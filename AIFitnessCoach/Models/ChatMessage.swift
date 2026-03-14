@@ -1,20 +1,34 @@
 import Foundation
 import SwiftUI
 
-/// Representeert de rol van de verzender
+/// Representeert de afzender van het chatbericht in de applicatie.
 enum SenderRole: String, Codable {
-    case user
-    case ai
+    case user // De eindgebruiker
+    case ai   // De virtuele AI coach
 }
 
-/// Representeert een chatbericht
+/// Representeert een individueel chatbericht (zowel inkomend als uitgaand).
+/// Bevat optionele ondersteuning voor beelddata (bijv. grafieken/foto's).
 struct ChatMessage: Identifiable, Equatable {
+    /// De unieke identificatiecode van dit bericht, cruciaal voor SwiftUI iteratie.
     let id: UUID
+    /// De afzender: AI of gebruiker.
     let role: SenderRole
+    /// De tekstuele inhoud van het bericht.
     let text: String
+    /// Het tijdstip waarop het bericht is aangemaakt.
     let timestamp: Date
+    /// Optionele ruwe JPEG data van een bijgevoegde afbeelding.
     let attachedImageData: Data?
 
+    /// Creëert een nieuw `ChatMessage` object.
+    ///
+    /// - Parameters:
+    ///   - id: Unieke identifier, standaard gegenereerd met `UUID()`.
+    ///   - role: Bepaalt of dit een `.user` of `.ai` bericht is.
+    ///   - text: De tekst van het bericht.
+    ///   - timestamp: Het verzendmoment.
+    ///   - attachedImageData: Optionele bytes van een gecomprimeerde JPEG afbeelding.
     init(id: UUID = UUID(), role: SenderRole, text: String, timestamp: Date = Date(), attachedImageData: Data? = nil) {
         self.id = id
         self.role = role
