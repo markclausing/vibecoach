@@ -23,7 +23,11 @@ public struct RealGenerativeModel: GenerativeModelProtocol {
 
     public func generateContent(_ parts: [any PartsRepresentable]) async throws -> String? {
         // We mappen de array direct door naar de SDK method.
-        let response = try await model.generateContent(parts)
+        // Omdat GenerativeModel.generateContent(_ parts: any ThrowingPartsRepresentable...) een variadische
+        // functie is en [any PartsRepresentable] een array is, roepen we de [ModelContent] overlaad aan.
+        let modelParts = parts.flatMap { $0.partsValue }
+        let modelContent = ModelContent(role: "user", parts: modelParts)
+        let response = try await model.generateContent([modelContent])
         return response.text
     }
 }
