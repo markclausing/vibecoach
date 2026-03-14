@@ -18,6 +18,20 @@ struct ChatView: View {
                                 MessageBubble(message: message)
                                     .id(message.id)
                             }
+
+                            // Laadindicator
+                            if viewModel.isTyping {
+                                HStack {
+                                    ProgressView()
+                                        .padding(.trailing, 8)
+                                    Text("Coach is aan het typen...")
+                                        .font(.caption)
+                                        .foregroundColor(.gray)
+                                    Spacer()
+                                }
+                                .padding()
+                                .id("typingIndicator")
+                            }
                         }
                         .padding()
                     }
@@ -25,6 +39,13 @@ struct ChatView: View {
                         if let lastMessage = viewModel.messages.last {
                             withAnimation {
                                 proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                            }
+                        }
+                    }
+                    .onChange(of: viewModel.isTyping) { _, isTyping in
+                        if isTyping {
+                            withAnimation {
+                                proxy.scrollTo("typingIndicator", anchor: .bottom)
                             }
                         }
                     }
