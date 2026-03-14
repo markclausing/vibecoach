@@ -78,12 +78,6 @@ struct ChatView: View {
                         .background(Color(.systemGray6))
                         .cornerRadius(20)
                         .lineLimit(1...5)
-                        .pasteDestination(for: Data.self) { items in
-                            // Probeer data te parsen als image
-                            if let data = items.first, let uiImage = UIImage(data: data) {
-                                viewModel.selectedImage = uiImage
-                            }
-                        }
 
                     Button(action: {
                         viewModel.sendMessage()
