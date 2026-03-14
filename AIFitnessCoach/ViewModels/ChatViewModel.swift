@@ -12,10 +12,10 @@ class ChatViewModel: ObservableObject {
 
     // De AI model instantie
     private lazy var model: GenerativeModel = {
-        let systemInstruction = "Jij bent een motiverende, deskundige persoonlijke fitness- en wielrencoach. Je helpt de gebruiker met het analyseren van trainingen, data van Strava/Intervals.icu en het behalen van doelen. Houd je antwoorden beknopt, behulpzaam en enthousiast."
+        let systemInstruction = "Jij bent een motiverende, deskundige persoonlijke fitness- en wielrencoach. Je helpt de gebruiker met het analyseren van trainingen en data van Strava/Intervals.icu. Houd je antwoorden beknopt, direct, deskundig en enthousiast."
 
         return GenerativeModel(
-            name: "gemini-1.5-flash",
+            name: "gemini-3.1-pro",
             apiKey: Secrets.geminiAPIKey,
             systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)])
         )
