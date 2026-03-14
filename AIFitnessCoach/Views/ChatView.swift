@@ -1,16 +1,18 @@
 import SwiftUI
 import PhotosUI
 
+/// De hoofd SwiftUI view die de chat interface toont.
 struct ChatView: View {
-    @StateObject private var viewModel = ChatViewModel()
+    /// De viewmodel die de chat status en netwerklogica beheert.
+    @StateObject var viewModel: ChatViewModel = ChatViewModel()
 
-    // Voor PhotosPicker
+    /// Huidige item geselecteerd vanuit de iOS Photos library.
     @State private var selectedItem: PhotosPickerItem? = nil
 
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Chat List
+                // Lijst met chatberichten
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: 12) {
@@ -75,7 +77,7 @@ struct ChatView: View {
 
                 Divider()
 
-                // Input Bar
+                // Onderste invoerbalk voor tekst en foto's
                 HStack(alignment: .bottom, spacing: 12) {
                     PhotosPicker(selection: $selectedItem, matching: .images, photoLibrary: .shared()) {
                         Image(systemName: "plus")
@@ -118,9 +120,12 @@ struct ChatView: View {
     }
 }
 
+/// Een herbruikbare view component die een enkel chatbericht tekent.
 struct MessageBubble: View {
+    /// Het bericht dat getoond moet worden.
     let message: ChatMessage
 
+    /// Bepaalt of de afzender de gebruiker is (rechts uitgelijnd en blauw).
     var isUser: Bool {
         message.role == .user
     }
