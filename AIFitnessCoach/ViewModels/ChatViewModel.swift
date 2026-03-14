@@ -15,7 +15,7 @@ class ChatViewModel: ObservableObject {
         let systemInstruction = "Jij bent een motiverende, deskundige persoonlijke fitness- en wielrencoach. Je helpt de gebruiker met het analyseren van trainingen en data van Strava/Intervals.icu. Houd je antwoorden beknopt, direct, deskundig en enthousiast."
 
         return GenerativeModel(
-            name: "gemini-1.5-pro",
+            name: "gemini-3.1-pro-preview",
             apiKey: Secrets.geminiAPIKey,
             systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)])
         )
