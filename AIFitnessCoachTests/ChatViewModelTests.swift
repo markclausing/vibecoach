@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 @testable import AIFitnessCoach
 import GoogleGenerativeAI
 
@@ -67,5 +68,50 @@ final class ChatViewModelTests: XCTestCase {
 
         // Check 4: De isTyping moet weer false zijn
         XCTAssertFalse(viewModel.isTyping, "Laadindicator moet weer uit (false) staan nadat de AI reactie succesvol geladen is.")
+    }
+
+    /// Test of het meesturen van een afbeelding succesvol in de berichtenlijst (met attached data) belandt,
+    /// de input gereset wordt, en we een mock antwoord krijgen.
+    func testSendMessage_WithImage_AttachesImageAndClearsInput() async {
+        // Arrange
+        let expectedUserText = "Kijk naar deze grafiek!"
+        let expectedAIResponse = "Interessante hartslagdata! Goed in de D2 zone gebleven."
+
+        // Simuleer een vierkantje rode afbeelding van 10x10 pixels
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 10, height: 10))
+        let testImage = renderer.image { ctx in
+            UIColor.red.setFill()
+            ctx.fill(CGRect(x: 0, y: 0, width: 10, height: 10))
+        }
+
+        viewModel.inputText = expectedUserText
+        viewModel.selectedImage = testImage
+        mockModel.responseToReturn = expectedAIResponse
+        mockModel.delay = 0.1
+
+        viewModel.messages.removeAll()
+
+        // Actie
+        viewModel.sendMessage()
+
+        // Assert: Input fields reset
+        XCTAssertTrue(viewModel.inputText.isEmpty, "Tekst invoer moet leeg zijn.")
+        XCTAssertNil(viewModel.selectedImage, "De geselecteerde afbeelding moet gereset (nil) zijn na verzending.")
+        XCTAssertTrue(viewModel.isTyping, "Laad indicator aan")
+
+        // Assert: User message bevat de image data
+        XCTAssertEqual(viewModel.messages.count, 1)
+        let userMessage = viewModel.messages.first
+        XCTAssertEqual(userMessage?.role, .user)
+        XCTAssertEqual(userMessage?.text, expectedUserText)
+        XCTAssertNotNil(userMessage?.attachedImageData, "De user message moet de attached image data (JPEG) bevatten.")
+
+        // Wacht op de asynchrone Vision AI reactie
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        // Assert: AI Vision antwoord
+        XCTAssertEqual(viewModel.messages.count, 2, "AI response moet zijn binnengekomen na het insturen van de afbeelding.")
+        XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
+        XCTAssertFalse(viewModel.isTyping, "Klaar met laden.")
     }
 }

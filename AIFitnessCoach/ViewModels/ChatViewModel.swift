@@ -46,18 +46,20 @@ class ChatViewModel: ObservableObject {
     /// Verstuurt het huidige tekstveld en/of de geselecteerde afbeelding.
     func sendMessage() {
         let textToSend = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let imageToSend = selectedImage
+
+        // Als de gebruiker een afbeelding heeft geselecteerd, verkleinen we hem meteen naar een payload-vriendelijk formaat.
+        let imageToSend = selectedImage?.downsample(to: 1024.0)
 
         guard !textToSend.isEmpty || imageToSend != nil else { return }
 
-        // 1. Maak bericht aan van gebruiker
+        // 1. Maak bericht aan van gebruiker (converteer UIImage naar datatypes na de resize)
         let imageData = imageToSend?.jpegData(compressionQuality: 0.8)
         let userMessage = ChatMessage(role: .user, text: textToSend, attachedImageData: imageData)
 
         // 2. Voeg toe aan UI en reset velden
         messages.append(userMessage)
 
-        // 3. Haal AI reactie op
+        // 3. Haal AI reactie op (de viewmodel geeft direct de afgeschaalde afbeelding door)
         fetchAIResponse(for: textToSend, image: imageToSend)
 
         inputText = ""
