@@ -27,10 +27,15 @@ jobs:
 
       - name: Build & Run XCTests
         run: |
+          # Haal dynamisch de UUID op van de eerste beschikbare iPhone simulator op de GitHub runner
+          SIMULATOR_ID=$(xcrun simctl list devices available | grep iPhone | grep -v unavailable | awk '{print $(NF-1)}' | tr -d '()' | head -n 1)
+
+          echo "Using Simulator ID: $SIMULATOR_ID"
+
           set -o pipefail && xcodebuild test \
             -project AIFitnessCoach.xcodeproj \
             -scheme AIFitnessCoach \
-            -destination "platform=iOS Simulator,name=iPhone 15" \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -enableCodeCoverage YES \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
