@@ -6,7 +6,7 @@ extension UIImage {
     ///
     /// - Parameter maxDimension: De maximale grootte (in pixels) voor de langste zijde.
     /// - Returns: De verkleinde UIImage, of de originele afbeelding als deze al kleiner was.
-    func downsample(to maxDimension: CGFloat = 1024.0) -> UIImage {
+    func downsample(to maxDimension: CGFloat = 2048.0) -> UIImage {
         let maxSide = max(size.width, size.height)
 
         // Alleen verkleinen als het echt groter is

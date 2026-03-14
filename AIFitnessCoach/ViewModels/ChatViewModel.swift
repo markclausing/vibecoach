@@ -48,7 +48,7 @@ class ChatViewModel: ObservableObject {
         let textToSend = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         // Als de gebruiker een afbeelding heeft geselecteerd, verkleinen we hem meteen naar een payload-vriendelijk formaat.
-        let imageToSend = selectedImage?.downsample(to: 1024.0)
+        let imageToSend = selectedImage?.downsample(to: 2048.0)
 
         guard !textToSend.isEmpty || imageToSend != nil else { return }
 
@@ -93,17 +93,21 @@ class ChatViewModel: ObservableObject {
 
         Task {
             do {
-                var contentParts: [ModelContent.Part] = []
+                // Maak een dynamische array van PartsRepresentable objects
+                var promptParts: [any PartsRepresentable] = []
 
                 if !text.isEmpty {
-                    contentParts.append(.text(text))
+                    promptParts.append(text)
                 }
 
-                if let image = image, let jpegData = image.jpegData(compressionQuality: 0.8) {
-                    contentParts.append(.data(mimetype: "image/jpeg", jpegData))
+                // Voeg direct the UIImage toe in plaats van een gemaakte payload
+                if let image = image {
+                    promptParts.append(image)
                 }
 
-                let responseText = try await model.generateContent(from: [ModelContent(role: "user", parts: contentParts)])
+                // Geef de array direct over aan de model protocol wrapper
+                let responseText = try await model.generateContent(promptParts)
+
                 let finalResponseText = responseText ?? "Ik kon geen antwoord genereren."
 
                 messages.append(ChatMessage(role: .ai, text: finalResponseText))
