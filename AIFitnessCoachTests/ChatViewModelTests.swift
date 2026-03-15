@@ -109,6 +109,18 @@ final class ChatViewModelTests: XCTestCase {
         // Wacht op de asynchrone Vision AI reactie
         try? await Task.sleep(nanoseconds: 200_000_000)
 
+        // Assert: Controleer of we de juiste SDK Part in de payload hebben doorgestuurd
+        XCTAssertEqual(mockModel.receivedParts.count, 2, "Er moeten twee parts doorgestuurd zijn: text en image")
+        if mockModel.receivedParts.count >= 2 {
+            let part2 = mockModel.receivedParts[1]
+            // Controleer via reflection of we een 'data' part hebben
+            let partMirror = Mirror(reflecting: part2)
+            // ModelContent.Part is een enum en case 'data(mimetype: String, data: Data)' heeft een payload tuple.
+            // Aangezien ModelContent.Part de 'data' enum case is, wordt deze als enum gereflecteerd.
+            XCTAssertTrue(String(describing: part2).contains("data"), "De tweede part moet een 'data' part zijn met mimetype en bytes.")
+            XCTAssertTrue(String(describing: part2).contains("image/jpeg"), "De data part moet een 'image/jpeg' mimetype hebben.")
+        }
+
         // Assert: AI Vision antwoord
         XCTAssertEqual(viewModel.messages.count, 2, "AI response moet zijn binnengekomen na het insturen van de afbeelding.")
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)

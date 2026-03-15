@@ -100,9 +100,10 @@ class ChatViewModel: ObservableObject {
                     promptParts.append(text)
                 }
 
-                // Voeg direct the UIImage toe in plaats van een gemaakte payload
-                if let image = image {
-                    promptParts.append(image)
+                // Zet de UIImage om naar JPEG data en wrap het in een SDK Part
+                if let image = image, let imageData = image.jpegData(compressionQuality: 0.8) {
+                    let imagePart = ModelContent.Part.data(mimetype: "image/jpeg", data: imageData)
+                    promptParts.append(imagePart)
                 }
 
                 // Geef de array direct over aan de model protocol wrapper
