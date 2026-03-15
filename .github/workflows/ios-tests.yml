@@ -1,0 +1,42 @@
+name: iOS CI Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build_and_test:
+    name: Build & Test iOS App
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Setup Secrets
+        # Kopieer het dummy template naar Secrets.swift zodat het project succesvol compileert.
+        # Het mockmodel zorgt er daarna voor dat testen draaien zonder echte API key.
+        run: cp AIFitnessCoach/Secrets-template.swift AIFitnessCoach/Secrets.swift
+
+      - name: Build & Run XCTests
+        run: |
+          # Haal dynamisch de UUID op van de eerste beschikbare iPhone simulator op de GitHub runner
+          SIMULATOR_ID=$(xcrun simctl list devices available | grep iPhone | grep -v unavailable | awk '{print $(NF-1)}' | tr -d '()' | head -n 1)
+
+          echo "Using Simulator ID: $SIMULATOR_ID"
+
+          set -o pipefail && xcodebuild test \
+            -project AIFitnessCoach.xcodeproj \
+            -scheme AIFitnessCoach \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -enableCodeCoverage YES \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty
