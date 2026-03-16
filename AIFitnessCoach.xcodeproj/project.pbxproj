@@ -13,6 +13,7 @@
 		626955C541119438634E5B32 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = 1DFC6E046AA02E4CF8689D9C /* GoogleGenerativeAI */; };
 		73F9568829F48D139CC06AB6 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = DDF501EC97778A185B48B142 /* GoogleGenerativeAI */; };
 		75D1A92071CFBE1BA9750D59 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984AC8DD2D26E4CA3247251E /* Secrets.swift */; };
+		7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */; };
 		CC54A4B0A24ABC7666AB3222 /* ChatViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */; };
 		D8A5CC6C6399BF876493D66B /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA86D03EE20341A8CB8173EE /* ChatView.swift */; };
 		D9D6946898CF838A86E276DC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B16CF484B776C9214345E29 /* Foundation.framework */; };
@@ -45,6 +46,7 @@
 		892FA4CC13985F26BA4BB4DE /* ChatViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		984AC8DD2D26E4CA3247251E /* Secrets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		AF9454A3119F7BF71A5331E4 /* ChatMessage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
+		C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "UIImage+Extensions.swift"; sourceTree = "<group>"; };
 		C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIFitnessCoachApp.swift; path = AIFitnessCoachApp.swift; sourceTree = "<group>"; };
 		CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockGenerativeModel.swift; sourceTree = "<group>"; };
 		DA86D03EE20341A8CB8173EE /* ChatView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
@@ -138,6 +140,15 @@
 			);
 			sourceTree = "<group>";
 		};
+		619A62432EF1F8A75BC8221B /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */,
+			);
+			name = Extensions;
+			path = Extensions;
+			sourceTree = "<group>";
+		};
 		690140878BF54A85F2CF5005 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -166,6 +177,7 @@
 				48F580DFE59DCB4027FB3AEC /* ViewModels */,
 				2757E95543939CACDB8D35DE /* Assets.xcassets */,
 				984AC8DD2D26E4CA3247251E /* Secrets.swift */,
+				619A62432EF1F8A75BC8221B /* Extensions */,
 			);
 			name = AIFitnessCoach;
 			path = AIFitnessCoach;
@@ -288,6 +300,7 @@
 				DEBB8672AFBDB80CA6D79AA6 /* ChatViewModel.swift in Sources */,
 				75D1A92071CFBE1BA9750D59 /* Secrets.swift in Sources */,
 				5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */,
+				7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
