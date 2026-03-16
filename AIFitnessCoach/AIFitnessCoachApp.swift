@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 @main
 struct AIFitnessCoachApp: App {
@@ -6,5 +7,6 @@ struct AIFitnessCoachApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: FitnessGoal.self) // Voeg SwiftData container toe voor lokale doelen tracking
     }
 }
