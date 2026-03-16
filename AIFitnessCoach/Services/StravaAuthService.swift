@@ -27,11 +27,15 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
     }
 
     func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        // Find the active window scene
-        return UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .first { $0.isKeyWindow } ?? ASPresentationAnchor()
+        // Find the active window scene and the window that is not presenting anything else if possible, or just the root window.
+        // We ensure we get the application window to prevent ASWebAuthenticationSession from grabbing the window
+        // of a presented sheet, which causes a layout bug upon dismissal.
+        guard let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+              let window = windowScene.windows.first(where: { $0.isKeyWindow }) else {
+            return ASPresentationAnchor()
+        }
+
+        return window
     }
 
     /// Start the OAuth flow
