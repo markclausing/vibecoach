@@ -54,16 +54,6 @@ class ChatViewModel: ObservableObject {
         // Als de gebruiker een afbeelding heeft geselecteerd, verkleinen we hem meteen naar een payload-vriendelijk formaat.
         let imageToSend = selectedImage?.downsample(to: 2048.0)
 
-        // Tijdelijk experiment: Roep de mock FitnessDataService aan bij elk bericht
-        Task {
-            do {
-                let activity = try await fitnessDataService.fetchLatestActivity()
-                print("Mock Activity from FitnessDataService: \(activity)")
-            } catch {
-                print("Failed to fetch activity: \(error)")
-            }
-        }
-
         guard !textToSend.isEmpty || imageToSend != nil else { return }
 
         // 1. Maak bericht aan van gebruiker (converteer UIImage naar datatypes na de resize)
@@ -73,8 +63,29 @@ class ChatViewModel: ObservableObject {
         // 2. Voeg toe aan UI en reset velden
         messages.append(userMessage)
 
-        // 3. Haal AI reactie op (de viewmodel geeft direct de afgeschaalde afbeelding door)
-        fetchAIResponse(for: textToSend, image: imageToSend)
+        isTyping = true
+
+        // Haal recente Strava activiteit op om als extra context mee te sturen
+        Task {
+            var activityContext = ""
+
+            do {
+                if let activity = try await fitnessDataService.fetchLatestActivity() {
+                    let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!)) bpm" : "onbekend"
+                    activityContext = "\n\n[Systeem context: De gebruiker heeft zojuist een Strava activiteit voltooid. Naam: '\(activity.name)'. Afstand: \(Int(activity.distance)) meter. Tijd: \(activity.moving_time) seconden. Gemiddelde hartslag: \(heartRateStr).]"
+                }
+            } catch let error as FitnessDataError {
+                // Toon een systeembericht aan de gebruiker als er een bekende API fout is
+                messages.append(ChatMessage(role: .ai, text: "Let op: Ik kon je recente Strava data niet ophalen. Reden: \(error.localizedDescription)"))
+                print("Strava data ophalen mislukt: \(error.localizedDescription)")
+            } catch {
+                print("Onbekende fout bij Strava: \(error)")
+            }
+
+            // 3. Haal AI reactie op (inclusief eventuele Strava context)
+            let fullText = textToSend + activityContext
+            fetchAIResponse(for: fullText, image: imageToSend)
+        }
 
         inputText = ""
         clearImage()
@@ -102,8 +113,6 @@ class ChatViewModel: ObservableObject {
              messages.append(ChatMessage(role: .ai, text: "Let op: De API-sleutel ontbreekt in Secrets.swift. Vul deze in om met mij te kunnen praten!"))
              return
         }
-
-        isTyping = true
 
         Task {
             do {
