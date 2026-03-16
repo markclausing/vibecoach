@@ -93,11 +93,11 @@ class ChatViewModel: ObservableObject {
 
         Task {
             do {
-                // Maak een dynamische array van PartsRepresentable objects
-                var promptParts: [any PartsRepresentable] = []
+                // Maak een dynamische array van ModelContent.Part objects
+                var promptParts: [ModelContent.Part] = []
 
                 if !text.isEmpty {
-                    promptParts.append(text)
+                    promptParts.append(.text(text))
                 }
 
                 // Zet de UIImage om naar JPEG data en wrap het in een SDK Part
