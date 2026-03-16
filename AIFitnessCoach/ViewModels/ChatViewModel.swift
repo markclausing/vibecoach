@@ -63,9 +63,10 @@ class ChatViewModel: ObservableObject {
         // 2. Voeg toe aan UI en reset velden
         messages.append(userMessage)
 
+        isTyping = true
+
         // Haal recente Strava activiteit op om als extra context mee te sturen
         Task {
-            isTyping = true
             var activityContext = ""
 
             do {
