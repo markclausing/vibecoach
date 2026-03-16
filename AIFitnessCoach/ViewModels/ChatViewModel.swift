@@ -19,12 +19,16 @@ class ChatViewModel: ObservableObject {
     /// Dit maakt Dependency Injection (DI) mogelijk voor unit tests.
     private let model: GenerativeModelProtocol
 
+    /// Service voor externe API calls (Sprint 4.2).
+    private let fitnessDataService: FitnessDataService
+
     /// Initialiseert de `ChatViewModel`.
     ///
     /// - Parameter aiModel: De AI-dienst die gebruikt moet worden.
     ///             Wanneer niets wordt meegegeven, wordt standaard de
     ///             `RealGenerativeModel` (die met Google API praat) gebruikt.
-    init(aiModel: GenerativeModelProtocol? = nil) {
+    init(aiModel: GenerativeModelProtocol? = nil, fitnessDataService: FitnessDataService = FitnessDataService()) {
+        self.fitnessDataService = fitnessDataService
         if let providedModel = aiModel {
             self.model = providedModel
         } else {
@@ -49,6 +53,16 @@ class ChatViewModel: ObservableObject {
 
         // Als de gebruiker een afbeelding heeft geselecteerd, verkleinen we hem meteen naar een payload-vriendelijk formaat.
         let imageToSend = selectedImage?.downsample(to: 2048.0)
+
+        // Tijdelijk experiment: Roep de mock FitnessDataService aan bij elk bericht
+        Task {
+            do {
+                let activity = try await fitnessDataService.fetchLatestActivity()
+                print("Mock Activity from FitnessDataService: \(activity)")
+            } catch {
+                print("Failed to fetch activity: \(error)")
+            }
+        }
 
         guard !textToSend.isEmpty || imageToSend != nil else { return }
 

@@ -9,6 +9,9 @@ struct ChatView: View {
     /// Huidige item geselecteerd vanuit de iOS Photos library.
     @State private var selectedItem: PhotosPickerItem? = nil
 
+    /// Toggle om SettingsView via een sheet weer te geven.
+    @State private var showingSettings = false
+
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -116,6 +119,18 @@ struct ChatView: View {
             }
             .navigationTitle("AI Fitness Coach")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingSettings = true
+                    } label: {
+                        Image(systemName: "gear")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView()
+            }
         }
     }
 }
