@@ -6,9 +6,9 @@ import GoogleGenerativeAI
 public protocol GenerativeModelProtocol {
     /// Genereert content op basis van de meegeleverde array van input types (Strings, UIImages, etc).
     ///
-    /// - Parameter parts: Een array van typen die `PartsRepresentable` conformeren.
+    /// - Parameter parts: Een array van typen die `ModelContent.Part` zijn.
     /// - Returns: Een tekstuele reactie gegenereerd door het AI-model.
-    func generateContent(_ parts: [any PartsRepresentable]) async throws -> String?
+    func generateContent(_ parts: [ModelContent.Part]) async throws -> String?
 }
 
 /// Een wrapper rondom de officiële `GoogleGenerativeAI.GenerativeModel`
@@ -21,12 +21,8 @@ public struct RealGenerativeModel: GenerativeModelProtocol {
         self.model = model
     }
 
-    public func generateContent(_ parts: [any PartsRepresentable]) async throws -> String? {
-        // We mappen de array direct door naar de SDK method.
-        // Omdat GenerativeModel.generateContent(_ parts: any ThrowingPartsRepresentable...) een variadische
-        // functie is en [any PartsRepresentable] een array is, roepen we de [ModelContent] overlaad aan.
-        let modelParts = parts.flatMap { $0.partsValue }
-        let modelContent = ModelContent(role: "user", parts: modelParts)
+    public func generateContent(_ parts: [ModelContent.Part]) async throws -> String? {
+        let modelContent = ModelContent(role: "user", parts: parts)
         let response = try await model.generateContent([modelContent])
         return response.text
     }

@@ -12,9 +12,9 @@ class MockGenerativeModel: GenerativeModelProtocol {
         case genericError
     }
 
-    var receivedParts: [any PartsRepresentable] = []
+    var receivedParts: [ModelContent.Part] = []
 
-    func generateContent(_ parts: [any PartsRepresentable]) async throws -> String? {
+    func generateContent(_ parts: [ModelContent.Part]) async throws -> String? {
         receivedParts = parts
 
         if delay > 0 {
