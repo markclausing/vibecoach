@@ -14,6 +14,7 @@
 		543CBE0027B161C9AFDE3824 /* AIFitnessCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */; };
 		5472F9DE43DB50C1D8654FD7 /* FitnessGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5F08AC5A92BA61E6C7AFF6 /* FitnessGoal.swift */; };
 		5DBFDEDC67859D1105BB9DE5 /* MockGenerativeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */; };
+		62101CEC1C2581646815DE5F /* StravaAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B0DBBC9E0C9003E4EDF353F /* StravaAuthService.swift */; };
 		626955C541119438634E5B32 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = 1DFC6E046AA02E4CF8689D9C /* GoogleGenerativeAI */; };
 		68E65A67D70774FFBC9AD974 /* FitnessGoalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7CB672BF9C4367442263B37 /* FitnessGoalTests.swift */; };
 		73F9568829F48D139CC06AB6 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = DDF501EC97778A185B48B142 /* GoogleGenerativeAI */; };
@@ -38,6 +39,7 @@
 		E8EC336C8B181FA437B5DDDE /* SettingsViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7E6C6819498919907E0080 /* SettingsViewTests.swift */; };
 		E947B16B55C5FE309BB6959B /* GoalsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155286CAEC115712CCC90878 /* GoalsListView.swift */; };
 		EDF73C6C2B12F9FC2BDB6140 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5493D0D3C44442CCF82489CA /* Preview Assets.xcassets */; };
+		EE56DFE3E3C416EDDE78EA78 /* StravaAuthServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 606055BEB3A7314BE5901FF2 /* StravaAuthServiceTests.swift */; };
 		F5707EAE74A37B1C1A488A51 /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F7CF789DC1652437B1E2912 /* TokenStore.swift */; };
 		F5AFB023FA1BED3CDEE37567 /* StravaActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42304B2581A136130248556F /* StravaActivity.swift */; };
 /* End PBXBuildFile section */
@@ -56,6 +58,7 @@
 		07262F9AE3513E421E9B387F /* AIFitnessCoachTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIFitnessCoachTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0B16CF484B776C9214345E29 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		155286CAEC115712CCC90878 /* GoalsListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalsListView.swift; sourceTree = "<group>"; };
+		1B0DBBC9E0C9003E4EDF353F /* StravaAuthService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaAuthService.swift; sourceTree = "<group>"; };
 		1DBDF1E1C126DA34735D2C6B /* FitnessDataServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataServiceTests.swift; sourceTree = "<group>"; };
 		2757E95543939CACDB8D35DE /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		42304B2581A136130248556F /* StravaActivity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaActivity.swift; sourceTree = "<group>"; };
@@ -65,6 +68,7 @@
 		5493D0D3C44442CCF82489CA /* Preview Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = "Preview Assets.xcassets"; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		589497AB8DCC82E3961468CE /* AddGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddGoalView.swift; sourceTree = "<group>"; };
 		5D2117400251372FC1E5F512 /* AIFitnessCoach.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIFitnessCoach.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		606055BEB3A7314BE5901FF2 /* StravaAuthServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaAuthServiceTests.swift; sourceTree = "<group>"; };
 		67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatViewModelTests.swift; sourceTree = "<group>"; };
 		6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GenerativeModelProtocol.swift; sourceTree = "<group>"; };
 		85944F35EF47E4BB1077234D /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -75,6 +79,7 @@
 		9E7E6C6819498919907E0080 /* SettingsViewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsViewTests.swift; sourceTree = "<group>"; };
 		A3ECC3842959E1E8F3B69DA0 /* EditGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditGoalView.swift; sourceTree = "<group>"; };
 		A9D551D0DC6DC7017708B223 /* MockNetworkSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockNetworkSession.swift; sourceTree = "<group>"; };
+		ACC1842A5A46E46BF46AEA7C /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AF5F08AC5A92BA61E6C7AFF6 /* FitnessGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoal.swift; sourceTree = "<group>"; };
 		AF9454A3119F7BF71A5331E4 /* ChatMessage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		B28842B4C89C1112076161C4 /* StravaTokenResponse.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaTokenResponse.swift; sourceTree = "<group>"; };
@@ -137,6 +142,7 @@
 				9E7E6C6819498919907E0080 /* SettingsViewTests.swift */,
 				B7CB672BF9C4367442263B37 /* FitnessGoalTests.swift */,
 				DC8C3EDBE5AC6FCAF9FC8241 /* Mocks */,
+				606055BEB3A7314BE5901FF2 /* StravaAuthServiceTests.swift */,
 			);
 			name = AIFitnessCoachTests;
 			path = AIFitnessCoachTests;
@@ -212,6 +218,7 @@
 				FAAEDBCBAA2F5BDD9FDD25D6 /* KeychainService.swift */,
 				482C73BF97955C69E55B3EAA /* FitnessDataService.swift */,
 				5137F495F415421A3577E04D /* NetworkSession.swift */,
+				1B0DBBC9E0C9003E4EDF353F /* StravaAuthService.swift */,
 			);
 			name = Services;
 			path = Services;
@@ -247,6 +254,7 @@
 				984AC8DD2D26E4CA3247251E /* Secrets.swift */,
 				619A62432EF1F8A75BC8221B /* Extensions */,
 				CB21CEFA35D337F34B36E40E /* Services */,
+				ACC1842A5A46E46BF46AEA7C /* Info.plist */,
 			);
 			name = AIFitnessCoach;
 			path = AIFitnessCoach;
@@ -360,6 +368,7 @@
 				E8EC336C8B181FA437B5DDDE /* SettingsViewTests.swift in Sources */,
 				68E65A67D70774FFBC9AD974 /* FitnessGoalTests.swift in Sources */,
 				52AA3D141D9AE73D9F58C89F /* MockNetworkSession.swift in Sources */,
+				EE56DFE3E3C416EDDE78EA78 /* StravaAuthServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -387,6 +396,7 @@
 				1BC92775458C6C45750FC134 /* FitnessDataError.swift in Sources */,
 				DD89096CB3AF1A819CD9A324 /* NetworkSession.swift in Sources */,
 				C594D2DAE9C27E9D2C259142 /* StravaTokenResponse.swift in Sources */,
+				62101CEC1C2581646815DE5F /* StravaAuthService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -464,7 +474,8 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				DEVELOPMENT_ASSET_PATHS = "\"AIFitnessCoach/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AIFitnessCoach/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -576,7 +587,8 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				DEVELOPMENT_ASSET_PATHS = "\"AIFitnessCoach/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = AIFitnessCoach/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

@@ -6,10 +6,10 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
+    // Authenticatie service voor Strava OAuth web flow
+    @StateObject private var stravaAuthService = StravaAuthService()
+
     // UI State variabelen, gehaald uit en geschreven naar Keychain
-    @State private var stravaToken: String = ""
-    @State private var stravaRefreshToken: String = ""
-    @State private var stravaTokenExpiresAt: String = ""
     @State private var intervalsToken: String = ""
 
     @State private var feedbackMessage: String?
@@ -19,10 +19,9 @@ struct SettingsView: View {
 
     // Laden van opgeslagen waarden
     private func loadTokens() {
+        stravaAuthService.checkAuthStatus()
+
         do {
-            stravaToken = try tokenStore.getToken(forService: "StravaToken") ?? ""
-            stravaRefreshToken = try tokenStore.getToken(forService: "StravaRefreshToken") ?? ""
-            stravaTokenExpiresAt = try tokenStore.getToken(forService: "StravaTokenExpiresAt") ?? ""
             intervalsToken = try tokenStore.getToken(forService: "IntervalsToken") ?? ""
         } catch {
             print("SettingsView: Kon tokens niet veilig laden (\(error))")
@@ -32,24 +31,6 @@ struct SettingsView: View {
     // Opslaan van ingevoerde waarden naar native Keychain
     private func saveTokens() {
         do {
-            if !stravaToken.isEmpty {
-                try tokenStore.saveToken(stravaToken, forService: "StravaToken")
-            } else {
-                try tokenStore.deleteToken(forService: "StravaToken")
-            }
-
-            if !stravaRefreshToken.isEmpty {
-                try tokenStore.saveToken(stravaRefreshToken, forService: "StravaRefreshToken")
-            } else {
-                try tokenStore.deleteToken(forService: "StravaRefreshToken")
-            }
-
-            if !stravaTokenExpiresAt.isEmpty {
-                try tokenStore.saveToken(stravaTokenExpiresAt, forService: "StravaTokenExpiresAt")
-            } else {
-                try tokenStore.deleteToken(forService: "StravaTokenExpiresAt")
-            }
-
             if !intervalsToken.isEmpty {
                 try tokenStore.saveToken(intervalsToken, forService: "IntervalsToken")
             } else {
@@ -74,22 +55,37 @@ struct SettingsView: View {
             Form {
                 Section(
                     header: Text("Strava Connectie"),
-                    footer: Text("OAuth tokens worden lokaal en versleuteld in de Apple Keychain bewaard.").font(.caption)
+                    footer: Text("Koppel veilig met Strava via de officiële OAuth web flow. Tokens worden lokaal versleuteld opgeslagen.").font(.caption)
                 ) {
-                    SecureField("Strava Access Token", text: $stravaToken)
-                        .textContentType(.password)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
+                    if stravaAuthService.isAuthenticated {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                            Text("Gekoppeld aan Strava")
+                        }
 
-                    SecureField("Strava Refresh Token", text: $stravaRefreshToken)
-                        .textContentType(.password)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
+                        Button(role: .destructive, action: {
+                            stravaAuthService.logout()
+                        }) {
+                            Text("Koppel los (Uitloggen)")
+                        }
+                    } else {
+                        Button(action: {
+                            stravaAuthService.authenticate()
+                        }) {
+                            HStack {
+                                Image(systemName: "figure.run.circle.fill")
+                                Text("Log in met Strava")
+                                    .fontWeight(.bold)
+                            }
+                        }
+                    }
 
-                    TextField("Expires At (Unix Timestamp)", text: $stravaTokenExpiresAt)
-                        .keyboardType(.numberPad)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
+                    if let errorMsg = stravaAuthService.authError {
+                        Text(errorMsg)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
                 }
 
                 Section(
