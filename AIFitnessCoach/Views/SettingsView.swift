@@ -8,6 +8,8 @@ struct SettingsView: View {
 
     // UI State variabelen, gehaald uit en geschreven naar Keychain
     @State private var stravaToken: String = ""
+    @State private var stravaRefreshToken: String = ""
+    @State private var stravaTokenExpiresAt: String = ""
     @State private var intervalsToken: String = ""
 
     @State private var feedbackMessage: String?
@@ -19,6 +21,8 @@ struct SettingsView: View {
     private func loadTokens() {
         do {
             stravaToken = try tokenStore.getToken(forService: "StravaToken") ?? ""
+            stravaRefreshToken = try tokenStore.getToken(forService: "StravaRefreshToken") ?? ""
+            stravaTokenExpiresAt = try tokenStore.getToken(forService: "StravaTokenExpiresAt") ?? ""
             intervalsToken = try tokenStore.getToken(forService: "IntervalsToken") ?? ""
         } catch {
             print("SettingsView: Kon tokens niet veilig laden (\(error))")
@@ -32,6 +36,18 @@ struct SettingsView: View {
                 try tokenStore.saveToken(stravaToken, forService: "StravaToken")
             } else {
                 try tokenStore.deleteToken(forService: "StravaToken")
+            }
+
+            if !stravaRefreshToken.isEmpty {
+                try tokenStore.saveToken(stravaRefreshToken, forService: "StravaRefreshToken")
+            } else {
+                try tokenStore.deleteToken(forService: "StravaRefreshToken")
+            }
+
+            if !stravaTokenExpiresAt.isEmpty {
+                try tokenStore.saveToken(stravaTokenExpiresAt, forService: "StravaTokenExpiresAt")
+            } else {
+                try tokenStore.deleteToken(forService: "StravaTokenExpiresAt")
             }
 
             if !intervalsToken.isEmpty {
@@ -57,14 +73,29 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section(
-                    header: Text("Externe Connecties"),
-                    footer: Text("API sleutels worden lokaal en versleuteld in de Apple Keychain bewaard.").font(.caption)
+                    header: Text("Strava Connectie"),
+                    footer: Text("OAuth tokens worden lokaal en versleuteld in de Apple Keychain bewaard.").font(.caption)
                 ) {
-                    SecureField("Strava OAuth Token", text: $stravaToken)
+                    SecureField("Strava Access Token", text: $stravaToken)
                         .textContentType(.password)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
 
+                    SecureField("Strava Refresh Token", text: $stravaRefreshToken)
+                        .textContentType(.password)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+
+                    TextField("Expires At (Unix Timestamp)", text: $stravaTokenExpiresAt)
+                        .keyboardType(.numberPad)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                }
+
+                Section(
+                    header: Text("Intervals.icu Connectie"),
+                    footer: Text("API sleutels worden lokaal bewaard.").font(.caption)
+                ) {
                     SecureField("Intervals.icu API Key", text: $intervalsToken)
                         .textContentType(.password)
                         .autocorrectionDisabled()

@@ -7,6 +7,10 @@ final class FitnessDataServiceTests: XCTestCase {
         // Arrange
         let mockTokenStore = MockTokenStore()
         try mockTokenStore.saveToken("valid_token", forService: "StravaToken")
+        // Set an expiration date far in the future so it doesn't trigger refresh
+        let futureDate = Date().addingTimeInterval(3600).timeIntervalSince1970
+        try mockTokenStore.saveToken(String(futureDate), forService: "StravaTokenExpiresAt")
+        try mockTokenStore.saveToken("refresh_token", forService: "StravaRefreshToken")
 
         let mockSession = MockNetworkSession()
         let jsonResponse = """
@@ -56,10 +60,77 @@ final class FitnessDataServiceTests: XCTestCase {
         }
     }
 
+    func testFetchLatestActivity_WithExpiredToken_ShouldRefreshAndFetch() async throws {
+        // Arrange
+        let mockTokenStore = MockTokenStore()
+        try mockTokenStore.saveToken("expired_token", forService: "StravaToken")
+        try mockTokenStore.saveToken("old_refresh", forService: "StravaRefreshToken")
+        // Set an expiration date in the past
+        let pastDate = Date().addingTimeInterval(-3600).timeIntervalSince1970
+        try mockTokenStore.saveToken(String(pastDate), forService: "StravaTokenExpiresAt")
+
+        let mockSession = MockNetworkSession()
+
+        // Setup sequence responses: 1st for refresh token, 2nd for activity fetch
+        let newExpiresAt = Int(Date().addingTimeInterval(3600).timeIntervalSince1970)
+        let refreshJson = """
+        {
+            "access_token": "new_access_token",
+            "refresh_token": "new_refresh_token",
+            "expires_at": \(newExpiresAt)
+        }
+        """
+        let refreshResponse = HTTPURLResponse(url: URL(string: "https://strava.com/oauth/token")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+
+        let activityJson = """
+        [
+            {
+                "id": 54321,
+                "name": "Morning Run",
+                "distance": 10000.0,
+                "moving_time": 3000,
+                "average_heartrate": 155.0,
+                "type": "Run"
+            }
+        ]
+        """
+        let activityResponse = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+
+        mockSession.sequenceResponses = [
+            (refreshJson.data(using: .utf8)!, refreshResponse),
+            (activityJson.data(using: .utf8)!, activityResponse)
+        ]
+
+        let service = FitnessDataService(tokenStore: mockTokenStore, session: mockSession)
+
+        // Act
+        let result = try await service.fetchLatestActivity()
+
+        // Assert
+        XCTAssertEqual(mockSession.callCount, 2, "Should have made 2 network calls (refresh + fetch)")
+
+        // Check if keychain was updated
+        let savedAccessToken = try mockTokenStore.getToken(forService: "StravaToken")
+        let savedRefreshToken = try mockTokenStore.getToken(forService: "StravaRefreshToken")
+        let savedExpiresAtStr = try mockTokenStore.getToken(forService: "StravaTokenExpiresAt")
+
+        XCTAssertEqual(savedAccessToken, "new_access_token")
+        XCTAssertEqual(savedRefreshToken, "new_refresh_token")
+        XCTAssertEqual(savedExpiresAtStr, String(newExpiresAt))
+
+        // Check if activity was fetched correctly
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.name, "Morning Run")
+    }
+
     func testFetchLatestActivity_Unauthorized() async throws {
         // Arrange
         let mockTokenStore = MockTokenStore()
         try mockTokenStore.saveToken("expired_token", forService: "StravaToken")
+        // Setup mock so it doesn't refresh automatically and falls through to the unauthorized block
+        let futureDate = Date().addingTimeInterval(3600).timeIntervalSince1970
+        try mockTokenStore.saveToken(String(futureDate), forService: "StravaTokenExpiresAt")
+        try mockTokenStore.saveToken("refresh_token", forService: "StravaRefreshToken")
 
         let mockSession = MockNetworkSession()
         mockSession.dataToReturn = Data()
@@ -82,6 +153,10 @@ final class FitnessDataServiceTests: XCTestCase {
         // Arrange
         let mockTokenStore = MockTokenStore()
         try mockTokenStore.saveToken("valid_token", forService: "StravaToken")
+        // Setup mock so it doesn't refresh
+        let futureDate = Date().addingTimeInterval(3600).timeIntervalSince1970
+        try mockTokenStore.saveToken(String(futureDate), forService: "StravaTokenExpiresAt")
+        try mockTokenStore.saveToken("refresh_token", forService: "StravaRefreshToken")
 
         let mockSession = MockNetworkSession()
         // Provide invalid JSON for an array of StravaActivity
