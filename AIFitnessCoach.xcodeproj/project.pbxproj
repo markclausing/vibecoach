@@ -24,7 +24,6 @@
 		75D1A92071CFBE1BA9750D59 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984AC8DD2D26E4CA3247251E /* Secrets.swift */; };
 		7C2EEDEF6E1CCAB9FE856BED /* StravaTokenResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6902F6A369E69FC0F8BC5C /* StravaTokenResponse.swift */; };
 		7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */; };
-		883744683CA8D5F503883544 /* Secrets-template.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D235CA77C73BA3BBA685143 /* Secrets-template.swift */; };
 		89B083BDD5A2948D191971E5 /* FitnessGoalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FDDDD26172C97669936B5B8 /* FitnessGoalTests.swift */; };
 		9673922FF2B9CCC9D666596F /* MockTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70418E8B60B3D7CA1BC426AA /* MockTokenStore.swift */; };
 		9E9427B7C484EE11E612C120 /* StravaActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */; };
@@ -395,7 +394,6 @@
 				E632BCD343E9A620341BD347 /* EditGoalView.swift in Sources */,
 				531DF0798000FFC0CACC940E /* SettingsView.swift in Sources */,
 				6D21D46EBFDA3ABDB67ECDBF /* GoalsListView.swift in Sources */,
-				883744683CA8D5F503883544 /* Secrets-template.swift in Sources */,
 				48E3320BE9BDAC79B8060EEE /* KeychainService.swift in Sources */,
 				DB076B94561F03C4EB2D8C5E /* TokenStore.swift in Sources */,
 				06C5198C4908FF10CCF1E836 /* StravaAuthService.swift in Sources */,
