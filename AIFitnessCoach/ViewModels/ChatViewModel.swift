@@ -46,18 +46,20 @@ class ChatViewModel: ObservableObject {
     /// Verstuurt het huidige tekstveld en/of de geselecteerde afbeelding.
     func sendMessage() {
         let textToSend = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let imageToSend = selectedImage
+
+        // Als de gebruiker een afbeelding heeft geselecteerd, verkleinen we hem meteen naar een payload-vriendelijk formaat.
+        let imageToSend = selectedImage?.downsample(to: 2048.0)
 
         guard !textToSend.isEmpty || imageToSend != nil else { return }
 
-        // 1. Maak bericht aan van gebruiker
+        // 1. Maak bericht aan van gebruiker (converteer UIImage naar datatypes na de resize)
         let imageData = imageToSend?.jpegData(compressionQuality: 0.8)
         let userMessage = ChatMessage(role: .user, text: textToSend, attachedImageData: imageData)
 
         // 2. Voeg toe aan UI en reset velden
         messages.append(userMessage)
 
-        // 3. Haal AI reactie op
+        // 3. Haal AI reactie op (de viewmodel geeft direct de afgeschaalde afbeelding door)
         fetchAIResponse(for: textToSend, image: imageToSend)
 
         inputText = ""
@@ -91,17 +93,22 @@ class ChatViewModel: ObservableObject {
 
         Task {
             do {
-                var contentParts: [ModelContent.Part] = []
+                // Maak een dynamische array van PartsRepresentable objects
+                var promptParts: [any PartsRepresentable] = []
 
                 if !text.isEmpty {
-                    contentParts.append(.text(text))
+                    promptParts.append(text)
                 }
 
-                if let image = image, let jpegData = image.jpegData(compressionQuality: 0.8) {
-                    contentParts.append(.data(mimetype: "image/jpeg", jpegData))
+                // Zet de UIImage om naar JPEG data en wrap het in een SDK Part
+                if let image = image, let imageData = image.jpegData(compressionQuality: 0.8) {
+                    let imagePart = ModelContent.Part.data(mimetype: "image/jpeg", imageData)
+                    promptParts.append(imagePart)
                 }
 
-                let responseText = try await model.generateContent(from: [ModelContent(role: "user", parts: contentParts)])
+                // Geef de array direct over aan de model protocol wrapper
+                let responseText = try await model.generateContent(promptParts)
+
                 let finalResponseText = responseText ?? "Ik kon geen antwoord genereren."
 
                 messages.append(ChatMessage(role: .ai, text: finalResponseText))
