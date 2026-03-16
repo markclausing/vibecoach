@@ -25,3 +25,4 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 * Houd de interface simpel, modern en native. Gebruik standaard iOS-componenten.
 * Leg bij complexe code (zoals API-koppelingen) in het Nederlands uit wat de code doet via comments.
 * Bouw stap voor stap: zorg dat de basis werkt voordat we ingewikkelde API's toevoegen.
+* Quality Control (TDD): Schrijf voor élke nieuwe functionaliteit of aanpassing altijd direct de bijbehorende Unit Tests (XCTest) in de test target. Geen enkele feature is af zonder werkende tests.
