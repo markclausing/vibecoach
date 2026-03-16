@@ -56,7 +56,10 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("Externe Connecties")) {
+                Section(
+                    header: Text("Externe Connecties"),
+                    footer: Text("API sleutels worden lokaal en versleuteld in de Apple Keychain bewaard.").font(.caption)
+                ) {
                     SecureField("Strava OAuth Token", text: $stravaToken)
                         .textContentType(.password)
                         .autocorrectionDisabled()
@@ -66,10 +69,6 @@ struct SettingsView: View {
                         .textContentType(.password)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
-
-                } footer: {
-                    Text("API sleutels worden lokaal en versleuteld in de Apple Keychain bewaard.")
-                        .font(.caption)
                 }
 
                 if let msg = feedbackMessage {
