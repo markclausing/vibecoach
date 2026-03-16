@@ -8,17 +8,28 @@ final class ChatViewModelTests: XCTestCase {
 
     var viewModel: ChatViewModel!
     var mockModel: MockGenerativeModel!
+    var mockTokenStore: MockTokenStore!
+    var mockNetworkSession: MockNetworkSession!
+    var fitnessDataService: FitnessDataService!
 
     override func setUp() {
         super.setUp()
         // Injecteer de mock AI, zodat we onafhankelijk van Google of netwerk kunnen testen
         mockModel = MockGenerativeModel()
-        viewModel = ChatViewModel(aiModel: mockModel)
+        mockTokenStore = MockTokenStore()
+        mockNetworkSession = MockNetworkSession()
+
+        fitnessDataService = FitnessDataService(tokenStore: mockTokenStore, session: mockNetworkSession)
+
+        viewModel = ChatViewModel(aiModel: mockModel, fitnessDataService: fitnessDataService)
     }
 
     override func tearDown() {
         viewModel = nil
         mockModel = nil
+        mockTokenStore = nil
+        mockNetworkSession = nil
+        fitnessDataService = nil
         super.tearDown()
     }
 
@@ -42,6 +53,12 @@ final class ChatViewModelTests: XCTestCase {
 
         // Simuleer een kleine API delay om asynchroon het isTyping flaggetje te kunnen evalueren
         mockModel.delay = 0.1
+
+        // Setup mock activity to avoid missing token error
+        try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
+        let activityJson = "[{\"id\":123,\"name\":\"Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\"}]"
+        mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
+        mockNetworkSession.responseToReturn = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)
 
         // Zorg dat messages leeg is voordat we de test beginnen
         viewModel.messages.removeAll()
@@ -88,6 +105,12 @@ final class ChatViewModelTests: XCTestCase {
         viewModel.selectedImage = testImage
         mockModel.responseToReturn = expectedAIResponse
         mockModel.delay = 0.1
+
+        // Setup mock activity to avoid missing token error
+        try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
+        let activityJson = "[{\"id\":123,\"name\":\"Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\"}]"
+        mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
+        mockNetworkSession.responseToReturn = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)
 
         viewModel.messages.removeAll()
 
