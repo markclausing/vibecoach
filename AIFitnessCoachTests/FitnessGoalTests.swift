@@ -2,6 +2,7 @@ import XCTest
 import SwiftData
 @testable import AIFitnessCoach
 
+@MainActor
 final class FitnessGoalTests: XCTestCase {
     var container: ModelContainer!
     var context: ModelContext!
