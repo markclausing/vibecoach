@@ -7,24 +7,17 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		373530FCC8A356E5CF81AD4C /* EditGoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AFAE53EC728640B4ACDB792 /* EditGoalView.swift */; };
-		3C98FCED656DD71893684552 /* FitnessGoalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE4ED106C1D323CB455747B3 /* FitnessGoalTests.swift */; };
 		5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */; };
 		543CBE0027B161C9AFDE3824 /* AIFitnessCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */; };
 		5DBFDEDC67859D1105BB9DE5 /* MockGenerativeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */; };
 		626955C541119438634E5B32 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = 1DFC6E046AA02E4CF8689D9C /* GoogleGenerativeAI */; };
-		63D082E2CA1E4EDED000023C /* FitnessGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8545A25A3533C4220E34AA89 /* FitnessGoal.swift */; };
 		73F9568829F48D139CC06AB6 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = DDF501EC97778A185B48B142 /* GoogleGenerativeAI */; };
 		75D1A92071CFBE1BA9750D59 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984AC8DD2D26E4CA3247251E /* Secrets.swift */; };
 		7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */; };
-		A378DD8818D2BD98DFAA20E9 /* GoalsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1DDC23DB1AB8133A7F0BA4B /* GoalsListView.swift */; };
-		AA7CAED37E725C278B7DC4C5 /* GoalsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB7B9DB08F0FECBA46AD53D0 /* GoalsListView.swift */; };
 		CC54A4B0A24ABC7666AB3222 /* ChatViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */; };
 		D8A5CC6C6399BF876493D66B /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA86D03EE20341A8CB8173EE /* ChatView.swift */; };
 		D9D6946898CF838A86E276DC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B16CF484B776C9214345E29 /* Foundation.framework */; };
-		DCD865308FDADD00186CEC59 /* AddGoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D503FF2E9E00723B3D165CA /* AddGoalView.swift */; };
 		DEBB8672AFBDB80CA6D79AA6 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 892FA4CC13985F26BA4BB4DE /* ChatViewModel.swift */; };
-		E091E30A0B119F058E5ECCBD /* AddGoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300EBB50802F70A5159E45FB /* AddGoalView.swift */; };
 		E37298633D0B4EB1FD27458D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2757E95543939CACDB8D35DE /* Assets.xcassets */; };
 		E541659C316B9F8EBCCD6AA3 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF9454A3119F7BF71A5331E4 /* ChatMessage.swift */; };
 		E6E8BD3E3A715A18D4957878 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B16CF484B776C9214345E29 /* Foundation.framework */; };
@@ -47,8 +40,6 @@
 		0B16CF484B776C9214345E29 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		1AFAE53EC728640B4ACDB792 /* EditGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditGoalView.swift; sourceTree = "<group>"; };
 		2757E95543939CACDB8D35DE /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		300EBB50802F70A5159E45FB /* AddGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddGoalView.swift; sourceTree = "<group>"; };
-		31A7FAC15EA07FE9FC43535D /* FitnessGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoal.swift; sourceTree = "<group>"; };
 		3D503FF2E9E00723B3D165CA /* AddGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddGoalView.swift; sourceTree = "<group>"; };
 		5493D0D3C44442CCF82489CA /* Preview Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = "Preview Assets.xcassets"; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		5D2117400251372FC1E5F512 /* AIFitnessCoach.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIFitnessCoach.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -57,11 +48,8 @@
 		8545A25A3533C4220E34AA89 /* FitnessGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoal.swift; sourceTree = "<group>"; };
 		892FA4CC13985F26BA4BB4DE /* ChatViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		984AC8DD2D26E4CA3247251E /* Secrets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
-		A5E5E14AE906142D7B2ECA11 /* FitnessGoalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoalTests.swift; sourceTree = "<group>"; };
 		AF9454A3119F7BF71A5331E4 /* ChatMessage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
-		B1DDC23DB1AB8133A7F0BA4B /* GoalsListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalsListView.swift; sourceTree = "<group>"; };
 		BE4ED106C1D323CB455747B3 /* FitnessGoalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoalTests.swift; sourceTree = "<group>"; };
-		C04504934FF227BA6DCA16BF /* EditGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditGoalView.swift; sourceTree = "<group>"; };
 		C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "UIImage+Extensions.swift"; sourceTree = "<group>"; };
 		C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIFitnessCoachApp.swift; path = AIFitnessCoachApp.swift; sourceTree = "<group>"; };
 		CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockGenerativeModel.swift; sourceTree = "<group>"; };
@@ -115,8 +103,6 @@
 			children = (
 				CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */,
 				67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */,
-				BE4ED106C1D323CB455747B3 /* FitnessGoalTests.swift */,
-				A5E5E14AE906142D7B2ECA11 /* FitnessGoalTests.swift */,
 			);
 			name = AIFitnessCoachTests;
 			path = AIFitnessCoachTests;
@@ -126,12 +112,6 @@
 			isa = PBXGroup;
 			children = (
 				DA86D03EE20341A8CB8173EE /* ChatView.swift */,
-				3D503FF2E9E00723B3D165CA /* AddGoalView.swift */,
-				1AFAE53EC728640B4ACDB792 /* EditGoalView.swift */,
-				DB7B9DB08F0FECBA46AD53D0 /* GoalsListView.swift */,
-				300EBB50802F70A5159E45FB /* AddGoalView.swift */,
-				C04504934FF227BA6DCA16BF /* EditGoalView.swift */,
-				B1DDC23DB1AB8133A7F0BA4B /* GoalsListView.swift */,
 			);
 			name = Views;
 			path = Views;
@@ -178,8 +158,6 @@
 			isa = PBXGroup;
 			children = (
 				AF9454A3119F7BF71A5331E4 /* ChatMessage.swift */,
-				8545A25A3533C4220E34AA89 /* FitnessGoal.swift */,
-				31A7FAC15EA07FE9FC43535D /* FitnessGoal.swift */,
 			);
 			name = Models;
 			path = Models;
@@ -313,7 +291,6 @@
 			files = (
 				5DBFDEDC67859D1105BB9DE5 /* MockGenerativeModel.swift in Sources */,
 				CC54A4B0A24ABC7666AB3222 /* ChatViewModelTests.swift in Sources */,
-				3C98FCED656DD71893684552 /* FitnessGoalTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -329,12 +306,6 @@
 				75D1A92071CFBE1BA9750D59 /* Secrets.swift in Sources */,
 				5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */,
 				7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */,
-				63D082E2CA1E4EDED000023C /* FitnessGoal.swift in Sources */,
-				DCD865308FDADD00186CEC59 /* AddGoalView.swift in Sources */,
-				373530FCC8A356E5CF81AD4C /* EditGoalView.swift in Sources */,
-				AA7CAED37E725C278B7DC4C5 /* GoalsListView.swift in Sources */,
-				E091E30A0B119F058E5ECCBD /* AddGoalView.swift in Sources */,
-				A378DD8818D2BD98DFAA20E9 /* GoalsListView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
