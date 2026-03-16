@@ -4,11 +4,11 @@ import GoogleGenerativeAI
 /// Een protocol dat de benodigde functionaliteiten van het Generative AI-model abstraheert.
 /// Dit stelt ons in staat om de daadwerkelijke implementatie te vervangen door een mock voor Unit Testing.
 public protocol GenerativeModelProtocol {
-    /// Genereert content op basis van de meegeleverde input parts.
+    /// Genereert content op basis van de meegeleverde array van input types (Strings, UIImages, etc).
     ///
-    /// - Parameter parts: Een array van `ModelContent` representaties.
+    /// - Parameter parts: Een array van typen die `ModelContent.Part` zijn.
     /// - Returns: Een tekstuele reactie gegenereerd door het AI-model.
-    func generateContent(from parts: [ModelContent]) async throws -> String?
+    func generateContent(_ parts: [ModelContent.Part]) async throws -> String?
 }
 
 /// Een wrapper rondom de officiële `GoogleGenerativeAI.GenerativeModel`
@@ -21,8 +21,9 @@ public struct RealGenerativeModel: GenerativeModelProtocol {
         self.model = model
     }
 
-    public func generateContent(from parts: [ModelContent]) async throws -> String? {
-        let response = try await model.generateContent(parts)
+    public func generateContent(_ parts: [ModelContent.Part]) async throws -> String? {
+        let modelContent = ModelContent(role: "user", parts: parts)
+        let response = try await model.generateContent([modelContent])
         return response.text
     }
 }

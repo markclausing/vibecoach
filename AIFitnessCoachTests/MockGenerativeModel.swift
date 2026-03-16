@@ -12,7 +12,11 @@ class MockGenerativeModel: GenerativeModelProtocol {
         case genericError
     }
 
-    func generateContent(from parts: [ModelContent]) async throws -> String? {
+    var receivedParts: [ModelContent.Part] = []
+
+    func generateContent(_ parts: [ModelContent.Part]) async throws -> String? {
+        receivedParts = parts
+
         if delay > 0 {
             try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         }
