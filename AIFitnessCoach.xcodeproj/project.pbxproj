@@ -173,6 +173,7 @@
 				AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */,
 			);
 			name = Services;
+			path = Services;
 			sourceTree = "<group>";
 		};
 		48F580DFE59DCB4027FB3AEC /* ViewModels */ = {
@@ -259,6 +260,7 @@
 				0DE3DDF83AB44095AF4FA0CE /* MockNetworkSession.swift */,
 			);
 			name = Mocks;
+			path = Mocks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
