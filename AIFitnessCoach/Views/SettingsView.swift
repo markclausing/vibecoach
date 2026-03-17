@@ -51,8 +51,7 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Form {
+        Form {
                 Section(
                     header: Text("Strava Connectie"),
                     footer: Text("Koppel veilig met Strava via de officiële OAuth web flow. Tokens worden lokaal versleuteld opgeslagen.").font(.caption)
@@ -104,24 +103,18 @@ struct SettingsView: View {
                             .foregroundColor(msg == "Opslaan mislukt." ? .red : .green)
                     }
                 }
-            }
-            .navigationTitle("Instellingen")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Annuleer") {
-                        dismiss()
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Opslaan") {
-                        saveTokens()
-                    }
+        }
+        .navigationTitle("Instellingen")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Opslaan") {
+                    saveTokens()
                 }
             }
-            .onAppear {
-                loadTokens()
-            }
+        }
+        .onAppear {
+            loadTokens()
         }
     }
 }

@@ -9,11 +9,8 @@ struct ChatView: View {
     /// Huidige item geselecteerd vanuit de iOS Photos library.
     @State private var selectedItem: PhotosPickerItem? = nil
 
-    /// Toggle om SettingsView via een sheet weer te geven.
-    @State private var showingSettings = false
-
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Lijst met chatberichten
                 ScrollViewReader { proxy in
@@ -121,15 +118,10 @@ struct ChatView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingSettings = true
-                    } label: {
+                    NavigationLink(destination: SettingsView()) {
                         Image(systemName: "gear")
                     }
                 }
-            }
-            .sheet(isPresented: $showingSettings) {
-                SettingsView()
             }
         }
     }
