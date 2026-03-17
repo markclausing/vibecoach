@@ -66,6 +66,9 @@ final class ChatViewModelTests: XCTestCase {
         // Actie 1: Verstuur het bericht
         viewModel.sendMessage()
 
+        // Wacht een fractie van een seconde om de async actie te laten starten (isTyping wordt direct gezet, maar fetchAIResponse is async)
+        try? await Task.sleep(nanoseconds: 10_000_000)
+
         // Check 1: De isTyping state moet direct na het triggeren 'true' zijn
         XCTAssertTrue(viewModel.isTyping, "Laadindicator (isTyping) moet op 'true' staan terwijl het AI model verwerkt.")
 
@@ -117,6 +120,8 @@ final class ChatViewModelTests: XCTestCase {
         // Actie
         viewModel.sendMessage()
 
+        try? await Task.sleep(nanoseconds: 10_000_000)
+
         // Assert: Input fields reset
         XCTAssertTrue(viewModel.inputText.isEmpty, "Tekst invoer moet leeg zijn.")
         XCTAssertNil(viewModel.selectedImage, "De geselecteerde afbeelding moet gereset (nil) zijn na verzending.")
@@ -147,5 +152,49 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.count, 2, "AI response moet zijn binnengekomen na het insturen van de afbeelding.")
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
         XCTAssertFalse(viewModel.isTyping, "Klaar met laden.")
+    }
+
+    func testAnalyzeLatestWorkout_Success() async {
+        // Arrange
+        let expectedAIResponse = "Goed getraind! Je hartslag was netjes."
+        mockModel.responseToReturn = expectedAIResponse
+
+        try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
+        // moving_time 7200 sec = 120 minuten
+        // distance 50000 m = 50.0 km
+        let activityJson = "[{\"id\":123,\"name\":\"Morning Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\"}]"
+        mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
+        let response = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        mockNetworkSession.responseToReturn = response
+
+        viewModel.messages.removeAll()
+
+        // Actie
+        viewModel.analyzeLatestWorkout()
+
+        // Check loading state immediately
+        XCTAssertTrue(viewModel.isFetchingWorkout)
+
+        // Wacht tot de data fetch is afgerond en AI verzoek is gestart
+        try? await Task.sleep(nanoseconds: 150_000_000)
+
+        // Check of fetching klaar is en we wachten op typen
+        XCTAssertFalse(viewModel.isFetchingWorkout)
+        XCTAssertTrue(viewModel.isTyping)
+
+        // Wacht op afronding AI verzoek
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Check berichten
+        XCTAssertEqual(viewModel.messages.count, 2)
+        XCTAssertEqual(viewModel.messages.first?.role, .user)
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Morning Ride"))
+        XCTAssertTrue(viewModel.messages.first!.text.contains("50.0 km"))
+        XCTAssertTrue(viewModel.messages.first!.text.contains("120 minuten"))
+        XCTAssertTrue(viewModel.messages.first!.text.contains("140"))
+
+        XCTAssertEqual(viewModel.messages.last?.role, .ai)
+        XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
+        XCTAssertFalse(viewModel.isTyping)
     }
 }

@@ -15,6 +15,9 @@ class ChatViewModel: ObservableObject {
     /// True als de applicatie wacht op een reactie van de AI.
     @Published var isTyping: Bool = false
 
+    /// True als we op dit moment Strava data aan het ophalen zijn via de expliciete knop.
+    @Published var isFetchingWorkout: Bool = false
+
     /// Het protocol waartegen we de AI-verzoeken uitvoeren.
     /// Dit maakt Dependency Injection (DI) mogelijk voor unit tests.
     private let model: GenerativeModelProtocol
@@ -65,30 +68,74 @@ class ChatViewModel: ObservableObject {
 
         isTyping = true
 
-        // Haal recente Strava activiteit op om als extra context mee te sturen
-        Task {
-            var activityContext = ""
-
-            do {
-                if let activity = try await fitnessDataService.fetchLatestActivity() {
-                    let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!)) bpm" : "onbekend"
-                    activityContext = "\n\n[Systeem context: De gebruiker heeft zojuist een Strava activiteit voltooid. Naam: '\(activity.name)'. Afstand: \(Int(activity.distance)) meter. Tijd: \(activity.moving_time) seconden. Gemiddelde hartslag: \(heartRateStr).]"
-                }
-            } catch let error as FitnessDataError {
-                // Toon een systeembericht aan de gebruiker als er een bekende API fout is
-                messages.append(ChatMessage(role: .ai, text: "Let op: Ik kon je recente Strava data niet ophalen. Reden: \(error.localizedDescription)"))
-                print("Strava data ophalen mislukt: \(error.localizedDescription)")
-            } catch {
-                print("Onbekende fout bij Strava: \(error)")
-            }
-
-            // 3. Haal AI reactie op (inclusief eventuele Strava context)
-            let fullText = textToSend + activityContext
-            fetchAIResponse(for: fullText, image: imageToSend)
-        }
+        // 3. Haal AI reactie op
+        fetchAIResponse(for: textToSend, image: imageToSend)
 
         inputText = ""
         clearImage()
+    }
+
+    /// Haalt de laatste Strava activiteit op, formatteert deze als een Nederlandse prompt
+    /// en stuurt deze naar de AI-coach voor analyse.
+    func analyzeLatestWorkout() {
+        guard !isFetchingWorkout else { return }
+        isFetchingWorkout = true
+
+        Task {
+            do {
+                let activityData = try await fitnessDataService.fetchLatestActivity()
+
+                guard let activity = activityData else {
+                    Task { @MainActor in
+                        messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden op je Strava account."))
+                        isFetchingWorkout = false
+                    }
+                    return
+                }
+
+                // Converteer eenheden
+                let distanceKm = String(format: "%.1f", activity.distance / 1000.0)
+                let timeMinutes = activity.moving_time / 60
+                let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!))" : "onbekend"
+
+                // Formatteer de context prompt
+                let prompt = "Hier is de data van mijn laatste training via Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
+
+                Task { @MainActor in
+                    // Voeg de prompt toe als een gebruikersbericht zodat de chatgeschiedenis klopt
+                    messages.append(ChatMessage(role: .user, text: prompt))
+
+                    isTyping = true
+                    isFetchingWorkout = false
+
+                    fetchAIResponse(for: prompt, image: nil)
+                }
+
+            } catch let error as FitnessDataError {
+                var errorMsg = "Fout bij ophalen van Strava data: "
+                switch error {
+                case .missingToken:
+                    errorMsg += "Je bent niet ingelogd op Strava. Ga naar instellingen om te koppelen."
+                case .unauthorized:
+                    errorMsg += "Je Strava sessie is verlopen. Koppel opnieuw in de instellingen."
+                case .networkError(let desc):
+                    errorMsg += "Netwerkfout (\(desc))."
+                case .decodingError(let desc):
+                    errorMsg += "Data onleesbaar (\(desc))."
+                case .invalidResponse:
+                    errorMsg += "Ongeldig antwoord van de server."
+                }
+                Task { @MainActor in
+                    messages.append(ChatMessage(role: .ai, text: errorMsg))
+                    isFetchingWorkout = false
+                }
+            } catch {
+                Task { @MainActor in
+                    messages.append(ChatMessage(role: .ai, text: "Er is een onbekende fout opgetreden bij het communiceren met Strava."))
+                    isFetchingWorkout = false
+                }
+            }
+        }
     }
 
     /// Stuurt asynchroon het verzoek naar het AI-model met de juiste content payload.
