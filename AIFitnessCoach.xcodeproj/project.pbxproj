@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -62,7 +62,7 @@
 		136CF190D3B3F2D63ADC3225 /* KeychainService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		203C295EF5D568151B5D1BEF /* EditGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditGoalView.swift; sourceTree = "<group>"; };
 		2757E95543939CACDB8D35DE /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		5493D0D3C44442CCF82489CA /* Preview Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = "Preview Assets.xcassets"; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		5493D0D3C44442CCF82489CA /* Preview Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		5D2117400251372FC1E5F512 /* AIFitnessCoach.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIFitnessCoach.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		60758C181F9C986190D5A369 /* StravaAuthService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaAuthService.swift; sourceTree = "<group>"; };
 		67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatViewModelTests.swift; sourceTree = "<group>"; };
@@ -77,11 +77,12 @@
 		AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NetworkSession.swift; sourceTree = "<group>"; };
 		AF9454A3119F7BF71A5331E4 /* ChatMessage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaActivity.swift; sourceTree = "<group>"; };
+		B88E085E2F6B22120063C085 /* AIFitnessCoach.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIFitnessCoach.entitlements; sourceTree = "<group>"; };
 		BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsViewTests.swift; sourceTree = "<group>"; };
 		BDF699C6B7148ACD66E857D7 /* AddGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddGoalView.swift; sourceTree = "<group>"; };
 		C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "UIImage+Extensions.swift"; sourceTree = "<group>"; };
 		C1C2BF572AF13DE2A83E51CF /* StravaAuthServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaAuthServiceTests.swift; sourceTree = "<group>"; };
-		C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIFitnessCoachApp.swift; path = AIFitnessCoachApp.swift; sourceTree = "<group>"; };
+		C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIFitnessCoachApp.swift; sourceTree = "<group>"; };
 		CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockGenerativeModel.swift; sourceTree = "<group>"; };
 		CE4D1D9B3991F419262E294E /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		D92F0B029D6902862CF50631 /* GoalsListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalsListView.swift; sourceTree = "<group>"; };
@@ -90,7 +91,7 @@
 		EDA9519ECAE22F903D67C756 /* TokenStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
 		F6DDC1DD36DFE9FDBEB93ED1 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataService.swift; sourceTree = "<group>"; };
-		FAE95B5B0D96FB302BFE3145 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		FAE95B5B0D96FB302BFE3145 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -129,7 +130,6 @@
 			children = (
 				5493D0D3C44442CCF82489CA /* Preview Assets.xcassets */,
 			);
-			name = "Preview Content";
 			path = "Preview Content";
 			sourceTree = "<group>";
 		};
@@ -145,7 +145,6 @@
 				BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */,
 				7FDDDD26172C97669936B5B8 /* FitnessGoalTests.swift */,
 			);
-			name = AIFitnessCoachTests;
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
 		};
@@ -158,7 +157,6 @@
 				CE4D1D9B3991F419262E294E /* SettingsView.swift */,
 				D92F0B029D6902862CF50631 /* GoalsListView.swift */,
 			);
-			name = Views;
 			path = Views;
 			sourceTree = "<group>";
 		};
@@ -171,7 +169,6 @@
 				F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */,
 				AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */,
 			);
-			name = Services;
 			path = Services;
 			sourceTree = "<group>";
 		};
@@ -181,7 +178,6 @@
 				892FA4CC13985F26BA4BB4DE /* ChatViewModel.swift */,
 				6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */,
 			);
-			name = ViewModels;
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
@@ -208,7 +204,6 @@
 			children = (
 				C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */,
 			);
-			name = Extensions;
 			path = Extensions;
 			sourceTree = "<group>";
 		};
@@ -221,7 +216,6 @@
 				AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */,
 				E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */,
 			);
-			name = Models;
 			path = Models;
 			sourceTree = "<group>";
 		};
@@ -236,6 +230,7 @@
 		FA2A2794C32C5CAB743605CF /* AIFitnessCoach */ = {
 			isa = PBXGroup;
 			children = (
+				B88E085E2F6B22120063C085 /* AIFitnessCoach.entitlements */,
 				C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */,
 				FAE95B5B0D96FB302BFE3145 /* ContentView.swift */,
 				1EE573857F2D428ED6D60DD8 /* Preview Content */,
@@ -249,7 +244,6 @@
 				0D235CA77C73BA3BBA685143 /* Secrets-template.swift */,
 				413E677FAE0B37E364E902DA /* Services */,
 			);
-			name = AIFitnessCoach;
 			path = AIFitnessCoach;
 			sourceTree = "<group>";
 		};
@@ -258,7 +252,6 @@
 			children = (
 				0DE3DDF83AB44095AF4FA0CE /* MockNetworkSession.swift */,
 			);
-			name = Mocks;
 			path = Mocks;
 			sourceTree = "<group>";
 		};
@@ -324,11 +317,9 @@
 				Base,
 			);
 			mainGroup = 5E2E25462E75CD2AA9086296;
-			minimizedProjectReferenceProxies = 0;
 			packageReferences = (
 				0F29A922938A67769695405C /* XCRemoteSwiftPackageReference "generative-ai-swift" */,
 			);
-			preferredProjectObjectVersion = 77;
 			productRefGroup = 12C5691C1D9812D6840FF85F /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -474,6 +465,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = AIFitnessCoach/AIFitnessCoach.entitlements;
 				DEVELOPMENT_ASSET_PATHS = "\"AIFitnessCoach/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -483,7 +475,10 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.aifitnesscoach.app;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
@@ -587,6 +582,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = AIFitnessCoach/AIFitnessCoach.entitlements;
 				DEVELOPMENT_ASSET_PATHS = "\"AIFitnessCoach/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -596,7 +592,10 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.aifitnesscoach.app;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
