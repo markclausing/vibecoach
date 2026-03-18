@@ -22,7 +22,8 @@ final class FitnessDataServiceTests: XCTestCase {
                 "distance": 25000.0,
                 "moving_time": 3600,
                 "average_heartrate": 145.0,
-                "type": "Ride"
+                "type": "Ride",
+                "start_date": "2023-10-12T10:00:00Z"
             }
         ]
         """
@@ -91,7 +92,8 @@ final class FitnessDataServiceTests: XCTestCase {
                 "distance": 10000.0,
                 "moving_time": 3000,
                 "average_heartrate": 155.0,
-                "type": "Run"
+                "type": "Run",
+                "start_date": "2023-10-12T10:00:00Z"
             }
         ]
         """
@@ -196,7 +198,8 @@ final class FitnessDataServiceTests: XCTestCase {
             "distance": 5000.0,
             "moving_time": 1800,
             "average_heartrate": 160.0,
-            "type": "Run"
+            "type": "Run",
+            "start_date": "2023-10-12T10:00:00Z"
         }
         """
         mockSession.dataToReturn = jsonResponse.data(using: .utf8)
