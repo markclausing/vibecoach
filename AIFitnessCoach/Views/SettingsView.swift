@@ -1,20 +1,28 @@
 import SwiftUI
 import UserNotifications
+import SwiftData
 
 /// Beheer van externe API koppelingen en andere voorkeuren.
 /// Deze view is toegankelijk via het instellingen-icoon en schrijft gegevens
 /// veilig weg naar de KeychainService.
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     // Authenticatie service voor Strava OAuth web flow
     @StateObject private var stravaAuthService = StravaAuthService()
+    private let fitnessDataService = FitnessDataService()
+    private let profileManager = AthleticProfileManager()
 
     // UI State variabelen, gehaald uit en geschreven naar Keychain
     @State private var intervalsToken: String = ""
 
     @State private var feedbackMessage: String?
     @State private var notificationsEnabled: Bool = false
+
+    // Historische sync state
+    @State private var isSyncingHistory: Bool = false
+    @State private var athleticProfile: AthleticProfile?
 
     // Dependency injection (voor tests of preview)
     var tokenStore: TokenStore = KeychainService.shared
@@ -30,6 +38,71 @@ struct SettingsView: View {
         }
 
         checkNotificationStatus()
+        refreshProfile()
+    }
+
+    // Herbereken het lokale atletisch profiel op basis van SwiftData
+    private func refreshProfile() {
+        do {
+            self.athleticProfile = try profileManager.calculateProfile(context: modelContext)
+        } catch {
+            print("Fout bij berekenen atletisch profiel: \(error)")
+        }
+    }
+
+    // Synchroniseer historische Strava data naar SwiftData
+    private func syncHistoricalData() {
+        guard !isSyncingHistory else { return }
+        isSyncingHistory = true
+        feedbackMessage = "Synchroniseren gestart..."
+
+        Task {
+            do {
+                let activities = try await fitnessDataService.fetchHistoricalActivities(monthsBack: 6)
+
+                await MainActor.run {
+                    // Zet de StravaActivity DTO's om naar ActivityRecord SwiftData models
+                    let formatter = ISO8601DateFormatter()
+                    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                    let fallbackFormatter = ISO8601DateFormatter()
+
+                    var newRecordsCount = 0
+
+                    for activity in activities {
+                        // Voorkom duplicaten: check of id al bestaat
+                        let currentId = activity.id
+                        let fetchDescriptor = FetchDescriptor<ActivityRecord>(predicate: #Predicate { $0.id == currentId })
+                        let existing = try? modelContext.fetch(fetchDescriptor)
+
+                        if existing?.isEmpty ?? true {
+                            let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
+
+                            let record = ActivityRecord(
+                                id: activity.id,
+                                name: activity.name,
+                                distance: activity.distance,
+                                movingTime: activity.moving_time,
+                                averageHeartrate: activity.average_heartrate,
+                                type: activity.type,
+                                startDate: date
+                            )
+                            modelContext.insert(record)
+                            newRecordsCount += 1
+                        }
+                    }
+
+                    try? modelContext.save()
+                    isSyncingHistory = false
+                    feedbackMessage = "Synchronisatie voltooid (\(newRecordsCount) nieuwe trainingen)."
+                    refreshProfile() // Bereken het profiel direct opnieuw na de sync
+                }
+            } catch {
+                await MainActor.run {
+                    isSyncingHistory = false
+                    feedbackMessage = "Synchronisatie mislukt: \(error.localizedDescription)"
+                }
+            }
+        }
     }
 
     // Controleer de huidige status van Push Notifications toestemming
@@ -127,6 +200,57 @@ struct SettingsView: View {
                         .textContentType(.password)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
+                }
+
+                Section(
+                    header: Text("Historische Data & Atletisch Profiel"),
+                    footer: Text("Haal de laatste 6 maanden aan Strava data op om de AI-coach context te geven over jouw fitnessniveau.").font(.caption)
+                ) {
+                    Button(action: {
+                        syncHistoricalData()
+                    }) {
+                        HStack {
+                            if isSyncingHistory {
+                                ProgressView()
+                                    .padding(.trailing, 8)
+                                Text("Bezig met synchroniseren...")
+                            } else {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                Text("Synchroniseer Geschiedenis (Laatste 6 maanden)")
+                            }
+                        }
+                    }
+                    .disabled(isSyncingHistory || !stravaAuthService.isAuthenticated)
+
+                    if let profile = athleticProfile {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Atletisch Profiel")
+                                .font(.headline)
+                                .padding(.bottom, 4)
+
+                            HStack {
+                                Image(systemName: "trophy")
+                                    .foregroundColor(.yellow)
+                                Text("Piekprestatie: \(String(format: "%.1f", profile.peakDistanceInMeters / 1000)) km / \(profile.peakDurationInSeconds / 60) min")
+                                    .font(.subheadline)
+                            }
+
+                            HStack {
+                                Image(systemName: "chart.bar")
+                                    .foregroundColor(.blue)
+                                Text("Wekelijks Volume: \(profile.averageWeeklyVolumeInSeconds / 60) min (gem. laatste 4 weken)")
+                                    .font(.subheadline)
+                            }
+
+                            HStack {
+                                Image(systemName: "calendar.badge.clock")
+                                    .foregroundColor(profile.daysSinceLastTraining > 5 ? .red : .green)
+                                Text("Dagen sinds laatste training: \(profile.daysSinceLastTraining)")
+                                    .font(.subheadline)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
                 }
 
                 Section(
