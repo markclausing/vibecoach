@@ -108,6 +108,7 @@ struct AIFitnessCoachApp: App {
             ContentView()
                 .environmentObject(appState)
         }
-        .modelContainer(for: FitnessGoal.self) // Voeg SwiftData container toe voor lokale doelen tracking
+        // Voeg SwiftData containers toe voor lokale doelen tracking en historische activiteiten
+        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self])
     }
 }

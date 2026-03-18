@@ -174,4 +174,77 @@ actor FitnessDataService {
             throw FitnessDataError.decodingError(error.localizedDescription)
         }
     }
+
+    /// Haalt historische activiteiten op via de Strava API, met ondersteuning voor paginatie.
+    /// Dit wordt gebruikt voor het berekenen van het langetermijn atletisch profiel.
+    /// - Parameter monthsBack: Hoeveel maanden we terug willen kijken (bijv. 6).
+    /// - Returns: Een lijst van `StravaActivity` objecten.
+    /// - Throws: `FitnessDataError` als de auth of het netwerk faalt.
+    func fetchHistoricalActivities(monthsBack: Int) async throws -> [StravaActivity] {
+        try await refreshTokenIfNeeded()
+
+        guard let stravaToken = try tokenStore.getToken(forService: "StravaToken"), !stravaToken.isEmpty else {
+            throw FitnessDataError.missingToken
+        }
+
+        // Bereken de UNIX timestamps
+        let now = Date()
+        let beforeTime = Int(now.timeIntervalSince1970)
+
+        let calendar = Calendar.current
+        guard let pastDate = calendar.date(byAdding: .month, value: -monthsBack, to: now) else {
+            throw FitnessDataError.networkError("Fout bij het berekenen van startdatum")
+        }
+        let afterTime = Int(pastDate.timeIntervalSince1970)
+
+        var allActivities: [StravaActivity] = []
+        var page = 1
+        let perPage = 200
+
+        let decoder = JSONDecoder()
+
+        // Paginatie loop (blijf doorgaan tot er een lege pagina terugkomt)
+        while true {
+            guard let url = URL(string: "https://www.strava.com/api/v3/athlete/activities?before=\(beforeTime)&after=\(afterTime)&page=\(page)&per_page=\(perPage)") else {
+                throw FitnessDataError.networkError("Ongeldige URL voor history fetch")
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.addValue("Bearer \(stravaToken)", forHTTPHeaderField: "Authorization")
+
+            let (data, response): (Data, URLResponse)
+            do {
+                (data, response) = try await session.data(for: request)
+            } catch {
+                throw FitnessDataError.networkError(error.localizedDescription)
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw FitnessDataError.invalidResponse
+            }
+
+            if httpResponse.statusCode == 401 {
+                throw FitnessDataError.unauthorized
+            } else if !(200...299).contains(httpResponse.statusCode) {
+                throw FitnessDataError.networkError("Onverwachte HTTP status code: \(httpResponse.statusCode)")
+            }
+
+            do {
+                let pageActivities = try decoder.decode([StravaActivity].self, from: data)
+
+                if pageActivities.isEmpty {
+                    // Er zijn geen resultaten meer, we zijn klaar
+                    break
+                }
+
+                allActivities.append(contentsOf: pageActivities)
+                page += 1
+            } catch {
+                throw FitnessDataError.decodingError(error.localizedDescription)
+            }
+        }
+
+        return allActivities
+    }
 }
