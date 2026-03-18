@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 /// Beheer van externe API koppelingen en andere voorkeuren.
 /// Deze view is toegankelijk via het instellingen-icoon en schrijft gegevens
@@ -13,11 +14,12 @@ struct SettingsView: View {
     @State private var intervalsToken: String = ""
 
     @State private var feedbackMessage: String?
+    @State private var notificationsEnabled: Bool = false
 
     // Dependency injection (voor tests of preview)
     var tokenStore: TokenStore = KeychainService.shared
 
-    // Laden van opgeslagen waarden
+    // Laden van opgeslagen waarden en rechten
     private func loadTokens() {
         stravaAuthService.checkAuthStatus()
 
@@ -25,6 +27,36 @@ struct SettingsView: View {
             intervalsToken = try tokenStore.getToken(forService: "IntervalsToken") ?? ""
         } catch {
             print("SettingsView: Kon tokens niet veilig laden (\(error))")
+        }
+
+        checkNotificationStatus()
+    }
+
+    // Controleer de huidige status van Push Notifications toestemming
+    private func checkNotificationStatus() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                self.notificationsEnabled = (settings.authorizationStatus == .authorized)
+            }
+        }
+    }
+
+    // Vraag expliciet toestemming aan de gebruiker voor Push Notifications
+    private func requestNotificationPermission() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            DispatchQueue.main.async {
+                self.notificationsEnabled = granted
+                if granted {
+                    // Registreer voor remote notifications nu we toestemming hebben
+                    UIApplication.shared.registerForRemoteNotifications()
+                    self.feedbackMessage = "Notificaties succesvol ingeschakeld."
+                } else if let error = error {
+                    self.feedbackMessage = "Fout bij aanvragen notificaties: \(error.localizedDescription)"
+                } else {
+                    self.feedbackMessage = "Notificatie toestemming geweigerd. Zet dit aan in de iOS Instellingen app."
+                }
+            }
         }
     }
 
@@ -95,6 +127,28 @@ struct SettingsView: View {
                         .textContentType(.password)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
+                }
+
+                Section(
+                    header: Text("Notificaties"),
+                    footer: Text("Ontvang direct een analyse van je AI coach nadat je een nieuwe activiteit hebt geüpload.").font(.caption)
+                ) {
+                    if notificationsEnabled {
+                        HStack {
+                            Image(systemName: "bell.badge.fill")
+                                .foregroundColor(.green)
+                            Text("Notificaties zijn ingeschakeld")
+                        }
+                    } else {
+                        Button(action: {
+                            requestNotificationPermission()
+                        }) {
+                            HStack {
+                                Image(systemName: "bell.badge")
+                                Text("Schakel Push Notificaties in")
+                            }
+                        }
+                    }
                 }
 
                 if let msg = feedbackMessage {
