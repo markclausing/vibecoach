@@ -51,6 +51,7 @@ app.post('/webhook', (req, res) => {
     console.log(`- Volledige payload:`, JSON.stringify(payload));
 
     // Trigger de Apple Push Notification Service (APNs) voor de specifieke testgebruiker
+    // We pass the parsed Strava object_id (which is the activity ID)
     // Let op: asynchrone oproep niet 'await'-en om de server responstijd zo laag mogelijk te houden
     sendTestNotification(objectId).catch(console.error);
 

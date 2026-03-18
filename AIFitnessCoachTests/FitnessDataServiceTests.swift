@@ -178,4 +178,63 @@ final class FitnessDataServiceTests: XCTestCase {
             XCTFail("Threw unexpected error: \(error)")
         }
     }
+
+    func testFetchActivityById_Success() async throws {
+        // Arrange
+        let mockTokenStore = MockTokenStore()
+        try mockTokenStore.saveToken("valid_token", forService: "StravaToken")
+        let futureDate = Date().addingTimeInterval(3600).timeIntervalSince1970
+        try mockTokenStore.saveToken(String(futureDate), forService: "StravaTokenExpiresAt")
+        try mockTokenStore.saveToken("refresh_token", forService: "StravaRefreshToken")
+
+        let mockSession = MockNetworkSession()
+        let jsonResponse = """
+        {
+            "id": 99999,
+            "name": "Lunch Run",
+            "distance": 5000.0,
+            "moving_time": 1800,
+            "average_heartrate": 160.0,
+            "type": "Run"
+        }
+        """
+        mockSession.dataToReturn = jsonResponse.data(using: .utf8)
+        mockSession.responseToReturn = HTTPURLResponse(url: URL(string: "https://strava.com/api/v3/activities/99999")!, statusCode: 200, httpVersion: nil, headerFields: nil)
+
+        let service = FitnessDataService(tokenStore: mockTokenStore, session: mockSession)
+
+        // Act
+        let result = try await service.fetchActivity(byId: 99999)
+
+        // Assert
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result.id, 99999)
+        XCTAssertEqual(result.name, "Lunch Run")
+        XCTAssertEqual(result.distance, 5000.0)
+    }
+
+    func testFetchActivityById_NotFound() async throws {
+        // Arrange
+        let mockTokenStore = MockTokenStore()
+        try mockTokenStore.saveToken("valid_token", forService: "StravaToken")
+        let futureDate = Date().addingTimeInterval(3600).timeIntervalSince1970
+        try mockTokenStore.saveToken(String(futureDate), forService: "StravaTokenExpiresAt")
+        try mockTokenStore.saveToken("refresh_token", forService: "StravaRefreshToken")
+
+        let mockSession = MockNetworkSession()
+        mockSession.dataToReturn = Data()
+        mockSession.responseToReturn = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 404, httpVersion: nil, headerFields: nil)
+
+        let service = FitnessDataService(tokenStore: mockTokenStore, session: mockSession)
+
+        // Act & Assert
+        do {
+            _ = try await service.fetchActivity(byId: 99999)
+            XCTFail("Should have thrown network error for 404")
+        } catch FitnessDataError.networkError(let message) {
+            XCTAssertTrue(message.contains("niet gevonden"))
+        } catch {
+            XCTFail("Threw unexpected error: \(error)")
+        }
+    }
 }
