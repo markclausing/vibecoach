@@ -8,9 +8,9 @@ dotenv.config();
 // Omdat we nu in de beginfase zitten en .env gebruiken, halen we deze opties deels op uit .env.
 const options = {
     token: {
-        key: process.env.APN_AUTH_KEY || 'dummy_key', // Het absolute pad naar de .p8 file OF een string representatie
-        keyId: process.env.APN_KEY_ID || 'dummy_keyId', // Het Key ID van Apple Developer Portal
-        teamId: process.env.APN_TEAM_ID || 'dummy_teamId' // Het Team ID van je Apple Developer account
+        key: process.env.APN_AUTH_KEY_PATH, // Het absolute of relatieve pad naar de .p8 file
+        keyId: process.env.APN_KEY_ID, // Het Key ID van Apple Developer Portal
+        teamId: process.env.APN_TEAM_ID // Het Team ID van je Apple Developer account
     },
     production: false // Gebruik sandbox/development voor nu
 };
@@ -49,7 +49,7 @@ export const sendTestNotification = async (activityId) => {
     note.badge = 1;
     note.sound = 'ping.aiff';
     note.alert = `🏃‍♂️ Nieuwe Strava activiteit gedetecteerd (ID: ${activityId}). Jouw coach analyseert dit...`;
-    note.topic = process.env.APN_BUNDLE_ID || 'nl.aifitnesscoach.app'; // Moet matchen met de App Bundle ID
+    note.topic = process.env.BUNDLE_ID; // Moet matchen met de App Bundle ID
 
     // Custom data in de payload, voor later (Fase 5.3) om SwiftData update te triggeren
     note.payload = { 'activityId': activityId };
