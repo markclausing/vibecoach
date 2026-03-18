@@ -20,6 +20,21 @@ Dit is de lichte "brievenbus" backend service die we gebruiken om push (proactie
    cp .env.example .env
    ```
 
+## Apple Push Notifications Setup
+
+Om test notificaties te kunnen versturen naar de iOS app wanneer een webhook afgaat, moeten APNs variabelen worden geconfigureerd in je `.env` bestand:
+
+1. Ga naar je [Apple Developer Account](https://developer.apple.com/account).
+2. Navigeer naar **Certificates, Identifiers & Profiles** -> **Keys**.
+3. Maak een nieuwe sleutel aan en vink **Apple Push Notifications service (APNs)** aan.
+4. Download het gegenereerde `.p8` bestand en bewaar dit veilig (bijv. in de root van je backend of een map daarbinnen, let op dat je hem toevoegt aan `.gitignore`).
+5. Vul de volgende velden in in `.env`:
+   - `APN_KEY_ID`: Het 10-karakter Key ID van je zojuist gemaakte sleutel.
+   - `APN_TEAM_ID`: Je Apple Team ID.
+   - `APN_AUTH_KEY_PATH`: Het absolute of relatieve pad naar het gedownloade `.p8` bestand.
+   - `BUNDLE_ID`: De Bundle Identifier van je iOS app (bijv. `nl.jouwbedrijf.aifitnesscoach`).
+6. Om de flow lokaal te testen start je de iOS app in Xcode en kopieer je het "Device Token" dat in de console geprint wordt door de AppDelegate naar `TEST_DEVICE_TOKEN`.
+
 ## Server Starten
 
 Start de server lokaal via:
