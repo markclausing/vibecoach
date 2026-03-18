@@ -6,15 +6,32 @@ fitness coach app for iphone
 Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitnesscoach. De gebruiker kan via een chat-interface praten over fitnessdoelen, trainingen analyseren en directe feedback krijgen.
 
 ## Kernfunctionaliteiten (Roadmap)
-1. **Fase 1: Chat Interface.** Een native iOS chat-scherm vergelijkbaar met iMessage, waar de gebruiker berichten en screenshots kan sturen.
-2. **Fase 2: AI Integratie (Gemini).** Koppeling met de Gemini API (tekst) zodat de coach intelligent kan reageren op vragen.
-3. **Fase 3: Vision API Integratie.** Gebruik van Gemini's vision-mogelijkheden zodat de coach geüploade screenshots van intervallen of data-overzichten kan 'lezen' en interpreteren.
-4. **Fase 4: Proactieve Coach & Doelen.** De introductie van persoonlijke sportdoelen en geautomatiseerde integratie met externe sportplatformen. Deze fase bestaat uit drie deelsprints:
-    - **Sprint 4.1: Doelen Tracker (SwiftData).** Een lokale database voor het aanmaken, bewerken en verwijderen van specifieke trainingsdoelen (bijv. "Marathon onder 3:30 op 18 oktober"). De app toont de voortgang en resterende dagen.
-    - **Sprint 4.2: Externe API's (Strava / Intervals.icu).** Een beveiligde OAuth koppeling bouwen om ruwe en actuele trainingsdata, zoals hartslag- en vermogensstreams, rechtstreeks in te laden.
-    - **Sprint 4.3: 'Update & Analyse' Engine.** Een centrale actie-knop die de actuele externe trainingsdata combineert met de gestelde doelen uit SwiftData, en deze bundel als één uitgebreide context-prompt naar het AI-model (Gemini 3.1 Pro) stuurt voor een gerichte, professionele sportanalyse.
-5. **Fase 5: Proactive AI Coach & Cloud Infrastructure.** Introductie van een 'push' model waar backend triggers (zoals Strava webhooks) direct push notificaties naar de app sturen.
-    - **Sprint 5.3: Notificatie Afhandeling.** Het afvangen van inkomende APNs notificaties en het verwerken van de payload (`activityId`) om direct gerichte analyses in te starten.
+
+✅ **Fase 1 t/m 4: Fundament & Handmatige AI Coach**
+* Setup iOS App (SwiftUI) & SwiftData lokale opslag.
+* OAuth2 integratie met Strava API.
+* Ophalen van de laatste training en deze handmatig via een chat-interface laten analyseren door de Gemini AI API.
+
+✅ **Fase 5: Automatisering & Push Notificaties**
+* Node.js Backend met Strava Webhook integratie.
+* Apple Push Notifications (APNs) implementatie met een 'Mock Mode' voor de iOS Simulator.
+* Deep-linking: Notificatie opvangen, UI forceren naar de Coach tab, en specifieke workout ophalen op basis van het `activityId`.
+
+⏳ **Fase 6: Langetermijngeheugen & Atletisch Profiel**
+* Historische Sync: Knop in Settings om Strava data van de afgelopen 6 maanden op te halen en op te slaan in SwiftData.
+* Atletisch Profiel: De iOS app berekent lokaal een profiel (piekprestaties, huidig volume, detraining-status) om als context aan Gemini te voeren.
+* Proactieve waarschuwingen: AI laten signaleren bij overtraining of afwijkingen in hartslagzones.
+
+⏳ **Fase 7: Interactieve Trainingsplanner & Dashboards**
+* 7-Dagen Planner: Gemini genereert gestructureerde JSON trainingsschema's.
+* Interactieve UI: Horizontale kaarten-carrousel in SwiftUI waar de gebruiker trainingen kan wegdrukken, verplaatsen of afvinken.
+* AI Herberekening: Direct een nieuw plan genereren als een gebruiker een training wegdrukt.
+* Swift Charts: Visuele grafieken van voortgang en hartslagzones.
+
+⏳ **Fase 8: Productie & Lancering**
+* Echte APNs certificaten koppelen via Apple Developer Account.
+* Node.js backend hosten in de cloud (bijv. Render/Heroku).
+* TestFlight distributie.
 
 ## Testing Push Notifications in Simulator
 Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de naam `test-push.apns` aanmaken en deze letterlijk naar de draaiende simulator slepen (Drag & Drop). De structuur van dit bestand moet er als volgt uitzien:
