@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import { sendTestNotification } from './services/apnService.js';
 
 dotenv.config();
 
@@ -49,7 +50,10 @@ app.post('/webhook', (req, res) => {
     console.log(`- Activity ID: ${objectId}`);
     console.log(`- Volledige payload:`, JSON.stringify(payload));
 
-    // TODO (Fase 5): Apple Push Notification Service (APNs) triggeren naar de specifieke gebruiker.
+    // Trigger de Apple Push Notification Service (APNs) voor de specifieke testgebruiker
+    // Let op: asynchrone oproep niet 'await'-en om de server responstijd zo laag mogelijk te houden
+    sendTestNotification(objectId).catch(console.error);
+
   } else if (payload) {
     console.log(`ℹ️ Ander Strava event ontvangen (niet verwerkt): ${payload.object_type} - ${payload.aspect_type}`);
   }
