@@ -12,6 +12,9 @@ struct StravaActivity: Codable, Equatable {
     // Optioneel: voeg enum toe voor activity type (Run, Ride, etc.)
     let type: String
 
+    // ISO8601 string, b.v. "2023-10-12T10:00:00Z"
+    let start_date: String
+
     enum CodingKeys: String, CodingKey {
         case id
         case name
@@ -19,5 +22,6 @@ struct StravaActivity: Codable, Equatable {
         case moving_time
         case average_heartrate
         case type
+        case start_date
     }
 }
