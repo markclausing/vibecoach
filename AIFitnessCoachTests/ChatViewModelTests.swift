@@ -56,7 +56,7 @@ final class ChatViewModelTests: XCTestCase {
 
         // Setup mock activity to avoid missing token error
         try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
-        let activityJson = "[{\"id\":123,\"name\":\"Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\"}]"
+        let activityJson = "[{\"id\":123,\"name\":\"Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\",\"start_date\":\"2023-10-12T10:00:00Z\"}]"
         mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
         mockNetworkSession.responseToReturn = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)
 
@@ -111,7 +111,7 @@ final class ChatViewModelTests: XCTestCase {
 
         // Setup mock activity to avoid missing token error
         try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
-        let activityJson = "[{\"id\":123,\"name\":\"Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\"}]"
+        let activityJson = "[{\"id\":123,\"name\":\"Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\",\"start_date\":\"2023-10-12T10:00:00Z\"}]"
         mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
         mockNetworkSession.responseToReturn = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)
 
@@ -163,7 +163,7 @@ final class ChatViewModelTests: XCTestCase {
         try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
         // moving_time 7200 sec = 120 minuten
         // distance 50000 m = 50.0 km
-        let activityJson = "[{\"id\":123,\"name\":\"Morning Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\"}]"
+        let activityJson = "[{\"id\":123,\"name\":\"Morning Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\",\"start_date\":\"2023-10-12T10:00:00Z\"}]"
         mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
         let response = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         mockNetworkSession.responseToReturn = response
@@ -207,7 +207,7 @@ final class ChatViewModelTests: XCTestCase {
         try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
 
         // Specifieke workout JSON (geen array, maar één object)
-        let activityJson = "{\"id\":999,\"name\":\"Lunch Run\",\"distance\":5000.0,\"moving_time\":1800,\"average_heartrate\":160.0,\"type\":\"Run\"}"
+        let activityJson = "{\"id\":999,\"name\":\"Lunch Run\",\"distance\":5000.0,\"moving_time\":1800,\"average_heartrate\":160.0,\"type\":\"Run\",\"start_date\":\"2023-10-12T10:00:00Z\"}"
         mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
         let response = HTTPURLResponse(url: URL(string: "https://strava.com/api/v3/activities/999")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         mockNetworkSession.responseToReturn = response
