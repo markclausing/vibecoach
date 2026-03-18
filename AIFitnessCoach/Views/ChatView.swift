@@ -9,6 +9,9 @@ struct ChatView: View {
     /// Huidige item geselecteerd vanuit de iOS Photos library.
     @State private var selectedItem: PhotosPickerItem? = nil
 
+    /// De globale app status om notificatie-tap acties af te vangen.
+    @EnvironmentObject var appState: AppNavigationState
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -150,6 +153,17 @@ struct ChatView: View {
                     }
                 }
             }
+            .onChange(of: appState.targetActivityId) { oldValue, newValue in
+                if let activityId = newValue {
+                    // Start de analyse en clear daarna de target uit de state zodat
+                    // hij later opnieuw getriggerd kan worden indien nodig
+                    viewModel.analyzeWorkout(withId: activityId)
+
+                    Task { @MainActor in
+                        appState.targetActivityId = nil
+                    }
+                }
+            }
         }
     }
 }
@@ -193,4 +207,5 @@ struct MessageBubble: View {
 
 #Preview {
     ChatView()
+        .environmentObject(AppNavigationState())
 }

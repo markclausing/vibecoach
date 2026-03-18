@@ -1,6 +1,41 @@
 import SwiftUI
 import SwiftData
 import UserNotifications
+import Combine
+
+/// Globale navigatiestatus van de app.
+/// Dit wordt gebruikt om programmatisch van tabblad te wisselen en diepe links
+/// of notificaties af te handelen.
+@MainActor
+class AppNavigationState: ObservableObject {
+    /// De beschikbare tabbladen in de applicatie.
+    enum Tab {
+        case coach
+        case goals
+    }
+
+    /// Het momenteel geselecteerde tabblad.
+    @Published var selectedTab: Tab = .coach
+
+    /// Een eventueel specifiek Strava Activity ID dat vanuit een notificatie
+    /// is meegegeven en geanalyseerd moet worden door de coach.
+    @Published var targetActivityId: Int64? = nil
+
+    /// Optionele statische shared instance voor toegang buiten SwiftUI views (bijv. AppDelegate).
+    /// Let op: Dit vereist dat we de properties updaten op de main thread.
+    static let shared = AppNavigationState()
+
+    // Init is public zodat Previews een eigen instance kunnen maken.
+    init() {}
+
+    /// Stelt de app in om een specifieke activiteit in het Coach scherm te openen.
+    nonisolated func openActivityAnalysis(activityId: Int64) {
+        Task { @MainActor in
+            self.selectedTab = .coach
+            self.targetActivityId = activityId
+        }
+    }
+}
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
 
@@ -35,6 +70,29 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Toon de notificatie als een banner (en speel geluid af)
         completionHandler([.banner, .sound])
     }
+
+    // Deze methode wordt aangeroepen wanneer de gebruiker DAADWERKELIJK op de notificatie tikt
+    // (werkt als de app op de achtergrond zat, in de voorgrond is, of vanuit gesloten toestand is gestart).
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        let userInfo = response.notification.request.content.userInfo
+
+        print("📱 Gebruiker heeft op notificatie getikt!")
+
+        // Haal het activityId uit de payload
+        if let activityId = userInfo["activityId"] as? Int64 {
+            print("  ➡️ Strava Activity ID gedetecteerd in payload: \(activityId)")
+
+            // Trigger navigatie & analyse via onze globale AppNavigationState
+            AppNavigationState.shared.openActivityAnalysis(activityId: activityId)
+        } else if let activityIdString = userInfo["activityId"] as? String, let activityId = Int64(activityIdString) {
+            print("  ➡️ Strava Activity ID (String) gedetecteerd in payload: \(activityId)")
+            AppNavigationState.shared.openActivityAnalysis(activityId: activityId)
+        } else {
+            print("  ⚠️ Geen geldig activityId gevonden in payload: \(userInfo)")
+        }
+
+        completionHandler()
+    }
 }
 
 @main
@@ -42,9 +100,13 @@ struct AIFitnessCoachApp: App {
     // Inject the custom AppDelegate voor APNs en Push Notifications (Fase 5)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    // Globale navigatiestatus (voor notificaties & deep links)
+    @StateObject private var appState = AppNavigationState.shared
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(appState)
         }
         .modelContainer(for: FitnessGoal.self) // Voeg SwiftData container toe voor lokale doelen tracking
     }
