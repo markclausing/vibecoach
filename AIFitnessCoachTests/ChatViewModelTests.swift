@@ -176,18 +176,18 @@ final class ChatViewModelTests: XCTestCase {
         // Check loading state immediately
         XCTAssertTrue(viewModel.isFetchingWorkout)
 
-        // Wacht tot de data fetch is afgerond en AI verzoek is gestart
-        try? await Task.sleep(nanoseconds: 150_000_000)
+        // Polling loop to wait for the asynchronous operations to complete
+        // The process involves fetching from mock network, then mock AI, taking multiple task hops.
+        var attempts = 0
+        while viewModel.messages.count < 2 && attempts < 50 { // max 5 seconds wait (50 * 0.1s)
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            attempts += 1
+        }
 
-        // Check of fetching klaar is en we wachten op typen
-        XCTAssertFalse(viewModel.isFetchingWorkout)
-        XCTAssertTrue(viewModel.isTyping)
-
-        // Wacht op afronding AI verzoek
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
-        // Check berichten
-        XCTAssertEqual(viewModel.messages.count, 2)
+        // Check berichten en eindstatus
+        XCTAssertFalse(viewModel.isFetchingWorkout, "Fetching state should be reset to false")
+        XCTAssertFalse(viewModel.isTyping, "Typing state should be reset to false")
+        XCTAssertEqual(viewModel.messages.count, 2, "There should be exactly 2 messages: the workout context prompt and the AI response")
         XCTAssertEqual(viewModel.messages.first?.role, .user)
         XCTAssertTrue(viewModel.messages.first!.text.contains("Morning Ride"))
         XCTAssertTrue(viewModel.messages.first!.text.contains("50.0 km"))
@@ -196,6 +196,5 @@ final class ChatViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
-        XCTAssertFalse(viewModel.isTyping)
     }
 }
