@@ -35,6 +35,9 @@ Om test notificaties te kunnen versturen naar de iOS app wanneer een webhook afg
    - `BUNDLE_ID`: De Bundle Identifier van je iOS app (bijv. `nl.jouwbedrijf.aifitnesscoach`).
 6. Om de flow lokaal te testen start je de iOS app in Xcode en kopieer je het "Device Token" dat in de console geprint wordt door de AppDelegate naar `TEST_DEVICE_TOKEN`.
 
+> **💡 Geen betaald Apple Developer account of testen in Simulator?**
+> De backend bevat een slimme "Mock Mode" logica. Als je de variabelen (`APN_KEY_ID`, `APN_TEAM_ID`, `APN_AUTH_KEY_PATH`) leeg laat in je `.env` óf als je `TEST_DEVICE_TOKEN` het woord `simulator` bevat, zal de backend de verbinding met Apple Push Notification servers automatisch overslaan. In plaats daarvan wordt in de console gesimuleerd dat een pushbericht is verstuurd (bijv. `[MOCK APN] 🚀 Mock notificatie verstuurd...`). Hiermee kan de gehele Webhook-flow succesvol lokaal getest worden zonder dat pushberichten falen.
+
 ## Server Starten
 
 Start de server lokaal via:
