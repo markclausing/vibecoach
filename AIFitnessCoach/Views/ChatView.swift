@@ -116,6 +116,13 @@ struct ChatView: View {
             }
             .navigationTitle("AI Fitness Coach")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: SettingsView()) {
+                        Image(systemName: "gear")
+                    }
+                }
+            }
         }
     }
 }

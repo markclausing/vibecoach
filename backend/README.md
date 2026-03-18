@@ -20,6 +20,17 @@ Dit is de lichte "brievenbus" backend service die we gebruiken om push (proactie
    cp .env.example .env
    ```
 
+## Push Notificaties (APNs) instellen
+
+Om de app op een fysiek iOS-toestel notificaties te sturen, moeten de juiste certificaten aanwezig zijn.
+
+1. Zorg in de iOS App (AIFitnessCoach) via Xcode (tab 'Signing & Capabilities') dat:
+   - **Push Notifications** is toegevoegd.
+   - **Background Modes (Remote notifications)** is ingeschakeld (voor latere fase 5 doeleinden).
+2. Genereer een `.p8` (Auth Key) via het Apple Developer Portal. Zet dit bestand in de `backend/` map.
+3. Vul de `APN_KEY_ID` en `APN_TEAM_ID` in je `.env` bestand in, en wijs `APN_KEY_FILE` naar de naam van het `.p8` bestand.
+4. Om te testen zonder database: start de app, accepteer notificaties, kopieer de Device Token uit de Xcode console, en plak deze als `TEST_DEVICE_TOKEN` in de `.env` file van de backend.
+
 ## Server Starten
 
 Start de server lokaal via:
