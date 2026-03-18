@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import { sendPushNotification } from './services/apnService.js';
 
 dotenv.config();
 
@@ -49,7 +50,14 @@ app.post('/webhook', (req, res) => {
     console.log(`- Activity ID: ${objectId}`);
     console.log(`- Volledige payload:`, JSON.stringify(payload));
 
-    // TODO (Fase 5): Apple Push Notification Service (APNs) triggeren naar de specifieke gebruiker.
+    // Trigger Apple Push Notification Service (APNs) naar de specifieke gebruiker (voor nu TEST_DEVICE_TOKEN)
+    const deviceToken = process.env.TEST_DEVICE_TOKEN;
+    if (deviceToken && aspectType === 'create') {
+        sendPushNotification(deviceToken, objectId);
+    } else {
+        console.log(`ℹ️ Geen push verstuurd: geen device token geconfigureerd of aspect_type is geen 'create'.`);
+    }
+
   } else if (payload) {
     console.log(`ℹ️ Ander Strava event ontvangen (niet verwerkt): ${payload.object_type} - ${payload.aspect_type}`);
   }

@@ -18,6 +18,16 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
     - Het versturen van Apple Push Notifications (APNs) naar de iOS app bij een nieuwe training.
     - Het dynamisch laten herberekenen van het trainingsplan (in SwiftData) door Gemini, direct na het voltooien van een training.
 
+### Sprint 5.2 - Configuratie Instructies voor Push Notificaties
+Voor de ontwikkelaar/tester die lokaal test op een echt device (Simulators ondersteunen beperkt APNs):
+1. Open de iOS app `AIFitnessCoach.xcodeproj` in Xcode.
+2. Ga naar de app target ("AIFitnessCoach") > tabblad **Signing & Capabilities**.
+3. Voeg de Capability **Push Notifications** toe.
+4. Voeg de Capability **Background Modes** toe en vink **Remote notifications** aan.
+5. Bouw en run de app op je fysieke iPhone, ga naar het instellingen menu (via het tandwiel in ChatView) en zet notificaties aan.
+6. Kopieer de hexadecimale `Device Token` uit de Xcode console.
+7. Plak deze in de `.env` file van de `backend/` als `TEST_DEVICE_TOKEN`, samen met je `.p8` bestand en keys, en test de webhook trigger!
+
 ## Tech Stack
 * **Platform:** iOS (macOS met Xcode vereist voor het bouwen)
 * **UI Framework:** SwiftUI
