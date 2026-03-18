@@ -126,4 +126,52 @@ actor FitnessDataService {
             throw FitnessDataError.decodingError(error.localizedDescription)
         }
     }
+
+    /// Haalt een specifieke activiteit op via de Strava API op basis van het Activity ID.
+    /// Dit wordt voornamelijk gebruikt wanneer een notificatie binnenkomt met een specifiek ID.
+    /// - Parameter id: Het Strava Activity ID.
+    /// - Returns: Het bijbehorende `StravaActivity` object.
+    /// - Throws: `FitnessDataError` als er iets misgaat.
+    func fetchActivity(byId id: Int64) async throws -> StravaActivity {
+        try await refreshTokenIfNeeded()
+
+        guard let stravaToken = try tokenStore.getToken(forService: "StravaToken"), !stravaToken.isEmpty else {
+            throw FitnessDataError.missingToken
+        }
+
+        guard let url = URL(string: "https://www.strava.com/api/v3/activities/\(id)") else {
+            throw FitnessDataError.networkError("Ongeldige URL voor activiteit \(id)")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(stravaToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw FitnessDataError.networkError(error.localizedDescription)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw FitnessDataError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw FitnessDataError.unauthorized
+        } else if httpResponse.statusCode == 404 {
+             throw FitnessDataError.networkError("Activiteit met ID \(id) niet gevonden")
+        } else if !(200...299).contains(httpResponse.statusCode) {
+            throw FitnessDataError.networkError("Onverwachte HTTP status code: \(httpResponse.statusCode)")
+        }
+
+        do {
+            let decoder = JSONDecoder()
+            let activity = try decoder.decode(StravaActivity.self, from: data)
+            return activity
+        } catch {
+            throw FitnessDataError.decodingError(error.localizedDescription)
+        }
+    }
 }

@@ -197,4 +197,47 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
     }
+
+    func testAnalyzeWorkoutWithId_Success() async {
+        // Arrange
+        let expectedAIResponse = "Snelle lunch run! Goed tempo."
+        mockModel.responseToReturn = expectedAIResponse
+        mockModel.delay = 0.1
+
+        try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
+
+        // Specifieke workout JSON (geen array, maar één object)
+        let activityJson = "{\"id\":999,\"name\":\"Lunch Run\",\"distance\":5000.0,\"moving_time\":1800,\"average_heartrate\":160.0,\"type\":\"Run\"}"
+        mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
+        let response = HTTPURLResponse(url: URL(string: "https://strava.com/api/v3/activities/999")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        mockNetworkSession.responseToReturn = response
+
+        viewModel.messages.removeAll()
+
+        // Actie
+        viewModel.analyzeWorkout(withId: 999)
+
+        // Check loading state immediately
+        XCTAssertTrue(viewModel.isFetchingWorkout)
+
+        // Polling loop to wait for the asynchronous operations to complete
+        var attempts = 0
+        while viewModel.messages.count < 2 && attempts < 50 {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            attempts += 1
+        }
+
+        // Check berichten en eindstatus
+        XCTAssertFalse(viewModel.isFetchingWorkout)
+        XCTAssertFalse(viewModel.isTyping)
+        XCTAssertEqual(viewModel.messages.count, 2)
+        XCTAssertEqual(viewModel.messages.first?.role, .user)
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Lunch Run"))
+        XCTAssertTrue(viewModel.messages.first!.text.contains("5.0 km"))
+        XCTAssertTrue(viewModel.messages.first!.text.contains("30 minuten"))
+        XCTAssertTrue(viewModel.messages.first!.text.contains("160"))
+
+        XCTAssertEqual(viewModel.messages.last?.role, .ai)
+        XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
+    }
 }
