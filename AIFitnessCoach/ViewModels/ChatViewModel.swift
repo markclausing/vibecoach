@@ -15,23 +15,16 @@ class ChatViewModel: ObservableObject {
     /// True als de applicatie wacht op een reactie van de AI.
     @Published var isTyping: Bool = false
 
-    /// True als we op dit moment Strava data aan het ophalen zijn via de expliciete knop.
-    @Published var isFetchingWorkout: Bool = false
-
     /// Het protocol waartegen we de AI-verzoeken uitvoeren.
     /// Dit maakt Dependency Injection (DI) mogelijk voor unit tests.
     private let model: GenerativeModelProtocol
-
-    /// Service voor externe API calls (Sprint 4.2).
-    private let fitnessDataService: FitnessDataService
 
     /// Initialiseert de `ChatViewModel`.
     ///
     /// - Parameter aiModel: De AI-dienst die gebruikt moet worden.
     ///             Wanneer niets wordt meegegeven, wordt standaard de
     ///             `RealGenerativeModel` (die met Google API praat) gebruikt.
-    init(aiModel: GenerativeModelProtocol? = nil, fitnessDataService: FitnessDataService = FitnessDataService()) {
-        self.fitnessDataService = fitnessDataService
+    init(aiModel: GenerativeModelProtocol? = nil) {
         if let providedModel = aiModel {
             self.model = providedModel
         } else {
@@ -66,76 +59,11 @@ class ChatViewModel: ObservableObject {
         // 2. Voeg toe aan UI en reset velden
         messages.append(userMessage)
 
-        isTyping = true
-
-        // 3. Haal AI reactie op
+        // 3. Haal AI reactie op (de viewmodel geeft direct de afgeschaalde afbeelding door)
         fetchAIResponse(for: textToSend, image: imageToSend)
 
         inputText = ""
         clearImage()
-    }
-
-    /// Haalt de laatste Strava activiteit op, formatteert deze als een Nederlandse prompt
-    /// en stuurt deze naar de AI-coach voor analyse.
-    func analyzeLatestWorkout() {
-        guard !isFetchingWorkout else { return }
-        isFetchingWorkout = true
-
-        Task {
-            do {
-                let activityData = try await fitnessDataService.fetchLatestActivity()
-
-                guard let activity = activityData else {
-                    Task { @MainActor in
-                        messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden op je Strava account."))
-                        isFetchingWorkout = false
-                    }
-                    return
-                }
-
-                // Converteer eenheden
-                let distanceKm = String(format: "%.1f", activity.distance / 1000.0)
-                let timeMinutes = activity.moving_time / 60
-                let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!))" : "onbekend"
-
-                // Formatteer de context prompt
-                let prompt = "Hier is de data van mijn laatste training via Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
-
-                Task { @MainActor in
-                    // Voeg de prompt toe als een gebruikersbericht zodat de chatgeschiedenis klopt
-                    messages.append(ChatMessage(role: .user, text: prompt))
-
-                    isTyping = true
-                    isFetchingWorkout = false
-
-                    fetchAIResponse(for: prompt, image: nil)
-                }
-
-            } catch let error as FitnessDataError {
-                var errorMsg = "Fout bij ophalen van Strava data: "
-                switch error {
-                case .missingToken:
-                    errorMsg += "Je bent niet ingelogd op Strava. Ga naar instellingen om te koppelen."
-                case .unauthorized:
-                    errorMsg += "Je Strava sessie is verlopen. Koppel opnieuw in de instellingen."
-                case .networkError(let desc):
-                    errorMsg += "Netwerkfout (\(desc))."
-                case .decodingError(let desc):
-                    errorMsg += "Data onleesbaar (\(desc))."
-                case .invalidResponse:
-                    errorMsg += "Ongeldig antwoord van de server."
-                }
-                Task { @MainActor in
-                    messages.append(ChatMessage(role: .ai, text: errorMsg))
-                    isFetchingWorkout = false
-                }
-            } catch {
-                Task { @MainActor in
-                    messages.append(ChatMessage(role: .ai, text: "Er is een onbekende fout opgetreden bij het communiceren met Strava."))
-                    isFetchingWorkout = false
-                }
-            }
-        }
     }
 
     /// Stuurt asynchroon het verzoek naar het AI-model met de juiste content payload.
@@ -160,6 +88,8 @@ class ChatViewModel: ObservableObject {
              messages.append(ChatMessage(role: .ai, text: "Let op: De API-sleutel ontbreekt in Secrets.swift. Vul deze in om met mij te kunnen praten!"))
              return
         }
+
+        isTyping = true
 
         Task {
             do {

@@ -10,7 +10,7 @@ struct ChatView: View {
     @State private var selectedItem: PhotosPickerItem? = nil
 
     var body: some View {
-        NavigationStack {
+        NavigationView {
             VStack(spacing: 0) {
                 // Lijst met chatberichten
                 ScrollViewReader { proxy in
@@ -51,33 +51,6 @@ struct ChatView: View {
                             }
                         }
                     }
-                }
-
-                // Acties / Quick Replies
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack {
-                        Button(action: {
-                            viewModel.analyzeLatestWorkout()
-                        }) {
-                            HStack {
-                                if viewModel.isFetchingWorkout {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                } else {
-                                    Image(systemName: "figure.run")
-                                }
-                                Text("Analyseer laatste training")
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemBlue).opacity(0.1))
-                            .foregroundColor(.blue)
-                            .cornerRadius(20)
-                        }
-                        .disabled(viewModel.isFetchingWorkout)
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 4)
                 }
 
                 // Geselecteerde afbeelding preview (indien aanwezig)
@@ -143,13 +116,6 @@ struct ChatView: View {
             }
             .navigationTitle("AI Fitness Coach")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(destination: SettingsView()) {
-                        Image(systemName: "gear")
-                    }
-                }
-            }
         }
     }
 }

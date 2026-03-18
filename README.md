@@ -13,6 +13,10 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
     - **Sprint 4.1: Doelen Tracker (SwiftData).** Een lokale database voor het aanmaken, bewerken en verwijderen van specifieke trainingsdoelen (bijv. "Marathon onder 3:30 op 18 oktober"). De app toont de voortgang en resterende dagen.
     - **Sprint 4.2: Externe API's (Strava / Intervals.icu).** Een beveiligde OAuth koppeling bouwen om ruwe en actuele trainingsdata, zoals hartslag- en vermogensstreams, rechtstreeks in te laden.
     - **Sprint 4.3: 'Update & Analyse' Engine.** Een centrale actie-knop die de actuele externe trainingsdata combineert met de gestelde doelen uit SwiftData, en deze bundel als één uitgebreide context-prompt naar het AI-model (Gemini 3.1 Pro) stuurt voor een gerichte, professionele sportanalyse.
+5. **Fase 5: Proactieve AI Coach & Cloud Infrastructuur.** De app transformeert van een "pull" model naar een "push" model, waarbij het proactief reageert op voltooide trainingen.
+    - Het opzetten van een lichte backend ('brievenbus') om real-time Strava Webhooks op te vangen.
+    - Het versturen van Apple Push Notifications (APNs) naar de iOS app bij een nieuwe training.
+    - Het dynamisch laten herberekenen van het trainingsplan (in SwiftData) door Gemini, direct na het voltooien van een training.
 
 ## Tech Stack
 * **Platform:** iOS (macOS met Xcode vereist voor het bouwen)
