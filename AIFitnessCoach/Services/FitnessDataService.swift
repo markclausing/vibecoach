@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 /// Verantwoordelijk voor het ophalen van sport- en activiteitsdata van externe API's (bijv. Strava of Intervals.icu).
 actor FitnessDataService {
