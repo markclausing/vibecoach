@@ -158,6 +158,7 @@ final class ChatViewModelTests: XCTestCase {
         // Arrange
         let expectedAIResponse = "Goed getraind! Je hartslag was netjes."
         mockModel.responseToReturn = expectedAIResponse
+        mockModel.delay = 0.1
 
         try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
         // moving_time 7200 sec = 120 minuten
