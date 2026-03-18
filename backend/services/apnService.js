@@ -6,39 +6,44 @@ dotenv.config();
 // Configuratie object voor APNs provider.
 // Normaal gesproken gebruik je hier een .p8 bestand en je team id.
 // Omdat we nu in de beginfase zitten en .env gebruiken, halen we deze opties deels op uit .env.
-const options = {
-    token: {
-        key: process.env.APN_AUTH_KEY || 'dummy_key', // Het absolute pad naar de .p8 file OF een string representatie
-        keyId: process.env.APN_KEY_ID || 'dummy_keyId', // Het Key ID van Apple Developer Portal
-        teamId: process.env.APN_TEAM_ID || 'dummy_teamId' // Het Team ID van je Apple Developer account
-    },
-    production: false // Gebruik sandbox/development voor nu
-};
+// Check of alle benodigde echte variabelen aanwezig zijn.
+const hasRealCredentials = process.env.APN_AUTH_KEY_PATH && process.env.APN_KEY_ID && process.env.APN_TEAM_ID;
 
-// Initialiseer provider (enkel een instance, probeert te verbinden wanneer we zenden)
-// Als je geen key instelt kan new apn.Provider() een fout gooien als dit niet compleet is.
-// Echter voor deze test flow zorgen we dat de provider functioneert wanneer de variabelen juist zijn.
 let apnProvider = null;
-try {
-    apnProvider = new apn.Provider(options);
-} catch (e) {
-    console.error('⚠️ Fout bij initialiseren van APNs provider (missende of foute configuratie):', e.message);
+
+if (hasRealCredentials) {
+    const options = {
+        token: {
+            key: process.env.APN_AUTH_KEY_PATH, // Het absolute of relatieve pad naar de .p8 file
+            keyId: process.env.APN_KEY_ID, // Het Key ID van Apple Developer Portal
+            teamId: process.env.APN_TEAM_ID // Het Team ID van je Apple Developer account
+        },
+        production: false // Gebruik sandbox/development voor nu
+    };
+
+    // Initialiseer provider (enkel een instance, probeert te verbinden wanneer we zenden)
+    try {
+        apnProvider = new apn.Provider(options);
+    } catch (e) {
+        console.error('⚠️ Fout bij initialiseren van APNs provider (missende of foute configuratie):', e.message);
+    }
 }
 
 /**
- * Verstuurt een test notificatie naar de client app via APNs.
+ * Verstuurt een test notificatie naar de client app via APNs (of mockt deze).
  */
 export const sendTestNotification = async (activityId) => {
-    // Kijk of we het device token hebben uit de .env file
     const deviceToken = process.env.TEST_DEVICE_TOKEN;
+    const isSimulatorToken = deviceToken && deviceToken.includes('simulator'); // Een makkelijke heuristiek
+    const isMockMode = !hasRealCredentials || !apnProvider || isSimulatorToken;
+
+    if (isMockMode) {
+        console.log(`[MOCK APN] 🚀 Mock notificatie verstuurd voor activity ID: ${activityId}`);
+        return { success: true, mock: true };
+    }
 
     if (!deviceToken) {
         console.warn('⚠️ Geen TEST_DEVICE_TOKEN gevonden in .env. APN wordt overgeslagen.');
-        return;
-    }
-
-    if (!apnProvider) {
-        console.warn('⚠️ APNs Provider is niet succesvol geïnitialiseerd. APN wordt overgeslagen.');
         return;
     }
 
@@ -49,7 +54,7 @@ export const sendTestNotification = async (activityId) => {
     note.badge = 1;
     note.sound = 'ping.aiff';
     note.alert = `🏃‍♂️ Nieuwe Strava activiteit gedetecteerd (ID: ${activityId}). Jouw coach analyseert dit...`;
-    note.topic = process.env.APN_BUNDLE_ID || 'nl.aifitnesscoach.app'; // Moet matchen met de App Bundle ID
+    note.topic = process.env.BUNDLE_ID; // Moet matchen met de App Bundle ID
 
     // Custom data in de payload, voor later (Fase 5.3) om SwiftData update te triggeren
     note.payload = { 'activityId': activityId };
