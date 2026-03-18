@@ -1,4 +1,5 @@
 import XCTest
+import SwiftData
 @testable import AIFitnessCoach
 
 final class FitnessDataServiceTests: XCTestCase {
