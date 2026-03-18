@@ -138,6 +138,58 @@ class ChatViewModel: ObservableObject {
         }
     }
 
+    /// Haalt een specifieke Strava activiteit op (bijv. vanuit een notificatie),
+    /// formatteert deze als een Nederlandse prompt en stuurt deze naar de AI-coach.
+    func analyzeWorkout(withId id: Int64) {
+        guard !isFetchingWorkout else { return }
+        isFetchingWorkout = true
+
+        Task {
+            do {
+                let activity = try await fitnessDataService.fetchActivity(byId: id)
+
+                // Converteer eenheden
+                let distanceKm = String(format: "%.1f", activity.distance / 1000.0)
+                let timeMinutes = activity.moving_time / 60
+                let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!))" : "onbekend"
+
+                // Formatteer de context prompt
+                let prompt = "Ik heb zojuist deze training voltooid op Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
+
+                Task { @MainActor in
+                    messages.append(ChatMessage(role: .user, text: prompt))
+                    isTyping = true
+                    isFetchingWorkout = false
+                    fetchAIResponse(for: prompt, image: nil)
+                }
+
+            } catch let error as FitnessDataError {
+                var errorMsg = "Fout bij ophalen van Strava data voor activiteit \(id): "
+                switch error {
+                case .missingToken:
+                    errorMsg += "Je bent niet ingelogd op Strava."
+                case .unauthorized:
+                    errorMsg += "Je Strava sessie is verlopen."
+                case .networkError(let desc):
+                    errorMsg += "Netwerkfout (\(desc))."
+                case .decodingError(let desc):
+                    errorMsg += "Data onleesbaar (\(desc))."
+                case .invalidResponse:
+                    errorMsg += "Ongeldig antwoord van de server."
+                }
+                Task { @MainActor in
+                    messages.append(ChatMessage(role: .ai, text: errorMsg))
+                    isFetchingWorkout = false
+                }
+            } catch {
+                Task { @MainActor in
+                    messages.append(ChatMessage(role: .ai, text: "Er is een onbekende fout opgetreden."))
+                    isFetchingWorkout = false
+                }
+            }
+        }
+    }
+
     /// Stuurt asynchroon het verzoek naar het AI-model met de juiste content payload.
     ///
     /// - Parameters:

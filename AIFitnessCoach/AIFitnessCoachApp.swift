@@ -35,6 +35,29 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Toon de notificatie als een banner (en speel geluid af)
         completionHandler([.banner, .sound])
     }
+
+    // Deze methode wordt aangeroepen wanneer de gebruiker DAADWERKELIJK op de notificatie tikt
+    // (werkt als de app op de achtergrond zat, in de voorgrond is, of vanuit gesloten toestand is gestart).
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        let userInfo = response.notification.request.content.userInfo
+
+        print("📱 Gebruiker heeft op notificatie getikt!")
+
+        // Haal het activityId uit de payload
+        if let activityId = userInfo["activityId"] as? Int64 {
+            print("  ➡️ Strava Activity ID gedetecteerd in payload: \(activityId)")
+
+            // Trigger navigatie & analyse via onze globale AppNavigationState
+            AppNavigationState.shared.openActivityAnalysis(activityId: activityId)
+        } else if let activityIdString = userInfo["activityId"] as? String, let activityId = Int64(activityIdString) {
+            print("  ➡️ Strava Activity ID (String) gedetecteerd in payload: \(activityId)")
+            AppNavigationState.shared.openActivityAnalysis(activityId: activityId)
+        } else {
+            print("  ⚠️ Geen geldig activityId gevonden in payload: \(userInfo)")
+        }
+
+        completionHandler()
+    }
 }
 
 @main
@@ -42,9 +65,13 @@ struct AIFitnessCoachApp: App {
     // Inject the custom AppDelegate voor APNs en Push Notifications (Fase 5)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    // Globale navigatiestatus (voor notificaties & deep links)
+    @StateObject private var appState = AppNavigationState.shared
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(appState)
         }
         .modelContainer(for: FitnessGoal.self) // Voeg SwiftData container toe voor lokale doelen tracking
     }

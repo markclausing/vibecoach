@@ -13,6 +13,28 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
     - **Sprint 4.1: Doelen Tracker (SwiftData).** Een lokale database voor het aanmaken, bewerken en verwijderen van specifieke trainingsdoelen (bijv. "Marathon onder 3:30 op 18 oktober"). De app toont de voortgang en resterende dagen.
     - **Sprint 4.2: Externe API's (Strava / Intervals.icu).** Een beveiligde OAuth koppeling bouwen om ruwe en actuele trainingsdata, zoals hartslag- en vermogensstreams, rechtstreeks in te laden.
     - **Sprint 4.3: 'Update & Analyse' Engine.** Een centrale actie-knop die de actuele externe trainingsdata combineert met de gestelde doelen uit SwiftData, en deze bundel als één uitgebreide context-prompt naar het AI-model (Gemini 3.1 Pro) stuurt voor een gerichte, professionele sportanalyse.
+5. **Fase 5: Proactive AI Coach & Cloud Infrastructure.** Introductie van een 'push' model waar backend triggers (zoals Strava webhooks) direct push notificaties naar de app sturen.
+    - **Sprint 5.3: Notificatie Afhandeling.** Het afvangen van inkomende APNs notificaties en het verwerken van de payload (`activityId`) om direct gerichte analyses in te starten.
+
+## Testing Push Notifications in Simulator
+Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de naam `test-push.apns` aanmaken en deze letterlijk naar de draaiende simulator slepen (Drag & Drop). De structuur van dit bestand moet er als volgt uitzien:
+
+```json
+{
+  "Simulator Target Bundle": "com.markclausing.aifitnesscoach",
+  "aps": {
+    "alert": {
+      "title": "Nieuwe Workout",
+      "body": "🏃‍♂️ Nieuwe Strava activiteit gedetecteerd. Jouw coach analyseert dit..."
+    },
+    "badge": 1,
+    "sound": "default"
+  },
+  "activityId": 1234567890
+}
+```
+*Zorg ervoor dat het veld `"Simulator Target Bundle"` exact overeenkomt met de Bundle Identifier van je Xcode project.*
+*Vervang `1234567890` door een echt Strava Activity ID om een live analyse af te dwingen.*
 
 ## Tech Stack
 * **Platform:** iOS (macOS met Xcode vereist voor het bouwen)
