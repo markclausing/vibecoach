@@ -56,3 +56,18 @@ final class ActivityRecord {
         self.startDate = startDate
     }
 }
+
+/// Een meting van de hartslag op een specifiek tijdstip
+struct HeartRateSample: Codable, Equatable {
+    let timestamp: Date
+    let bpm: Double
+}
+
+/// Details van een voltooide workout inclusief fysiologische data
+struct WorkoutDetails: Codable, Equatable {
+    let duration: Double
+    let averageHeartRate: Double
+    let maxHeartRate: Double
+    let restingHeartRate: Double
+    let heartRateSamples: [HeartRateSample]
+}
