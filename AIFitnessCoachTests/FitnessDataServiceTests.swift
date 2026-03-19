@@ -352,12 +352,14 @@ final class IntervalsApiServiceTests: XCTestCase {
 
         let mockSession = MockNetworkSession()
         let jsonResponse = """
-        {
-            "id": "12345",
-            "hr_recovery": 35.0,
-            "tss": 120.5,
-            "cardiac_drift": 4.2
-        }
+        [
+            {
+                "id": "12345",
+                "hr_recovery": 35.0,
+                "tss": 120.5,
+                "cardiac_drift": 4.2
+            }
+        ]
         """
         mockSession.dataToReturn = jsonResponse.data(using: .utf8)
         mockSession.responseToReturn = HTTPURLResponse(url: URL(string: "https://intervals.icu/api/v1/athlete/i999/activities/12345")!, statusCode: 200, httpVersion: nil, headerFields: nil)
@@ -410,6 +412,29 @@ final class IntervalsApiServiceTests: XCTestCase {
             // Success: also verify token was deleted
             let token = try? mockTokenStore.getToken(forService: "IntervalsToken")
             XCTAssertNil(token, "Token should be deleted on 401")
+        } catch {
+            XCTFail("Threw unexpected error: \(error)")
+        }
+    }
+
+    func testFetchActivityDetails_EmptyArray() async throws {
+        // Arrange
+        let mockTokenStore = MockTokenStore()
+        try mockTokenStore.saveToken("valid_api_key", forService: "IntervalsToken")
+
+        let mockSession = MockNetworkSession()
+        let jsonResponse = "[]" // Lege array
+        mockSession.dataToReturn = jsonResponse.data(using: .utf8)
+        mockSession.responseToReturn = HTTPURLResponse(url: URL(string: "https://intervals.icu/api/v1/athlete/i999/activities/12345")!, statusCode: 200, httpVersion: nil, headerFields: nil)
+
+        let service = IntervalsApiService(session: mockSession, tokenStore: mockTokenStore)
+
+        // Act & Assert
+        do {
+            _ = try await service.fetchActivityDetails(athleteId: "i999", activityId: "12345")
+            XCTFail("Should have thrown error on empty array")
+        } catch FitnessDataError.networkError(let msg) {
+            XCTAssertEqual(msg, "Geen activiteiten gevonden op Intervals.icu.")
         } catch {
             XCTFail("Threw unexpected error: \(error)")
         }
