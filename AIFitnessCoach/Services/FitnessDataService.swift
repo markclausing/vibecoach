@@ -256,6 +256,7 @@ struct AthleticProfile {
     var peakDurationInSeconds: Int
     var averageWeeklyVolumeInSeconds: Int
     var daysSinceLastTraining: Int
+    var isRecoveryNeeded: Bool // SPRINT 6.3 - Proactieve Waarschuwing status
 }
 
 /// Verantwoordelijk voor het berekenen van het atleetprofiel op basis van historische gegevens in SwiftData.
@@ -263,11 +264,10 @@ struct AthleticProfile {
 class AthleticProfileManager {
 
     /// Berekent het profiel op basis van de aanwezige `ActivityRecord` elementen.
+    /// Inclusief de Overtraining logica (Sprint 6.3).
     /// - Parameter context: De `ModelContext` van de app om gegevens uit te lezen.
     /// - Returns: Een berekend `AthleticProfile` of nil als er onvoldoende data is.
     func calculateProfile(context: ModelContext) throws -> AthleticProfile? {
-        // Haal alle ActivityRecords op (dit zou ideaal gefilterd en gesorteerd kunnen worden op database-niveau,
-        // maar voor dit MVP berekenen we het lokaal).
         let fetchDescriptor = FetchDescriptor<ActivityRecord>()
         let allActivities = try context.fetch(fetchDescriptor)
 
@@ -275,7 +275,7 @@ class AthleticProfileManager {
             return nil
         }
 
-        // 1. Piekprestatie (langste afstand en langste tijd over de gehele dataset)
+        // 1. Piekprestatie
         let peakDistance = allActivities.max(by: { $0.distance < $1.distance })?.distance ?? 0.0
         let peakDuration = allActivities.max(by: { $0.movingTime < $1.movingTime })?.movingTime ?? 0
 
@@ -295,18 +295,54 @@ class AthleticProfileManager {
             return AthleticProfile(peakDistanceInMeters: peakDistance,
                                    peakDurationInSeconds: peakDuration,
                                    averageWeeklyVolumeInSeconds: 0,
-                                   daysSinceLastTraining: daysSinceLast)
+                                   daysSinceLastTraining: daysSinceLast,
+                                   isRecoveryNeeded: false)
         }
 
         let recentActivities = allActivities.filter { $0.startDate >= fourWeeksAgo }
         let totalVolumeRecent = recentActivities.reduce(0) { $0 + $1.movingTime }
-        let averageWeeklyVolume = totalVolumeRecent / 4 // we delen door 4 omdat we precies 4 weken terugkijken
+        let averageWeeklyVolume = totalVolumeRecent / 4
+
+        // 4. SPRINT 6.3: Overtrainingslogica
+        var needsRecovery = false
+
+        // Bereken volume van *alleen* de afgelopen week
+        guard let oneWeekAgo = Calendar.current.date(byAdding: .day, value: -7, to: now) else {
+            return AthleticProfile(peakDistanceInMeters: peakDistance,
+                                   peakDurationInSeconds: peakDuration,
+                                   averageWeeklyVolumeInSeconds: averageWeeklyVolume,
+                                   daysSinceLastTraining: daysSinceLast,
+                                   isRecoveryNeeded: false)
+        }
+        let thisWeekActivities = recentActivities.filter { $0.startDate >= oneWeekAgo }
+        let thisWeekVolume = thisWeekActivities.reduce(0) { $0 + $1.movingTime }
+
+        // Regel 1: Volume deze week is > 50% hoger dan het gemiddelde
+        // Zorg dat we niet delen door 0, en stel een ondergrens (b.v. average minimaal 2 uur) om false positives bij beginners te voorkomen
+        if averageWeeklyVolume > 7200 {
+            let ratio = Double(thisWeekVolume) / Double(averageWeeklyVolume)
+            if ratio > 1.5 {
+                needsRecovery = true
+            }
+        }
+
+        // Regel 2: Traint al 4 of meer dagen op rij
+        // Voor een simpeler algoritme: als er 4 trainingen zijn in de afgelopen 4 dagen (we negeren multi-a-days voor deze simpele check)
+        guard let fourDaysAgo = Calendar.current.date(byAdding: .day, value: -4, to: now) else {
+            return AthleticProfile(peakDistanceInMeters: peakDistance, peakDurationInSeconds: peakDuration, averageWeeklyVolumeInSeconds: averageWeeklyVolume, daysSinceLastTraining: max(0, daysSinceLast), isRecoveryNeeded: needsRecovery)
+        }
+        let daysTrainedInLast4Days = Set(thisWeekActivities.filter { $0.startDate >= fourDaysAgo }.map { Calendar.current.startOfDay(for: $0.startDate) }).count
+
+        if daysTrainedInLast4Days >= 4 {
+            needsRecovery = true
+        }
 
         return AthleticProfile(
             peakDistanceInMeters: peakDistance,
             peakDurationInSeconds: peakDuration,
             averageWeeklyVolumeInSeconds: averageWeeklyVolume,
-            daysSinceLastTraining: max(0, daysSinceLast) // Voor het geval het in de toekomst staat door tijdzones
+            daysSinceLastTraining: max(0, daysSinceLast),
+            isRecoveryNeeded: needsRecovery
         )
     }
 }

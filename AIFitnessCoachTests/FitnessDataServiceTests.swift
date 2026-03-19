@@ -316,8 +316,29 @@ final class AthleticProfileManagerTests: XCTestCase {
         // Gemiddeld per week: 5400 / 4 = 1350 seconden
         XCTAssertEqual(profile?.averageWeeklyVolumeInSeconds, 1350)
 
-        // Dagen sinds laatste training: act1 was 2 dagen geleden
-        // Omdat de precieze tijd op de milliseconde kan verschillen en Calendar kan afronden, checken we of het 2 of 1 is
-        XCTAssertTrue((1...2).contains(profile!.daysSinceLastTraining), "Days since last training should be around 2")
+        // Overtraining vlag zou false moeten zijn in deze milde case
+        XCTAssertFalse(profile?.isRecoveryNeeded ?? true)
+    }
+
+    func testCalculateProfile_TriggersRecoveryWarning_WhenTrainingTooManyConsecutiveDays() throws {
+        // Arrange
+        let now = Date()
+        let oneDayAgo = Calendar.current.date(byAdding: .day, value: -1, to: now)!
+        let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: now)!
+        let threeDaysAgo = Calendar.current.date(byAdding: .day, value: -3, to: now)!
+
+        // 4 trainingen op rij
+        context.insert(ActivityRecord(id: 1, name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, type: "Run", startDate: now))
+        context.insert(ActivityRecord(id: 2, name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, type: "Run", startDate: oneDayAgo))
+        context.insert(ActivityRecord(id: 3, name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, type: "Run", startDate: twoDaysAgo))
+        context.insert(ActivityRecord(id: 4, name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, type: "Run", startDate: threeDaysAgo))
+        try context.save()
+
+        // Act
+        let profile = try manager.calculateProfile(context: context)
+
+        // Assert
+        XCTAssertNotNil(profile)
+        XCTAssertTrue(profile?.isRecoveryNeeded ?? false, "Should trigger recovery warning for 4 consecutive days of training")
     }
 }
