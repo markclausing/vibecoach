@@ -355,8 +355,8 @@ final class IntervalsApiServiceTests: XCTestCase {
         [
             {
                 "id": "12345",
-                "hr_recovery": 35.0,
-                "tss": 120.5,
+                "hrrc": 35.0,
+                "icu_training_load": 120.5,
                 "cardiac_drift": 4.2
             }
         ]
