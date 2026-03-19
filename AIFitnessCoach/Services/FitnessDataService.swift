@@ -358,8 +358,8 @@ struct IntervalsActivity: Codable {
 
     enum CodingKeys: String, CodingKey {
         case id
-        case hrRecovery = "hr_recovery"
-        case tss
+        case hrRecovery = "hrrc"
+        case tss = "icu_training_load"
         case cardiacDrift = "cardiac_drift"
     }
 }
