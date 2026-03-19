@@ -57,7 +57,15 @@ class ChatViewModel: ObservableObject {
         let peakDurationMin = p.peakDurationInSeconds / 60
         let weeklyVolumeMin = p.averageWeeklyVolumeInSeconds / 60
 
-        return "[CONTEXT ATLEET: Heeft een piekprestatie van \(peakDistanceKm) km in \(peakDurationMin) minuten. Traint gemiddeld \(weeklyVolumeMin) minuten per week (gem. laatste 4 weken), en heeft \(p.daysSinceLastTraining) dagen geleden voor het laatst getraind. Neem dit mee in je analyse over herstel en prestatie.]\n\n[VRAAG]: "
+        var prefix = "[CONTEXT ATLEET: Heeft een piekprestatie van \(peakDistanceKm) km in \(peakDurationMin) minuten. Traint gemiddeld \(weeklyVolumeMin) minuten per week (gem. laatste 4 weken), en heeft \(p.daysSinceLastTraining) dagen geleden voor het laatst getraind."
+
+        // SPRINT 6.3: Overtrainings waarschuwing
+        if p.isRecoveryNeeded {
+            prefix += " URGENT: De atleet vertoont tekenen van overtraining op basis van recent volume. Wees streng, adviseer actief om rust te nemen en analyseer deze training puur op herstel."
+        }
+
+        prefix += " Neem dit mee in je analyse over herstel en prestatie.]\n\n[VRAAG]: "
+        return prefix
     }
 
     /// Verstuurt het huidige tekstveld (of de meegegeven tekst) en/of de geselecteerde afbeelding.

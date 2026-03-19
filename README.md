@@ -7,31 +7,27 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 
 ## Kernfunctionaliteiten (Roadmap)
 
-✅ **Fase 1 t/m 4: Fundament & Handmatige AI Coach**
+✅ **Fase 1 t/m 5: Afgerond.**
 * Setup iOS App (SwiftUI) & SwiftData lokale opslag.
 * OAuth2 integratie met Strava API.
-* Ophalen van de laatste training en deze handmatig via een chat-interface laten analyseren door de Gemini AI API.
+* Node.js Backend met Strava Webhook integratie & Apple Push Notifications (APNs).
+* Deep-linking: Notificatie opvangen en specifieke workout ophalen op basis van het `activityId`.
 
-✅ **Fase 5: Automatisering & Push Notificaties**
-* Node.js Backend met Strava Webhook integratie.
-* Apple Push Notifications (APNs) implementatie met een 'Mock Mode' voor de iOS Simulator.
-* Deep-linking: Notificatie opvangen, UI forceren naar de Coach tab, en specifieke workout ophalen op basis van het `activityId`.
+**Fase 6: Langetermijngeheugen & Proactieve Coaching (Huidig)**
+* ✅ **Sprint 6.1 & 6.2 (Historische Sync & Context Injectie):** Afgerond.
+* ⏳ **Sprint 6.3 (Proactieve Waarschuwingen):** In uitvoering (Local alerts & AI focus bij overtraining).
 
-⏳ **Fase 6: Langetermijngeheugen & Atletisch Profiel**
-* Historische Sync: Knop in Settings om Strava data van de afgelopen 6 maanden op te halen en op te slaan in SwiftData.
-* Atletisch Profiel: De iOS app berekent lokaal een profiel (piekprestaties, huidig volume, detraining-status) om als context aan Gemini te voeren.
-* Proactieve waarschuwingen: AI laten signaleren bij overtraining of afwijkingen in hartslagzones.
+⏳ **Fase 7: Pro-Level Fysiologische Analyse (Nieuw! Gepland)**
+* Integratie met de Intervals.icu API.
+* Hartslagherstel (HRR), Cardiac Drift en Training Load (TSS) ophalen na een workout.
+* Deze diepe fysiologische data injecteren in de Gemini prompts.
 
-⏳ **Fase 7: Interactieve Trainingsplanner & Dashboards**
-* 7-Dagen Planner: Gemini genereert gestructureerde JSON trainingsschema's.
-* Interactieve UI: Horizontale kaarten-carrousel in SwiftUI waar de gebruiker trainingen kan wegdrukken, verplaatsen of afvinken.
-* AI Herberekening: Direct een nieuw plan genereren als een gebruiker een training wegdrukt.
-* Swift Charts: Visuele grafieken van voortgang en hartslagzones.
+⏳ **Fase 8: Interactieve Trainingsplanner & Dashboards (Gepland)**
+* 7-Dagen visuele kalender (kaarten wegdrukken/aanpassen).
+* AI genereert JSON schema's voor de komende week.
 
-⏳ **Fase 8: Productie & Lancering**
-* Echte APNs certificaten koppelen via Apple Developer Account.
-* Node.js backend hosten in de cloud (bijv. Render/Heroku).
-* TestFlight distributie.
+⏳ **Fase 9: Productie & Lancering (Gepland)**
+* Echte APNs, Cloud Hosting, TestFlight.
 
 ## Testing Push Notifications in Simulator
 Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de naam `test-push.apns` aanmaken en deze letterlijk naar de draaiende simulator slepen (Drag & Drop). De structuur van dit bestand moet er als volgt uitzien:
