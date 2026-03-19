@@ -13,11 +13,11 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 * Node.js Backend met Strava Webhook integratie & Apple Push Notifications (APNs).
 * Deep-linking: Notificatie opvangen en specifieke workout ophalen op basis van het `activityId`.
 
-**Fase 6: Langetermijngeheugen & Proactieve Coaching (Huidig)**
-* ✅ **Sprint 6.1 & 6.2 (Historische Sync & Context Injectie):** Afgerond.
-* ⏳ **Sprint 6.3 (Proactieve Waarschuwingen):** In uitvoering (Local alerts & AI focus bij overtraining).
+✅ **Fase 6: Langetermijngeheugen & Proactieve Coaching**
+* Historische Sync, Context Injectie & Proactieve Waarschuwingen (Overtraining risk) afgerond.
 
-⏳ **Fase 7: Pro-Level Fysiologische Analyse (Nieuw! Gepland)**
+**Fase 7: Pro-Level Fysiologische Analyse (Huidig)**
+* ⏳ **Sprint 7.1: API Koppeling met Intervals.icu:** In uitvoering (Settings & Basic Auth fetch).
 * Integratie met de Intervals.icu API.
 * Hartslagherstel (HRR), Cardiac Drift en Training Load (TSS) ophalen na een workout.
 * Deze diepe fysiologische data injecteren in de Gemini prompts.
