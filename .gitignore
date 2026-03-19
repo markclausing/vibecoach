@@ -20,3 +20,4 @@ DerivedData/
 # Secrets
 Secrets.swift
 AIFitnessCoach/Secrets.swift
+.DS_Store
