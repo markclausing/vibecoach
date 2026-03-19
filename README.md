@@ -16,10 +16,11 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ✅ **Fase 6: Langetermijngeheugen & Proactieve Coaching**
 * Historische Sync, Context Injectie & Proactieve Waarschuwingen (Overtraining risk) afgerond.
 
-**Fase 7: Pro-Level Fysiologische Analyse (Huidig)**
-* ⏳ **Sprint 7.1: API Koppeling met Intervals.icu:** In uitvoering (Settings & Basic Auth fetch).
-* Integratie met de Intervals.icu API.
-* Hartslagherstel (HRR), Cardiac Drift en Training Load (TSS) ophalen na een workout.
+**Fase 7: Apple HealthKit Integratie (Huidig)**
+* ⏳ **Sprint 7.2: De Fysiologische Rekenmachine:** In uitvoering (Berekenen van TSS/TRIMP obv HealthKit data).
+* Integratie met Apple HealthKit als primaire databron (Architectonische Pivot: we hebben Intervals.icu verlaten vanwege API restricties vanuit Strava).
+* Dit biedt voordelen: 100% lokaal, privacy-first, en geen afhankelijkheid van externe API-limieten.
+* Hartslagherstel (HRR), Cardiac Drift en Training Load (TSS) ophalen en zelf berekenen na een workout.
 * Deze diepe fysiologische data injecteren in de Gemini prompts.
 
 ⏳ **Fase 8: Interactieve Trainingsplanner & Dashboards (Gepland)**

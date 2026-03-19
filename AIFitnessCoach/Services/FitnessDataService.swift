@@ -371,4 +371,112 @@ class HealthKitManager {
             completion(success, error)
         }
     }
+
+    /// Haalt de meest recente duursport-workout (.running of .cycling) op uit HealthKit
+    /// Inclusief de duur, hartslagstatistieken en ruwe hartslagsamples.
+    func fetchLatestWorkoutDetails() async throws -> WorkoutDetails? {
+        let workoutType = HKObjectType.workoutType()
+        let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)!
+        let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
+
+        // Zoek naar hardlopen of fietsen
+        let predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
+            HKQuery.predicateForWorkouts(with: .running),
+            HKQuery.predicateForWorkouts(with: .cycling)
+        ])
+
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: workoutType, predicate: predicate, limit: 1, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, error in
+                guard let self = self else {
+                    continuation.resume(throwing: FitnessDataError.networkError("Manager deallocated"))
+                    return
+                }
+
+                if let error = error {
+                    continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen HealthKit workout: \(error.localizedDescription)"))
+                    return
+                }
+
+                guard let workout = samples?.first as? HKWorkout else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                Task {
+                    do {
+                        // Haal de ruwe hartslagsamples op voor deze workout
+                        let hrSamples = try await self.fetchHeartRateSamples(for: workout, quantityType: heartRateType)
+                        let heartRateData = hrSamples.map { HeartRateSample(timestamp: $0.startDate, bpm: $0.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))) }
+
+                        // Bereken gem en max uit de ruwe samples
+                        let avgHR = heartRateData.isEmpty ? 0 : heartRateData.reduce(0) { $0 + $1.bpm } / Double(heartRateData.count)
+                        let maxHR = heartRateData.max(by: { $0.bpm < $1.bpm })?.bpm ?? 0
+
+                        // Haal laatste rusthartslag op
+                        let restingHR = try await self.fetchLatestRestingHeartRate(quantityType: restingHeartRateType)
+
+                        let details = WorkoutDetails(
+                            duration: workout.duration,
+                            averageHeartRate: avgHR,
+                            maxHeartRate: maxHR,
+                            restingHeartRate: restingHR,
+                            heartRateSamples: heartRateData
+                        )
+                        continuation.resume(returning: details)
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// Hulpfunctie om ruwe hartslagsamples op te halen behorend bij een specifieke workout.
+    private func fetchHeartRateSamples(for workout: HKWorkout, quantityType: HKQuantityType) async throws -> [HKQuantitySample] {
+        let predicate = HKQuery.predicateForSamples(withStart: workout.startDate, end: workout.endDate, options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: quantityType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen HR samples: \(error.localizedDescription)"))
+                    return
+                }
+
+                let hrSamples = (samples as? [HKQuantitySample]) ?? []
+                continuation.resume(returning: hrSamples)
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// Hulpfunctie om de meest recente rusthartslag op te halen.
+    private func fetchLatestRestingHeartRate(quantityType: HKQuantityType) async throws -> Double {
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+        let now = Date()
+        let pastDate = Calendar.current.date(byAdding: .month, value: -1, to: now)!
+        let predicate = HKQuery.predicateForSamples(withStart: pastDate, end: now, options: .strictEndDate)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: quantityType, predicate: predicate, limit: 1, sortDescriptors: [sortDescriptor]) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen RHR: \(error.localizedDescription)"))
+                    return
+                }
+
+                guard let latestSample = samples?.first as? HKQuantitySample else {
+                    // Fallback naar een standaardwaarde als er geen is gemeten in de afgelopen maand
+                    continuation.resume(returning: 60.0)
+                    return
+                }
+
+                let restingBpm = latestSample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                continuation.resume(returning: restingBpm)
+            }
+            healthStore.execute(query)
+        }
+    }
 }
