@@ -326,13 +326,12 @@ final class AthleticProfileManagerTests: XCTestCase {
         let oneDayAgo = Calendar.current.date(byAdding: .day, value: -1, to: now)!
         let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: now)!
         let threeDaysAgo = Calendar.current.date(byAdding: .day, value: -3, to: now)!
-        let fourDaysAgo = Calendar.current.date(byAdding: .day, value: -4, to: now)!
 
         // 4 trainingen op rij
-        context.insert(ActivityRecord(id: 1, name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, type: "Run", startDate: oneDayAgo))
-        context.insert(ActivityRecord(id: 2, name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, type: "Run", startDate: twoDaysAgo))
-        context.insert(ActivityRecord(id: 3, name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, type: "Run", startDate: threeDaysAgo))
-        context.insert(ActivityRecord(id: 4, name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, type: "Run", startDate: fourDaysAgo))
+        context.insert(ActivityRecord(id: 1, name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, type: "Run", startDate: now))
+        context.insert(ActivityRecord(id: 2, name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, type: "Run", startDate: oneDayAgo))
+        context.insert(ActivityRecord(id: 3, name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, type: "Run", startDate: twoDaysAgo))
+        context.insert(ActivityRecord(id: 4, name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, type: "Run", startDate: threeDaysAgo))
         try context.save()
 
         // Act
