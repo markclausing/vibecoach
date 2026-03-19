@@ -350,7 +350,7 @@ class AthleticProfileManager {
 import HealthKit
 
 /// Beheert de Apple HealthKit integratie en permissies
-class HealthKitManager {
+final class HealthKitManager: @unchecked Sendable {
     let healthStore = HKHealthStore()
 
     /// Vraagt toestemming aan de gebruiker om benodigde gezondheidsdata (workouts, hartslag, VO2 Max) te lezen.
