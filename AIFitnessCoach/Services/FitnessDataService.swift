@@ -346,89 +346,29 @@ class AthleticProfileManager {
         )
     }
 }
-import Foundation
 
-/// Data Transfer Object voor de Intervals.icu API response.
-/// Bevat specifieke fysiologische en trainingsbelastingsmetrieken.
-struct IntervalsActivity: Codable {
-    let id: String
-    let hrRecovery: Double?
-    let tss: Double?
-    let cardiacDrift: Double?
+import HealthKit
 
-    enum CodingKeys: String, CodingKey {
-        case id
-        case hrRecovery = "hrrc"
-        case tss = "icu_training_load"
-        case cardiacDrift = "cardiac_drift"
-    }
-}
-import Foundation
+/// Beheert de Apple HealthKit integratie en permissies
+class HealthKitManager {
+    let healthStore = HKHealthStore()
 
-/// Service voor communicatie met de Intervals.icu API.
-class IntervalsApiService {
-    private let session: NetworkSession
-    private let tokenStore: TokenStore
-
-    init(session: NetworkSession = URLSession.shared, tokenStore: TokenStore = KeychainService.shared) {
-        self.session = session
-        self.tokenStore = tokenStore
-    }
-
-    /// Haalt diepgaande activiteitsdetails (zoals TSS en hartslagherstel) op via de Intervals.icu API.
-    func fetchActivityDetails(athleteId: String, activityId: String) async throws -> IntervalsActivity {
-        // Controleer op API token
-        guard let token = try tokenStore.getToken(forService: "IntervalsToken"), !token.isEmpty else {
-            throw FitnessDataError.missingToken
+    /// Vraagt toestemming aan de gebruiker om benodigde gezondheidsdata (workouts, hartslag, VO2 Max) te lezen.
+    func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            completion(false, FitnessDataError.networkError("HealthKit is niet beschikbaar op dit apparaat."))
+            return
         }
 
-        let urlString = "https://intervals.icu/api/v1/athlete/\(athleteId)/activities/\(activityId)"
-        guard let url = URL(string: urlString) else {
-            throw FitnessDataError.networkError("Invalid URL")
+        let typesToRead: Set<HKObjectType> = [
+            HKObjectType.workoutType(),
+            HKQuantityType.quantityType(forIdentifier: .heartRate)!,
+            HKQuantityType.quantityType(forIdentifier: .restingHeartRate)!,
+            HKQuantityType.quantityType(forIdentifier: .vo2Max)!
+        ]
+
+        healthStore.requestAuthorization(toShare: nil, read: typesToRead) { success, error in
+            completion(success, error)
         }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-
-        // Basic Authentication (Username is "API_KEY", Password is the token)
-        let loginString = "API_KEY:\(token)"
-        guard let loginData = loginString.data(using: .utf8) else {
-            throw FitnessDataError.networkError("Kon authenticatiedata niet coderen")
-        }
-        let base64LoginString = loginData.base64EncodedString()
-        request.setValue("Basic \(base64LoginString)", forHTTPHeaderField: "Authorization")
-
-        // Fetch data
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw FitnessDataError.invalidResponse
-        }
-
-        if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
-            // Token ongeldig of geen toegang
-            try tokenStore.deleteToken(forService: "IntervalsToken")
-            throw FitnessDataError.unauthorized
-        } else if httpResponse.statusCode == 404 {
-             throw FitnessDataError.networkError("Activiteit niet gevonden op Intervals.icu.")
-        } else if !(200...299).contains(httpResponse.statusCode) {
-            throw FitnessDataError.networkError("Server retourneerde status code \(httpResponse.statusCode)")
-        }
-
-        let activities: [IntervalsActivity]
-        do {
-            print(String(data: data, encoding: .utf8) ?? "Geen JSON")
-            let decoder = JSONDecoder()
-            activities = try decoder.decode([IntervalsActivity].self, from: data)
-        } catch {
-            print("IntervalsApiService Decode Error: \(error)")
-            throw FitnessDataError.decodingError("Intervals decode failed")
-        }
-
-        guard let activity = activities.first else {
-            throw FitnessDataError.networkError("Geen activiteiten gevonden op Intervals.icu.")
-        }
-
-        return activity
     }
 }
