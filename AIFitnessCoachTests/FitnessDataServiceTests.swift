@@ -343,9 +343,6 @@ final class AthleticProfileManagerTests: XCTestCase {
     }
 }
 
-import XCTest
-@testable import AIFitnessCoach
-
 final class FitnessCalculatorTests: XCTestCase {
     var calculator: FitnessCalculator!
 
