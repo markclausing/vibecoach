@@ -342,3 +342,66 @@ final class AthleticProfileManagerTests: XCTestCase {
         XCTAssertTrue(profile?.isRecoveryNeeded ?? false, "Should trigger recovery warning for 4 consecutive days of training")
     }
 }
+
+final class FitnessCalculatorTests: XCTestCase {
+    var calculator: FitnessCalculator!
+
+    override func setUp() {
+        super.setUp()
+        calculator = FitnessCalculator()
+    }
+
+    override func tearDown() {
+        calculator = nil
+        super.tearDown()
+    }
+
+    func testCalculateTSS_LightRide() {
+        // Arrange
+        let durationInSeconds: Double = 3600 // 1 hour
+        let averageHeartRate: Double = 130
+        let maxHeartRate: Double = 190
+        let restingHeartRate: Double = 60
+
+        // Act
+        let tss = calculator.calculateTSS(durationInSeconds: durationInSeconds, averageHeartRate: averageHeartRate, maxHeartRate: maxHeartRate, restingHeartRate: restingHeartRate)
+
+        // Assert
+        // Delta HR = (130 - 60) / (190 - 60) = 70 / 130 = 0.538461538
+        // TRIMP = 60 * 0.538461538 * 0.64 * e^(1.92 * 0.538461538)
+        // TRIMP = ~58.14
+        XCTAssertEqual(tss, 58.14, accuracy: 0.1, "TSS calculation for light ride is incorrect")
+    }
+
+    func testCalculateTSS_HeavyRide() {
+        // Arrange
+        let durationInSeconds: Double = 3600 // 1 hour
+        let averageHeartRate: Double = 170
+        let maxHeartRate: Double = 190
+        let restingHeartRate: Double = 60
+
+        // Act
+        let tss = calculator.calculateTSS(durationInSeconds: durationInSeconds, averageHeartRate: averageHeartRate, maxHeartRate: maxHeartRate, restingHeartRate: restingHeartRate)
+
+        // Assert
+        // Delta HR = (170 - 60) / (190 - 60) = 110 / 130 = 0.846153846
+        // TRIMP = 60 * 0.846153846 * 0.64 * e^(1.92 * 0.846153846)
+        // TRIMP = ~164.94
+        XCTAssertEqual(tss, 164.94, accuracy: 0.1, "TSS calculation for heavy ride is incorrect")
+    }
+
+    func testCalculateTSS_ZeroDuration() {
+        let tss = calculator.calculateTSS(durationInSeconds: 0, averageHeartRate: 150, maxHeartRate: 190, restingHeartRate: 60)
+        XCTAssertEqual(tss, 0.0, "TSS should be 0 for zero duration")
+    }
+
+    func testCalculateTSS_NegativeDuration() {
+        let tss = calculator.calculateTSS(durationInSeconds: -3600, averageHeartRate: 150, maxHeartRate: 190, restingHeartRate: 60)
+        XCTAssertEqual(tss, 0.0, "TSS should be 0 for negative duration")
+    }
+
+    func testCalculateTSS_SameRestingAndMaxHeartRate() {
+        let tss = calculator.calculateTSS(durationInSeconds: 3600, averageHeartRate: 150, maxHeartRate: 60, restingHeartRate: 60)
+        XCTAssertEqual(tss, 0.0, "TSS should handle identical rest and max HR gracefully")
+    }
+}
