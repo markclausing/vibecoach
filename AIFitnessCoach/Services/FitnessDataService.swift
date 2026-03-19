@@ -417,6 +417,7 @@ class IntervalsApiService {
 
         let activities: [IntervalsActivity]
         do {
+            print(String(data: data, encoding: .utf8) ?? "Geen JSON")
             let decoder = JSONDecoder()
             activities = try decoder.decode([IntervalsActivity].self, from: data)
         } catch {
