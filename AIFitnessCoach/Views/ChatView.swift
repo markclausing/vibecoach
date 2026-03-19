@@ -31,6 +31,20 @@ struct ChatView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // SPRINT 6.3 - Proactieve Waarschuwing UI
+                if currentProfile?.isRecoveryNeeded == true {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                        Text("Let op: Je trainingsvolume is erg hoog. Neem voldoende rust.")
+                            .font(.subheadline)
+                            .bold()
+                        Spacer()
+                    }
+                    .padding(12)
+                    .background(Color.orange.opacity(0.8))
+                    .foregroundColor(.white)
+                }
+
                 // Lijst met chatberichten
                 ScrollViewReader { proxy in
                     ScrollView {

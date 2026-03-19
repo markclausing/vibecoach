@@ -158,7 +158,7 @@ final class ChatViewModelTests: XCTestCase {
         // Arrange
         let userText = "Wat vind je van mijn vorm?"
         let expectedAIResponse = "Je vorm is fantastisch op basis van je volume!"
-        let testProfile = AthleticProfile(peakDistanceInMeters: 50000, peakDurationInSeconds: 7200, averageWeeklyVolumeInSeconds: 14400, daysSinceLastTraining: 2)
+        let testProfile = AthleticProfile(peakDistanceInMeters: 50000, peakDurationInSeconds: 7200, averageWeeklyVolumeInSeconds: 14400, daysSinceLastTraining: 2, isRecoveryNeeded: false)
 
         viewModel.inputText = userText
         mockModel.responseToReturn = expectedAIResponse
@@ -182,6 +182,30 @@ final class ChatViewModelTests: XCTestCase {
             XCTAssertTrue(desc.contains("50.0 km"), "Payload string mist geparseerde piekprestatie")
             XCTAssertTrue(desc.contains("240 minuten per week"), "Payload string mist wekelijks volume (14400s / 60)")
             XCTAssertTrue(desc.contains(userText), "Payload string mist de daadwerkelijke user vraag")
+            XCTAssertFalse(desc.contains("URGENT: De atleet vertoont tekenen van overtraining"), "Warning mag niet inzitten als isRecoveryNeeded false is")
+        }
+    }
+
+    func testSendMessage_WithRecoveryWarning_InjectsUrgentPrefix() async {
+        // Arrange
+        let userText = "Wat vind je van mijn vorm?"
+        let expectedAIResponse = "Je moet rusten!"
+        let testProfile = AthleticProfile(peakDistanceInMeters: 50000, peakDurationInSeconds: 7200, averageWeeklyVolumeInSeconds: 20000, daysSinceLastTraining: 0, isRecoveryNeeded: true)
+
+        viewModel.inputText = userText
+        mockModel.responseToReturn = expectedAIResponse
+        mockModel.delay = 0.1
+        viewModel.messages.removeAll()
+
+        // Actie
+        viewModel.sendMessage(contextProfile: testProfile)
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        // Assert: Mock model heeft de urgent prefix
+        XCTAssertEqual(mockModel.receivedParts.count, 1)
+        if let firstPart = mockModel.receivedParts.first {
+            let desc = String(describing: firstPart)
+            XCTAssertTrue(desc.contains("URGENT: De atleet vertoont tekenen van overtraining"), "Urgent waarschuwing mist in payload")
         }
     }
 
