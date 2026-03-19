@@ -17,6 +17,7 @@ struct SettingsView: View {
     // UI State variabelen, gehaald uit en geschreven naar Keychain
     @State private var feedbackMessage: String?
     @State private var notificationsEnabled: Bool = false
+    @AppStorage("isHealthKitLinked") private var isHealthKitLinked: Bool = false
 
     // Historische sync state
     @State private var isSyncingHistory: Bool = false
@@ -130,6 +131,7 @@ struct SettingsView: View {
         healthKitManager.requestAuthorization { success, error in
             DispatchQueue.main.async {
                 if success {
+                    self.isHealthKitLinked = true
                     self.feedbackMessage = "Apple Health succesvol gekoppeld."
                 } else {
                     self.feedbackMessage = "Fout bij koppelen Apple Health: \(error?.localizedDescription ?? "Onbekende fout")"
@@ -189,14 +191,29 @@ struct SettingsView: View {
                     header: Text("Apple Health Integratie"),
                     footer: Text("Koppel lokaal met Apple Health voor fysiologische data. Er gaat geen data naar externe servers.").font(.caption)
                 ) {
-                    Button(action: {
-                        koppelAppleHealth()
-                    }) {
-                        HStack {
-                            Image(systemName: "heart.fill")
-                                .foregroundColor(.red)
-                            Text("Koppel Apple Health")
-                                .fontWeight(.bold)
+                    if isHealthKitLinked {
+                        Button(action: {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                                Text("Gekoppeld aan Apple Health")
+                                    .foregroundColor(.primary)
+                            }
+                        }
+                    } else {
+                        Button(action: {
+                            koppelAppleHealth()
+                        }) {
+                            HStack {
+                                Image(systemName: "heart.fill")
+                                    .foregroundColor(.red)
+                                Text("Koppel Apple Health")
+                                    .fontWeight(.bold)
+                            }
                         }
                     }
                 }
