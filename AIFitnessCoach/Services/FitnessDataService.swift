@@ -352,12 +352,16 @@ import Foundation
 /// Bevat specifieke fysiologische en trainingsbelastingsmetrieken.
 struct IntervalsActivity: Codable {
     let id: String
+    let source: String?
+    let note: String?
     let hrRecovery: Double?
     let tss: Double?
     let cardiacDrift: Double?
 
     enum CodingKeys: String, CodingKey {
         case id
+        case source
+        case note = "_note"
         case hrRecovery = "hrrc"
         case tss = "icu_training_load"
         case cardiacDrift = "cardiac_drift"
@@ -417,7 +421,6 @@ class IntervalsApiService {
 
         let activities: [IntervalsActivity]
         do {
-            print(String(data: data, encoding: .utf8) ?? "Geen JSON")
             let decoder = JSONDecoder()
             activities = try decoder.decode([IntervalsActivity].self, from: data)
         } catch {
@@ -427,6 +430,10 @@ class IntervalsApiService {
 
         guard let activity = activities.first else {
             throw FitnessDataError.networkError("Geen activiteiten gevonden op Intervals.icu.")
+        }
+
+        if activity.source == "STRAVA" {
+            print("⚠️ Let op: Intervals.icu data geblokkeerd door Strava API restricties. Gebruik Garmin/Apple Health direct in Intervals voor diepe metrics.")
         }
 
         return activity
