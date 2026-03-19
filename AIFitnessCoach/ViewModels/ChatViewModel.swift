@@ -50,34 +50,44 @@ class ChatViewModel: ObservableObject {
         self.selectedImage = nil
     }
 
-    /// Verstuurt het huidige tekstveld en/of de geselecteerde afbeelding.
-    func sendMessage() {
-        let textToSend = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+    /// Genereert een context-prefix string op basis van het meegegeven atletisch profiel.
+    private func buildContextPrefix(from profile: AthleticProfile?) -> String {
+        guard let p = profile else { return "" }
+        let peakDistanceKm = String(format: "%.1f", p.peakDistanceInMeters / 1000)
+        let peakDurationMin = p.peakDurationInSeconds / 60
+        let weeklyVolumeMin = p.averageWeeklyVolumeInSeconds / 60
 
-        // Als de gebruiker een afbeelding heeft geselecteerd, verkleinen we hem meteen naar een payload-vriendelijk formaat.
+        return "[CONTEXT ATLEET: Heeft een piekprestatie van \(peakDistanceKm) km in \(peakDurationMin) minuten. Traint gemiddeld \(weeklyVolumeMin) minuten per week (gem. laatste 4 weken), en heeft \(p.daysSinceLastTraining) dagen geleden voor het laatst getraind. Neem dit mee in je analyse over herstel en prestatie.]\n\n[VRAAG]: "
+    }
+
+    /// Verstuurt het huidige tekstveld (of de meegegeven tekst) en/of de geselecteerde afbeelding.
+    func sendMessage(_ explicitText: String? = nil, contextProfile: AthleticProfile? = nil) {
+        let textToUse = explicitText ?? inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+
         let imageToSend = selectedImage?.downsample(to: 2048.0)
 
-        guard !textToSend.isEmpty || imageToSend != nil else { return }
+        guard !textToUse.isEmpty || imageToSend != nil else { return }
 
-        // 1. Maak bericht aan van gebruiker (converteer UIImage naar datatypes na de resize)
+        // 1. Maak bericht aan van gebruiker voor de UI (ZONDER de onzichtbare context prefix)
         let imageData = imageToSend?.jpegData(compressionQuality: 0.8)
-        let userMessage = ChatMessage(role: .user, text: textToSend, attachedImageData: imageData)
-
-        // 2. Voeg toe aan UI en reset velden
-        messages.append(userMessage)
+        let uiMessage = ChatMessage(role: .user, text: textToUse, attachedImageData: imageData)
+        messages.append(uiMessage)
 
         isTyping = true
-
-        // 3. Haal AI reactie op
-        fetchAIResponse(for: textToSend, image: imageToSend)
-
         inputText = ""
         clearImage()
+
+        // 2. Bouw de uiteindelijke payload prompt op
+        let contextPrefix = buildContextPrefix(from: contextProfile)
+        let payloadText = textToUse.isEmpty ? contextPrefix : "\(contextPrefix)\(textToUse)"
+
+        // 3. Haal AI reactie op met de verrijkte payload
+        fetchAIResponse(for: payloadText, image: imageToSend)
     }
 
     /// Haalt de laatste Strava activiteit op, formatteert deze als een Nederlandse prompt
     /// en stuurt deze naar de AI-coach voor analyse.
-    func analyzeLatestWorkout() {
+    func analyzeLatestWorkout(contextProfile: AthleticProfile? = nil) {
         guard !isFetchingWorkout else { return }
         isFetchingWorkout = true
 
@@ -98,17 +108,21 @@ class ChatViewModel: ObservableObject {
                 let timeMinutes = activity.moving_time / 60
                 let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!))" : "onbekend"
 
-                // Formatteer de context prompt
-                let prompt = "Hier is de data van mijn laatste training via Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
+                // Formatteer de zichtbare UI prompt
+                let uiPrompt = "Hier is de data van mijn laatste training via Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
 
                 Task { @MainActor in
-                    // Voeg de prompt toe als een gebruikersbericht zodat de chatgeschiedenis klopt
-                    messages.append(ChatMessage(role: .user, text: prompt))
+                    // Voeg de originele prompt toe aan UI
+                    messages.append(ChatMessage(role: .user, text: uiPrompt))
 
                     isTyping = true
                     isFetchingWorkout = false
 
-                    fetchAIResponse(for: prompt, image: nil)
+                    // Bouw de payload inclusief onzichtbare context
+                    let contextPrefix = buildContextPrefix(from: contextProfile)
+                    let payloadText = "\(contextPrefix)\(uiPrompt)"
+
+                    fetchAIResponse(for: payloadText, image: nil)
                 }
 
             } catch let error as FitnessDataError {
@@ -140,7 +154,7 @@ class ChatViewModel: ObservableObject {
 
     /// Haalt een specifieke Strava activiteit op (bijv. vanuit een notificatie),
     /// formatteert deze als een Nederlandse prompt en stuurt deze naar de AI-coach.
-    func analyzeWorkout(withId id: Int64) {
+    func analyzeWorkout(withId id: Int64, contextProfile: AthleticProfile? = nil) {
         guard !isFetchingWorkout else { return }
         isFetchingWorkout = true
 
@@ -153,14 +167,18 @@ class ChatViewModel: ObservableObject {
                 let timeMinutes = activity.moving_time / 60
                 let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!))" : "onbekend"
 
-                // Formatteer de context prompt
-                let prompt = "Ik heb zojuist deze training voltooid op Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
+                // Formatteer de zichtbare UI prompt
+                let uiPrompt = "Ik heb zojuist deze training voltooid op Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
 
                 Task { @MainActor in
-                    messages.append(ChatMessage(role: .user, text: prompt))
+                    messages.append(ChatMessage(role: .user, text: uiPrompt))
                     isTyping = true
                     isFetchingWorkout = false
-                    fetchAIResponse(for: prompt, image: nil)
+
+                    let contextPrefix = buildContextPrefix(from: contextProfile)
+                    let payloadText = "\(contextPrefix)\(uiPrompt)"
+
+                    fetchAIResponse(for: payloadText, image: nil)
                 }
 
             } catch let error as FitnessDataError {
