@@ -154,6 +154,37 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isTyping, "Klaar met laden.")
     }
 
+    func testSendMessage_WithProfileContext_InjectsContextInPayload() async {
+        // Arrange
+        let userText = "Wat vind je van mijn vorm?"
+        let expectedAIResponse = "Je vorm is fantastisch op basis van je volume!"
+        let testProfile = AthleticProfile(peakDistanceInMeters: 50000, peakDurationInSeconds: 7200, averageWeeklyVolumeInSeconds: 14400, daysSinceLastTraining: 2)
+
+        viewModel.inputText = userText
+        mockModel.responseToReturn = expectedAIResponse
+        mockModel.delay = 0.1
+
+        viewModel.messages.removeAll()
+
+        // Actie
+        viewModel.sendMessage(contextProfile: testProfile)
+
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        // Assert: UI bevat alleen de userText, NIET de context prefix
+        XCTAssertEqual(viewModel.messages.first?.text, userText, "UI message mag geen prefix bevatten")
+
+        // Assert: Mock model heeft wél de prefix ontvangen in de parts payload
+        XCTAssertEqual(mockModel.receivedParts.count, 1)
+        if let firstPart = mockModel.receivedParts.first {
+            let desc = String(describing: firstPart)
+            XCTAssertTrue(desc.contains("CONTEXT ATLEET:"), "Payload string naar AI mist de profiel prefix")
+            XCTAssertTrue(desc.contains("50.0 km"), "Payload string mist geparseerde piekprestatie")
+            XCTAssertTrue(desc.contains("240 minuten per week"), "Payload string mist wekelijks volume (14400s / 60)")
+            XCTAssertTrue(desc.contains(userText), "Payload string mist de daadwerkelijke user vraag")
+        }
+    }
+
     func testAnalyzeLatestWorkout_Success() async {
         // Arrange
         let expectedAIResponse = "Goed getraind! Je hartslag was netjes."
