@@ -342,3 +342,76 @@ final class AthleticProfileManagerTests: XCTestCase {
         XCTAssertTrue(profile?.isRecoveryNeeded ?? false, "Should trigger recovery warning for 4 consecutive days of training")
     }
 }
+
+final class IntervalsApiServiceTests: XCTestCase {
+
+    func testFetchActivityDetails_Success() async throws {
+        // Arrange
+        let mockTokenStore = MockTokenStore()
+        try mockTokenStore.saveToken("valid_api_key", forService: "IntervalsToken")
+
+        let mockSession = MockNetworkSession()
+        let jsonResponse = """
+        {
+            "id": "12345",
+            "hr_recovery": 35.0,
+            "tss": 120.5,
+            "cardiac_drift": 4.2
+        }
+        """
+        mockSession.dataToReturn = jsonResponse.data(using: .utf8)
+        mockSession.responseToReturn = HTTPURLResponse(url: URL(string: "https://intervals.icu/api/v1/athlete/i999/activities/12345")!, statusCode: 200, httpVersion: nil, headerFields: nil)
+
+        let service = IntervalsApiService(session: mockSession, tokenStore: mockTokenStore)
+
+        // Act
+        let result = try await service.fetchActivityDetails(athleteId: "i999", activityId: "12345")
+
+        // Assert
+        XCTAssertEqual(result.id, "12345")
+        XCTAssertEqual(result.hrRecovery, 35.0)
+        XCTAssertEqual(result.tss, 120.5)
+        XCTAssertEqual(result.cardiacDrift, 4.2)
+    }
+
+    func testFetchActivityDetails_MissingToken() async throws {
+        // Arrange
+        let mockTokenStore = MockTokenStore()
+        let mockSession = MockNetworkSession()
+        let service = IntervalsApiService(session: mockSession, tokenStore: mockTokenStore)
+
+        // Act & Assert
+        do {
+            _ = try await service.fetchActivityDetails(athleteId: "i999", activityId: "12345")
+            XCTFail("Should have thrown missingToken error")
+        } catch FitnessDataError.missingToken {
+            // Success
+        } catch {
+            XCTFail("Threw unexpected error: \(error)")
+        }
+    }
+
+    func testFetchActivityDetails_AuthFailed() async throws {
+        // Arrange
+        let mockTokenStore = MockTokenStore()
+        try mockTokenStore.saveToken("invalid_api_key", forService: "IntervalsToken")
+
+        let mockSession = MockNetworkSession()
+        mockSession.dataToReturn = Data()
+        mockSession.responseToReturn = HTTPURLResponse(url: URL(string: "https://intervals.icu")!, statusCode: 401, httpVersion: nil, headerFields: nil)
+
+        let service = IntervalsApiService(session: mockSession, tokenStore: mockTokenStore)
+
+        // Act & Assert
+        do {
+            _ = try await service.fetchActivityDetails(athleteId: "i999", activityId: "12345")
+            XCTFail("Should have thrown unauthorized error")
+        } catch FitnessDataError.unauthorized {
+            // Success: also verify token was deleted
+            let token = try? mockTokenStore.getToken(forService: "IntervalsToken")
+            XCTAssertNil(token, "Token should be deleted on 401")
+        } catch {
+            XCTFail("Threw unexpected error: \(error)")
+        }
+    }
+}
