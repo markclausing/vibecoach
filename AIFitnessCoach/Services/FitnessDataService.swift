@@ -415,13 +415,19 @@ class IntervalsApiService {
             throw FitnessDataError.networkError("Server retourneerde status code \(httpResponse.statusCode)")
         }
 
+        let activities: [IntervalsActivity]
         do {
             let decoder = JSONDecoder()
-            let activity = try decoder.decode(IntervalsActivity.self, from: data)
-            return activity
+            activities = try decoder.decode([IntervalsActivity].self, from: data)
         } catch {
             print("IntervalsApiService Decode Error: \(error)")
             throw FitnessDataError.decodingError("Intervals decode failed")
         }
+
+        guard let activity = activities.first else {
+            throw FitnessDataError.networkError("Geen activiteiten gevonden op Intervals.icu.")
+        }
+
+        return activity
     }
 }
