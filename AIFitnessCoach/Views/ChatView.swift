@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import SwiftData
 
 /// De hoofd SwiftUI view die de chat interface toont.
 struct ChatView: View {
@@ -11,6 +12,21 @@ struct ChatView: View {
 
     /// De globale app status om notificatie-tap acties af te vangen.
     @EnvironmentObject var appState: AppNavigationState
+
+    /// SwiftData Context voor het berekenen van het atletisch profiel.
+    @Environment(\.modelContext) private var modelContext
+    @State private var currentProfile: AthleticProfile? = nil
+
+    private let profileManager = AthleticProfileManager()
+
+    /// Werkt het actuele profiel bij vanuit SwiftData.
+    private func refreshProfileContext() {
+        do {
+            self.currentProfile = try profileManager.calculateProfile(context: modelContext)
+        } catch {
+            print("Kon profiel niet laden in ChatView: \(error)")
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -60,7 +76,8 @@ struct ChatView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack {
                         Button(action: {
-                            viewModel.analyzeLatestWorkout()
+                            refreshProfileContext()
+                            viewModel.analyzeLatestWorkout(contextProfile: currentProfile)
                         }) {
                             HStack {
                                 if viewModel.isFetchingWorkout {
@@ -133,7 +150,8 @@ struct ChatView: View {
                         .lineLimit(1...5)
 
                     Button(action: {
-                        viewModel.sendMessage()
+                        refreshProfileContext()
+                        viewModel.sendMessage(contextProfile: currentProfile)
                         selectedItem = nil
                     }) {
                         Image(systemName: "arrow.up.circle.fill")
@@ -157,12 +175,16 @@ struct ChatView: View {
                 if let activityId = newValue {
                     // Start de analyse en clear daarna de target uit de state zodat
                     // hij later opnieuw getriggerd kan worden indien nodig
-                    viewModel.analyzeWorkout(withId: activityId)
+                    refreshProfileContext()
+                    viewModel.analyzeWorkout(withId: activityId, contextProfile: currentProfile)
 
                     Task { @MainActor in
                         appState.targetActivityId = nil
                     }
                 }
+            }
+            .onAppear {
+                refreshProfileContext()
             }
         }
     }
