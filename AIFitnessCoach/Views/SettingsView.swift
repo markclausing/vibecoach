@@ -69,7 +69,6 @@ struct SettingsView: View {
                     var newRecordsCount = 0
 
                     for activity in activities {
-                        // Voorkom duplicaten: check of id al bestaat
                         let currentId = activity.id
                         let fetchDescriptor = FetchDescriptor<ActivityRecord>(predicate: #Predicate { $0.id == currentId })
                         let existing = try? modelContext.fetch(fetchDescriptor)
@@ -247,6 +246,17 @@ struct SettingsView: View {
                                     .foregroundColor(profile.daysSinceLastTraining > 5 ? .red : .green)
                                 Text("Dagen sinds laatste training: \(profile.daysSinceLastTraining)")
                                     .font(.subheadline)
+                            }
+
+                            if profile.isRecoveryNeeded {
+                                HStack {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundColor(.orange)
+                                    Text("Overtrainingsrisico! Rust wordt aanbevolen.")
+                                        .font(.subheadline)
+                                        .bold()
+                                        .foregroundColor(.orange)
+                                }
                             }
                         }
                         .padding(.vertical, 4)
