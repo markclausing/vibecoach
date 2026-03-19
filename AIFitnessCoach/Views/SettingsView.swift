@@ -16,6 +16,7 @@ struct SettingsView: View {
 
     // UI State variabelen, gehaald uit en geschreven naar Keychain
     @State private var intervalsToken: String = ""
+    @AppStorage("intervalsAthleteId") private var intervalsAthleteId: String = ""
 
     @State private var feedbackMessage: String?
     @State private var notificationsEnabled: Bool = false
@@ -132,6 +133,55 @@ struct SettingsView: View {
         }
     }
 
+    // Functie om de API call naar Intervals.icu te testen
+    private func testIntervalsApi() {
+        guard !intervalsToken.isEmpty && !intervalsAthleteId.isEmpty else {
+            feedbackMessage = "Vul zowel Athlete ID als API Key in."
+            return
+        }
+
+        feedbackMessage = "Testen van Intervals API..."
+
+        Task {
+            do {
+                // Haal de meest recente activiteit uit SwiftData
+                let fetchDescriptor = FetchDescriptor<ActivityRecord>(sortBy: [SortDescriptor(\.startDate, order: .reverse)])
+                if let recentActivity = try modelContext.fetch(fetchDescriptor).first {
+
+                    let apiService = IntervalsApiService(tokenStore: tokenStore)
+                    // Bewaar token tijdelijk als deze nog niet was opgeslagen (want gebruiker klikt direct op testknop)
+                    if let _ = try? tokenStore.getToken(forService: "IntervalsToken") {
+                        // All good
+                    } else {
+                        try? tokenStore.saveToken(intervalsToken, forService: "IntervalsToken")
+                    }
+
+                    let activityDetails = try await apiService.fetchActivityDetails(athleteId: intervalsAthleteId, activityId: String(recentActivity.id))
+
+                    print("--- Intervals.icu Test Resultaten ---")
+                    print("Activiteit ID: \(recentActivity.id)")
+                    print("TSS: \(activityDetails.tss ?? 0)")
+                    print("Hartslagherstel: \(activityDetails.hrRecovery ?? 0)")
+                    print("Cardiac Drift: \(activityDetails.cardiacDrift ?? 0)")
+                    print("---------------------------------------")
+
+                    await MainActor.run {
+                        feedbackMessage = "Intervals test geslaagd! Zie Xcode console voor resultaten."
+                    }
+                } else {
+                    await MainActor.run {
+                        feedbackMessage = "Geen activiteiten gevonden in SwiftData om te testen. Synchroniseer eerst je geschiedenis."
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    feedbackMessage = "Intervals test mislukt: \(error.localizedDescription)"
+                    print("Intervals Test Error: \(error)")
+                }
+            }
+        }
+    }
+
     // Opslaan van ingevoerde waarden naar native Keychain
     private func saveTokens() {
         do {
@@ -195,10 +245,24 @@ struct SettingsView: View {
                     header: Text("Intervals.icu Connectie"),
                     footer: Text("API sleutels worden lokaal bewaard.").font(.caption)
                 ) {
+                    TextField("Athlete ID (bijv. i12345)", text: $intervalsAthleteId)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+
                     SecureField("Intervals.icu API Key", text: $intervalsToken)
                         .textContentType(.password)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
+
+                    Button(action: {
+                        testIntervalsApi()
+                    }) {
+                        HStack {
+                            Image(systemName: "bolt.fill")
+                            Text("Test Intervals API")
+                        }
+                    }
+                    .disabled(intervalsToken.isEmpty || intervalsAthleteId.isEmpty)
                 }
 
                 Section(
