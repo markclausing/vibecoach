@@ -346,3 +346,82 @@ class AthleticProfileManager {
         )
     }
 }
+import Foundation
+
+/// Data Transfer Object voor de Intervals.icu API response.
+/// Bevat specifieke fysiologische en trainingsbelastingsmetrieken.
+struct IntervalsActivity: Codable {
+    let id: String
+    let hrRecovery: Double?
+    let tss: Double?
+    let cardiacDrift: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case hrRecovery = "hr_recovery"
+        case tss
+        case cardiacDrift = "cardiac_drift"
+    }
+}
+import Foundation
+
+/// Service voor communicatie met de Intervals.icu API.
+class IntervalsApiService {
+    private let session: NetworkSession
+    private let tokenStore: TokenStore
+
+    init(session: NetworkSession = URLSession.shared, tokenStore: TokenStore = KeychainService.shared) {
+        self.session = session
+        self.tokenStore = tokenStore
+    }
+
+    /// Haalt diepgaande activiteitsdetails (zoals TSS en hartslagherstel) op via de Intervals.icu API.
+    func fetchActivityDetails(athleteId: String, activityId: String) async throws -> IntervalsActivity {
+        // Controleer op API token
+        guard let token = try tokenStore.getToken(forService: "IntervalsToken"), !token.isEmpty else {
+            throw FitnessDataError.missingToken
+        }
+
+        let urlString = "https://intervals.icu/api/v1/athlete/\(athleteId)/activities/\(activityId)"
+        guard let url = URL(string: urlString) else {
+            throw FitnessDataError.networkError("Invalid URL")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+
+        // Basic Authentication (Username is "API_KEY", Password is the token)
+        let loginString = "API_KEY:\(token)"
+        guard let loginData = loginString.data(using: .utf8) else {
+            throw FitnessDataError.networkError("Kon authenticatiedata niet coderen")
+        }
+        let base64LoginString = loginData.base64EncodedString()
+        request.setValue("Basic \(base64LoginString)", forHTTPHeaderField: "Authorization")
+
+        // Fetch data
+        let (data, response) = try await session.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw FitnessDataError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+            // Token ongeldig of geen toegang
+            try tokenStore.deleteToken(forService: "IntervalsToken")
+            throw FitnessDataError.unauthorized
+        } else if httpResponse.statusCode == 404 {
+             throw FitnessDataError.networkError("Activiteit niet gevonden op Intervals.icu.")
+        } else if !(200...299).contains(httpResponse.statusCode) {
+            throw FitnessDataError.networkError("Server retourneerde status code \(httpResponse.statusCode)")
+        }
+
+        do {
+            let decoder = JSONDecoder()
+            let activity = try decoder.decode(IntervalsActivity.self, from: data)
+            return activity
+        } catch {
+            print("IntervalsApiService Decode Error: \(error)")
+            throw FitnessDataError.decodingError("Intervals decode failed")
+        }
+    }
+}
