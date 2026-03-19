@@ -355,6 +355,7 @@ final class IntervalsApiServiceTests: XCTestCase {
         [
             {
                 "id": "12345",
+                "source": "GARMIN",
                 "hrrc": 35.0,
                 "icu_training_load": 120.5,
                 "cardiac_drift": 4.2
@@ -374,6 +375,39 @@ final class IntervalsApiServiceTests: XCTestCase {
         XCTAssertEqual(result.hrRecovery, 35.0)
         XCTAssertEqual(result.tss, 120.5)
         XCTAssertEqual(result.cardiacDrift, 4.2)
+    }
+
+    func testFetchActivityDetails_StravaSource() async throws {
+        // Arrange
+        let mockTokenStore = MockTokenStore()
+        try mockTokenStore.saveToken("valid_api_key", forService: "IntervalsToken")
+
+        let mockSession = MockNetworkSession()
+        let jsonResponse = """
+        [
+            {
+                "id": "17767954747",
+                "icu_athlete_id": "i262111",
+                "source": "STRAVA",
+                "_note": "STRAVA activities are not available via the API"
+            }
+        ]
+        """
+        mockSession.dataToReturn = jsonResponse.data(using: .utf8)
+        mockSession.responseToReturn = HTTPURLResponse(url: URL(string: "https://intervals.icu/api/v1/athlete/i999/activities/17767954747")!, statusCode: 200, httpVersion: nil, headerFields: nil)
+
+        let service = IntervalsApiService(session: mockSession, tokenStore: mockTokenStore)
+
+        // Act
+        let result = try await service.fetchActivityDetails(athleteId: "i999", activityId: "17767954747")
+
+        // Assert
+        XCTAssertEqual(result.id, "17767954747")
+        XCTAssertEqual(result.source, "STRAVA")
+        XCTAssertEqual(result.note, "STRAVA activities are not available via the API")
+        XCTAssertNil(result.hrRecovery)
+        XCTAssertNil(result.tss)
+        XCTAssertNil(result.cardiacDrift)
     }
 
     func testFetchActivityDetails_MissingToken() async throws {
