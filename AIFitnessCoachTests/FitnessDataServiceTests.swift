@@ -411,9 +411,9 @@ final class PhysiologicalCalculatorTests: XCTestCase {
         let tss = calculator.calculateTSS(durationInSeconds: 3600, averageHeartRate: 200, maxHeartRate: 190, restingHeartRate: 60)
         XCTAssertTrue(tss > 0, "TSS should be a valid positive number even if average HR slightly exceeds Max HR")
 
-        // Let's verify the math is consistent: Delta HR = 140 / 130 = 1.0769
-        // TRIMP = 60 * 1.0769 * 0.64 * e^(1.92 * 1.0769) = ~327.3
-        XCTAssertEqual(tss, 327.28, accuracy: 0.1, "TSS calculation for average HR > max HR is incorrect")
+        // Let's verify the math is consistent: Delta HR = 140 / 130 = 1.076923077
+        // TRIMP = 60 * 1.076923077 * 0.64 * e^(1.92 * 1.076923077) = ~326.97
+        XCTAssertEqual(tss, 326.97, accuracy: 0.1, "TSS calculation for average HR > max HR is incorrect")
     }
 
     func testCalculateTSS_AverageHrEqualsRestingHr() {
