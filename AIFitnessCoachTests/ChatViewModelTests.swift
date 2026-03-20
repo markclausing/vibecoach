@@ -295,4 +295,43 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
     }
+
+    func testAnalyzeLatestWorkout_FallbackToStrava() async {
+        // We simuleren dat HealthKit nil teruggeeft, dus we vallen terug op Strava.
+        // Omdat we HealthKitManager niet direct kunnen mocken in de huidige opzet zonder een protocol
+        // (we gebruiken direct de class), zal HealthKit de `HKSampleQuery` falen in een test environment
+        // omdat de permissies niet gevraagd zijn en de test target geen entitlements heeft. Dit gooit een fout
+        // en valt keurig terug in de catch block naar Strava.
+
+        // Arrange
+        let expectedAIResponse = "Strava Fallback gelukt!"
+        mockModel.responseToReturn = expectedAIResponse
+        mockModel.delay = 0.1
+
+        try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
+        let activityJson = "[{\"id\":123,\"name\":\"Morning Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\",\"start_date\":\"2023-10-12T10:00:00Z\"}]"
+        mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
+        let response = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        mockNetworkSession.responseToReturn = response
+
+        viewModel.messages.removeAll()
+
+        // Actie
+        viewModel.analyzeLatestWorkout()
+
+        var attempts = 0
+        while viewModel.messages.count < 2 && attempts < 50 {
+            try? await Task.sleep(nanoseconds: 100_000_000)
+            attempts += 1
+        }
+
+        // Assert
+        XCTAssertEqual(viewModel.messages.count, 2)
+        XCTAssertEqual(viewModel.messages.first?.role, .user)
+        XCTAssertTrue(viewModel.messages.first!.text.contains("via Strava")) // Bevestigt dat we Strava prompt gebruiken
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Morning Ride"))
+
+        XCTAssertEqual(viewModel.messages.last?.role, .ai)
+        XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
+    }
 }
