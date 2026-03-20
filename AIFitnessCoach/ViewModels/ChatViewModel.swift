@@ -25,13 +25,23 @@ class ChatViewModel: ObservableObject {
     /// Service voor externe API calls (Sprint 4.2).
     private let fitnessDataService: FitnessDataService
 
+    /// Service voor HealthKit (Sprint 7.2).
+    private let healthKitManager: HealthKitManager
+    private let fitnessCalculator: FitnessCalculatorProtocol
+
     /// Initialiseert de `ChatViewModel`.
     ///
     /// - Parameter aiModel: De AI-dienst die gebruikt moet worden.
     ///             Wanneer niets wordt meegegeven, wordt standaard de
     ///             `RealGenerativeModel` (die met Google API praat) gebruikt.
-    init(aiModel: GenerativeModelProtocol? = nil, fitnessDataService: FitnessDataService = FitnessDataService()) {
+    init(aiModel: GenerativeModelProtocol? = nil,
+         fitnessDataService: FitnessDataService = FitnessDataService(),
+         healthKitManager: HealthKitManager = HealthKitManager(),
+         fitnessCalculator: FitnessCalculatorProtocol = FitnessCalculator()) {
         self.fitnessDataService = fitnessDataService
+        self.healthKitManager = healthKitManager
+        self.fitnessCalculator = fitnessCalculator
+
         if let providedModel = aiModel {
             self.model = providedModel
         } else {
@@ -93,19 +103,65 @@ class ChatViewModel: ObservableObject {
         fetchAIResponse(for: payloadText, image: imageToSend)
     }
 
-    /// Haalt de laatste Strava activiteit op, formatteert deze als een Nederlandse prompt
-    /// en stuurt deze naar de AI-coach voor analyse.
+    /// Genereert een tekstprompt voor de Gemini AI op basis van de fysiologische data uit HealthKit.
+    private func generateHealthKitPrompt(for workout: WorkoutDetails, tss: Int) -> String {
+        let durationInMinutes = workout.duration / 60.0
+        let hr = Int(workout.averageHeartRate)
+        return "Analyseer mijn laatste training. Duur: \(String(format: "%.1f", durationInMinutes)) min, Gemiddelde hartslag: \(hr) bpm, Berekende Training Stress Score (TSS): \(tss)."
+    }
+
+    /// Haalt de laatste activiteit op via HealthKit (of valt terug op Strava),
+    /// berekent de fysiologische data, en stuurt de prompt naar de AI.
     func analyzeLatestWorkout(contextProfile: AthleticProfile? = nil) {
         guard !isFetchingWorkout else { return }
         isFetchingWorkout = true
 
         Task {
             do {
+                // 1. Probeer eerst HealthKit (Sprint 7.3)
+                if let workout = try await healthKitManager.fetchLatestWorkoutDetails() {
+                    let durationInMinutes = workout.duration / 60.0
+
+                    // Bereken TSS
+                    let calculatedTSS = fitnessCalculator.calculateTSS(
+                        durationInSeconds: workout.duration,
+                        averageHeartRate: workout.averageHeartRate,
+                        maxHeartRate: workout.maxHeartRate,
+                        restingHeartRate: workout.restingHeartRate
+                    )
+
+                    let tssInt = Int(calculatedTSS)
+
+                    // Print de gewenste console output
+                    print("🍏 HealthKit Workout Gevonden: \(String(format: "%.1f", durationInMinutes)) min, Gem HR: \(workout.averageHeartRate), Berekende TSS: \(calculatedTSS)")
+
+                    let uiPrompt = generateHealthKitPrompt(for: workout, tss: tssInt)
+
+                    await MainActor.run {
+                        messages.append(ChatMessage(role: .user, text: uiPrompt))
+                        isTyping = true
+                        isFetchingWorkout = false
+
+                        let contextPrefix = buildContextPrefix(from: contextProfile)
+                        let payloadText = "\(contextPrefix)\(uiPrompt)"
+                        fetchAIResponse(for: payloadText, image: nil)
+                    }
+                    return
+                }
+
+                print("⚠️ Geen of lege HealthKit workout gevonden, terugvallen op Strava.")
+
+            } catch {
+                print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
+            }
+
+            // 2. Fallback: Gebruik Strava API (Oude logica)
+            do {
                 let activityData = try await fitnessDataService.fetchLatestActivity()
 
                 guard let activity = activityData else {
-                    Task { @MainActor in
-                        messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden op je Strava account."))
+                    await MainActor.run {
+                        messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account."))
                         isFetchingWorkout = false
                     }
                     return
@@ -119,7 +175,7 @@ class ChatViewModel: ObservableObject {
                 // Formatteer de zichtbare UI prompt
                 let uiPrompt = "Hier is de data van mijn laatste training via Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
 
-                Task { @MainActor in
+                await MainActor.run {
                     // Voeg de originele prompt toe aan UI
                     messages.append(ChatMessage(role: .user, text: uiPrompt))
 
@@ -134,7 +190,7 @@ class ChatViewModel: ObservableObject {
                 }
 
             } catch let error as FitnessDataError {
-                var errorMsg = "Fout bij ophalen van Strava data: "
+                var errorMsg = "Fout bij ophalen van data: "
                 switch error {
                 case .missingToken:
                     errorMsg += "Je bent niet ingelogd op Strava. Ga naar instellingen om te koppelen."
@@ -147,13 +203,13 @@ class ChatViewModel: ObservableObject {
                 case .invalidResponse:
                     errorMsg += "Ongeldig antwoord van de server."
                 }
-                Task { @MainActor in
+                await MainActor.run {
                     messages.append(ChatMessage(role: .ai, text: errorMsg))
                     isFetchingWorkout = false
                 }
             } catch {
-                Task { @MainActor in
-                    messages.append(ChatMessage(role: .ai, text: "Er is een onbekende fout opgetreden bij het communiceren met Strava."))
+                await MainActor.run {
+                    messages.append(ChatMessage(role: .ai, text: "Er is een onbekende fout opgetreden."))
                     isFetchingWorkout = false
                 }
             }
