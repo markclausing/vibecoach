@@ -481,7 +481,7 @@ final class HealthKitManager: @unchecked Sendable {
     }
 }
 
-protocol FitnessCalculatorProtocol {
+protocol PhysiologicalCalculatorProtocol {
     /// Berekent de Training Stress Score (TRIMP methode) gebaseerd op Banister.
     /// - Parameters:
     ///   - durationInSeconds: Duur van de activiteit in seconden.
@@ -497,7 +497,7 @@ protocol FitnessCalculatorProtocol {
     func calculateCardiacDrift(samples: [HeartRateSample]) -> Double?
 }
 
-class FitnessCalculator: FitnessCalculatorProtocol {
+class PhysiologicalCalculator: PhysiologicalCalculatorProtocol {
 
     func calculateTSS(durationInSeconds: Double, averageHeartRate: Double, maxHeartRate: Double, restingHeartRate: Double) -> Double {
         // Voorkom delen door nul of negatieve waarden indien parameters onjuist zijn ingevoerd
