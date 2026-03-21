@@ -179,6 +179,72 @@ actor FitnessDataService {
     /// Haalt historische activiteiten op via de Strava API, met ondersteuning voor paginatie.
     /// Dit wordt gebruikt voor het berekenen van het langetermijn atletisch profiel.
     /// - Parameter monthsBack: Hoeveel maanden we terug willen kijken (bijv. 6).
+    /// - Returns: Een lijst van `StravaActivity` objecten voor de afgelopen dagen.
+    /// - Throws: `FitnessDataError` als de auth of het netwerk faalt.
+    func fetchRecentActivities(days: Int) async throws -> [StravaActivity] {
+        try await refreshTokenIfNeeded()
+
+        guard let stravaToken = try tokenStore.getToken(forService: "StravaToken"), !stravaToken.isEmpty else {
+            throw FitnessDataError.missingToken
+        }
+
+        let now = Date()
+        let beforeTime = Int(now.timeIntervalSince1970)
+
+        let calendar = Calendar.current
+        guard let pastDate = calendar.date(byAdding: .day, value: -days, to: now) else {
+            throw FitnessDataError.networkError("Fout bij het berekenen van startdatum")
+        }
+        let afterTime = Int(pastDate.timeIntervalSince1970)
+
+        var allActivities: [StravaActivity] = []
+        var page = 1
+        let perPage = 200
+
+        let decoder = JSONDecoder()
+
+        while true {
+            guard let url = URL(string: "https://www.strava.com/api/v3/athlete/activities?before=\(beforeTime)&after=\(afterTime)&page=\(page)&per_page=\(perPage)") else {
+                throw FitnessDataError.networkError("Ongeldige URL voor history fetch")
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.addValue("Bearer \(stravaToken)", forHTTPHeaderField: "Authorization")
+
+            let (data, response): (Data, URLResponse)
+            do {
+                (data, response) = try await session.data(for: request)
+            } catch {
+                throw FitnessDataError.networkError(error.localizedDescription)
+            }
+
+            guard let httpResp = response as? HTTPURLResponse else {
+                throw FitnessDataError.invalidResponse
+            }
+
+            if httpResp.statusCode == 401 {
+                throw FitnessDataError.unauthorized
+            }
+            guard httpResp.statusCode == 200 else {
+                throw FitnessDataError.invalidResponse
+            }
+
+            do {
+                let batch = try decoder.decode([StravaActivity].self, from: data)
+                if batch.isEmpty {
+                    break
+                }
+                allActivities.append(contentsOf: batch)
+                page += 1
+            } catch {
+                throw FitnessDataError.decodingError(error.localizedDescription)
+            }
+        }
+
+        return allActivities
+    }
+
     /// - Returns: Een lijst van `StravaActivity` objecten.
     /// - Throws: `FitnessDataError` als de auth of het netwerk faalt.
     func fetchHistoricalActivities(monthsBack: Int) async throws -> [StravaActivity] {
@@ -416,6 +482,8 @@ final class HealthKitManager: @unchecked Sendable {
                         let restingHR = try await self.fetchLatestRestingHeartRate(quantityType: restingHeartRateType)
 
                         let details = WorkoutDetails(
+                            name: "HealthKit Training",
+                            startDate: workout.startDate,
                             duration: workout.duration,
                             averageHeartRate: avgHR,
                             maxHeartRate: maxHR,
@@ -423,6 +491,70 @@ final class HealthKitManager: @unchecked Sendable {
                             heartRateSamples: heartRateData
                         )
                         continuation.resume(returning: details)
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// Haalt workouts op van de afgelopen specifieke hoeveelheid dagen
+    func fetchRecentWorkouts(days: Int) async throws -> [WorkoutDetails] {
+        let workoutType = HKObjectType.workoutType()
+        let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)!
+        let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
+
+        let now = Date()
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: now)!
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictEndDate)
+
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: workoutType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, error in
+                guard let self = self else {
+                    continuation.resume(throwing: FitnessDataError.networkError("Manager deallocated"))
+                    return
+                }
+
+                if let error = error {
+                    continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen HealthKit workouts: \(error.localizedDescription)"))
+                    return
+                }
+
+                guard let workoutSamples = samples as? [HKWorkout] else {
+                    continuation.resume(returning: [])
+                    return
+                }
+
+                Task {
+                    do {
+                        var recentWorkouts: [WorkoutDetails] = []
+
+                        let restingHR = try await self.fetchLatestRestingHeartRate(quantityType: restingHeartRateType)
+
+                        for workout in workoutSamples {
+                            let hrSamples = try await self.fetchHeartRateSamples(for: workout, quantityType: heartRateType)
+                            let heartRateData = hrSamples.map { HeartRateSample(timestamp: $0.startDate, bpm: $0.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))) }
+
+                            let avgHR = heartRateData.isEmpty ? 0 : heartRateData.reduce(0) { $0 + $1.bpm } / Double(heartRateData.count)
+                            let maxHR = heartRateData.max(by: { $0.bpm < $1.bpm })?.bpm ?? 0
+
+                            let details = WorkoutDetails(
+                                name: "HealthKit Training",
+                                startDate: workout.startDate,
+                                duration: workout.duration,
+                                averageHeartRate: avgHR,
+                                maxHeartRate: maxHR,
+                                restingHeartRate: restingHR,
+                                heartRateSamples: heartRateData
+                            )
+                            recentWorkouts.append(details)
+                        }
+
+                        continuation.resume(returning: recentWorkouts)
                     } catch {
                         continuation.resume(throwing: error)
                     }
