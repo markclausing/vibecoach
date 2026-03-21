@@ -29,6 +29,9 @@ class ChatViewModel: ObservableObject {
     private let healthKitManager: HealthKitManager
     private let fitnessCalculator: PhysiologicalCalculatorProtocol
 
+    // Lees de voorkeur van de gebruiker m.b.t. primaire databron (Sprint 7.4)
+    @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
+
     /// Initialiseert de `ChatViewModel`.
     ///
     /// - Parameter aiModel: De AI-dienst die gebruikt moet worden.
@@ -120,108 +123,148 @@ class ChatViewModel: ObservableObject {
         return "Analyseer mijn laatste training. Duur: \(String(format: "%.1f", durationInMinutes)) min, Gemiddelde hartslag: \(hr) bpm, Berekende TRIMP (Training Impulse): \(trimp)."
     }
 
-    /// Haalt de laatste activiteit op via HealthKit (of valt terug op Strava),
-    /// berekent de fysiologische data, en stuurt de prompt naar de AI.
+    /// Haalt de laatste activiteit op via de geselecteerde bron.
+    /// Valt terug op de andere bron bij gebrek aan data of permissies.
     func analyzeLatestWorkout(contextProfile: AthleticProfile? = nil) {
         guard !isFetchingWorkout else { return }
         isFetchingWorkout = true
 
         Task {
-            do {
-                // 1. Probeer eerst HealthKit (Sprint 7.3)
-                if let workout = try await healthKitManager.fetchLatestWorkoutDetails() {
-                    let durationInMinutes = workout.duration / 60.0
+            // SPRINT 7.4 - Check geselecteerde databron
+            if selectedDataSource == .healthKit {
+                do {
+                    if let workout = try await healthKitManager.fetchLatestWorkoutDetails() {
+                        let durationInMinutes = workout.duration / 60.0
+                        let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: workout.averageHeartRate, maxHeartRate: workout.maxHeartRate, restingHeartRate: workout.restingHeartRate)
+                        let trimpInt = Int(calculatedTSS)
 
-                    // Bereken TSS
-                    let calculatedTSS = fitnessCalculator.calculateTSS(
-                        durationInSeconds: workout.duration,
-                        averageHeartRate: workout.averageHeartRate,
-                        maxHeartRate: workout.maxHeartRate,
-                        restingHeartRate: workout.restingHeartRate
-                    )
+                        print("🍏 HealthKit Workout Gevonden: \(String(format: "%.1f", durationInMinutes)) min, Gem HR: \(workout.averageHeartRate), Berekende TRIMP: \(calculatedTSS)")
 
-                    let trimpInt = Int(calculatedTSS)
-
-                    // Print de gewenste console output
-                    print("🍏 HealthKit Workout Gevonden: \(String(format: "%.1f", durationInMinutes)) min, Gem HR: \(workout.averageHeartRate), Berekende TRIMP: \(calculatedTSS)")
-
-                    let uiPrompt = generateHealthKitPrompt(for: workout, trimp: trimpInt)
-
-                    await MainActor.run {
-                        messages.append(ChatMessage(role: .user, text: uiPrompt))
-                        isTyping = true
-                        isFetchingWorkout = false
-
-                        let contextPrefix = buildContextPrefix(from: contextProfile)
-                        let payloadText = "\(contextPrefix)\(uiPrompt)"
-                        fetchAIResponse(for: payloadText, image: nil)
+                        let uiPrompt = generateHealthKitPrompt(for: workout, trimp: trimpInt)
+                        await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile)
+                        return
                     }
-                    return
+                    print("⚠️ Geen of lege HealthKit workout gevonden, terugvallen op Strava.")
+                } catch {
+                    print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
                 }
 
-                print("⚠️ Geen of lege HealthKit workout gevonden, terugvallen op Strava.")
+                // Fallback naar Strava
+                await fetchStravaWorkout(contextProfile: contextProfile)
 
-            } catch {
-                print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
+            } else {
+                // Strava geselecteerd
+                await fetchStravaWorkout(contextProfile: contextProfile)
+            }
+        }
+    }
+
+    /// Hulpfunctie voor de AI prompt injectie.
+    private func sendPromptToAI(uiPrompt: String, contextProfile: AthleticProfile?) async {
+        await MainActor.run {
+            messages.append(ChatMessage(role: .user, text: uiPrompt))
+            isTyping = true
+            isFetchingWorkout = false
+
+            let contextPrefix = buildContextPrefix(from: contextProfile)
+            let payloadText = "\(contextPrefix)\(uiPrompt)"
+            fetchAIResponse(for: payloadText, image: nil)
+        }
+    }
+
+    /// Hulpfunctie voor het ophalen via HealthKit, met optionele fallback.
+    private func fetchHealthKitWorkout(contextProfile: AthleticProfile?, isFallback: Bool = false) async {
+        do {
+            if let workout = try await healthKitManager.fetchLatestWorkoutDetails() {
+                let durationInMinutes = workout.duration / 60.0
+                let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: workout.averageHeartRate, maxHeartRate: workout.maxHeartRate, restingHeartRate: workout.restingHeartRate)
+                let trimpInt = Int(calculatedTSS)
+
+                print("🍏 HealthKit Workout Gevonden: \(String(format: "%.1f", durationInMinutes)) min, Gem HR: \(workout.averageHeartRate), Berekende TRIMP: \(calculatedTSS)")
+
+                let uiPrompt = generateHealthKitPrompt(for: workout, trimp: trimpInt)
+                await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile)
+                return
             }
 
-            // 2. Fallback: Gebruik Strava API (Oude logica)
-            do {
-                let activityData = try await fitnessDataService.fetchLatestActivity()
+            if !isFallback {
+                print("⚠️ Geen of lege HealthKit workout gevonden, terugvallen op Strava.")
+                await fetchStravaWorkout(contextProfile: contextProfile, isFallback: true)
+            } else {
+                await MainActor.run {
+                    messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account."))
+                    isFetchingWorkout = false
+                }
+            }
+        } catch {
+            if !isFallback {
+                print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
+                await fetchStravaWorkout(contextProfile: contextProfile, isFallback: true)
+            } else {
+                await MainActor.run {
+                    messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden. HealthKit fout: \(error.localizedDescription)"))
+                    isFetchingWorkout = false
+                }
+            }
+        }
+    }
 
-                guard let activity = activityData else {
-                    await MainActor.run {
-                        messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account."))
-                        isFetchingWorkout = false
-                    }
+    /// Hulpfunctie voor het ophalen via Strava, inclusief fallback naar HealthKit.
+    private func fetchStravaWorkout(contextProfile: AthleticProfile?, isFallback: Bool = false) async {
+        do {
+            let activityData = try await fitnessDataService.fetchLatestActivity()
+
+            guard let activity = activityData else {
+                if !isFallback && selectedDataSource == .strava {
+                    // Reverse Fallback: Als Strava faalt of leeg is en Strava was de bron, probeer HealthKit
+                    print("⚠️ Geen recente Strava activiteit gevonden. Reverse fallback naar HealthKit.")
+                    await fetchHealthKitWorkout(contextProfile: contextProfile, isFallback: true)
                     return
                 }
 
-                // Converteer eenheden
-                let distanceKm = String(format: "%.1f", activity.distance / 1000.0)
-                let timeMinutes = activity.moving_time / 60
-                let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!))" : "onbekend"
-
-                // Formatteer de zichtbare UI prompt
-                let uiPrompt = "Hier is de data van mijn laatste training via Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
-
                 await MainActor.run {
-                    // Voeg de originele prompt toe aan UI
-                    messages.append(ChatMessage(role: .user, text: uiPrompt))
-
-                    isTyping = true
-                    isFetchingWorkout = false
-
-                    // Bouw de payload inclusief onzichtbare context
-                    let contextPrefix = buildContextPrefix(from: contextProfile)
-                    let payloadText = "\(contextPrefix)\(uiPrompt)"
-
-                    fetchAIResponse(for: payloadText, image: nil)
-                }
-
-            } catch let error as FitnessDataError {
-                var errorMsg = "Fout bij ophalen van data: "
-                switch error {
-                case .missingToken:
-                    errorMsg += "Je bent niet ingelogd op Strava. Ga naar instellingen om te koppelen."
-                case .unauthorized:
-                    errorMsg += "Je Strava sessie is verlopen. Koppel opnieuw in de instellingen."
-                case .networkError(let desc):
-                    errorMsg += "Netwerkfout (\(desc))."
-                case .decodingError(let desc):
-                    errorMsg += "Data onleesbaar (\(desc))."
-                case .invalidResponse:
-                    errorMsg += "Ongeldig antwoord van de server."
-                }
-                await MainActor.run {
-                    messages.append(ChatMessage(role: .ai, text: errorMsg))
+                    messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account."))
                     isFetchingWorkout = false
                 }
-            } catch {
-                await MainActor.run {
-                    messages.append(ChatMessage(role: .ai, text: "Er is een onbekende fout opgetreden."))
-                    isFetchingWorkout = false
-                }
+                return
+            }
+
+            let distanceKm = String(format: "%.1f", activity.distance / 1000.0)
+            let timeMinutes = activity.moving_time / 60
+            let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!))" : "onbekend"
+
+            let uiPrompt = "Hier is de data van mijn laatste training via Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
+
+            await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile)
+
+        } catch let error as FitnessDataError {
+            if !isFallback && selectedDataSource == .strava {
+                print("⚠️ Strava API fout (\(error)). Reverse fallback naar HealthKit.")
+                await fetchHealthKitWorkout(contextProfile: contextProfile, isFallback: true)
+                return
+            }
+
+            var errorMsg = "Fout bij ophalen van data: "
+            switch error {
+            case .missingToken: errorMsg += "Je bent niet ingelogd op Strava. Ga naar instellingen om te koppelen."
+            case .unauthorized: errorMsg += "Je Strava sessie is verlopen. Koppel opnieuw in de instellingen."
+            case .networkError(let desc): errorMsg += "Netwerkfout (\(desc))."
+            case .decodingError(let desc): errorMsg += "Data onleesbaar (\(desc))."
+            case .invalidResponse: errorMsg += "Ongeldig antwoord van de server."
+            }
+            await MainActor.run {
+                messages.append(ChatMessage(role: .ai, text: errorMsg))
+                isFetchingWorkout = false
+            }
+        } catch {
+            if !isFallback && selectedDataSource == .strava {
+                await fetchHealthKitWorkout(contextProfile: contextProfile, isFallback: true)
+                return
+            }
+
+            await MainActor.run {
+                messages.append(ChatMessage(role: .ai, text: "Er is een onbekende fout opgetreden."))
+                isFetchingWorkout = false
             }
         }
     }

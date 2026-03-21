@@ -522,3 +522,150 @@ class PhysiologicalCalculator: PhysiologicalCalculatorProtocol {
         return nil
     }
 }
+
+import SwiftData
+
+/// SPRINT 7.4 - Nieuwe service voor het asynchroon synchroniseren van historische workouts direct uit Apple HealthKit.
+actor HealthKitSyncService {
+    private let healthKitManager: HealthKitManager
+    private let physiologicalCalculator: PhysiologicalCalculatorProtocol
+
+    init(healthKitManager: HealthKitManager = HealthKitManager(),
+         physiologicalCalculator: PhysiologicalCalculatorProtocol = PhysiologicalCalculator()) {
+        self.healthKitManager = healthKitManager
+        self.physiologicalCalculator = physiologicalCalculator
+    }
+
+    /// Haalt 1 jaar (365 dagen) aan historische workouts op uit HealthKit, berekent lokaal de TRIMP,
+    /// en bewaart deze als `ActivityRecord` in de SwiftData context.
+    /// - Parameter context: De context waarin de gesynchroniseerde data opgeslagen moet worden.
+    @MainActor
+    func syncHistoricalWorkouts(to context: ModelContext) async throws {
+        let workoutType = HKObjectType.workoutType()
+        let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)!
+        let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
+
+        let now = Date()
+        // Zoek 365 dagen terug
+        guard let oneYearAgo = Calendar.current.date(byAdding: .day, value: -365, to: now) else {
+            throw FitnessDataError.networkError("Kan datum voor historie niet berekenen.")
+        }
+
+        // We filteren niet op type; alle workouts tussen 1 jaar geleden en nu worden opgehaald
+        let predicate = HKQuery.predicateForSamples(withStart: oneYearAgo, end: now, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        // Gebruik withCheckedThrowingContinuation om de asynchrone HealthKit query veilig te overbruggen
+        let workouts: [HKWorkout] = try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: workoutType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen HealthKit historie: \(error.localizedDescription)"))
+                    return
+                }
+
+                let results = (samples as? [HKWorkout]) ?? []
+                continuation.resume(returning: results)
+            }
+            healthKitManager.healthStore.execute(query)
+        }
+
+        // Loop asynchroon door alle gevonden workouts om de hartslag (gemiddeld, max) en rusthartslag op te halen
+        for workout in workouts {
+            // Uniek ID gebaseerd op de HealthKit UUID
+            let workoutId = workout.uuid.uuidString
+
+            // Duplicaten voorkomen: Check of dit ID al bestaat in SwiftData
+            let descriptor = FetchDescriptor<ActivityRecord>(predicate: #Predicate { $0.id == workoutId })
+            if let existing = try? context.fetch(descriptor), !existing.isEmpty {
+                // Sla over als hij al gesynchroniseerd is
+                continue
+            }
+
+            var avgHR: Double? = nil
+            var maxHR: Double = 0
+            var restHR: Double = 60 // Standaardwaarde als fallback
+
+            do {
+                // Haal de ruwe samples op voor deze workout (hergebruik van de functie uit HealthKitManager is hier niet direct beschikbaar via public scope, we doen de queries expliciet of we voegen een helper toe. Aangezien we de manager al hebben, kunnen we hem daar in theorie public maken of we herschrijven de call kort).
+                // Om geen private methodes van de manager aan te roepen, gebruiken we een custom fetch
+                let hrSamples = try await fetchHeartRateSamples(for: workout, quantityType: heartRateType)
+                let heartRateData = hrSamples.map { $0.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute())) }
+
+                if !heartRateData.isEmpty {
+                    avgHR = heartRateData.reduce(0, +) / Double(heartRateData.count)
+                    maxHR = heartRateData.max() ?? 0
+                }
+
+                // Rusthartslag ophalen op de dag van de workout (vereenvoudigde benadering)
+                restHR = try await fetchRestingHeartRate(near: workout.startDate, quantityType: restingHeartRateType)
+            } catch {
+                print("Kon geen HR data ophalen voor workout op \(workout.startDate). Fout: \(error)")
+            }
+
+            // Bereken TRIMP (of gebruik nil als er geen hartslag is gemeten)
+            let trimp = (avgHR != nil) ? physiologicalCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: avgHR!, maxHeartRate: maxHR, restingHeartRate: restHR) : nil
+
+            // Map de HealthKit Workout naar onze ActivityRecord (SwiftData Model)
+            // type wordt als string opgeslagen (we gebruiken de naam van het HKWorkoutActivityType via een simpele string mapping voor de UI)
+            let recordName = "HealthKit \(workout.workoutActivityType.rawValue)"
+
+            let record = ActivityRecord(
+                id: workoutId,
+                name: recordName,
+                distance: workout.totalDistance?.doubleValue(for: .meter()) ?? 0.0,
+                movingTime: Int(workout.duration),
+                averageHeartrate: avgHR,
+                type: "HealthKit",
+                startDate: workout.startDate,
+                trimp: trimp
+            )
+
+            context.insert(record)
+        }
+
+        try context.save()
+    }
+
+    // Hulpfunctie voor ruwe samples binnen dit actor domein
+    private func fetchHeartRateSamples(for workout: HKWorkout, quantityType: HKQuantityType) async throws -> [HKQuantitySample] {
+        let predicate = HKQuery.predicateForSamples(withStart: workout.startDate, end: workout.endDate, options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: quantityType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                continuation.resume(returning: (samples as? [HKQuantitySample]) ?? [])
+            }
+            healthKitManager.healthStore.execute(query)
+        }
+    }
+
+    // Hulpfunctie voor rusthartslag
+    private func fetchRestingHeartRate(near date: Date, quantityType: HKQuantityType) async throws -> Double {
+        // Haal de RHR op in een venster van 30 dagen voorafgaand aan de activiteit
+        guard let pastDate = Calendar.current.date(byAdding: .month, value: -1, to: date) else { return 60.0 }
+        let predicate = HKQuery.predicateForSamples(withStart: pastDate, end: date, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: quantityType, predicate: predicate, limit: 1, sortDescriptors: [sortDescriptor]) { _, samples, error in
+                if let _ = error {
+                    continuation.resume(returning: 60.0) // Fallback on error
+                    return
+                }
+
+                guard let latestSample = samples?.first as? HKQuantitySample else {
+                    continuation.resume(returning: 60.0) // Fallback if no data
+                    return
+                }
+
+                let restingBpm = latestSample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                continuation.resume(returning: restingBpm)
+            }
+            healthKitManager.healthStore.execute(query)
+        }
+    }
+}
