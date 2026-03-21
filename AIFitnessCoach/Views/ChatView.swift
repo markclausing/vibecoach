@@ -91,7 +91,7 @@ struct ChatView: View {
                     HStack {
                         Button(action: {
                             refreshProfileContext()
-                            viewModel.analyzeLatestWorkout(contextProfile: currentProfile)
+                            viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile)
                         }) {
                             HStack {
                                 if viewModel.isFetchingWorkout {

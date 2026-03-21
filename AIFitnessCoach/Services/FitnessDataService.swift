@@ -735,7 +735,8 @@ actor HealthKitSyncService {
             }
 
             // Bereken TRIMP (of gebruik nil als er geen hartslag is gemeten)
-            let trimp = (avgHR != nil) ? physiologicalCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: avgHR!, maxHeartRate: maxHR, restingHeartRate: restHR) : nil
+            let calcTSS = await physiologicalCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: avgHR ?? 0, maxHeartRate: maxHR, restingHeartRate: restHR)
+            let trimp = (avgHR != nil) ? calcTSS : nil
 
             // Map de HealthKit Workout naar onze ActivityRecord (SwiftData Model)
             // type wordt als string opgeslagen (we gebruiken de naam van het HKWorkoutActivityType via een simpele string mapping voor de UI)
