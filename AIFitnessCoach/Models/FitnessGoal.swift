@@ -69,6 +69,8 @@ struct HeartRateSample: Codable, Equatable {
 
 /// Details van een voltooide workout inclusief fysiologische data
 struct WorkoutDetails: Codable, Equatable {
+    let name: String
+    let startDate: Date
     let duration: Double
     let averageHeartRate: Double
     let maxHeartRate: Double
