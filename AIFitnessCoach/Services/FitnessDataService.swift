@@ -372,20 +372,18 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Haalt de meest recente duursport-workout (.running of .cycling) op uit HealthKit
+    /// Haalt de meest recente workout op uit HealthKit (ongeacht het type)
     /// Inclusief de duur, hartslagstatistieken en ruwe hartslagsamples.
     func fetchLatestWorkoutDetails() async throws -> WorkoutDetails? {
         let workoutType = HKObjectType.workoutType()
         let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)!
         let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
 
-        // Zoek naar hardlopen of fietsen
-        let predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
-            HKQuery.predicateForWorkouts(with: .running),
-            HKQuery.predicateForWorkouts(with: .cycling)
-        ])
+        // Geen specifiek predicaat meer, we willen de laatste workout van willekeurig welk type
+        let predicate: NSPredicate? = nil
 
-        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+        // Sorteer op einddatum om daadwerkelijk de laatst afrondde activiteit te pakken
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
 
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: workoutType, predicate: predicate, limit: 1, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, error in
