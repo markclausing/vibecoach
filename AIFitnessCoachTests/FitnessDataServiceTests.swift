@@ -343,12 +343,12 @@ final class AthleticProfileManagerTests: XCTestCase {
     }
 }
 
-final class FitnessCalculatorTests: XCTestCase {
-    var calculator: FitnessCalculator!
+final class PhysiologicalCalculatorTests: XCTestCase {
+    var calculator: PhysiologicalCalculator!
 
     override func setUp() {
         super.setUp()
-        calculator = FitnessCalculator()
+        calculator = PhysiologicalCalculator()
     }
 
     override func tearDown() {
@@ -403,5 +403,37 @@ final class FitnessCalculatorTests: XCTestCase {
     func testCalculateTSS_SameRestingAndMaxHeartRate() {
         let tss = calculator.calculateTSS(durationInSeconds: 3600, averageHeartRate: 150, maxHeartRate: 60, restingHeartRate: 60)
         XCTAssertEqual(tss, 0.0, "TSS should handle identical rest and max HR gracefully")
+    }
+
+    func testCalculateTSS_AverageHrGreaterThanMaxHr() {
+        // Average HR 200, Max HR 190.
+        // Should calculate normally but yield a high positive number without crashing.
+        let tss = calculator.calculateTSS(durationInSeconds: 3600, averageHeartRate: 200, maxHeartRate: 190, restingHeartRate: 60)
+        XCTAssertTrue(tss > 0, "TSS should be a valid positive number even if average HR slightly exceeds Max HR")
+
+        // Let's verify the math is consistent: Delta HR = 140 / 130 = 1.076923077
+        // TRIMP = 60 * 1.076923077 * 0.64 * e^(1.92 * 1.076923077) = ~326.97
+        XCTAssertEqual(tss, 326.97, accuracy: 0.1, "TSS calculation for average HR > max HR is incorrect")
+    }
+
+    func testCalculateTSS_AverageHrEqualsRestingHr() {
+        // Average HR equals resting HR (Delta = 0)
+        // TRIMP = duration * 0 * 0.64 * e^(0) = 0
+        let tss = calculator.calculateTSS(durationInSeconds: 3600, averageHeartRate: 60, maxHeartRate: 190, restingHeartRate: 60)
+        XCTAssertEqual(tss, 0.0, "TSS should be exactly 0 if average heart rate equals resting heart rate")
+    }
+
+    func testCalculateTSS_MissingHealthKitData() {
+        // Test with max HR 0 and resting HR 0
+        let tss1 = calculator.calculateTSS(durationInSeconds: 3600, averageHeartRate: 150, maxHeartRate: 0, restingHeartRate: 0)
+        XCTAssertEqual(tss1, 0.0, "TSS should be 0 when max HR and resting HR are missing/0 to avoid division by zero")
+
+        // Test with resting HR missing (0) but max HR present
+        let tss2 = calculator.calculateTSS(durationInSeconds: 3600, averageHeartRate: 150, maxHeartRate: 190, restingHeartRate: 0)
+        XCTAssertTrue(tss2 > 0, "TSS should still calculate if only resting HR is missing (defaults to 0)")
+
+        // Test with max HR missing (0) but resting HR present (would result in negative HRR)
+        let tss3 = calculator.calculateTSS(durationInSeconds: 3600, averageHeartRate: 150, maxHeartRate: 0, restingHeartRate: 60)
+        XCTAssertEqual(tss3, 0.0, "TSS should be 0 if HRR is negative due to missing max HR")
     }
 }

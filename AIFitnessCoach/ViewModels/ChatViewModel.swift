@@ -27,7 +27,7 @@ class ChatViewModel: ObservableObject {
 
     /// Service voor HealthKit (Sprint 7.2).
     private let healthKitManager: HealthKitManager
-    private let fitnessCalculator: FitnessCalculatorProtocol
+    private let fitnessCalculator: PhysiologicalCalculatorProtocol
 
     /// Initialiseert de `ChatViewModel`.
     ///
@@ -37,7 +37,7 @@ class ChatViewModel: ObservableObject {
     init(aiModel: GenerativeModelProtocol? = nil,
          fitnessDataService: FitnessDataService = FitnessDataService(),
          healthKitManager: HealthKitManager = HealthKitManager(),
-         fitnessCalculator: FitnessCalculatorProtocol = FitnessCalculator()) {
+         fitnessCalculator: PhysiologicalCalculatorProtocol = PhysiologicalCalculator()) {
         self.fitnessDataService = fitnessDataService
         self.healthKitManager = healthKitManager
         self.fitnessCalculator = fitnessCalculator
