@@ -45,7 +45,17 @@ class ChatViewModel: ObservableObject {
         if let providedModel = aiModel {
             self.model = providedModel
         } else {
-            let systemInstruction = "Jij bent een motiverende, deskundige persoonlijke fitness- en wielrencoach. Je helpt de gebruiker met het analyseren van trainingen en data van Strava/Intervals.icu. Houd je antwoorden beknopt, direct, deskundig en enthousiast."
+            let systemInstruction = """
+            Jij bent een analytische, aanmoedigende en realistische persoonlijke fitness- en duurcoach.
+            Je helpt de gebruiker met het analyseren van trainingen via Apple HealthKit en fysiologische data.
+            Houd je antwoorden beknopt, direct en deskundig. Vermijd overdreven of dramatisch taalgebruik (zoals 'totale sloopkogel' of 'je bent kapot').
+
+            Belangrijke context voor je analyse:
+            Wij berekenen lokaal een Banister TRIMP (Training Impulse) score om de trainingsbelasting te bepalen (niet de traditionele TSS die op 100/uur cap).
+            - Een TRIMP van 70-100 is een pittige, solide training.
+            - Een TRIMP van 100-140 is een zeer zware training, maar dit is op zichzelf geen teken van overtraining.
+            """
+
             let googleModel = GenerativeModel(
                 name: "gemini-3.1-pro-preview",
                 apiKey: Secrets.geminiAPIKey,
@@ -104,10 +114,10 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Genereert een tekstprompt voor de Gemini AI op basis van de fysiologische data uit HealthKit.
-    private func generateHealthKitPrompt(for workout: WorkoutDetails, tss: Int) -> String {
+    private func generateHealthKitPrompt(for workout: WorkoutDetails, trimp: Int) -> String {
         let durationInMinutes = workout.duration / 60.0
         let hr = Int(workout.averageHeartRate)
-        return "Analyseer mijn laatste training. Duur: \(String(format: "%.1f", durationInMinutes)) min, Gemiddelde hartslag: \(hr) bpm, Berekende Training Stress Score (TSS): \(tss)."
+        return "Analyseer mijn laatste training. Duur: \(String(format: "%.1f", durationInMinutes)) min, Gemiddelde hartslag: \(hr) bpm, Berekende TRIMP (Training Impulse): \(trimp)."
     }
 
     /// Haalt de laatste activiteit op via HealthKit (of valt terug op Strava),
@@ -130,12 +140,12 @@ class ChatViewModel: ObservableObject {
                         restingHeartRate: workout.restingHeartRate
                     )
 
-                    let tssInt = Int(calculatedTSS)
+                    let trimpInt = Int(calculatedTSS)
 
                     // Print de gewenste console output
-                    print("🍏 HealthKit Workout Gevonden: \(String(format: "%.1f", durationInMinutes)) min, Gem HR: \(workout.averageHeartRate), Berekende TSS: \(calculatedTSS)")
+                    print("🍏 HealthKit Workout Gevonden: \(String(format: "%.1f", durationInMinutes)) min, Gem HR: \(workout.averageHeartRate), Berekende TRIMP: \(calculatedTSS)")
 
-                    let uiPrompt = generateHealthKitPrompt(for: workout, tss: tssInt)
+                    let uiPrompt = generateHealthKitPrompt(for: workout, trimp: trimpInt)
 
                     await MainActor.run {
                         messages.append(ChatMessage(role: .user, text: uiPrompt))
