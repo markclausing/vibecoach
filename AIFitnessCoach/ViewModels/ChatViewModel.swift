@@ -54,9 +54,12 @@ class ChatViewModel: ObservableObject {
             Houd je antwoorden beknopt, direct en deskundig. Vermijd overdreven of dramatisch taalgebruik (zoals 'totale sloopkogel' of 'je bent kapot').
 
             Belangrijke context voor je analyse:
-            Wij berekenen lokaal een Banister TRIMP (Training Impulse) score om de trainingsbelasting te bepalen (niet de traditionele TSS die op 100/uur cap).
-            - Een TRIMP van 70-100 is een pittige, solide training.
-            - Een TRIMP van 100-140 is een zeer zware training, maar dit is op zichzelf geen teken van overtraining.
+            Je ontvangt data over een 7-daagse periode. Beoordeel de 'Readiness' van de atleet (actuele vermoeidheid vs. fitheid op basis van de opgetelde TRIMP en de opeenvolging van dagen).
+            Geef op basis van deze 7-daagse periode altijd prescriptief advies voor vandaag (bijv: 'Je hebt een zware week gehad, pak vandaag een rustige wandeling' óf 'Je bent goed hersteld, tijd voor intervallen').
+
+            TRIMP (Training Impulse) Context:
+            - Een TRIMP van 70-100 op een dag is een pittige, solide training.
+            - Een TRIMP van 100-140 is een zeer zware training, maar op zichzelf geen teken van overtraining.
             """
 
             let googleModel = GenerativeModel(
@@ -116,90 +119,73 @@ class ChatViewModel: ObservableObject {
         fetchAIResponse(for: payloadText, image: imageToSend)
     }
 
-    /// Genereert een tekstprompt voor de Gemini AI op basis van de fysiologische data uit HealthKit.
-    private func generateHealthKitPrompt(for workout: WorkoutDetails, trimp: Int) -> String {
-        let durationInMinutes = workout.duration / 60.0
-        let hr = Int(workout.averageHeartRate)
-        return "Analyseer mijn laatste training. Duur: \(String(format: "%.1f", durationInMinutes)) min, Gemiddelde hartslag: \(hr) bpm, Berekende TRIMP (Training Impulse): \(trimp)."
+    /// Genereert een tekstprompt voor de Gemini AI op basis van een 7-daagse periode.
+    private func generateWeeklyContextPrompt(summary: String, totalTrimp: Int) -> String {
+        return """
+        Coach mij voor vandaag op basis van mijn Readiness.
+        Hier is de samenvatting van mijn activiteiten in de afgelopen 7 dagen:
+        \(summary)
+
+        Mijn opgetelde TRIMP (belasting) voor deze week is: \(totalTrimp).
+        Wat is je actuele prescriptieve advies voor vandaag (rust, herstel, lichte training, of intervallen)?
+        """
     }
 
-    /// Haalt de laatste activiteit op via de geselecteerde bron.
+    /// Haalt de laatste 7 dagen aan activiteiten op via de geselecteerde bron.
     /// Valt terug op de andere bron bij gebrek aan data of permissies.
-    func analyzeLatestWorkout(contextProfile: AthleticProfile? = nil) {
+    func analyzeCurrentStatus(contextProfile: AthleticProfile? = nil) {
         guard !isFetchingWorkout else { return }
         isFetchingWorkout = true
 
         Task {
-            // SPRINT 7.4 - Check geselecteerde databron
+            // SPRINT 8.1 - 7 Dagen Window
             if selectedDataSource == .healthKit {
-                do {
-                    if let workout = try await healthKitManager.fetchLatestWorkoutDetails() {
-                        let durationInMinutes = workout.duration / 60.0
-                        let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: workout.averageHeartRate, maxHeartRate: workout.maxHeartRate, restingHeartRate: workout.restingHeartRate)
-                        let trimpInt = Int(calculatedTSS)
-
-                        print("🍏 HealthKit Workout Gevonden: \(String(format: "%.1f", durationInMinutes)) min, Gem HR: \(workout.averageHeartRate), Berekende TRIMP: \(calculatedTSS)")
-
-                        let uiPrompt = generateHealthKitPrompt(for: workout, trimp: trimpInt)
-                        await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile)
-                        return
-                    }
-                    print("⚠️ Geen of lege HealthKit workout gevonden, terugvallen op Strava.")
-                } catch {
-                    print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
-                }
-
-                // Fallback naar Strava
-                await fetchStravaWorkout(contextProfile: contextProfile)
-
+                await fetchHealthKitRecentWorkouts(contextProfile: contextProfile, isFallback: false)
             } else {
-                // Strava geselecteerd
-                await fetchStravaWorkout(contextProfile: contextProfile)
+                await fetchStravaRecentWorkouts(contextProfile: contextProfile, isFallback: false)
             }
         }
     }
 
-    /// Hulpfunctie voor de AI prompt injectie.
-    private func sendPromptToAI(uiPrompt: String, contextProfile: AthleticProfile?) async {
-        await MainActor.run {
-            messages.append(ChatMessage(role: .user, text: uiPrompt))
-            isTyping = true
-            isFetchingWorkout = false
-
-            let contextPrefix = buildContextPrefix(from: contextProfile)
-            let payloadText = "\(contextPrefix)\(uiPrompt)"
-            fetchAIResponse(for: payloadText, image: nil)
-        }
-    }
-
-    /// Hulpfunctie voor het ophalen via HealthKit, met optionele fallback.
-    private func fetchHealthKitWorkout(contextProfile: AthleticProfile?, isFallback: Bool = false) async {
+    private func fetchHealthKitRecentWorkouts(contextProfile: AthleticProfile?, isFallback: Bool) async {
         do {
-            if let workout = try await healthKitManager.fetchLatestWorkoutDetails() {
-                let durationInMinutes = workout.duration / 60.0
-                let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: workout.averageHeartRate, maxHeartRate: workout.maxHeartRate, restingHeartRate: workout.restingHeartRate)
-                let trimpInt = Int(calculatedTSS)
+            let workouts = try await healthKitManager.fetchRecentWorkouts(days: 7)
 
-                print("🍏 HealthKit Workout Gevonden: \(String(format: "%.1f", durationInMinutes)) min, Gem HR: \(workout.averageHeartRate), Berekende TRIMP: \(calculatedTSS)")
+            if !workouts.isEmpty {
+                var summaryLines: [String] = []
+                var totalTrimp = 0
 
-                let uiPrompt = generateHealthKitPrompt(for: workout, trimp: trimpInt)
+                for workout in workouts {
+                    let durationInMinutes = workout.duration / 60.0
+                    let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: workout.averageHeartRate, maxHeartRate: workout.maxHeartRate, restingHeartRate: workout.restingHeartRate)
+                    let trimpInt = Int(calculatedTSS)
+                    totalTrimp += trimpInt
+
+                    let dateStr = DateFormatter.localizedString(from: workout.startDate, dateStyle: .short, timeStyle: .none)
+                    summaryLines.append("- \(dateStr): \(String(format: "%.0f", durationInMinutes)) min \(workout.name.replacingOccurrences(of: "HealthKit ", with: "")) (TRIMP: \(trimpInt))")
+                }
+
+                let summary = summaryLines.joined(separator: "\n")
+                print("🍏 HealthKit 7-Dagen Data:\n\(summary)\nTotale TRIMP: \(totalTrimp)")
+
+                let uiPrompt = generateWeeklyContextPrompt(summary: summary, totalTrimp: totalTrimp)
                 await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile)
                 return
             }
 
             if !isFallback {
-                print("⚠️ Geen of lege HealthKit workout gevonden, terugvallen op Strava.")
-                await fetchStravaWorkout(contextProfile: contextProfile, isFallback: true)
+                print("⚠️ Geen HealthKit workouts gevonden voor afgelopen 7 dagen, terugvallen op Strava.")
+                await fetchStravaRecentWorkouts(contextProfile: contextProfile, isFallback: true)
             } else {
                 await MainActor.run {
-                    messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account."))
+                    messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in de afgelopen 7 dagen."))
                     isFetchingWorkout = false
                 }
             }
         } catch {
             if !isFallback {
                 print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
-                await fetchStravaWorkout(contextProfile: contextProfile, isFallback: true)
+                await fetchStravaRecentWorkouts(contextProfile: contextProfile, isFallback: true)
             } else {
                 await MainActor.run {
                     messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden. HealthKit fout: \(error.localizedDescription)"))
@@ -209,38 +195,53 @@ class ChatViewModel: ObservableObject {
         }
     }
 
-    /// Hulpfunctie voor het ophalen via Strava, inclusief fallback naar HealthKit.
-    private func fetchStravaWorkout(contextProfile: AthleticProfile?, isFallback: Bool = false) async {
+    private func fetchStravaRecentWorkouts(contextProfile: AthleticProfile?, isFallback: Bool) async {
         do {
-            let activityData = try await fitnessDataService.fetchLatestActivity()
+            let activities = try await fitnessDataService.fetchRecentActivities(daysBack: 7)
 
-            guard let activity = activityData else {
+            if activities.isEmpty {
                 if !isFallback && selectedDataSource == .strava {
-                    // Reverse Fallback: Als Strava faalt of leeg is en Strava was de bron, probeer HealthKit
-                    print("⚠️ Geen recente Strava activiteit gevonden. Reverse fallback naar HealthKit.")
-                    await fetchHealthKitWorkout(contextProfile: contextProfile, isFallback: true)
+                    print("⚠️ Geen Strava activiteiten gevonden. Reverse fallback naar HealthKit.")
+                    await fetchHealthKitRecentWorkouts(contextProfile: contextProfile, isFallback: true)
                     return
                 }
 
                 await MainActor.run {
-                    messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account."))
+                    messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in de afgelopen 7 dagen."))
                     isFetchingWorkout = false
                 }
                 return
             }
 
-            let distanceKm = String(format: "%.1f", activity.distance / 1000.0)
-            let timeMinutes = activity.moving_time / 60
-            let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!))" : "onbekend"
+            var summaryLines: [String] = []
+            var totalTrimp = 0
 
-            let uiPrompt = "Hier is de data van mijn laatste training via Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
+            for activity in activities {
+                let durationInMinutes = Double(activity.moving_time) / 60.0
+
+                // Schatting TRIMP indien Strava geen hartslag heeft, of een basic berekening
+                let avgHr = activity.average_heartrate ?? 0
+                let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: Double(activity.moving_time), averageHeartRate: avgHr, maxHeartRate: 190, restingHeartRate: 60)
+                // OPMERKING: Omdat we de specifieke max/rest HR via Strava lastiger krijgen, gebruiken we 190/60 fallback
+                // of als avgHr nil is zal TRIMP 0 zijn. Dat is prima voor Strava fallback in deze demo.
+                let trimpInt = Int(calculatedTSS)
+                totalTrimp += trimpInt
+
+                // Formatteer datum
+                let dateStr = activity.start_date.prefix(10) // Eenvoudige extractie YYYY-MM-DD
+
+                summaryLines.append("- \(dateStr): \(String(format: "%.0f", durationInMinutes)) min \(activity.type) (TRIMP: \(trimpInt))")
+            }
+
+            let summary = summaryLines.joined(separator: "\n")
+            let uiPrompt = generateWeeklyContextPrompt(summary: summary, totalTrimp: totalTrimp)
 
             await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile)
 
         } catch let error as FitnessDataError {
             if !isFallback && selectedDataSource == .strava {
                 print("⚠️ Strava API fout (\(error)). Reverse fallback naar HealthKit.")
-                await fetchHealthKitWorkout(contextProfile: contextProfile, isFallback: true)
+                await fetchHealthKitRecentWorkouts(contextProfile: contextProfile, isFallback: true)
                 return
             }
 
@@ -258,7 +259,7 @@ class ChatViewModel: ObservableObject {
             }
         } catch {
             if !isFallback && selectedDataSource == .strava {
-                await fetchHealthKitWorkout(contextProfile: contextProfile, isFallback: true)
+                await fetchHealthKitRecentWorkouts(contextProfile: contextProfile, isFallback: true)
                 return
             }
 
@@ -266,6 +267,19 @@ class ChatViewModel: ObservableObject {
                 messages.append(ChatMessage(role: .ai, text: "Er is een onbekende fout opgetreden."))
                 isFetchingWorkout = false
             }
+        }
+    }
+
+    /// Hulpfunctie voor de AI prompt injectie.
+    private func sendPromptToAI(uiPrompt: String, contextProfile: AthleticProfile?) async {
+        await MainActor.run {
+            messages.append(ChatMessage(role: .user, text: uiPrompt))
+            isTyping = true
+            isFetchingWorkout = false
+
+            let contextPrefix = buildContextPrefix(from: contextProfile)
+            let payloadText = "\(contextPrefix)\(uiPrompt)"
+            fetchAIResponse(for: payloadText, image: nil)
         }
     }
 

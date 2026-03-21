@@ -16,15 +16,16 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ✅ **Fase 6: Langetermijngeheugen & Proactieve Coaching**
 * Historische Sync, Context Injectie & Proactieve Waarschuwingen (Overtraining risk) afgerond.
 
-**Fase 7: Apple HealthKit Integratie (Huidig)**
-* ⏳ **Sprint 7.2: De Fysiologische Rekenmachine:** In uitvoering (Berekenen van TSS/TRIMP obv HealthKit data).
-* Integratie met Apple HealthKit als primaire databron (Architectonische Pivot: we hebben Intervals.icu verlaten vanwege API restricties vanuit Strava).
-* Dit biedt voordelen: 100% lokaal, privacy-first, en geen afhankelijkheid van externe API-limieten.
-* Hartslagherstel (HRR), Cardiac Drift en Training Load (TSS) ophalen en zelf berekenen na een workout.
-* Deze diepe fysiologische data injecteren in de Gemini prompts.
+✅ **Fase 7: Apple HealthKit Integratie & Hybride Architectuur (Afgerond)**
+* Integratie met Apple HealthKit als primaire, lokale databron (Architectonische Pivot vanaf Intervals.icu/Strava).
+* Fysiologische Rekenmachine toegevoegd: Lokaal berekenen van de Banister TRIMP (Training Impulse).
+* Databron-schakelaar in de instellingen: Gebruikers kunnen zelf kiezen tussen 100% lokaal (HealthKit) of Cloud-API (Strava) voor hun historie en analyses.
 
-⏳ **Fase 8: Interactieve Trainingsplanner & Dashboards (Gepland)**
-* 7-Dagen visuele kalender (kaarten wegdrukken/aanpassen).
+**Fase 8: Holistisch Coachen (Huidig)**
+* ⏳ **Sprint 8.1: De 7-Dagen Window (Readiness & Prescriptief Advies):** In uitvoering.
+* We verschuiven van het analyseren van de *laatste losse sessie* naar het coachen op basis van de opgetelde belasting van de afgelopen 7 dagen.
+* De AI beoordeelt de 'Readiness' (actuele vermoeidheid vs. fitheid) en geeft direct prescriptief advies voor de dag zelf (bijv. rust vs. intensieve intervallen).
+* 7-Dagen visuele kalender & dashboards (kaarten wegdrukken/aanpassen).
 * AI genereert JSON schema's voor de komende week.
 
 ⏳ **Fase 9: Productie & Lancering (Gepland)**

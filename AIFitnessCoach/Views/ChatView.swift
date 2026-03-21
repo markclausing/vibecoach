@@ -91,16 +91,16 @@ struct ChatView: View {
                     HStack {
                         Button(action: {
                             refreshProfileContext()
-                            viewModel.analyzeLatestWorkout(contextProfile: currentProfile)
+                            viewModel.analyzeCurrentStatus(contextProfile: currentProfile)
                         }) {
                             HStack {
                                 if viewModel.isFetchingWorkout {
                                     ProgressView()
                                         .controlSize(.small)
                                 } else {
-                                    Image(systemName: "figure.run")
+                                    Image(systemName: "bolt.heart.fill")
                                 }
-                                Text("Analyseer laatste training")
+                                Text("Coach mij voor vandaag")
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)

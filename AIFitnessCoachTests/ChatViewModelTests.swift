@@ -209,7 +209,7 @@ final class ChatViewModelTests: XCTestCase {
         }
     }
 
-    func testAnalyzeLatestWorkout_Success() async {
+    func testAnalyzeCurrentStatus_Success() async {
         // Arrange
         let expectedAIResponse = "Goed getraind! Je hartslag was netjes."
         mockModel.responseToReturn = expectedAIResponse
@@ -217,16 +217,17 @@ final class ChatViewModelTests: XCTestCase {
 
         try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
         // moving_time 7200 sec = 120 minuten
-        // distance 50000 m = 50.0 km
         let activityJson = "[{\"id\":123,\"name\":\"Morning Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\",\"start_date\":\"2023-10-12T10:00:00Z\"}]"
         mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
         let response = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         mockNetworkSession.responseToReturn = response
 
         viewModel.messages.removeAll()
+        // Force the test to fall back to Strava logic since HealthKit Manager is unmocked in these tests
+        UserDefaults.standard.set(DataSource.strava.rawValue, forKey: "selectedDataSource")
 
         // Actie
-        viewModel.analyzeLatestWorkout()
+        viewModel.analyzeCurrentStatus()
 
         // Check loading state immediately
         XCTAssertTrue(viewModel.isFetchingWorkout)
@@ -244,10 +245,9 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isTyping, "Typing state should be reset to false")
         XCTAssertEqual(viewModel.messages.count, 2, "There should be exactly 2 messages: the workout context prompt and the AI response")
         XCTAssertEqual(viewModel.messages.first?.role, .user)
-        XCTAssertTrue(viewModel.messages.first!.text.contains("Morning Ride"))
-        XCTAssertTrue(viewModel.messages.first!.text.contains("50.0 km"))
-        XCTAssertTrue(viewModel.messages.first!.text.contains("120 minuten"))
-        XCTAssertTrue(viewModel.messages.first!.text.contains("140"))
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Morning Ride")) // Verificatie via type/name logica in de nieuwe prompt
+        XCTAssertTrue(viewModel.messages.first!.text.contains("120 min"))
+        XCTAssertTrue(viewModel.messages.first!.text.contains("TRIMP"))
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
@@ -296,7 +296,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
     }
 
-    func testAnalyzeLatestWorkout_FallbackToStrava() async {
+    func testAnalyzeCurrentStatus_FallbackToStrava() async {
         // We simuleren dat HealthKit nil teruggeeft, dus we vallen terug op Strava.
         // Omdat we HealthKitManager niet direct kunnen mocken in de huidige opzet zonder een protocol
         // (we gebruiken direct de class), zal HealthKit de `HKSampleQuery` falen in een test environment
@@ -315,9 +315,11 @@ final class ChatViewModelTests: XCTestCase {
         mockNetworkSession.responseToReturn = response
 
         viewModel.messages.removeAll()
+        // Ensure default setting is HealthKit to test the fallback trigger
+        UserDefaults.standard.set(DataSource.healthKit.rawValue, forKey: "selectedDataSource")
 
         // Actie
-        viewModel.analyzeLatestWorkout()
+        viewModel.analyzeCurrentStatus()
 
         var attempts = 0
         while viewModel.messages.count < 2 && attempts < 50 {
@@ -328,8 +330,8 @@ final class ChatViewModelTests: XCTestCase {
         // Assert
         XCTAssertEqual(viewModel.messages.count, 2)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
-        XCTAssertTrue(viewModel.messages.first!.text.contains("via Strava")) // Bevestigt dat we Strava prompt gebruiken
-        XCTAssertTrue(viewModel.messages.first!.text.contains("Morning Ride"))
+        XCTAssertTrue(viewModel.messages.first!.text.contains("TRIMP")) // Fallback genereert nog steeds de wekelijkse context
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Ride"))
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)

@@ -248,6 +248,75 @@ actor FitnessDataService {
 
         return allActivities
     }
+
+    /// Haalt historische activiteiten op via de Strava API, met ondersteuning voor paginatie.
+    /// Dit wordt gebruikt voor het berekenen van de wekelijkse belasting (7 dagen window).
+    /// - Parameter daysBack: Hoeveel dagen we terug willen kijken (bijv. 7).
+    /// - Returns: Een lijst van `StravaActivity` objecten.
+    /// - Throws: `FitnessDataError` als de auth of het netwerk faalt.
+    func fetchRecentActivities(daysBack: Int) async throws -> [StravaActivity] {
+        try await refreshTokenIfNeeded()
+
+        guard let stravaToken = try tokenStore.getToken(forService: "StravaToken"), !stravaToken.isEmpty else {
+            throw FitnessDataError.missingToken
+        }
+
+        let now = Date()
+        let beforeTime = Int(now.timeIntervalSince1970)
+
+        guard let pastDate = Calendar.current.date(byAdding: .day, value: -daysBack, to: now) else {
+            throw FitnessDataError.networkError("Fout bij het berekenen van startdatum")
+        }
+        let afterTime = Int(pastDate.timeIntervalSince1970)
+
+        var allActivities: [StravaActivity] = []
+        var page = 1
+        let perPage = 100
+
+        let decoder = JSONDecoder()
+
+        while true {
+            guard let url = URL(string: "https://www.strava.com/api/v3/athlete/activities?before=\(beforeTime)&after=\(afterTime)&page=\(page)&per_page=\(perPage)") else {
+                throw FitnessDataError.networkError("Ongeldige URL voor history fetch")
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.addValue("Bearer \(stravaToken)", forHTTPHeaderField: "Authorization")
+
+            let (data, response): (Data, URLResponse)
+            do {
+                (data, response) = try await session.data(for: request)
+            } catch {
+                throw FitnessDataError.networkError(error.localizedDescription)
+            }
+
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw FitnessDataError.invalidResponse
+            }
+
+            if httpResponse.statusCode == 401 {
+                throw FitnessDataError.unauthorized
+            } else if !(200...299).contains(httpResponse.statusCode) {
+                throw FitnessDataError.networkError("Onverwachte HTTP status code: \(httpResponse.statusCode)")
+            }
+
+            do {
+                let pageActivities = try decoder.decode([StravaActivity].self, from: data)
+
+                if pageActivities.isEmpty {
+                    break
+                }
+
+                allActivities.append(contentsOf: pageActivities)
+                page += 1
+            } catch {
+                throw FitnessDataError.decodingError(error.localizedDescription)
+            }
+        }
+
+        return allActivities
+    }
 }
 
 /// Samenvatting van het berekende profiel
@@ -415,7 +484,11 @@ final class HealthKitManager: @unchecked Sendable {
                         // Haal laatste rusthartslag op
                         let restingHR = try await self.fetchLatestRestingHeartRate(quantityType: restingHeartRateType)
 
+                        let recordName = "HealthKit \(workout.workoutActivityType.rawValue)"
+
                         let details = WorkoutDetails(
+                            name: recordName,
+                            startDate: workout.startDate,
                             duration: workout.duration,
                             averageHeartRate: avgHR,
                             maxHeartRate: maxHR,
@@ -427,6 +500,107 @@ final class HealthKitManager: @unchecked Sendable {
                         continuation.resume(throwing: error)
                     }
                 }
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// Haalt alle workouts op van de afgelopen `days` dagen (bijv. 7).
+    func fetchRecentWorkouts(days: Int) async throws -> [WorkoutDetails] {
+        let workoutType = HKObjectType.workoutType()
+        let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)!
+        let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
+
+        let now = Date()
+        guard let pastDate = Calendar.current.date(byAdding: .day, value: -days, to: now) else {
+            return []
+        }
+
+        let predicate = HKQuery.predicateForSamples(withStart: pastDate, end: now, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: workoutType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { [weak self] _, samples, error in
+                guard let self = self else {
+                    continuation.resume(throwing: FitnessDataError.networkError("Manager deallocated"))
+                    return
+                }
+
+                if let error = error {
+                    continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen HealthKit workouts: \(error.localizedDescription)"))
+                    return
+                }
+
+                guard let workouts = samples as? [HKWorkout], !workouts.isEmpty else {
+                    continuation.resume(returning: [])
+                    return
+                }
+
+                Task {
+                    do {
+                        var recentWorkouts: [WorkoutDetails] = []
+
+                        for workout in workouts {
+                            // Haal de ruwe hartslagsamples op voor deze workout
+                            let hrSamples = try await self.fetchHeartRateSamples(for: workout, quantityType: heartRateType)
+                            let heartRateData = hrSamples.map { HeartRateSample(timestamp: $0.startDate, bpm: $0.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))) }
+
+                            // Bereken gem en max uit de ruwe samples
+                            var avgHR: Double = 0
+                            var maxHR: Double = 0
+                            if !heartRateData.isEmpty {
+                                avgHR = heartRateData.reduce(0) { $0 + $1.bpm } / Double(heartRateData.count)
+                                maxHR = heartRateData.max(by: { $0.bpm < $1.bpm })?.bpm ?? 0
+                            }
+
+                            // Haal dichtstbijzijnde rusthartslag op
+                            // Voor eenvoud gebruiken we de laatste rusthartslag in het algemeen (of rond de workout)
+                            let restingHR = try await self.fetchRestingHeartRate(near: workout.startDate, quantityType: restingHeartRateType)
+
+                            let recordName = "HealthKit \(workout.workoutActivityType.rawValue)"
+
+                            let details = WorkoutDetails(
+                                name: recordName,
+                                startDate: workout.startDate,
+                                duration: workout.duration,
+                                averageHeartRate: avgHR,
+                                maxHeartRate: maxHR,
+                                restingHeartRate: restingHR,
+                                heartRateSamples: heartRateData
+                            )
+                            recentWorkouts.append(details)
+                        }
+
+                        continuation.resume(returning: recentWorkouts)
+                    } catch {
+                        continuation.resume(throwing: error)
+                    }
+                }
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    // Publieke wrapper (reeds impliciet of als copy van actor versie) voor resting heart rate nabij een datum
+    private func fetchRestingHeartRate(near date: Date, quantityType: HKQuantityType) async throws -> Double {
+        guard let pastDate = Calendar.current.date(byAdding: .month, value: -1, to: date) else { return 60.0 }
+        let predicate = HKQuery.predicateForSamples(withStart: pastDate, end: date, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: quantityType, predicate: predicate, limit: 1, sortDescriptors: [sortDescriptor]) { _, samples, error in
+                if let _ = error {
+                    continuation.resume(returning: 60.0)
+                    return
+                }
+
+                guard let latestSample = samples?.first as? HKQuantitySample else {
+                    continuation.resume(returning: 60.0)
+                    return
+                }
+
+                let restingBpm = latestSample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                continuation.resume(returning: restingBpm)
             }
             healthStore.execute(query)
         }
