@@ -19,6 +19,8 @@ struct SettingsView: View {
     @State private var notificationsEnabled: Bool = false
     @AppStorage("isHealthKitLinked") private var isHealthKitLinked: Bool = false
 
+    @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
+
     // Historische sync state
     @State private var isSyncingHistory: Bool = false
     @State private var athleticProfile: AthleticProfile?
@@ -43,7 +45,7 @@ struct SettingsView: View {
         }
     }
 
-    // Synchroniseer historische Strava data naar SwiftData
+    // Activeert het ophalen van historische workouts via gekozen databron.
     private func syncHistoricalData() {
         guard !isSyncingHistory else { return }
         isSyncingHistory = true
@@ -51,42 +53,57 @@ struct SettingsView: View {
 
         Task {
             do {
-                let activities = try await fitnessDataService.fetchHistoricalActivities(monthsBack: 6)
+                if selectedDataSource == .healthKit {
+                    // SPRINT 7.4: Gebruik de lokale HealthKit bron (1 jaar aan data)
+                    let syncService = HealthKitSyncService()
+                    // Start asynchroon de HealthKit queries en verwerk in SwiftData
+                    try await syncService.syncHistoricalWorkouts(to: modelContext)
 
-                await MainActor.run {
-                    // Zet de StravaActivity DTO's om naar ActivityRecord SwiftData models
-                    let formatter = ISO8601DateFormatter()
-                    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                    let fallbackFormatter = ISO8601DateFormatter()
-
-                    var newRecordsCount = 0
-
-                    for activity in activities {
-                        let currentId = activity.id
-                        let fetchDescriptor = FetchDescriptor<ActivityRecord>(predicate: #Predicate { $0.id == currentId })
-                        let existing = try? modelContext.fetch(fetchDescriptor)
-
-                        if existing?.isEmpty ?? true {
-                            let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
-
-                            let record = ActivityRecord(
-                                id: activity.id,
-                                name: activity.name,
-                                distance: activity.distance,
-                                movingTime: activity.moving_time,
-                                averageHeartrate: activity.average_heartrate,
-                                type: activity.type,
-                                startDate: date
-                            )
-                            modelContext.insert(record)
-                            newRecordsCount += 1
-                        }
+                    await MainActor.run {
+                        isSyncingHistory = false
+                        feedbackMessage = "HealthKit historie (1 jaar) succesvol gesynchroniseerd."
+                        refreshProfile() // Bereken het profiel direct opnieuw na de sync
                     }
+                } else {
+                    // SPRINT 6.1 & 7.4: Vraag maximaal 12 maanden (1 jaar) aan Strava activiteiten op
+                    let activities = try await fitnessDataService.fetchHistoricalActivities(monthsBack: 12)
 
-                    try? modelContext.save()
-                    isSyncingHistory = false
-                    feedbackMessage = "Synchronisatie voltooid (\(newRecordsCount) nieuwe trainingen)."
-                    refreshProfile() // Bereken het profiel direct opnieuw na de sync
+                    await MainActor.run {
+                        // Zet de StravaActivity DTO's om naar ActivityRecord SwiftData models
+                        let formatter = ISO8601DateFormatter()
+                        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                        let fallbackFormatter = ISO8601DateFormatter()
+
+                        var newRecordsCount = 0
+
+                        for activity in activities {
+                            let currentId = String(activity.id)
+                            let fetchDescriptor = FetchDescriptor<ActivityRecord>(predicate: #Predicate { $0.id == currentId })
+                            let existing = try? modelContext.fetch(fetchDescriptor)
+
+                            if existing?.isEmpty ?? true {
+                                let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
+
+                                let record = ActivityRecord(
+                                    id: currentId,
+                                    name: activity.name,
+                                    distance: activity.distance,
+                                    movingTime: activity.moving_time,
+                                    averageHeartrate: activity.average_heartrate,
+                                    type: activity.type,
+                                    startDate: date,
+                                    trimp: nil
+                                )
+                                modelContext.insert(record)
+                                newRecordsCount += 1
+                            }
+                        }
+
+                        try? modelContext.save()
+                        isSyncingHistory = false
+                        feedbackMessage = "Strava synchronisatie voltooid (\(newRecordsCount) nieuwe trainingen over afgelopen jaar)."
+                        refreshProfile() // Bereken het profiel direct opnieuw na de sync
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -152,6 +169,15 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+                Section(header: Text("Primaire Databron"), footer: Text("Kies welke bron als eerste aangesproken wordt voor analyses en historie.").font(.caption)) {
+                    Picker("Databron", selection: $selectedDataSource) {
+                        ForEach(DataSource.allCases) { source in
+                            Text(source.rawValue).tag(source)
+                        }
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+                }
+
                 Section(
                     header: Text("Strava Connectie"),
                     footer: Text("Koppel veilig met Strava via de officiële OAuth web flow. Tokens worden lokaal versleuteld opgeslagen.").font(.caption)
@@ -220,7 +246,7 @@ struct SettingsView: View {
 
                 Section(
                     header: Text("Historische Data & Atletisch Profiel"),
-                    footer: Text("Haal de laatste 6 maanden aan Strava data op om de AI-coach context te geven over jouw fitnessniveau.").font(.caption)
+                    footer: Text("Haal 1 jaar (365 dagen) aan historie op uit de gekozen databron om de AI-coach context te geven over jouw fitnessniveau. Omdat de berekening asynchroon is, blijft de app gewoon bruikbaar.").font(.caption)
                 ) {
                     Button(action: {
                         syncHistoricalData()
@@ -229,14 +255,14 @@ struct SettingsView: View {
                             if isSyncingHistory {
                                 ProgressView()
                                     .padding(.trailing, 8)
-                                Text("Bezig met synchroniseren...")
+                                Text("Bezig met ophalen (1 jaar)...")
                             } else {
                                 Image(systemName: "arrow.triangle.2.circlepath")
-                                Text("Synchroniseer Geschiedenis (Laatste 6 maanden)")
+                                Text("Synchroniseer Geschiedenis (1 Jaar)")
                             }
                         }
                     }
-                    .disabled(isSyncingHistory || !stravaAuthService.isAuthenticated)
+                    .disabled(isSyncingHistory || (selectedDataSource == .strava && !stravaAuthService.isAuthenticated))
 
                     if let profile = athleticProfile {
                         VStack(alignment: .leading, spacing: 8) {

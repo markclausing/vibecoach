@@ -30,14 +30,14 @@ final class FitnessGoal {
     }
 }
 
-/// Een historisch verslag van een activiteit (gesynchroniseerd met externe bronnen zoals Strava).
+/// Een historisch verslag van een activiteit (gesynchroniseerd met externe bronnen zoals Strava of HealthKit).
 /// Dit wordt lokaal opgeslagen met SwiftData voor snelle toegang en offline analyses,
 /// zoals het berekenen van het atletisch profiel.
 @Model
 final class ActivityRecord {
-    /// De unieke identificatie van de activiteit, vaak afkomstig van de externe provider (zoals Strava ID).
+    /// De unieke identificatie van de activiteit, vaak afkomstig van de externe provider (zoals Strava ID of HealthKit UUID).
     @Attribute(.unique)
-    var id: Int64
+    var id: String
 
     var name: String
     var distance: Double // Afstand in meters
@@ -46,7 +46,10 @@ final class ActivityRecord {
     var type: String
     var startDate: Date
 
-    init(id: Int64, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, type: String, startDate: Date) {
+    /// Berekende Trainingsbelasting (TRIMP) voor deze specifieke activiteit.
+    var trimp: Double?
+
+    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, type: String, startDate: Date, trimp: Double? = nil) {
         self.id = id
         self.name = name
         self.distance = distance
@@ -54,6 +57,7 @@ final class ActivityRecord {
         self.averageHeartrate = averageHeartrate
         self.type = type
         self.startDate = startDate
+        self.trimp = trimp
     }
 }
 
@@ -70,4 +74,12 @@ struct WorkoutDetails: Codable, Equatable {
     let maxHeartRate: Double
     let restingHeartRate: Double
     let heartRateSamples: [HeartRateSample]
+}
+
+/// De databron die door de gebruiker is gekozen voor de fysiologische analyses en historie.
+enum DataSource: String, CaseIterable, Identifiable {
+    case healthKit = "Apple HealthKit"
+    case strava = "Strava API"
+
+    var id: String { self.rawValue }
 }
