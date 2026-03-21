@@ -237,9 +237,14 @@ final class ChatViewModelTests: XCTestCase {
         ]
         """
 
-        mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
+        let emptyJson = "[]"
         let response = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-        mockNetworkSession.responseToReturn = response
+
+        // Sequence: 1. first page, 2. empty page to break loop
+        mockNetworkSession.sequenceResponses = [
+            (activityJson.data(using: .utf8)!, response),
+            (emptyJson.data(using: .utf8)!, response)
+        ]
 
         viewModel.messages.removeAll()
 
@@ -340,9 +345,13 @@ final class ChatViewModelTests: XCTestCase {
         let start_date_1 = formatter.string(from: date1)
 
         let activityJson = "[{\"id\":123,\"name\":\"Morning Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\",\"start_date\":\"\(start_date_1)\"}]"
-        mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
+        let emptyJson = "[]"
         let response = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-        mockNetworkSession.responseToReturn = response
+
+        mockNetworkSession.sequenceResponses = [
+            (activityJson.data(using: .utf8)!, response),
+            (emptyJson.data(using: .utf8)!, response)
+        ]
 
         viewModel.messages.removeAll()
 
