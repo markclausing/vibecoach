@@ -68,6 +68,10 @@ struct AddGoalView: View {
 
         do {
             try modelContext.save()
+            print("DEBUG: Doel toegevoegd. Context has changes: \(modelContext.hasChanges)")
+            let fetchDescriptor = FetchDescriptor<FitnessGoal>()
+            let count = (try? modelContext.fetch(fetchDescriptor).count) ?? 0
+            print("DEBUG: Totaal aantal doelen in database is nu: \(count)")
         } catch {
             print("Failed to save FitnessGoal: \(error)")
         }
