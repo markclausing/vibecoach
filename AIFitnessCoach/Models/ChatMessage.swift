@@ -21,6 +21,9 @@ struct ChatMessage: Identifiable, Equatable {
     /// Optionele ruwe JPEG data van een bijgevoegde afbeelding.
     let attachedImageData: Data?
 
+    /// Sprint 8.2: Een optioneel voorgesteld trainingsplan dat uit de gestructureerde JSON komt.
+    let suggestedPlan: SuggestedTrainingPlan?
+
     /// Creëert een nieuw `ChatMessage` object.
     ///
     /// - Parameters:
@@ -29,11 +32,13 @@ struct ChatMessage: Identifiable, Equatable {
     ///   - text: De tekst van het bericht.
     ///   - timestamp: Het verzendmoment.
     ///   - attachedImageData: Optionele bytes van een gecomprimeerde JPEG afbeelding.
-    init(id: UUID = UUID(), role: SenderRole, text: String, timestamp: Date = Date(), attachedImageData: Data? = nil) {
+    ///   - suggestedPlan: Een dynamisch gegenereerde kalender in JSON.
+    init(id: UUID = UUID(), role: SenderRole, text: String, timestamp: Date = Date(), attachedImageData: Data? = nil, suggestedPlan: SuggestedTrainingPlan? = nil) {
         self.id = id
         self.role = role
         self.text = text
         self.timestamp = timestamp
         self.attachedImageData = attachedImageData
+        self.suggestedPlan = suggestedPlan
     }
 }
