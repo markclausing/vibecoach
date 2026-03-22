@@ -42,6 +42,12 @@ struct EditGoalView: View {
         }
         .navigationTitle("Bewerk Doel")
         .navigationBarTitleDisplayMode(.inline)
-        // Auto-save on dismiss is standard behaviour voor @Bindable in SwiftData
+        .onDisappear {
+            do {
+                try modelContext.save()
+            } catch {
+                print("Failed to save edited FitnessGoal: \(error)")
+            }
+        }
     }
 }

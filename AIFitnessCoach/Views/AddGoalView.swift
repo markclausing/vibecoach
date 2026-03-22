@@ -65,6 +65,13 @@ struct AddGoalView: View {
         )
 
         modelContext.insert(newGoal)
+
+        do {
+            try modelContext.save()
+        } catch {
+            print("Failed to save FitnessGoal: \(error)")
+        }
+
         dismiss()
     }
 }
