@@ -117,15 +117,83 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Genereert een tekstprompt voor de Gemini AI op basis van de fysiologische data uit HealthKit.
-    private func generateHealthKitPrompt(for workout: WorkoutDetails, trimp: Int) -> String {
-        let durationInMinutes = workout.duration / 60.0
-        let hr = Int(workout.averageHeartRate)
-        return "Analyseer mijn laatste training. Duur: \(String(format: "%.1f", durationInMinutes)) min, Gemiddelde hartslag: \(hr) bpm, Berekende TRIMP (Training Impulse): \(trimp)."
+    struct DailyWorkout {
+        let date: Date
+        let name: String
+        let durationMinutes: Int
+        let trimp: Int
     }
 
-    /// Haalt de laatste activiteit op via de geselecteerde bron.
+    private func generateCurrentStatusPrompt(workouts: [DailyWorkout], days: Int) -> String {
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfToday = calendar.startOfDay(for: now)
+
+        var lines: [String] = ["Actuele Status (Laatste \(days) dagen):"]
+        var totalTrimp = 0
+
+        var workoutsByDay: [Int: [DailyWorkout]] = [:]
+
+        for workout in workouts {
+            let startOfWorkoutDay = calendar.startOfDay(for: workout.date)
+            let components = calendar.dateComponents([.day], from: startOfWorkoutDay, to: startOfToday)
+            let dayOffset = components.day ?? 0
+
+            if dayOffset < days && dayOffset >= 0 {
+                if workoutsByDay[dayOffset] == nil {
+                    workoutsByDay[dayOffset] = []
+                }
+                workoutsByDay[dayOffset]?.append(workout)
+                totalTrimp += workout.trimp
+            }
+        }
+
+        var emptyDaysStreak: [Int] = []
+
+        for dayOffset in 0..<days {
+            let displayDay = days - dayOffset
+
+            if let dailyWorkouts = workoutsByDay[dayOffset], !dailyWorkouts.isEmpty {
+                if !emptyDaysStreak.isEmpty {
+                    if emptyDaysStreak.count == 1 {
+                        lines.append("- Dag \(emptyDaysStreak[0]): Rust")
+                    } else {
+                        lines.append("- Dag \(emptyDaysStreak.first!) t/m \(emptyDaysStreak.last!): Rust")
+                    }
+                    emptyDaysStreak.removeAll()
+                }
+
+                var dayName = "Dag \(displayDay)"
+                if dayOffset == 0 {
+                    dayName += " (Vandaag)"
+                } else if dayOffset == 1 {
+                    dayName += " (Gisteren)"
+                }
+
+                for workout in dailyWorkouts {
+                    lines.append("- \(dayName): \(workout.durationMinutes) min \(workout.name) (TRIMP: \(workout.trimp))")
+                }
+            } else {
+                emptyDaysStreak.append(displayDay)
+            }
+        }
+
+        if !emptyDaysStreak.isEmpty {
+            if emptyDaysStreak.count == 1 {
+                lines.append("- Dag \(emptyDaysStreak[0]): Rust")
+            } else {
+                lines.append("- Dag \(emptyDaysStreak.first!) t/m \(emptyDaysStreak.last!): Rust")
+            }
+        }
+
+        lines.append("\nTotale Cumulatieve TRIMP: \(totalTrimp)")
+
+        return lines.joined(separator: "\n")
+    }
+
+    /// Haalt de status op via de geselecteerde bron voor de afgelopen X dagen.
     /// Valt terug op de andere bron bij gebrek aan data of permissies.
-    func analyzeLatestWorkout(contextProfile: AthleticProfile? = nil) {
+    func analyzeCurrentStatus(days: Int = 7, contextProfile: AthleticProfile? = nil) {
         guard !isFetchingWorkout else { return }
         isFetchingWorkout = true
 
@@ -133,28 +201,32 @@ class ChatViewModel: ObservableObject {
             // SPRINT 7.4 - Check geselecteerde databron
             if selectedDataSource == .healthKit {
                 do {
-                    if let workout = try await healthKitManager.fetchLatestWorkoutDetails() {
-                        let durationInMinutes = workout.duration / 60.0
-                        let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: workout.averageHeartRate, maxHeartRate: workout.maxHeartRate, restingHeartRate: workout.restingHeartRate)
-                        let trimpInt = Int(calculatedTSS)
+                    let workouts = try await healthKitManager.fetchRecentWorkouts(days: days)
+                    if !workouts.isEmpty {
+                        var dailyWorkouts: [DailyWorkout] = []
+                        for workout in workouts {
+                            let durationInMinutes = Int(workout.duration / 60.0)
+                            let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: workout.averageHeartRate, maxHeartRate: workout.maxHeartRate, restingHeartRate: workout.restingHeartRate)
+                            let trimpInt = Int(calculatedTSS)
 
-                        print("🍏 HealthKit Workout Gevonden: \(String(format: "%.1f", durationInMinutes)) min, Gem HR: \(workout.averageHeartRate), Berekende TRIMP: \(calculatedTSS)")
+                            dailyWorkouts.append(DailyWorkout(date: workout.startDate, name: workout.name, durationMinutes: durationInMinutes, trimp: trimpInt))
+                        }
 
-                        let uiPrompt = generateHealthKitPrompt(for: workout, trimp: trimpInt)
+                        let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days)
                         await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile)
                         return
                     }
-                    print("⚠️ Geen of lege HealthKit workout gevonden, terugvallen op Strava.")
+                    print("⚠️ Geen of lege HealthKit workouts gevonden, terugvallen op Strava.")
                 } catch {
                     print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
                 }
 
                 // Fallback naar Strava
-                await fetchStravaWorkout(contextProfile: contextProfile)
+                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile)
 
             } else {
                 // Strava geselecteerd
-                await fetchStravaWorkout(contextProfile: contextProfile)
+                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile)
             }
         }
     }
@@ -173,23 +245,27 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Hulpfunctie voor het ophalen via HealthKit, met optionele fallback.
-    private func fetchHealthKitWorkout(contextProfile: AthleticProfile?, isFallback: Bool = false) async {
+    private func fetchHealthKitRecentWorkouts(days: Int, contextProfile: AthleticProfile?, isFallback: Bool = false) async {
         do {
-            if let workout = try await healthKitManager.fetchLatestWorkoutDetails() {
-                let durationInMinutes = workout.duration / 60.0
-                let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: workout.averageHeartRate, maxHeartRate: workout.maxHeartRate, restingHeartRate: workout.restingHeartRate)
-                let trimpInt = Int(calculatedTSS)
+            let workouts = try await healthKitManager.fetchRecentWorkouts(days: days)
+            if !workouts.isEmpty {
+                var dailyWorkouts: [DailyWorkout] = []
+                for workout in workouts {
+                    let durationInMinutes = Int(workout.duration / 60.0)
+                    let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: workout.averageHeartRate, maxHeartRate: workout.maxHeartRate, restingHeartRate: workout.restingHeartRate)
+                    let trimpInt = Int(calculatedTSS)
 
-                print("🍏 HealthKit Workout Gevonden: \(String(format: "%.1f", durationInMinutes)) min, Gem HR: \(workout.averageHeartRate), Berekende TRIMP: \(calculatedTSS)")
+                    dailyWorkouts.append(DailyWorkout(date: workout.startDate, name: workout.name, durationMinutes: durationInMinutes, trimp: trimpInt))
+                }
 
-                let uiPrompt = generateHealthKitPrompt(for: workout, trimp: trimpInt)
+                let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days)
                 await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile)
                 return
             }
 
             if !isFallback {
-                print("⚠️ Geen of lege HealthKit workout gevonden, terugvallen op Strava.")
-                await fetchStravaWorkout(contextProfile: contextProfile, isFallback: true)
+                print("⚠️ Geen of lege HealthKit workouts gevonden, terugvallen op Strava.")
+                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, isFallback: true)
             } else {
                 await MainActor.run {
                     messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account."))
@@ -199,7 +275,7 @@ class ChatViewModel: ObservableObject {
         } catch {
             if !isFallback {
                 print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
-                await fetchStravaWorkout(contextProfile: contextProfile, isFallback: true)
+                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, isFallback: true)
             } else {
                 await MainActor.run {
                     messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden. HealthKit fout: \(error.localizedDescription)"))
@@ -210,15 +286,15 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Hulpfunctie voor het ophalen via Strava, inclusief fallback naar HealthKit.
-    private func fetchStravaWorkout(contextProfile: AthleticProfile?, isFallback: Bool = false) async {
+    private func fetchStravaRecentActivities(days: Int, contextProfile: AthleticProfile?, isFallback: Bool = false) async {
         do {
-            let activityData = try await fitnessDataService.fetchLatestActivity()
+            let activities = try await fitnessDataService.fetchRecentActivities(days: days)
 
-            guard let activity = activityData else {
+            if activities.isEmpty {
                 if !isFallback && selectedDataSource == .strava {
                     // Reverse Fallback: Als Strava faalt of leeg is en Strava was de bron, probeer HealthKit
                     print("⚠️ Geen recente Strava activiteit gevonden. Reverse fallback naar HealthKit.")
-                    await fetchHealthKitWorkout(contextProfile: contextProfile, isFallback: true)
+                    await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, isFallback: true)
                     return
                 }
 
@@ -229,18 +305,30 @@ class ChatViewModel: ObservableObject {
                 return
             }
 
-            let distanceKm = String(format: "%.1f", activity.distance / 1000.0)
-            let timeMinutes = activity.moving_time / 60
-            let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!))" : "onbekend"
+            let formatter = ISO8601DateFormatter()
+            var dailyWorkouts: [DailyWorkout] = []
 
-            let uiPrompt = "Hier is de data van mijn laatste training via Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
+            for activity in activities {
+                let date = formatter.date(from: activity.start_date) ?? Date()
+                let durationMinutes = activity.moving_time / 60
+
+                // Schatting resting heart rate en max heart rate als deze niet via Strava beschikbaar is,
+                // of we kunnen een simpele fallback gebruiken.
+                // In een echte app zouden we dit uit het profiel halen of een default nemen.
+                let avgHR = activity.average_heartrate ?? 140.0
+                let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: Double(activity.moving_time), averageHeartRate: avgHR, maxHeartRate: 190.0, restingHeartRate: 60.0)
+
+                dailyWorkouts.append(DailyWorkout(date: date, name: activity.name, durationMinutes: durationMinutes, trimp: Int(calculatedTSS)))
+            }
+
+            let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days)
 
             await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile)
 
         } catch let error as FitnessDataError {
             if !isFallback && selectedDataSource == .strava {
                 print("⚠️ Strava API fout (\(error)). Reverse fallback naar HealthKit.")
-                await fetchHealthKitWorkout(contextProfile: contextProfile, isFallback: true)
+                await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, isFallback: true)
                 return
             }
 
@@ -258,7 +346,7 @@ class ChatViewModel: ObservableObject {
             }
         } catch {
             if !isFallback && selectedDataSource == .strava {
-                await fetchHealthKitWorkout(contextProfile: contextProfile, isFallback: true)
+                await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, isFallback: true)
                 return
             }
 

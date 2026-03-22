@@ -209,30 +209,52 @@ final class ChatViewModelTests: XCTestCase {
         }
     }
 
-    func testAnalyzeLatestWorkout_Success() async {
+    func testAnalyzeCurrentStatus_Success() async {
         // Arrange
-        let expectedAIResponse = "Goed getraind! Je hartslag was netjes."
+        let expectedAIResponse = "Je hebt een mooie week achter de rug met 2 trainingen!"
         mockModel.responseToReturn = expectedAIResponse
         mockModel.delay = 0.1
 
         try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
-        // moving_time 7200 sec = 120 minuten
-        // distance 50000 m = 50.0 km
-        let activityJson = "[{\"id\":123,\"name\":\"Morning Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\",\"start_date\":\"2023-10-12T10:00:00Z\"}]"
-        mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
+
+        // Mock data with 2 workouts in the last 7 days
+        let formatter = ISO8601DateFormatter()
+        let now = Date()
+        let calendar = Calendar.current
+
+        // 1 day ago
+        let date1 = calendar.date(byAdding: .day, value: -1, to: now)!
+        let start_date_1 = formatter.string(from: date1)
+
+        // 3 days ago
+        let date2 = calendar.date(byAdding: .day, value: -3, to: now)!
+        let start_date_2 = formatter.string(from: date2)
+
+        let activityJson = """
+        [
+            {"id":123,"name":"Hardlopen","distance":5000.0,"moving_time":2700,"average_heartrate":150.0,"type":"Run","start_date":"\(start_date_1)"},
+            {"id":124,"name":"Wandelen","distance":3000.0,"moving_time":1800,"average_heartrate":100.0,"type":"Walk","start_date":"\(start_date_2)"}
+        ]
+        """
+
+        let emptyJson = "[]"
         let response = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-        mockNetworkSession.responseToReturn = response
+
+        // Sequence: 1. first page, 2. empty page to break loop
+        mockNetworkSession.sequenceResponses = [
+            (activityJson.data(using: .utf8)!, response),
+            (emptyJson.data(using: .utf8)!, response)
+        ]
 
         viewModel.messages.removeAll()
 
         // Actie
-        viewModel.analyzeLatestWorkout()
+        viewModel.analyzeCurrentStatus(days: 7)
 
         // Check loading state immediately
         XCTAssertTrue(viewModel.isFetchingWorkout)
 
         // Polling loop to wait for the asynchronous operations to complete
-        // The process involves fetching from mock network, then mock AI, taking multiple task hops.
         var attempts = 0
         while viewModel.messages.count < 2 && attempts < 50 { // max 5 seconds wait (50 * 0.1s)
             try? await Task.sleep(nanoseconds: 100_000_000)
@@ -243,11 +265,16 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isFetchingWorkout, "Fetching state should be reset to false")
         XCTAssertFalse(viewModel.isTyping, "Typing state should be reset to false")
         XCTAssertEqual(viewModel.messages.count, 2, "There should be exactly 2 messages: the workout context prompt and the AI response")
+
+        let promptText = viewModel.messages.first?.text ?? ""
         XCTAssertEqual(viewModel.messages.first?.role, .user)
-        XCTAssertTrue(viewModel.messages.first!.text.contains("Morning Ride"))
-        XCTAssertTrue(viewModel.messages.first!.text.contains("50.0 km"))
-        XCTAssertTrue(viewModel.messages.first!.text.contains("120 minuten"))
-        XCTAssertTrue(viewModel.messages.first!.text.contains("140"))
+
+        // Check if the prompt contains expected formats
+        XCTAssertTrue(promptText.contains("Actuele Status (Laatste 7 dagen):"))
+        XCTAssertTrue(promptText.contains("Hardlopen"))
+        XCTAssertTrue(promptText.contains("Wandelen"))
+        XCTAssertTrue(promptText.contains("Totale Cumulatieve TRIMP:"))
+        XCTAssertTrue(promptText.contains("Rust"))
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
@@ -296,7 +323,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
     }
 
-    func testAnalyzeLatestWorkout_FallbackToStrava() async {
+    func testAnalyzeCurrentStatus_FallbackToStrava() async {
         // We simuleren dat HealthKit nil teruggeeft, dus we vallen terug op Strava.
         // Omdat we HealthKitManager niet direct kunnen mocken in de huidige opzet zonder een protocol
         // (we gebruiken direct de class), zal HealthKit de `HKSampleQuery` falen in een test environment
@@ -309,15 +336,27 @@ final class ChatViewModelTests: XCTestCase {
         mockModel.delay = 0.1
 
         try? mockTokenStore.saveToken("valid_token", forService: "StravaToken")
-        let activityJson = "[{\"id\":123,\"name\":\"Morning Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\",\"start_date\":\"2023-10-12T10:00:00Z\"}]"
-        mockNetworkSession.dataToReturn = activityJson.data(using: .utf8)
+
+        let formatter = ISO8601DateFormatter()
+        let now = Date()
+        let calendar = Calendar.current
+
+        let date1 = calendar.date(byAdding: .day, value: -2, to: now)!
+        let start_date_1 = formatter.string(from: date1)
+
+        let activityJson = "[{\"id\":123,\"name\":\"Morning Ride\",\"distance\":50000.0,\"moving_time\":7200,\"average_heartrate\":140.0,\"type\":\"Ride\",\"start_date\":\"\(start_date_1)\"}]"
+        let emptyJson = "[]"
         let response = HTTPURLResponse(url: URL(string: "https://strava.com")!, statusCode: 200, httpVersion: nil, headerFields: nil)!
-        mockNetworkSession.responseToReturn = response
+
+        mockNetworkSession.sequenceResponses = [
+            (activityJson.data(using: .utf8)!, response),
+            (emptyJson.data(using: .utf8)!, response)
+        ]
 
         viewModel.messages.removeAll()
 
         // Actie
-        viewModel.analyzeLatestWorkout()
+        viewModel.analyzeCurrentStatus(days: 7)
 
         var attempts = 0
         while viewModel.messages.count < 2 && attempts < 50 {
@@ -328,7 +367,7 @@ final class ChatViewModelTests: XCTestCase {
         // Assert
         XCTAssertEqual(viewModel.messages.count, 2)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
-        XCTAssertTrue(viewModel.messages.first!.text.contains("via Strava")) // Bevestigt dat we Strava prompt gebruiken
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Actuele Status")) // Bevestigt dat we de nieuwe prompt gebruiken
         XCTAssertTrue(viewModel.messages.first!.text.contains("Morning Ride"))
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
