@@ -34,6 +34,7 @@ struct GoalsListView: View {
             }
             .sheet(isPresented: $showingAddSheet) {
                 AddGoalView()
+                    .environment(\.modelContext, modelContext)
             }
             .overlay {
                 if goals.isEmpty {
