@@ -53,6 +53,11 @@ struct GoalsListView: View {
             for index in offsets {
                 modelContext.delete(goals[index])
             }
+            do {
+                try modelContext.save()
+            } catch {
+                print("Failed to save context after deleting FitnessGoal: \(error)")
+            }
         }
     }
 }
