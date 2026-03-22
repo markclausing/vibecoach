@@ -15,6 +15,7 @@ struct ChatView: View {
 
     /// SwiftData Context voor het berekenen van het atletisch profiel.
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
     @State private var currentProfile: AthleticProfile? = nil
 
     private let profileManager = AthleticProfileManager()
@@ -91,7 +92,7 @@ struct ChatView: View {
                     HStack {
                         Button(action: {
                             refreshProfileContext()
-                            viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile)
+                            viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals)
                         }) {
                             HStack {
                                 if viewModel.isFetchingWorkout {
@@ -165,7 +166,7 @@ struct ChatView: View {
 
                     Button(action: {
                         refreshProfileContext()
-                        viewModel.sendMessage(contextProfile: currentProfile)
+                        viewModel.sendMessage(contextProfile: currentProfile, activeGoals: goals)
                         selectedItem = nil
                     }) {
                         Image(systemName: "arrow.up.circle.fill")
@@ -190,7 +191,7 @@ struct ChatView: View {
                     // Start de analyse en clear daarna de target uit de state zodat
                     // hij later opnieuw getriggerd kan worden indien nodig
                     refreshProfileContext()
-                    viewModel.analyzeWorkout(withId: activityId, contextProfile: currentProfile)
+                    viewModel.analyzeWorkout(withId: activityId, contextProfile: currentProfile, activeGoals: goals)
 
                     Task { @MainActor in
                         appState.targetActivityId = nil
