@@ -49,9 +49,9 @@ class ChatViewModel: ObservableObject {
             self.model = providedModel
         } else {
             let systemInstruction = """
-            Jij bent een analytische, aanmoedigende en realistische persoonlijke fitness- en duurcoach.
-            Je helpt de gebruiker met het analyseren van trainingen via Apple HealthKit en fysiologische data.
-            Houd je antwoorden beknopt, direct en deskundig. Vermijd overdreven of dramatisch taalgebruik (zoals 'totale sloopkogel' of 'je bent kapot').
+            Jij bent een samenwerkende, meedenkende en proactieve AI fitness-coach.
+            Je analyseert niet alleen vermoeidheid, maar je helpt de gebruiker actief om de eerstvolgende stap te plannen richting hun gestelde doelen.
+            Houd je antwoorden beknopt, direct en deskundig. Stel je niet op als een waarschuwende dokter, maar als een partner in hun trainingsschema.
 
             Belangrijke context voor je analyse:
             Wij berekenen lokaal een Banister TRIMP (Training Impulse) score om de trainingsbelasting te bepalen (niet de traditionele TSS die op 100/uur cap).
@@ -74,7 +74,7 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Genereert een context-prefix string op basis van het meegegeven atletisch profiel.
-    private func buildContextPrefix(from profile: AthleticProfile?, goals: [FitnessGoal] = []) -> String {
+    private func buildContextPrefix(from profile: AthleticProfile?) -> String {
         var prefix = ""
 
         if let p = profile {
@@ -90,19 +90,6 @@ class ChatViewModel: ObservableObject {
             }
 
             prefix += " Neem dit mee in je analyse over herstel en prestatie.]\n\n"
-        }
-
-        let activeGoals = goals.filter { !$0.isCompleted }
-        if !activeGoals.isEmpty {
-            prefix += "[DOELEN: De atleet werkt momenteel aan de volgende doelen:\n"
-            for goal in activeGoals {
-                let formatter = DateFormatter()
-                formatter.dateStyle = .medium
-                let dateStr = formatter.string(from: goal.targetDate)
-                let sportType = goal.sportType ?? "Sport"
-                prefix += "- \(goal.title) (\(sportType)), gepland voor \(dateStr).\n"
-            }
-            prefix += "Houd hier rekening mee in je coaching en advies.]\n\n"
         }
 
         guard !prefix.isEmpty else { return "" }
@@ -128,8 +115,22 @@ class ChatViewModel: ObservableObject {
         clearImage()
 
         // 2. Bouw de uiteindelijke payload prompt op
-        let contextPrefix = buildContextPrefix(from: contextProfile, goals: activeGoals)
-        let payloadText = textToUse.isEmpty ? contextPrefix : "\(contextPrefix)\(textToUse)"
+        let contextPrefix = buildContextPrefix(from: contextProfile)
+
+        // Combine explicitly injected goals into user text if applicable for plain chat
+        var finalUserText = textToUse
+        let uncompletedGoals = activeGoals.filter { !$0.isCompleted }
+        if !uncompletedGoals.isEmpty && textToUse != "" {
+            let goalsString = uncompletedGoals.map { goal in
+                let formatter = DateFormatter()
+                formatter.dateStyle = .medium
+                return "\(goal.title) voor \(formatter.string(from: goal.targetDate))"
+            }.joined(separator: ", ")
+
+            finalUserText = "[DOELEN: \(goalsString)]\n" + finalUserText
+        }
+
+        let payloadText = finalUserText.isEmpty ? contextPrefix : "\(contextPrefix)\(finalUserText)"
 
         // 3. Haal AI reactie op met de verrijkte payload
         fetchAIResponse(for: payloadText, image: imageToSend)
@@ -143,12 +144,29 @@ class ChatViewModel: ObservableObject {
         let trimp: Int
     }
 
-    private func generateCurrentStatusPrompt(workouts: [DailyWorkout], days: Int) -> String {
+    private func generateCurrentStatusPrompt(workouts: [DailyWorkout], days: Int, activeGoals: [FitnessGoal]) -> String {
         let calendar = Calendar.current
         let now = Date()
         let startOfToday = calendar.startOfDay(for: now)
 
-        var lines: [String] = ["Actuele Status (Laatste \(days) dagen):"]
+        var lines: [String] = ["Context voor de AI Coach:"]
+
+        // Inject Goals explicitly
+        let uncompletedGoals = activeGoals.filter { !$0.isCompleted }
+        if uncompletedGoals.isEmpty {
+            lines.append("- Mijn opgeslagen doelen: Geen specifieke doelen.")
+        } else {
+            let goalsString = uncompletedGoals.map { goal in
+                let formatter = DateFormatter()
+                formatter.dateStyle = .medium
+                let dateStr = formatter.string(from: goal.targetDate)
+                let sport = goal.sportType ?? "Sport"
+                return "\(goal.title) (\(sport)) voor \(dateStr)"
+            }.joined(separator: ", ")
+            lines.append("- Mijn opgeslagen doelen: \(goalsString)")
+        }
+
+        lines.append("- Mijn belasting (afgelopen \(days) dagen):")
         var totalTrimp = 0
 
         var workoutsByDay: [Int: [DailyWorkout]] = [:]
@@ -205,7 +223,14 @@ class ChatViewModel: ObservableObject {
             }
         }
 
-        lines.append("\nTotale Cumulatieve TRIMP: \(totalTrimp)")
+        lines.append("Totale Cumulatieve TRIMP: \(totalTrimp)")
+
+        lines.append("\nInstructie voor de Coach:")
+        lines.append("Analyseer mijn vermoeidheid, maar start vooral een discussie over wat nu verstandig is om te doen. Geef een concreet voorstel voor mijn eerstvolgende training. Denk proactief mee over:")
+        lines.append("- Specifieke afstand of duur.")
+        lines.append("- Het gewenste tempo (pace).")
+        lines.append("- De hartslagzones waar ik in moet blijven.")
+        lines.append("\nEindig je antwoord altijd met een vraag aan mij (bijv. 'Heb je daar vandaag de tijd voor?').")
 
         return lines.joined(separator: "\n")
     }
@@ -231,7 +256,7 @@ class ChatViewModel: ObservableObject {
                             dailyWorkouts.append(DailyWorkout(date: workout.startDate, name: workout.name, durationMinutes: durationInMinutes, trimp: trimpInt))
                         }
 
-                        let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days)
+                        let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days, activeGoals: activeGoals)
                         await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals)
                         return
                     }
@@ -257,7 +282,7 @@ class ChatViewModel: ObservableObject {
             isTyping = true
             isFetchingWorkout = false
 
-            let contextPrefix = buildContextPrefix(from: contextProfile, goals: activeGoals)
+            let contextPrefix = buildContextPrefix(from: contextProfile)
             let payloadText = "\(contextPrefix)\(uiPrompt)"
             fetchAIResponse(for: payloadText, image: nil)
         }
@@ -277,7 +302,7 @@ class ChatViewModel: ObservableObject {
                     dailyWorkouts.append(DailyWorkout(date: workout.startDate, name: workout.name, durationMinutes: durationInMinutes, trimp: trimpInt))
                 }
 
-                let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days)
+                let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days, activeGoals: activeGoals)
                 await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals)
                 return
             }
@@ -340,7 +365,7 @@ class ChatViewModel: ObservableObject {
                 dailyWorkouts.append(DailyWorkout(date: date, name: activity.name, durationMinutes: durationMinutes, trimp: Int(calculatedTSS)))
             }
 
-            let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days)
+            let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days, activeGoals: activeGoals)
 
             await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals)
 
@@ -399,7 +424,7 @@ class ChatViewModel: ObservableObject {
                     isTyping = true
                     isFetchingWorkout = false
 
-                    let contextPrefix = buildContextPrefix(from: contextProfile, goals: activeGoals)
+                    let contextPrefix = buildContextPrefix(from: contextProfile)
                     let payloadText = "\(contextPrefix)\(uiPrompt)"
 
                     fetchAIResponse(for: payloadText, image: nil)
