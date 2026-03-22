@@ -57,11 +57,30 @@ class ChatViewModel: ObservableObject {
             Wij berekenen lokaal een Banister TRIMP (Training Impulse) score om de trainingsbelasting te bepalen (niet de traditionele TSS die op 100/uur cap).
             - Een TRIMP van 70-100 is een pittige, solide training.
             - Een TRIMP van 100-140 is een zeer zware training, maar dit is op zichzelf geen teken van overtraining.
+
+            BELANGRIJK: Zodra je een schema of status voor de komende 7 dagen plant of analyseert, MOET je antwoord een JSON object bevatten (eventueel in een codeblock) dat voldoet aan deze structuur:
+            {
+                "motivation": "Korte motiverende zin",
+                "workouts": [
+                    {
+                        "dateOrDay": "Maandag",
+                        "activityType": "Hardlopen",
+                        "suggestedDurationMinutes": 45,
+                        "targetTRIMP": 60,
+                        "description": "Herstel na de lange duurloop"
+                    }
+                ]
+            }
             """
 
+            let config = GenerationConfig(
+                responseMIMEType: "application/json"
+            )
+
             let googleModel = GenerativeModel(
-                name: "gemini-3.1-pro-preview",
+                name: "gemini-2.5-flash",
                 apiKey: Secrets.geminiAPIKey,
+                generationConfig: config,
                 systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)])
             )
             self.model = RealGenerativeModel(model: googleModel)
@@ -498,9 +517,26 @@ class ChatViewModel: ObservableObject {
                 // Geef de array direct over aan de model protocol wrapper
                 let responseText = try await model.generateContent(promptParts)
 
-                let finalResponseText = responseText ?? "Ik kon geen antwoord genereren."
+                var finalResponseText = responseText ?? "{}"
 
-                messages.append(ChatMessage(role: .ai, text: finalResponseText))
+                // Verwijder markdown code block tags als de AI ze toevoegt ondanks de mimeType setting
+                finalResponseText = finalResponseText.replacingOccurrences(of: "```json", with: "").replacingOccurrences(of: "```", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+
+                var parsedPlan: SuggestedTrainingPlan? = nil
+                var motivationText: String = "Ik kon het JSON schema niet correct laden."
+
+                if let data = finalResponseText.data(using: .utf8) {
+                    do {
+                        let plan = try JSONDecoder().decode(SuggestedTrainingPlan.self, from: data)
+                        parsedPlan = plan
+                        motivationText = plan.motivation
+                    } catch {
+                        // Fallback als het geen correcte JSON is, toon de ruwe tekst aan de gebruiker (handig voor gewone chat)
+                        motivationText = responseText ?? ""
+                    }
+                }
+
+                messages.append(ChatMessage(role: .ai, text: motivationText, suggestedPlan: parsedPlan))
             } catch {
                 messages.append(ChatMessage(role: .ai, text: "Sorry, er ging iets mis: \(error.localizedDescription)"))
             }
