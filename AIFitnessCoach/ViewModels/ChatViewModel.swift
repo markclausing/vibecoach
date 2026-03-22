@@ -74,25 +74,44 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Genereert een context-prefix string op basis van het meegegeven atletisch profiel.
-    private func buildContextPrefix(from profile: AthleticProfile?) -> String {
-        guard let p = profile else { return "" }
-        let peakDistanceKm = String(format: "%.1f", p.peakDistanceInMeters / 1000)
-        let peakDurationMin = p.peakDurationInSeconds / 60
-        let weeklyVolumeMin = p.averageWeeklyVolumeInSeconds / 60
+    private func buildContextPrefix(from profile: AthleticProfile?, goals: [FitnessGoal] = []) -> String {
+        var prefix = ""
 
-        var prefix = "[CONTEXT ATLEET: Heeft een piekprestatie van \(peakDistanceKm) km in \(peakDurationMin) minuten. Traint gemiddeld \(weeklyVolumeMin) minuten per week (gem. laatste 4 weken), en heeft \(p.daysSinceLastTraining) dagen geleden voor het laatst getraind."
+        if let p = profile {
+            let peakDistanceKm = String(format: "%.1f", p.peakDistanceInMeters / 1000)
+            let peakDurationMin = p.peakDurationInSeconds / 60
+            let weeklyVolumeMin = p.averageWeeklyVolumeInSeconds / 60
 
-        // SPRINT 6.3: Overtrainings waarschuwing
-        if p.isRecoveryNeeded {
-            prefix += " URGENT: De atleet vertoont tekenen van overtraining op basis van recent volume. Wees streng, adviseer actief om rust te nemen en analyseer deze training puur op herstel."
+            prefix += "[CONTEXT ATLEET: Heeft een piekprestatie van \(peakDistanceKm) km in \(peakDurationMin) minuten. Traint gemiddeld \(weeklyVolumeMin) minuten per week (gem. laatste 4 weken), en heeft \(p.daysSinceLastTraining) dagen geleden voor het laatst getraind."
+
+            // SPRINT 6.3: Overtrainings waarschuwing
+            if p.isRecoveryNeeded {
+                prefix += " URGENT: De atleet vertoont tekenen van overtraining op basis van recent volume. Wees streng, adviseer actief om rust te nemen en analyseer deze training puur op herstel."
+            }
+
+            prefix += " Neem dit mee in je analyse over herstel en prestatie.]\n\n"
         }
 
-        prefix += " Neem dit mee in je analyse over herstel en prestatie.]\n\n[VRAAG]: "
+        let activeGoals = goals.filter { !$0.isCompleted }
+        if !activeGoals.isEmpty {
+            prefix += "[DOELEN: De atleet werkt momenteel aan de volgende doelen:\n"
+            for goal in activeGoals {
+                let formatter = DateFormatter()
+                formatter.dateStyle = .medium
+                let dateStr = formatter.string(from: goal.targetDate)
+                let sportType = goal.sportType ?? "Sport"
+                prefix += "- \(goal.title) (\(sportType)), gepland voor \(dateStr).\n"
+            }
+            prefix += "Houd hier rekening mee in je coaching en advies.]\n\n"
+        }
+
+        guard !prefix.isEmpty else { return "" }
+        prefix += "[VRAAG]: "
         return prefix
     }
 
     /// Verstuurt het huidige tekstveld (of de meegegeven tekst) en/of de geselecteerde afbeelding.
-    func sendMessage(_ explicitText: String? = nil, contextProfile: AthleticProfile? = nil) {
+    func sendMessage(_ explicitText: String? = nil, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = []) {
         let textToUse = explicitText ?? inputText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let imageToSend = selectedImage?.downsample(to: 2048.0)
@@ -109,7 +128,7 @@ class ChatViewModel: ObservableObject {
         clearImage()
 
         // 2. Bouw de uiteindelijke payload prompt op
-        let contextPrefix = buildContextPrefix(from: contextProfile)
+        let contextPrefix = buildContextPrefix(from: contextProfile, goals: activeGoals)
         let payloadText = textToUse.isEmpty ? contextPrefix : "\(contextPrefix)\(textToUse)"
 
         // 3. Haal AI reactie op met de verrijkte payload
@@ -193,7 +212,7 @@ class ChatViewModel: ObservableObject {
 
     /// Haalt de status op via de geselecteerde bron voor de afgelopen X dagen.
     /// Valt terug op de andere bron bij gebrek aan data of permissies.
-    func analyzeCurrentStatus(days: Int = 7, contextProfile: AthleticProfile? = nil) {
+    func analyzeCurrentStatus(days: Int = 7, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = []) {
         guard !isFetchingWorkout else { return }
         isFetchingWorkout = true
 
@@ -213,7 +232,7 @@ class ChatViewModel: ObservableObject {
                         }
 
                         let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days)
-                        await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile)
+                        await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals)
                         return
                     }
                     print("⚠️ Geen of lege HealthKit workouts gevonden, terugvallen op Strava.")
@@ -222,30 +241,30 @@ class ChatViewModel: ObservableObject {
                 }
 
                 // Fallback naar Strava
-                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile)
+                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals)
 
             } else {
                 // Strava geselecteerd
-                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile)
+                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals)
             }
         }
     }
 
     /// Hulpfunctie voor de AI prompt injectie.
-    private func sendPromptToAI(uiPrompt: String, contextProfile: AthleticProfile?) async {
+    private func sendPromptToAI(uiPrompt: String, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = []) async {
         await MainActor.run {
             messages.append(ChatMessage(role: .user, text: uiPrompt))
             isTyping = true
             isFetchingWorkout = false
 
-            let contextPrefix = buildContextPrefix(from: contextProfile)
+            let contextPrefix = buildContextPrefix(from: contextProfile, goals: activeGoals)
             let payloadText = "\(contextPrefix)\(uiPrompt)"
             fetchAIResponse(for: payloadText, image: nil)
         }
     }
 
     /// Hulpfunctie voor het ophalen via HealthKit, met optionele fallback.
-    private func fetchHealthKitRecentWorkouts(days: Int, contextProfile: AthleticProfile?, isFallback: Bool = false) async {
+    private func fetchHealthKitRecentWorkouts(days: Int, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = [], isFallback: Bool = false) async {
         do {
             let workouts = try await healthKitManager.fetchRecentWorkouts(days: days)
             if !workouts.isEmpty {
@@ -259,13 +278,13 @@ class ChatViewModel: ObservableObject {
                 }
 
                 let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days)
-                await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile)
+                await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals)
                 return
             }
 
             if !isFallback {
                 print("⚠️ Geen of lege HealthKit workouts gevonden, terugvallen op Strava.")
-                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, isFallback: true)
+                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, isFallback: true)
             } else {
                 await MainActor.run {
                     messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account."))
@@ -275,7 +294,7 @@ class ChatViewModel: ObservableObject {
         } catch {
             if !isFallback {
                 print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
-                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, isFallback: true)
+                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, isFallback: true)
             } else {
                 await MainActor.run {
                     messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden. HealthKit fout: \(error.localizedDescription)"))
@@ -286,7 +305,7 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Hulpfunctie voor het ophalen via Strava, inclusief fallback naar HealthKit.
-    private func fetchStravaRecentActivities(days: Int, contextProfile: AthleticProfile?, isFallback: Bool = false) async {
+    private func fetchStravaRecentActivities(days: Int, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = [], isFallback: Bool = false) async {
         do {
             let activities = try await fitnessDataService.fetchRecentActivities(days: days)
 
@@ -294,7 +313,7 @@ class ChatViewModel: ObservableObject {
                 if !isFallback && selectedDataSource == .strava {
                     // Reverse Fallback: Als Strava faalt of leeg is en Strava was de bron, probeer HealthKit
                     print("⚠️ Geen recente Strava activiteit gevonden. Reverse fallback naar HealthKit.")
-                    await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, isFallback: true)
+                    await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, isFallback: true)
                     return
                 }
 
@@ -323,12 +342,12 @@ class ChatViewModel: ObservableObject {
 
             let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days)
 
-            await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile)
+            await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals)
 
         } catch let error as FitnessDataError {
             if !isFallback && selectedDataSource == .strava {
                 print("⚠️ Strava API fout (\(error)). Reverse fallback naar HealthKit.")
-                await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, isFallback: true)
+                await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, isFallback: true)
                 return
             }
 
@@ -346,7 +365,7 @@ class ChatViewModel: ObservableObject {
             }
         } catch {
             if !isFallback && selectedDataSource == .strava {
-                await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, isFallback: true)
+                await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, isFallback: true)
                 return
             }
 
@@ -359,7 +378,7 @@ class ChatViewModel: ObservableObject {
 
     /// Haalt een specifieke Strava activiteit op (bijv. vanuit een notificatie),
     /// formatteert deze als een Nederlandse prompt en stuurt deze naar de AI-coach.
-    func analyzeWorkout(withId id: Int64, contextProfile: AthleticProfile? = nil) {
+    func analyzeWorkout(withId id: Int64, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = []) {
         guard !isFetchingWorkout else { return }
         isFetchingWorkout = true
 
@@ -380,7 +399,7 @@ class ChatViewModel: ObservableObject {
                     isTyping = true
                     isFetchingWorkout = false
 
-                    let contextPrefix = buildContextPrefix(from: contextProfile)
+                    let contextPrefix = buildContextPrefix(from: contextProfile, goals: activeGoals)
                     let payloadText = "\(contextPrefix)\(uiPrompt)"
 
                     fetchAIResponse(for: payloadText, image: nil)
