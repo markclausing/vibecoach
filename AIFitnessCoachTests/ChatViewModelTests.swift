@@ -270,11 +270,13 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.first?.role, .user)
 
         // Check if the prompt contains expected formats
-        XCTAssertTrue(promptText.contains("Actuele Status (Laatste 7 dagen):"))
+        XCTAssertTrue(promptText.contains("Context voor de AI Coach:"))
+        XCTAssertTrue(promptText.contains("Mijn opgeslagen doelen:"))
         XCTAssertTrue(promptText.contains("Hardlopen"))
         XCTAssertTrue(promptText.contains("Wandelen"))
         XCTAssertTrue(promptText.contains("Totale Cumulatieve TRIMP:"))
         XCTAssertTrue(promptText.contains("Rust"))
+        XCTAssertTrue(promptText.contains("Instructie voor de Coach:"))
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
@@ -367,7 +369,7 @@ final class ChatViewModelTests: XCTestCase {
         // Assert
         XCTAssertEqual(viewModel.messages.count, 2)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
-        XCTAssertTrue(viewModel.messages.first!.text.contains("Actuele Status")) // Bevestigt dat we de nieuwe prompt gebruiken
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Context voor de AI Coach:")) // Bevestigt dat we de nieuwe prompt gebruiken
         XCTAssertTrue(viewModel.messages.first!.text.contains("Morning Ride"))
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
