@@ -228,7 +228,12 @@ struct MessageBubble: View {
                         .cornerRadius(8)
                 }
 
-                if !message.text.isEmpty {
+                if let plan = message.suggestedPlan {
+                    TrainingCalendarView(plan: plan)
+                        .padding(12)
+                        .background(Color(.systemGray5))
+                        .cornerRadius(16)
+                } else if !message.text.isEmpty {
                     Text(message.text)
                         .padding(12)
                         .background(isUser ? Color.blue : Color(.systemGray5))

@@ -16,16 +16,16 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ✅ **Fase 6: Langetermijngeheugen & Proactieve Coaching**
 * Historische Sync, Context Injectie & Proactieve Waarschuwingen (Overtraining risk) afgerond.
 
-**Fase 7: Apple HealthKit Integratie (Huidig)**
-* ⏳ **Sprint 7.2: De Fysiologische Rekenmachine:** In uitvoering (Berekenen van TSS/TRIMP obv HealthKit data).
+✅ **Fase 7: Apple HealthKit Integratie**
+* De Fysiologische Rekenmachine (Berekenen van TSS/TRIMP obv HealthKit data) is voltooid.
 * Integratie met Apple HealthKit als primaire databron (Architectonische Pivot: we hebben Intervals.icu verlaten vanwege API restricties vanuit Strava).
-* Dit biedt voordelen: 100% lokaal, privacy-first, en geen afhankelijkheid van externe API-limieten.
+* 100% lokaal, privacy-first, en geen afhankelijkheid van externe API-limieten.
 * Hartslagherstel (HRR), Cardiac Drift en Training Load (TSS) ophalen en zelf berekenen na een workout.
-* Deze diepe fysiologische data injecteren in de Gemini prompts.
+* Deze diepe fysiologische data geïnjecteerd in de Gemini prompts.
 
-⏳ **Fase 8: Interactieve Trainingsplanner & Dashboards (Gepland)**
-* 7-Dagen visuele kalender (kaarten wegdrukken/aanpassen).
-* AI genereert JSON schema's voor de komende week.
+**Fase 8: Interactieve Trainingsplanner & Dashboards (Huidig)**
+* ✅ **Sprint 8.1: Readiness Calculator & Goal Injectie:** Afgerond (7-daagse cumulatieve TRIMP en actieve doelen toegevoegd aan de prompt).
+* ⏳ **Sprint 8.2: Interactieve Trainingskalender:** Huidig. De app krijgt een proactieve, visuele planning. We bouwen een 7-daagse interactieve kalender in SwiftUI, aangedreven door gestructureerde JSON-output van het Gemini model. De focus ligt op interactie: gebruikers kunnen voorgestelde trainingen wegdrukken of aanpassen, waarna de AI het resterende schema dynamisch herrekent.
 
 ⏳ **Fase 9: Productie & Lancering (Gepland)**
 * Echte APNs, Cloud Hosting, TestFlight.
