@@ -35,6 +35,9 @@ class ChatViewModel: ObservableObject {
     /// Opgeslagen Data van het meest recente gegenereerde schema (Sprint 9.3)
     @AppStorage("latestSuggestedPlanData") private var latestSuggestedPlanData: Data = Data()
 
+    /// Opgeslagen inzichten/motivatie van de coach om uit te lichten op het dashboard
+    @AppStorage("latestCoachInsight") private var latestCoachInsight: String = ""
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([String]) -> Void)?
 
@@ -600,6 +603,11 @@ class ChatViewModel: ObservableObject {
                         // Sla het actuele schema op in AppStorage als referentie voor post-workout evaluaties
                         if let encodedPlan = try? JSONEncoder().encode(plan) {
                             latestSuggestedPlanData = encodedPlan
+                        }
+
+                        // Sla de motivatie op voor het dashboard insight block
+                        if !plan.motivation.isEmpty {
+                            latestCoachInsight = plan.motivation
                         }
                     } catch {
                         // Fallback als het geen correcte JSON is, toon de ruwe tekst aan de gebruiker (handig voor gewone chat)

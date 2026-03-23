@@ -338,11 +338,10 @@ struct SettingsView: View {
         .navigationTitle("Instellingen")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Opslaan") {
-                    saveTokens()
-                }
-            }
+            // Controleer of de view is gepresenteerd als sheet (via onDismiss/dismiss), of als root tab.
+            // Aangezien het nu een Tab is, is de "Opslaan" knop (die dismiss() aanroept) overbodig.
+            // We verbergen de knop voor een cleanere UI. Instellingen worden in de AppStorage / Keychain
+            // toch al opgeslagen bij interactie (behalve tokens, maar dat gaat via webflow).
         }
         .onAppear {
             loadTokens()

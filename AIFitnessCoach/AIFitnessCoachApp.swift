@@ -10,12 +10,14 @@ import Combine
 class AppNavigationState: ObservableObject {
     /// De beschikbare tabbladen in de applicatie.
     enum Tab {
-        case coach
+        case dashboard
         case goals
+        case memory
+        case settings
     }
 
     /// Het momenteel geselecteerde tabblad.
-    @Published var selectedTab: Tab = .coach
+    @Published var selectedTab: Tab = .dashboard
 
     /// Een eventueel specifiek Strava Activity ID dat vanuit een notificatie
     /// is meegegeven en geanalyseerd moet worden door de coach.
@@ -28,10 +30,10 @@ class AppNavigationState: ObservableObject {
     // Init is public zodat Previews een eigen instance kunnen maken.
     init() {}
 
-    /// Stelt de app in om een specifieke activiteit in het Coach scherm te openen.
+    /// Stelt de app in om een specifieke activiteit in het Dashboard / Coach scherm te openen.
     nonisolated func openActivityAnalysis(activityId: Int64) {
         Task { @MainActor in
-            self.selectedTab = .coach
+            self.selectedTab = .dashboard
             self.targetActivityId = activityId
         }
     }
