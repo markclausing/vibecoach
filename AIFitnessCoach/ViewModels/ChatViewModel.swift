@@ -82,7 +82,7 @@ class ChatViewModel: ObservableObject {
             )
 
             let googleModel = GenerativeModel(
-                name: "gemini-3.1-pro-preview",
+                name: "gemini-1.5-pro",
                 apiKey: Secrets.geminiAPIKey,
                 generationConfig: config,
                 systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)]),
@@ -518,6 +518,8 @@ class ChatViewModel: ObservableObject {
                     let imagePart = ModelContent.Part.data(mimetype: "image/jpeg", imageData)
                     promptParts.append(imagePart)
                 }
+
+                print("DEBUG PROMPT: \(text)")
 
                 // Geef de array direct over aan de model protocol wrapper
                 let responseText = try await model.generateContent(promptParts)
