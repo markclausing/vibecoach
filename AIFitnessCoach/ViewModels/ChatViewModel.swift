@@ -32,6 +32,9 @@ class ChatViewModel: ObservableObject {
     // Lees de voorkeur van de gebruiker m.b.t. primaire databron (Sprint 7.4)
     @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
 
+    /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
+    var onNewPreferencesDetected: (([String]) -> Void)?
+
     /// Initialiseert de `ChatViewModel`.
     ///
     /// - Parameter aiModel: De AI-dienst die gebruikt moet worden.
@@ -69,8 +72,10 @@ class ChatViewModel: ObservableObject {
                         "targetTRIMP": 60,
                         "description": "Herstel na de lange duurloop"
                     }
-                ]
+                ],
+                "newPreferences": ["Optioneel: een array met harde regels of voorkeuren die je in de chat van de gebruiker hebt ontdekt (bijv. 'Ik heb last van mijn knie' of 'Ik sport altijd op zondag')."]
             }
+            Extra instructie voor `newPreferences`: Als je opmerkt dat de gebruiker een vaste regel, langetermijnvoorkeur, of blessure doorgeeft, vul dit array dan aan. Laat het anders weg of laat het leeg.
             """
 
             let config = GenerationConfig(
@@ -98,8 +103,13 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Genereert een context-prefix string op basis van het meegegeven atletisch profiel.
-    private func buildContextPrefix(from profile: AthleticProfile?) -> String {
+    private func buildContextPrefix(from profile: AthleticProfile?, activePreferences: [UserPreference] = []) -> String {
         var prefix = ""
+
+        if !activePreferences.isEmpty {
+            let prefStrings = activePreferences.map { "\"- \($0.preferenceText)\"" }.joined(separator: ", ")
+            prefix += "[VASTE REGELS / VOORKEUREN VAN DE GEBRUIKER: \(prefStrings). Houd hier ten alle tijden rekening mee in je planning en advies.]\n\n"
+        }
 
         if let p = profile {
             let peakDistanceKm = String(format: "%.1f", p.peakDistanceInMeters / 1000)
@@ -122,13 +132,13 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Handelt het afwijzen (overslaan) van een specifieke voorgestelde workout af.
-    func dismissWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = []) {
+    func dismissWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
         let explicitText = "Ik wil de training '\(workout.activityType)' van \(workout.dateOrDay) overslaan. Kun je mijn schema herberekenen voor de resterende dagen?"
-        sendMessage(explicitText, contextProfile: contextProfile, activeGoals: activeGoals)
+        sendMessage(explicitText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
     }
 
     /// Verstuurt het huidige tekstveld (of de meegegeven tekst) en/of de geselecteerde afbeelding.
-    func sendMessage(_ explicitText: String? = nil, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = []) {
+    func sendMessage(_ explicitText: String? = nil, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
         let textToUse = explicitText ?? inputText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let imageToSend = selectedImage?.downsample(to: 2048.0)
@@ -145,7 +155,7 @@ class ChatViewModel: ObservableObject {
         clearImage()
 
         // 2. Bouw de uiteindelijke payload prompt op
-        let contextPrefix = buildContextPrefix(from: contextProfile)
+        let contextPrefix = buildContextPrefix(from: contextProfile, activePreferences: activePreferences)
 
         // Combine explicitly injected goals into user text if applicable for plain chat
         var finalUserText = textToUse
@@ -267,7 +277,7 @@ class ChatViewModel: ObservableObject {
 
     /// Haalt de status op via de geselecteerde bron voor de afgelopen X dagen.
     /// Valt terug op de andere bron bij gebrek aan data of permissies.
-    func analyzeCurrentStatus(days: Int = 7, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = []) {
+    func analyzeCurrentStatus(days: Int = 7, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
         guard !isFetchingWorkout else { return }
         isFetchingWorkout = true
 
@@ -287,7 +297,7 @@ class ChatViewModel: ObservableObject {
                         }
 
                         let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days, activeGoals: activeGoals)
-                        await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals)
+                        await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
                         return
                     }
                     print("⚠️ Geen of lege HealthKit workouts gevonden, terugvallen op Strava.")
@@ -296,30 +306,30 @@ class ChatViewModel: ObservableObject {
                 }
 
                 // Fallback naar Strava
-                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals)
+                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
 
             } else {
                 // Strava geselecteerd
-                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals)
+                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
             }
         }
     }
 
     /// Hulpfunctie voor de AI prompt injectie.
-    private func sendPromptToAI(uiPrompt: String, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = []) async {
+    private func sendPromptToAI(uiPrompt: String, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) async {
         await MainActor.run {
             messages.append(ChatMessage(role: .user, text: uiPrompt))
             isTyping = true
             isFetchingWorkout = false
 
-            let contextPrefix = buildContextPrefix(from: contextProfile)
+            let contextPrefix = buildContextPrefix(from: contextProfile, activePreferences: activePreferences)
             let payloadText = "\(contextPrefix)\(uiPrompt)"
             fetchAIResponse(for: payloadText, image: nil)
         }
     }
 
     /// Hulpfunctie voor het ophalen via HealthKit, met optionele fallback.
-    private func fetchHealthKitRecentWorkouts(days: Int, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = [], isFallback: Bool = false) async {
+    private func fetchHealthKitRecentWorkouts(days: Int, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = [], isFallback: Bool = false) async {
         do {
             let workouts = try await healthKitManager.fetchRecentWorkouts(days: days)
             if !workouts.isEmpty {
@@ -333,13 +343,13 @@ class ChatViewModel: ObservableObject {
                 }
 
                 let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days, activeGoals: activeGoals)
-                await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals)
+                await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
                 return
             }
 
             if !isFallback {
                 print("⚠️ Geen of lege HealthKit workouts gevonden, terugvallen op Strava.")
-                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, isFallback: true)
+                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
             } else {
                 await MainActor.run {
                     messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account."))
@@ -349,7 +359,7 @@ class ChatViewModel: ObservableObject {
         } catch {
             if !isFallback {
                 print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
-                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, isFallback: true)
+                await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
             } else {
                 await MainActor.run {
                     messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden. HealthKit fout: \(error.localizedDescription)"))
@@ -360,7 +370,7 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Hulpfunctie voor het ophalen via Strava, inclusief fallback naar HealthKit.
-    private func fetchStravaRecentActivities(days: Int, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = [], isFallback: Bool = false) async {
+    private func fetchStravaRecentActivities(days: Int, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = [], isFallback: Bool = false) async {
         do {
             let activities = try await fitnessDataService.fetchRecentActivities(days: days)
 
@@ -368,7 +378,7 @@ class ChatViewModel: ObservableObject {
                 if !isFallback && selectedDataSource == .strava {
                     // Reverse Fallback: Als Strava faalt of leeg is en Strava was de bron, probeer HealthKit
                     print("⚠️ Geen recente Strava activiteit gevonden. Reverse fallback naar HealthKit.")
-                    await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, isFallback: true)
+                    await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
                     return
                 }
 
@@ -397,12 +407,12 @@ class ChatViewModel: ObservableObject {
 
             let uiPrompt = generateCurrentStatusPrompt(workouts: dailyWorkouts, days: days, activeGoals: activeGoals)
 
-            await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals)
+            await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
 
         } catch let error as FitnessDataError {
             if !isFallback && selectedDataSource == .strava {
                 print("⚠️ Strava API fout (\(error)). Reverse fallback naar HealthKit.")
-                await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, isFallback: true)
+                await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
                 return
             }
 
@@ -420,7 +430,7 @@ class ChatViewModel: ObservableObject {
             }
         } catch {
             if !isFallback && selectedDataSource == .strava {
-                await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, isFallback: true)
+                await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
                 return
             }
 
@@ -433,7 +443,7 @@ class ChatViewModel: ObservableObject {
 
     /// Haalt een specifieke Strava activiteit op (bijv. vanuit een notificatie),
     /// formatteert deze als een Nederlandse prompt en stuurt deze naar de AI-coach.
-    func analyzeWorkout(withId id: Int64, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = []) {
+    func analyzeWorkout(withId id: Int64, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
         guard !isFetchingWorkout else { return }
         isFetchingWorkout = true
 
@@ -454,7 +464,7 @@ class ChatViewModel: ObservableObject {
                     isTyping = true
                     isFetchingWorkout = false
 
-                    let contextPrefix = buildContextPrefix(from: contextProfile)
+                    let contextPrefix = buildContextPrefix(from: contextProfile, activePreferences: activePreferences)
                     let payloadText = "\(contextPrefix)\(uiPrompt)"
 
                     fetchAIResponse(for: payloadText, image: nil)
@@ -545,6 +555,11 @@ class ChatViewModel: ObservableObject {
                         let plan = try JSONDecoder().decode(SuggestedTrainingPlan.self, from: data)
                         parsedPlan = plan
                         motivationText = plan.motivation
+
+                        // Trigger callback als er nieuwe voorkeuren zijn gevonden
+                        if let prefs = plan.newPreferences, !prefs.isEmpty {
+                            onNewPreferencesDetected?(prefs)
+                        }
                     } catch {
                         // Fallback als het geen correcte JSON is, toon de ruwe tekst aan de gebruiker (handig voor gewone chat)
                         motivationText = responseText ?? ""
