@@ -7,7 +7,15 @@ import SwiftData
 /// De hoofd SwiftUI view die de chat interface toont.
 struct ChatView: View {
     /// De viewmodel die de chat status en netwerklogica beheert.
-    @StateObject var viewModel: ChatViewModel = ChatViewModel()
+    @ObservedObject var viewModel: ChatViewModel
+
+    // Als de view zonder argument wordt aangeroepen (bijv. in Previews), gebruiken we een default instance.
+    init(viewModel: ChatViewModel = ChatViewModel()) {
+        self.viewModel = viewModel
+    }
+
+    /// Om de sheet te sluiten.
+    @Environment(\.dismiss) private var dismiss
 
     /// Huidige item geselecteerd vanuit de iOS Photos library.
     @State private var selectedItem: PhotosPickerItem? = nil
@@ -99,34 +107,6 @@ struct ChatView: View {
                     }
                 }
 
-                // Acties / Quick Replies
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack {
-                        Button(action: {
-                            refreshProfileContext()
-                            viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                        }) {
-                            HStack {
-                                if viewModel.isFetchingWorkout {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                } else {
-                                    Image(systemName: "calendar.badge.exclamationmark")
-                                }
-                                Text("Evalueer Schema")
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color(.systemBlue).opacity(0.1))
-                            .foregroundColor(.blue)
-                            .cornerRadius(20)
-                        }
-                        .disabled(viewModel.isFetchingWorkout)
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 4)
-                }
-
                 // Geselecteerde afbeelding preview (indien aanwezig)
                 if let image = viewModel.selectedImage {
                     HStack {
@@ -189,17 +169,12 @@ struct ChatView: View {
                 }
                 .padding()
             }
-            .navigationTitle("AI Fitness Coach")
+            .navigationTitle("Vraag de Coach")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack {
-                        NavigationLink(destination: PreferencesListView()) {
-                            Image(systemName: "brain.head.profile")
-                        }
-                        NavigationLink(destination: SettingsView()) {
-                            Image(systemName: "gear")
-                        }
+                    Button("Sluiten") {
+                        dismiss()
                     }
                 }
             }
