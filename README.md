@@ -23,11 +23,15 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 * Hartslagherstel (HRR), Cardiac Drift en Training Load (TSS) ophalen en zelf berekenen na een workout.
 * Deze diepe fysiologische data geïnjecteerd in de Gemini prompts.
 
-**Fase 8: Interactieve Trainingsplanner & Dashboards (Huidig)**
+**Fase 8: Interactieve Trainingsplanner & Dashboards (Afgerond)**
 * ✅ **Sprint 8.1: Readiness Calculator & Goal Injectie:** Afgerond (7-daagse cumulatieve TRIMP en actieve doelen toegevoegd aan de prompt).
-* ⏳ **Sprint 8.2: Interactieve Trainingskalender:** Huidig. De app krijgt een proactieve, visuele planning. We bouwen een 7-daagse interactieve kalender in SwiftUI, aangedreven door gestructureerde JSON-output van het Gemini model. De focus ligt op interactie: gebruikers kunnen voorgestelde trainingen wegdrukken of aanpassen, waarna de AI het resterende schema dynamisch herrekent.
+* ✅ **Sprint 8.2: Interactieve Trainingskalender:** Afgerond. De app heeft een proactieve, visuele planning gekregen met een 7-daagse interactieve kalender in SwiftUI. Gebruikers kunnen voorgestelde trainingen wegdrukken, waarna de AI het resterende schema dynamisch herrekent via structuur JSON-output.
 
-⏳ **Fase 9: Productie & Lancering (Gepland)**
+⏳ **Fase 9: Productie & Lancering (Huidig / Gepland)**
+* **Sprint 9.0: De Intelligente Coach (Huidig)**
+  * [ ] **9.1 Langetermijngeheugen (Context Injectie):** Opzetten van een lokale opslag (bijv. SwiftData) om gebruikersvoorkeuren uit de chat (zoals vaste sportdagen) op te slaan en deze onzichtbaar te injecteren in de `system_instruction` van elke Gemini API-call.
+  * [ ] **9.2 UI: Workout Acties (Vervangen vs. Overslaan):** De `WorkoutCardView` uitbreiden met een menu of swipe-acties, zodat de gebruiker expliciet kan kiezen tussen een 'Rest Day' (uitsmeren van belasting) of een 'Alternatief' (vergelijkbare trainingsprikkel).
+  * [ ] **9.3 Dynamische Evaluatie (Post-Workout):** Logica bouwen om voltooide trainingen (nieuwe HealthKit/Strava data) te detecteren en Gemini te triggeren om het resterende weekschema te valideren en waar nodig te herberekenen.
 * Echte APNs, Cloud Hosting, TestFlight.
 
 ## Testing Push Notifications in Simulator
