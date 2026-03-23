@@ -10,7 +10,7 @@ final class FitnessGoalTests: XCTestCase {
     override func setUpWithError() throws {
         // Configuratie voor in-memory database om geen persisterende data achter te laten
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        container = try ModelContainer(for: FitnessGoal.self, configurations: config)
+        container = try ModelContainer(for: FitnessGoal.self, UserPreference.self, configurations: config)
         context = container.mainContext
     }
 
@@ -80,5 +80,22 @@ final class FitnessGoalTests: XCTestCase {
 
         XCTAssertEqual(fetchedGoals.count, 1)
         XCTAssertEqual(fetchedGoals.first?.title, "Doel 2")
+    }
+
+    func testCreateUserPreference() throws {
+        // Arrange
+        let text = "Ik sport altijd op dinsdag"
+
+        // Act
+        let pref = UserPreference(preferenceText: text)
+        context.insert(pref)
+
+        // Assert
+        let descriptor = FetchDescriptor<UserPreference>()
+        let fetchedPrefs = try context.fetch(descriptor)
+
+        XCTAssertEqual(fetchedPrefs.count, 1)
+        XCTAssertEqual(fetchedPrefs.first?.preferenceText, text)
+        XCTAssertTrue(fetchedPrefs.first!.isActive)
     }
 }

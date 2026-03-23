@@ -3,6 +3,22 @@ import Foundation
 
 import SwiftData
 
+/// Representeert een opgeslagen langetermijnvoorkeur of 'harde regel' van de gebruiker.
+@Model
+final class UserPreference {
+    @Attribute(.unique) var id: UUID
+    var preferenceText: String
+    var createdAt: Date
+    var isActive: Bool
+
+    init(id: UUID = UUID(), preferenceText: String, createdAt: Date = Date(), isActive: Bool = true) {
+        self.id = id
+        self.preferenceText = preferenceText
+        self.createdAt = createdAt
+        self.isActive = isActive
+    }
+}
+
 /// Represents a user's fitness goal.
 /// Dit model wordt opgeslagen in SwiftData om lokale doelen bij te houden.
 @Model
@@ -147,4 +163,5 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
 struct SuggestedTrainingPlan: Codable, Equatable {
     let motivation: String
     let workouts: [SuggestedWorkout]
+    let newPreferences: [String]?
 }
