@@ -70,7 +70,9 @@ class ChatViewModel: ObservableObject {
                         "activityType": "Hardlopen",
                         "suggestedDurationMinutes": 45,
                         "targetTRIMP": 60,
-                        "description": "Herstel na de lange duurloop"
+                        "description": "Herstel na de lange duurloop",
+                        "heartRateZone": "Zone 2",
+                        "targetPace": "5:30 min/km"
                     }
                 ],
                 "newPreferences": ["Optioneel: een array met harde regels of voorkeuren die je in de chat van de gebruiker hebt ontdekt (bijv. 'Ik heb last van mijn knie' of 'Ik sport altijd op zondag')."]
