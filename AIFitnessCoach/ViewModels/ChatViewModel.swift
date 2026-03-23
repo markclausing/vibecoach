@@ -133,13 +133,13 @@ class ChatViewModel: ObservableObject {
 
     /// Handelt het afwijzen (overslaan) van een specifieke voorgestelde workout af (Rest Day).
     func skipWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
-        let explicitText = "Ik sla de training '\(workout.activityType)' op \(workout.dateOrDay) over. Herbereken de week en schuif de belasting door."
+        let explicitText = "Ik sla de training '\(workout.activityType)' op \(workout.dateOrDay) over. Herbereken de week en schuif de belasting door. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."
         sendMessage(explicitText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
     }
 
     /// Handelt de aanvraag voor een alternatieve workout af.
     func requestAlternativeWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
-        let explicitText = "Ik vind de geplande training '\(workout.activityType)' op \(workout.dateOrDay) niet leuk. Geef me een alternatief voor \(workout.dateOrDay) dat een vergelijkbare trainingsprikkel geeft."
+        let explicitText = "Ik vind de geplande training '\(workout.activityType)' op \(workout.dateOrDay) niet leuk. Geef me een alternatief voor \(workout.dateOrDay) dat een vergelijkbare trainingsprikkel geeft. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."
         sendMessage(explicitText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
     }
 
