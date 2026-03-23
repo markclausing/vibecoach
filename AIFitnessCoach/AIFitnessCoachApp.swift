@@ -108,6 +108,6 @@ struct AIFitnessCoachApp: App {
             ContentView()
                 .environmentObject(appState)
         }
-        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self]) // Voeg SwiftData containers toe
+        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self]) // Voeg SwiftData containers toe
     }
 }

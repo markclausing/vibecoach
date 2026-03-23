@@ -20,6 +20,9 @@ struct ChatView: View {
     @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
     @State private var currentProfile: AthleticProfile? = nil
 
+    /// Actieve gebruikersvoorkeuren uit SwiftData
+    @Query(filter: #Predicate<UserPreference> { $0.isActive == true }, sort: \UserPreference.createdAt, order: .forward) private var activePreferences: [UserPreference]
+
     private let profileManager = AthleticProfileManager()
 
     /// Werkt het actuele profiel bij vanuit SwiftData.
@@ -55,7 +58,7 @@ struct ChatView: View {
                             ForEach(viewModel.messages) { message in
                                 MessageBubble(message: message, onDismissWorkout: { workout in
                                     refreshProfileContext()
-                                    viewModel.dismissWorkout(workout, contextProfile: currentProfile, activeGoals: goals)
+                                    viewModel.dismissWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                                 })
                                 .id(message.id)
                             }
@@ -97,7 +100,7 @@ struct ChatView: View {
                     HStack {
                         Button(action: {
                             refreshProfileContext()
-                            viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals)
+                            viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                         }) {
                             HStack {
                                 if viewModel.isFetchingWorkout {
@@ -171,7 +174,7 @@ struct ChatView: View {
 
                     Button(action: {
                         refreshProfileContext()
-                        viewModel.sendMessage(contextProfile: currentProfile, activeGoals: goals)
+                        viewModel.sendMessage(contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                         selectedItem = nil
                     }) {
                         Image(systemName: "arrow.up.circle.fill")
@@ -186,8 +189,13 @@ struct ChatView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(destination: SettingsView()) {
-                        Image(systemName: "gear")
+                    HStack {
+                        NavigationLink(destination: PreferencesListView()) {
+                            Image(systemName: "brain.head.profile")
+                        }
+                        NavigationLink(destination: SettingsView()) {
+                            Image(systemName: "gear")
+                        }
                     }
                 }
             }
@@ -196,7 +204,7 @@ struct ChatView: View {
                     // Start de analyse en clear daarna de target uit de state zodat
                     // hij later opnieuw getriggerd kan worden indien nodig
                     refreshProfileContext()
-                    viewModel.analyzeWorkout(withId: activityId, contextProfile: currentProfile, activeGoals: goals)
+                    viewModel.analyzeWorkout(withId: activityId, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
 
                     Task { @MainActor in
                         appState.targetActivityId = nil
@@ -205,6 +213,22 @@ struct ChatView: View {
             }
             .onAppear {
                 refreshProfileContext()
+                setupPreferenceCallback()
+            }
+        }
+    }
+
+    /// Setup de callback in ViewModel om gedetecteerde voorkeuren op te slaan in SwiftData
+    private func setupPreferenceCallback() {
+        viewModel.onNewPreferencesDetected = { [weak viewModel] detectedPrefs in
+            let context = modelContext
+            Task { @MainActor in
+                for text in detectedPrefs {
+                    // Simpele deduplicatie (optioneel, let op exact matching)
+                    let newPref = UserPreference(preferenceText: text)
+                    context.insert(newPref)
+                }
+                try? context.save()
             }
         }
     }
