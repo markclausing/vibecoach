@@ -121,6 +121,12 @@ class ChatViewModel: ObservableObject {
         return prefix
     }
 
+    /// Handelt het afwijzen (overslaan) van een specifieke voorgestelde workout af.
+    func dismissWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = []) {
+        let explicitText = "Ik wil de training '\(workout.activityType)' van \(workout.dateOrDay) overslaan. Kun je mijn schema herberekenen voor de resterende dagen?"
+        sendMessage(explicitText, contextProfile: contextProfile, activeGoals: activeGoals)
+    }
+
     /// Verstuurt het huidige tekstveld (of de meegegeven tekst) en/of de geselecteerde afbeelding.
     func sendMessage(_ explicitText: String? = nil, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = []) {
         let textToUse = explicitText ?? inputText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -523,6 +529,8 @@ class ChatViewModel: ObservableObject {
 
                 // Geef de array direct over aan de model protocol wrapper
                 let responseText = try await model.generateContent(promptParts)
+
+                print("DEBUG RAW RESPONSE: \(responseText ?? "nil")")
 
                 var finalResponseText = responseText ?? "{}"
 
