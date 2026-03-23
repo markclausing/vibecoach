@@ -124,21 +124,31 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
     /// Korte toelichting, bijv. "Zone 2 herstelrit" of "Intervaltraining: 5x1000m"
     let description: String
 
+    /// Doel hartslagzone, bijv. "Zone 2"
+    let heartRateZone: String?
+
+    /// Doel tempo, bijv. "5:30 min/km"
+    let targetPace: String?
+
     enum CodingKeys: String, CodingKey {
         case dateOrDay
         case activityType
         case suggestedDurationMinutes
         case targetTRIMP
         case description
+        case heartRateZone
+        case targetPace
     }
 
-    init(id: UUID = UUID(), dateOrDay: String, activityType: String, suggestedDurationMinutes: Int, targetTRIMP: Int?, description: String) {
+    init(id: UUID = UUID(), dateOrDay: String, activityType: String, suggestedDurationMinutes: Int, targetTRIMP: Int?, description: String, heartRateZone: String? = nil, targetPace: String? = nil) {
         self.id = id
         self.dateOrDay = dateOrDay
         self.activityType = activityType
         self.suggestedDurationMinutes = suggestedDurationMinutes
         self.targetTRIMP = targetTRIMP
         self.description = description
+        self.heartRateZone = heartRateZone
+        self.targetPace = targetPace
     }
 
     init(from decoder: Decoder) throws {
@@ -147,6 +157,8 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         activityType = try container.decode(String.self, forKey: .activityType)
         suggestedDurationMinutes = try container.decode(Int.self, forKey: .suggestedDurationMinutes)
         description = try container.decode(String.self, forKey: .description)
+        heartRateZone = try container.decodeIfPresent(String.self, forKey: .heartRateZone)
+        targetPace = try container.decodeIfPresent(String.self, forKey: .targetPace)
 
         // Probeer targetTRIMP te decoderen als Int, en anders als String en parse naar Int
         if let intTRIMP = try? container.decodeIfPresent(Int.self, forKey: .targetTRIMP) {

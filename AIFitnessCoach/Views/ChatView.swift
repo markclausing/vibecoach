@@ -297,6 +297,8 @@ struct TrainingCalendarView: View {
     var onSkipWorkout: ((SuggestedWorkout) -> Void)?
     var onAlternativeWorkout: ((SuggestedWorkout) -> Void)?
 
+    @State private var selectedWorkoutForDetail: SuggestedWorkout?
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Jouw Plan voor de komende 7 dagen")
@@ -315,11 +317,18 @@ struct TrainingCalendarView: View {
                             onSkipWorkout?(workout)
                         }, onAlternative: {
                             onAlternativeWorkout?(workout)
+                        }, onSelect: {
+                            selectedWorkoutForDetail = workout
                         })
                     }
                 }
                 .padding(.horizontal, 4) // voor schaduw clips
             }
+        }
+        .sheet(item: $selectedWorkoutForDetail) { workout in
+            WorkoutDetailView(workout: workout)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
     }
 }
@@ -328,11 +337,15 @@ struct WorkoutCardView: View {
     let workout: SuggestedWorkout
     var onSkip: (() -> Void)?
     var onAlternative: (() -> Void)?
+    var onSelect: (() -> Void)?
 
     @State private var isProcessingAction: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        Button(action: {
+            onSelect?()
+        }) {
+            VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(workout.dateOrDay)
                     .font(.caption)
@@ -378,22 +391,113 @@ struct WorkoutCardView: View {
 
             Spacer()
 
-            HStack {
-                if workout.suggestedDurationMinutes > 0 {
-                    Label("\(workout.suggestedDurationMinutes) min", systemImage: "clock")
+                HStack {
+                    if workout.suggestedDurationMinutes > 0 {
+                        Label("\(workout.suggestedDurationMinutes) min", systemImage: "clock")
+                            .font(.caption2)
+                    }
+
+                    let trimpText = workout.targetTRIMP != nil ? "\(workout.targetTRIMP!)" : "-"
+                    Label("TRIMP: \(trimpText)", systemImage: "bolt.heart")
                         .font(.caption2)
                 }
+            }
+            .padding()
+            .frame(width: 180, height: 160)
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+            .opacity(isProcessingAction ? 0.5 : 1.0)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
 
-                let trimpText = workout.targetTRIMP != nil ? "\(workout.targetTRIMP!)" : "-"
-                Label("TRIMP: \(trimpText)", systemImage: "bolt.heart")
-                    .font(.caption2)
+/// Gedetailleerde view voor een enkele workout, bedoeld om als bottom sheet getoond te worden.
+struct WorkoutDetailView: View {
+    let workout: SuggestedWorkout
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+
+                    // Header sectie
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(workout.dateOrDay)
+                            .font(.headline)
+                            .foregroundColor(.blue)
+
+                        Text(workout.activityType)
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                    }
+                    .padding(.top)
+
+                    // Info sectie met icoontjes
+                    VStack(spacing: 16) {
+                        InfoRowView(icon: "clock", title: "Duur", value: "\(workout.suggestedDurationMinutes) minuten")
+
+                        if let trimp = workout.targetTRIMP {
+                            InfoRowView(icon: "bolt.heart", title: "Doel TRIMP", value: "\(trimp)")
+                        }
+
+                        if let zone = workout.heartRateZone {
+                            InfoRowView(icon: "heart.text.square", title: "Hartslagzone", value: zone)
+                        }
+
+                        if let pace = workout.targetPace {
+                            InfoRowView(icon: "speedometer", title: "Doel Tempo", value: pace)
+                        }
+                    }
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(12)
+
+                    // Omschrijving sectie
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Omschrijving")
+                            .font(.headline)
+
+                        Text(workout.description)
+                            .font(.body)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer()
+                }
+                .padding(.horizontal)
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Sluiten") {
+                        dismiss()
+                    }
+                }
             }
         }
-        .padding()
-        .frame(width: 180, height: 160)
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
-        .opacity(isProcessingAction ? 0.5 : 1.0)
+    }
+}
+
+/// Herbruikbare regel voor informatie in de WorkoutDetailView
+struct InfoRowView: View {
+    let icon: String
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .frame(width: 24)
+                .foregroundColor(.blue)
+            Text(title)
+                .foregroundColor(.secondary)
+            Spacer()
+            Text(value)
+                .fontWeight(.medium)
+        }
     }
 }
