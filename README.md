@@ -65,4 +65,4 @@ Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de na
 * Houd de interface simpel, modern en native. Gebruik standaard iOS-componenten.
 * Leg bij complexe code (zoals API-koppelingen) in het Nederlands uit wat de code doet via comments.
 * Bouw stap voor stap: zorg dat de basis werkt voordat we ingewikkelde API's toevoegen.
-* Quality Control (TDD): Schrijf voor élke nieuwe functionaliteit of aanpassing altijd direct de bijbehorende Unit Tests (XCTest) in de test target. Geen enkele feature is af zonder werkende tests.
+* Quality Control: Schrijf voor élke nieuwe functionaliteit Unit Tests (XCTest) voor de onderliggende logica. Voor de absolute kern-flows (de 'Happy Paths') schrijven we XCUITest UI-tests, zodat we de belangrijkste interacties borgen zonder de test-suite te traag te maken.

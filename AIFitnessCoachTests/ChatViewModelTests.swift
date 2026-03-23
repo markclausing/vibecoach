@@ -325,14 +325,14 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
     }
 
-    func testDismissWorkout_SendsCorrectMessageAndTriggersRecalculation() async {
+    func testSkipWorkout_SendsCorrectMessageAndTriggersRecalculation() async {
         // Arrange
-        let expectedAIResponse = "Ik heb je schema aangepast."
+        let expectedAIResponse = "Ik heb je schema aangepast en rust ingepland."
         mockModel.responseToReturn = expectedAIResponse
         mockModel.delay = 0.1
         viewModel.messages.removeAll()
 
-        let workoutToDismiss = SuggestedWorkout(
+        let workoutToSkip = SuggestedWorkout(
             dateOrDay: "Morgen",
             activityType: "Hardlopen",
             suggestedDurationMinutes: 45,
@@ -341,7 +341,7 @@ final class ChatViewModelTests: XCTestCase {
         )
 
         // Actie
-        viewModel.dismissWorkout(workoutToDismiss)
+        viewModel.skipWorkout(workoutToSkip)
 
         // Wacht even tot asynchrone taken gestart zijn
         try? await Task.sleep(nanoseconds: 10_000_000)
@@ -351,7 +351,45 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.count, 1)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
         let sentMessageText = viewModel.messages.first?.text ?? ""
-        XCTAssertTrue(sentMessageText.contains("Ik wil de training 'Hardlopen' van Morgen overslaan. Kun je mijn schema herberekenen voor de resterende dagen?"))
+        XCTAssertTrue(sentMessageText.contains("Ik sla de training 'Hardlopen' op Morgen over. Herbereken de week en schuif de belasting door."))
+
+        // Wacht op AI response
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        // Assert na AI response
+        XCTAssertEqual(viewModel.messages.count, 2)
+        XCTAssertEqual(viewModel.messages.last?.role, .ai)
+        XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
+        XCTAssertFalse(viewModel.isTyping)
+    }
+
+    func testRequestAlternativeWorkout_SendsCorrectMessageAndTriggersRecalculation() async {
+        // Arrange
+        let expectedAIResponse = "Hier is een fietstraining in plaats van hardlopen."
+        mockModel.responseToReturn = expectedAIResponse
+        mockModel.delay = 0.1
+        viewModel.messages.removeAll()
+
+        let workoutToReplace = SuggestedWorkout(
+            dateOrDay: "Zaterdag",
+            activityType: "Duurloop",
+            suggestedDurationMinutes: 90,
+            targetTRIMP: 120,
+            description: "Lange langzame duurloop"
+        )
+
+        // Actie
+        viewModel.requestAlternativeWorkout(workoutToReplace)
+
+        // Wacht even tot asynchrone taken gestart zijn
+        try? await Task.sleep(nanoseconds: 10_000_000)
+
+        // Assert direct na start
+        XCTAssertTrue(viewModel.isTyping)
+        XCTAssertEqual(viewModel.messages.count, 1)
+        XCTAssertEqual(viewModel.messages.first?.role, .user)
+        let sentMessageText = viewModel.messages.first?.text ?? ""
+        XCTAssertTrue(sentMessageText.contains("Ik vind de geplande training 'Duurloop' op Zaterdag niet leuk. Geef me een alternatief voor Zaterdag dat een vergelijkbare trainingsprikkel geeft."))
 
         // Wacht op AI response
         try? await Task.sleep(nanoseconds: 200_000_000)
