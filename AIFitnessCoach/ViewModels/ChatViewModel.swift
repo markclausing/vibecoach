@@ -131,9 +131,15 @@ class ChatViewModel: ObservableObject {
         return prefix
     }
 
-    /// Handelt het afwijzen (overslaan) van een specifieke voorgestelde workout af.
-    func dismissWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
-        let explicitText = "Ik wil de training '\(workout.activityType)' van \(workout.dateOrDay) overslaan. Kun je mijn schema herberekenen voor de resterende dagen?"
+    /// Handelt het afwijzen (overslaan) van een specifieke voorgestelde workout af (Rest Day).
+    func skipWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
+        let explicitText = "Ik sla de training '\(workout.activityType)' op \(workout.dateOrDay) over. Herbereken de week en schuif de belasting door."
+        sendMessage(explicitText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
+    }
+
+    /// Handelt de aanvraag voor een alternatieve workout af.
+    func requestAlternativeWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
+        let explicitText = "Ik vind de geplande training '\(workout.activityType)' op \(workout.dateOrDay) niet leuk. Geef me een alternatief voor \(workout.dateOrDay) dat een vergelijkbare trainingsprikkel geeft."
         sendMessage(explicitText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
     }
 
