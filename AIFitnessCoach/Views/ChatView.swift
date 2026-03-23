@@ -53,8 +53,11 @@ struct ChatView: View {
                     ScrollView {
                         VStack(spacing: 12) {
                             ForEach(viewModel.messages) { message in
-                                MessageBubble(message: message)
-                                    .id(message.id)
+                                MessageBubble(message: message, onDismissWorkout: { workout in
+                                    refreshProfileContext()
+                                    viewModel.dismissWorkout(workout, contextProfile: currentProfile, activeGoals: goals)
+                                })
+                                .id(message.id)
                             }
 
                             // Laadindicator
@@ -212,6 +215,9 @@ struct MessageBubble: View {
     /// Het bericht dat getoond moet worden.
     let message: ChatMessage
 
+    // Geef een onDismiss actie door om de chatview te laten weten dat er een actie op de kalender plaatsvond
+    var onDismissWorkout: ((SuggestedWorkout) -> Void)?
+
     /// Bepaalt of de afzender de gebruiker is (rechts uitgelijnd en blauw).
     var isUser: Bool {
         message.role == .user
@@ -231,7 +237,7 @@ struct MessageBubble: View {
                 }
 
                 if let plan = message.suggestedPlan {
-                    TrainingCalendarView(plan: plan)
+                    TrainingCalendarView(plan: plan, onDismissWorkout: onDismissWorkout)
                         .padding(12)
                         .background(Color(.systemGray5))
                         .cornerRadius(16)
@@ -291,6 +297,8 @@ struct WorkoutCardView: View {
     let workout: SuggestedWorkout
     var onDismiss: (() -> Void)?
 
+    @State private var isDismissing: Bool = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -299,11 +307,22 @@ struct WorkoutCardView: View {
                     .fontWeight(.bold)
                     .foregroundColor(.blue)
                 Spacer()
-                Button(action: {
-                    onDismiss?()
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
+
+                if isDismissing {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Button(action: {
+                        isDismissing = true
+                        onDismiss?()
+                        // Reset na een korte tijd voor de zekerheid als het mislukt
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                            isDismissing = false
+                        }
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                    }
                 }
             }
 
@@ -323,10 +342,10 @@ struct WorkoutCardView: View {
                     Label("\(workout.suggestedDurationMinutes) min", systemImage: "clock")
                         .font(.caption2)
                 }
-                if workout.targetTRIMP > 0 {
-                    Label("TRIMP: \(workout.targetTRIMP)", systemImage: "bolt.heart")
-                        .font(.caption2)
-                }
+
+                let trimpText = workout.targetTRIMP != nil ? "\(workout.targetTRIMP!)" : "-"
+                Label("TRIMP: \(trimpText)", systemImage: "bolt.heart")
+                    .font(.caption2)
             }
         }
         .padding()
@@ -334,5 +353,6 @@ struct WorkoutCardView: View {
         .background(Color(.secondarySystemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .opacity(isDismissing ? 0.5 : 1.0)
     }
 }
