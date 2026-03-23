@@ -82,7 +82,7 @@ class ChatViewModel: ObservableObject {
             )
 
             let googleModel = GenerativeModel(
-                name: "gemini-1.5-pro",
+                name: "gemini-2.5-flash",
                 apiKey: Secrets.geminiAPIKey,
                 generationConfig: config,
                 systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)]),
