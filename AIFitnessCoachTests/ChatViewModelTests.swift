@@ -270,13 +270,14 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.first?.role, .user)
 
         // Check if the prompt contains expected formats
-        XCTAssertTrue(promptText.contains("Context voor de AI Coach:"))
+        XCTAssertTrue(promptText.contains("Dit is mijn momenteel geplande schema"))
+        XCTAssertTrue(promptText.contains("Dit zijn mijn meest recente voltooide trainingen"))
         XCTAssertTrue(promptText.contains("Mijn opgeslagen doelen:"))
         XCTAssertTrue(promptText.contains("Hardlopen"))
         XCTAssertTrue(promptText.contains("Wandelen"))
         XCTAssertTrue(promptText.contains("Totale Cumulatieve TRIMP:"))
         XCTAssertTrue(promptText.contains("Rust"))
-        XCTAssertTrue(promptText.contains("Instructie voor de Coach:"))
+        XCTAssertTrue(promptText.contains("Vergelijk deze recente activiteiten met het actuele schema"))
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
@@ -316,10 +317,12 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isTyping)
         XCTAssertEqual(viewModel.messages.count, 2)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Dit is mijn momenteel geplande schema"))
         XCTAssertTrue(viewModel.messages.first!.text.contains("Lunch Run"))
         XCTAssertTrue(viewModel.messages.first!.text.contains("5.0 km"))
         XCTAssertTrue(viewModel.messages.first!.text.contains("30 minuten"))
         XCTAssertTrue(viewModel.messages.first!.text.contains("160"))
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Vergelijk dit met de geplande belasting in het schema."))
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
@@ -492,7 +495,7 @@ final class ChatViewModelTests: XCTestCase {
         // Assert
         XCTAssertEqual(viewModel.messages.count, 2)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
-        XCTAssertTrue(viewModel.messages.first!.text.contains("Context voor de AI Coach:")) // Bevestigt dat we de nieuwe prompt gebruiken
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Dit is mijn momenteel geplande schema")) // Bevestigt dat we de nieuwe prompt gebruiken
         XCTAssertTrue(viewModel.messages.first!.text.contains("Morning Ride"))
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)

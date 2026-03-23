@@ -32,6 +32,9 @@ class ChatViewModel: ObservableObject {
     // Lees de voorkeur van de gebruiker m.b.t. primaire databron (Sprint 7.4)
     @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
 
+    /// Opgeslagen Data van het meest recente gegenereerde schema (Sprint 9.3)
+    @AppStorage("latestSuggestedPlanData") private var latestSuggestedPlanData: Data = Data()
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([String]) -> Void)?
 
@@ -102,6 +105,27 @@ class ChatViewModel: ObservableObject {
     /// Verwijdert de geselecteerde afbeelding uit de invoer.
     func clearImage() {
         self.selectedImage = nil
+    }
+
+    /// Haalt het huidig opgeslagen schema op en formatteert dit als een string,
+    /// zodat de AI dit als referentiemateriaal kan gebruiken voor post-workout evaluaties.
+    private func getStoredPlanString() -> String {
+        guard let decodedPlan = try? JSONDecoder().decode(SuggestedTrainingPlan.self, from: latestSuggestedPlanData) else {
+            return "Geen actueel gepland schema bekend."
+        }
+
+        var planString = "Dit is mijn momenteel geplande schema (vergelijk je advies altijd hiermee):\n"
+        for workout in decodedPlan.workouts {
+            planString += "- \(workout.dateOrDay): \(workout.activityType) "
+            if workout.suggestedDurationMinutes > 0 {
+                planString += "(\(workout.suggestedDurationMinutes) min)"
+            }
+            if let trimp = workout.targetTRIMP {
+                planString += " [Doel TRIMP: \(trimp)]"
+            }
+            planString += "\n"
+        }
+        return planString
     }
 
     /// Genereert een context-prefix string op basis van het meegegeven atletisch profiel.
@@ -197,7 +221,9 @@ class ChatViewModel: ObservableObject {
         let now = Date()
         let startOfToday = calendar.startOfDay(for: now)
 
-        var lines: [String] = ["Context voor de AI Coach:"]
+        let storedPlanContext = getStoredPlanString()
+
+        var lines: [String] = [storedPlanContext, "\nDit zijn mijn meest recente voltooide trainingen (inclusief rustdagen):"]
 
         // Inject Goals explicitly
         let uncompletedGoals = activeGoals.filter { !$0.isCompleted }
@@ -274,11 +300,7 @@ class ChatViewModel: ObservableObject {
         lines.append("Totale Cumulatieve TRIMP: \(totalTrimp)")
 
         lines.append("\nInstructie voor de Coach:")
-        lines.append("Analyseer mijn vermoeidheid, maar start vooral een discussie over wat nu verstandig is om te doen. Geef een concreet voorstel voor mijn eerstvolgende training. Denk proactief mee over:")
-        lines.append("- Specifieke afstand of duur.")
-        lines.append("- Het gewenste tempo (pace).")
-        lines.append("- De hartslagzones waar ik in moet blijven.")
-        lines.append("\nEindig je antwoord altijd met een vraag aan mij (bijv. 'Heb je daar vandaag de tijd voor?').")
+        lines.append("Vergelijk deze recente activiteiten met het actuele schema hierboven. Is het resterende schema voor deze week nog steeds optimaal en realistisch? Zo niet, herbereken het schema (retourneer altijd alle 7 dagen) en geef een korte motivatie of feedback op mijn recente trainingen.")
 
         return lines.joined(separator: "\n")
     }
@@ -464,8 +486,14 @@ class ChatViewModel: ObservableObject {
                 let timeMinutes = activity.moving_time / 60
                 let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!))" : "onbekend"
 
-                // Formatteer de zichtbare UI prompt
-                let uiPrompt = "Ik heb zojuist deze training voltooid op Strava. Naam: \(activity.name), Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr). Kan je deze training kort analyseren als mijn coach en vertellen of ik goed bezig ben?"
+                // Bereken TRIMP
+                let avgHR = activity.average_heartrate ?? 140.0
+                let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: Double(activity.moving_time), averageHeartRate: avgHR, maxHeartRate: 190.0, restingHeartRate: 60.0)
+                let trimpScore = Int(calculatedTSS)
+
+                // Formatteer de zichtbare UI prompt inclusief de referentie naar het actuele schema (Sprint 9.3)
+                let storedPlanContext = getStoredPlanString()
+                let uiPrompt = "\(storedPlanContext)\n\nIk heb zojuist deze training voltooid: '\(activity.name)' (Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr), TRIMP: \(trimpScore)). Vergelijk dit met de geplande belasting in het schema. Is het resterende schema voor deze week nog steeds optimaal? Zo niet, herbereken het schema (retourneer alle 7 dagen) en geef een korte motivatie of feedback op de zojuist voltooide training."
 
                 Task { @MainActor in
                     messages.append(ChatMessage(role: .user, text: uiPrompt))
@@ -567,6 +595,11 @@ class ChatViewModel: ObservableObject {
                         // Trigger callback als er nieuwe voorkeuren zijn gevonden
                         if let prefs = plan.newPreferences, !prefs.isEmpty {
                             onNewPreferencesDetected?(prefs)
+                        }
+
+                        // Sla het actuele schema op in AppStorage als referentie voor post-workout evaluaties
+                        if let encodedPlan = try? JSONEncoder().encode(plan) {
+                            latestSuggestedPlanData = encodedPlan
                         }
                     } catch {
                         // Fallback als het geen correcte JSON is, toon de ruwe tekst aan de gebruiker (handig voor gewone chat)
