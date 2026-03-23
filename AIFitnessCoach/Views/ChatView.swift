@@ -56,9 +56,12 @@ struct ChatView: View {
                     ScrollView {
                         VStack(spacing: 12) {
                             ForEach(viewModel.messages) { message in
-                                MessageBubble(message: message, onDismissWorkout: { workout in
+                                MessageBubble(message: message, onSkipWorkout: { workout in
                                     refreshProfileContext()
-                                    viewModel.dismissWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                    viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                }, onAlternativeWorkout: { workout in
+                                    refreshProfileContext()
+                                    viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                                 })
                                 .id(message.id)
                             }
@@ -79,6 +82,7 @@ struct ChatView: View {
                         }
                         .padding()
                     }
+                    .scrollDismissesKeyboard(.interactively)
                     .onChange(of: viewModel.messages) { _, _ in
                         if let lastMessage = viewModel.messages.last {
                             withAnimation {
@@ -239,8 +243,9 @@ struct MessageBubble: View {
     /// Het bericht dat getoond moet worden.
     let message: ChatMessage
 
-    // Geef een onDismiss actie door om de chatview te laten weten dat er een actie op de kalender plaatsvond
-    var onDismissWorkout: ((SuggestedWorkout) -> Void)?
+    // Callbacks voor de workout kaartjes
+    var onSkipWorkout: ((SuggestedWorkout) -> Void)?
+    var onAlternativeWorkout: ((SuggestedWorkout) -> Void)?
 
     /// Bepaalt of de afzender de gebruiker is (rechts uitgelijnd en blauw).
     var isUser: Bool {
@@ -261,7 +266,7 @@ struct MessageBubble: View {
                 }
 
                 if let plan = message.suggestedPlan {
-                    TrainingCalendarView(plan: plan, onDismissWorkout: onDismissWorkout)
+                    TrainingCalendarView(plan: plan, onSkipWorkout: onSkipWorkout, onAlternativeWorkout: onAlternativeWorkout)
                         .padding(12)
                         .background(Color(.systemGray5))
                         .cornerRadius(16)
@@ -289,8 +294,8 @@ struct MessageBubble: View {
 struct TrainingCalendarView: View {
     let plan: SuggestedTrainingPlan
 
-    // Bijvoorbeeld een callback als we een training willen wegdrukken of aanpassen
-    var onDismissWorkout: ((SuggestedWorkout) -> Void)?
+    var onSkipWorkout: ((SuggestedWorkout) -> Void)?
+    var onAlternativeWorkout: ((SuggestedWorkout) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -306,8 +311,10 @@ struct TrainingCalendarView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(plan.workouts) { workout in
-                        WorkoutCardView(workout: workout, onDismiss: {
-                            onDismissWorkout?(workout)
+                        WorkoutCardView(workout: workout, onSkip: {
+                            onSkipWorkout?(workout)
+                        }, onAlternative: {
+                            onAlternativeWorkout?(workout)
                         })
                     }
                 }
@@ -319,9 +326,10 @@ struct TrainingCalendarView: View {
 
 struct WorkoutCardView: View {
     let workout: SuggestedWorkout
-    var onDismiss: (() -> Void)?
+    var onSkip: (() -> Void)?
+    var onAlternative: (() -> Void)?
 
-    @State private var isDismissing: Bool = false
+    @State private var isProcessingAction: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -332,19 +340,28 @@ struct WorkoutCardView: View {
                     .foregroundColor(.blue)
                 Spacer()
 
-                if isDismissing {
+                if isProcessingAction {
                     ProgressView()
                         .controlSize(.small)
                 } else {
-                    Button(action: {
-                        isDismissing = true
-                        onDismiss?()
-                        // Reset na een korte tijd voor de zekerheid als het mislukt
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-                            isDismissing = false
+                    Menu {
+                        Button(role: .destructive, action: {
+                            isProcessingAction = true
+                            onSkip?()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { isProcessingAction = false }
+                        }) {
+                            Label("Overslaan", systemImage: "trash")
                         }
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
+
+                        Button(action: {
+                            isProcessingAction = true
+                            onAlternative?()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { isProcessingAction = false }
+                        }) {
+                            Label("Geef alternatief", systemImage: "arrow.triangle.2.circlepath")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                             .foregroundColor(.gray)
                     }
                 }
@@ -377,6 +394,6 @@ struct WorkoutCardView: View {
         .background(Color(.secondarySystemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
-        .opacity(isDismissing ? 0.5 : 1.0)
+        .opacity(isProcessingAction ? 0.5 : 1.0)
     }
 }
