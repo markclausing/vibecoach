@@ -367,21 +367,13 @@ struct PreferencesListView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(preference.preferenceText)
                                 .font(.body)
-                                .strikethrough(!preference.isActive)
-                                .foregroundColor(preference.isActive ? .primary : .secondary)
+                                .foregroundColor(.primary)
 
                             Text("Gedetecteerd op: \(preference.createdAt, formatter: itemFormatter)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                         Spacer()
-                        Toggle("", isOn: Binding(
-                            get: { preference.isActive },
-                            set: { newValue in
-                                preference.isActive = newValue
-                                try? modelContext.save()
-                            }
-                        ))
                     }
                 }
                 .onDelete(perform: deleteItems)

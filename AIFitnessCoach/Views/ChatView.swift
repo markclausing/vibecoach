@@ -227,12 +227,28 @@ struct ChatView: View {
         viewModel.onNewPreferencesDetected = { [weak viewModel] detectedPrefs in
             let context = modelContext
             Task { @MainActor in
+                // Omdat activePreferences al ge-fetched is via @Query, kunnen we die gebruiken voor een check.
+                let existingTexts = activePreferences.map { $0.preferenceText.lowercased() }
+
+                var hasNew = false
                 for text in detectedPrefs {
-                    // Simpele deduplicatie (optioneel, let op exact matching)
-                    let newPref = UserPreference(preferenceText: text)
-                    context.insert(newPref)
+                    let lowerText = text.lowercased()
+
+                    // Alleen toevoegen als er nog niet (exact of bijna exact) dezelfde tekst in de lijst staat
+                    if !existingTexts.contains(where: { existing in
+                        // Bijvoorbeeld: Levenshtein distance of simpele string conversie.
+                        // We doen hier een simpele substring/contains check om dubbele aannames te voorkomen.
+                        existing.contains(lowerText) || lowerText.contains(existing)
+                    }) {
+                        let newPref = UserPreference(preferenceText: text)
+                        context.insert(newPref)
+                        hasNew = true
+                    }
                 }
-                try? context.save()
+
+                if hasNew {
+                    try? context.save()
+                }
             }
         }
     }
