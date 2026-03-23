@@ -77,7 +77,7 @@ class ChatViewModel: ObservableObject {
                 ],
                 "newPreferences": ["Optioneel: een array met harde regels of voorkeuren die je in de chat van de gebruiker hebt ontdekt (bijv. 'Ik heb last van mijn knie' of 'Ik sport altijd op zondag')."]
             }
-            Extra instructie voor `newPreferences`: Als je opmerkt dat de gebruiker een vaste regel, langetermijnvoorkeur, of blessure doorgeeft, vul dit array dan aan. Laat het anders weg of laat het leeg.
+            Extra instructie voor `newPreferences`: Als je opmerkt dat de gebruiker een vaste regel, langetermijnvoorkeur, of blessure doorgeeft, vul dit array dan aan. Laat het anders weg of laat het leeg. Plaats in de 'newPreferences' array UITSLUITEND voorkeuren die in het LAATSTE, nieuwste bericht van de gebruiker staan. Herhaal geen regels die je al kent.
             """
 
             let config = GenerationConfig(
