@@ -325,6 +325,87 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
     }
 
+    func testDismissWorkout_SendsCorrectMessageAndTriggersRecalculation() async {
+        // Arrange
+        let expectedAIResponse = "Ik heb je schema aangepast."
+        mockModel.responseToReturn = expectedAIResponse
+        mockModel.delay = 0.1
+        viewModel.messages.removeAll()
+
+        let workoutToDismiss = SuggestedWorkout(
+            dateOrDay: "Morgen",
+            activityType: "Hardlopen",
+            suggestedDurationMinutes: 45,
+            targetTRIMP: 60,
+            description: "Intervals"
+        )
+
+        // Actie
+        viewModel.dismissWorkout(workoutToDismiss)
+
+        // Wacht even tot asynchrone taken gestart zijn
+        try? await Task.sleep(nanoseconds: 10_000_000)
+
+        // Assert direct na start
+        XCTAssertTrue(viewModel.isTyping)
+        XCTAssertEqual(viewModel.messages.count, 1)
+        XCTAssertEqual(viewModel.messages.first?.role, .user)
+        let sentMessageText = viewModel.messages.first?.text ?? ""
+        XCTAssertTrue(sentMessageText.contains("Ik wil de training 'Hardlopen' van Morgen overslaan. Kun je mijn schema herberekenen voor de resterende dagen?"))
+
+        // Wacht op AI response
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        // Assert na AI response
+        XCTAssertEqual(viewModel.messages.count, 2)
+        XCTAssertEqual(viewModel.messages.last?.role, .ai)
+        XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
+        XCTAssertFalse(viewModel.isTyping)
+    }
+
+    func testSuggestedWorkout_DecodingWithMissingOrStringTRIMP_HandlesGracefully() throws {
+        // Test Int TRIMP
+        let jsonInt = """
+        {
+            "dateOrDay": "Maandag",
+            "activityType": "Fietsen",
+            "suggestedDurationMinutes": 60,
+            "targetTRIMP": 55,
+            "description": "Rustige rit"
+        }
+        """
+        let dataInt = jsonInt.data(using: .utf8)!
+        let workoutInt = try JSONDecoder().decode(SuggestedWorkout.self, from: dataInt)
+        XCTAssertEqual(workoutInt.targetTRIMP, 55)
+
+        // Test String TRIMP
+        let jsonString = """
+        {
+            "dateOrDay": "Dinsdag",
+            "activityType": "Hardlopen",
+            "suggestedDurationMinutes": 30,
+            "targetTRIMP": "45",
+            "description": "Korte run"
+        }
+        """
+        let dataString = jsonString.data(using: .utf8)!
+        let workoutString = try JSONDecoder().decode(SuggestedWorkout.self, from: dataString)
+        XCTAssertEqual(workoutString.targetTRIMP, 45)
+
+        // Test Missing TRIMP
+        let jsonMissing = """
+        {
+            "dateOrDay": "Woensdag",
+            "activityType": "Rust",
+            "suggestedDurationMinutes": 0,
+            "description": "Hersteldag"
+        }
+        """
+        let dataMissing = jsonMissing.data(using: .utf8)!
+        let workoutMissing = try JSONDecoder().decode(SuggestedWorkout.self, from: dataMissing)
+        XCTAssertNil(workoutMissing.targetTRIMP)
+    }
+
     func testAnalyzeCurrentStatus_FallbackToStrava() async {
         // We simuleren dat HealthKit nil teruggeeft, dus we vallen terug op Strava.
         // Omdat we HealthKitManager niet direct kunnen mocken in de huidige opzet zonder een protocol

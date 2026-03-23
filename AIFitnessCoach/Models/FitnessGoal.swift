@@ -102,8 +102,8 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
     /// Voorgestelde duur in minuten (0 voor rust)
     let suggestedDurationMinutes: Int
 
-    /// Beoogde belasting (TRIMP), 0 voor rust
-    let targetTRIMP: Int
+    /// Beoogde belasting (TRIMP), 0 voor rust. Soms stuurt Gemini dit als String, of laat hij het weg.
+    let targetTRIMP: Int?
 
     /// Korte toelichting, bijv. "Zone 2 herstelrit" of "Intervaltraining: 5x1000m"
     let description: String
@@ -114,6 +114,32 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         case suggestedDurationMinutes
         case targetTRIMP
         case description
+    }
+
+    init(id: UUID = UUID(), dateOrDay: String, activityType: String, suggestedDurationMinutes: Int, targetTRIMP: Int?, description: String) {
+        self.id = id
+        self.dateOrDay = dateOrDay
+        self.activityType = activityType
+        self.suggestedDurationMinutes = suggestedDurationMinutes
+        self.targetTRIMP = targetTRIMP
+        self.description = description
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        dateOrDay = try container.decode(String.self, forKey: .dateOrDay)
+        activityType = try container.decode(String.self, forKey: .activityType)
+        suggestedDurationMinutes = try container.decode(Int.self, forKey: .suggestedDurationMinutes)
+        description = try container.decode(String.self, forKey: .description)
+
+        // Probeer targetTRIMP te decoderen als Int, en anders als String en parse naar Int
+        if let intTRIMP = try? container.decodeIfPresent(Int.self, forKey: .targetTRIMP) {
+            targetTRIMP = intTRIMP
+        } else if let stringTRIMP = try? container.decodeIfPresent(String.self, forKey: .targetTRIMP), let parsedInt = Int(stringTRIMP) {
+            targetTRIMP = parsedInt
+        } else {
+            targetTRIMP = nil
+        }
     }
 }
 
