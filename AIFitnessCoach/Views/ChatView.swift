@@ -111,9 +111,9 @@ struct ChatView: View {
                                     ProgressView()
                                         .controlSize(.small)
                                 } else {
-                                    Image(systemName: "figure.run")
+                                    Image(systemName: "calendar.badge.exclamationmark")
                                 }
-                                Text("Analyseer laatste training")
+                                Text("Evalueer Schema")
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
