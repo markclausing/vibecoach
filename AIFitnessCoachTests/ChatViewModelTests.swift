@@ -351,7 +351,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.count, 1)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
         let sentMessageText = viewModel.messages.first?.text ?? ""
-        XCTAssertTrue(sentMessageText.contains("Ik sla de training 'Hardlopen' op Morgen over. Herbereken de week en schuif de belasting door."))
+        XCTAssertTrue(sentMessageText.contains("Ik sla de training 'Hardlopen' op Morgen over. Herbereken de week en schuif de belasting door. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."))
 
         // Wacht op AI response
         try? await Task.sleep(nanoseconds: 200_000_000)
@@ -389,7 +389,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.count, 1)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
         let sentMessageText = viewModel.messages.first?.text ?? ""
-        XCTAssertTrue(sentMessageText.contains("Ik vind de geplande training 'Duurloop' op Zaterdag niet leuk. Geef me een alternatief voor Zaterdag dat een vergelijkbare trainingsprikkel geeft."))
+        XCTAssertTrue(sentMessageText.contains("Ik vind de geplande training 'Duurloop' op Zaterdag niet leuk. Geef me een alternatief voor Zaterdag dat een vergelijkbare trainingsprikkel geeft. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."))
 
         // Wacht op AI response
         try? await Task.sleep(nanoseconds: 200_000_000)
