@@ -409,12 +409,16 @@ final class ChatViewModelTests: XCTestCase {
             "activityType": "Fietsen",
             "suggestedDurationMinutes": 60,
             "targetTRIMP": 55,
-            "description": "Rustige rit"
+            "description": "Rustige rit",
+            "heartRateZone": "Zone 2",
+            "targetPace": "25 km/u"
         }
         """
         let dataInt = jsonInt.data(using: .utf8)!
         let workoutInt = try JSONDecoder().decode(SuggestedWorkout.self, from: dataInt)
         XCTAssertEqual(workoutInt.targetTRIMP, 55)
+        XCTAssertEqual(workoutInt.heartRateZone, "Zone 2")
+        XCTAssertEqual(workoutInt.targetPace, "25 km/u")
 
         // Test String TRIMP
         let jsonString = """
