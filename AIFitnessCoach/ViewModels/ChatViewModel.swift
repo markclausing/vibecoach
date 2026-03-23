@@ -77,11 +77,16 @@ class ChatViewModel: ObservableObject {
                 responseMIMEType: "application/json"
             )
 
+            let options = RequestOptions(
+                timeout: 120
+            )
+
             let googleModel = GenerativeModel(
                 name: "gemini-3.1-pro-preview",
                 apiKey: Secrets.geminiAPIKey,
                 generationConfig: config,
-                systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)])
+                systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)]),
+                requestOptions: options
             )
             self.model = RealGenerativeModel(model: googleModel)
         }
