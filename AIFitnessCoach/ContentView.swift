@@ -115,6 +115,22 @@ struct DashboardView: View {
                             .padding(.horizontal)
                         }
 
+                        // Toon progressie-indicator bij asynchrone bewerkingen
+                        if viewModel.isFetchingWorkout || viewModel.isTyping {
+                            VStack(spacing: 12) {
+                                ProgressView()
+                                    .scaleEffect(1.2)
+                                Text("Coach analyseert schema...")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color(.secondarySystemBackground))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                        }
+
                         if let plan = try? JSONDecoder().decode(SuggestedTrainingPlan.self, from: latestSuggestedPlanData) {
                             // Hergebruik de TrainingCalendarView uit ChatView,
                             // we geven wel de viewModel callbacks door zodat de acties werken.
@@ -159,8 +175,9 @@ struct DashboardView: View {
                 .refreshable {
                     refreshProfileContext()
                     viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                    // Na een pull to refresh laten we de AI nadenken op de achtergrond.
-                    // Het dashboard zal automatisch updaten als er een nieuwe planData binnen is.
+                    // Voeg een kleine vertraging toe zodat de pull-animatie niet direct wegschiet
+                    // Terwijl het 'echte' wachten zichtbaar wordt via de ProgressView hierboven
+                    try? await Task.sleep(nanoseconds: 1_000_000_000)
                 }
 
                 // FAB voor Chat
