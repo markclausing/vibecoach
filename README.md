@@ -1,43 +1,71 @@
-# ai-fitness-coach
-fitness coach app for iphone
-# AI Fitness Coach - Project Context & AI Instructies
+# AI Fitness Coach
 
-## Doel van de App
-Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitnesscoach. De gebruiker kan via een chat-interface praten over fitnessdoelen, trainingen analyseren en directe feedback krijgen.
+Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitnesscoach. De app combineert Apple HealthKit data, Strava activiteiten en de kracht van de Gemini AI om dynamisch en proactief je trainingsschema's te evalueren en bij te sturen.
+
+---
+
+## 🚀 Huidige Status
+**Klaar voor Open Source / Public Release**
+
+---
+
+## 🛠 Installatie & Setup
+
+Om dit project lokaal te draaien, moet je zowel de iOS-app als de bijbehorende Node.js webhook-backend configureren. Volg de onderstaande stappen:
+
+### 1. iOS App (Xcode)
+1. Open `AIFitnessCoach.xcodeproj` in Xcode.
+2. Kopieer in de projectmap het bestand `Secrets-template.swift` naar `Secrets.swift`.
+3. Open `Secrets.swift` en vul je eigen API-sleutels in (zoals je Gemini API Key en Strava API credentials).
+4. Selecteer je simulator of fysieke iPhone en druk op Run (Cmd+R).
+*(Let op: voor Apple HealthKit functionaliteit is testen op een fysiek toestel aanbevolen).*
+
+### 2. Backend (Node.js)
+De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) te sturen naar de app.
+1. Navigeer in je terminal naar de `backend/` map.
+2. Voer `npm install` uit om de afhankelijkheden te installeren.
+3. Kopieer het bestand `.env.example` naar `.env`.
+4. Open de `.env` file en vul daar de benodigde variabelen in (zoals `CLIENT_ID`, `CLIENT_SECRET`, en je zelfbedachte `VERIFY_TOKEN`).
+5. Start de server (bijvoorbeeld via `./start.sh` als je ngrok wilt gebruiken voor lokaal testen).
+
+---
 
 ## Kernfunctionaliteiten (Roadmap)
 
-✅ **Fase 1 t/m 5: Afgerond.**
+✅ **Fase 1 t/m 5: Fundering & Connectiviteit**
 * Setup iOS App (SwiftUI) & SwiftData lokale opslag.
 * OAuth2 integratie met Strava API.
 * Node.js Backend met Strava Webhook integratie & Apple Push Notifications (APNs).
 * Deep-linking: Notificatie opvangen en specifieke workout ophalen op basis van het `activityId`.
 
 ✅ **Fase 6: Langetermijngeheugen & Proactieve Coaching**
-* Historische Sync, Context Injectie & Proactieve Waarschuwingen (Overtraining risk) afgerond.
+* Historische Sync, Context Injectie & Proactieve Waarschuwingen (Overtraining risk).
 
 ✅ **Fase 7: Apple HealthKit Integratie**
-* De Fysiologische Rekenmachine (Berekenen van TSS/TRIMP obv HealthKit data) is voltooid.
-* Integratie met Apple HealthKit als primaire databron (Architectonische Pivot: we hebben Intervals.icu verlaten vanwege API restricties vanuit Strava).
-* 100% lokaal, privacy-first, en geen afhankelijkheid van externe API-limieten.
+* De Fysiologische Rekenmachine (Berekenen van TSS/TRIMP obv HealthKit data).
+* Integratie met Apple HealthKit als primaire databron (100% lokaal, privacy-first).
 * Hartslagherstel (HRR), Cardiac Drift en Training Load (TSS) ophalen en zelf berekenen na een workout.
-* Deze diepe fysiologische data geïnjecteerd in de Gemini prompts.
 
-**Fase 8: Interactieve Trainingsplanner & Dashboards (Afgerond)**
-* ✅ **Sprint 8.1: Readiness Calculator & Goal Injectie:** Afgerond (7-daagse cumulatieve TRIMP en actieve doelen toegevoegd aan de prompt).
-* ✅ **Sprint 8.2: Interactieve Trainingskalender:** Afgerond. De app heeft een proactieve, visuele planning gekregen met een 7-daagse interactieve kalender in SwiftUI. Gebruikers kunnen voorgestelde trainingen wegdrukken, waarna de AI het resterende schema dynamisch herrekent via structuur JSON-output.
+✅ **Fase 8: Interactieve Trainingsplanner & Dashboards**
+* ✅ **Sprint 8.1:** Readiness Calculator & Goal Injectie (7-daagse cumulatieve TRIMP en actieve doelen toegevoegd aan de prompt).
+* ✅ **Sprint 8.2:** Interactieve Trainingskalender. De app heeft een proactieve, visuele planning met een 7-daagse interactieve kalender in SwiftUI.
 
-✅ **Fase 9: De Intelligente Coach & UI Pivot (Afgerond)**
-* ✅ **Sprint 9.1: Langetermijngeheugen (Context Injectie):** Lokale opslag (SwiftData) van gebruikersvoorkeuren uit de chat (bijv. vaste sportdagen, blessures). Deze worden onzichtbaar geïnjecteerd in de `system_instruction` van elke Gemini API-call, te beheren via een nieuw "Coach Geheugen" scherm.
-* ✅ **Sprint 9.2: Workout Acties (Interactieve Kaarten):** De `WorkoutCardView` is uitgebreid met native SwiftUI Menu-acties. Gebruikers kunnen expliciet kiezen om een workout 'Over te slaan' (Rest Day inplannen) of een 'Alternatief' te vragen, wat via dynamische prompts een directe herberekening triggert.
-* ✅ **Sprint 9.3: Dynamische Evaluatie & Fysiologische Targets:** Logica ingebouwd voor post-workout evaluatie via push notificaties en "Pull-to-Refresh". Trainingen bevatten nu extra fysiologische JSON-velden (`heartRateZone`, `targetPace`) die in een gedetailleerde bottom-sheet worden getoond.
-* ✅ **UI Pivot:** De app-architectuur is succesvol getransformeerd naar een volwaardige TabBar/Dashboard applicatie. Het Dashboard toont de actuele kalender met "Pull-to-Refresh" functionaliteit, de chat is nu beschikbaar via een zwevende .sheet overlay, en instellingen en geheugen hebben eigen tabbladen.
-* ✅ **Performance Baseline:** De app berekent nu dynamisch het gemiddelde hardlooptempo (pace) van de gebruiker op basis van recente `ActivityRecord`s in de `AthleticProfileManager` en injecteert deze automatisch in de fysiologische context van de AI-prompts, zodat doelen altijd realistisch zijn.
+✅ **Fase 9: De Intelligente Coach (Afgerond)**
+* ✅ **Sprint 9.1: Langetermijngeheugen:** Lokale opslag (SwiftData) van gebruikersvoorkeuren uit de chat (bijv. vaste sportdagen). Deze worden onzichtbaar geïnjecteerd in de AI-context.
+* ✅ **Sprint 9.2: Workout Acties:** De `WorkoutCardView` is uitgebreid met native SwiftUI Menu-acties (Overslaan, Alternatief vragen), wat een directe herberekening van het schema triggert.
+* ✅ **Sprint 9.3: Dynamische Evaluatie & Fysiologische Targets:** Logica ingebouwd voor post-workout evaluatie via push notificaties. Trainingen bevatten fysiologische JSON-velden (`heartRateZone`, `targetPace`).
+* ✅ **Nieuwe Feature - UI Pivot:** De app-architectuur is getransformeerd naar een volwaardige TabBar navigatie. Het Dashboard toont de actuele kalender met "Pull-to-Refresh", de chat is beschikbaar via een zwevende `.sheet` overlay, en instellingen en geheugen hebben eigen tabbladen.
+* ✅ **Nieuwe Feature - Performance Baseline:** De app berekent dynamisch het gemiddelde hardlooptempo van de gebruiker op basis van recente `ActivityRecord`s in het `AthleticProfile`, en injecteert deze in de AI-prompts voor realistische doelen.
 
-🚀 **Huidige Status:** De applicatie is architecturaal compleet en staat gemarkeerd als **"Klaar voor Open Source / Public Release"**. (Rest nog: opzetten productie-omgevingen voor APNs en Cloud Hosting indien gewenst).
+🚀 **Epic 10: Open Source Release (Actief)**
+* Het project voorbereiden op publieke release.
+* Security review (verwijderen van hardcoded secrets).
+* Documentatie optimaliseren (zoals deze README en setup instructies).
+
+---
 
 ## Testing Push Notifications in Simulator
-Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de naam `test-push.apns` aanmaken en deze letterlijk naar de draaiende simulator slepen (Drag & Drop). De structuur van dit bestand moet er als volgt uitzien:
+Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de naam `test-push.apns` aanmaken en deze letterlijk naar de draaiende simulator slepen (Drag & Drop).
 
 ```json
 {
@@ -55,6 +83,8 @@ Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de na
 ```
 *Zorg ervoor dat het veld `"Simulator Target Bundle"` exact overeenkomt met de Bundle Identifier van je Xcode project.*
 *Vervang `1234567890` door een echt Strava Activity ID om een live analyse af te dwingen.*
+
+---
 
 ## Tech Stack
 * **Platform:** iOS (macOS met Xcode vereist voor het bouwen)
