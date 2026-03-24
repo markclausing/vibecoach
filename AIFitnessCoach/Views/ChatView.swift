@@ -293,12 +293,6 @@ struct TrainingCalendarView: View {
             Text("Jouw Plan voor de komende 7 dagen")
                 .font(.headline)
 
-            Text(plan.motivation)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .italic()
-                .padding(.bottom, 8)
-
             if isHorizontal {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
