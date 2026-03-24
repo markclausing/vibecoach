@@ -252,7 +252,7 @@ struct MessageBubble: View {
                 }
 
                 if let plan = message.suggestedPlan {
-                    TrainingCalendarView(plan: plan, onSkipWorkout: onSkipWorkout, onAlternativeWorkout: onAlternativeWorkout)
+                    TrainingCalendarView(plan: plan, onSkipWorkout: onSkipWorkout, onAlternativeWorkout: onAlternativeWorkout, isHorizontal: true)
                         .padding(12)
                         .background(Color(.systemGray5))
                         .cornerRadius(16)
@@ -283,6 +283,9 @@ struct TrainingCalendarView: View {
     var onSkipWorkout: ((SuggestedWorkout) -> Void)?
     var onAlternativeWorkout: ((SuggestedWorkout) -> Void)?
 
+    // Optie om de weergave te bepalen (horizontaal voor chat, verticaal voor dashboard)
+    var isHorizontal: Bool = false
+
     @State private var selectedWorkoutForDetail: SuggestedWorkout?
 
     var body: some View {
@@ -296,8 +299,24 @@ struct TrainingCalendarView: View {
                 .italic()
                 .padding(.bottom, 8)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+            if isHorizontal {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(plan.workouts) { workout in
+                            WorkoutCardView(workout: workout, onSkip: {
+                                onSkipWorkout?(workout)
+                            }, onAlternative: {
+                                onAlternativeWorkout?(workout)
+                            }, onSelect: {
+                                selectedWorkoutForDetail = workout
+                            })
+                            .frame(width: 220) // Fixeer breedte in horizontale chat-bubble
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                }
+            } else {
+                VStack(spacing: 16) {
                     ForEach(plan.workouts) { workout in
                         WorkoutCardView(workout: workout, onSkip: {
                             onSkipWorkout?(workout)
@@ -306,9 +325,10 @@ struct TrainingCalendarView: View {
                         }, onSelect: {
                             selectedWorkoutForDetail = workout
                         })
+                        // In de VStack neemt de kaart de volledige breedte (maxWidth: .infinity is ingesteld in de WorkoutCardView)
                     }
                 }
-                .padding(.horizontal, 4) // voor schaduw clips
+                .padding(.horizontal, 4)
             }
         }
         .sheet(item: $selectedWorkoutForDetail) { workout in
@@ -389,7 +409,7 @@ struct WorkoutCardView: View {
                 }
             }
             .padding()
-            .frame(width: 180, height: 160)
+            .frame(maxWidth: .infinity, minHeight: 160)
             .background(Color(.secondarySystemBackground))
             .cornerRadius(12)
             .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
