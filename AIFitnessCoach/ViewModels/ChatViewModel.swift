@@ -152,6 +152,14 @@ class ChatViewModel: ObservableObject {
                 prefix += " URGENT: De atleet vertoont tekenen van overtraining op basis van recent volume. Wees streng, adviseer actief om rust te nemen en analyseer deze training puur op herstel."
             }
 
+            // SPRINT 9.3: Pace Baseline Injectie
+            if let avgPaceInSeconds = p.averagePacePerKmInSeconds {
+                let minutes = avgPaceInSeconds / 60
+                let seconds = avgPaceInSeconds % 60
+                let paceString = String(format: "%d:%02d", minutes, seconds)
+                prefix += " Belangrijke fysiologische context: Het actuele gemiddelde hardlooptempo van de gebruiker ligt rond de \(paceString) min/km (bovenkant Zone 2). Gebruik dit als absolute baseline om realistische 'targetPace' doelen voor de komende trainingen te berekenen."
+            }
+
             prefix += " Neem dit mee in je analyse over herstel en prestatie.]\n\n"
         }
 

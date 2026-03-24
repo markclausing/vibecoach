@@ -323,6 +323,7 @@ struct AthleticProfile {
     var averageWeeklyVolumeInSeconds: Int
     var daysSinceLastTraining: Int
     var isRecoveryNeeded: Bool // SPRINT 6.3 - Proactieve Waarschuwing status
+    var averagePacePerKmInSeconds: Int? // SPRINT 9.3 - Gemiddeld hardlooptempo
 }
 
 /// Verantwoordelijk voor het berekenen van het atleetprofiel op basis van historische gegevens in SwiftData.
@@ -362,7 +363,8 @@ class AthleticProfileManager {
                                    peakDurationInSeconds: peakDuration,
                                    averageWeeklyVolumeInSeconds: 0,
                                    daysSinceLastTraining: daysSinceLast,
-                                   isRecoveryNeeded: false)
+                                   isRecoveryNeeded: false,
+                                   averagePacePerKmInSeconds: nil)
         }
 
         let recentActivities = allActivities.filter { $0.startDate >= fourWeeksAgo }
@@ -378,7 +380,8 @@ class AthleticProfileManager {
                                    peakDurationInSeconds: peakDuration,
                                    averageWeeklyVolumeInSeconds: averageWeeklyVolume,
                                    daysSinceLastTraining: daysSinceLast,
-                                   isRecoveryNeeded: false)
+                                   isRecoveryNeeded: false,
+                                   averagePacePerKmInSeconds: nil)
         }
         let thisWeekActivities = recentActivities.filter { $0.startDate >= oneWeekAgo }
         let thisWeekVolume = thisWeekActivities.reduce(0) { $0 + $1.movingTime }
@@ -395,7 +398,7 @@ class AthleticProfileManager {
         // Regel 2: Traint al 4 of meer dagen op rij
         // Voor een simpeler algoritme: als er 4 trainingen zijn in de afgelopen 4 dagen (we negeren multi-a-days voor deze simpele check)
         guard let fourDaysAgo = Calendar.current.date(byAdding: .day, value: -4, to: now) else {
-            return AthleticProfile(peakDistanceInMeters: peakDistance, peakDurationInSeconds: peakDuration, averageWeeklyVolumeInSeconds: averageWeeklyVolume, daysSinceLastTraining: max(0, daysSinceLast), isRecoveryNeeded: needsRecovery)
+            return AthleticProfile(peakDistanceInMeters: peakDistance, peakDurationInSeconds: peakDuration, averageWeeklyVolumeInSeconds: averageWeeklyVolume, daysSinceLastTraining: max(0, daysSinceLast), isRecoveryNeeded: needsRecovery, averagePacePerKmInSeconds: nil)
         }
         let daysTrainedInLast4Days = Set(thisWeekActivities.filter { $0.startDate >= fourDaysAgo }.map { Calendar.current.startOfDay(for: $0.startDate) }).count
 
@@ -403,12 +406,31 @@ class AthleticProfileManager {
             needsRecovery = true
         }
 
+        // 5. SPRINT 9.3: Gemiddeld tempo berekenen (baseline pace)
+        var averagePace: Int? = nil
+        if let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: now) {
+            let runningActivities = allActivities.filter {
+                $0.startDate >= thirtyDaysAgo &&
+                ($0.type.lowercased().contains("run") || $0.type.lowercased().contains("hardlopen"))
+            }
+
+            let totalRunningDistance = runningActivities.reduce(0.0) { $0 + $1.distance }
+            let totalRunningTime = runningActivities.reduce(0) { $0 + $1.movingTime }
+
+            // Controleer op division by zero en zorg voor betrouwbare data (minimaal 1km gelopen)
+            if totalRunningDistance > 1000.0 && totalRunningTime > 0 {
+                // Pace = (tijd in seconden / afstand in meters) * 1000 = seconden per kilometer
+                averagePace = Int((Double(totalRunningTime) / totalRunningDistance) * 1000.0)
+            }
+        }
+
         return AthleticProfile(
             peakDistanceInMeters: peakDistance,
             peakDurationInSeconds: peakDuration,
             averageWeeklyVolumeInSeconds: averageWeeklyVolume,
             daysSinceLastTraining: max(0, daysSinceLast),
-            isRecoveryNeeded: needsRecovery
+            isRecoveryNeeded: needsRecovery,
+            averagePacePerKmInSeconds: averagePace
         )
     }
 }
