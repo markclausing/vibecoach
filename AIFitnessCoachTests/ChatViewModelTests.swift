@@ -270,7 +270,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.first?.role, .user)
 
         // Check if the prompt contains expected formats
-        XCTAssertTrue(promptText.contains("Dit is mijn momenteel geplande schema"))
+        XCTAssertTrue(promptText.contains("Geen actueel gepland schema bekend."))
         XCTAssertTrue(promptText.contains("Dit zijn mijn meest recente voltooide trainingen"))
         XCTAssertTrue(promptText.contains("Mijn opgeslagen doelen:"))
         XCTAssertTrue(promptText.contains("Hardlopen"))
@@ -317,7 +317,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isTyping)
         XCTAssertEqual(viewModel.messages.count, 2)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
-        XCTAssertTrue(viewModel.messages.first!.text.contains("Dit is mijn momenteel geplande schema"))
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Geen actueel gepland schema bekend."))
         XCTAssertTrue(viewModel.messages.first!.text.contains("Lunch Run"))
         XCTAssertTrue(viewModel.messages.first!.text.contains("5.0 km"))
         XCTAssertTrue(viewModel.messages.first!.text.contains("30 minuten"))
@@ -495,7 +495,7 @@ final class ChatViewModelTests: XCTestCase {
         // Assert
         XCTAssertEqual(viewModel.messages.count, 2)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
-        XCTAssertTrue(viewModel.messages.first!.text.contains("Dit is mijn momenteel geplande schema")) // Bevestigt dat we de nieuwe prompt gebruiken
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Geen actueel gepland schema bekend.")) // Bevestigt dat we de nieuwe prompt gebruiken (empty state)
         XCTAssertTrue(viewModel.messages.first!.text.contains("Morning Ride"))
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
