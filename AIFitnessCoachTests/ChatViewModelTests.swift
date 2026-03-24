@@ -277,6 +277,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertTrue(promptText.contains("Wandelen"))
         XCTAssertTrue(promptText.contains("Totale Cumulatieve TRIMP:"))
         XCTAssertTrue(promptText.contains("Rust"))
+        XCTAssertTrue(promptText.contains("LET OP: Vandaag is het"))
         XCTAssertTrue(promptText.contains("Vergelijk deze recente activiteiten met het actuele schema"))
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
