@@ -20,4 +20,5 @@ DerivedData/
 # Secrets
 Secrets.swift
 AIFitnessCoach/Secrets.swift
+backend/.env
 .DS_Store
