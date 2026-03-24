@@ -194,7 +194,7 @@ struct ChatView: View {
 
     /// Setup de callback in ViewModel om gedetecteerde voorkeuren op te slaan in SwiftData
     private func setupPreferenceCallback() {
-        viewModel.onNewPreferencesDetected = { [weak viewModel] detectedPrefs in
+        viewModel.onNewPreferencesDetected = { detectedPrefs in
             let context = modelContext
             Task { @MainActor in
                 // Omdat activePreferences al ge-fetched is via @Query, kunnen we die gebruiken voor een check.
