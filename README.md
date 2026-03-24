@@ -27,12 +27,14 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 * ✅ **Sprint 8.1: Readiness Calculator & Goal Injectie:** Afgerond (7-daagse cumulatieve TRIMP en actieve doelen toegevoegd aan de prompt).
 * ✅ **Sprint 8.2: Interactieve Trainingskalender:** Afgerond. De app heeft een proactieve, visuele planning gekregen met een 7-daagse interactieve kalender in SwiftUI. Gebruikers kunnen voorgestelde trainingen wegdrukken, waarna de AI het resterende schema dynamisch herrekent via structuur JSON-output.
 
-⏳ **Fase 9: Productie & Lancering (Huidig / Gepland)**
-* **Sprint 9.0: De Intelligente Coach (Huidig)**
-  * [ ] **9.1 Langetermijngeheugen (Context Injectie):** Opzetten van een lokale opslag (bijv. SwiftData) om gebruikersvoorkeuren uit de chat (zoals vaste sportdagen) op te slaan en deze onzichtbaar te injecteren in de `system_instruction` van elke Gemini API-call.
-  * [ ] **9.2 UI: Workout Acties (Vervangen vs. Overslaan):** De `WorkoutCardView` uitbreiden met een menu of swipe-acties, zodat de gebruiker expliciet kan kiezen tussen een 'Rest Day' (uitsmeren van belasting) of een 'Alternatief' (vergelijkbare trainingsprikkel).
-  * [ ] **9.3 Dynamische Evaluatie (Post-Workout):** Logica bouwen om voltooide trainingen (nieuwe HealthKit/Strava data) te detecteren en Gemini te triggeren om het resterende weekschema te valideren en waar nodig te herberekenen.
-* Echte APNs, Cloud Hosting, TestFlight.
+✅ **Fase 9: De Intelligente Coach & UI Pivot (Afgerond)**
+* ✅ **Sprint 9.1: Langetermijngeheugen (Context Injectie):** Lokale opslag (SwiftData) van gebruikersvoorkeuren uit de chat (bijv. vaste sportdagen, blessures). Deze worden onzichtbaar geïnjecteerd in de `system_instruction` van elke Gemini API-call, te beheren via een nieuw "Coach Geheugen" scherm.
+* ✅ **Sprint 9.2: Workout Acties (Interactieve Kaarten):** De `WorkoutCardView` is uitgebreid met native SwiftUI Menu-acties. Gebruikers kunnen expliciet kiezen om een workout 'Over te slaan' (Rest Day inplannen) of een 'Alternatief' te vragen, wat via dynamische prompts een directe herberekening triggert.
+* ✅ **Sprint 9.3: Dynamische Evaluatie & Fysiologische Targets:** Logica ingebouwd voor post-workout evaluatie via push notificaties en "Pull-to-Refresh". Trainingen bevatten nu extra fysiologische JSON-velden (`heartRateZone`, `targetPace`) die in een gedetailleerde bottom-sheet worden getoond.
+* ✅ **UI Pivot:** De app-architectuur is succesvol getransformeerd naar een volwaardige TabBar/Dashboard applicatie. Het Dashboard toont de actuele kalender met "Pull-to-Refresh" functionaliteit, de chat is nu beschikbaar via een zwevende .sheet overlay, en instellingen en geheugen hebben eigen tabbladen.
+* ✅ **Performance Baseline:** De app berekent nu dynamisch het gemiddelde hardlooptempo (pace) van de gebruiker op basis van recente `ActivityRecord`s in de `AthleticProfileManager` en injecteert deze automatisch in de fysiologische context van de AI-prompts, zodat doelen altijd realistisch zijn.
+
+🚀 **Huidige Status:** De applicatie is architecturaal compleet en staat gemarkeerd als **"Klaar voor Open Source / Public Release"**. (Rest nog: opzetten productie-omgevingen voor APNs en Cloud Hosting indien gewenst).
 
 ## Testing Push Notifications in Simulator
 Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de naam `test-push.apns` aanmaken en deze letterlijk naar de draaiende simulator slepen (Drag & Drop). De structuur van dit bestand moet er als volgt uitzien:
