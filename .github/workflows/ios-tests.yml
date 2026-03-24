@@ -17,6 +17,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Create Dummy Secrets file for Build
+        run: cp AIFitnessCoach/Secrets-Template.swift AIFitnessCoach/Secrets.swift
+
       - name: Select Xcode Version
         run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 
