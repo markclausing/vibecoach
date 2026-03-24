@@ -9,11 +9,6 @@ struct ChatView: View {
     /// De viewmodel die de chat status en netwerklogica beheert.
     @ObservedObject var viewModel: ChatViewModel
 
-    // Als de view zonder argument wordt aangeroepen (bijv. in Previews), gebruiken we een default instance.
-    init(viewModel: ChatViewModel = ChatViewModel()) {
-        self.viewModel = viewModel
-    }
-
     /// Om de sheet te sluiten.
     @Environment(\.dismiss) private var dismiss
 
@@ -276,7 +271,7 @@ struct MessageBubble: View {
 }
 
 #Preview {
-    ChatView()
+    ChatView(viewModel: ChatViewModel())
         .environmentObject(AppNavigationState())
 }
 
