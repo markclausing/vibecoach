@@ -106,6 +106,9 @@ struct AIFitnessCoachApp: App {
     // Inject the custom AppDelegate voor APNs en Push Notifications (Fase 5)
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    // Luister naar de app status (foreground/background)
+    @Environment(\.scenePhase) private var scenePhase
+
     // Globale navigatiestatus (voor notificaties & deep links)
     @StateObject private var appState = AppNavigationState.shared
 
@@ -117,6 +120,13 @@ struct AIFitnessCoachApp: App {
             ContentView()
                 .environmentObject(appState)
                 .environmentObject(planManager)
+                .onChange(of: scenePhase) { oldPhase, newPhase in
+                    if newPhase == .active {
+                        // SPRINT 12.3: Trigger de automatische historische datasync wanneer de app open is.
+                        // We sturen hiervoor een notificatie, zodat ContentView dit netjes afhandelt met context toegang.
+                        NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
+                    }
+                }
         }
         .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self]) // Voeg SwiftData containers toe
     }

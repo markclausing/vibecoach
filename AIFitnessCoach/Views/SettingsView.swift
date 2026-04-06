@@ -334,6 +334,15 @@ struct SettingsView: View {
                             .foregroundColor(msg == "Opslaan mislukt." ? .red : .green)
                     }
                 }
+
+                #if targetEnvironment(simulator)
+                Section(header: Text("Developer Tools (Simulator Only)")) {
+                    Button("Genereer Test Data (Epic 12)") {
+                        generateDummyData()
+                    }
+                    .foregroundColor(.purple)
+                }
+                #endif
         }
         .navigationTitle("Instellingen")
         .navigationBarTitleDisplayMode(.inline)
@@ -347,6 +356,62 @@ struct SettingsView: View {
             loadTokens()
         }
     }
+
+    #if targetEnvironment(simulator)
+    private func generateDummyData() {
+        feedbackMessage = "Genereren van dummy data..."
+
+        Task { @MainActor in
+            let calendar = Calendar.current
+            let now = Date()
+
+            // 1. Voeg een dummy FitnessGoal toe (Marathon)
+            let targetDate = calendar.date(byAdding: .day, value: 60, to: now)! // Over 2 maanden
+            let createdDate = calendar.date(byAdding: .day, value: -30, to: now)! // 1 maand geleden gestart
+
+            let goal = FitnessGoal(
+                title: "Amsterdam Marathon (Test)",
+                details: "Gegenereerd via simulator tools",
+                targetDate: targetDate,
+                createdAt: createdDate,
+                sportType: "Hardlopen",
+                targetTRIMP: 6500.0
+            )
+            modelContext.insert(goal)
+
+            // 2. Voeg 5 realistische activiteiten toe in de afgelopen 14 dagen
+            let workoutDates = [
+                calendar.date(byAdding: .day, value: -12, to: now)!,
+                calendar.date(byAdding: .day, value: -10, to: now)!,
+                calendar.date(byAdding: .day, value: -7, to: now)!,
+                calendar.date(byAdding: .day, value: -4, to: now)!,
+                calendar.date(byAdding: .day, value: -1, to: now)!
+            ]
+
+            let trimps = [150.0, 210.0, 180.0, 320.0, 140.0]
+            let durations = [2700, 3600, 3200, 5400, 2400]
+            let names = ["Recovery Run", "Tempo Run", "Endurance", "Long Run", "Shakeout"]
+
+            for (index, date) in workoutDates.enumerated() {
+                let record = ActivityRecord(
+                    id: "dummy_\(index)_\(Int(date.timeIntervalSince1970))",
+                    name: names[index],
+                    distance: Double(durations[index]) * 2.5, // Ruwe schatting
+                    movingTime: durations[index],
+                    averageHeartrate: 145.0 + Double(index * 2),
+                    type: "Run",
+                    startDate: date,
+                    trimp: trimps[index]
+                )
+                modelContext.insert(record)
+            }
+
+            try? modelContext.save()
+            feedbackMessage = "Dummy data gegenereerd! Ga naar het Dashboard."
+            refreshProfile()
+        }
+    }
+    #endif
 }
 
 /// Lijst met actieve voorkeuren en regels van de gebruiker (AI Context).

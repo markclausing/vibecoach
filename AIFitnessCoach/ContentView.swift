@@ -10,6 +10,57 @@ struct ContentView: View {
     // voor pull-to-refresh en de ChatView als overlay.
     @StateObject private var sharedChatViewModel = ChatViewModel()
 
+    // Auto-Sync Dependencies (Sprint 12.3)
+    @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
+    @Environment(\.modelContext) private var modelContext
+    private let fitnessDataService = FitnessDataService()
+
+    /// Voert asynchroon de data-synchronisatie voor de afgelopen 14 dagen uit op de achtergrond.
+    private func performAutoSync() {
+        Task {
+            do {
+                if selectedDataSource == .healthKit {
+                    let syncService = HealthKitSyncService()
+                    try await syncService.syncHistoricalWorkouts(to: modelContext) // Note: HealthKitSyncService by default is fast if already authorized
+                } else {
+                    // Strava API (Alleen laatste 14 dagen ophalen om API limieten en laadtijden kort te houden voor de Burn Rate graph)
+                    let activities = try await fitnessDataService.fetchRecentActivities(days: 14)
+
+                    await MainActor.run {
+                        let formatter = ISO8601DateFormatter()
+                        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+                        let fallbackFormatter = ISO8601DateFormatter()
+
+                        for activity in activities {
+                            let currentId = String(activity.id)
+                            let fetchDescriptor = FetchDescriptor<ActivityRecord>(predicate: #Predicate { $0.id == currentId })
+                            let existing = try? modelContext.fetch(fetchDescriptor)
+
+                            if existing?.isEmpty ?? true {
+                                let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
+
+                                let record = ActivityRecord(
+                                    id: currentId,
+                                    name: activity.name,
+                                    distance: activity.distance,
+                                    movingTime: activity.moving_time,
+                                    averageHeartrate: activity.average_heartrate,
+                                    type: activity.type,
+                                    startDate: date,
+                                    trimp: nil // In a real app we could recalculate the local TRIMP here via PhysiologicalCalculator if missing
+                                )
+                                modelContext.insert(record)
+                            }
+                        }
+                        try? modelContext.save()
+                    }
+                }
+            } catch {
+                print("Auto-sync gefaald op de achtergrond: \(error)")
+            }
+        }
+    }
+
     var body: some View {
         // Intercept de tab-selectie om voor ".coach" alleen de sheet te openen
         let tabBinding = Binding<AppNavigationState.Tab>(
@@ -68,6 +119,9 @@ struct ContentView: View {
         }
         .onAppear {
             sharedChatViewModel.setTrainingPlanManager(planManager)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("TriggerAutoSync"))) { _ in
+            performAutoSync()
         }
     }
 }
@@ -233,6 +287,8 @@ struct SingleGoalBurndownView: View {
     let goal: FitnessGoal
     let activities: [ActivityRecord]
 
+    @EnvironmentObject var planManager: TrainingPlanManager
+
     enum LineType: String, Plottable {
         case ideal = "Ideaal"
         case actual = "Actueel"
@@ -253,6 +309,7 @@ struct SingleGoalBurndownView: View {
         var currentWeeklyBurnRate: Double = 0
         var requiredWeeklyBurnRate: Double = 0
         var currentRemainingTRIMP: Double = 0
+        var isUsingPlannedRate: Bool = false
     }
 
     private var chartAnalysis: (data: [ChartDataPoint], metrics: BurnMetrics) {
@@ -302,9 +359,29 @@ struct SingleGoalBurndownView: View {
              dataPoints.append(ChartDataPoint(date: goal.targetDate, remainingTRIMP: max(0, currentRemaining), type: .actual))
         }
 
+        // SPRINT 12.3: Bepaal Planned Burn Rate vs Historical Burn Rate
+        let historicalBurnRate = recent14DaysTRIMP / 2.0
+        var activeBurnRate = historicalBurnRate
+
+        if let plannedWorkouts = planManager.activePlan?.workouts {
+            // Bereken wat er in het huidige schema aan TRIMP gepland staat voor dit type
+            var plannedWeeklyTRIMP = 0.0
+            for workout in plannedWorkouts {
+                let workoutSportMatch = goal.sportType == nil || goal.sportType == "" || workout.activityType.lowercased() == goal.sportType?.lowercased() || workout.activityType.lowercased().contains((goal.sportType ?? "").lowercased())
+
+                if workoutSportMatch, let trimp = workout.targetTRIMP {
+                    plannedWeeklyTRIMP += Double(trimp)
+                }
+            }
+            if plannedWeeklyTRIMP > 0 {
+                activeBurnRate = plannedWeeklyTRIMP
+                metrics.isUsingPlannedRate = true
+            }
+        }
+
         // Zuivere toewijzing (geen state mutation in de View)
         metrics.currentRemainingTRIMP = currentRemaining
-        metrics.currentWeeklyBurnRate = recent14DaysTRIMP / 2.0 // Gemiddelde per week over afgelopen 14 dagen
+        metrics.currentWeeklyBurnRate = activeBurnRate
 
         let weeksToTarget = max(0.1, goal.targetDate.timeIntervalSince(now) / (86400 * 7))
         metrics.requiredWeeklyBurnRate = currentRemaining / weeksToTarget
@@ -314,10 +391,9 @@ struct SingleGoalBurndownView: View {
             let startForecast = ChartDataPoint(date: now, remainingTRIMP: max(0, currentRemaining), type: .forecast)
             dataPoints.append(startForecast)
 
-            let recentBurnRate = recent14DaysTRIMP / 2.0
-            if recentBurnRate > 0 {
-                // Hoeveel weken duurt het om op 0 te komen met dit tempo?
-                let weeksToZero = currentRemaining / recentBurnRate
+            if activeBurnRate > 0 {
+                // Hoeveel weken duurt het om op 0 te komen met dit geplande/historische tempo?
+                let weeksToZero = currentRemaining / activeBurnRate
                 let zeroDate = calendar.date(byAdding: .day, value: Int(weeksToZero * 7), to: now)!
 
                 // Teken de lijn
@@ -352,11 +428,12 @@ struct SingleGoalBurndownView: View {
 
                     HStack {
                         Text(isGreen ? "🟢" : (isOrange ? "🟠" : "🔴"))
-                        Text("Huidig: \(Int(currentWeeklyBurnRate)) /wk | Nodig: \(Int(requiredWeeklyBurnRate)) /wk")
+                        let rateTypeLabel = analysis.metrics.isUsingPlannedRate ? "Gepland" : "Historisch"
+                        Text("\(rateTypeLabel): \(Int(currentWeeklyBurnRate)) /wk | Nodig: \(Int(requiredWeeklyBurnRate)) /wk")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                    Text(isGreen ? "Je ligt perfect op schema!" : (isOrange ? "Je ligt iets achter op schema." : "Actie vereist! Je haalt het doel niet met dit tempo."))
+                    Text(isGreen ? "Je ligt perfect op schema!" : (isOrange ? "Je ligt iets achter op schema." : "Actie vereist! Je haalt het doel niet met dit (geplande) tempo."))
                         .font(.caption2)
                         .foregroundColor(isGreen ? .green : (isOrange ? .orange : .red))
                 } else {
@@ -602,6 +679,7 @@ struct DashboardView: View {
                     .padding(.bottom, 40) // Zorg voor wat extra scroll-ruimte
                 }
                 .refreshable {
+                    NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
                     refreshProfileContext()
                     viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                     // Voeg een kleine vertraging toe zodat de pull-animatie niet direct wegschiet
