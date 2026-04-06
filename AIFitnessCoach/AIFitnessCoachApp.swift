@@ -12,6 +12,7 @@ class AppNavigationState: ObservableObject {
     enum Tab {
         case dashboard
         case goals
+        case coach
         case memory
         case settings
     }

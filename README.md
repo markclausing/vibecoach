@@ -65,7 +65,7 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 ✅ **Epic 11: Coach UX Refactor & State Management (Afgerond)**
 * ✅ **Sprint 11.1: Shared State & UX:** Het 'Vraag de Coach' scherm is opgeschoond door backend logica (technische system prompts) onzichtbaar in te bouwen. `TrainingPlanManager` fungeert nu als Single Source of Truth voor het trainingsschema via de `@EnvironmentObject`.
 * ✅ **Sprint 11.2: Smart Expiring Memory:** De AI kan inschatten of een doorgegeven feit (bijv. een blessure) tijdelijk of permanent is. Tijdelijke regels krijgen een vervaldatum (`expirationDate`), welke getoond wordt in de Memory UI. Verlopen regels worden genegeerd in API Payloads.
-* ✅ **Sprint 11.3: Centrale TabBar Coach Knop:** De zwevende actieknop (FAB) is verwijderd van het dashboard en vervangen door een custom, centraal geplaatste knop in de TabBar. De AI-coach is nu vanuit elke hoek van de app direct oproepbaar als overlay sheet.
+* ✅ **Sprint 11.3: Centrale TabBar Coach Knop:** De zwevende actieknop (FAB) is verwijderd van het dashboard en vervangen door een native centrale TabBar knop. Door een custom SwiftUI tab-interceptie wordt de AI-coach vanuit elke hoek van de app gestart als overlay sheet, zonder de tab-navigatie flow te breken.
 
 🚀 **Epic 12: Advanced Analytics & Motivatie (Actief)**
 * Nieuwe grafieken toevoegen aan het Dashboard om progressie te visualiseren (bijv. wekelijkse TRIMP of hartslagzones).
@@ -107,3 +107,4 @@ Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de na
 * Leg bij complexe code (zoals API-koppelingen) in het Nederlands uit wat de code doet via comments.
 * Bouw stap voor stap: zorg dat de basis werkt voordat we ingewikkelde API's toevoegen.
 * Quality Control: Schrijf voor élke nieuwe functionaliteit Unit Tests (XCTest) voor de onderliggende logica. Voor de absolute kern-flows (de 'Happy Paths') schrijven we XCUITest UI-tests, zodat we de belangrijkste interacties borgen zonder de test-suite te traag te maken.
+* Documentatie Discipline (README Protocol): Elke Pull Request (PR) MOET een update van deze README.md bevatten in dezelfde commit. Vink afgeronde sprints/taken af (✅), voeg zichtbare wijzigingen toe aan de 'Nieuwe Features' sectie, en werk de Roadmap bij met het eerstvolgende logische doel zodat we altijd vooruit plannen.
