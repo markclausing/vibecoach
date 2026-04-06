@@ -318,19 +318,26 @@ struct SingleGoalBurndownView: View {
         let now = Date()
         let targetTRIMP = goal.computedTargetTRIMP
 
-        // 1. Ideale Lijn
-        dataPoints.append(ChartDataPoint(date: goal.createdAt, remainingTRIMP: targetTRIMP, type: .ideal))
+        let relevantActivities = activities.filter { record in
+            record.startDate <= goal.targetDate &&
+            (goal.sportType == nil || goal.sportType == "" || record.type.lowercased() == goal.sportType?.lowercased() || record.name.lowercased().contains((goal.sportType ?? "").lowercased()))
+        }.sorted(by: { $0.startDate < $1.startDate })
+
+        // Bepaal het effectieve startpunt van de grafiek (mag in het verleden liggen)
+        let effectiveStartDate: Date
+        if let firstRelevantDate = relevantActivities.first?.startDate, firstRelevantDate < goal.createdAt {
+            effectiveStartDate = firstRelevantDate
+        } else {
+            effectiveStartDate = goal.createdAt
+        }
+
+        // 1. Ideale Lijn start vanaf het effectieve startpunt
+        dataPoints.append(ChartDataPoint(date: effectiveStartDate, remainingTRIMP: targetTRIMP, type: .ideal))
         dataPoints.append(ChartDataPoint(date: goal.targetDate, remainingTRIMP: 0.0, type: .ideal))
 
         // 2. Actuele Lijn
         var currentRemaining = targetTRIMP
-        dataPoints.append(ChartDataPoint(date: goal.createdAt, remainingTRIMP: currentRemaining, type: .actual))
-
-        let relevantActivities = activities.filter { record in
-            record.startDate >= goal.createdAt &&
-            record.startDate <= goal.targetDate &&
-            (goal.sportType == nil || goal.sportType == "" || record.type.lowercased() == goal.sportType?.lowercased() || record.name.lowercased().contains((goal.sportType ?? "").lowercased()))
-        }.sorted(by: { $0.startDate < $1.startDate })
+        dataPoints.append(ChartDataPoint(date: effectiveStartDate, remainingTRIMP: currentRemaining, type: .actual))
 
         // Houd ook TRIMP bij voor de afgelopen 14 dagen voor de Burn Rate
         var recent14DaysTRIMP = 0.0
