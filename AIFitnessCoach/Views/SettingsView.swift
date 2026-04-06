@@ -90,7 +90,7 @@ struct SettingsView: View {
                                     distance: activity.distance,
                                     movingTime: activity.moving_time,
                                     averageHeartrate: activity.average_heartrate,
-                                    type: activity.type,
+                                    sportCategory: SportCategory.from(rawString: activity.type),
                                     startDate: date,
                                     trimp: nil
                                 )
@@ -374,7 +374,7 @@ struct SettingsView: View {
                 details: "Gegenereerd via simulator tools",
                 targetDate: targetDate,
                 createdAt: createdDate,
-                sportType: "Hardlopen",
+                sportCategory: .running,
                 targetTRIMP: 6500.0
             )
             modelContext.insert(goal)
@@ -399,7 +399,7 @@ struct SettingsView: View {
                     distance: Double(durations[index]) * 2.5, // Ruwe schatting
                     movingTime: durations[index],
                     averageHeartrate: 145.0 + Double(index * 2),
-                    type: "Run",
+                    sportCategory: .running,
                     startDate: date,
                     trimp: trimps[index]
                 )

@@ -45,7 +45,7 @@ struct ContentView: View {
                                     distance: activity.distance,
                                     movingTime: activity.moving_time,
                                     averageHeartrate: activity.average_heartrate,
-                                    type: activity.type,
+                                    sportCategory: SportCategory.from(rawString: activity.type),
                                     startDate: date,
                                     trimp: nil // In a real app we could recalculate the local TRIMP here via PhysiologicalCalculator if missing
                                 )
@@ -318,11 +318,27 @@ struct SingleGoalBurndownView: View {
         let now = Date()
         let targetTRIMP = goal.computedTargetTRIMP
 
+        // SPRINT 12.4 DEBUG: Print alle raw database records vóór we filteren
+        print("🔍 RAW DB DUMP VOOR DOEL: \(goal.title)")
+        for record in activities {
+            print("   Raw DB Record: \(record.name) - Category: '\(record.sportCategory.rawValue)' - Date: \(record.startDate)")
+        }
+
         let relevantActivities = activities.filter { record in
-            record.startDate <= goal.targetDate && record.matchesSportType(goal.sportType)
+            guard let goalCategory = goal.sportCategory else { return true } // Geen categorie == alles telt mee
+
+            // Speciale afhandeling voor Triatlon (combineert meerdere disciplines)
+            if goalCategory == .triathlon {
+                return record.startDate <= goal.targetDate && (record.sportCategory == .running || record.sportCategory == .cycling || record.sportCategory == .swimming || record.sportCategory == .triathlon)
+            }
+
+            return record.startDate <= goal.targetDate && record.sportCategory == goalCategory
         }.sorted(by: { $0.startDate < $1.startDate })
 
-        print("📊 Goal: \(goal.title) (\(goal.sportType ?? "All")) - Found \(relevantActivities.count) matching activities")
+        print("📊 Goal: \(goal.title) (\(goal.sportCategory?.displayName ?? "All")) - Found \(relevantActivities.count) matching activities")
+        for record in relevantActivities.prefix(3) {
+             print("   -> \(record.name) (\(record.sportCategory.displayName)) on \(record.startDate)")
+        }
 
         // Bepaal het effectieve startpunt van de grafiek (mag in het verleden liggen)
         let effectiveStartDate: Date
@@ -375,7 +391,15 @@ struct SingleGoalBurndownView: View {
             // Bereken wat er in het huidige schema aan TRIMP gepland staat voor dit type
             var plannedWeeklyTRIMP = 0.0
             for workout in plannedWorkouts {
-                let workoutSportMatch = goal.sportType == nil || goal.sportType == "" || workout.activityType.lowercased() == goal.sportType?.lowercased() || workout.activityType.lowercased().contains((goal.sportType ?? "").lowercased())
+                var workoutSportMatch = true
+                if let goalCat = goal.sportCategory {
+                     let mappedWorkoutCat = SportCategory.from(rawString: workout.activityType)
+                     if goalCat == .triathlon {
+                         workoutSportMatch = (mappedWorkoutCat == .running || mappedWorkoutCat == .cycling || mappedWorkoutCat == .swimming || mappedWorkoutCat == .triathlon)
+                     } else {
+                         workoutSportMatch = mappedWorkoutCat == goalCat
+                     }
+                }
 
                 if workoutSportMatch, let trimp = workout.targetTRIMP {
                     plannedWeeklyTRIMP += Double(trimp)

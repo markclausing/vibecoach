@@ -23,11 +23,11 @@ final class FitnessGoalTests: XCTestCase {
     func testCreateFitnessGoal() throws {
         // Arrange
         let title = "Marathon onder 3:30"
-        let sportType = "Hardlopen"
+        let sportCategory: SportCategory = .running
         let targetDate = Date().addingTimeInterval(86400 * 30) // +30 dagen
 
         // Act
-        let goal = FitnessGoal(title: title, targetDate: targetDate, sportType: sportType)
+        let goal = FitnessGoal(title: title, targetDate: targetDate, sportCategory: sportCategory)
         context.insert(goal)
 
         // Assert
@@ -36,7 +36,7 @@ final class FitnessGoalTests: XCTestCase {
 
         XCTAssertEqual(fetchedGoals.count, 1)
         XCTAssertEqual(fetchedGoals.first?.title, title)
-        XCTAssertEqual(fetchedGoals.first?.sportType, sportType)
+        XCTAssertEqual(fetchedGoals.first?.sportCategory, sportCategory)
         XCTAssertFalse(fetchedGoals.first!.isCompleted, "Standaard isCompleted zou false moeten zijn")
     }
 
