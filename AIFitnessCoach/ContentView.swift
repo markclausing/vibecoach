@@ -319,9 +319,10 @@ struct SingleGoalBurndownView: View {
         let targetTRIMP = goal.computedTargetTRIMP
 
         let relevantActivities = activities.filter { record in
-            record.startDate <= goal.targetDate &&
-            (goal.sportType == nil || goal.sportType == "" || record.type.lowercased() == goal.sportType?.lowercased() || record.name.lowercased().contains((goal.sportType ?? "").lowercased()))
+            record.startDate <= goal.targetDate && record.matchesSportType(goal.sportType)
         }.sorted(by: { $0.startDate < $1.startDate })
+
+        print("📊 Goal: \(goal.title) (\(goal.sportType ?? "All")) - Found \(relevantActivities.count) matching activities")
 
         // Bepaal het effectieve startpunt van de grafiek (mag in het verleden liggen)
         let effectiveStartDate: Date

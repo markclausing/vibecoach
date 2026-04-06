@@ -91,6 +91,45 @@ final class ActivityRecord {
         self.startDate = startDate
         self.trimp = trimp
     }
+
+    /// Vergelijkt robuust of deze activiteit past bij een opgegeven doel-sport (Sprint 12.4).
+    /// Dit koppelt Engelse Strava/HealthKit types (zoals "Ride", "VirtualRide") aan Nederlandse doelen (zoals "Fietsen").
+    func matchesSportType(_ targetSport: String?) -> Bool {
+        guard let target = targetSport?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines), !target.isEmpty else {
+            return true // Als er geen specifiek doel is ingesteld, telt elke activiteit mee
+        }
+
+        let currentType = type.lowercased()
+        let currentName = name.lowercased()
+
+        // Hardlopen Mapping
+        if target.contains("hardlopen") || target.contains("run") {
+            return currentType.contains("run") || currentType.contains("hardlopen") || currentName.contains("run") || currentName.contains("hardlopen") || currentType == "hkworkoutactivitytyperunning"
+        }
+
+        // Fietsen Mapping
+        if target.contains("fietsen") || target.contains("wielrennen") || target.contains("ride") || target.contains("cycl") {
+            return currentType.contains("ride") || currentType.contains("cycl") || currentType.contains("fiets") || currentName.contains("ride") || currentName.contains("fiets") || currentType == "hkworkoutactivitytypecycling"
+        }
+
+        // Zwemmen Mapping
+        if target.contains("zwemmen") || target.contains("swim") {
+            return currentType.contains("swim") || currentType.contains("zwem") || currentName.contains("swim") || currentName.contains("zwem") || currentType == "hkworkoutactivitytypeswimming"
+        }
+
+        // Krachttraining Mapping
+        if target.contains("kracht") || target.contains("strength") || target.contains("weight") {
+            return currentType.contains("strength") || currentType.contains("weight") || currentType.contains("kracht") || currentName.contains("kracht") || currentType == "hkworkoutactivitytypetraditionalstrengthtraining"
+        }
+
+        // Triatlon Mapping (Telt Hardlopen, Fietsen én Zwemmen mee)
+        if target.contains("triatlon") || target.contains("triathlon") {
+            return matchesSportType("hardlopen") || matchesSportType("fietsen") || matchesSportType("zwemmen")
+        }
+
+        // Fallback: generieke string matching
+        return currentType.contains(target) || target.contains(currentType) || currentName.contains(target)
+    }
 }
 
 /// Een meting van de hartslag op een specifiek tijdstip
