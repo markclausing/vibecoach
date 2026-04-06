@@ -217,7 +217,7 @@ struct BurndownChartView: View {
         let now = Date()
 
         for goal in goals {
-            guard let targetTRIMP = goal.targetTRIMP, targetTRIMP > 0 else { continue }
+            let targetTRIMP = goal.computedTargetTRIMP
             let title = goal.title
 
             // 1. Ideale Lijn
@@ -330,6 +330,22 @@ struct DashboardView: View {
             self.currentProfile = try profileManager.calculateProfile(context: modelContext)
         } catch {
             print("Kon profiel niet laden in DashboardView: \(error)")
+        }
+    }
+
+    /// Controleert en vult ontbrekende `targetTRIMP` aan voor legacy doelen (Epic 12 Data Migratie)
+    private func backfillLegacyGoals() {
+        var hasChanges = false
+        for goal in goals {
+            if goal.targetTRIMP == nil || goal.targetTRIMP == 0 {
+                let days = max(1.0, goal.targetDate.timeIntervalSince(goal.createdAt) / 86400)
+                goal.targetTRIMP = (days / 7.0) * 350.0
+                hasChanges = true
+            }
+        }
+
+        if hasChanges {
+            try? modelContext.save()
         }
     }
 
@@ -473,6 +489,7 @@ struct DashboardView: View {
                 }
             }
             .onAppear {
+                backfillLegacyGoals()
                 refreshProfileContext()
             }
         }
