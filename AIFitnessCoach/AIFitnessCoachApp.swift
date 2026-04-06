@@ -23,6 +23,9 @@ class AppNavigationState: ObservableObject {
     /// is meegegeven en geanalyseerd moet worden door de coach.
     @Published var targetActivityId: Int64? = nil
 
+    /// Bepaalt of de AI coach bottom sheet zichtbaar is, ongeacht welk tabblad actief is.
+    @Published var showingChatSheet: Bool = false
+
     /// Optionele statische shared instance voor toegang buiten SwiftUI views (bijv. AppDelegate).
     /// Let op: Dit vereist dat we de properties updaten op de main thread.
     static let shared = AppNavigationState()
