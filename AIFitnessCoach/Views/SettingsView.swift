@@ -84,6 +84,19 @@ struct SettingsView: View {
                             if existing?.isEmpty ?? true {
                                 let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
 
+                                // SPRINT 12.4: Voeg basic TRIMP fallback toe bij sync
+                                let basicTRIMPFallback: Double? = {
+                                    if let hr = activity.average_heartrate, hr > 100 {
+                                        // Super simpele Banister fallback als HR bekend is
+                                        let durationMins = Double(activity.moving_time) / 60.0
+                                        let simulatedDeltaHR = (hr - 60.0) / (190.0 - 60.0)
+                                        return durationMins * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
+                                    } else {
+                                        // Als niks bekend is, gebruik 1 minuut = 1.5 TRIMP als grove gok
+                                        return (Double(activity.moving_time) / 60.0) * 1.5
+                                    }
+                                }()
+
                                 let record = ActivityRecord(
                                     id: currentId,
                                     name: activity.name,
@@ -92,7 +105,7 @@ struct SettingsView: View {
                                     averageHeartrate: activity.average_heartrate,
                                     sportCategory: SportCategory.from(rawString: activity.type),
                                     startDate: date,
-                                    trimp: nil
+                                    trimp: basicTRIMPFallback
                                 )
                                 modelContext.insert(record)
                                 newRecordsCount += 1
@@ -379,13 +392,13 @@ struct SettingsView: View {
             )
             modelContext.insert(goal)
 
-            // 2. Voeg 5 realistische activiteiten toe in de afgelopen 14 dagen
+            // 2. Voeg 5 realistische activiteiten toe in de afgelopen 45 dagen
             let workoutDates = [
+                calendar.date(byAdding: .day, value: -35, to: now)!, // Time Travel: Voor de createdAt!
+                calendar.date(byAdding: .day, value: -20, to: now)!,
                 calendar.date(byAdding: .day, value: -12, to: now)!,
-                calendar.date(byAdding: .day, value: -10, to: now)!,
                 calendar.date(byAdding: .day, value: -7, to: now)!,
-                calendar.date(byAdding: .day, value: -4, to: now)!,
-                calendar.date(byAdding: .day, value: -1, to: now)!
+                calendar.date(byAdding: .day, value: -2, to: now)!
             ]
 
             let trimps = [150.0, 210.0, 180.0, 320.0, 140.0]
