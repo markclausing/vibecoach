@@ -1,4 +1,4 @@
-# AI Fitness Coach
+# VibeCoach
 
 Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitnesscoach. De app combineert Apple HealthKit data, Strava activiteiten en de kracht van de Gemini AI om dynamisch en proactief je trainingsschema's te evalueren en bij te sturen.
 
@@ -57,10 +57,14 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 * ✅ **Nieuwe Feature - UI Pivot:** De app-architectuur is getransformeerd naar een volwaardige TabBar navigatie. Het Dashboard toont de actuele kalender met "Pull-to-Refresh", de chat is beschikbaar via een zwevende `.sheet` overlay, en instellingen en geheugen hebben eigen tabbladen.
 * ✅ **Nieuwe Feature - Performance Baseline:** De app berekent dynamisch het gemiddelde hardlooptempo van de gebruiker op basis van recente `ActivityRecord`s in het `AthleticProfile`, en injecteert deze in de AI-prompts voor realistische doelen.
 
-🚀 **Epic 10: Open Source Release (Actief)**
+✅ **Epic 10: Open Source Release (Afgerond)**
 * Het project voorbereiden op publieke release.
 * Security review (verwijderen van hardcoded secrets).
 * Documentatie optimaliseren (zoals deze README en setup instructies).
+
+🚀 **Epic 11: Coach UX Refactor & State Management (Actief)**
+* Het 'Vraag de Coach' scherm opschonen: backend logica en de technische System Prompt verbergen in de UI, maar netjes behouden in de verborgen API payload.
+* Implementatie van een robuuste Shared State (bijv. een centraal datamodel voor het trainingsschema), zodat het dashboard en het coach-scherm naar exact dezelfde data kijken en real-time synchroniseren na een AI-update.
 
 ---
 
