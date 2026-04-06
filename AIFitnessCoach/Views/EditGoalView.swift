@@ -7,8 +7,6 @@ struct EditGoalView: View {
 
     @Bindable var goal: FitnessGoal
 
-    let sportTypes = ["Hardlopen", "Wielrennen", "Zwemmen", "Krachttraining", "Triatlon", "Anders"]
-
     // Tijdelijke state vars, we assignen aan 'goal' on the fly in een Form, of bij "Opslaan"
     // Bindable is mooi, we werken direct op het object.
 
@@ -24,13 +22,12 @@ struct EditGoalView: View {
             }
 
             Section(header: Text("Type Sport")) {
-                Picker("Sport", selection: Binding(
-                    get: { goal.sportType ?? "" },
-                    set: { goal.sportType = $0.isEmpty ? nil : $0 }
+                Picker("Sport", selection: Binding<SportCategory>(
+                    get: { goal.sportCategory ?? .other },
+                    set: { goal.sportCategory = $0 }
                 )) {
-                    Text("Selecteer een sport").tag("")
-                    ForEach(sportTypes, id: \.self) { sport in
-                        Text(sport).tag(sport)
+                    ForEach(SportCategory.allCases) { category in
+                        Text(category.displayName).tag(category)
                     }
                 }
             }

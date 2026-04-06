@@ -107,7 +107,7 @@ struct GoalRowView: View {
                 }
             }
 
-            if let sport = goal.sportType, !sport.isEmpty {
+            if let sport = goal.sportCategory?.displayName, !sport.isEmpty {
                 Text(sport)
                     .font(.caption2)
                     .foregroundColor(.secondary)
