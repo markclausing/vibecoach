@@ -256,7 +256,7 @@ final class ChatViewModelTests: XCTestCase {
 
         // Polling loop to wait for the asynchronous operations to complete
         var attempts = 0
-        while viewModel.messages.count < 2 && attempts < 50 { // max 5 seconds wait (50 * 0.1s)
+        while viewModel.messages.count < 1 && attempts < 50 { // max 5 seconds wait (50 * 0.1s)
             try? await Task.sleep(nanoseconds: 100_000_000)
             attempts += 1
         }
@@ -308,7 +308,7 @@ final class ChatViewModelTests: XCTestCase {
 
         // Polling loop to wait for the asynchronous operations to complete
         var attempts = 0
-        while viewModel.messages.count < 2 && attempts < 50 {
+        while viewModel.messages.count < 1 && attempts < 50 {
             try? await Task.sleep(nanoseconds: 100_000_000)
             attempts += 1
         }
@@ -318,12 +318,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isTyping)
         XCTAssertEqual(viewModel.messages.count, 2)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
-        XCTAssertTrue(viewModel.messages.first!.text.contains("Geen actueel gepland schema bekend."))
-        XCTAssertTrue(viewModel.messages.first!.text.contains("Lunch Run"))
-        XCTAssertTrue(viewModel.messages.first!.text.contains("5.0 km"))
-        XCTAssertTrue(viewModel.messages.first!.text.contains("30 minuten"))
-        XCTAssertTrue(viewModel.messages.first!.text.contains("160"))
-        XCTAssertTrue(viewModel.messages.first!.text.contains("Vergelijk dit met de geplande belasting in het schema."))
+        XCTAssertTrue(viewModel.messages.first!.text.contains("Ik heb zojuist de training 'Lunch Run' voltooid."))
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
@@ -355,7 +350,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.count, 1)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
         let sentMessageText = viewModel.messages.first?.text ?? ""
-        XCTAssertTrue(sentMessageText.contains("Ik sla de training 'Hardlopen' op Morgen over. Herbereken de week en schuif de belasting door. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."))
+        XCTAssertTrue(sentMessageText.contains("Ik sla de geplande Hardlopen op Morgen over."))
 
         // Wacht op AI response
         try? await Task.sleep(nanoseconds: 200_000_000)
@@ -393,7 +388,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.count, 1)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
         let sentMessageText = viewModel.messages.first?.text ?? ""
-        XCTAssertTrue(sentMessageText.contains("Ik vind de geplande training 'Duurloop' op Zaterdag niet leuk. Geef me een alternatief voor Zaterdag dat een vergelijkbare trainingsprikkel geeft. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."))
+        XCTAssertTrue(sentMessageText.contains("Geef me een alternatief voor de Duurloop op Zaterdag."))
 
         // Wacht op AI response
         try? await Task.sleep(nanoseconds: 200_000_000)
@@ -494,11 +489,8 @@ final class ChatViewModelTests: XCTestCase {
         }
 
         // Assert
-        XCTAssertEqual(viewModel.messages.count, 2)
-        XCTAssertEqual(viewModel.messages.first?.role, .user)
-        XCTAssertTrue(viewModel.messages.first!.text.contains("Geen actueel gepland schema bekend.")) // Bevestigt dat we de nieuwe prompt gebruiken (empty state)
-        XCTAssertTrue(viewModel.messages.first!.text.contains("Morning Ride"))
-
+        // In de nieuwe flow (verborgen payload) voegen we het user bericht in `analyzeCurrentStatus` / `sendPromptToAI` NIET toe aan de messages array.
+        XCTAssertEqual(viewModel.messages.count, 1)
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
     }
