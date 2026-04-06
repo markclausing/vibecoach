@@ -142,7 +142,22 @@ enum SportCategory: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    /// Factory methode om ruwe externe API strings (zoals "Ride", "HKWorkoutActivityTypeCycling")
+    /// Mapt direct vanaf een HealthKit type voor robuustheid in plaats van string beschrijvingen
+    static func from(hkType: UInt) -> SportCategory {
+        // We gebruiken UInt omdat we HealthKit hier wellicht niet expliciet willen importeren op elke plek
+        // 13 = cycling, 37 = running, 52 = walking, 16 = elliptical, 50 = traditionalStrengthTraining, 82 = swimming
+        switch hkType {
+        case 13: return .cycling
+        case 37: return .running
+        case 46, 82: return .swimming
+        case 50, 59: return .strength
+        case 52: return .walking
+        case 83: return .triathlon
+        default: return .other
+        }
+    }
+
+    /// Factory methode om ruwe externe API strings (zoals "Ride")
     /// robuust te mappen naar de gestandaardiseerde `SportCategory`.
     static func from(rawString: String?) -> SportCategory {
         guard let raw = rawString?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
