@@ -264,21 +264,7 @@ final class ChatViewModelTests: XCTestCase {
         // Check berichten en eindstatus
         XCTAssertFalse(viewModel.isFetchingWorkout, "Fetching state should be reset to false")
         XCTAssertFalse(viewModel.isTyping, "Typing state should be reset to false")
-        XCTAssertEqual(viewModel.messages.count, 2, "There should be exactly 2 messages: the workout context prompt and the AI response")
-
-        let promptText = viewModel.messages.first?.text ?? ""
-        XCTAssertEqual(viewModel.messages.first?.role, .user)
-
-        // Check if the prompt contains expected formats
-        XCTAssertTrue(promptText.contains("Geen actueel gepland schema bekend."))
-        XCTAssertTrue(promptText.contains("Dit zijn mijn meest recente voltooide trainingen"))
-        XCTAssertTrue(promptText.contains("Mijn opgeslagen doelen:"))
-        XCTAssertTrue(promptText.contains("Hardlopen"))
-        XCTAssertTrue(promptText.contains("Wandelen"))
-        XCTAssertTrue(promptText.contains("Totale Cumulatieve TRIMP:"))
-        XCTAssertTrue(promptText.contains("Rust"))
-        XCTAssertTrue(promptText.contains("LET OP: Vandaag is het"))
-        XCTAssertTrue(promptText.contains("Vergelijk deze recente activiteiten met het actuele schema"))
+        XCTAssertEqual(viewModel.messages.count, 1, "There should be exactly 1 message: the AI response, context prompt is hidden")
 
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
@@ -308,7 +294,7 @@ final class ChatViewModelTests: XCTestCase {
 
         // Polling loop to wait for the asynchronous operations to complete
         var attempts = 0
-        while viewModel.messages.count < 1 && attempts < 50 {
+        while viewModel.messages.count < 2 && attempts < 50 {
             try? await Task.sleep(nanoseconds: 100_000_000)
             attempts += 1
         }
