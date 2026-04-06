@@ -39,6 +39,17 @@ struct ContentView: View {
                             if existing?.isEmpty ?? true {
                                 let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
 
+                                // SPRINT 12.4: Voeg basic TRIMP fallback toe bij sync
+                                let basicTRIMPFallback: Double? = {
+                                    if let hr = activity.average_heartrate, hr > 100 {
+                                        let durationMins = Double(activity.moving_time) / 60.0
+                                        let simulatedDeltaHR = (hr - 60.0) / (190.0 - 60.0)
+                                        return durationMins * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
+                                    } else {
+                                        return (Double(activity.moving_time) / 60.0) * 1.5
+                                    }
+                                }()
+
                                 let record = ActivityRecord(
                                     id: currentId,
                                     name: activity.name,
@@ -47,7 +58,7 @@ struct ContentView: View {
                                     averageHeartrate: activity.average_heartrate,
                                     sportCategory: SportCategory.from(rawString: activity.type),
                                     startDate: date,
-                                    trimp: nil // In a real app we could recalculate the local TRIMP here via PhysiologicalCalculator if missing
+                                    trimp: basicTRIMPFallback // In a real app we could recalculate the local TRIMP hier via PhysiologicalCalculator if missing
                                 )
                                 modelContext.insert(record)
                             }
@@ -309,7 +320,7 @@ struct SingleGoalBurndownView: View {
         var currentWeeklyBurnRate: Double = 0
         var requiredWeeklyBurnRate: Double = 0
         var currentRemainingTRIMP: Double = 0
-        var isUsingPlannedRate: Bool = false
+        var rateSourceLabel: String = "Historisch"
     }
 
     private var chartAnalysis: (data: [ChartDataPoint], metrics: BurnMetrics) {
@@ -340,10 +351,13 @@ struct SingleGoalBurndownView: View {
              print("   -> \(record.name) (\(record.sportCategory.displayName)) on \(record.startDate)")
         }
 
-        // Bepaal het effectieve startpunt van de grafiek (mag in het verleden liggen)
+        // SPRINT 12.4: Bepaal het effectieve startpunt van de grafiek (mag in het verleden liggen)
+        // Definieer effectiveStartDate opnieuw: Kijk naar de lijst met gefilterde relevantActivities.
+        // Pak de datum van de alleroudste activiteit in die lijst.
+        // De effectiveStartDate wordt de vroegste van de twee: óf de goal.createdAt, óf de datum van die oudste activiteit.
         let effectiveStartDate: Date
-        if let firstRelevantDate = relevantActivities.first?.startDate, firstRelevantDate < goal.createdAt {
-            effectiveStartDate = firstRelevantDate
+        if let firstRelevantDate = relevantActivities.first?.startDate {
+            effectiveStartDate = min(firstRelevantDate, goal.createdAt)
         } else {
             effectiveStartDate = goal.createdAt
         }
@@ -405,9 +419,26 @@ struct SingleGoalBurndownView: View {
                     plannedWeeklyTRIMP += Double(trimp)
                 }
             }
-            if plannedWeeklyTRIMP > 0 {
+            if plannedWeeklyTRIMP > 0 && historicalBurnRate > 0 {
+                activeBurnRate = (plannedWeeklyTRIMP + historicalBurnRate) / 2.0
+                metrics.rateSourceLabel = "Gemiddeld"
+            } else if plannedWeeklyTRIMP > 0 {
                 activeBurnRate = plannedWeeklyTRIMP
-                metrics.isUsingPlannedRate = true
+                metrics.rateSourceLabel = "Gepland"
+            } else if historicalBurnRate > 0 {
+                activeBurnRate = historicalBurnRate
+                metrics.rateSourceLabel = "Historisch"
+            } else {
+                activeBurnRate = 0.0
+                metrics.rateSourceLabel = "Geen data"
+            }
+        } else {
+            if historicalBurnRate > 0 {
+                activeBurnRate = historicalBurnRate
+                metrics.rateSourceLabel = "Historisch"
+            } else {
+                activeBurnRate = 0.0
+                metrics.rateSourceLabel = "Geen data"
             }
         }
 
@@ -460,7 +491,7 @@ struct SingleGoalBurndownView: View {
 
                     HStack {
                         Text(isGreen ? "🟢" : (isOrange ? "🟠" : "🔴"))
-                        let rateTypeLabel = analysis.metrics.isUsingPlannedRate ? "Gepland" : "Historisch"
+                        let rateTypeLabel = analysis.metrics.rateSourceLabel
                         Text("\(rateTypeLabel): \(Int(currentWeeklyBurnRate)) /wk | Nodig: \(Int(requiredWeeklyBurnRate)) /wk")
                             .font(.caption)
                             .foregroundColor(.secondary)
