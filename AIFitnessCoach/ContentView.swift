@@ -335,15 +335,21 @@ struct SingleGoalBurndownView: View {
             print("   Raw DB Record: \(record.name) - Category: '\(record.sportCategory.rawValue)' - Date: \(record.startDate)")
         }
 
+        // SPRINT 12.5: Training Block Constraint (16 weken macroyclus)
+        let trainingBlockStartDate = goal.targetDate.addingTimeInterval(-16 * 7 * 24 * 3600)
+
         let relevantActivities = activities.filter { record in
+            // Filter records buiten de 16 weken of in de toekomst (na targetDate) eruit
+            guard record.startDate >= trainingBlockStartDate && record.startDate <= goal.targetDate else { return false }
+
             guard let goalCategory = goal.sportCategory else { return true } // Geen categorie == alles telt mee
 
             // Speciale afhandeling voor Triatlon (combineert meerdere disciplines)
             if goalCategory == .triathlon {
-                return record.startDate <= goal.targetDate && (record.sportCategory == .running || record.sportCategory == .cycling || record.sportCategory == .swimming || record.sportCategory == .triathlon)
+                return (record.sportCategory == .running || record.sportCategory == .cycling || record.sportCategory == .swimming || record.sportCategory == .triathlon)
             }
 
-            return record.startDate <= goal.targetDate && record.sportCategory == goalCategory
+            return record.sportCategory == goalCategory
         }.sorted(by: { $0.startDate < $1.startDate })
 
         print("📊 Goal: \(goal.title) (\(goal.sportCategory?.displayName ?? "All")) - Found \(relevantActivities.count) matching activities")
@@ -377,8 +383,8 @@ struct SingleGoalBurndownView: View {
         for record in relevantActivities {
             if let trimp = record.trimp {
                 if record.startDate <= now {
-                    currentRemaining -= trimp
-                    dataPoints.append(ChartDataPoint(date: record.startDate, remainingTRIMP: max(0, currentRemaining), type: .actual))
+                    currentRemaining = max(0, currentRemaining - trimp)
+                    dataPoints.append(ChartDataPoint(date: record.startDate, remainingTRIMP: currentRemaining, type: .actual))
 
                     if record.startDate >= fourteenDaysAgo {
                         recent14DaysTRIMP += trimp
@@ -390,11 +396,11 @@ struct SingleGoalBurndownView: View {
         // Voeg vandaag toe aan de actuele lijn
         if now >= goal.createdAt && now <= goal.targetDate {
             if let last = dataPoints.filter({ $0.type == .actual }).last, last.date < now {
-                dataPoints.append(ChartDataPoint(date: now, remainingTRIMP: max(0, currentRemaining), type: .actual))
+                dataPoints.append(ChartDataPoint(date: now, remainingTRIMP: currentRemaining, type: .actual))
             }
         } else if now > goal.targetDate {
             // Als doel verstreken is, teken tot doel datum
-             dataPoints.append(ChartDataPoint(date: goal.targetDate, remainingTRIMP: max(0, currentRemaining), type: .actual))
+             dataPoints.append(ChartDataPoint(date: goal.targetDate, remainingTRIMP: currentRemaining, type: .actual))
         }
 
         // SPRINT 12.3: Bepaal Planned Burn Rate vs Historical Burn Rate
@@ -451,10 +457,10 @@ struct SingleGoalBurndownView: View {
 
         // 3. Prognose Lijn (Alleen zinvol als we in het heden of verleden van de doeldatum zitten)
         if now < goal.targetDate {
-            let startForecast = ChartDataPoint(date: now, remainingTRIMP: max(0, currentRemaining), type: .forecast)
+            let startForecast = ChartDataPoint(date: now, remainingTRIMP: currentRemaining, type: .forecast)
             dataPoints.append(startForecast)
 
-            if activeBurnRate > 0 {
+            if activeBurnRate > 0 && currentRemaining > 0 {
                 // Hoeveel weken duurt het om op 0 te komen met dit geplande/historische tempo?
                 let weeksToZero = currentRemaining / activeBurnRate
                 let zeroDate = calendar.date(byAdding: .day, value: Int(weeksToZero * 7), to: now)!
@@ -462,9 +468,9 @@ struct SingleGoalBurndownView: View {
                 // Teken de lijn
                 dataPoints.append(ChartDataPoint(date: zeroDate, remainingTRIMP: 0.0, type: .forecast))
             } else {
-                // Geen progressie (0 burn rate), teken een platte lijn naar (en voorbij) targetDate
+                // Geen progressie (0 burn rate) of doel al behaald, teken een platte lijn naar (en voorbij) targetDate
                 let futureDate = calendar.date(byAdding: .day, value: 14, to: goal.targetDate)!
-                dataPoints.append(ChartDataPoint(date: futureDate, remainingTRIMP: max(0, currentRemaining), type: .forecast))
+                dataPoints.append(ChartDataPoint(date: futureDate, remainingTRIMP: currentRemaining, type: .forecast))
             }
         }
 
@@ -486,19 +492,32 @@ struct SingleGoalBurndownView: View {
                     .fontWeight(.bold)
 
                 if Date() < goal.targetDate {
-                    let isGreen = currentWeeklyBurnRate >= requiredWeeklyBurnRate * 0.95
-                    let isOrange = currentWeeklyBurnRate >= requiredWeeklyBurnRate * 0.75 && !isGreen
-
-                    HStack {
-                        Text(isGreen ? "🟢" : (isOrange ? "🟠" : "🔴"))
-                        let rateTypeLabel = analysis.metrics.rateSourceLabel
-                        Text("\(rateTypeLabel): \(Int(currentWeeklyBurnRate)) /wk | Nodig: \(Int(requiredWeeklyBurnRate)) /wk")
-                            .font(.caption)
+                    if analysis.metrics.currentRemainingTRIMP <= 0 {
+                        HStack {
+                            Text("🏆")
+                            Text("Doel TRIMP behaald!")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.green)
+                        }
+                        Text("Je bent fysiologisch klaar voor dit doel!")
+                            .font(.caption2)
                             .foregroundColor(.secondary)
+                    } else {
+                        let isGreen = currentWeeklyBurnRate >= requiredWeeklyBurnRate * 0.95
+                        let isOrange = currentWeeklyBurnRate >= requiredWeeklyBurnRate * 0.75 && !isGreen
+
+                        HStack {
+                            Text(isGreen ? "🟢" : (isOrange ? "🟠" : "🔴"))
+                            let rateTypeLabel = analysis.metrics.rateSourceLabel
+                            Text("\(rateTypeLabel): \(Int(currentWeeklyBurnRate)) /wk | Nodig: \(Int(requiredWeeklyBurnRate)) /wk")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        Text(isGreen ? "Je ligt perfect op schema!" : (isOrange ? "Je ligt iets achter op schema." : "Actie vereist! Je haalt het doel niet met dit (geplande) tempo."))
+                            .font(.caption2)
+                            .foregroundColor(isGreen ? .green : (isOrange ? .orange : .red))
                     }
-                    Text(isGreen ? "Je ligt perfect op schema!" : (isOrange ? "Je ligt iets achter op schema." : "Actie vereist! Je haalt het doel niet met dit (geplande) tempo."))
-                        .font(.caption2)
-                        .foregroundColor(isGreen ? .green : (isOrange ? .orange : .red))
                 } else {
                     Text("Doeldatum is verstreken.")
                         .font(.caption)
