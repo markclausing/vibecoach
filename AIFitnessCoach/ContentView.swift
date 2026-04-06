@@ -335,9 +335,11 @@ struct SingleGoalBurndownView: View {
             print("   Raw DB Record: \(record.name) - Category: '\(record.sportCategory.rawValue)' - Date: \(record.startDate)")
         }
 
-        // SPRINT 12.5 & 12.6: Waterdichte Training Block Constraint (16 weken macroyclus) met Calendar
+        // SPRINT 12.5 & 12.6 & 12.7: Waterdichte Training Block Constraint (16 weken macroyclus) met Calendar
+        // Ankerpunt is *vandaag*, zodat we de actuele fysiologische basis (base-building) altijd meenemen
+        // ook als het doel nog ver in de toekomst ligt.
         let calendar = Calendar.current
-        let trainingBlockStartDate = calendar.date(byAdding: .weekOfYear, value: -16, to: goal.targetDate) ?? Date()
+        let trainingBlockStartDate = calendar.date(byAdding: .weekOfYear, value: -16, to: Date()) ?? Date()
 
         let relevantActivities = activities.filter { record in
             // 1. Harde Datum Check
