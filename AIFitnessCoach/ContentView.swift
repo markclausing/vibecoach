@@ -9,55 +9,57 @@ struct ContentView: View {
     @StateObject private var sharedChatViewModel = ChatViewModel()
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            TabView(selection: $appState.selectedTab) {
-                // Tab 1: Overzicht (Dashboard & Kalender)
-                DashboardView(viewModel: sharedChatViewModel)
-                    .tabItem {
-                        Label("Overzicht", systemImage: "house.fill")
-                    }
-                    .tag(AppNavigationState.Tab.dashboard)
-
-                // Tab 2: Doelen
-                GoalsListView()
-                    .tabItem {
-                        Label("Doelen", systemImage: "target")
-                    }
-                    .tag(AppNavigationState.Tab.goals)
-
-                // Tab 3: Geheugen
-                NavigationStack {
-                    PreferencesListView()
+        // Intercept de tab-selectie om voor ".coach" alleen de sheet te openen
+        let tabBinding = Binding<AppNavigationState.Tab>(
+            get: { appState.selectedTab },
+            set: { newTab in
+                if newTab == .coach {
+                    appState.showingChatSheet = true
+                } else {
+                    appState.selectedTab = newTab
                 }
-                .tabItem {
-                    Label("Geheugen", systemImage: "brain.head.profile")
-                }
-                .tag(AppNavigationState.Tab.memory)
-
-                // Tab 4: Instellingen
-                NavigationStack {
-                    SettingsView()
-                }
-                .tabItem {
-                    Label("Instellingen", systemImage: "gearshape.fill")
-                }
-                .tag(AppNavigationState.Tab.settings)
             }
+        )
 
-            // Custom Centrale Coach Knop over de TabBar heen
-            Button(action: {
-                appState.showingChatSheet = true
-            }) {
-                Image(systemName: "message.fill")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(width: 60, height: 60)
-                    .background(Color.blue)
-                    .clipShape(Circle())
-                    .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 5)
+        TabView(selection: tabBinding) {
+            // Tab 1: Overzicht (Dashboard & Kalender)
+            DashboardView(viewModel: sharedChatViewModel)
+                .tabItem {
+                    Label("Overzicht", systemImage: "house.fill")
+                }
+                .tag(AppNavigationState.Tab.dashboard)
+
+            // Tab 2: Doelen
+            GoalsListView()
+                .tabItem {
+                    Label("Doelen", systemImage: "target")
+                }
+                .tag(AppNavigationState.Tab.goals)
+
+            // Tab 3: Coach (Centraal, opent als sheet)
+            Color.clear
+                .tabItem {
+                    Label("Coach", systemImage: "message.fill")
+                }
+                .tag(AppNavigationState.Tab.coach)
+
+            // Tab 4: Geheugen
+            NavigationStack {
+                PreferencesListView()
             }
-            // De offset zorgt ervoor dat de knop precies op de balk ligt
-            .offset(y: -10)
+            .tabItem {
+                Label("Geheugen", systemImage: "brain.head.profile")
+            }
+            .tag(AppNavigationState.Tab.memory)
+
+            // Tab 5: Instellingen
+            NavigationStack {
+                SettingsView()
+            }
+            .tabItem {
+                Label("Instellingen", systemImage: "gearshape.fill")
+            }
+            .tag(AppNavigationState.Tab.settings)
         }
         .sheet(isPresented: $appState.showingChatSheet) {
             ChatView(viewModel: sharedChatViewModel)
@@ -205,7 +207,7 @@ struct DashboardView: View {
                             .padding(.top, 40)
                         }
                     }
-                    .padding(.bottom, 100) // Ruimte voor de FAB padding, blijft behouden ivm de nieuwe custom button
+                    .padding(.bottom, 40) // Zorg voor wat extra scroll-ruimte
                 }
                 .refreshable {
                     refreshProfileContext()
