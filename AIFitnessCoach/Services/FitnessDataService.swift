@@ -770,7 +770,7 @@ actor HealthKitSyncService {
                 distance: workout.totalDistance?.doubleValue(for: .meter()) ?? 0.0,
                 movingTime: Int(workout.duration),
                 averageHeartrate: avgHR,
-                type: "HealthKit",
+                sportCategory: SportCategory.from(rawString: String(describing: workout.workoutActivityType)),
                 startDate: workout.startDate,
                 trimp: trimp
             )

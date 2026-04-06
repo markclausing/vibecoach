@@ -9,11 +9,10 @@ struct AddGoalView: View {
     @State private var title = ""
     @State private var details = ""
     @State private var targetDate = Date().addingTimeInterval(86400 * 30) // +30 dagen
-    @State private var sportType = ""
+    @State private var sportCategory: SportCategory = .running
 
     @State private var isSaving = false
 
-    let sportTypes = ["Hardlopen", "Wielrennen", "Zwemmen", "Krachttraining", "Triatlon", "Anders"]
     private let profileManager = AthleticProfileManager()
 
     var body: some View {
@@ -26,10 +25,9 @@ struct AddGoalView: View {
                 }
 
                 Section(header: Text("Type Sport")) {
-                    Picker("Sport", selection: $sportType) {
-                        Text("Selecteer een sport").tag("")
-                        ForEach(sportTypes, id: \.self) { sport in
-                            Text(sport).tag(sport)
+                    Picker("Sport", selection: $sportCategory) {
+                        ForEach(SportCategory.allCases) { category in
+                            Text(category.displayName).tag(category)
                         }
                     }
                 }
@@ -63,14 +61,13 @@ struct AddGoalView: View {
     /// Sla het nieuwe doel op in SwiftData
     private func saveGoal() {
         isSaving = true
-        let finalSportType = sportType.isEmpty ? nil : sportType
         let finalDetails = details.isEmpty ? nil : details
 
         let newGoal = FitnessGoal(
             title: title,
             details: finalDetails,
             targetDate: targetDate,
-            sportType: finalSportType
+            sportCategory: sportCategory
         )
 
         // Bepaal via AI of fallback de Target TRIMP asynchroon
@@ -112,7 +109,7 @@ struct AddGoalView: View {
             profileText = "Trainde recent \(p.averageWeeklyVolumeInSeconds / 60) min per week."
         }
 
-        let sport = goal.sportType ?? "Sport"
+        let sport = goal.sportCategory?.displayName ?? "Sport"
         let prompt = """
         De gebruiker heeft als doel '\(goal.title)' (\(sport)) op \(goal.targetDate.formatted(date: .complete, time: .omitted)).
         Het huidige niveau is: \(profileText).
