@@ -51,6 +51,15 @@ final class FitnessGoal {
         self.sportType = sportType
         self.targetTRIMP = targetTRIMP
     }
+
+    /// Berekent of retourneert de Target TRIMP veilig, inclusief fail-safe fallback formule
+    var computedTargetTRIMP: Double {
+        if let trimp = targetTRIMP, trimp > 0 {
+            return trimp
+        }
+        let days = max(1.0, targetDate.timeIntervalSince(createdAt) / 86400)
+        return (days / 7.0) * 350.0
+    }
 }
 
 /// Een historisch verslag van een activiteit (gesynchroniseerd met externe bronnen zoals Strava of HealthKit).
