@@ -10,12 +10,14 @@ final class UserPreference {
     var preferenceText: String
     var createdAt: Date
     var isActive: Bool
+    var expirationDate: Date?
 
-    init(id: UUID = UUID(), preferenceText: String, createdAt: Date = Date(), isActive: Bool = true) {
+    init(id: UUID = UUID(), preferenceText: String, createdAt: Date = Date(), isActive: Bool = true, expirationDate: Date? = nil) {
         self.id = id
         self.preferenceText = preferenceText
         self.createdAt = createdAt
         self.isActive = isActive
+        self.expirationDate = expirationDate
     }
 }
 
@@ -171,11 +173,17 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
     }
 }
 
+/// Structuur om via JSON een nieuw geheugen inclusief optionele verloopdatum te ontvangen.
+struct ExtractedPreference: Codable, Equatable {
+    let text: String
+    let expirationDate: String? // Verwacht formaat: "YYYY-MM-DD"
+}
+
 /// De gestructureerde JSON-output (vanuit Gemini) voor een compleet weekschema.
 struct SuggestedTrainingPlan: Codable, Equatable {
     let motivation: String
     let workouts: [SuggestedWorkout]
-    let newPreferences: [String]?
+    let newPreferences: [ExtractedPreference]?
 }
 
 import SwiftUI

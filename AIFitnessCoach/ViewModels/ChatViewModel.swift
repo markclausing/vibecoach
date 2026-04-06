@@ -42,7 +42,7 @@ class ChatViewModel: ObservableObject {
     @AppStorage("latestCoachInsight") private var latestCoachInsight: String = ""
 
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
-    var onNewPreferencesDetected: (([String]) -> Void)?
+    var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
     /// Stelt de TrainingPlanManager in
     func setTrainingPlanManager(_ manager: TrainingPlanManager) {
@@ -89,9 +89,14 @@ class ChatViewModel: ObservableObject {
                         "targetPace": "5:30 min/km"
                     }
                 ],
-                "newPreferences": ["Optioneel: een array met harde regels of voorkeuren die je in de chat van de gebruiker hebt ontdekt (bijv. 'Ik heb last van mijn knie' of 'Ik sport altijd op zondag')."]
+                "newPreferences": [
+                    {
+                        "text": "Ik heb last van mijn knie",
+                        "expirationDate": "2024-05-20"
+                    }
+                ]
             }
-            Extra instructie voor `newPreferences`: Als je opmerkt dat de gebruiker een vaste regel, langetermijnvoorkeur, of blessure doorgeeft, vul dit array dan aan. Laat het anders weg of laat het leeg. Plaats in de 'newPreferences' array UITSLUITEND voorkeuren die in het LAATSTE, nieuwste bericht van de gebruiker staan. Herhaal geen regels die je al kent.
+            Extra instructie voor `newPreferences`: Als je opmerkt dat de gebruiker een vaste regel, langetermijnvoorkeur, of tijdelijke kwaal/blessure doorgeeft in hun LAATSTE bericht, vul dit array dan aan. Schat in of dit feit permanent is (zoals een vaste sportdag) of tijdelijk (zoals spierpijn, een lichte blessure of kramp). Als het tijdelijk is, bereken dan een logische verloopdatum (bijv. 1 of 2 weken vanaf vandaag) en retourneer deze in de JSON onder `expirationDate` als een "YYYY-MM-DD" string. Laat `expirationDate` leeg (null) bij permanente regels. Herhaal geen regels die je al kent.
             """
 
             let config = GenerationConfig(
@@ -143,8 +148,21 @@ class ChatViewModel: ObservableObject {
     private func buildContextPrefix(from profile: AthleticProfile?, activePreferences: [UserPreference] = []) -> String {
         var prefix = ""
 
-        if !activePreferences.isEmpty {
-            let prefStrings = activePreferences.map { "\"- \($0.preferenceText)\"" }.joined(separator: ", ")
+        let now = Date()
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        prefix += "[HUIDIGE DATUM: Vandaag is het \(dateFormatter.string(from: now)). Gebruik dit voor je berekeningen rondom 'expirationDate'.]\n\n"
+
+        // Filter expired preferences out context
+        let validPreferences = activePreferences.filter { pref in
+            if let expirationDate = pref.expirationDate {
+                return expirationDate > now
+            }
+            return true
+        }
+
+        if !validPreferences.isEmpty {
+            let prefStrings = validPreferences.map { "\"- \($0.preferenceText)\"" }.joined(separator: ", ")
             prefix += "[VASTE REGELS / VOORKEUREN VAN DE GEBRUIKER: \(prefStrings). Houd hier ten alle tijden rekening mee in je planning en advies.]\n\n"
         }
 
