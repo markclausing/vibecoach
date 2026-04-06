@@ -32,7 +32,10 @@ class ChatViewModel: ObservableObject {
     // Lees de voorkeur van de gebruiker m.b.t. primaire databron (Sprint 7.4)
     @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
 
-    /// Opgeslagen Data van het meest recente gegenereerde schema (Sprint 9.3)
+    /// De gedeelde state manager voor het actuele trainingsschema.
+    private var trainingPlanManager: TrainingPlanManager?
+
+    /// Opgeslagen Data van het meest recente gegenereerde schema (Voor fallback referentie)
     @AppStorage("latestSuggestedPlanData") private var latestSuggestedPlanData: Data = Data()
 
     /// Opgeslagen inzichten/motivatie van de coach om uit te lichten op het dashboard
@@ -40,6 +43,11 @@ class ChatViewModel: ObservableObject {
 
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([String]) -> Void)?
+
+    /// Stelt de TrainingPlanManager in
+    func setTrainingPlanManager(_ manager: TrainingPlanManager) {
+        self.trainingPlanManager = manager
+    }
 
     /// Initialiseert de `ChatViewModel`.
     ///
@@ -170,14 +178,27 @@ class ChatViewModel: ObservableObject {
 
     /// Handelt het afwijzen (overslaan) van een specifieke voorgestelde workout af (Rest Day).
     func skipWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
-        let explicitText = "Ik sla de training '\(workout.activityType)' op \(workout.dateOrDay) over. Herbereken de week en schuif de belasting door. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."
-        sendMessage(explicitText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
+        let systemPrompt = "Ik sla de training '\(workout.activityType)' op \(workout.dateOrDay) over. Herbereken de week en schuif de belasting door. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."
+        let userFacingText = "Ik sla de geplande \(workout.activityType) op \(workout.dateOrDay) over."
+        sendHiddenSystemMessage(systemText: systemPrompt, userText: userFacingText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
     }
 
     /// Handelt de aanvraag voor een alternatieve workout af.
     func requestAlternativeWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
-        let explicitText = "Ik vind de geplande training '\(workout.activityType)' op \(workout.dateOrDay) niet leuk. Geef me een alternatief voor \(workout.dateOrDay) dat een vergelijkbare trainingsprikkel geeft. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."
-        sendMessage(explicitText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
+        let systemPrompt = "Ik vind de geplande training '\(workout.activityType)' op \(workout.dateOrDay) niet leuk. Geef me een alternatief voor \(workout.dateOrDay) dat een vergelijkbare trainingsprikkel geeft. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."
+        let userFacingText = "Geef me een alternatief voor de \(workout.activityType) op \(workout.dateOrDay)."
+        sendHiddenSystemMessage(systemText: systemPrompt, userText: userFacingText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
+    }
+
+    /// Verstuurt een bericht waarbij de UI een simpele tekst toont, maar de payload de technische prompt bevat.
+    private func sendHiddenSystemMessage(systemText: String, userText: String, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
+        messages.append(ChatMessage(role: .user, text: userText))
+        isTyping = true
+
+        let contextPrefix = buildContextPrefix(from: contextProfile, activePreferences: activePreferences)
+        let payloadText = "\(contextPrefix)\(systemText)"
+
+        fetchAIResponse(for: payloadText, image: nil)
     }
 
     /// Verstuurt het huidige tekstveld (of de meegegeven tekst) en/of de geselecteerde afbeelding.
@@ -359,10 +380,13 @@ class ChatViewModel: ObservableObject {
         }
     }
 
-    /// Hulpfunctie voor de AI prompt injectie.
+    /// Hulpfunctie voor de AI prompt injectie (Zonder de payload in de UI te tonen).
     private func sendPromptToAI(uiPrompt: String, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) async {
         await MainActor.run {
-            messages.append(ChatMessage(role: .user, text: uiPrompt))
+            // Let op: We voegen uiPrompt (de ruwe JSON context) NIET toe aan messages.
+            // Voeg eventueel een vriendelijke systeem-indicatie toe voor de UI als het een handmatige refresh was,
+            // of laat de UI leeg en toon alleen het laden (isTyping).
+            // Voor nu houden we het simpel en onzichtbaar.
             isTyping = true
             isFetchingWorkout = false
 
@@ -505,12 +529,13 @@ class ChatViewModel: ObservableObject {
                 let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: Double(activity.moving_time), averageHeartRate: avgHR, maxHeartRate: 190.0, restingHeartRate: 60.0)
                 let trimpScore = Int(calculatedTSS)
 
-                // Formatteer de zichtbare UI prompt inclusief de referentie naar het actuele schema (Sprint 9.3)
+                // Formatteer de verborgen systeem prompt inclusief de referentie naar het actuele schema (Sprint 9.3)
                 let storedPlanContext = getStoredPlanString()
                 let uiPrompt = "\(storedPlanContext)\n\nIk heb zojuist deze training voltooid: '\(activity.name)' (Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr), TRIMP: \(trimpScore)). Vergelijk dit met de geplande belasting in het schema. Is het resterende schema voor deze week nog steeds optimaal? Zo niet, herbereken het schema (retourneer alle 7 dagen) en geef een korte motivatie of feedback op de zojuist voltooide training."
 
                 Task { @MainActor in
-                    messages.append(ChatMessage(role: .user, text: uiPrompt))
+                    // Verberg de technische JSON details uit de UI, toon een simpele zin.
+                    messages.append(ChatMessage(role: .user, text: "Ik heb zojuist de training '\(activity.name)' voltooid. Hoe ziet de rest van mijn week eruit?"))
                     isTyping = true
                     isFetchingWorkout = false
 
@@ -611,10 +636,8 @@ class ChatViewModel: ObservableObject {
                             onNewPreferencesDetected?(prefs)
                         }
 
-                        // Sla het actuele schema op in AppStorage als referentie voor post-workout evaluaties
-                        if let encodedPlan = try? JSONEncoder().encode(plan) {
-                            latestSuggestedPlanData = encodedPlan
-                        }
+                        // Update the central shared state (which also handles persistence to AppStorage)
+                        trainingPlanManager?.updatePlan(plan)
 
                         // Sla de motivatie op voor het dashboard insight block
                         if !plan.motivation.isEmpty {

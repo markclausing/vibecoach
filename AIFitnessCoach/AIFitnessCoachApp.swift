@@ -105,10 +105,14 @@ struct AIFitnessCoachApp: App {
     // Globale navigatiestatus (voor notificaties & deep links)
     @StateObject private var appState = AppNavigationState.shared
 
+    // Globale shared state voor het trainingsschema (Epic 11)
+    @StateObject private var planManager = TrainingPlanManager()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
+                .environmentObject(planManager)
         }
         .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self]) // Voeg SwiftData containers toe
     }

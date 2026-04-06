@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppNavigationState
+    @EnvironmentObject var planManager: TrainingPlanManager
 
     // We maken de ViewModel hier aan zodat we hem kunnen delen met de DashboardView
     // voor pull-to-refresh en de ChatView als overlay.
@@ -41,18 +42,23 @@ struct ContentView: View {
             }
             .tag(AppNavigationState.Tab.settings)
         }
+        .onAppear {
+            sharedChatViewModel.setTrainingPlanManager(planManager)
+        }
     }
 }
 
 #Preview {
     ContentView()
         .environmentObject(AppNavigationState())
+        .environmentObject(TrainingPlanManager())
 }
 
 import SwiftData
 
 struct DashboardView: View {
     @EnvironmentObject var appState: AppNavigationState
+    @EnvironmentObject var planManager: TrainingPlanManager
     @ObservedObject var viewModel: ChatViewModel
 
     @Environment(\.modelContext) private var modelContext
@@ -62,7 +68,6 @@ struct DashboardView: View {
     @State private var currentProfile: AthleticProfile? = nil
     private let profileManager = AthleticProfileManager()
 
-    @AppStorage("latestSuggestedPlanData") private var latestSuggestedPlanData: Data = Data()
     @AppStorage("latestCoachInsight") private var latestCoachInsight: String = ""
 
     @State private var showingChatSheet: Bool = false
@@ -141,7 +146,7 @@ struct DashboardView: View {
                             .padding(.horizontal)
                         }
 
-                        if let plan = try? JSONDecoder().decode(SuggestedTrainingPlan.self, from: latestSuggestedPlanData) {
+                        if let plan = planManager.activePlan {
                             // Hergebruik de TrainingCalendarView uit ChatView,
                             // we geven wel de viewModel callbacks door zodat de acties werken.
                             TrainingCalendarView(
@@ -149,6 +154,8 @@ struct DashboardView: View {
                                 onSkipWorkout: { workout in
                                     refreshProfileContext()
                                     viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                    // Chat niet direct openen indien gewenst om de UI rustig te houden, maar we openen hem hier wel als we
+                                    // verwachten dat de gebruiker de chat loader wil zien
                                     showingChatSheet = true
                                 },
                                 onAlternativeWorkout: { workout in

@@ -251,12 +251,7 @@ struct MessageBubble: View {
                         .cornerRadius(8)
                 }
 
-                if let plan = message.suggestedPlan {
-                    TrainingCalendarView(plan: plan, onSkipWorkout: onSkipWorkout, onAlternativeWorkout: onAlternativeWorkout, isHorizontal: true)
-                        .padding(12)
-                        .background(Color(.systemGray5))
-                        .cornerRadius(16)
-                } else if !message.text.isEmpty {
+                if !message.text.isEmpty {
                     Text(message.text)
                         .padding(12)
                         .background(isUser ? Color.blue : Color(.systemGray5))

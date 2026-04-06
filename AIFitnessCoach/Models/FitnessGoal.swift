@@ -177,3 +177,32 @@ struct SuggestedTrainingPlan: Codable, Equatable {
     let workouts: [SuggestedWorkout]
     let newPreferences: [String]?
 }
+
+import SwiftUI
+
+/// Shared state manager for the active training plan.
+/// It acts as the single source of truth for both DashboardView and ChatView.
+@MainActor
+class TrainingPlanManager: ObservableObject {
+    @Published var activePlan: SuggestedTrainingPlan?
+    @AppStorage("latestSuggestedPlanData") private var latestSuggestedPlanData: Data = Data()
+
+    init() {
+        loadPlan()
+    }
+
+    /// Loads the plan from AppStorage.
+    private func loadPlan() {
+        if let decodedPlan = try? JSONDecoder().decode(SuggestedTrainingPlan.self, from: latestSuggestedPlanData) {
+            self.activePlan = decodedPlan
+        }
+    }
+
+    /// Updates the plan, publishes the change, and persists it to AppStorage.
+    func updatePlan(_ newPlan: SuggestedTrainingPlan) {
+        self.activePlan = newPlan
+        if let encoded = try? JSONEncoder().encode(newPlan) {
+            latestSuggestedPlanData = encoded
+        }
+    }
+}
