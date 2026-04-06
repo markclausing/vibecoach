@@ -65,6 +65,7 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 ✅ **Epic 11: Coach UX Refactor & State Management (Afgerond)**
 * ✅ **Sprint 11.1: Shared State & UX:** Het 'Vraag de Coach' scherm is opgeschoond door backend logica (technische system prompts) onzichtbaar in te bouwen. `TrainingPlanManager` fungeert nu als Single Source of Truth voor het trainingsschema via de `@EnvironmentObject`.
 * ✅ **Sprint 11.2: Smart Expiring Memory:** De AI kan inschatten of een doorgegeven feit (bijv. een blessure) tijdelijk of permanent is. Tijdelijke regels krijgen een vervaldatum (`expirationDate`), welke getoond wordt in de Memory UI. Verlopen regels worden genegeerd in API Payloads.
+* ✅ **Sprint 11.3: Centrale TabBar Coach Knop:** De zwevende actieknop (FAB) is verwijderd van het dashboard en vervangen door een custom, centraal geplaatste knop in de TabBar. De AI-coach is nu vanuit elke hoek van de app direct oproepbaar als overlay sheet.
 
 🚀 **Epic 12: Advanced Analytics & Motivatie (Actief)**
 * Nieuwe grafieken toevoegen aan het Dashboard om progressie te visualiseren (bijv. wekelijkse TRIMP of hartslagzones).

@@ -9,38 +9,58 @@ struct ContentView: View {
     @StateObject private var sharedChatViewModel = ChatViewModel()
 
     var body: some View {
-        TabView(selection: $appState.selectedTab) {
-            // Tab 1: Overzicht (Dashboard & Kalender)
-            DashboardView(viewModel: sharedChatViewModel)
-                .tabItem {
-                    Label("Overzicht", systemImage: "house.fill")
+        ZStack(alignment: .bottom) {
+            TabView(selection: $appState.selectedTab) {
+                // Tab 1: Overzicht (Dashboard & Kalender)
+                DashboardView(viewModel: sharedChatViewModel)
+                    .tabItem {
+                        Label("Overzicht", systemImage: "house.fill")
+                    }
+                    .tag(AppNavigationState.Tab.dashboard)
+
+                // Tab 2: Doelen
+                GoalsListView()
+                    .tabItem {
+                        Label("Doelen", systemImage: "target")
+                    }
+                    .tag(AppNavigationState.Tab.goals)
+
+                // Tab 3: Geheugen
+                NavigationStack {
+                    PreferencesListView()
                 }
-                .tag(AppNavigationState.Tab.dashboard)
-
-            // Tab 2: Doelen
-            GoalsListView()
                 .tabItem {
-                    Label("Doelen", systemImage: "target")
+                    Label("Geheugen", systemImage: "brain.head.profile")
                 }
-                .tag(AppNavigationState.Tab.goals)
+                .tag(AppNavigationState.Tab.memory)
 
-            // Tab 3: Geheugen
-            NavigationStack {
-                PreferencesListView()
+                // Tab 4: Instellingen
+                NavigationStack {
+                    SettingsView()
+                }
+                .tabItem {
+                    Label("Instellingen", systemImage: "gearshape.fill")
+                }
+                .tag(AppNavigationState.Tab.settings)
             }
-            .tabItem {
-                Label("Geheugen", systemImage: "brain.head.profile")
-            }
-            .tag(AppNavigationState.Tab.memory)
 
-            // Tab 4: Instellingen
-            NavigationStack {
-                SettingsView()
+            // Custom Centrale Coach Knop over de TabBar heen
+            Button(action: {
+                appState.showingChatSheet = true
+            }) {
+                Image(systemName: "message.fill")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 60, height: 60)
+                    .background(Color.blue)
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.2), radius: 5, x: 0, y: 5)
             }
-            .tabItem {
-                Label("Instellingen", systemImage: "gearshape.fill")
-            }
-            .tag(AppNavigationState.Tab.settings)
+            // De offset zorgt ervoor dat de knop precies op de balk ligt
+            .offset(y: -10)
+        }
+        .sheet(isPresented: $appState.showingChatSheet) {
+            ChatView(viewModel: sharedChatViewModel)
         }
         .onAppear {
             sharedChatViewModel.setTrainingPlanManager(planManager)
@@ -70,8 +90,6 @@ struct DashboardView: View {
 
     @AppStorage("latestCoachInsight") private var latestCoachInsight: String = ""
 
-    @State private var showingChatSheet: Bool = false
-
     private func refreshProfileContext() {
         do {
             self.currentProfile = try profileManager.calculateProfile(context: modelContext)
@@ -82,7 +100,7 @@ struct DashboardView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottomTrailing) {
+            ZStack(alignment: .bottom) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
 
@@ -156,12 +174,12 @@ struct DashboardView: View {
                                     viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                                     // Chat niet direct openen indien gewenst om de UI rustig te houden, maar we openen hem hier wel als we
                                     // verwachten dat de gebruiker de chat loader wil zien
-                                    showingChatSheet = true
+                                    appState.showingChatSheet = true
                                 },
                                 onAlternativeWorkout: { workout in
                                     refreshProfileContext()
                                     viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                                    showingChatSheet = true
+                                    appState.showingChatSheet = true
                                 }
                             )
                             .padding(.horizontal)
@@ -178,7 +196,7 @@ struct DashboardView: View {
                                     .multilineTextAlignment(.center)
 
                                 Button("Open Chat") {
-                                    showingChatSheet = true
+                                    appState.showingChatSheet = true
                                 }
                                 .buttonStyle(.borderedProminent)
                             }
@@ -187,7 +205,7 @@ struct DashboardView: View {
                             .padding(.top, 40)
                         }
                     }
-                    .padding(.bottom, 100) // Ruimte voor de FAB
+                    .padding(.bottom, 100) // Ruimte voor de FAB padding, blijft behouden ivm de nieuwe custom button
                 }
                 .refreshable {
                     refreshProfileContext()
@@ -196,35 +214,13 @@ struct DashboardView: View {
                     // Terwijl het 'echte' wachten zichtbaar wordt via de ProgressView hierboven
                     try? await Task.sleep(nanoseconds: 1_000_000_000)
                 }
-
-                // FAB voor Chat
-                Button(action: {
-                    showingChatSheet = true
-                }) {
-                    HStack {
-                        Image(systemName: "message.fill")
-                        Text("Vraag de Coach")
-                            .fontWeight(.bold)
-                    }
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .clipShape(Capsule())
-                    .shadow(radius: 4, y: 2)
-                }
-                .padding()
             }
             .navigationTitle("Overzicht")
-            .sheet(isPresented: $showingChatSheet) {
-                // Toon de ChatView. We geven de gedeelde viewModel door via een init-aanpassing.
-                // ChatView moet dit accepteren (zie de update in ChatView.swift).
-                ChatView(viewModel: viewModel)
-            }
             .onChange(of: appState.targetActivityId) { oldValue, newValue in
                 if let activityId = newValue {
                     refreshProfileContext()
                     viewModel.analyzeWorkout(withId: activityId, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                    showingChatSheet = true
+                    appState.showingChatSheet = true
                     Task { @MainActor in
                         appState.targetActivityId = nil
                     }
