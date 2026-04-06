@@ -32,6 +32,7 @@ final class FitnessGoal {
     var createdAt: Date
     var isCompleted: Bool
     var sportType: String?
+    var targetTRIMP: Double? // Sprint 12.1: Benodigde belasting om dit doel te halen.
 
     init(id: UUID = UUID(),
          title: String,
@@ -39,7 +40,8 @@ final class FitnessGoal {
          targetDate: Date,
          createdAt: Date = Date(),
          isCompleted: Bool = false,
-         sportType: String? = nil) {
+         sportType: String? = nil,
+         targetTRIMP: Double? = nil) {
         self.id = id
         self.title = title
         self.details = details
@@ -47,6 +49,7 @@ final class FitnessGoal {
         self.createdAt = createdAt
         self.isCompleted = isCompleted
         self.sportType = sportType
+        self.targetTRIMP = targetTRIMP
     }
 }
 

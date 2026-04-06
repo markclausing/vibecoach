@@ -70,6 +70,236 @@ struct ContentView: View {
     }
 }
 
+// MARK: - SPRINT 12.2: TRIMP Explainer Card
+struct TRIMPExplainerCard: View {
+    @State private var durationMinutes: Double = 60
+    @State private var intensityZone: Double = 2.0 // 1 tot 5
+
+    // Simpele Banister mapping op basis van Zone (Zone 2 = lichte hartslag stijging, Zone 5 = max)
+    // Z1 ~ 60%, Z2 ~ 70%, Z3 ~ 80%, Z4 ~ 90%, Z5 ~ 95% deltaHR
+    private var simulatedDeltaHR: Double {
+        switch Int(intensityZone) {
+        case 1: return 0.60
+        case 2: return 0.70
+        case 3: return 0.80
+        case 4: return 0.90
+        case 5: return 0.95
+        default: return 0.70
+        }
+    }
+
+    private var calculatedTRIMP: Double {
+        return durationMinutes * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
+    }
+
+    struct ExplainerPoint: Identifiable {
+        let id = UUID()
+        let zone: Int
+        let trimp: Double
+    }
+
+    private var curveData: [ExplainerPoint] {
+        var points: [ExplainerPoint] = []
+        for z in 1...5 {
+            let hr: Double
+            switch z {
+            case 1: hr = 0.60; case 2: hr = 0.70; case 3: hr = 0.80; case 4: hr = 0.90; case 5: hr = 0.95; default: hr = 0.70
+            }
+            let trimpValue = durationMinutes * hr * 0.64 * exp(1.92 * hr)
+            points.append(ExplainerPoint(zone: z, trimp: trimpValue))
+        }
+        return points
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Wat is TRIMP?")
+                    .font(.headline)
+                Text("TRIMP meet de échte fysiologische impact van je training.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+
+            // Interactieve Sliders
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading) {
+                    Text("Duur: \(Int(durationMinutes)) min")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                    Slider(value: $durationMinutes, in: 10...180, step: 5)
+                        .accentColor(.blue)
+                }
+
+                VStack(alignment: .leading) {
+                    Text("Intensiteit: Zone \(Int(intensityZone))")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                    Slider(value: $intensityZone, in: 1...5, step: 1)
+                        .accentColor(.red)
+                }
+            }
+            .padding(.vertical, 8)
+
+            // Dynamische Score & Chart
+            HStack(alignment: .bottom) {
+                VStack(alignment: .leading) {
+                    Text("TRIMP Score")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Text("\(Int(calculatedTRIMP))")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(calculatedTRIMP > 100 ? .red : (calculatedTRIMP > 60 ? .orange : .green))
+                }
+
+                Spacer()
+
+                Chart(curveData) { point in
+                    LineMark(
+                        x: .value("Zone", point.zone),
+                        y: .value("TRIMP", point.trimp)
+                    )
+                    .interpolationMethod(.monotone)
+                    .foregroundStyle(.red.gradient)
+
+                    PointMark(
+                        x: .value("Zone", point.zone),
+                        y: .value("TRIMP", point.trimp)
+                    )
+                    .symbolSize(point.zone == Int(intensityZone) ? 150 : 50)
+                    .foregroundStyle(point.zone == Int(intensityZone) ? .red : .gray)
+                }
+                .frame(width: 120, height: 60)
+                .chartXAxis(.hidden)
+                .chartYAxis(.hidden)
+            }
+
+            Divider()
+
+            // Vaste uitleg tekst
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top) {
+                    Image(systemName: "clock.fill").foregroundColor(.blue).frame(width: 24)
+                    Text("**Volume:** De basis is de tijd die je sport.").font(.caption)
+                }
+                HStack(alignment: .top) {
+                    Image(systemName: "heart.fill").foregroundColor(.red).frame(width: 24)
+                    Text("**Intensiteit:** Je hartslag gemeten tegen je persoonlijke maximum.").font(.caption)
+                }
+                HStack(alignment: .top) {
+                    Image(systemName: "flame.fill").foregroundColor(.orange).frame(width: 24)
+                    Text("**De Prijs:** In het rood (Zone 4-5) trainen scoort exponentieel hoger door verzuring en spierschade.").font(.caption)
+                }
+            }
+            .padding(.top, 4)
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - SPRINT 12.1: Burndown Chart View
+struct BurndownChartView: View {
+    let goals: [FitnessGoal]
+    let activities: [ActivityRecord]
+
+    struct ChartDataPoint: Identifiable {
+        let id = UUID()
+        let date: Date
+        let remainingTRIMP: Double
+        let goalTitle: String
+        let isIdeal: Bool
+    }
+
+    private var chartData: [ChartDataPoint] {
+        var dataPoints: [ChartDataPoint] = []
+        let now = Date()
+
+        for goal in goals {
+            guard let targetTRIMP = goal.targetTRIMP, targetTRIMP > 0 else { continue }
+            let title = goal.title
+
+            // 1. Ideale Lijn
+            dataPoints.append(ChartDataPoint(date: goal.createdAt, remainingTRIMP: targetTRIMP, goalTitle: title, isIdeal: true))
+            dataPoints.append(ChartDataPoint(date: goal.targetDate, remainingTRIMP: 0.0, goalTitle: title, isIdeal: true))
+
+            // 2. Actuele Lijn
+            var currentRemaining = targetTRIMP
+            dataPoints.append(ChartDataPoint(date: goal.createdAt, remainingTRIMP: currentRemaining, goalTitle: title, isIdeal: false))
+
+            // Filter activiteiten sinds aanmaakdatum tot max de doeldatum
+            // en die (indien ingesteld) matchen met sportType
+            let relevantActivities = activities.filter { record in
+                record.startDate >= goal.createdAt &&
+                record.startDate <= goal.targetDate &&
+                (goal.sportType == nil || goal.sportType == "" || record.type.lowercased() == goal.sportType?.lowercased() || record.name.lowercased().contains((goal.sportType ?? "").lowercased()))
+            }.sorted(by: { $0.startDate < $1.startDate })
+
+            for record in relevantActivities {
+                if let trimp = record.trimp {
+                    currentRemaining -= trimp
+                    dataPoints.append(ChartDataPoint(date: record.startDate, remainingTRIMP: max(0, currentRemaining), goalTitle: title, isIdeal: false))
+                }
+            }
+
+            // Voeg vandaag toe als er vandaag geen activiteit was om de actuele stand mooi door te trekken (zolang vandaag <= targetDate)
+            if now >= goal.createdAt && now <= goal.targetDate {
+                if let last = dataPoints.last, last.date < now {
+                    dataPoints.append(ChartDataPoint(date: now, remainingTRIMP: max(0, currentRemaining), goalTitle: title, isIdeal: false))
+                }
+            }
+        }
+
+        return dataPoints
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Progressie (Burndown TRIMP)")
+                .font(.headline)
+
+            if chartData.isEmpty {
+                Text("Nog onvoldoende data. Begin met trainen!")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            } else {
+                Chart {
+                    ForEach(chartData) { point in
+                        LineMark(
+                            x: .value("Datum", point.date),
+                            y: .value("TRIMP", point.remainingTRIMP)
+                        )
+                        .foregroundStyle(by: .value("Doel", point.goalTitle))
+                        .lineStyle(StrokeStyle(lineWidth: point.isIdeal ? 1.5 : 3.0, dash: point.isIdeal ? [5, 5] : []))
+                        .opacity(point.isIdeal ? 0.5 : 1.0)
+                    }
+                }
+                .frame(height: 250)
+                .chartXAxis {
+                    AxisMarks(values: .stride(by: .weekOfYear)) { _ in
+                        AxisGridLine()
+                        AxisValueLabel(format: .dateTime.week(), centered: true)
+                    }
+                }
+
+                HStack(spacing: 16) {
+                    Label("Actueel", systemImage: "line.diagonal")
+                        .font(.caption)
+                    Label("Ideaal", systemImage: "line.diagonal")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .opacity(0.7)
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
+    }
+}
+
 #Preview {
     ContentView()
         .environmentObject(AppNavigationState())
@@ -77,6 +307,7 @@ struct ContentView: View {
 }
 
 import SwiftData
+import Charts
 
 struct DashboardView: View {
     @EnvironmentObject var appState: AppNavigationState
@@ -89,6 +320,8 @@ struct DashboardView: View {
 
     @State private var currentProfile: AthleticProfile? = nil
     private let profileManager = AthleticProfileManager()
+
+    @Query(sort: \ActivityRecord.startDate, order: .forward) private var activities: [ActivityRecord]
 
     @AppStorage("latestCoachInsight") private var latestCoachInsight: String = ""
 
@@ -206,6 +439,17 @@ struct DashboardView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.top, 40)
                         }
+
+                        // SPRINT 12.1: Multi-Goal Burndown Chart
+                        let uncompletedGoals = goals.filter { !$0.isCompleted }
+                        if !uncompletedGoals.isEmpty {
+                            BurndownChartView(goals: uncompletedGoals, activities: activities)
+                                .padding(.horizontal)
+                        }
+
+                        // SPRINT 12.2: Interactieve TRIMP Explainer
+                        TRIMPExplainerCard()
+                            .padding(.horizontal)
                     }
                     .padding(.bottom, 40) // Zorg voor wat extra scroll-ruimte
                 }

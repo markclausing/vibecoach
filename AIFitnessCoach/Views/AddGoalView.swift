@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import GoogleGenerativeAI
 
 struct AddGoalView: View {
     @Environment(\.modelContext) private var modelContext
@@ -10,7 +11,10 @@ struct AddGoalView: View {
     @State private var targetDate = Date().addingTimeInterval(86400 * 30) // +30 dagen
     @State private var sportType = ""
 
+    @State private var isSaving = false
+
     let sportTypes = ["Hardlopen", "Wielrennen", "Zwemmen", "Krachttraining", "Triatlon", "Anders"]
+    private let profileManager = AthleticProfileManager()
 
     var body: some View {
         NavigationStack {
@@ -43,10 +47,14 @@ struct AddGoalView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Opslaan") {
-                        saveGoal()
+                    Button(action: saveGoal) {
+                        if isSaving {
+                            ProgressView()
+                        } else {
+                            Text("Opslaan")
+                        }
                     }
-                    .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
                 }
             }
         }
@@ -54,6 +62,7 @@ struct AddGoalView: View {
 
     /// Sla het nieuwe doel op in SwiftData
     private func saveGoal() {
+        isSaving = true
         let finalSportType = sportType.isEmpty ? nil : sportType
         let finalDetails = details.isEmpty ? nil : details
 
@@ -64,18 +73,68 @@ struct AddGoalView: View {
             sportType: finalSportType
         )
 
-        modelContext.insert(newGoal)
+        // Bepaal via AI of fallback de Target TRIMP asynchroon
+        Task {
+            do {
+                let currentProfile = try profileManager.calculateProfile(context: modelContext)
+                let trimp = await fetchAITargetTRIMP(goal: newGoal, profile: currentProfile)
+                newGoal.targetTRIMP = trimp
+            } catch {
+                // Fallback: ruwe schatting als we geen profiel kunnen inladen
+                let days = max(1.0, targetDate.timeIntervalSince(Date()) / 86400)
+                newGoal.targetTRIMP = (days / 7.0) * 350.0
+            }
 
-        do {
-            try modelContext.save()
-            print("DEBUG: Doel toegevoegd. Context has changes: \(modelContext.hasChanges)")
-            let fetchDescriptor = FetchDescriptor<FitnessGoal>()
-            let count = (try? modelContext.fetch(fetchDescriptor).count) ?? 0
-            print("DEBUG: Totaal aantal doelen in database is nu: \(count)")
-        } catch {
-            print("Failed to save FitnessGoal: \(error)")
+            await MainActor.run {
+                modelContext.insert(newGoal)
+                try? modelContext.save()
+                isSaving = false
+                dismiss()
+            }
+        }
+    }
+
+    /// Vraag de Gemini AI om een logische TRIMP belasting
+    private func fetchAITargetTRIMP(goal: FitnessGoal, profile: AthleticProfile?) async -> Double {
+        #if !DEBUG
+        guard Secrets.geminiAPIKey != "VUL_HIER_JE_API_KEY_IN" else { return fallbackTRIMP(for: goal.targetDate) }
+        #endif
+
+        if Secrets.geminiAPIKey == "VUL_HIER_JE_API_KEY_IN" { return fallbackTRIMP(for: goal.targetDate) }
+
+        let model = GenerativeModel(
+            name: "gemini-2.5-flash",
+            apiKey: Secrets.geminiAPIKey
+        )
+
+        var profileText = "Geen specifieke historie bekend."
+        if let p = profile {
+            profileText = "Trainde recent \(p.averageWeeklyVolumeInSeconds / 60) min per week."
         }
 
-        dismiss()
+        let sport = goal.sportType ?? "Sport"
+        let prompt = """
+        De gebruiker heeft als doel '\(goal.title)' (\(sport)) op \(goal.targetDate.formatted(date: .complete, time: .omitted)).
+        Het huidige niveau is: \(profileText).
+        Vandaag is het \(Date().formatted(date: .complete, time: .omitted)).
+        Hoeveel cumulatieve TRIMP is er ruwweg nodig voor deze specifieke voorbereiding vanaf vandaag tot de doeldatum?
+        Retourneer UITSLUITEND een logisch, kaal getal (Double of Integer) zonder verdere tekst, leestekens of eenheden. Bijv: 4500.
+        """
+
+        do {
+            let response = try await model.generateContent(prompt)
+            if let text = response.text?.trimmingCharacters(in: .whitespacesAndNewlines), let trimp = Double(text) {
+                return trimp
+            }
+        } catch {
+            print("AI TRIMP Fetch failed: \(error)")
+        }
+
+        return fallbackTRIMP(for: goal.targetDate)
+    }
+
+    private func fallbackTRIMP(for date: Date) -> Double {
+        let days = max(1.0, date.timeIntervalSince(Date()) / 86400)
+        return (days / 7.0) * 350.0
     }
 }

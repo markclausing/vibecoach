@@ -67,8 +67,14 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 * ✅ **Sprint 11.2: Smart Expiring Memory:** De AI kan inschatten of een doorgegeven feit (bijv. een blessure) tijdelijk of permanent is. Tijdelijke regels krijgen een vervaldatum (`expirationDate`), welke getoond wordt in de Memory UI. Verlopen regels worden genegeerd in API Payloads.
 * ✅ **Sprint 11.3: Centrale TabBar Coach Knop:** De zwevende actieknop (FAB) is verwijderd van het dashboard en vervangen door een native centrale TabBar knop. Door een custom SwiftUI tab-interceptie wordt de AI-coach vanuit elke hoek van de app gestart als overlay sheet, zonder de tab-navigatie flow te breken.
 
-🚀 **Epic 12: Advanced Analytics & Motivatie (Actief)**
-* Nieuwe grafieken toevoegen aan het Dashboard om progressie te visualiseren (bijv. wekelijkse TRIMP of hartslagzones).
+✅ **Epic 12: Visual Progress & TRIMP Analytics (Afgerond)**
+* ✅ **Sprint 12.1: Multi-Goal Burndown Chart:** Het Dashboard is uitgebreid met een native Swift Charts burndown grafiek. Per fitnessdoel (bijv. een marathon) berekent de AI automatisch de benodigde start-TRIMP, en tekent de UI zowel een ideale afbouwlijn als de actueel behaalde trainingsbelasting.
+* ✅ **Sprint 12.2: Interactieve TRIMP Explainer:** Een nieuwe educatieve kaart onderaan het dashboard met twee interactieve sliders (Duur & Intensiteit). De gebruiker ziet dynamisch en visueel via een exponentiële curve hoe zwaar het doortrainen in hoge hartslagzones weegt op het lichaam.
+
+🚀 **Epic 13: Proactieve Push-waarschuwingen (Actief)**
+* Push-notificaties implementeren via de backend wanneer de actuele TRIMP afbouwlijn structureel afwijkt van de ideale lijn, zodat de coach proactief kan waarschuwen zonder dat de gebruiker de app hoeft te openen.
+
+🗄 **Backlog**
 * Gamification: beloningen voor het volhouden van schema's.
 
 ---
