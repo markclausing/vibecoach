@@ -1,4 +1,6 @@
 import SwiftUI
+import SwiftData
+import Charts
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppNavigationState
@@ -199,125 +201,235 @@ struct TRIMPExplainerCard: View {
     }
 }
 
-// MARK: - SPRINT 12.1: Burndown Chart View
+// MARK: - SPRINT 12.1 & 12.3: Burndown Chart View met Paging & Predictive Analytics
 struct BurndownChartView: View {
     let goals: [FitnessGoal]
     let activities: [ActivityRecord]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Progressie & Prognoses")
+                .font(.headline)
+                .padding(.horizontal)
+
+            TabView {
+                ForEach(goals) { goal in
+                    SingleGoalBurndownView(goal: goal, activities: activities)
+                        .padding(.horizontal)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .always))
+            .indexViewStyle(.page(backgroundDisplayMode: .always))
+            .frame(height: 420) // Ruimte voor chart + padding + text + pager
+        }
+        .padding(.vertical)
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
+    }
+}
+
+/// De weergave voor één individueel Fitness Doel met Ideale, Actuele én Prognose lijn.
+struct SingleGoalBurndownView: View {
+    let goal: FitnessGoal
+    let activities: [ActivityRecord]
+
+    enum LineType: String, Plottable {
+        case ideal = "Ideaal"
+        case actual = "Actueel"
+        case forecast = "Prognose"
+    }
 
     struct ChartDataPoint: Identifiable {
         let id = UUID()
         let date: Date
         let remainingTRIMP: Double
-        let goalTitle: String
-        let isIdeal: Bool
+        let type: LineType
     }
 
-    private var chartData: [ChartDataPoint] {
+    @State private var scrollPosition: Date = Date().addingTimeInterval(-86400 * 21)
+
+    // Zuivere berekening voor de UI state status (zonder state mutation in body)
+    struct BurnMetrics {
+        var currentWeeklyBurnRate: Double = 0
+        var requiredWeeklyBurnRate: Double = 0
+        var currentRemainingTRIMP: Double = 0
+    }
+
+    private var chartAnalysis: (data: [ChartDataPoint], metrics: BurnMetrics) {
         var dataPoints: [ChartDataPoint] = []
+        var metrics = BurnMetrics()
         let now = Date()
+        let targetTRIMP = goal.computedTargetTRIMP
 
-        for goal in goals {
-            let targetTRIMP = goal.computedTargetTRIMP
-            let title = goal.title
+        // 1. Ideale Lijn
+        dataPoints.append(ChartDataPoint(date: goal.createdAt, remainingTRIMP: targetTRIMP, type: .ideal))
+        dataPoints.append(ChartDataPoint(date: goal.targetDate, remainingTRIMP: 0.0, type: .ideal))
 
-            // 1. Ideale Lijn
-            dataPoints.append(ChartDataPoint(date: goal.createdAt, remainingTRIMP: targetTRIMP, goalTitle: title, isIdeal: true))
-            dataPoints.append(ChartDataPoint(date: goal.targetDate, remainingTRIMP: 0.0, goalTitle: title, isIdeal: true))
+        // 2. Actuele Lijn
+        var currentRemaining = targetTRIMP
+        dataPoints.append(ChartDataPoint(date: goal.createdAt, remainingTRIMP: currentRemaining, type: .actual))
 
-            // 2. Actuele Lijn
-            var currentRemaining = targetTRIMP
-            dataPoints.append(ChartDataPoint(date: goal.createdAt, remainingTRIMP: currentRemaining, goalTitle: title, isIdeal: false))
+        let relevantActivities = activities.filter { record in
+            record.startDate >= goal.createdAt &&
+            record.startDate <= goal.targetDate &&
+            (goal.sportType == nil || goal.sportType == "" || record.type.lowercased() == goal.sportType?.lowercased() || record.name.lowercased().contains((goal.sportType ?? "").lowercased()))
+        }.sorted(by: { $0.startDate < $1.startDate })
 
-            // Filter activiteiten sinds aanmaakdatum tot max de doeldatum
-            // en die (indien ingesteld) matchen met sportType
-            let relevantActivities = activities.filter { record in
-                record.startDate >= goal.createdAt &&
-                record.startDate <= goal.targetDate &&
-                (goal.sportType == nil || goal.sportType == "" || record.type.lowercased() == goal.sportType?.lowercased() || record.name.lowercased().contains((goal.sportType ?? "").lowercased()))
-            }.sorted(by: { $0.startDate < $1.startDate })
+        // Houd ook TRIMP bij voor de afgelopen 14 dagen voor de Burn Rate
+        var recent14DaysTRIMP = 0.0
+        let fourteenDaysAgo = calendar.date(byAdding: .day, value: -14, to: now)!
 
-            for record in relevantActivities {
-                if let trimp = record.trimp {
+        for record in relevantActivities {
+            if let trimp = record.trimp {
+                if record.startDate <= now {
                     currentRemaining -= trimp
-                    dataPoints.append(ChartDataPoint(date: record.startDate, remainingTRIMP: max(0, currentRemaining), goalTitle: title, isIdeal: false))
-                }
-            }
+                    dataPoints.append(ChartDataPoint(date: record.startDate, remainingTRIMP: max(0, currentRemaining), type: .actual))
 
-            // Voeg vandaag toe als er vandaag geen activiteit was om de actuele stand mooi door te trekken (zolang vandaag <= targetDate)
-            if now >= goal.createdAt && now <= goal.targetDate {
-                if let last = dataPoints.last, last.date < now {
-                    dataPoints.append(ChartDataPoint(date: now, remainingTRIMP: max(0, currentRemaining), goalTitle: title, isIdeal: false))
+                    if record.startDate >= fourteenDaysAgo {
+                        recent14DaysTRIMP += trimp
+                    }
                 }
             }
         }
 
-        return dataPoints
+        // Voeg vandaag toe aan de actuele lijn
+        if now >= goal.createdAt && now <= goal.targetDate {
+            if let last = dataPoints.filter({ $0.type == .actual }).last, last.date < now {
+                dataPoints.append(ChartDataPoint(date: now, remainingTRIMP: max(0, currentRemaining), type: .actual))
+            }
+        } else if now > goal.targetDate {
+            // Als doel verstreken is, teken tot doel datum
+             dataPoints.append(ChartDataPoint(date: goal.targetDate, remainingTRIMP: max(0, currentRemaining), type: .actual))
+        }
+
+        // Zuivere toewijzing (geen state mutation in de View)
+        metrics.currentRemainingTRIMP = currentRemaining
+        metrics.currentWeeklyBurnRate = recent14DaysTRIMP / 2.0 // Gemiddelde per week over afgelopen 14 dagen
+
+        let weeksToTarget = max(0.1, goal.targetDate.timeIntervalSince(now) / (86400 * 7))
+        metrics.requiredWeeklyBurnRate = currentRemaining / weeksToTarget
+
+        // 3. Prognose Lijn (Alleen zinvol als we in het heden of verleden van de doeldatum zitten)
+        if now < goal.targetDate {
+            let startForecast = ChartDataPoint(date: now, remainingTRIMP: max(0, currentRemaining), type: .forecast)
+            dataPoints.append(startForecast)
+
+            let recentBurnRate = recent14DaysTRIMP / 2.0
+            if recentBurnRate > 0 {
+                // Hoeveel weken duurt het om op 0 te komen met dit tempo?
+                let weeksToZero = currentRemaining / recentBurnRate
+                let zeroDate = calendar.date(byAdding: .day, value: Int(weeksToZero * 7), to: now)!
+
+                // Teken de lijn
+                dataPoints.append(ChartDataPoint(date: zeroDate, remainingTRIMP: 0.0, type: .forecast))
+            } else {
+                // Geen progressie (0 burn rate), teken een platte lijn naar (en voorbij) targetDate
+                let futureDate = calendar.date(byAdding: .day, value: 14, to: goal.targetDate)!
+                dataPoints.append(ChartDataPoint(date: futureDate, remainingTRIMP: max(0, currentRemaining), type: .forecast))
+            }
+        }
+
+        return (dataPoints, metrics)
     }
 
-    @State private var scrollPosition: Date = Date().addingTimeInterval(-86400 * 21) // Focus window center on today
+    private let calendar = Calendar.current
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Progressie (Burndown TRIMP)")
-                .font(.headline)
+        let analysis = chartAnalysis
+        let currentWeeklyBurnRate = analysis.metrics.currentWeeklyBurnRate
+        let requiredWeeklyBurnRate = analysis.metrics.requiredWeeklyBurnRate
 
-            if chartData.isEmpty {
-                Text("Nog onvoldoende data. Begin met trainen!")
+        VStack(alignment: .leading, spacing: 8) {
+            // Status Indicator UI
+            VStack(alignment: .leading, spacing: 4) {
+                Text(goal.title)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
-            } else {
-                Chart {
-                    ForEach(chartData) { point in
-                        LineMark(
-                            x: .value("Datum", point.date),
-                            y: .value("TRIMP", point.remainingTRIMP)
-                        )
-                        .foregroundStyle(by: .value("Doel", point.goalTitle))
-                        .lineStyle(StrokeStyle(lineWidth: point.isIdeal ? 2.0 : 4.0, dash: point.isIdeal ? [5, 5] : []))
-                        .opacity(point.isIdeal ? 0.4 : 1.0)
-                    }
+                    .fontWeight(.bold)
 
-                    // Verticale referentielijn voor "Vandaag"
-                    RuleMark(x: .value("Vandaag", Date()))
-                        .foregroundStyle(.red)
-                        .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 4]))
-                        .annotation(position: .top) {
-                            Text("Vandaag")
-                                .font(.caption2)
-                                .foregroundColor(.red)
-                                .padding(4)
-                                .background(Color(.systemBackground).opacity(0.8))
-                                .cornerRadius(4)
-                        }
-                }
-                .frame(height: 250)
-                .chartScrollableAxes(.horizontal)
-                .chartXVisibleDomain(length: 3600 * 24 * 42) // 42 dagen zichtbaar
-                .chartScrollPosition(x: $scrollPosition)
-                .chartXAxis {
-                    AxisMarks(values: .stride(by: .day, count: 7)) { _ in
-                        AxisGridLine()
-                        AxisTick()
-                        AxisValueLabel(format: .dateTime.day().month(), centered: true)
-                    }
-                }
+                if Date() < goal.targetDate {
+                    let isGreen = currentWeeklyBurnRate >= requiredWeeklyBurnRate * 0.95
+                    let isOrange = currentWeeklyBurnRate >= requiredWeeklyBurnRate * 0.75 && !isGreen
 
-                HStack(spacing: 16) {
-                    Label("Actueel", systemImage: "line.diagonal")
-                        .font(.caption)
-                    Label("Ideaal", systemImage: "line.diagonal")
+                    HStack {
+                        Text(isGreen ? "🟢" : (isOrange ? "🟠" : "🔴"))
+                        Text("Huidig: \(Int(currentWeeklyBurnRate)) /wk | Nodig: \(Int(requiredWeeklyBurnRate)) /wk")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Text(isGreen ? "Je ligt perfect op schema!" : (isOrange ? "Je ligt iets achter op schema." : "Actie vereist! Je haalt het doel niet met dit tempo."))
+                        .font(.caption2)
+                        .foregroundColor(isGreen ? .green : (isOrange ? .orange : .red))
+                } else {
+                    Text("Doeldatum is verstreken.")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                        .opacity(0.7)
                 }
-                .padding(.top, 4)
             }
+            .padding(.bottom, 8)
+
+            // De Grafiek
+            Chart {
+                ForEach(analysis.data) { point in
+                    LineMark(
+                        x: .value("Datum", point.date),
+                        y: .value("TRIMP", point.remainingTRIMP)
+                    )
+                    .foregroundStyle(by: .value("Type", point.type))
+                    .lineStyle(StrokeStyle(
+                        lineWidth: point.type == .actual ? 4.0 : 2.0,
+                        dash: point.type == .actual ? [] : (point.type == .ideal ? [5, 5] : [2, 2])
+                    ))
+                    .opacity(point.type == .actual ? 1.0 : (point.type == .ideal ? 0.4 : 0.8))
+                }
+
+                // Verticale referentielijn voor "Vandaag"
+                RuleMark(x: .value("Vandaag", Date()))
+                    .foregroundStyle(.red)
+                    .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 4]))
+                    .annotation(position: .top) {
+                        Text("Vandaag")
+                            .font(.caption2)
+                            .foregroundColor(.red)
+                            .padding(2)
+                            .background(Color(.systemBackground).opacity(0.8))
+                            .cornerRadius(4)
+                    }
+            }
+            // Handmatige kleurtoewijzing
+            .chartForegroundStyleScale([
+                LineType.actual.rawValue: .blue,
+                LineType.ideal.rawValue: .gray,
+                LineType.forecast.rawValue: .orange
+            ])
+            .frame(height: 250)
+            .chartScrollableAxes(.horizontal)
+            .chartXVisibleDomain(length: 3600 * 24 * 42) // 42 dagen zichtbaar
+            .chartScrollPosition(x: $scrollPosition)
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .day, count: 7)) { _ in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel(format: .dateTime.day().month(), centered: true)
+                }
+            }
+
+            // Legenda
+            HStack(spacing: 16) {
+                Label("Actueel", systemImage: "line.diagonal")
+                    .font(.caption)
+                    .foregroundColor(.blue)
+                Label("Ideaal", systemImage: "line.diagonal")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .opacity(0.7)
+                Label("Prognose", systemImage: "line.diagonal")
+                    .font(.caption)
+                    .foregroundColor(.orange)
+            }
+            .padding(.top, 4)
+            .padding(.bottom, 24) // Extra ruimte voor de page indicator
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(12)
         .onAppear {
-            // Zorg dat de chart start met 'vandaag' netjes in het midden
             scrollPosition = Date().addingTimeInterval(-86400 * 21)
         }
     }
@@ -328,9 +440,6 @@ struct BurndownChartView: View {
         .environmentObject(AppNavigationState())
         .environmentObject(TrainingPlanManager())
 }
-
-import SwiftData
-import Charts
 
 struct DashboardView: View {
     @EnvironmentObject var appState: AppNavigationState
