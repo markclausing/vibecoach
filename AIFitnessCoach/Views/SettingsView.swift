@@ -371,6 +371,13 @@ struct PreferencesListView: View {
                             Text("Gedetecteerd op: \(preference.createdAt, formatter: itemFormatter)")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+
+                            if let expirationDate = preference.expirationDate {
+                                let isExpired = expirationDate < Date()
+                                Text(isExpired ? "Verlopen" : "Verloopt op: \(expirationDate, formatter: itemFormatter)")
+                                    .font(.caption)
+                                    .foregroundColor(isExpired ? .red : .orange)
+                            }
                         }
                         Spacer()
                     }

@@ -200,17 +200,23 @@ struct ChatView: View {
                 // Omdat activePreferences al ge-fetched is via @Query, kunnen we die gebruiken voor een check.
                 let existingTexts = activePreferences.map { $0.preferenceText.lowercased() }
 
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd"
+
                 var hasNew = false
-                for text in detectedPrefs {
-                    let lowerText = text.lowercased()
+                for pref in detectedPrefs {
+                    let lowerText = pref.text.lowercased()
 
                     // Alleen toevoegen als er nog niet (exact of bijna exact) dezelfde tekst in de lijst staat
                     if !existingTexts.contains(where: { existing in
-                        // Bijvoorbeeld: Levenshtein distance of simpele string conversie.
-                        // We doen hier een simpele substring/contains check om dubbele aannames te voorkomen.
                         existing.contains(lowerText) || lowerText.contains(existing)
                     }) {
-                        let newPref = UserPreference(preferenceText: text)
+                        var parsedDate: Date? = nil
+                        if let dateString = pref.expirationDate, !dateString.isEmpty {
+                            parsedDate = dateFormatter.date(from: dateString)
+                        }
+
+                        let newPref = UserPreference(preferenceText: pref.text, expirationDate: parsedDate)
                         context.insert(newPref)
                         hasNew = true
                     }

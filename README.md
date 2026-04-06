@@ -62,9 +62,13 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 * Security review (verwijderen van hardcoded secrets).
 * Documentatie optimaliseren (zoals deze README en setup instructies).
 
-🚀 **Epic 11: Coach UX Refactor & State Management (Actief)**
-* Het 'Vraag de Coach' scherm opschonen: backend logica en de technische System Prompt verbergen in de UI, maar netjes behouden in de verborgen API payload.
-* Implementatie van een robuuste Shared State (bijv. een centraal datamodel voor het trainingsschema), zodat het dashboard en het coach-scherm naar exact dezelfde data kijken en real-time synchroniseren na een AI-update.
+✅ **Epic 11: Coach UX Refactor & State Management (Afgerond)**
+* ✅ **Sprint 11.1: Shared State & UX:** Het 'Vraag de Coach' scherm is opgeschoond door backend logica (technische system prompts) onzichtbaar in te bouwen. `TrainingPlanManager` fungeert nu als Single Source of Truth voor het trainingsschema via de `@EnvironmentObject`.
+* ✅ **Sprint 11.2: Smart Expiring Memory:** De AI kan inschatten of een doorgegeven feit (bijv. een blessure) tijdelijk of permanent is. Tijdelijke regels krijgen een vervaldatum (`expirationDate`), welke getoond wordt in de Memory UI. Verlopen regels worden genegeerd in API Payloads.
+
+🚀 **Epic 12: Advanced Analytics & Motivatie (Actief)**
+* Nieuwe grafieken toevoegen aan het Dashboard om progressie te visualiseren (bijv. wekelijkse TRIMP of hartslagzones).
+* Gamification: beloningen voor het volhouden van schema's.
 
 ---
 
