@@ -70,10 +70,10 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 ✅ **Epic 12: Visual Progress & TRIMP Analytics (Afgerond)**
 * ✅ **Sprint 12.1: Multi-Goal Burndown Chart:** Het Dashboard is uitgebreid met een native Swift Charts burndown grafiek. Per fitnessdoel berekent de AI automatisch de benodigde start-TRIMP, en tekent de UI zowel een ideale afbouwlijn als de actueel behaalde trainingsbelasting. Voorzien van backward compatibility voor legacy doelen. De grafiek is interactief en schuifbaar (iOS 17 focus-window) met een duidelijke visuele hiërarchie en markering voor "Vandaag".
 * ✅ **Sprint 12.2: Interactieve TRIMP Explainer:** Een nieuwe educatieve kaart onderaan het dashboard met twee interactieve sliders (Duur & Intensiteit). De gebruiker ziet dynamisch en visueel via een exponentiële curve hoe zwaar het doortrainen in hoge hartslagzones weegt op het lichaam.
+* ✅ **Sprint 12.3: Predictive Analytics:** De Burndown Chart toont nu per doel via een Swipeable Carousel (Paging) een voorspellende 'Forecast'-lijn gebaseerd op de Current Burn Rate van de laatste 14 dagen, inclusief dynamische UI indicatoren (🟢/🟠/🔴) of je op schema ligt.
 
 🚀 **Epic 13: Proactive Coaching Engine (Actief)**
-* Waarschuwingen via de UI of push-notificatie wanneer de gebruiker te ver boven of onder de stippellijn afwijkt.
-* Proactief bijsturen van schema's op de achtergrond.
+* Slimme waarschuwingen via de in-app UI en Push-notificaties (indien actief) wanneer de gebruiker in de Burndown Chart te ver onder de ideale stippellijn afwijkt (en de doelstelling in gevaar komt).
 
 🗄 **Backlog**
 * Gamification: beloningen voor het volhouden van schema's.
