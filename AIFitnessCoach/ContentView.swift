@@ -254,6 +254,8 @@ struct BurndownChartView: View {
         return dataPoints
     }
 
+    @State private var scrollPosition: Date = Date().addingTimeInterval(-86400 * 21) // Focus window center on today
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Progressie (Burndown TRIMP)")
@@ -271,15 +273,32 @@ struct BurndownChartView: View {
                             y: .value("TRIMP", point.remainingTRIMP)
                         )
                         .foregroundStyle(by: .value("Doel", point.goalTitle))
-                        .lineStyle(StrokeStyle(lineWidth: point.isIdeal ? 1.5 : 3.0, dash: point.isIdeal ? [5, 5] : []))
-                        .opacity(point.isIdeal ? 0.5 : 1.0)
+                        .lineStyle(StrokeStyle(lineWidth: point.isIdeal ? 2.0 : 4.0, dash: point.isIdeal ? [5, 5] : []))
+                        .opacity(point.isIdeal ? 0.4 : 1.0)
                     }
+
+                    // Verticale referentielijn voor "Vandaag"
+                    RuleMark(x: .value("Vandaag", Date()))
+                        .foregroundStyle(.red)
+                        .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 4]))
+                        .annotation(position: .top) {
+                            Text("Vandaag")
+                                .font(.caption2)
+                                .foregroundColor(.red)
+                                .padding(4)
+                                .background(Color(.systemBackground).opacity(0.8))
+                                .cornerRadius(4)
+                        }
                 }
                 .frame(height: 250)
+                .chartScrollableAxes(.horizontal)
+                .chartXVisibleDomain(length: 3600 * 24 * 42) // 42 dagen zichtbaar
+                .chartScrollPosition(x: $scrollPosition)
                 .chartXAxis {
-                    AxisMarks(values: .stride(by: .weekOfYear)) { _ in
+                    AxisMarks(values: .stride(by: .day, count: 7)) { _ in
                         AxisGridLine()
-                        AxisValueLabel(format: .dateTime.week(), centered: true)
+                        AxisTick()
+                        AxisValueLabel(format: .dateTime.day().month(), centered: true)
                     }
                 }
 
@@ -297,6 +316,10 @@ struct BurndownChartView: View {
         .padding()
         .background(Color(.secondarySystemBackground))
         .cornerRadius(12)
+        .onAppear {
+            // Zorg dat de chart start met 'vandaag' netjes in het midden
+            scrollPosition = Date().addingTimeInterval(-86400 * 21)
+        }
     }
 }
 
