@@ -335,16 +335,17 @@ struct SingleGoalBurndownView: View {
             print("   Raw DB Record: \(record.name) - Category: '\(record.sportCategory.rawValue)' - Date: \(record.startDate)")
         }
 
-        // SPRINT 12.5: Training Block Constraint (16 weken macroyclus)
-        let trainingBlockStartDate = goal.targetDate.addingTimeInterval(-16 * 7 * 24 * 3600)
+        // SPRINT 12.5 & 12.6: Waterdichte Training Block Constraint (16 weken macroyclus) met Calendar
+        let calendar = Calendar.current
+        let trainingBlockStartDate = calendar.date(byAdding: .weekOfYear, value: -16, to: goal.targetDate) ?? Date()
 
         let relevantActivities = activities.filter { record in
-            // Filter records buiten de 16 weken of in de toekomst (na targetDate) eruit
+            // 1. Harde Datum Check
             guard record.startDate >= trainingBlockStartDate && record.startDate <= goal.targetDate else { return false }
 
+            // 2. Sport Categorie Check
             guard let goalCategory = goal.sportCategory else { return true } // Geen categorie == alles telt mee
 
-            // Speciale afhandeling voor Triatlon (combineert meerdere disciplines)
             if goalCategory == .triathlon {
                 return (record.sportCategory == .running || record.sportCategory == .cycling || record.sportCategory == .swimming || record.sportCategory == .triathlon)
             }
@@ -352,7 +353,7 @@ struct SingleGoalBurndownView: View {
             return record.sportCategory == goalCategory
         }.sorted(by: { $0.startDate < $1.startDate })
 
-        print("📊 Goal: \(goal.title) (\(goal.sportCategory?.displayName ?? "All")) - Found \(relevantActivities.count) matching activities")
+        print("🛡️ Goal: \(goal.title) | Block Start: \(trainingBlockStartDate) | Aantal activities in block: \(relevantActivities.count)")
         for record in relevantActivities.prefix(3) {
              print("   -> \(record.name) (\(record.sportCategory.displayName)) on \(record.startDate)")
         }
