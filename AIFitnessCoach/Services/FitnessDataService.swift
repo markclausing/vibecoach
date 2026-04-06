@@ -410,8 +410,7 @@ class AthleticProfileManager {
         var averagePace: Int? = nil
         if let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: now) {
             let runningActivities = allActivities.filter {
-                $0.startDate >= thirtyDaysAgo &&
-                ($0.type.lowercased().contains("run") || $0.type.lowercased().contains("hardlopen"))
+                $0.startDate >= thirtyDaysAgo && $0.sportCategory == .running
             }
 
             let totalRunningDistance = runningActivities.reduce(0.0) { $0 + $1.distance }

@@ -284,7 +284,7 @@ class ChatViewModel: ObservableObject {
                 let formatter = DateFormatter()
                 formatter.dateStyle = .medium
                 let dateStr = formatter.string(from: goal.targetDate)
-                let sport = goal.sportType ?? "Sport"
+                let sport = goal.sportCategory?.displayName ?? "Sport"
                 return "\(goal.title) (\(sport)) voor \(dateStr)"
             }.joined(separator: ", ")
             lines.append("- Mijn opgeslagen doelen: \(goalsString)")
