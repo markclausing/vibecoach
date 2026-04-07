@@ -87,8 +87,9 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 * ✅ **Sprint 13.3: Proactieve Interventie & Herstelplan (Action Phase):**
   * **Debug Trigger:** Knop 'Forceer Achtergrond Sync (Debug)' toegevoegd in Instellingen (`#if DEBUG`). Simuleert exact de logica van Engine A én Engine B, inclusief cooldown-reset — zodat de volledige notificatieflow testbaar is zonder te wachten op een echte iOS achtergrondwake-up.
   * **Recovery Context Injectie:** `ChatViewModel.requestRecoveryPlan()` bouwt automatisch een gedetailleerde prompt met per doel: naam, actuele TRIMP/week, benodigde rate, wekelijks tekort en weken resterend. De AI krijgt instructies om een concreet 7-daags bijgestuurd schema te produceren.
-  * **'Los dit op'-knop:** De waarschuwingsbanner heeft nu twee acties: 'Los dit op' (stuurt recovery context naar AI, opent chat direct met schema-output) en 'Open Chat' (opent de coach zonder context voor vrij gesprek).
-  * **UX:** De banner blijft rood/oranje en blijft verschijnen totdat het doel niet meer op rood staat, zodat de gebruiker elke dag eraan herinnerd wordt.
+  * **'Los dit op'-knop:** De waarschuwingsbanner heeft twee acties: 'Los dit op' (stuurt recovery context naar AI, opent chat direct met schema-output) en 'Open Chat' (vrij gesprek).
+  * **Herstelplan Actief Banner:** Na het drukken op 'Los dit op' verandert de rode banner 3 dagen lang in een blauwe bevestigingsbanner ("Herstelplan Actief") via een `AppStorage` timestamp — zodat de rode foutmelding verdwijnt zodra de gebruiker actie heeft ondernomen.
+  * **Fysiologische Guardrails in AI Prompt:** De recovery prompt bevat nu harde regels: (1) de 10-15% progressieregel (wekelijkse TRIMP nooit meer dan 12% verhogen), (2) horizon-check — meer dan 8 weken tot het evenement? Dan Base Building en geleidelijk uitsmeren, geen paniekcorrectie in één week.
 
 🗄 **Backlog**
 * Gamification: beloningen voor het volhouden van schema's.
