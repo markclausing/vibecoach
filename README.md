@@ -84,11 +84,11 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
   * **Engine A (Action Trigger):** `HKObserverQuery` + `enableBackgroundDelivery` — iOS wekt de app bij elke nieuwe workout. De app checkt of een doel nog op rood staat en stuurt een contextuele pushnotificatie met directe link naar de coach.
   * **Engine B (Inaction Trigger):** `BGAppRefreshTask` via `BGTaskScheduler` — dagelijkse stille achtergrondcheck. Als de gebruiker 2+ dagen inactief is én een doel op rood staat, volgt een motivatienotificatie.
   * **Architectuur:** `ProactiveNotificationService` (singleton) beheert beide engines. De risicodata wordt gecached in `UserDefaults` vanuit `DashboardView` zodat de engines geen SwiftData-toegang nodig hebben in de achtergrond. Een 24-uurs cooldown voorkomt notificatiespam. Tikken op een notificatie opent direct de AI-coach.
-* ⏳ **Sprint 13.3: Proactieve Interventie & Herstelplan (Action Phase):**
-  * **Doel:** De 'Rode Status' direct oplossen in plaats van alleen tonen.
-  * **Logica:** Wanneer een doel op 'Rood' staat, injecteert de app automatisch een 'Recovery Context' in de AI-coach prompt.
-  * **Output:** De coach stelt direct een aangepast trainingsplan voor (bijv. extra volume in het weekend of een extra rustdag bij overtraining) om de gebruiker weer op de ideale stippellijn te krijgen.
-  * **UX:** De banner op het dashboard krijgt een 'Los dit op'-knop die direct het herstelplan van de coach opent.
+* ✅ **Sprint 13.3: Proactieve Interventie & Herstelplan (Action Phase):**
+  * **Debug Trigger:** Knop 'Forceer Achtergrond Sync (Debug)' toegevoegd in Instellingen (`#if DEBUG`). Simuleert exact de logica van Engine A én Engine B, inclusief cooldown-reset — zodat de volledige notificatieflow testbaar is zonder te wachten op een echte iOS achtergrondwake-up.
+  * **Recovery Context Injectie:** `ChatViewModel.requestRecoveryPlan()` bouwt automatisch een gedetailleerde prompt met per doel: naam, actuele TRIMP/week, benodigde rate, wekelijks tekort en weken resterend. De AI krijgt instructies om een concreet 7-daags bijgestuurd schema te produceren.
+  * **'Los dit op'-knop:** De waarschuwingsbanner heeft nu twee acties: 'Los dit op' (stuurt recovery context naar AI, opent chat direct met schema-output) en 'Open Chat' (opent de coach zonder context voor vrij gesprek).
+  * **UX:** De banner blijft rood/oranje en blijft verschijnen totdat het doel niet meer op rood staat, zodat de gebruiker elke dag eraan herinnerd wordt.
 
 🗄 **Backlog**
 * Gamification: beloningen voor het volhouden van schema's.

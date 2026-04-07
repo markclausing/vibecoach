@@ -197,6 +197,56 @@ class ChatViewModel: ObservableObject {
         return prefix
     }
 
+    // MARK: - Sprint 13.3: Proactieve Interventie
+
+    /// Struct met de risicodata per doel, los van DashboardView zodat ChatViewModel
+    /// geen afhankelijkheid heeft van de view-laag.
+    struct GoalRiskInfo {
+        let title: String
+        let currentWeeklyRate: Double
+        let requiredWeeklyRate: Double
+        let weeksRemaining: Double
+    }
+
+    /// Vraagt de AI om een concreet herstelplan voor doelen die achterlopen.
+    /// Injecteert automatisch de recovery context (doel, actuele rate, tekort, weken resterend)
+    /// zodat de coach direct een bijgestuurd schema kan produceren.
+    func requestRecoveryPlan(atRiskGoals: [GoalRiskInfo], contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
+        guard !atRiskGoals.isEmpty else { return }
+
+        // Bouw de technische context op (onzichtbaar voor de gebruiker)
+        var systemLines = [
+            "RECOVERY CONTEXT — Mijn doel(en) lopen significant achter op schema. Los dit op:",
+            ""
+        ]
+        for risk in atRiskGoals {
+            let deficit = Int(risk.requiredWeeklyRate - risk.currentWeeklyRate)
+            let weeksText = String(format: "%.1f", risk.weeksRemaining)
+            systemLines.append("• Doel: '\(risk.title)'")
+            systemLines.append("  - Actuele burn rate: \(Int(risk.currentWeeklyRate)) TRIMP/week")
+            systemLines.append("  - Benodigde burn rate: \(Int(risk.requiredWeeklyRate)) TRIMP/week")
+            systemLines.append("  - Wekelijks tekort: \(deficit) TRIMP")
+            systemLines.append("  - Weken resterend: \(weeksText)")
+            systemLines.append("")
+        }
+        systemLines.append(contentsOf: [
+            "Geef me een concreet, op maat gemaakt herstelplan voor de komende 7 dagen.",
+            "Het plan moet:",
+            "1. Het wekelijkse TRIMP-tekort compenseren zonder overtrainingrisico.",
+            "2. Extra volume verdelen over de komende dagen (bijv. extra training in het weekend of een rustdag vervangen door een lichte sessie).",
+            "3. Realistisch zijn op basis van mijn profiel.",
+            "BELANGRIJK: Retourneer altijd het volledige 7-daagse schema in JSON-formaat."
+        ])
+
+        let systemPrompt = systemLines.joined(separator: "\n")
+
+        // De tekst die de gebruiker ziet in de chat (beknopt en begrijpelijk)
+        let goalTitles = atRiskGoals.map { "'\($0.title)'" }.joined(separator: " en ")
+        let userFacingText = "Los de achterstand op voor \(goalTitles) en geef me een bijgestuurd schema."
+
+        sendHiddenSystemMessage(systemText: systemPrompt, userText: userFacingText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
+    }
+
     /// Handelt het afwijzen (overslaan) van een specifieke voorgestelde workout af (Rest Day).
     func skipWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
         let systemPrompt = "Ik sla de training '\(workout.activityType)' op \(workout.dateOrDay) over. Herbereken de week en schuif de belasting door. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."

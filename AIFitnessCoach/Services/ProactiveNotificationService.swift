@@ -198,4 +198,22 @@ final class ProactiveNotificationService {
         UserDefaults.standard.set(atRiskGoalTitles, forKey: atRiskTitlesKey)
         print("📦 Risicocache bijgewerkt: \(atRiskGoalTitles.isEmpty ? "geen doelen op rood" : atRiskGoalTitles.joined(separator: ", "))")
     }
+
+    // MARK: - Debug Tools
+
+    /// Debug trigger: simuleert exact de logica die Engine A én Engine B zouden afvuren.
+    /// De 24-uurs cooldown wordt tijdelijk gereset zodat de notificatie écht verstuurd wordt.
+    /// Alleen zichtbaar in DEBUG builds via SettingsView.
+    func debugTriggerEngines() async {
+        print("🔧 DEBUG: Handmatige trigger van beide proactieve engines")
+        // Reset de cooldown zodat de notificatie niet wordt onderdrukt
+        UserDefaults.standard.removeObject(forKey: lastNotificationKey)
+        // Engine A: stel in dat er nu een workout was (3 seconden geleden, om de sleep te simuleren)
+        UserDefaults.standard.set(Date().addingTimeInterval(-10), forKey: lastWorkoutDateKey)
+        // Voer Engine A logica uit (check op rood staande doelen na een nieuwe workout)
+        await handleNewWorkoutDetected()
+        // Voer Engine B logica uit (inactiviteitscheck — pas relevant als er geen doelen op rood staan na Engine A)
+        await checkInactionAndNotify()
+        print("🔧 DEBUG: Beide engines afgevuurd")
+    }
 }
