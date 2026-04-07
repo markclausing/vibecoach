@@ -447,11 +447,14 @@ final class HealthKitManager: @unchecked Sendable {
             return
         }
 
+        // Epic 14: HRV en SlaapAnalyse toegevoegd voor Readiness Score berekening
         let typesToRead: Set<HKObjectType> = [
             HKObjectType.workoutType(),
             HKQuantityType.quantityType(forIdentifier: .heartRate)!,
             HKQuantityType.quantityType(forIdentifier: .restingHeartRate)!,
-            HKQuantityType.quantityType(forIdentifier: .vo2Max)!
+            HKQuantityType.quantityType(forIdentifier: .vo2Max)!,
+            HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
+            HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!
         ]
 
         healthStore.requestAuthorization(toShare: nil, read: typesToRead) { success, error in
@@ -599,6 +602,104 @@ final class HealthKitManager: @unchecked Sendable {
 
                 let hrSamples = (samples as? [HKQuantitySample]) ?? []
                 continuation.resume(returning: hrSamples)
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    // MARK: - Epic 14: Readiness Score Data
+
+    /// Haalt de gemiddelde HRV (SDNN, in milliseconden) op van de afgelopen nacht (afgelopen 24 uur).
+    /// HRV is een sterke indicator voor herstel van het zenuwstelsel.
+    /// - Returns: Gemiddelde HRV in ms, of nil als er geen meting beschikbaar is.
+    func fetchRecentHRV() async throws -> Double? {
+        guard let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else {
+            return nil
+        }
+
+        let now = Date()
+        // Kijken naar de afgelopen 24 uur — Apple Watch schrijft HRV vooral tijdens slaap
+        let yesterday = Calendar.current.date(byAdding: .hour, value: -24, to: now)!
+        let predicate = HKQuery.predicateForSamples(withStart: yesterday, end: now, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: hrvType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen HRV: \(error.localizedDescription)"))
+                    return
+                }
+
+                guard let hrvSamples = samples as? [HKQuantitySample], !hrvSamples.isEmpty else {
+                    // Geen HRV-meting beschikbaar (bijv. geen Apple Watch, of Watch niet gedragen)
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                // Bereken het gemiddelde van alle beschikbare metingen in het tijdvenster
+                let unit = HKUnit.secondUnit(with: .milli)
+                let totalHRV = hrvSamples.reduce(0.0) { $0 + $1.quantity.doubleValue(for: unit) }
+                let averageHRV = totalHRV / Double(hrvSamples.count)
+
+                print("📊 [Epic 14] HRV opgehaald: \(String(format: "%.1f", averageHRV)) ms (op basis van \(hrvSamples.count) meting(en))")
+                continuation.resume(returning: averageHRV)
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// Berekent het aantal daadwerkelijk geslapen uren van de afgelopen nacht.
+    /// Filtert op `.asleepCore`, `.asleepDeep` en `.asleepREM` (iOS 16+) of de generieke `.asleep` waarde
+    /// om 'inBed' tijd uit te sluiten — dat zijn de minuten dat je in bed lag maar niet sliep.
+    /// - Returns: Totale slaaptijd in uren (bijv. 7.5), of nil als geen data beschikbaar.
+    func fetchLastNightSleep() async throws -> Double? {
+        guard let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) else {
+            return nil
+        }
+
+        let now = Date()
+        // Slaapdata van de afgelopen 16 uur ophalen — dit vangt de nacht van gisteravond t/m nu
+        let windowStart = Calendar.current.date(byAdding: .hour, value: -16, to: now)!
+        let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: now, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen slaapdata: \(error.localizedDescription)"))
+                    return
+                }
+
+                guard let sleepSamples = samples as? [HKCategorySample], !sleepSamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                // Filter op echte slaapfases — sluit HKCategoryValueSleepAnalysis.inBed (waarde 0) uit.
+                // iOS 16+: asleepCore (3), asleepDeep (4), asleepREM (5)
+                // Oudere Watch firmware: asleep (1) — ook acceptabel
+                let asleepValues: Set<Int> = [
+                    HKCategoryValueSleepAnalysis.asleep.rawValue,
+                    HKCategoryValueSleepAnalysis.asleepCore.rawValue,
+                    HKCategoryValueSleepAnalysis.asleepDeep.rawValue,
+                    HKCategoryValueSleepAnalysis.asleepREM.rawValue
+                ]
+
+                let totalSleepSeconds = sleepSamples
+                    .filter { asleepValues.contains($0.value) }
+                    .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+
+                guard totalSleepSeconds > 0 else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let totalSleepHours = totalSleepSeconds / 3600.0
+                let hours = Int(totalSleepHours)
+                let minutes = Int((totalSleepHours - Double(hours)) * 60)
+
+                print("😴 [Epic 14] Slaap afgelopen nacht: \(hours)u \(minutes)m (\(String(format: "%.2f", totalSleepHours)) uur totaal)")
+                continuation.resume(returning: totalSleepHours)
             }
             healthStore.execute(query)
         }
