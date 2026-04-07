@@ -427,38 +427,70 @@ struct SettingsView: View {
                         }
                     }
 
-                    // Epic 14: Debug-knop om HRV en slaap rechtstreeks naar de console te printen
+                    // Epic 14: Bereken Vibe Score en sla op in SwiftData (upsert voor vandaag)
                     Button(action: {
-                        feedbackMessage = "HRV & slaap ophalen..."
+                        feedbackMessage = "Vibe Score berekenen..."
                         Task {
                             let hkManager = HealthKitManager()
-                            async let hrv = try? hkManager.fetchRecentHRV()
-                            async let sleep = try? hkManager.fetchLastNightSleep()
-                            let (hrvResult, sleepResult) = await (hrv, sleep)
+
+                            // Haal de drie inputs parallel op
+                            async let hrvTask = try? hkManager.fetchRecentHRV()
+                            async let baselineTask = try? hkManager.fetchHRVBaseline(days: 7)
+                            async let sleepTask = try? hkManager.fetchLastNightSleep()
+                            let (hrv, baseline, sleep) = await (hrvTask, baselineTask, sleepTask)
 
                             await MainActor.run {
-                                var parts: [String] = []
-                                if let h = hrvResult {
-                                    parts.append(String(format: "HRV: %.1f ms", h))
-                                } else {
-                                    parts.append("HRV: geen data")
+                                guard let sleepHours = sleep, let currentHRV = hrv, let hrvBaseline = baseline else {
+                                    // Geef aan welke data ontbreekt voor duidelijke debugging
+                                    var missing: [String] = []
+                                    if sleep == nil { missing.append("Slaap") }
+                                    if hrv == nil { missing.append("HRV") }
+                                    if baseline == nil { missing.append("HRV-baseline") }
+                                    feedbackMessage = "Geen data: \(missing.joined(separator: ", ")) ontbreekt."
+                                    return
                                 }
-                                if let s = sleepResult {
-                                    let hrs = Int(s)
-                                    let mins = Int((s - Double(hrs)) * 60)
-                                    parts.append("Slaap: \(hrs)u \(mins)m")
+
+                                let score = ReadinessCalculator.calculate(
+                                    sleepHours: sleepHours,
+                                    hrv: currentHRV,
+                                    hrvBaseline: hrvBaseline
+                                )
+
+                                // Upsert: zoek een bestaand record voor vandaag en overschrijf, anders nieuw aanmaken
+                                let todayStart = Calendar.current.startOfDay(for: Date())
+                                let tomorrowStart = Calendar.current.date(byAdding: .day, value: 1, to: todayStart)!
+                                let descriptor = FetchDescriptor<DailyReadiness>(
+                                    predicate: #Predicate { $0.date >= todayStart && $0.date < tomorrowStart }
+                                )
+                                if let existing = try? modelContext.fetch(descriptor), let record = existing.first {
+                                    // Record bestaat al voor vandaag — bijwerken
+                                    record.sleepHours = sleepHours
+                                    record.hrv = currentHRV
+                                    record.readinessScore = score
                                 } else {
-                                    parts.append("Slaap: geen data")
+                                    // Nieuw record aanmaken voor vandaag
+                                    let record = DailyReadiness(
+                                        date: Date(),
+                                        sleepHours: sleepHours,
+                                        hrv: currentHRV,
+                                        readinessScore: score
+                                    )
+                                    modelContext.insert(record)
                                 }
-                                feedbackMessage = parts.joined(separator: " | ")
-                                print("🧪 [Epic 14 Debug] \(feedbackMessage ?? "")")
+                                try? modelContext.save()
+
+                                let hrs = Int(sleepHours)
+                                let mins = Int((sleepHours - Double(hrs)) * 60)
+                                let message = "Vibe Score: \(score)/100 (Slaap: \(hrs)u\(mins)m, HRV: \(String(format: "%.1f", currentHRV))ms)"
+                                feedbackMessage = message
+                                print("✅ [Epic 14] \(message)")
                             }
                         }
                     }) {
                         HStack {
                             Image(systemName: "heart.text.square")
                                 .foregroundColor(.purple)
-                            Text("Test HRV & Slaap (Epic 14)")
+                            Text("Bereken Vibe Score (Epic 14)")
                                 .foregroundColor(.purple)
                         }
                     }
