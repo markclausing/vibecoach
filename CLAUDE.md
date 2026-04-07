@@ -5,6 +5,16 @@ Lees dit bij elke sessie als basis voor alle beslissingen.
 
 ---
 
+## 0. Meta: Autonoom Context Management
+
+**Proactieve Updates:** Claude is verantwoordelijk voor het actueel houden van dit bestand. Bij een nieuwe architectuurkeuze, een structureel opgeloste bug (bijv. een iOS-quirk), of een nieuwe project-standaard: update `CLAUDE.md` direct en zonder toestemming te vragen.
+
+**Token Optimalisatie (The Cache):** Als er veel heen-en-weer wordt gepraat over een complex concept, vat Claude de eindconclusie samen, voegt deze toe als harde regel, en meldt: *"Ik heb de regels bijgewerkt. Je kunt nu `/compact` typen om tokens te besparen."*
+
+**Epic Overgangen:** Bij de start van een nieuwe Epic controleert Claude zowel `CLAUDE.md` als `README.md` op oude of irrelevante regels die verwijderd kunnen worden om de cache schoon te houden.
+
+---
+
 ## 1. Product Filosofie: Management by Exception
 
 - De app waarschuwt **niet** bij goed gedrag — alleen bij afwijkingen (te zwaar of te licht trainen).
