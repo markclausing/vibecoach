@@ -102,6 +102,41 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 
 ---
 
+## 🚀 Toekomstige Roadmap (Visie)
+
+Na afronding van Epic 13 (Proactieve Coach) en 13.4 (Polish), evolueert VibeCoach van een TRIMP-tracker naar een **Holistische Performance Coach**. De volgende grote thema's staan op de planning:
+
+### Fysiologische Diepte
+
+⏳ **Epic 14: De Readiness Score (HRV & Slaap)**
+* **Doel:** HealthKit data (`heartRateVariabilitySDNN`, `sleepAnalysis`) combineren met TRIMP om een dagelijkse "Vibe/Readiness Score" te berekenen.
+* **Coach Impact:** De Dual Engine kan voorafgaand aan een training ingrijpen ("Je zenuwstelsel is overprikkeld, neem rust") in plaats van achteraf.
+
+⏳ **Epic 15: Biometrische Context**
+* **Doel:** Integratie van externe en interne factoren (bijv. lokale weersomstandigheden (hitte), of hormonale cyclus tracking via HealthKit).
+* **Coach Impact:** Schema's aanpassen op verwachte omgevingsstress.
+
+### Strategie & Periodisering
+
+⏳ **Epic 16: Dynamische Periodisering**
+* **Doel:** De lineaire 'Burndown Chart' vervangen door een fysiologisch correcte, golvende curve (Base, Build, Peak, Taper).
+* **Coach Impact:** De UI en verwachtingen passen zich aan de specifieke trainingsfase aan.
+
+⏳ **Epic 17: Goal-Specific Blueprints**
+* **Doel:** AI-prompts uitbreiden met domeinspecifieke regels (bijv. de '32km long-run' regel voor marathons, of voedingsstrategieën voor meerdaagse fietstochten).
+
+### Mentale Belastbaarheid & UX
+
+⏳ **Epic 18: Subjectieve Feedback (RPE)**
+* **Doel:** Een korte post-workout slider (Rate of Perceived Exertion) om te meten hoe zwaar de training voelde, onafhankelijk van wat de hartslagmeter zegt.
+* **Coach Impact:** Discrepanties tussen lage hartslag en hoge RPE gebruiken als vroege indicator voor overtraining of naderende ziekte.
+
+⏳ **Epic 19: Long-Term Memory & Reflectie**
+* **Doel:** Structurele samenvattingen van wekelijkse prestaties en pijntjes (zoals kuitklachten) opslaan.
+* **Coach Impact:** De AI kan in toekomstige gesprekken refereren aan prestaties of blessures van maanden geleden.
+
+---
+
 ## Testing Push Notifications in Simulator
 Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de naam `test-push.apns` aanmaken en deze letterlijk naar de draaiende simulator slepen (Drag & Drop).
 
