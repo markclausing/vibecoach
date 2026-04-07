@@ -726,21 +726,44 @@ actor HealthKitSyncService {
         // Lokale Set als extra veiligheidsnet: vangt duplicaten op die HealthKit zelf teruggeeft
         // én voorkomt dubbele inserts als context.fetch nog niet-gesavede records niet ziet.
         var seenWorkoutIds = Set<String>()
+        // Composite key set: vangt HealthKit-level duplicaten op waarbij dezelfde workout
+        // met twee verschillende UUIDs wordt aangeleverd (bijv. Watch + iPhone dubbele opname).
+        var seenCompositeKeys = Set<String>()
 
         for workout in workouts {
             // Uniek ID gebaseerd op de HealthKit UUID
             let workoutId = workout.uuid.uuidString
 
-            // Laag 1: al verwerkt in deze sync-run?
+            // Laag 1a: al verwerkt in deze sync-run op basis van UUID?
             guard seenWorkoutIds.insert(workoutId).inserted else {
                 print("⚠️ Sync: HealthKit UUID \(workoutId) al verwerkt in deze batch — overgeslagen")
                 continue
             }
 
-            // Laag 2: al opgeslagen in SwiftData?
+            // Laag 1b: al verwerkt in deze sync-run op basis van startDatum + sporttype?
+            let sport = SportCategory.from(hkType: workout.workoutActivityType.rawValue)
+            let compositeKey = "\(workout.startDate.timeIntervalSince1970)_\(sport.rawValue)"
+            guard seenCompositeKeys.insert(compositeKey).inserted else {
+                print("⚠️ Sync: Workout op \(workout.startDate) [\(sport.rawValue)] al verwerkt (HealthKit-level duplicaat) — overgeslagen")
+                continue
+            }
+
+            // Laag 2: al opgeslagen in SwiftData (UUID check)?
             let descriptor = FetchDescriptor<ActivityRecord>(predicate: #Predicate { $0.id == workoutId })
             if let existing = try? context.fetch(descriptor), !existing.isEmpty {
                 // Sla over als hij al gesynchroniseerd is
+                continue
+            }
+
+            // Laag 3: al opgeslagen in SwiftData op basis van startDatum (±5 sec venster)?
+            // Vangt HealthKit-level duplicaten op waarbij dezelfde workout twee UUIDs heeft.
+            let windowStart = workout.startDate.addingTimeInterval(-5)
+            let windowEnd = workout.startDate.addingTimeInterval(5)
+            let compositeDescriptor = FetchDescriptor<ActivityRecord>(
+                predicate: #Predicate { $0.startDate >= windowStart && $0.startDate <= windowEnd }
+            )
+            if let existing = try? context.fetch(compositeDescriptor), !existing.isEmpty {
+                print("⚠️ Sync: Workout op \(workout.startDate) [\(sport.rawValue)] bestaat al in DB (HealthKit-level duplicaat) — overgeslagen")
                 continue
             }
 

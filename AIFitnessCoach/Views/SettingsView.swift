@@ -170,21 +170,29 @@ struct SettingsView: View {
         }
     }
 
-    /// Verwijdert dubbele ActivityRecords met dezelfde ID uit SwiftData.
-    /// Behoudt altijd de eerste (oudste) record, verwijdert de rest.
+    /// Verwijdert dubbele ActivityRecords uit SwiftData.
+    /// Detecteert duplicaten op twee manieren:
+    /// 1. Zelfde `id` (UUID) — normale race-condition duplicaten
+    /// 2. Zelfde `startDate` + `sportCategory` — HealthKit-level duplicaten (zelfde workout, twee UUIDs)
+    /// Behoudt altijd de eerste record (gesorteerd op startDate), verwijdert de rest.
     private func removeDuplicateRecords() {
         let descriptor = FetchDescriptor<ActivityRecord>(sortBy: [SortDescriptor(\.startDate, order: .forward)])
         guard let allRecords = try? modelContext.fetch(descriptor) else { return }
 
         var seenIds = Set<String>()
+        // Composite key: "startDate_sportCategory" voor HealthKit-level duplicaten
+        var seenCompositeKeys = Set<String>()
         var duplicatesRemoved = 0
 
         for record in allRecords {
-            if seenIds.contains(record.id) {
+            let compositeKey = "\(record.startDate.timeIntervalSince1970)_\(record.sportCategory.rawValue)"
+
+            if seenIds.contains(record.id) || seenCompositeKeys.contains(compositeKey) {
                 modelContext.delete(record)
                 duplicatesRemoved += 1
             } else {
                 seenIds.insert(record.id)
+                seenCompositeKeys.insert(compositeKey)
             }
         }
 
