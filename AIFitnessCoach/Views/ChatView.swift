@@ -69,14 +69,16 @@ struct ChatView: View {
                                 .id(message.id)
                             }
 
-                            // Laadindicator
+                            // Laadindicator (toont retry-status als de server overbelast is)
                             if viewModel.isTyping {
                                 HStack {
                                     ProgressView()
                                         .padding(.trailing, 8)
-                                    Text("Coach is aan het typen...")
+                                    Text(viewModel.retryStatusMessage.isEmpty
+                                         ? "Coach is aan het typen..."
+                                         : viewModel.retryStatusMessage)
                                         .font(.caption)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(viewModel.retryStatusMessage.isEmpty ? .gray : .orange)
                                     Spacer()
                                 }
                                 .padding()

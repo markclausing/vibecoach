@@ -15,6 +15,9 @@ class ChatViewModel: ObservableObject {
     /// True als de applicatie wacht op een reactie van de AI.
     @Published var isTyping: Bool = false
 
+    /// Statusbericht tijdens een retry-poging, bijv. "Opnieuw proberen (1/3)...". Leeg als er geen retry loopt.
+    @Published var retryStatusMessage: String = ""
+
     /// True als we op dit moment Strava data aan het ophalen zijn via de expliciete knop.
     @Published var isFetchingWorkout: Bool = false
 
@@ -616,75 +619,107 @@ class ChatViewModel: ObservableObject {
         }
 
         Task {
-            do {
-                // Maak een dynamische array van ModelContent.Part objects
-                var promptParts: [ModelContent.Part] = []
+            // Maak een dynamische array van ModelContent.Part objects
+            var promptParts: [ModelContent.Part] = []
 
-                if !text.isEmpty {
-                    promptParts.append(.text(text))
-                }
-
-                // Zet de UIImage om naar JPEG data en wrap het in een SDK Part
-                if let image = image, let imageData = image.jpegData(compressionQuality: 0.8) {
-                    let imagePart = ModelContent.Part.data(mimetype: "image/jpeg", imageData)
-                    promptParts.append(imagePart)
-                }
-
-                print("DEBUG PROMPT: \(text)")
-
-                // Geef de array direct over aan de model protocol wrapper
-                let responseText = try await model.generateContent(promptParts)
-
-                print("DEBUG RAW RESPONSE: \(responseText ?? "nil")")
-
-                var finalResponseText = responseText ?? "{}"
-
-                // Verwijder markdown code block tags als de AI ze toevoegt ondanks de mimeType setting
-                finalResponseText = finalResponseText.replacingOccurrences(of: "```json", with: "").replacingOccurrences(of: "```", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
-
-                var parsedPlan: SuggestedTrainingPlan? = nil
-                var motivationText: String = "Ik kon het JSON schema niet correct laden."
-
-                if let data = finalResponseText.data(using: .utf8) {
-                    do {
-                        let plan = try JSONDecoder().decode(SuggestedTrainingPlan.self, from: data)
-                        parsedPlan = plan
-                        motivationText = plan.motivation
-
-                        // Trigger callback als er nieuwe voorkeuren zijn gevonden
-                        if let prefs = plan.newPreferences, !prefs.isEmpty {
-                            onNewPreferencesDetected?(prefs)
-                        }
-
-                        // Update the central shared state (which also handles persistence to AppStorage)
-                        trainingPlanManager?.updatePlan(plan)
-
-                        // Sla de motivatie op voor het dashboard insight block
-                        if !plan.motivation.isEmpty {
-                            latestCoachInsight = plan.motivation
-                        }
-                    } catch {
-                        // Fallback als het geen correcte JSON is, toon de ruwe tekst aan de gebruiker (handig voor gewone chat)
-                        motivationText = responseText ?? ""
-                    }
-                }
-
-                messages.append(ChatMessage(role: .ai, text: motivationText, suggestedPlan: parsedPlan))
-            } catch let error as GenerateContentError {
-                // Specifieke Gemini API-fouten met gebruiksvriendelijke meldingen
-                switch error {
-                case .promptBlocked:
-                    // Prompt geblokkeerd door veiligheidsfilters (error 1)
-                    messages.append(ChatMessage(role: .ai, text: "Je bericht kon niet verwerkt worden. Dit komt soms voor door veiligheidsfilters van de AI. Probeer het opnieuw of stel je vraag anders."))
-                case .invalidAPIKey:
-                    messages.append(ChatMessage(role: .ai, text: "De API-sleutel is ongeldig. Controleer je Secrets.swift."))
-                default:
-                    messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem met de AI-service. Probeer het opnieuw."))
-                }
-            } catch {
-                messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem. Probeer het opnieuw."))
+            if !text.isEmpty {
+                promptParts.append(.text(text))
             }
 
+            // Zet de UIImage om naar JPEG data en wrap het in een SDK Part
+            if let image = image, let imageData = image.jpegData(compressionQuality: 0.8) {
+                let imagePart = ModelContent.Part.data(mimetype: "image/jpeg", imageData)
+                promptParts.append(imagePart)
+            }
+
+            print("DEBUG PROMPT: \(text)")
+
+            // Retry logica: probeer maximaal 3 keer bij tijdelijke server-fouten (bijv. 503 overbelasting).
+            let maxPogingen = 3
+            var responseText: String? = nil
+            var finalError: Error? = nil
+
+            for poging in 1...maxPogingen {
+                do {
+                    responseText = try await model.generateContent(promptParts)
+                    finalError = nil
+                    break // Gelukt — stop de retry loop
+                } catch let error as GenerateContentError {
+                    if case .internalError = error, poging < maxPogingen {
+                        // Tijdelijke server-fout (bijv. 503) — wacht even en probeer opnieuw
+                        retryStatusMessage = "Server tijdelijk overbelast, opnieuw proberen (\(poging)/\(maxPogingen))..."
+                        try? await Task.sleep(nanoseconds: UInt64(poging) * 2_000_000_000)
+                        continue
+                    }
+                    finalError = error
+                    break
+                } catch {
+                    finalError = error
+                    break
+                }
+            }
+
+            // Reset retry-statusbericht
+            retryStatusMessage = ""
+
+            // Verwerk fout als alle pogingen zijn mislukt
+            if let error = finalError {
+                if let geminiError = error as? GenerateContentError {
+                    switch geminiError {
+                    case .promptBlocked:
+                        // Prompt geblokkeerd door veiligheidsfilters
+                        messages.append(ChatMessage(role: .ai, text: "Je bericht kon niet verwerkt worden. Dit komt soms voor door veiligheidsfilters van de AI. Probeer het opnieuw of stel je vraag anders."))
+                    case .invalidAPIKey:
+                        messages.append(ChatMessage(role: .ai, text: "De API-sleutel is ongeldig. Controleer je Secrets.swift."))
+                    case .internalError:
+                        // Na 3 pogingen nog steeds een server-fout (bijv. 503)
+                        messages.append(ChatMessage(role: .ai, text: "De AI-service is tijdelijk overbelast. Wacht even en probeer het opnieuw."))
+                    default:
+                        messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem met de AI-service. Probeer het opnieuw."))
+                    }
+                } else {
+                    messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem. Probeer het opnieuw."))
+                }
+                isTyping = false
+                return
+            }
+
+            // Verwerk het succesvolle antwoord
+            print("DEBUG RAW RESPONSE: \(responseText ?? "nil")")
+
+            var finalResponseText = responseText ?? "{}"
+
+            // Verwijder markdown code block tags als de AI ze toevoegt ondanks de mimeType setting
+            finalResponseText = finalResponseText.replacingOccurrences(of: "```json", with: "").replacingOccurrences(of: "```", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+
+            var parsedPlan: SuggestedTrainingPlan? = nil
+            var motivationText: String = "Ik kon het JSON schema niet correct laden."
+
+            if let data = finalResponseText.data(using: .utf8) {
+                do {
+                    let plan = try JSONDecoder().decode(SuggestedTrainingPlan.self, from: data)
+                    parsedPlan = plan
+                    motivationText = plan.motivation
+
+                    // Trigger callback als er nieuwe voorkeuren zijn gevonden
+                    if let prefs = plan.newPreferences, !prefs.isEmpty {
+                        onNewPreferencesDetected?(prefs)
+                    }
+
+                    // Update the central shared state (which also handles persistence to AppStorage)
+                    trainingPlanManager?.updatePlan(plan)
+
+                    // Sla de motivatie op voor het dashboard insight block
+                    if !plan.motivation.isEmpty {
+                        latestCoachInsight = plan.motivation
+                    }
+                } catch {
+                    // Fallback als het geen correcte JSON is, toon de ruwe tekst aan de gebruiker (handig voor gewone chat)
+                    motivationText = responseText ?? ""
+                }
+            }
+
+            messages.append(ChatMessage(role: .ai, text: motivationText, suggestedPlan: parsedPlan))
             isTyping = false
         }
     }

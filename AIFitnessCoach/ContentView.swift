@@ -688,9 +688,11 @@ struct DashboardView: View {
                             VStack(spacing: 12) {
                                 ProgressView()
                                     .scaleEffect(1.2)
-                                Text("Coach analyseert schema...")
+                                Text(viewModel.retryStatusMessage.isEmpty
+                                     ? "Coach analyseert schema..."
+                                     : viewModel.retryStatusMessage)
                                     .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(viewModel.retryStatusMessage.isEmpty ? .secondary : .orange)
                             }
                             .padding()
                             .frame(maxWidth: .infinity)
@@ -752,6 +754,19 @@ struct DashboardView: View {
                             .padding(.horizontal)
                     }
                     .padding(.bottom, 40) // Zorg voor wat extra scroll-ruimte
+                }
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    // Pull-to-refresh hint: geplaatst boven de scroll-content via safeAreaInset
+                    // zodat hij niet overlapt met de NavigationTitle
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.down")
+                            .font(.caption2)
+                        Text("Swipe omlaag om te verversen")
+                            .font(.caption2)
+                    }
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
                 }
                 .refreshable {
                     NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)

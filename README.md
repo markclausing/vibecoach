@@ -73,9 +73,10 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 * ✅ **Sprint 12.3: Predictive Analytics:** De Burndown Chart toont nu per doel via een Swipeable Carousel (Paging) een voorspellende 'Forecast'-lijn. De prognose is hybride: hij kijkt eerst naar de geplande TRIMP uit het actuele weken-schema (`TrainingPlanManager`). Is het schema leeg? Dan valt hij terug op de historische Burn Rate van de laatste 14 dagen. Tevens is er Auto-Sync toegevoegd (die de laatste 14 dagen data laadt bij App Launch en Refresh) én is er een Simulator-Only Developer Tool gebouwd om direct test-data in te schieten. Tot slot past de grafiek "Historical Retroactive Progress" (Optie A) toe: prestaties van vóór de aanmaakdatum van het doel worden met terugwerkende kracht geplot om het startpunt logisch mee te laten schalen met eerder behaalde TRIMP-scores.
 
 ✅ **Bugfixes Dashboard & Coach (Afgerond)**
-* ✅ **Fix: Pull-to-Refresh hint verwijderd:** De "Swipe omlaag" tekst overlapte visueel met de NavigationTitle op het Dashboard. De hint is verwijderd; iOS regelt pull-to-refresh native via de `.refreshable` modifier.
-* ✅ **Fix: Betere foutafhandeling Gemini API:** `GoogleGenerativeAI.GenerateContentError error 1` (promptBlocked) wordt nu afgevangen met een gebruiksvriendelijke Nederlandse melding. Overige API-fouten tonen ook een nette melding zonder technische details.
-* ✅ **Fix: Concurrency guard:** Een guard in `sendMessage` voorkomt dat de gebruiker een nieuw bericht kan sturen terwijl de coach nog bezig is met een antwoord, wat gelijktijdige API-calls vermijdt.
+* ✅ **Fix: Pull-to-Refresh hint correct geplaatst:** De "Swipe omlaag om te verversen" hint is teruggezet via `.safeAreaInset(edge: .top)` op de ScrollView, zodat hij niet langer overlapt met de NavigationTitle maar netjes erboven hangt.
+* ✅ **Fix: Retry logica bij tijdelijke API-fouten:** Bij een 503-fout (server overbelast) probeert de app automatisch tot 3x opnieuw, met 2 seconden tussenruimte. De loading-indicator toont tijdens een retry een oranje statusmelding ("Server tijdelijk overbelast, opnieuw proberen (1/3)...") in zowel de Chat als het Dashboard.
+* ✅ **Fix: Betere foutafhandeling Gemini API:** Specifieke fouten (`promptBlocked`, `invalidAPIKey`, `internalError`) worden netjes afgevangen met gebruiksvriendelijke Nederlandse meldingen zonder technische details.
+* ✅ **Fix: Concurrency guard:** Een guard in `sendMessage` voorkomt dat de gebruiker een nieuw bericht stuurt terwijl de coach nog bezig is.
 
 🚀 **Epic 13: Proactive Coaching Engine (Actief)**
 * Slimme waarschuwingen via de in-app UI en Push-notificaties (indien actief) wanneer de gebruiker in de Burndown Chart te ver onder de ideale stippellijn afwijkt (en de doelstelling in gevaar komt).
