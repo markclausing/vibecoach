@@ -264,7 +264,14 @@ class ChatViewModel: ObservableObject {
         let goalTitles = atRiskGoals.map { "'\($0.title)'" }.joined(separator: " en ")
         let userFacingText = "Los de achterstand op voor \(goalTitles) en geef me een bijgestuurd schema."
 
-        sendHiddenSystemMessage(systemText: systemPrompt, userText: userFacingText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
+        sendHiddenSystemMessage(
+            systemText: systemPrompt,
+            userText: userFacingText,
+            fallbackMessage: "Ik heb je herstelplan klaar! Bekijk je overzicht — het schema is bijgewerkt om je weer op schema te brengen.",
+            contextProfile: contextProfile,
+            activeGoals: activeGoals,
+            activePreferences: activePreferences
+        )
     }
 
     /// Handelt het afwijzen (overslaan) van een specifieke voorgestelde workout af (Rest Day).
@@ -282,14 +289,23 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Verstuurt een bericht waarbij de UI een simpele tekst toont, maar de payload de technische prompt bevat.
-    private func sendHiddenSystemMessage(systemText: String, userText: String, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
+    /// Als JSON-parsing mislukt, wordt `fallbackMessage` getoond in plaats van de ruwe AI-tekst —
+    /// zodat bij recovery plan / skip-workout calls nooit ruwe JSON in de chat verschijnt.
+    private func sendHiddenSystemMessage(
+        systemText: String,
+        userText: String,
+        fallbackMessage: String = "Ik heb je schema bijgewerkt! Bekijk je overzicht voor het nieuwe plan.",
+        contextProfile: AthleticProfile? = nil,
+        activeGoals: [FitnessGoal] = [],
+        activePreferences: [UserPreference] = []
+    ) {
         messages.append(ChatMessage(role: .user, text: userText))
         isTyping = true
 
         let contextPrefix = buildContextPrefix(from: contextProfile, activePreferences: activePreferences)
         let payloadText = "\(contextPrefix)\(systemText)"
 
-        fetchAIResponse(for: payloadText, image: nil)
+        fetchAIResponse(for: payloadText, image: nil, fallbackMessage: fallbackMessage)
     }
 
     /// Verstuurt het huidige tekstveld (of de meegegeven tekst) en/of de geselecteerde afbeelding.
@@ -665,12 +681,53 @@ class ChatViewModel: ObservableObject {
         }
     }
 
+    // MARK: - JSON Parsing Hulpfuncties
+
+    /// Haalt een schone JSON-string op uit een AI-response die mogelijk markdown-opmaak bevat.
+    ///
+    /// Strategie (in volgorde):
+    /// 1. Strip markdown code block tags (```json, ```JSON, ```) aan het begin en einde.
+    /// 2. Als de string daarna nog steeds niet begint met `{`, zoek dan de eerste `{`
+    ///    en de laatste `}` en extraheer alleen dat gedeelte.
+    /// 3. Trim witruimte.
+    private func extractCleanJSON(from rawText: String) -> String {
+        var text = rawText
+
+        // Stap 1: Strip markdown code block opening tag (```json of ```)
+        // Gebruik case-insensitive zoek zodat ook ```JSON werkt
+        if let startRange = text.range(of: "```json", options: .caseInsensitive) {
+            text = String(text[startRange.upperBound...])
+        } else if let startRange = text.range(of: "```") {
+            text = String(text[startRange.upperBound...])
+        }
+
+        // Strip sluitende ``` (zoek van achteren naar voren)
+        if let endRange = text.range(of: "```", options: .backwards) {
+            text = String(text[..<endRange.lowerBound])
+        }
+
+        text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Stap 2: Als er nog steeds proza vóór de JSON staat, extraheer het { ... } blok direct
+        if !text.hasPrefix("{") {
+            if let startIndex = text.firstIndex(of: "{"),
+               let endIndex = text.lastIndex(of: "}") {
+                text = String(text[startIndex...endIndex])
+            }
+        }
+
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     /// Stuurt asynchroon het verzoek naar het AI-model met de juiste content payload.
     ///
     /// - Parameters:
     ///   - text: De ingevoerde tekst door de gebruiker.
     ///   - image: Een optionele UIImage.
-    func fetchAIResponse(for text: String, image: UIImage?) {
+    ///   - fallbackMessage: Optioneel. Als JSON-parsing mislukt (bijv. bij hidden system calls),
+    ///     wordt dit bericht getoond in plaats van de ruwe AI-tekst. Gebruik dit voor
+    ///     recovery plan requests, skip workout, etc. om te voorkomen dat JSON in de chat zichtbaar wordt.
+    func fetchAIResponse(for text: String, image: UIImage?, fallbackMessage: String? = nil) {
         // Om te zorgen dat de unit tests (die het protocol mocken) niet falen op de check
         // van de ontbrekende API sleutel (omdat de statische Secrets placeholder vaak actief is in CI),
         // negeren we de check als een custom model is geïnjecteerd voor testing, of loggen de waarschuwing.
@@ -757,15 +814,13 @@ class ChatViewModel: ObservableObject {
             // Verwerk het succesvolle antwoord
             print("DEBUG RAW RESPONSE: \(responseText ?? "nil")")
 
-            var finalResponseText = responseText ?? "{}"
-
-            // Verwijder markdown code block tags als de AI ze toevoegt ondanks de mimeType setting
-            finalResponseText = finalResponseText.replacingOccurrences(of: "```json", with: "").replacingOccurrences(of: "```", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            // Gebruik de robuuste JSON-extractor: strip markdown en haal het JSON-object eruit
+            let cleanedJSON = extractCleanJSON(from: responseText ?? "{}")
 
             var parsedPlan: SuggestedTrainingPlan? = nil
-            var motivationText: String = "Ik kon het JSON schema niet correct laden."
+            var motivationText: String
 
-            if let data = finalResponseText.data(using: .utf8) {
+            if let data = cleanedJSON.data(using: .utf8) {
                 do {
                     let plan = try JSONDecoder().decode(SuggestedTrainingPlan.self, from: data)
                     parsedPlan = plan
@@ -776,7 +831,7 @@ class ChatViewModel: ObservableObject {
                         onNewPreferencesDetected?(prefs)
                     }
 
-                    // Update the central shared state (which also handles persistence to AppStorage)
+                    // Update het centrale schema (ook opgeslagen in AppStorage)
                     trainingPlanManager?.updatePlan(plan)
 
                     // Sla de motivatie op voor het dashboard insight block
@@ -784,9 +839,19 @@ class ChatViewModel: ObservableObject {
                         latestCoachInsight = plan.motivation
                     }
                 } catch {
-                    // Fallback als het geen correcte JSON is, toon de ruwe tekst aan de gebruiker (handig voor gewone chat)
-                    motivationText = responseText ?? ""
+                    // JSON-parsing mislukt: gebruik de fallbackMessage als die is meegegeven
+                    // (bijv. bij recovery plan of skip-workout calls), zodat nooit ruwe JSON in de chat zichtbaar is.
+                    // Voor gewone chat-berichten tonen we de opgeschoonde tekst (proza zonder JSON-blokken).
+                    print("⚠️ JSON-parsing mislukt: \(error.localizedDescription)")
+                    if let fallback = fallbackMessage {
+                        motivationText = fallback
+                    } else {
+                        // Gewone chat: toon de opgeschoonde response (zonder markdown-tags) als tekst
+                        motivationText = cleanedJSON.hasPrefix("{") ? "Ik kon het schema niet correct verwerken. Probeer het opnieuw." : cleanedJSON
+                    }
                 }
+            } else {
+                motivationText = fallbackMessage ?? "Ik kon de reactie niet verwerken. Probeer het opnieuw."
             }
 
             messages.append(ChatMessage(role: .ai, text: motivationText, suggestedPlan: parsedPlan))
