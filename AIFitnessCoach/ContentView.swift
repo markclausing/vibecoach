@@ -1036,6 +1036,11 @@ struct DashboardView: View {
                 ProactiveNotificationService.shared.updateRiskCache(
                     atRiskGoalTitles: atRiskGoals.map { $0.goal.title }
                 )
+                // EPIC 14: Vraag altijd opnieuw toestemming aan bij app-launch.
+                // HealthKit toont alleen een popup voor types die nog niet zijn goedgekeurd
+                // (bijv. heartRateVariabilitySDNN en sleepAnalysis zijn nieuw in Epic 14).
+                // Voor al-goedgekeurde types gebeurt er niets — dit is de standaard iOS-aanpak.
+                HealthKitManager().requestAuthorization { _, _ in }
             }
         }
     }
