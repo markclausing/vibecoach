@@ -52,6 +52,19 @@ class ChatViewModel: ObservableObject {
         self.trainingPlanManager = manager
     }
 
+    /// SPRINT 13.4: Geeft het meest recent opgeslagen coach-inzicht terug (uit AppStorage).
+    /// Wordt door ChatView gebruikt om een welkomstbericht te tonen als de chat leeg is.
+    var latestStoredInsight: String {
+        return latestCoachInsight
+    }
+
+    /// SPRINT 13.4: Voegt het meest recente coach-inzicht toe als welkomstbericht.
+    /// Wordt alleen aangeroepen als `messages` leeg is, zodat bestaande conversaties niet verstoord worden.
+    func injectWelcomeMessage(_ text: String) {
+        guard messages.isEmpty, !text.isEmpty else { return }
+        messages.append(ChatMessage(role: .ai, text: text))
+    }
+
     /// Initialiseert de `ChatViewModel`.
     ///
     /// - Parameter aiModel: De AI-dienst die gebruikt moet worden.

@@ -9,9 +9,6 @@ struct ChatView: View {
     /// De viewmodel die de chat status en netwerklogica beheert.
     @ObservedObject var viewModel: ChatViewModel
 
-    /// Om de sheet te sluiten.
-    @Environment(\.dismiss) private var dismiss
-
     /// Huidige item geselecteerd vanuit de iOS Photos library.
     @State private var selectedItem: PhotosPickerItem? = nil
 
@@ -168,13 +165,6 @@ struct ChatView: View {
             }
             .navigationTitle("Vraag de Coach")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Sluiten") {
-                        dismiss()
-                    }
-                }
-            }
             .onChange(of: appState.targetActivityId) { oldValue, newValue in
                 if let activityId = newValue {
                     // Start de analyse en clear daarna de target uit de state zodat
@@ -190,8 +180,22 @@ struct ChatView: View {
             .onAppear {
                 refreshProfileContext()
                 setupPreferenceCallback()
+                // SPRINT 13.4: Toon het laatste coach-inzicht als welkomstbericht als de chat nog leeg is.
+                // Dit zorgt dat de gebruiker na een herstelplan direct de uitleg van de coach ziet
+                // zodra ze naar de Coach-tab navigeren, ook als de AI al klaar was.
+                showWelcomeInsightIfNeeded()
             }
         }
+    }
+
+    /// SPRINT 13.4: Toont het opgeslagen coach-inzicht als welkomstbericht als de chat leeg is.
+    /// Zo ziet de gebruiker direct de uitleg van de coach nadat ze naar de Coach-tab navigeren,
+    /// ook als de AI al klaar was voordat ze de tab openden.
+    private func showWelcomeInsightIfNeeded() {
+        guard viewModel.messages.isEmpty else { return }
+        let insight = viewModel.latestStoredInsight
+        guard !insight.isEmpty else { return }
+        viewModel.injectWelcomeMessage(insight)
     }
 
     /// Setup de callback in ViewModel om gedetecteerde voorkeuren op te slaan in SwiftData
