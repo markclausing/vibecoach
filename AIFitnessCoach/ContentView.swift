@@ -597,6 +597,69 @@ struct SingleGoalBurndownView: View {
     }
 }
 
+// MARK: - SPRINT 13.1: Proactieve Waarschuwingsbanner
+
+/// Toont een prominente rode banner op het Dashboard als een of meerdere doelen
+/// significant achterlopen op de ideale burndown-lijn (< 75% van de benodigde burn rate).
+struct ProactiveWarningBannerView: View {
+    let atRiskGoals: [DashboardView.GoalRiskStatus]
+    let onCoachTapped: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Kop
+            HStack(spacing: 8) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.white)
+                Text(atRiskGoals.count == 1
+                     ? "Doel dreigt te mislukken"
+                     : "\(atRiskGoals.count) doelen dreigen te mislukken")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Spacer()
+            }
+
+            // Lijst van doelen in gevaar (max 2 tonen)
+            ForEach(atRiskGoals.prefix(2), id: \.goal.id) { status in
+                HStack {
+                    Text("• \(status.goal.title)")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.9))
+                        .lineLimit(1)
+                    Spacer()
+                    Text("\(Int(status.currentWeeklyRate))/\(Int(status.requiredWeeklyRate)) /wk")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                }
+            }
+
+            // Coach-knop
+            Button(action: onCoachTapped) {
+                HStack {
+                    Image(systemName: "brain.head.profile")
+                    Text("Vraag de Coach om hulp")
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(Color.white.opacity(0.2))
+                .cornerRadius(10)
+                .foregroundColor(.white)
+            }
+        }
+        .padding()
+        .background(
+            LinearGradient(
+                colors: [Color.red.opacity(0.85), Color.orange.opacity(0.75)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .cornerRadius(14)
+    }
+}
+
 #Preview {
     ContentView()
         .environmentObject(AppNavigationState())
@@ -625,6 +688,60 @@ struct DashboardView: View {
         } catch {
             print("Kon profiel niet laden in DashboardView: \(error)")
         }
+    }
+
+    // MARK: - Sprint 13.1: Risicobeoordeling per doel
+
+    /// Lichtgewicht status-struct per doel dat achteroploopt op de burndown.
+    struct GoalRiskStatus {
+        let goal: FitnessGoal
+        let currentWeeklyRate: Double  // Actuele burn rate (TRIMP/week)
+        let requiredWeeklyRate: Double // Benodigde burn rate om doel te halen
+    }
+
+    /// Retourneert actieve doelen die significant achterlopen (< 75% van benodigde burn rate),
+    /// gesorteerd op grootste tekort eerst.
+    private var atRiskGoals: [GoalRiskStatus] {
+        let now = Date()
+        let calendar = Calendar.current
+        let twoWeeksAgo = calendar.date(byAdding: .day, value: -14, to: now) ?? now
+        let trainingBlockStart = calendar.date(byAdding: .weekOfYear, value: -16, to: now) ?? now
+
+        return goals.compactMap { goal in
+            guard !goal.isCompleted, now < goal.targetDate else { return nil }
+
+            let targetTRIMP = goal.computedTargetTRIMP
+            let weeksRemaining = max(0.1, goal.targetDate.timeIntervalSince(now) / (7 * 86400))
+
+            // Filter relevante activiteiten (zelfde logica als SingleGoalBurndownView)
+            let relevantActivities = activities.filter { record in
+                guard record.startDate >= trainingBlockStart && record.startDate <= now else { return false }
+                guard let goalCategory = goal.sportCategory else { return true }
+                if goalCategory == .triathlon {
+                    return [.running, .cycling, .swimming, .triathlon].contains(record.sportCategory)
+                }
+                return record.sportCategory == goalCategory
+            }
+
+            // Bereken hoeveel TRIMP er nog overblijft
+            let achievedTRIMP = relevantActivities.compactMap { $0.trimp }.reduce(0, +)
+            let currentRemaining = max(0, targetTRIMP - achievedTRIMP)
+            guard currentRemaining > 0 else { return nil } // Doel al behaald
+
+            // Burn rate op basis van de laatste 2 weken
+            let recentTRIMP = relevantActivities
+                .filter { $0.startDate >= twoWeeksAgo }
+                .compactMap { $0.trimp }
+                .reduce(0, +)
+            let currentBurnRate = recentTRIMP / 2.0
+
+            let requiredRate = currentRemaining / weeksRemaining
+
+            // Alleen tonen bij rood (< 75% van benodigde burn rate)
+            guard currentBurnRate < requiredRate * 0.75 else { return nil }
+            return GoalRiskStatus(goal: goal, currentWeeklyRate: currentBurnRate, requiredWeeklyRate: requiredRate)
+        }
+        .sorted { ($0.requiredWeeklyRate - $0.currentWeeklyRate) > ($1.requiredWeeklyRate - $1.currentWeeklyRate) }
     }
 
     /// Controleert en vult ontbrekende `targetTRIMP` aan voor legacy doelen (Epic 12 Data Migratie)
@@ -660,6 +777,14 @@ struct DashboardView: View {
                         .foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity)
                         .padding(.top, 4)
+
+                        // SPRINT 13.1: Proactieve waarschuwingsbanner als een doel op rood staat
+                        if !atRiskGoals.isEmpty {
+                            ProactiveWarningBannerView(atRiskGoals: atRiskGoals) {
+                                appState.showingChatSheet = true
+                            }
+                            .padding(.horizontal)
+                        }
 
                         if currentProfile?.isRecoveryNeeded == true {
                             HStack {
