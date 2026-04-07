@@ -15,9 +15,18 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     private let fitnessDataService = FitnessDataService()
 
+    /// Guard tegen gelijktijdige auto-sync runs (race condition fix voor duplicate records).
+    @State private var isAutoSyncing = false
+
     /// Voert asynchroon de data-synchronisatie voor de afgelopen 14 dagen uit op de achtergrond.
     private func performAutoSync() {
+        guard !isAutoSyncing else {
+            print("⚠️ Auto-sync overgeslagen: vorige sync is nog actief")
+            return
+        }
+        isAutoSyncing = true
         Task {
+            defer { Task { @MainActor in isAutoSyncing = false } }
             do {
                 if selectedDataSource == .healthKit {
                     let syncService = HealthKitSyncService()

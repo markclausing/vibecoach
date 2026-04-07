@@ -723,11 +723,21 @@ actor HealthKitSyncService {
         }
 
         // Loop asynchroon door alle gevonden workouts om de hartslag (gemiddeld, max) en rusthartslag op te halen
+        // Lokale Set als extra veiligheidsnet: vangt duplicaten op die HealthKit zelf teruggeeft
+        // én voorkomt dubbele inserts als context.fetch nog niet-gesavede records niet ziet.
+        var seenWorkoutIds = Set<String>()
+
         for workout in workouts {
             // Uniek ID gebaseerd op de HealthKit UUID
             let workoutId = workout.uuid.uuidString
 
-            // Duplicaten voorkomen: Check of dit ID al bestaat in SwiftData
+            // Laag 1: al verwerkt in deze sync-run?
+            guard seenWorkoutIds.insert(workoutId).inserted else {
+                print("⚠️ Sync: HealthKit UUID \(workoutId) al verwerkt in deze batch — overgeslagen")
+                continue
+            }
+
+            // Laag 2: al opgeslagen in SwiftData?
             let descriptor = FetchDescriptor<ActivityRecord>(predicate: #Predicate { $0.id == workoutId })
             if let existing = try? context.fetch(descriptor), !existing.isEmpty {
                 // Sla over als hij al gesynchroniseerd is
