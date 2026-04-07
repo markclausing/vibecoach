@@ -79,7 +79,11 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 * ✅ **Fix: Concurrency guard:** Een guard in `sendMessage` voorkomt dat de gebruiker een nieuw bericht stuurt terwijl de coach nog bezig is.
 
 🚀 **Epic 13: Proactive Coaching Engine (Actief)**
-* Slimme waarschuwingen via de in-app UI en Push-notificaties (indien actief) wanneer de gebruiker in de Burndown Chart te ver onder de ideale stippellijn afwijkt (en de doelstelling in gevaar komt).
+* ✅ **Sprint 13.1: In-app Waarschuwingsbanner:** Een prominente rode banner verschijnt bovenaan het Dashboard zodra een doel significant achteroploopt (burn rate < 75% van benodigde rate). Toont het tekort per doel en een directe "Vraag de Coach"-knop.
+* 🔄 **Sprint 13.2: Dual Engine Notificatie Architectuur:**
+  * **Engine A (Action Trigger):** `HKObserverQuery` + `enableBackgroundDelivery` — app ontwaakt na elke nieuwe HealthKit-workout en checkt de afwijking direct.
+  * **Engine B (Inaction Trigger):** `BGAppRefreshTask` via `BGTaskScheduler` — dagelijkse stille achtergrondcheck of de burndown onder de 75%-grens duikt.
+* ⏳ **Sprint 13.3: Coach Integratie:** Achterstands-context automatisch geïnjecteerd in de coach prompt bij openen vanuit de waarschuwingsbanner.
 
 🗄 **Backlog**
 * Gamification: beloningen voor het volhouden van schema's.
