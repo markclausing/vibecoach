@@ -80,9 +80,10 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 
 🚀 **Epic 13: Proactive Coaching Engine (Actief)**
 * ✅ **Sprint 13.1: In-app Waarschuwingsbanner:** Een prominente rode banner verschijnt bovenaan het Dashboard zodra een doel significant achteroploopt (burn rate < 75% van benodigde rate). Toont het tekort per doel en een directe "Vraag de Coach"-knop.
-* 🔄 **Sprint 13.2: Dual Engine Notificatie Architectuur:**
-  * **Engine A (Action Trigger):** `HKObserverQuery` + `enableBackgroundDelivery` — app ontwaakt na elke nieuwe HealthKit-workout en checkt de afwijking direct.
-  * **Engine B (Inaction Trigger):** `BGAppRefreshTask` via `BGTaskScheduler` — dagelijkse stille achtergrondcheck of de burndown onder de 75%-grens duikt.
+* ✅ **Sprint 13.2: Dual Engine Notificatie Architectuur:**
+  * **Engine A (Action Trigger):** `HKObserverQuery` + `enableBackgroundDelivery` — iOS wekt de app bij elke nieuwe workout. De app checkt of een doel nog op rood staat en stuurt een contextuele pushnotificatie met directe link naar de coach.
+  * **Engine B (Inaction Trigger):** `BGAppRefreshTask` via `BGTaskScheduler` — dagelijkse stille achtergrondcheck. Als de gebruiker 2+ dagen inactief is én een doel op rood staat, volgt een motivatienotificatie.
+  * **Architectuur:** `ProactiveNotificationService` (singleton) beheert beide engines. De risicodata wordt gecached in `UserDefaults` vanuit `DashboardView` zodat de engines geen SwiftData-toegang nodig hebben in de achtergrond. Een 24-uurs cooldown voorkomt notificatiespam. Tikken op een notificatie opent direct de AI-coach.
 * ⏳ **Sprint 13.3: Proactieve Interventie & Herstelplan (Action Phase):**
   * **Doel:** De 'Rode Status' direct oplossen in plaats van alleen tonen.
   * **Logica:** Wanneer een doel op 'Rood' staat, injecteert de app automatisch een 'Recovery Context' in de AI-coach prompt.

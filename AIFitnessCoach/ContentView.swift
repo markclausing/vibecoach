@@ -896,8 +896,10 @@ struct DashboardView: View {
                     NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
                     refreshProfileContext()
                     viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                    // Voeg een kleine vertraging toe zodat de pull-animatie niet direct wegschiet
-                    // Terwijl het 'echte' wachten zichtbaar wordt via de ProgressView hierboven
+                    // SPRINT 13.2: Werk de risicocache bij voor de achtergrond-engines na refresh
+                    ProactiveNotificationService.shared.updateRiskCache(
+                        atRiskGoalTitles: atRiskGoals.map { $0.goal.title }
+                    )
                     try? await Task.sleep(nanoseconds: 1_000_000_000)
                 }
             }
@@ -915,6 +917,11 @@ struct DashboardView: View {
             .onAppear {
                 backfillLegacyGoals()
                 refreshProfileContext()
+                // SPRINT 13.2: Werk de risicocache bij bij elk app-open zodat
+                // de achtergrond-engines altijd actuele data hebben
+                ProactiveNotificationService.shared.updateRiskCache(
+                    atRiskGoalTitles: atRiskGoals.map { $0.goal.title }
+                )
             }
         }
     }
