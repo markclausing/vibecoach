@@ -15,9 +15,18 @@ struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     private let fitnessDataService = FitnessDataService()
 
+    /// Guard tegen gelijktijdige auto-sync runs (race condition fix voor duplicate records).
+    @State private var isAutoSyncing = false
+
     /// Voert asynchroon de data-synchronisatie voor de afgelopen 14 dagen uit op de achtergrond.
     private func performAutoSync() {
+        guard !isAutoSyncing else {
+            print("⚠️ Auto-sync overgeslagen: vorige sync is nog actief")
+            return
+        }
+        isAutoSyncing = true
         Task {
+            defer { Task { @MainActor in isAutoSyncing = false } }
             do {
                 if selectedDataSource == .healthKit {
                     let syncService = HealthKitSyncService()
@@ -73,19 +82,7 @@ struct ContentView: View {
     }
 
     var body: some View {
-        // Intercept de tab-selectie om voor ".coach" alleen de sheet te openen
-        let tabBinding = Binding<AppNavigationState.Tab>(
-            get: { appState.selectedTab },
-            set: { newTab in
-                if newTab == .coach {
-                    appState.showingChatSheet = true
-                } else {
-                    appState.selectedTab = newTab
-                }
-            }
-        )
-
-        TabView(selection: tabBinding) {
+        TabView(selection: $appState.selectedTab) {
             // Tab 1: Overzicht (Dashboard & Kalender)
             DashboardView(viewModel: sharedChatViewModel)
                 .tabItem {
@@ -100,8 +97,8 @@ struct ContentView: View {
                 }
                 .tag(AppNavigationState.Tab.goals)
 
-            // Tab 3: Coach (Centraal, opent als sheet)
-            Color.clear
+            // Tab 3: Coach — echte tab zodat de TabBar altijd zichtbaar blijft (Sprint 13.4)
+            ChatView(viewModel: sharedChatViewModel)
                 .tabItem {
                     Label("Coach", systemImage: "message.fill")
                 }
@@ -125,8 +122,15 @@ struct ContentView: View {
             }
             .tag(AppNavigationState.Tab.settings)
         }
-        .sheet(isPresented: $appState.showingChatSheet) {
-            ChatView(viewModel: sharedChatViewModel)
+        // SPRINT 13.4: showingChatSheet = true redirecteert nu naar de Coach tab
+        // zodat alle bestaande callsites (banners, notificaties, deep links) blijven werken
+        // zonder aanpassingen, en de TabBar altijd zichtbaar blijft.
+        .onChange(of: appState.showingChatSheet) { _, isShowing in
+            if isShowing {
+                appState.selectedTab = .coach
+                // Reset zodat de trigger opnieuw gebruikt kan worden
+                Task { @MainActor in appState.showingChatSheet = false }
+            }
         }
         .onAppear {
             sharedChatViewModel.setTrainingPlanManager(planManager)

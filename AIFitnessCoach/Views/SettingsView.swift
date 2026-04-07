@@ -170,6 +170,30 @@ struct SettingsView: View {
         }
     }
 
+    /// Verwijdert dubbele ActivityRecords met dezelfde ID uit SwiftData.
+    /// Behoudt altijd de eerste (oudste) record, verwijdert de rest.
+    private func removeDuplicateRecords() {
+        let descriptor = FetchDescriptor<ActivityRecord>(sortBy: [SortDescriptor(\.startDate, order: .forward)])
+        guard let allRecords = try? modelContext.fetch(descriptor) else { return }
+
+        var seenIds = Set<String>()
+        var duplicatesRemoved = 0
+
+        for record in allRecords {
+            if seenIds.contains(record.id) {
+                modelContext.delete(record)
+                duplicatesRemoved += 1
+            } else {
+                seenIds.insert(record.id)
+            }
+        }
+
+        try? modelContext.save()
+        feedbackMessage = duplicatesRemoved > 0
+            ? "\(duplicatesRemoved) dubbele activiteit(en) verwijderd."
+            : "Geen duplicaten gevonden — database is schoon."
+    }
+
     // Opslaan van ingevoerde waarden naar native Keychain
     private func saveTokens() {
         feedbackMessage = "Instellingen veilig opgeslagen"
@@ -356,6 +380,22 @@ struct SettingsView: View {
                     .foregroundColor(.purple)
                 }
                 #endif
+
+                Section(
+                    header: Text("Data Beheer"),
+                    footer: Text("Verwijdert dubbele activiteiten met dezelfde ID die door een race-condition in de sync zijn ontstaan.").font(.caption)
+                ) {
+                    Button(action: {
+                        removeDuplicateRecords()
+                    }) {
+                        HStack {
+                            Image(systemName: "trash.slash")
+                                .foregroundColor(.red)
+                            Text("Verwijder Dubbele Activiteiten")
+                                .foregroundColor(.red)
+                        }
+                    }
+                }
 
                 #if DEBUG
                 Section(
