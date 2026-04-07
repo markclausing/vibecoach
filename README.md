@@ -83,7 +83,11 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 * 🔄 **Sprint 13.2: Dual Engine Notificatie Architectuur:**
   * **Engine A (Action Trigger):** `HKObserverQuery` + `enableBackgroundDelivery` — app ontwaakt na elke nieuwe HealthKit-workout en checkt de afwijking direct.
   * **Engine B (Inaction Trigger):** `BGAppRefreshTask` via `BGTaskScheduler` — dagelijkse stille achtergrondcheck of de burndown onder de 75%-grens duikt.
-* ⏳ **Sprint 13.3: Coach Integratie:** Achterstands-context automatisch geïnjecteerd in de coach prompt bij openen vanuit de waarschuwingsbanner.
+* ⏳ **Sprint 13.3: Proactieve Interventie & Herstelplan (Action Phase):**
+  * **Doel:** De 'Rode Status' direct oplossen in plaats van alleen tonen.
+  * **Logica:** Wanneer een doel op 'Rood' staat, injecteert de app automatisch een 'Recovery Context' in de AI-coach prompt.
+  * **Output:** De coach stelt direct een aangepast trainingsplan voor (bijv. extra volume in het weekend of een extra rustdag bij overtraining) om de gebruiker weer op de ideale stippellijn te krijgen.
+  * **UX:** De banner op het dashboard krijgt een 'Los dit op'-knop die direct het herstelplan van de coach opent.
 
 🗄 **Backlog**
 * Gamification: beloningen voor het volhouden van schema's.
