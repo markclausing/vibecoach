@@ -37,8 +37,13 @@
 	<string>AI Fitness Coach analyseert je workouts, hartslag en VO2 Max om gepersonaliseerd trainingsadvies te geven.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>AI Fitness Coach heeft toegang nodig om trainingsdata te synchroniseren.</string>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.markclausing.aifitnesscoach.dailygoalcheck</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
 	<key>UILaunchScreen</key>

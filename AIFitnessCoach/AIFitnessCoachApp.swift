@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UserNotifications
+import BackgroundTasks
 import Combine
 
 /// Globale navigatiestatus van de app.
@@ -48,6 +49,23 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Zorg dat we delegate zijn van het notification center om in-app (foreground) notificaties af te handelen
         UNUserNotificationCenter.current().delegate = self
+
+        // SPRINT 13.2 — Engine B: Registreer de BGAppRefreshTask handler.
+        // Dit MOET vóór het einde van didFinishLaunching gebeuren.
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: ProactiveNotificationService.bgTaskIdentifier,
+            using: nil
+        ) { task in
+            guard let refreshTask = task as? BGAppRefreshTask else { return }
+            ProactiveNotificationService.shared.handleEngineBTask(refreshTask)
+        }
+
+        // SPRINT 13.2 — Engine A: Start de HKObserverQuery voor workout-detectie.
+        ProactiveNotificationService.shared.setupEngineA()
+
+        // SPRINT 13.2 — Engine B: Plan de eerste dagelijkse achtergrondcheck.
+        ProactiveNotificationService.shared.scheduleEngineB()
+
         return true
     }
 
@@ -84,15 +102,19 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
         print("📱 Gebruiker heeft op notificatie getikt!")
 
-        // Haal het activityId uit de payload
+        // Haal het activityId uit de payload (Strava webhook notificaties)
         if let activityId = userInfo["activityId"] as? Int64 {
             print("  ➡️ Strava Activity ID gedetecteerd in payload: \(activityId)")
-
-            // Trigger navigatie & analyse via onze globale AppNavigationState
             AppNavigationState.shared.openActivityAnalysis(activityId: activityId)
         } else if let activityIdString = userInfo["activityId"] as? String, let activityId = Int64(activityIdString) {
             print("  ➡️ Strava Activity ID (String) gedetecteerd in payload: \(activityId)")
             AppNavigationState.shared.openActivityAnalysis(activityId: activityId)
+        } else if let type = userInfo["type"] as? String, type == "goalRisk" {
+            // SPRINT 13.2: Proactieve coach-notificatie — open direct de coach
+            print("  ➡️ Doel-risico notificatie gedetecteerd — Coach openen")
+            Task { @MainActor in
+                AppNavigationState.shared.showingChatSheet = true
+            }
         } else {
             print("  ⚠️ Geen geldig activityId gevonden in payload: \(userInfo)")
         }
