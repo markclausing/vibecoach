@@ -680,6 +680,57 @@ struct ProactiveWarningBannerView: View {
     }
 }
 
+// MARK: - SPRINT 13.3: Herstelplan Actief Banner
+
+/// Toont een blauwe/groene bevestigingsbanner als de gebruiker recent 'Los dit op'
+/// heeft gedrukt en de AI een herstelplan heeft gegenereerd.
+/// Verdwijnt automatisch na 3 dagen.
+struct RecoveryPlanActiveBannerView: View {
+    let onCoachTapped: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.white)
+                Text("Herstelplan Actief")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                Spacer()
+                Text("3 dagen")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.8))
+            }
+
+            Text("Je bent weer op de goede weg. Volg het schema van de coach om je doel te halen.")
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.9))
+
+            Button(action: onCoachTapped) {
+                HStack(spacing: 6) {
+                    Image(systemName: "message")
+                    Text("Bekijk het herstelplan")
+                        .fontWeight(.semibold)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(Color.white.opacity(0.2))
+                .cornerRadius(10)
+                .foregroundColor(.white)
+            }
+        }
+        .padding()
+        .background(
+            LinearGradient(
+                colors: [Color.blue.opacity(0.8), Color.teal.opacity(0.7)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .cornerRadius(14)
+    }
+}
+
 #Preview {
     ContentView()
         .environmentObject(AppNavigationState())
@@ -701,6 +752,18 @@ struct DashboardView: View {
     @Query(sort: \ActivityRecord.startDate, order: .forward) private var activities: [ActivityRecord]
 
     @AppStorage("latestCoachInsight") private var latestCoachInsight: String = ""
+
+    /// SPRINT 13.3: Tijdstip waarop de gebruiker voor het laatst 'Los dit op' heeft gedrukt.
+    /// Opgeslagen als Unix timestamp (Double) zodat AppStorage er mee werkt.
+    @AppStorage("vibecoach_recoveryPlanTimestamp") private var recoveryPlanTimestamp: Double = 0
+
+    /// True als er een actief herstelplan is dat minder dan 3 dagen geleden is aangevraagd.
+    private var hasActiveRecoveryPlan: Bool {
+        guard recoveryPlanTimestamp > 0 else { return false }
+        let planDate = Date(timeIntervalSince1970: recoveryPlanTimestamp)
+        let threeDays: TimeInterval = 3 * 24 * 3600
+        return Date().timeIntervalSince(planDate) < threeDays
+    }
 
     private func refreshProfileContext() {
         do {
@@ -798,35 +861,46 @@ struct DashboardView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 4)
 
-                        // SPRINT 13.1 & 13.3: Proactieve waarschuwingsbanner als een doel op rood staat
+                        // SPRINT 13.1 & 13.3: Banner logica op basis van recovery plan status
                         if !atRiskGoals.isEmpty {
-                            ProactiveWarningBannerView(
-                                atRiskGoals: atRiskGoals,
-                                onCoachTapped: {
-                                    appState.showingChatSheet = true
-                                },
-                                onRecoveryPlanTapped: {
-                                    // SPRINT 13.3: Bouw recovery context en stuur naar AI
-                                    refreshProfileContext()
-                                    let riskInfos = atRiskGoals.map { status in
-                                        let weeksRemaining = max(0.1, status.goal.targetDate.timeIntervalSince(Date()) / (7 * 86400))
-                                        return ChatViewModel.GoalRiskInfo(
-                                            title: status.goal.title,
-                                            currentWeeklyRate: status.currentWeeklyRate,
-                                            requiredWeeklyRate: status.requiredWeeklyRate,
-                                            weeksRemaining: weeksRemaining
-                                        )
-                                    }
-                                    viewModel.requestRecoveryPlan(
-                                        atRiskGoals: riskInfos,
-                                        contextProfile: currentProfile,
-                                        activeGoals: goals,
-                                        activePreferences: activePreferences
-                                    )
+                            if hasActiveRecoveryPlan {
+                                // Herstelplan is actief (< 3 dagen geleden aangevraagd): toon blauwe banner
+                                RecoveryPlanActiveBannerView {
                                     appState.showingChatSheet = true
                                 }
-                            )
-                            .padding(.horizontal)
+                                .padding(.horizontal)
+                            } else {
+                                // Geen actief herstelplan: toon rode waarschuwingsbanner
+                                ProactiveWarningBannerView(
+                                    atRiskGoals: atRiskGoals,
+                                    onCoachTapped: {
+                                        appState.showingChatSheet = true
+                                    },
+                                    onRecoveryPlanTapped: {
+                                        // SPRINT 13.3: Bouw recovery context en stuur naar AI
+                                        refreshProfileContext()
+                                        let riskInfos = atRiskGoals.map { status in
+                                            let weeksRemaining = max(0.1, status.goal.targetDate.timeIntervalSince(Date()) / (7 * 86400))
+                                            return ChatViewModel.GoalRiskInfo(
+                                                title: status.goal.title,
+                                                currentWeeklyRate: status.currentWeeklyRate,
+                                                requiredWeeklyRate: status.requiredWeeklyRate,
+                                                weeksRemaining: weeksRemaining
+                                            )
+                                        }
+                                        viewModel.requestRecoveryPlan(
+                                            atRiskGoals: riskInfos,
+                                            contextProfile: currentProfile,
+                                            activeGoals: goals,
+                                            activePreferences: activePreferences
+                                        )
+                                        // Sla het tijdstip op zodat de banner 3 dagen blauw blijft
+                                        recoveryPlanTimestamp = Date().timeIntervalSince1970
+                                        appState.showingChatSheet = true
+                                    }
+                                )
+                                .padding(.horizontal)
+                            }
                         }
 
                         if currentProfile?.isRecoveryNeeded == true {

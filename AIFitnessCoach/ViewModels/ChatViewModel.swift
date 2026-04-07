@@ -216,26 +216,46 @@ class ChatViewModel: ObservableObject {
 
         // Bouw de technische context op (onzichtbaar voor de gebruiker)
         var systemLines = [
-            "RECOVERY CONTEXT — Mijn doel(en) lopen significant achter op schema. Los dit op:",
+            "RECOVERY CONTEXT — Mijn doel(en) lopen achter op schema. Maak een geleidelijk herstelplan:",
             ""
         ]
         for risk in atRiskGoals {
             let deficit = Int(risk.requiredWeeklyRate - risk.currentWeeklyRate)
             let weeksText = String(format: "%.1f", risk.weeksRemaining)
+            let currentRate = Int(risk.currentWeeklyRate)
+
+            // Bepaal de horizon-strategie op basis van weken resterend
+            let horizonAdvice: String
+            if risk.weeksRemaining > 8 {
+                // Veel tijd over: geef Base Building-advies, spreid het tekort geleidelijk uit
+                let gradualWeeklyIncrease = Int(Double(deficit) / max(risk.weeksRemaining * 0.5, 1))
+                horizonAdvice = "Het evenement is \(weeksText) weken weg. PRIORITEIT: Base Building. Verhoog het wekelijkse volume heel geleidelijk — streef naar +\(gradualWeeklyIncrease) TRIMP/week over de komende maanden. Geen paniektrainingen."
+            } else if risk.weeksRemaining > 4 {
+                horizonAdvice = "Het evenement is \(weeksText) weken weg. Verhoog het volume gecontroleerd, maar bouw nog geen volledige piekbelasting op."
+            } else {
+                horizonAdvice = "Het evenement is \(weeksText) weken weg. Focus op efficiënte, kwaliteitsvolle trainingen — geen drastische volumestijging meer."
+            }
+
             systemLines.append("• Doel: '\(risk.title)'")
-            systemLines.append("  - Actuele burn rate: \(Int(risk.currentWeeklyRate)) TRIMP/week")
-            systemLines.append("  - Benodigde burn rate: \(Int(risk.requiredWeeklyRate)) TRIMP/week")
+            systemLines.append("  - Actuele burn rate: \(currentRate) TRIMP/week")
+            systemLines.append("  - Benodigde burn rate (ideaal): \(Int(risk.requiredWeeklyRate)) TRIMP/week")
             systemLines.append("  - Wekelijks tekort: \(deficit) TRIMP")
             systemLines.append("  - Weken resterend: \(weeksText)")
+            systemLines.append("  - Horizon advies: \(horizonAdvice)")
+            systemLines.append("")
+
+            // Bereken het maximaal toegestane wekelijkse volume (10-15% regel)
+            let maxAllowedRate = Int(Double(currentRate) * 1.12) // 12% = midden van 10-15%
+            systemLines.append("  ⛔️ HARDE FYSIOLOGISCHE GRENS: De totale wekelijkse TRIMP voor de komende week mag NOOIT meer zijn dan \(maxAllowedRate) TRIMP (\(currentRate) × 1.12). Dit is de 10-15% progressieregel om overtraining te voorkomen. Dit is niet onderhandelbaar.")
             systemLines.append("")
         }
         systemLines.append(contentsOf: [
-            "Geef me een concreet, op maat gemaakt herstelplan voor de komende 7 dagen.",
+            "Geef me een concreet, haalbaar herstelplan voor de komende 7 dagen.",
             "Het plan moet:",
-            "1. Het wekelijkse TRIMP-tekort compenseren zonder overtrainingrisico.",
-            "2. Extra volume verdelen over de komende dagen (bijv. extra training in het weekend of een rustdag vervangen door een lichte sessie).",
-            "3. Realistisch zijn op basis van mijn profiel.",
-            "BELANGRIJK: Retourneer altijd het volledige 7-daagse schema in JSON-formaat."
+            "1. De 10-15% progressieregel strikt respecteren — liever iets te conservatief dan te agressief.",
+            "2. Het tekort uitsmeren over meerdere weken als het evenement ver weg is (zie horizon advies hierboven).",
+            "3. Extra volume verdelen via frequentie (extra rustdag omzetten in een lichte sessie) i.p.v. één megasessie.",
+            "4. Altijd het volledige 7-daagse schema retourneren in JSON-formaat."
         ])
 
         let systemPrompt = systemLines.joined(separator: "\n")
