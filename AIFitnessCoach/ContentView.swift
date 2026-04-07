@@ -597,13 +597,16 @@ struct SingleGoalBurndownView: View {
     }
 }
 
-// MARK: - SPRINT 13.1: Proactieve Waarschuwingsbanner
+// MARK: - SPRINT 13.1 & 13.3: Proactieve Waarschuwingsbanner
 
 /// Toont een prominente rode banner op het Dashboard als een of meerdere doelen
 /// significant achterlopen op de ideale burndown-lijn (< 75% van de benodigde burn rate).
+/// Sprint 13.3: bevat een 'Los dit op'-knop die direct een AI-herstelplan aanvraagt.
 struct ProactiveWarningBannerView: View {
     let atRiskGoals: [DashboardView.GoalRiskStatus]
     let onCoachTapped: () -> Void
+    /// Sprint 13.3: callback voor het aanvragen van een concreet herstelplan.
+    let onRecoveryPlanTapped: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -634,18 +637,35 @@ struct ProactiveWarningBannerView: View {
                 }
             }
 
-            // Coach-knop
-            Button(action: onCoachTapped) {
-                HStack {
-                    Image(systemName: "brain.head.profile")
-                    Text("Vraag de Coach om hulp")
-                        .fontWeight(.semibold)
+            // SPRINT 13.3: Twee knoppen naast elkaar
+            HStack(spacing: 10) {
+                // 'Los dit op' — stuurt recovery context naar de AI en opent de chat
+                Button(action: onRecoveryPlanTapped) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "wand.and.stars")
+                        Text("Los dit op")
+                            .fontWeight(.bold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .foregroundColor(.red)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(Color.white.opacity(0.2))
-                .cornerRadius(10)
-                .foregroundColor(.white)
+
+                // 'Vraag Coach' — opent de chat zonder specifieke context
+                Button(action: onCoachTapped) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "message")
+                        Text("Open Chat")
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.white.opacity(0.2))
+                    .cornerRadius(10)
+                    .foregroundColor(.white)
+                }
             }
         }
         .padding()
@@ -778,11 +798,34 @@ struct DashboardView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 4)
 
-                        // SPRINT 13.1: Proactieve waarschuwingsbanner als een doel op rood staat
+                        // SPRINT 13.1 & 13.3: Proactieve waarschuwingsbanner als een doel op rood staat
                         if !atRiskGoals.isEmpty {
-                            ProactiveWarningBannerView(atRiskGoals: atRiskGoals) {
-                                appState.showingChatSheet = true
-                            }
+                            ProactiveWarningBannerView(
+                                atRiskGoals: atRiskGoals,
+                                onCoachTapped: {
+                                    appState.showingChatSheet = true
+                                },
+                                onRecoveryPlanTapped: {
+                                    // SPRINT 13.3: Bouw recovery context en stuur naar AI
+                                    refreshProfileContext()
+                                    let riskInfos = atRiskGoals.map { status in
+                                        let weeksRemaining = max(0.1, status.goal.targetDate.timeIntervalSince(Date()) / (7 * 86400))
+                                        return ChatViewModel.GoalRiskInfo(
+                                            title: status.goal.title,
+                                            currentWeeklyRate: status.currentWeeklyRate,
+                                            requiredWeeklyRate: status.requiredWeeklyRate,
+                                            weeksRemaining: weeksRemaining
+                                        )
+                                    }
+                                    viewModel.requestRecoveryPlan(
+                                        atRiskGoals: riskInfos,
+                                        contextProfile: currentProfile,
+                                        activeGoals: goals,
+                                        activePreferences: activePreferences
+                                    )
+                                    appState.showingChatSheet = true
+                                }
+                            )
                             .padding(.horizontal)
                         }
 

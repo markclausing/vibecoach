@@ -356,6 +356,30 @@ struct SettingsView: View {
                     .foregroundColor(.purple)
                 }
                 #endif
+
+                #if DEBUG
+                Section(
+                    header: Text("Developer Tools (Debug)"),
+                    footer: Text("Simuleert exact de logica van Engine A (workout detectie) én Engine B (inactiviteitscheck). Reset de 24-uurs cooldown zodat de notificatie écht verstuurd wordt.").font(.caption)
+                ) {
+                    Button(action: {
+                        feedbackMessage = "Engines worden afgevuurd..."
+                        Task {
+                            await ProactiveNotificationService.shared.debugTriggerEngines()
+                            await MainActor.run {
+                                feedbackMessage = "Klaar! Controleer je notificaties."
+                            }
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "bolt.fill")
+                                .foregroundColor(.orange)
+                            Text("Forceer Achtergrond Sync (Debug)")
+                                .foregroundColor(.orange)
+                        }
+                    }
+                }
+                #endif
         }
         .navigationTitle("Instellingen")
         .navigationBarTitleDisplayMode(.inline)
