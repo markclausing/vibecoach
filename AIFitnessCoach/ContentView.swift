@@ -613,12 +613,12 @@ struct ProactiveWarningBannerView: View {
             // Kop
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundColor(.white)
+                    .foregroundColor(.orange)
                 Text(atRiskGoals.count == 1
-                     ? "Doel dreigt te mislukken"
-                     : "\(atRiskGoals.count) doelen dreigen te mislukken")
+                     ? "Doel loopt achter"
+                     : "\(atRiskGoals.count) doelen lopen achter")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 Spacer()
             }
 
@@ -627,13 +627,13 @@ struct ProactiveWarningBannerView: View {
                 HStack {
                     Text("• \(status.goal.title)")
                         .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundColor(.primary)
                         .lineLimit(1)
                     Spacer()
                     Text("\(Int(status.currentWeeklyRate))/\(Int(status.requiredWeeklyRate)) /wk")
                         .font(.caption)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.orange)
                 }
             }
 
@@ -648,9 +648,10 @@ struct ProactiveWarningBannerView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(Color.white)
+                    .background(Color.orange.opacity(0.15))
                     .cornerRadius(10)
-                    .foregroundColor(.red)
+                    .foregroundColor(.orange)
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.orange.opacity(0.4), lineWidth: 1))
                 }
 
                 // 'Vraag Coach' — opent de chat zonder specifieke context
@@ -662,21 +663,17 @@ struct ProactiveWarningBannerView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.2))
+                    .background(Color(.secondarySystemBackground))
                     .cornerRadius(10)
-                    .foregroundColor(.white)
+                    .foregroundColor(.secondary)
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.3), lineWidth: 1))
                 }
             }
         }
         .padding()
-        .background(
-            LinearGradient(
-                colors: [Color.red.opacity(0.85), Color.orange.opacity(0.75)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
+        .background(Color.orange.opacity(0.08))
         .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.orange.opacity(0.25), lineWidth: 1))
     }
 }
 
@@ -692,19 +689,19 @@ struct RecoveryPlanActiveBannerView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.white)
+                    .foregroundColor(.blue)
                 Text("Herstelplan Actief")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 Spacer()
                 Text("3 dagen")
                     .font(.caption)
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(.secondary)
             }
 
             Text("Je bent weer op de goede weg. Volg het schema van de coach om je doel te halen.")
                 .font(.subheadline)
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(.secondary)
 
             Button(action: onCoachTapped) {
                 HStack(spacing: 6) {
@@ -714,20 +711,16 @@ struct RecoveryPlanActiveBannerView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
-                .background(Color.white.opacity(0.2))
+                .background(Color.blue.opacity(0.12))
                 .cornerRadius(10)
-                .foregroundColor(.white)
+                .foregroundColor(.blue)
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.blue.opacity(0.3), lineWidth: 1))
             }
         }
         .padding()
-        .background(
-            LinearGradient(
-                colors: [Color.blue.opacity(0.8), Color.teal.opacity(0.7)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
+        .background(Color.blue.opacity(0.07))
         .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.blue.opacity(0.2), lineWidth: 1))
     }
 }
 
