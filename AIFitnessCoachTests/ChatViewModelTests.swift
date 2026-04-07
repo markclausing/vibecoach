@@ -311,9 +311,10 @@ final class ChatViewModelTests: XCTestCase {
     }
 
     func testSkipWorkout_SendsCorrectMessageAndTriggersRecalculation() async {
-        // Arrange
-        let expectedAIResponse = "Ik heb je schema aangepast en rust ingepland."
-        mockModel.responseToReturn = expectedAIResponse
+        // Arrange: sendHiddenSystemMessage geeft de fallbackMessage terug als de mock-response geen geldige JSON is.
+        // De echte AI retourneert JSON; de mock simuleert een niet-JSON response om de fallback te triggeren.
+        let expectedAIResponse = "Ik heb je schema bijgewerkt! Bekijk je overzicht voor het nieuwe plan."
+        mockModel.responseToReturn = "geen geldige json"
         mockModel.delay = 0.1
         viewModel.messages.removeAll()
 
@@ -349,9 +350,9 @@ final class ChatViewModelTests: XCTestCase {
     }
 
     func testRequestAlternativeWorkout_SendsCorrectMessageAndTriggersRecalculation() async {
-        // Arrange
-        let expectedAIResponse = "Hier is een fietstraining in plaats van hardlopen."
-        mockModel.responseToReturn = expectedAIResponse
+        // Arrange: sendHiddenSystemMessage geeft de fallbackMessage terug als de mock-response geen geldige JSON is.
+        let expectedAIResponse = "Ik heb je schema bijgewerkt! Bekijk je overzicht voor het nieuwe plan."
+        mockModel.responseToReturn = "geen geldige json"
         mockModel.delay = 0.1
         viewModel.messages.removeAll()
 
