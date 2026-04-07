@@ -60,6 +60,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             ProactiveNotificationService.shared.handleEngineBTask(refreshTask)
         }
 
+        // Vraag toestemming voor lokale notificaties (indien nog niet bepaald).
+        // Dit zorgt dat de app verschijnt in iOS Berichtgeving-instellingen en de
+        // proactieve engines notificaties kunnen versturen.
+        ProactiveNotificationService.shared.requestNotificationPermissions()
+
         // SPRINT 13.2 — Engine A: Start de HKObserverQuery voor workout-detectie.
         ProactiveNotificationService.shared.setupEngineA()
 

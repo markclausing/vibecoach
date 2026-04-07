@@ -154,6 +154,29 @@ final class ProactiveNotificationService {
         )
     }
 
+    // MARK: - Toestemming aanvragen
+
+    /// Vraagt toestemming aan voor lokale notificaties.
+    /// Roep aan bij app-start (didFinishLaunching of DashboardView.onAppear).
+    /// Als de status al bepaald is (.authorized of .denied) doet deze functie niets.
+    func requestNotificationPermissions() {
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            guard settings.authorizationStatus == .notDetermined else {
+                print("ℹ️ Notificatiestatus al bepaald: \(settings.authorizationStatus.rawValue)")
+                return
+            }
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+                if granted {
+                    print("✅ Notificatietoestemming verleend door gebruiker")
+                } else if let error = error {
+                    print("⚠️ Notificatietoestemming mislukt: \(error.localizedDescription)")
+                } else {
+                    print("ℹ️ Notificatietoestemming geweigerd door gebruiker")
+                }
+            }
+        }
+    }
+
     // MARK: - Gedeelde notificatielogica
 
     /// Verstuurt een lokale push notificatie met een 24-uurs cooldown tegen spam.
@@ -161,7 +184,7 @@ final class ProactiveNotificationService {
         // Controleer of de gebruiker notificaties heeft toegestaan
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         guard settings.authorizationStatus == .authorized else {
-            print("ℹ️ Notificaties niet toegestaan — overgeslagen")
+            print("ℹ️ Notificaties niet toegestaan (status: \(settings.authorizationStatus.rawValue)) — overgeslagen")
             return
         }
 
@@ -203,16 +226,33 @@ final class ProactiveNotificationService {
 
     /// Debug trigger: simuleert exact de logica die Engine A én Engine B zouden afvuren.
     /// De 24-uurs cooldown wordt tijdelijk gereset zodat de notificatie écht verstuurd wordt.
+    /// Als toestemming nog niet is gevraagd, vraagt deze functie dat alsnog vóór de engines draaien.
     /// Alleen zichtbaar in DEBUG builds via SettingsView.
     func debugTriggerEngines() async {
         print("🔧 DEBUG: Handmatige trigger van beide proactieve engines")
+
+        // Controleer de toestemmingsstatus — vraag alsnog als nog niet bepaald
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        if settings.authorizationStatus == .notDetermined {
+            print("🔧 DEBUG: Toestemming nog niet bepaald — aanvraag starten")
+            // requestAuthorization is een throwing async functie
+            _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
+            // Geef iOS even de tijd om de keuze te verwerken
+            try? await Task.sleep(nanoseconds: 500_000_000)
+        }
+
+        guard settings.authorizationStatus != .denied else {
+            print("⚠️ DEBUG: Notificaties zijn geweigerd in Systeeminstellingen — stop hier")
+            return
+        }
+
         // Reset de cooldown zodat de notificatie niet wordt onderdrukt
         UserDefaults.standard.removeObject(forKey: lastNotificationKey)
-        // Engine A: stel in dat er nu een workout was (3 seconden geleden, om de sleep te simuleren)
+        // Engine A: stel in dat er net een workout was (om de 3-seconden sleep te omzeilen)
         UserDefaults.standard.set(Date().addingTimeInterval(-10), forKey: lastWorkoutDateKey)
         // Voer Engine A logica uit (check op rood staande doelen na een nieuwe workout)
         await handleNewWorkoutDetected()
-        // Voer Engine B logica uit (inactiviteitscheck — pas relevant als er geen doelen op rood staan na Engine A)
+        // Voer Engine B logica uit (inactiviteitscheck)
         await checkInactionAndNotify()
         print("🔧 DEBUG: Beide engines afgevuurd")
     }
