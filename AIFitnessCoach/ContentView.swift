@@ -649,16 +649,6 @@ struct DashboardView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
 
-                        // Pull-to-Refresh Hint
-                        HStack {
-                            Image(systemName: "arrow.down")
-                            Text("Swipe omlaag om data te evalueren")
-                        }
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 8)
-
                         if currentProfile?.isRecoveryNeeded == true {
                             HStack {
                                 Image(systemName: "exclamationmark.triangle.fill")

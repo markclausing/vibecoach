@@ -226,6 +226,8 @@ class ChatViewModel: ObservableObject {
         let imageToSend = selectedImage?.downsample(to: 2048.0)
 
         guard !textToUse.isEmpty || imageToSend != nil else { return }
+        // Voorkom dat de gebruiker een nieuw bericht stuurt terwijl de coach nog aan het typen is.
+        guard !isTyping else { return }
 
         // 1. Maak bericht aan van gebruiker voor de UI (ZONDER de onzichtbare context prefix)
         let imageData = imageToSend?.jpegData(compressionQuality: 0.8)
@@ -668,8 +670,19 @@ class ChatViewModel: ObservableObject {
                 }
 
                 messages.append(ChatMessage(role: .ai, text: motivationText, suggestedPlan: parsedPlan))
+            } catch let error as GenerateContentError {
+                // Specifieke Gemini API-fouten met gebruiksvriendelijke meldingen
+                switch error {
+                case .promptBlocked:
+                    // Prompt geblokkeerd door veiligheidsfilters (error 1)
+                    messages.append(ChatMessage(role: .ai, text: "Je bericht kon niet verwerkt worden. Dit komt soms voor door veiligheidsfilters van de AI. Probeer het opnieuw of stel je vraag anders."))
+                case .invalidAPIKey:
+                    messages.append(ChatMessage(role: .ai, text: "De API-sleutel is ongeldig. Controleer je Secrets.swift."))
+                default:
+                    messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem met de AI-service. Probeer het opnieuw."))
+                }
             } catch {
-                messages.append(ChatMessage(role: .ai, text: "Sorry, er ging iets mis: \(error.localizedDescription)"))
+                messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem. Probeer het opnieuw."))
             }
 
             isTyping = false

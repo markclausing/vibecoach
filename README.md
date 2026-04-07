@@ -72,6 +72,11 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 * ✅ **Sprint 12.2: Interactieve TRIMP Explainer:** Een nieuwe educatieve kaart onderaan het dashboard met twee interactieve sliders (Duur & Intensiteit). De gebruiker ziet dynamisch en visueel via een exponentiële curve hoe zwaar het doortrainen in hoge hartslagzones weegt op het lichaam.
 * ✅ **Sprint 12.3: Predictive Analytics:** De Burndown Chart toont nu per doel via een Swipeable Carousel (Paging) een voorspellende 'Forecast'-lijn. De prognose is hybride: hij kijkt eerst naar de geplande TRIMP uit het actuele weken-schema (`TrainingPlanManager`). Is het schema leeg? Dan valt hij terug op de historische Burn Rate van de laatste 14 dagen. Tevens is er Auto-Sync toegevoegd (die de laatste 14 dagen data laadt bij App Launch en Refresh) én is er een Simulator-Only Developer Tool gebouwd om direct test-data in te schieten. Tot slot past de grafiek "Historical Retroactive Progress" (Optie A) toe: prestaties van vóór de aanmaakdatum van het doel worden met terugwerkende kracht geplot om het startpunt logisch mee te laten schalen met eerder behaalde TRIMP-scores.
 
+✅ **Bugfixes Dashboard & Coach (Afgerond)**
+* ✅ **Fix: Pull-to-Refresh hint verwijderd:** De "Swipe omlaag" tekst overlapte visueel met de NavigationTitle op het Dashboard. De hint is verwijderd; iOS regelt pull-to-refresh native via de `.refreshable` modifier.
+* ✅ **Fix: Betere foutafhandeling Gemini API:** `GoogleGenerativeAI.GenerateContentError error 1` (promptBlocked) wordt nu afgevangen met een gebruiksvriendelijke Nederlandse melding. Overige API-fouten tonen ook een nette melding zonder technische details.
+* ✅ **Fix: Concurrency guard:** Een guard in `sendMessage` voorkomt dat de gebruiker een nieuw bericht kan sturen terwijl de coach nog bezig is met een antwoord, wat gelijktijdige API-calls vermijdt.
+
 🚀 **Epic 13: Proactive Coaching Engine (Actief)**
 * Slimme waarschuwingen via de in-app UI en Push-notificaties (indien actief) wanneer de gebruiker in de Burndown Chart te ver onder de ideale stippellijn afwijkt (en de doelstelling in gevaar komt).
 
