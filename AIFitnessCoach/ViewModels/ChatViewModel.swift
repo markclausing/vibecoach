@@ -71,7 +71,7 @@ class ChatViewModel: ObservableObject {
             let systemInstruction = """
             Jij bent een samenwerkende, meedenkende en proactieve AI fitness-coach.
             Je analyseert niet alleen vermoeidheid, maar je helpt de gebruiker actief om de eerstvolgende stap te plannen richting hun gestelde doelen.
-            Houd je antwoorden beknopt, direct en deskundig. Stel je niet op als een waarschuwende dokter, maar als een partner in hun trainingsschema.
+            Stel je op als een slimme trainingspartner — niet als een waarschuwende dokter.
 
             Belangrijke context voor je analyse:
             Wij berekenen lokaal een Banister TRIMP (Training Impulse) score om de trainingsbelasting te bepalen (niet de traditionele TSS die op 100/uur cap).
@@ -80,7 +80,7 @@ class ChatViewModel: ObservableObject {
 
             BELANGRIJK: Zodra je een schema of status voor de komende 7 dagen plant of analyseert, MOET je antwoord een JSON object bevatten (eventueel in een codeblock) dat voldoet aan deze structuur:
             {
-                "motivation": "Korte motiverende zin",
+                "motivation": "Schrijf hier een empathische, beschrijvende analyse van maximaal 3 zinnen. Leg het WAAROM uit achter je strategische keuzes. Als je cross-training inplant om een spiergroep te sparen (bijv. fietsen om de kuiten te ontzien voor een hardloopdoel), benoem die slimme aanpak dan letterlijk. Geef de gebruiker het gevoel dat de coach écht meedenkt.",
                 "workouts": [
                     {
                         "dateOrDay": "Maandag",
@@ -255,7 +255,11 @@ class ChatViewModel: ObservableObject {
             "1. De 10-15% progressieregel strikt respecteren — liever iets te conservatief dan te agressief.",
             "2. Het tekort uitsmeren over meerdere weken als het evenement ver weg is (zie horizon advies hierboven).",
             "3. Extra volume verdelen via frequentie (extra rustdag omzetten in een lichte sessie) i.p.v. één megasessie.",
-            "4. Altijd het volledige 7-daagse schema retourneren in JSON-formaat."
+            "4. Altijd het volledige 7-daagse schema retourneren in JSON-formaat.",
+            "",
+            "⛔️ EXTRA INTENSITEITSLIMIETEN (niet onderhandelbaar):",
+            "- Binnensessies (indoor fietsen, roeien, zwemmen) mogen NOOIT langer zijn dan 60 minuten, tenzij het doel expliciet een duurtraining van >90 min vereist.",
+            "- Geen enkele individuele sessie mag meer dan 40% hoger in TRIMP zijn dan het gemiddelde van de afgelopen 7 dagen. Voorkomen van extreme pieken is prioriteit."
         ])
 
         let systemPrompt = systemLines.joined(separator: "\n")
@@ -824,7 +828,14 @@ class ChatViewModel: ObservableObject {
                 do {
                     let plan = try JSONDecoder().decode(SuggestedTrainingPlan.self, from: data)
                     parsedPlan = plan
-                    motivationText = plan.motivation
+
+                    // SPRINT 13.4: motivation altijd zichtbaar in de chat.
+                    // Als de AI een leeg veld teruggeeft, toon de fallbackMessage zodat
+                    // er altijd een menselijke bevestiging in de chat staat.
+                    let trimmedMotivation = plan.motivation.trimmingCharacters(in: .whitespacesAndNewlines)
+                    motivationText = trimmedMotivation.isEmpty
+                        ? (fallbackMessage ?? "Ik heb je schema bijgewerkt! Bekijk je overzicht.")
+                        : trimmedMotivation
 
                     // Trigger callback als er nieuwe voorkeuren zijn gevonden
                     if let prefs = plan.newPreferences, !prefs.isEmpty {
@@ -835,8 +846,8 @@ class ChatViewModel: ObservableObject {
                     trainingPlanManager?.updatePlan(plan)
 
                     // Sla de motivatie op voor het dashboard insight block
-                    if !plan.motivation.isEmpty {
-                        latestCoachInsight = plan.motivation
+                    if !motivationText.isEmpty {
+                        latestCoachInsight = motivationText
                     }
                 } catch {
                     // JSON-parsing mislukt: gebruik de fallbackMessage als die is meegegeven

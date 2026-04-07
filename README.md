@@ -90,6 +90,12 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
   * **'Los dit op'-knop:** De waarschuwingsbanner heeft twee acties: 'Los dit op' (stuurt recovery context naar AI, opent chat direct met schema-output) en 'Open Chat' (vrij gesprek).
   * **Herstelplan Actief Banner:** Na het drukken op 'Los dit op' verandert de rode banner 3 dagen lang in een blauwe bevestigingsbanner ("Herstelplan Actief") via een `AppStorage` timestamp — zodat de rode foutmelding verdwijnt zodra de gebruiker actie heeft ondernomen.
   * **Fysiologische Guardrails in AI Prompt:** De recovery prompt bevat nu harde regels: (1) de 10-15% progressieregel (wekelijkse TRIMP nooit meer dan 12% verhogen), (2) horizon-check — meer dan 8 weken tot het evenement? Dan Base Building en geleidelijk uitsmeren, geen paniekcorrectie in één week.
+  * **Robuuste JSON-parsing:** `extractCleanJSON()` helper strip markdown code blocks (ook `\`\`\`JSON`) én extraheert het `{…}` blok als de AI ook proza vóór de JSON schrijft. `fallbackMessage` parameter op `fetchAIResponse` voorkomt dat ruwe JSON ooit in de chat zichtbaar wordt.
+* ✅ **Sprint 13.4: UX & AI Reasoning Polish:**
+  * **Motivation altijd zichtbaar:** Als de AI-JSON succesvol wordt geparsed maar `motivation` leeg is, valt de app terug op de `fallbackMessage`. Zo staat er altijd een menselijke bevestiging in de chat.
+  * **Subtielere banners:** `ProactiveWarningBannerView` en `RecoveryPlanActiveBannerView` gebruiken nu lichte achtergronden (`Color.orange.opacity(0.12)` / `Color.blue.opacity(0.12)`) met een gekleurde border, zodat ze beter blenden met het native iOS thema.
+  * **Rijkere Coach Insights:** De system prompt instrueert de AI nu om een empathische, 2-3 zin uitleg te schrijven die de *waarom* van strategische keuzes benoemt (bijv. cross-training op de fiets om de kuiten te sparen voor een hardloopdoel).
+  * **Strengere intensiteitslimieten:** De recovery prompt bevat nu een harde limiet van 60 minuten voor binnensessies én een bewakingsregel tegen extreme TRIMP-pieken ten opzichte van de laatste 7 dagen.
 
 🗄 **Backlog**
 * Gamification: beloningen voor het volhouden van schema's.
