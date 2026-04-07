@@ -426,6 +426,42 @@ struct SettingsView: View {
                                 .foregroundColor(.orange)
                         }
                     }
+
+                    // Epic 14: Debug-knop om HRV en slaap rechtstreeks naar de console te printen
+                    Button(action: {
+                        feedbackMessage = "HRV & slaap ophalen..."
+                        Task {
+                            let hkManager = HealthKitManager()
+                            async let hrv = try? hkManager.fetchRecentHRV()
+                            async let sleep = try? hkManager.fetchLastNightSleep()
+                            let (hrvResult, sleepResult) = await (hrv, sleep)
+
+                            await MainActor.run {
+                                var parts: [String] = []
+                                if let h = hrvResult {
+                                    parts.append(String(format: "HRV: %.1f ms", h))
+                                } else {
+                                    parts.append("HRV: geen data")
+                                }
+                                if let s = sleepResult {
+                                    let hrs = Int(s)
+                                    let mins = Int((s - Double(hrs)) * 60)
+                                    parts.append("Slaap: \(hrs)u \(mins)m")
+                                } else {
+                                    parts.append("Slaap: geen data")
+                                }
+                                feedbackMessage = parts.joined(separator: " | ")
+                                print("🧪 [Epic 14 Debug] \(feedbackMessage ?? "")")
+                            }
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "heart.text.square")
+                                .foregroundColor(.purple)
+                            Text("Test HRV & Slaap (Epic 14)")
+                                .foregroundColor(.purple)
+                        }
+                    }
                 }
                 #endif
         }

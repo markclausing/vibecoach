@@ -78,7 +78,7 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 * ✅ **Fix: Betere foutafhandeling Gemini API:** Specifieke fouten (`promptBlocked`, `invalidAPIKey`, `internalError`) worden netjes afgevangen met gebruiksvriendelijke Nederlandse meldingen zonder technische details.
 * ✅ **Fix: Concurrency guard:** Een guard in `sendMessage` voorkomt dat de gebruiker een nieuw bericht stuurt terwijl de coach nog bezig is.
 
-🚀 **Epic 13: Proactive Coaching Engine (Actief)**
+✅ **Epic 13: Proactive Coaching Engine (Afgerond)**
 * ✅ **Sprint 13.1: In-app Waarschuwingsbanner:** Een prominente rode banner verschijnt bovenaan het Dashboard zodra een doel significant achteroploopt (burn rate < 75% van benodigde rate). Toont het tekort per doel en een directe "Vraag de Coach"-knop.
 * ✅ **Sprint 13.2: Dual Engine Notificatie Architectuur:**
   * **Engine A (Action Trigger):** `HKObserverQuery` + `enableBackgroundDelivery` — iOS wekt de app bij elke nieuwe workout. De app checkt of een doel nog op rood staat en stuurt een contextuele pushnotificatie met directe link naar de coach.
@@ -108,9 +108,10 @@ Na afronding van Epic 13 (Proactieve Coach) en 13.4 (Polish), evolueert VibeCoac
 
 ### Fysiologische Diepte
 
-⏳ **Epic 14: De Readiness Score (HRV & Slaap)**
+🔄 **Epic 14: De Readiness Score (HRV & Slaap)**
 * **Doel:** HealthKit data (`heartRateVariabilitySDNN`, `sleepAnalysis`) combineren met TRIMP om een dagelijkse "Vibe/Readiness Score" te berekenen.
 * **Coach Impact:** De Dual Engine kan voorafgaand aan een training ingrijpen ("Je zenuwstelsel is overprikkeld, neem rust") in plaats van achteraf.
+* ✅ **Sprint 14.1: HealthKit Fundering (Data ophalen):** Permissies voor `heartRateVariabilitySDNN` en `sleepAnalysis` toegevoegd. Robuuste `fetchRecentHRV()` (gemiddelde HRV afgelopen nacht) en `fetchLastNightSleep()` (daadwerkelijke slaapuren, exclusief 'inBed') functies gebouwd in `HealthKitManager`. Debug-knop in Instellingen print HRV en slaap rechtstreeks naar de Xcode console.
 
 ⏳ **Epic 15: Biometrische Context**
 * **Doel:** Integratie van externe en interne factoren (bijv. lokale weersomstandigheden (hitte), of hormonale cyclus tracking via HealthKit).
