@@ -194,7 +194,7 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Genereert een context-prefix string op basis van het meegegeven atletisch profiel.
-    private func buildContextPrefix(from profile: AthleticProfile?, activePreferences: [UserPreference] = []) -> String {
+    private func buildContextPrefix(from profile: AthleticProfile?, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) -> String {
         var prefix = ""
 
         let now = Date()
@@ -205,6 +205,20 @@ class ChatViewModel: ObservableObject {
         // Epic 14.4: Injecteer de Vibe Score als harde context — de AI MOET dit volgen (zie systeeminstructie)
         if !todayVibeScoreContext.isEmpty {
             prefix += "[HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Volg de kritieke regel over de Vibe Score autoriteit strikt.]\n\n"
+        }
+
+        // Epic 16: Injecteer de trainingsfase per actief doel — de AI MOET de fase-instructies strikt volgen
+        let activeGoalsWithPhase = activeGoals.compactMap { goal -> (FitnessGoal, TrainingPhase)? in
+            guard let phase = goal.currentPhase else { return nil }
+            return (goal, phase)
+        }
+        if !activeGoalsWithPhase.isEmpty {
+            prefix += "[PERIODISERING — ACTIEVE TRAININGSFASES:\n"
+            for (goal, phase) in activeGoalsWithPhase {
+                let weeksLeft = String(format: "%.1f", goal.targetDate.timeIntervalSince(now) / (7 * 86400))
+                prefix += "• Doel '\(goal.title)' (\(weeksLeft) weken resterend): \(phase.aiInstruction)\n"
+            }
+            prefix += "]\n\n"
         }
 
         // Filter expired preferences out context
@@ -363,7 +377,7 @@ class ChatViewModel: ObservableObject {
         messages.append(ChatMessage(role: .user, text: userText))
         isTyping = true
 
-        let contextPrefix = buildContextPrefix(from: contextProfile, activePreferences: activePreferences)
+        let contextPrefix = buildContextPrefix(from: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
         let payloadText = "\(contextPrefix)\(systemText)"
 
         fetchAIResponse(for: payloadText, image: nil, fallbackMessage: fallbackMessage)
@@ -389,7 +403,7 @@ class ChatViewModel: ObservableObject {
         clearImage()
 
         // 2. Bouw de uiteindelijke payload prompt op
-        let contextPrefix = buildContextPrefix(from: contextProfile, activePreferences: activePreferences)
+        let contextPrefix = buildContextPrefix(from: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
 
         // Combine explicitly injected goals into user text if applicable for plain chat
         var finalUserText = textToUse
@@ -560,7 +574,7 @@ class ChatViewModel: ObservableObject {
             isTyping = true
             isFetchingWorkout = false
 
-            let contextPrefix = buildContextPrefix(from: contextProfile, activePreferences: activePreferences)
+            let contextPrefix = buildContextPrefix(from: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
             let payloadText = "\(contextPrefix)\(uiPrompt)"
             fetchAIResponse(for: payloadText, image: nil)
         }
@@ -709,7 +723,7 @@ class ChatViewModel: ObservableObject {
                     isTyping = true
                     isFetchingWorkout = false
 
-                    let contextPrefix = buildContextPrefix(from: contextProfile, activePreferences: activePreferences)
+                    let contextPrefix = buildContextPrefix(from: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
                     let payloadText = "\(contextPrefix)\(uiPrompt)"
 
                     fetchAIResponse(for: payloadText, image: nil)
