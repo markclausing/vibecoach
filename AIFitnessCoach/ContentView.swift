@@ -1448,7 +1448,11 @@ struct DashboardView: View {
                 // HealthKit toont alleen een popup voor types die nog niet zijn goedgekeurd
                 // (bijv. heartRateVariabilitySDNN en sleepAnalysis zijn nieuw in Epic 14).
                 // Voor al-goedgekeurde types gebeurt er niets — dit is de standaard iOS-aanpak.
-                HealthKitManager().requestAuthorization { _, _ in }
+                // Sprint 19: Overslaan tijdens UI-tests — simulator heeft geen echte HealthKit-data
+                // en de authorization sheet blokkeert anders alle UI-test elementen.
+                if !ProcessInfo.processInfo.arguments.contains("-isRunningUITests") {
+                    HealthKitManager().requestAuthorization { _, _ in }
+                }
                 // EPIC 14.4: Schrijf de Vibe Score van vandaag naar de AI-prompt cache
                 // zodat elke coach-interactie de actuele herstelstatus kent.
                 viewModel.cacheVibeScore(todayReadiness)

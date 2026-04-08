@@ -15,7 +15,32 @@ final class AIFitnessCoachUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
+
+        // Sprint 19: Signaleer aan de app dat we in UI-test modus draaien.
+        // De app slaat hierdoor HealthKit-autorisatie en notificatie-engines over,
+        // zodat er geen systeem-popups verschijnen die de tests blokkeren.
+        app.launchArguments.append("-isRunningUITests")
+
+        // Vang eventuele resterende OS-alerts automatisch af (bijv. als de simulator
+        // al eerder toestemming heeft gevraagd en de status 'notDetermined' is).
+        // De monitor zoekt naar de meest voorkomende knoplabels in NL en EN.
+        addUIInterruptionMonitor(withDescription: "OS Toestemming Alert") { alert in
+            let allowLabels = ["Allow", "Sta toe", "OK", "Allow While Using App",
+                               "Allow Once", "Don't Allow", "Niet toestaan"]
+            for label in allowLabels {
+                if alert.buttons[label].exists {
+                    alert.buttons[label].tap()
+                    return true
+                }
+            }
+            return false
+        }
+
         app.launch()
+
+        // Tik op de app zodat Xcode de interrupt monitor activeert voor alerts
+        // die direct na launch verschijnen (vereist door XCTest interne timing).
+        app.tap()
     }
 
     override func tearDownWithError() throws {
