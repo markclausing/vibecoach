@@ -60,6 +60,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             ProactiveNotificationService.shared.handleEngineBTask(refreshTask)
         }
 
+        // Sprint 19: Sla alle toestemming-popups en achtergrond-engines over tijdens UI-tests.
+        // De simulator heeft geen echte HealthKit-data en OS-alerts blokkeren anders de tests.
+        guard !ProcessInfo.processInfo.arguments.contains("-isRunningUITests") else {
+            return true
+        }
+
         // Vraag toestemming voor lokale notificaties (indien nog niet bepaald).
         // Dit zorgt dat de app verschijnt in iOS Berichtgeving-instellingen en de
         // proactieve engines notificaties kunnen versturen.

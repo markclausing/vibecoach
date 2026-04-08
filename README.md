@@ -79,7 +79,23 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 
 ---
 
-### 🔄 Epic 18: Subjectieve Feedback — RPE & Mood (Actief)
+### ✅ Epic 18: Subjectieve Feedback — RPE & Mood (Afgerond)
+
+> Zie Sprint 18.1 & 18.2 details in de commit history.
+
+---
+
+### 🔄 Sprint 19: Tech Debt & UI Testing (Actief)
+
+**Codebase portfolio-ready maken zonder bestaande functionaliteit te breken.**
+
+* Magic numbers vervangen door benoemde constanten (`WorkoutCheckinConfig` enum).
+* Accessibility identifiers toegevoegd aan kerncomponenten (`VibeScoreCard`, `RPECheckinCard`, `RPESlider`).
+* XCUITest UI-suite uitgebreid: TabBar-structuur, Dashboard rendering, navigatie naar Coach en Doelen, RPE check-in kaart.
+
+---
+
+### 🔄 Epic 18: Subjectieve Feedback — RPE & Mood (Afgerond)
 
 **Hoe zwaar voelde de training?** — onafhankelijk van wat de hartslagmeter zegt.
 
