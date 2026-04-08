@@ -420,15 +420,17 @@ struct VibeScoreExplainerCard: View {
     }
 }
 
-// MARK: - EPIC 18.1: Post-Workout Check-in Kaart
+// MARK: - EPIC 18: Post-Workout Check-in Kaart
 
-/// Kaart die verschijnt als de meest recente workout (≤48u geleden) nog geen RPE en stemming heeft.
+/// Kaart die verschijnt als de meest recente echte workout (≤48u, ≥15 min, TRIMP ≥15) nog geen RPE heeft.
 /// De gebruiker geeft een RPE (1-10) en een stemmings-emoji op. Na opslaan verdwijnt de kaart direct.
+/// rpe == 0 wordt gebruikt als sentinel voor 'Genegeerd' (geen training) — kaart verdwijnt ook dan.
 struct PostWorkoutCheckinCard: View {
     @Bindable var activity: ActivityRecord
     @Environment(\.modelContext) private var modelContext
 
     /// Callback zodat DashboardView de AI-cache direct kan bijwerken na opslaan.
+    /// rpe == 0 betekent genegeerd — de caller slaat dit niet op als echte feedback.
     var onSaved: ((Int, String) -> Void)? = nil
 
     @State private var rpe: Double = 5
@@ -451,19 +453,45 @@ struct PostWorkoutCheckinCard: View {
         }
     }
 
+    /// Opmaken van de subtitle: '[Sportnaam] • [Duur] min • [Vandaag/Gisteren]'
+    private var subtitle: String {
+        let sport = activity.sportCategory.displayName
+        let durationMin = activity.movingTime / 60
+        let calendar = Calendar.current
+        let relativeDay: String
+        if calendar.isDateInToday(activity.startDate) {
+            relativeDay = "Vandaag"
+        } else if calendar.isDateInYesterday(activity.startDate) {
+            relativeDay = "Gisteren"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "d MMM"
+            formatter.locale = Locale(identifier: "nl_NL")
+            relativeDay = formatter.string(from: activity.startDate)
+        }
+        return "\(sport) • \(durationMin) min • \(relativeDay)"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
+            // Header met negeer-knop rechtsboven
+            HStack(alignment: .top) {
                 Image(systemName: "checkmark.bubble.fill")
                     .foregroundColor(.blue)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Hoe ging je laatste training?")
                         .font(.headline)
-                    Text(activity.name)
+                    Text(subtitle)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 Spacer()
+                Button(action: ignoreActivity) {
+                    Text("Negeer")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
             }
 
             Divider()
@@ -541,6 +569,14 @@ struct PostWorkoutCheckinCard: View {
         activity.mood = mood
         try? modelContext.save()
         onSaved?(rpeValue, mood)
+    }
+
+    /// Markeert de activiteit als 'geen training' (rpe = 0 als sentinel).
+    /// De kaart verdwijnt direct; de AI-cache wordt niet bijgewerkt.
+    private func ignoreActivity() {
+        activity.rpe = 0
+        try? modelContext.save()
+        // rpe == 0 → onSaved wordt niet aangeroepen, cache blijft ongewijzigd
     }
 }
 
@@ -1056,12 +1092,19 @@ struct DashboardView: View {
         return readinessRecords.first { $0.date >= todayStart }
     }
 
-    /// Epic 18.1: Geeft de meest recente ActivityRecord (≤48u geleden) terug
-    /// als die nog geen RPE/mood beoordeling heeft. Anders nil.
+    /// Epic 18.2: Geeft de meest recente ActivityRecord terug die om een check-in vraagt.
+    /// Drempelwaarden voor 'echte training': ≤48u geleden, ≥15 min (900s), TRIMP ≥15.
+    /// rpe == nil → nog niet beoordeeld. rpe == 0 → bewust genegeerd. Beide worden uitgesloten.
     private var recentUncheckedActivity: ActivityRecord? {
         let fortyEightHoursAgo = Calendar.current.date(byAdding: .hour, value: -48, to: Date()) ?? Date()
         return activities
-            .filter { $0.startDate >= fortyEightHoursAgo && $0.rpe == nil }
+            .filter { record in
+                guard record.startDate >= fortyEightHoursAgo else { return false }
+                guard record.rpe == nil else { return false }          // nil = onbeoordeeld
+                guard record.movingTime >= 900 else { return false }   // ≥15 minuten
+                guard (record.trimp ?? 0) >= 15 else { return false }  // echte trainingsbelasting
+                return true
+            }
             .max(by: { $0.startDate < $1.startDate })
     }
 
@@ -1392,10 +1435,10 @@ struct DashboardView: View {
                 // EPIC 14.4: Schrijf de Vibe Score van vandaag naar de AI-prompt cache
                 // zodat elke coach-interactie de actuele herstelstatus kent.
                 viewModel.cacheVibeScore(todayReadiness)
-                // EPIC 18.1: Schrijf de meest recente workout-beoordeling (RPE + stemming) naar de AI-prompt cache.
-                // Kijk naar de allerlaatste activiteit met een ingevulde beoordeling om de AI up-to-date te houden.
+                // EPIC 18: Schrijf de meest recente echte workout-beoordeling naar de AI-prompt cache.
+                // rpe == 0 is de 'genegeerd' sentinel — dat telt niet als echte feedback.
                 let lastRatedActivity = activities
-                    .filter { $0.rpe != nil }
+                    .filter { ($0.rpe ?? 0) > 0 }
                     .max(by: { $0.startDate < $1.startDate })
                 viewModel.cacheLastWorkoutFeedback(
                     rpe: lastRatedActivity?.rpe,
