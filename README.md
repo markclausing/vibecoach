@@ -81,27 +81,32 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 
 ### ✅ Epic 18: Subjectieve Feedback — RPE & Mood (Afgerond)
 
-> Zie Sprint 18.1 & 18.2 details in de commit history.
-
----
-
-### 🔄 Sprint 19: Tech Debt & UI Testing (Actief)
-
-**Codebase portfolio-ready maken zonder bestaande functionaliteit te breken.**
-
-* Magic numbers vervangen door benoemde constanten (`WorkoutCheckinConfig` enum).
-* Accessibility identifiers toegevoegd aan kerncomponenten (`VibeScoreCard`, `RPECheckinCard`, `RPESlider`).
-* XCUITest UI-suite uitgebreid: TabBar-structuur, Dashboard rendering, navigatie naar Coach en Doelen, RPE check-in kaart.
-
----
-
-### 🔄 Epic 18: Subjectieve Feedback — RPE & Mood (Afgerond)
-
 **Hoe zwaar voelde de training?** — onafhankelijk van wat de hartslagmeter zegt.
 
 * **Post-Workout Check-in:** `PostWorkoutCheckinCard` verschijnt bovenaan het dashboard na een echte training (≤48u geleden, ≥15 min, TRIMP ≥15). Bevat een RPE-slider (1–10) en vijf stemming-knoppen (😌 Rustig · 🟢 Goed · 🚀 Sterk · 🤕 Pijn · 🥵 Uitgeput).
-* **Noise Filtering:** Woon-werk ritten en korte wandelingetjes onder de drempelwaarden worden automatisch overgeslagen. De 'Negeer'-knop slaat `rpe = 0` op als sentinel zodat de kaart direct verdwijnt zonder de AI-cache te beïnvloeden.
-* **Discrepantie-analyse:** De AI ontvangt een `[SUBJECTIEVE FEEDBACK]` blok in iedere prompt. Harde systeeminstructie: laag TRIMP + RPE ≥8 = vroeg waarschuwingssignaal voor overtraining of naderende ziekte — de coach reageert hierop met gedwongen rustadvies.
+* **Noise Filtering:** Woon-werk ritten en korte wandelingetjes worden automatisch overgeslagen. De 'Negeer'-knop slaat `rpe = 0` op als sentinel zodat de kaart verdwijnt zonder de AI-cache te beïnvloeden.
+* **Discrepantie-analyse:** De AI ontvangt een `[SUBJECTIEVE FEEDBACK]` blok in iedere prompt. Harde systeeminstructie: laag TRIMP + RPE ≥8 = vroeg waarschuwingssignaal voor overtraining of naderende ziekte.
+
+---
+
+### ✅ Epic 19: Tech Debt, MVVM Refactor & UI Testing (Afgerond)
+
+Uitgebreide opschoning van de codebase. Toevoeging van XCTest Unit- en UI-tests voor de core gebruikersflows en fysiologische rekenmodellen. De testsuite is succesvol afgerond met een Code Coverage van **54%**.
+
+* **Magic Numbers → Constanten:** `WorkoutCheckinConfig` enum centraliseert de RPE check-in drempelwaarden (minimumDurationSeconds, minimumTRIMP, ignoredRPESentinel).
+* **Accessibility Identifiers:** Kerncomponenten gemarkeerd (`VibeScoreCard`, `RPECheckinCard`, `RPESlider`, `ChatInputField`, `AddGoalButton`) voor robuuste UI-testbaarheid.
+* **UI-testsuite:** 8 XCUITests voor TabBar-volledigheid, Dashboard rendering, navigatie naar Coach/Doelen/Instellingen en de RPE check-in kaart. HealthKit- en notificatie-popups worden gebypassed via `-isRunningUITests` launch argument.
+* **Unit Tests (Epic 14 & 16):** `ReadinessCalculatorTests` (8 tests) verifieert grenscases van het Vibe Score algoritme. `TrainingPhaseTests` (11 tests) verifieert fase-detectie, multipliers en fase-gecorrigeerde TRIMP-berekeningen.
+
+---
+
+### 🔄 Epic 20: App Store Ready — Onboarding & Polish (Actief)
+
+De transitie van functioneel prototype naar een release-kandidaat voor de App Store.
+
+* **Splash Screen & App Icon:** Ontwerp en implementatie van native branding.
+* **Onboarding Flow:** Een welkomst-carrousel die de gebruiker uitlegt wat VibeCoach doet (TRIMP, Readiness, AI-coaching).
+* **Graceful Permissions:** HealthKit en Push Notification permissies netjes en met context uitvragen tijdens de onboarding — in plaats van kille popups bij de eerste lancering.
 
 ---
 
@@ -111,8 +116,7 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 |------|--------------|
 | **Epic 15 — Biometrische & Omgevingscontext** | Integratie met lokale weersomstandigheden (hitte/kou) en hormonale cyclus via HealthKit voor contextuele TRIMP-weging. |
 | **Epic 17 — Goal-Specific Blueprints** | Hardcoded sportwetenschappelijke regels per discipline, zoals 'minimaal één 32 km duurloop voor een marathon', rechtstreeks in de LLM Manager. |
-| **Epic 19 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes (bijv. kuitklachten) — zodat de coach maanden later nog kan refereren aan chronische patronen. |
-
+| **Epic 21 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes (bijv. kuitklachten) — zodat de coach maanden later nog kan refereren aan chronische patronen. |
 
 ---
 
