@@ -27,6 +27,7 @@ struct GoalsListView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityIdentifier("AddGoalButton")
                 }
                 ToolbarItem(placement: .topBarLeading) {
                     EditButton()

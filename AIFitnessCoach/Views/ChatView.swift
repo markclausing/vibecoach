@@ -149,6 +149,7 @@ struct ChatView: View {
                         .background(Color(.systemGray6))
                         .cornerRadius(20)
                         .lineLimit(1...5)
+                        .accessibilityIdentifier("ChatInputField")
 
                     Button(action: {
                         refreshProfileContext()
