@@ -270,6 +270,156 @@ struct TRIMPExplainerCard: View {
     }
 }
 
+// MARK: - EPIC 14.3: Vibe Score Kaart (Dashboard)
+
+/// Compacte kaart die de dagelijkse Readiness Score toont met kleurcodering.
+/// Wordt bovenaan het dashboard geplaatst zodat de gebruiker direct richting krijgt.
+struct VibeScoreCardView: View {
+    let readiness: DailyReadiness?
+
+    // Kleur op basis van score (groen / oranje / rood)
+    private var scoreColor: Color {
+        guard let r = readiness else { return .gray }
+        if r.readinessScore >= 80 { return .green }
+        if r.readinessScore >= 50 { return .orange }
+        return .red
+    }
+
+    // SF Symbol op basis van score (batterij-metafoor)
+    private var scoreIcon: String {
+        guard let r = readiness else { return "battery.0" }
+        if r.readinessScore >= 80 { return "bolt.fill" }
+        if r.readinessScore >= 50 { return "battery.50" }
+        return "battery.0"
+    }
+
+    // Tekstlabel op basis van score
+    private var scoreLabel: String {
+        guard let r = readiness else { return "Vibe Score berekenen..." }
+        if r.readinessScore >= 80 { return "Optimaal Hersteld" }
+        if r.readinessScore >= 50 { return "Matig Hersteld" }
+        return "Focus op Herstel"
+    }
+
+    // Slaap opmaken als "Xu Ym"
+    private func formatSleep(_ hours: Double) -> String {
+        let h = Int(hours)
+        let m = Int((hours - Double(h)) * 60)
+        return "\(h)u \(m)m"
+    }
+
+    var body: some View {
+        HStack(spacing: 16) {
+            // Score-getal + icoon
+            VStack(spacing: 2) {
+                Image(systemName: scoreIcon)
+                    .font(.title2)
+                    .foregroundColor(scoreColor)
+                if let r = readiness {
+                    Text("\(r.readinessScore)")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundColor(scoreColor)
+                    Text("/ 100")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .frame(width: 64)
+
+            // Label + onderliggende data
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Vibe Score")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Text(scoreLabel)
+                    .font(.headline)
+                    .foregroundColor(scoreColor)
+
+                if let r = readiness {
+                    HStack(spacing: 12) {
+                        Label(formatSleep(r.sleepHours), systemImage: "moon.fill")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Label(String(format: "%.0f ms", r.hrv), systemImage: "waveform.path.ecg")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                } else {
+                    Text("Zorg dat je Apple Watch is gesynchroniseerd.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer()
+        }
+        .padding()
+        .background(readiness != nil ? scoreColor.opacity(0.08) : Color(.secondarySystemBackground))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(scoreColor.opacity(readiness != nil ? 0.3 : 0.15), lineWidth: 1)
+        )
+        .cornerRadius(12)
+    }
+}
+
+/// Educatieve infokaart die uitlegt wat de Vibe Score is en hoe hij berekend wordt.
+struct VibeScoreExplainerCard: View {
+    @State private var isExpanded: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button(action: { withAnimation(.easeInOut) { isExpanded.toggle() } }) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Wat is de Vibe Score?")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        Text("Jouw dagelijkse lichaamsbatterij (0-100)")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                }
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("De Vibe Score (0-100) is jouw dagelijkse lichaamsbatterij. We combineren je slaap van afgelopen nacht met je Heart Rate Variability (HRV) trend.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    HStack(alignment: .top) {
+                        Image(systemName: "moon.fill").foregroundColor(.indigo).frame(width: 24)
+                        Text("**Slaap (50%):** 8+ uur = vol hersteld. Onder de 5 uur = uitgeput zenuwstelsel.").font(.caption)
+                    }
+                    HStack(alignment: .top) {
+                        Image(systemName: "waveform.path.ecg").foregroundColor(.pink).frame(width: 24)
+                        Text("**HRV (50%):** Hoger dan jouw 7-daagse gemiddelde = klaar voor belasting. Meer dan 20% eronder = rode vlag voor overtraining.").font(.caption)
+                    }
+                    HStack(alignment: .top) {
+                        Image(systemName: "bolt.fill").foregroundColor(.green).frame(width: 24)
+                        Text("**Hoge score:** Je zenuwstelsel is optimaal hersteld en klaar voor zware trainingsbelasting.").font(.caption)
+                    }
+                    HStack(alignment: .top) {
+                        Image(systemName: "battery.0").foregroundColor(.red).frame(width: 24)
+                        Text("**Lage score:** Signaal van je lichaam om gas terug te nemen en overtraining te voorkomen.").font(.caption)
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
+    }
+}
+
 // MARK: - SPRINT 12.1 & 12.3: Burndown Chart View met Paging & Predictive Analytics
 struct BurndownChartView: View {
     let goals: [FitnessGoal]
@@ -750,6 +900,15 @@ struct DashboardView: View {
 
     @AppStorage("latestCoachInsight") private var latestCoachInsight: String = ""
 
+    // Epic 14.3: Haal alle DailyReadiness records op (weinig records — max 1 per dag)
+    @Query(sort: \DailyReadiness.date, order: .reverse) private var readinessRecords: [DailyReadiness]
+
+    /// Geeft het DailyReadiness record van vandaag terug, of nil als er nog geen is.
+    private var todayReadiness: DailyReadiness? {
+        let todayStart = Calendar.current.startOfDay(for: Date())
+        return readinessRecords.first { $0.date >= todayStart }
+    }
+
     /// SPRINT 13.3: Tijdstip waarop de gebruiker voor het laatst 'Los dit op' heeft gedrukt.
     /// Opgeslagen als Unix timestamp (Double) zodat AppStorage er mee werkt.
     @AppStorage("vibecoach_recoveryPlanTimestamp") private var recoveryPlanTimestamp: Double = 0
@@ -900,6 +1059,10 @@ struct DashboardView: View {
                             }
                         }
 
+                        // EPIC 14.3: Vibe Score Kaart — bovenaan voor directe richting
+                        VibeScoreCardView(readiness: todayReadiness)
+                            .padding(.horizontal)
+
                         if currentProfile?.isRecoveryNeeded == true {
                             HStack {
                                 Image(systemName: "exclamationmark.triangle.fill")
@@ -1002,6 +1165,10 @@ struct DashboardView: View {
 
                         // SPRINT 12.2: Interactieve TRIMP Explainer
                         TRIMPExplainerCard()
+                            .padding(.horizontal)
+
+                        // EPIC 14.3: Educatieve Vibe Score uitlegkaart
+                        VibeScoreExplainerCard()
                             .padding(.horizontal)
                     }
                     .padding(.bottom, 40) // Zorg voor wat extra scroll-ruimte

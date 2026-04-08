@@ -112,6 +112,8 @@ Na afronding van Epic 13 (Proactieve Coach) en 13.4 (Polish), evolueert VibeCoac
 * **Doel:** HealthKit data (`heartRateVariabilitySDNN`, `sleepAnalysis`) combineren met TRIMP om een dagelijkse "Vibe/Readiness Score" te berekenen.
 * **Coach Impact:** De Dual Engine kan voorafgaand aan een training ingrijpen ("Je zenuwstelsel is overprikkeld, neem rust") in plaats van achteraf.
 * ✅ **Sprint 14.1: HealthKit Fundering (Data ophalen):** Permissies voor `heartRateVariabilitySDNN` en `sleepAnalysis` toegevoegd. Robuuste `fetchRecentHRV()` (gemiddelde HRV afgelopen nacht) en `fetchLastNightSleep()` (daadwerkelijke slaapuren, exclusief 'inBed') functies gebouwd in `HealthKitManager`. Debug-knop in Instellingen print HRV en slaap rechtstreeks naar de Xcode console.
+* ✅ **Sprint 14.2: Berekening & Opslag (De Vibe Score):** `DailyReadiness` SwiftData model aangemaakt. `ReadinessCalculator` berekent een 0-100 score: slaap (50%, lineair 5-8u) + HRV (50%, vs. 7-daagse persoonlijke baseline). `fetchHRVBaseline(days:)` haalt de vergelijkingsbaseline op. Debug-knop in Instellingen voert upsert uit (max 1 record per dag).
+* ✅ **Sprint 14.3: UI & Educatie (Dashboard Integratie):** `VibeScoreCardView` bovenaan het dashboard toont de dagelijkse score (groen ≥80, oranje 50-79, rood <50) met batterij-icoon, slaap- en HRV-data. Fallback naar grijze staat als er nog geen meting is. `VibeScoreExplainerCard` onderaan het dashboard legt het algoritme uit via een inklapbare infokaart.
 
 ⏳ **Epic 15: Biometrische Context**
 * **Doel:** Integratie van externe en interne factoren (bijv. lokale weersomstandigheden (hitte), of hormonale cyclus tracking via HealthKit).
