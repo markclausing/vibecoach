@@ -1,6 +1,4 @@
 import SwiftUI
-
-
 import PhotosUI
 import SwiftData
 
@@ -23,6 +21,9 @@ struct ChatView: View {
     /// Actieve gebruikersvoorkeuren uit SwiftData
     @Query(filter: #Predicate<UserPreference> { $0.isActive == true }, sort: \UserPreference.createdAt, order: .forward) private var activePreferences: [UserPreference]
 
+    /// Bijhouden of de gebruiker de overtraining-waarschuwingsbanner heeft weggedrukt.
+    @State private var warningDismissed = false
+
     private let profileManager = AthleticProfileManager()
 
     /// Werkt het actuele profiel bij vanuit SwiftData.
@@ -42,18 +43,30 @@ struct ChatView: View {
                     NoAPIKeyView()
                 } else {
 
-                // SPRINT 6.3 - Proactieve Waarschuwing UI
-                if currentProfile?.isRecoveryNeeded == true {
-                    HStack {
+                // SPRINT 6.3 - Proactieve Waarschuwing UI (compacter + dismissable)
+                if currentProfile?.isRecoveryNeeded == true && !warningDismissed {
+                    HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                        Text("Let op: Je trainingsvolume is erg hoog. Neem voldoende rust.")
-                            .font(.subheadline)
-                            .bold()
+                            .font(.caption)
+                        Text("Trainingsvolume te hoog — neem rust.")
+                            .font(.caption)
+                            .fontWeight(.medium)
                         Spacer()
+                        Button {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                warningDismissed = true
+                            }
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.8))
+                        }
                     }
-                    .padding(12)
-                    .background(Color.orange.opacity(0.8))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Color.orange.opacity(0.85))
                     .foregroundColor(.white)
+                    .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
                 // Lijst met chatberichten
@@ -93,6 +106,9 @@ struct ChatView: View {
                         .padding()
                     }
                     .scrollDismissesKeyboard(.interactively)
+                    .onTapGesture {
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
                     .onChange(of: viewModel.messages) { _, _ in
                         if let lastMessage = viewModel.messages.last {
                             withAnimation {
