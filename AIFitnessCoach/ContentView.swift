@@ -610,7 +610,10 @@ struct SingleGoalBurndownView: View {
         metrics.currentWeeklyBurnRate = activeBurnRate
 
         let weeksToTarget = max(0.1, goal.targetDate.timeIntervalSince(now) / (86400 * 7))
-        metrics.requiredWeeklyBurnRate = currentRemaining / weeksToTarget
+        // Sprint 16.2: Fase-multiplier toepassen op de benodigde wekelijkse burn rate
+        let linearRequired = currentRemaining / weeksToTarget
+        let phaseMultiplier = goal.currentPhase?.multiplier ?? 1.0
+        metrics.requiredWeeklyBurnRate = linearRequired * phaseMultiplier
 
         // 3. Prognose Lijn (Alleen zinvol als we in het heden of verleden van de doeldatum zitten)
         if now < goal.targetDate {
@@ -661,19 +664,29 @@ struct SingleGoalBurndownView: View {
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     } else {
-                        let isGreen = currentWeeklyBurnRate >= requiredWeeklyBurnRate * 0.95
-                        let isOrange = currentWeeklyBurnRate >= requiredWeeklyBurnRate * 0.75 && !isGreen
+                        // Sprint 16.2: Fase-bewuste statuslogica
+                        let phase = goal.currentPhase ?? .baseBuilding
+                        let isTaperingOverload = phase == .tapering && currentWeeklyBurnRate > requiredWeeklyBurnRate * 1.10
+                        let isGreen = !isTaperingOverload && currentWeeklyBurnRate >= requiredWeeklyBurnRate * 0.95
+                        let isOrange = !isTaperingOverload && currentWeeklyBurnRate >= requiredWeeklyBurnRate * 0.75 && !isGreen
 
                         HStack {
-                            Text(isGreen ? "🟢" : (isOrange ? "🟠" : "🔴"))
+                            Text(isTaperingOverload ? "🔴" : (isGreen ? "🟢" : (isOrange ? "🟠" : "🔴")))
                             let rateTypeLabel = analysis.metrics.rateSourceLabel
-                            Text("\(rateTypeLabel): \(Int(currentWeeklyBurnRate)) /wk | Nodig: \(Int(requiredWeeklyBurnRate)) /wk")
+                            // Toon de fase-naam naast de target voor duidelijkheid
+                            Text("\(rateTypeLabel): \(Int(currentWeeklyBurnRate)) /wk | Nodig: \(Int(requiredWeeklyBurnRate)) /wk (\(phase.displayName))")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
-                        Text(isGreen ? "Je ligt perfect op schema!" : (isOrange ? "Je ligt iets achter op schema." : "Actie vereist! Je haalt het doel niet met dit (geplande) tempo."))
+                        let statusText: String = {
+                            if isTaperingOverload { return "Waarschuwing: Je traint te hard in je taper-fase! Neem rust." }
+                            if isGreen { return "Je ligt perfect op schema!" }
+                            if isOrange { return "Je ligt iets achter op schema." }
+                            return "Actie vereist! Je haalt het doel niet met dit (geplande) tempo."
+                        }()
+                        Text(statusText)
                             .font(.caption2)
-                            .foregroundColor(isGreen ? .green : (isOrange ? .orange : .red))
+                            .foregroundColor(isTaperingOverload ? .red : (isGreen ? .green : (isOrange ? .orange : .red)))
                     }
                 } else {
                     Text("Doeldatum is verstreken.")
@@ -779,15 +792,25 @@ struct ProactiveWarningBannerView: View {
             // Lijst van doelen in gevaar (max 2 tonen)
             ForEach(atRiskGoals.prefix(2), id: \.goal.id) { status in
                 HStack {
-                    Text("• \(status.goal.title)")
-                        .font(.subheadline)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("• \(status.goal.title)")
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                        // Sprint 16.2: Toon tapering-specifieke waarschuwing
+                        if status.isTaperingOverload {
+                            Text("⚠️ Te hard in taper-fase! Neem rust.")
+                                .font(.caption2)
+                                .foregroundColor(.red)
+                        }
+                    }
                     Spacer()
-                    Text("\(Int(status.currentWeeklyRate))/\(Int(status.requiredWeeklyRate)) /wk")
+                    Text(status.isTaperingOverload
+                         ? "\(Int(status.currentWeeklyRate)) /wk (max \(Int(status.requiredWeeklyRate)))"
+                         : "\(Int(status.currentWeeklyRate))/\(Int(status.requiredWeeklyRate)) /wk")
                         .font(.caption)
                         .fontWeight(.bold)
-                        .foregroundColor(.orange)
+                        .foregroundColor(status.isTaperingOverload ? .red : .orange)
                 }
             }
 
@@ -934,12 +957,15 @@ struct DashboardView: View {
     /// Lichtgewicht status-struct per doel dat achteroploopt op de burndown.
     struct GoalRiskStatus {
         let goal: FitnessGoal
-        let currentWeeklyRate: Double  // Actuele burn rate (TRIMP/week)
-        let requiredWeeklyRate: Double // Benodigde burn rate om doel te halen
+        let currentWeeklyRate: Double       // Actuele burn rate (TRIMP/week)
+        let requiredWeeklyRate: Double      // Fase-gecorrigeerde benodigde burn rate
+        /// Sprint 16.2: True als de gebruiker in Tapering te hard traint (>110% van verlaagde target)
+        let isTaperingOverload: Bool
     }
 
-    /// Retourneert actieve doelen die significant achterlopen (< 75% van benodigde burn rate),
-    /// gesorteerd op grootste tekort eerst.
+    /// Sprint 16.2: Retourneert actieve doelen met een fase-bewuste risicostatus.
+    /// - Onderprestatie: actuele burn rate < 75% van fase-gecorrigeerde target → Rood
+    /// - Tapering overbelasting: actuele burn rate > 110% van tapering target → Rood (andere reden)
     private var atRiskGoals: [GoalRiskStatus] {
         let now = Date()
         let calendar = Calendar.current
@@ -951,6 +977,7 @@ struct DashboardView: View {
 
             let targetTRIMP = goal.computedTargetTRIMP
             let weeksRemaining = max(0.1, goal.targetDate.timeIntervalSince(now) / (7 * 86400))
+            let phase = goal.currentPhase ?? .baseBuilding
 
             // Filter relevante activiteiten (zelfde logica als SingleGoalBurndownView)
             let relevantActivities = activities.filter { record in
@@ -965,7 +992,7 @@ struct DashboardView: View {
             // Bereken hoeveel TRIMP er nog overblijft
             let achievedTRIMP = relevantActivities.compactMap { $0.trimp }.reduce(0, +)
             let currentRemaining = max(0, targetTRIMP - achievedTRIMP)
-            guard currentRemaining > 0 else { return nil } // Doel al behaald
+            guard currentRemaining > 0 else { return nil }
 
             // Burn rate op basis van de laatste 2 weken
             let recentTRIMP = relevantActivities
@@ -974,11 +1001,18 @@ struct DashboardView: View {
                 .reduce(0, +)
             let currentBurnRate = recentTRIMP / 2.0
 
-            let requiredRate = currentRemaining / weeksRemaining
+            // Sprint 16.2: Fase-gecorrigeerde target
+            let linearRate = currentRemaining / weeksRemaining
+            let adjustedRequired = linearRate * phase.multiplier
 
-            // Alleen tonen bij rood (< 75% van benodigde burn rate)
-            guard currentBurnRate < requiredRate * 0.75 else { return nil }
-            return GoalRiskStatus(goal: goal, currentWeeklyRate: currentBurnRate, requiredWeeklyRate: requiredRate)
+            // Tapering: te hard trainen is gevaarlijker dan te weinig
+            if phase == .tapering && currentBurnRate > adjustedRequired * 1.10 {
+                return GoalRiskStatus(goal: goal, currentWeeklyRate: currentBurnRate, requiredWeeklyRate: adjustedRequired, isTaperingOverload: true)
+            }
+
+            // Normale onderprestatie: actuele rate < 75% van fase-target
+            guard currentBurnRate < adjustedRequired * 0.75 else { return nil }
+            return GoalRiskStatus(goal: goal, currentWeeklyRate: currentBurnRate, requiredWeeklyRate: adjustedRequired, isTaperingOverload: false)
         }
         .sorted { ($0.requiredWeeklyRate - $0.currentWeeklyRate) > ($1.requiredWeeklyRate - $1.currentWeeklyRate) }
     }

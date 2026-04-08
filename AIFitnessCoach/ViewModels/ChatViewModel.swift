@@ -215,8 +215,13 @@ class ChatViewModel: ObservableObject {
         if !activeGoalsWithPhase.isEmpty {
             prefix += "[PERIODISERING — ACTIEVE TRAININGSFASES:\n"
             for (goal, phase) in activeGoalsWithPhase {
-                let weeksLeft = String(format: "%.1f", goal.targetDate.timeIntervalSince(now) / (7 * 86400))
-                prefix += "• Doel '\(goal.title)' (\(weeksLeft) weken resterend): \(phase.aiInstruction)\n"
+                let weeksLeft = goal.targetDate.timeIntervalSince(now) / (7 * 86400)
+                let weeksLeftStr = String(format: "%.1f", weeksLeft)
+                // Bereken de fase-gecorrigeerde wekelijkse target (lineaire baseline × multiplier)
+                let linearRate = goal.computedTargetTRIMP / max(0.1, weeksLeft)
+                let adjustedTarget = Int((linearRate * phase.multiplier).rounded())
+                prefix += "• Doel '\(goal.title)' (\(weeksLeftStr) weken resterend): \(phase.aiInstruction)\n"
+                prefix += "  Wiskundig aangepaste wekelijkse TRIMP-target: \(adjustedTarget) TRIMP/week (multiplier: ×\(String(format: "%.2f", phase.multiplier))). Houd je strikt aan deze target.\n"
             }
             prefix += "]\n\n"
         }
