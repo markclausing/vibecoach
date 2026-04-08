@@ -1156,7 +1156,7 @@ struct DashboardView: View {
         return Date().timeIntervalSince(planDate) < threeDays
     }
 
-    // MARK: - Contextuele TRIMP-bannerstatus
+    // MARK: - Contextuele TRIMP-bannerstatus (ACWR-gebaseerd)
 
     /// De meest recente workout (afgelopen 48u) met een TRIMP-waarde.
     private var lastWorkout: ActivityRecord? {
@@ -1164,6 +1164,18 @@ struct DashboardView: View {
         return activities
             .filter { $0.startDate >= cutoff && ($0.trimp ?? 0) >= WorkoutCheckinConfig.minimumTRIMP }
             .max(by: { $0.startDate < $1.startDate })
+    }
+
+    /// Gemiddelde TRIMP per sessie over de afgelopen 14 dagen (chronische belasting).
+    /// Vereist minimaal 3 sessies voor een betrouwbare baseline; anders nil.
+    private var chronicTRIMPPerSession: Double? {
+        guard let cutoff = Calendar.current.date(byAdding: .day, value: -14, to: Date()) else { return nil }
+        let recentSessions = activities.filter {
+            $0.startDate >= cutoff && ($0.trimp ?? 0) >= WorkoutCheckinConfig.minimumTRIMP
+        }
+        guard recentSessions.count >= 3 else { return nil }
+        let totalTRIMP = recentSessions.compactMap { $0.trimp }.reduce(0, +)
+        return totalTRIMP / Double(recentSessions.count)
     }
 
     /// Wekelijks TRIMP-doel op basis van het actieve doel met de hoogste vereiste weekrate.
@@ -1188,37 +1200,53 @@ struct DashboardView: View {
             .reduce(0, +)
     }
 
-    /// Verwachte TRIMP per sessie (weekdoel / 4 trainingsdagen).
-    private var expectedSessionTRIMP: Double { weeklyTRIMPTarget / 4.0 }
-
     enum BannerState {
-        /// Laatste workout was >50% zwaarder dan de verwachte sessie-TRIMP.
-        case overreached(workoutName: String, actualTRIMP: Int, expectedTRIMP: Int)
+        /// Acute:Chronic ratio > 1.5 — piek te groot t.o.v. chronische belasting.
+        /// percentageAbove = hoeveel % boven de chronische norm (bijv. 73 = +73%).
+        case overreached(workoutName: String, actualTRIMP: Int, chronicTRIMP: Int, percentageAbove: Int)
+        /// Lage Vibe Score + zware training — fysiologisch dubbele stress.
+        case lowVibeHighLoad(workoutName: String, vibeScore: Int, actualTRIMP: Int)
         /// Cumulatieve week-TRIMP is <50% van het weekdoel.
         case behindOnPlan(currentTRIMP: Int, targetTRIMP: Int)
         case none
     }
 
     private var bannerState: BannerState {
-        let target = weeklyTRIMPTarget
-        guard target > 0 else { return .none }
-
-        // Oranje: laatste workout was significant zwaarder dan gepland
-        if let last = lastWorkout, let trimp = last.trimp, expectedSessionTRIMP > 0 {
-            if trimp > expectedSessionTRIMP * 1.5 {
+        // Trigger 1: ACWR > 1.5 — acute belasting significant hoger dan chronisch gemiddelde.
+        // Vergelijkt de LAATSTE workout met de gemiddelde sessie-TRIMP van afgelopen 14 dagen.
+        // Dit is onafhankelijk van het weekdoel — het gaat om relatieve belastingspiek.
+        if let last = lastWorkout, let acuteTRIMP = last.trimp,
+           let chronic = chronicTRIMPPerSession, chronic > 0 {
+            let ratio = acuteTRIMP / chronic
+            if ratio > 1.5 {
+                let percentAbove = Int((ratio - 1.0) * 100)
                 return .overreached(
                     workoutName: last.name,
-                    actualTRIMP: Int(trimp),
-                    expectedTRIMP: Int(expectedSessionTRIMP)
+                    actualTRIMP: Int(acuteTRIMP),
+                    chronicTRIMP: Int(chronic),
+                    percentageAbove: percentAbove
+                )
+            }
+
+            // Trigger 2: Lage Vibe Score (<40) gecombineerd met zware training (>chronisch gemiddelde).
+            // Zelfs een normale training is te veel als het lichaam al uitgeput is.
+            if let vibe = todayReadiness?.readinessScore, vibe < 40, acuteTRIMP > chronic {
+                return .lowVibeHighLoad(
+                    workoutName: last.name,
+                    vibeScore: vibe,
+                    actualTRIMP: Int(acuteTRIMP)
                 )
             }
         }
 
-        // Blauw: minder dan 50% van weekdoel behaald en het is al halverwege de week
-        let dayOfWeek = Calendar.current.component(.weekday, from: Date())
-        let isHalfwayThrough = dayOfWeek >= 4 // woensdag of later
-        if isHalfwayThrough && currentWeekTRIMP < target * 0.5 {
-            return .behindOnPlan(currentTRIMP: Int(currentWeekTRIMP), targetTRIMP: Int(target))
+        // Trigger 3: Blauw — achter op weekplan (pas halverwege de week of later).
+        let target = weeklyTRIMPTarget
+        if target > 0 {
+            let dayOfWeek = Calendar.current.component(.weekday, from: Date())
+            let isHalfwayThrough = dayOfWeek >= 4 // woensdag of later
+            if isHalfwayThrough && currentWeekTRIMP < target * 0.5 {
+                return .behindOnPlan(currentTRIMP: Int(currentWeekTRIMP), targetTRIMP: Int(target))
+            }
         }
 
         return .none
@@ -1391,14 +1419,33 @@ struct DashboardView: View {
                             .padding(.horizontal)
                         }
 
-                        // Contextuele TRIMP-banner — oranje bij overreaching, blauw bij achterstand
+                        // Contextuele TRIMP-banner — gebaseerd op Acute:Chronic Workload Ratio
                         switch bannerState {
-                        case .overreached(let name, let actual, let expected):
-                            HStack(spacing: 8) {
+                        case .overreached(let name, let actual, let chronic, let pct):
+                            HStack(alignment: .top, spacing: 8) {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .font(.caption)
-                                Text("**\(name)** (TRIMP: \(actual)) was veel zwaarder dan gepland (TRIMP: \(expected)). Zorg voor voldoende herstel.")
+                                    .padding(.top, 1)
+                                Text("Hoewel je weekdoel nog niet is bereikt, was **\(name)** (+\(pct)%) een te grote piek t.o.v. je gemiddelde training (\(chronic) TRIMP). Pas op voor blessures.")
                                     .font(.caption)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.orange.opacity(0.15))
+                            .foregroundColor(.orange)
+                            .cornerRadius(10)
+                            .padding(.horizontal)
+
+                        case .lowVibeHighLoad(let name, let vibe, let actual):
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.caption)
+                                    .padding(.top, 1)
+                                Text("Je Vibe Score is \(vibe)/100 — je lichaam is uitgeput. **\(name)** (TRIMP: \(actual)) was zwaarder dan je herstel toelaat. Neem rust.")
+                                    .font(.caption)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 7)
@@ -1409,11 +1456,13 @@ struct DashboardView: View {
                             .padding(.horizontal)
 
                         case .behindOnPlan(let current, let target):
-                            HStack(spacing: 8) {
+                            HStack(alignment: .top, spacing: 8) {
                                 Image(systemName: "info.circle.fill")
                                     .font(.caption)
+                                    .padding(.top, 1)
                                 Text("Je TRIMP deze week (\(current)) ligt achter op het weekdoel (\(target)). Pak de geplande trainingen op.")
                                     .font(.caption)
+                                    .fixedSize(horizontal: false, vertical: true)
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 7)
