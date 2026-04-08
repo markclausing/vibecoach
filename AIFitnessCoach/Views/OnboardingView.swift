@@ -29,7 +29,7 @@ struct OnboardingView: View {
                     iconColor: .blue,
                     title: "Welkom bij VibeCoach",
                     subtitle: "Jouw AI-gestuurde fysiologische coach",
-                    body: "VibeCoach combineert je Apple Health data met kunstmatige intelligentie om je trainingsbelasting te bewaken, je herstel te meten en je schema's slim bij te sturen."
+                    description: "VibeCoach combineert je Apple Health data met kunstmatige intelligentie om je trainingsbelasting te bewaken, je herstel te meten en je schema's slim bij te sturen."
                 )
                 .tag(0)
 
@@ -39,7 +39,7 @@ struct OnboardingView: View {
                     iconColor: .green,
                     title: "Hoe het werkt",
                     subtitle: "Twee lagen van inzicht",
-                    body: "**TRIMP (Training Impulse)** meet hoe zwaar een training was — hartslag × duur × intensiteit.\n\n**Vibe Score** is jouw lichaamsbatterij (0–100), berekend uit jouw HRV en slaap. Deze twee samen vertellen de coach of je kunt pushen of moet herstellen."
+                    description: "**TRIMP (Training Impulse)** meet hoe zwaar een training was — hartslag × duur × intensiteit.\n\n**Vibe Score** is jouw lichaamsbatterij (0–100), berekend uit jouw HRV en slaap. Deze twee samen vertellen de coach of je kunt pushen of moet herstellen."
                 )
                 .tag(1)
 
@@ -49,7 +49,7 @@ struct OnboardingView: View {
                     iconColor: .purple,
                     title: "Jouw Data, Jouw AI",
                     subtitle: "Privacy first — geen dataverzameling",
-                    body: "Al jouw Apple Health data blijft **100% lokaal** op jouw iPhone. Er wordt niets naar onze servers gestuurd.\n\nDe AI-coach werkt via jouw eigen API-sleutel (BYOK). Voeg die na de onboarding toe via **Instellingen → AI Coach Configuratie** om de coach te activeren."
+                    description: "Al jouw Apple Health data blijft **100% lokaal** op jouw iPhone. Er wordt niets naar onze servers gestuurd.\n\nDe AI-coach werkt via jouw eigen API-sleutel (BYOK). Voeg die na de onboarding toe via **Instellingen → AI Coach Configuratie** om de coach te activeren."
                 )
                 .tag(2)
 
@@ -186,7 +186,7 @@ private struct OnboardingPage: View {
     let iconColor: Color
     let title: String
     let subtitle: String
-    let body: String
+    let description: String
 
     var body: some View {
         ScrollView {
@@ -210,7 +210,7 @@ private struct OnboardingPage: View {
                         .multilineTextAlignment(.center)
                 }
 
-                Text(LocalizedStringKey(body))
+                Text(LocalizedStringKey(description))
                     .font(.body)
                     .foregroundColor(.primary.opacity(0.8))
                     .multilineTextAlignment(.center)
