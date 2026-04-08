@@ -214,6 +214,26 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+                // Epic 20: BYOK AI Configuratie — bovenaan voor directe vindbaarheid
+                Section(header: Text("AI Coach")) {
+                    NavigationLink(destination: AIProviderSettingsView()) {
+                        HStack {
+                            Image(systemName: "brain.head.profile")
+                                .foregroundColor(.blue)
+                                .frame(width: 28)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("AI Coach Configuratie")
+                                    .fontWeight(.medium)
+                                Text(UserDefaults.standard.string(forKey: "vibecoach_userAPIKey")?.isEmpty == false
+                                     ? "Sleutel geconfigureerd ✓"
+                                     : "Geen sleutel ingesteld")
+                                    .font(.caption)
+                                    .foregroundColor(UserDefaults.standard.string(forKey: "vibecoach_userAPIKey")?.isEmpty == false ? .green : .orange)
+                            }
+                        }
+                    }
+                }
+
                 Section(header: Text("Primaire Databron"), footer: Text("Kies welke bron als eerste aangesproken wordt voor analyses en historie.").font(.caption)) {
                     Picker("Databron", selection: $selectedDataSource) {
                         ForEach(DataSource.allCases) { source in
@@ -565,6 +585,89 @@ struct SettingsView: View {
         }
     }
     #endif
+}
+
+// MARK: - Epic 20: AI Coach Configuratie (BYOK)
+
+/// Instellingenscherm waar de gebruiker zijn eigen AI-provider en API-sleutel configureert.
+/// De sleutel wordt opgeslagen in AppStorage (lokaal op het apparaat, niet gedeeld).
+struct AIProviderSettingsView: View {
+    @AppStorage("vibecoach_aiProvider")  private var providerRaw: String = AIProvider.gemini.rawValue
+    @AppStorage("vibecoach_userAPIKey") private var apiKey: String = ""
+
+    private var selectedProvider: AIProvider {
+        AIProvider(rawValue: providerRaw) ?? .gemini
+    }
+
+    var body: some View {
+        Form {
+            // Provider picker
+            Section(header: Text("AI Provider")) {
+                Picker("Provider", selection: $providerRaw) {
+                    ForEach(AIProvider.allCases) { provider in
+                        HStack {
+                            Text(provider.displayName)
+                            if !provider.isSupported {
+                                Spacer()
+                                Text("Binnenkort")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .tag(provider.rawValue)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            }
+
+            // API sleutel invoer
+            Section(
+                header: Text("API Sleutel"),
+                footer: VStack(alignment: .leading, spacing: 6) {
+                    Text("VibeCoach gebruikt jouw eigen API-sleutel om de AI te activeren. De sleutel wordt uitsluitend lokaal op dit apparaat opgeslagen en nooit gedeeld met derden.")
+                        .font(.caption)
+                    if let url = selectedProvider.getKeyURL {
+                        Link("Hoe kom ik aan een sleutel? →", destination: url)
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                    }
+                }
+            ) {
+                SecureField(selectedProvider.keyPlaceholder, text: $apiKey)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .accessibilityIdentifier("APIKeyField")
+
+                if !selectedProvider.isSupported {
+                    HStack {
+                        Image(systemName: "info.circle").foregroundColor(.orange)
+                        Text("\(selectedProvider.displayName) wordt binnenkort ondersteund. Selecteer Gemini voor directe AI-coaching.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+
+            // Status indicator
+            if !apiKey.isEmpty {
+                Section {
+                    HStack(spacing: 10) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Sleutel geconfigureerd")
+                                .fontWeight(.medium)
+                            Text("Je AI Coach is actief en klaar voor gebruik.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle("AI Coach Configuratie")
+    }
 }
 
 /// Lijst met actieve voorkeuren en regels van de gebruiker (AI Context).

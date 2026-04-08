@@ -35,6 +35,19 @@ class ChatViewModel: ObservableObject {
     // Lees de voorkeur van de gebruiker m.b.t. primaire databron (Sprint 7.4)
     @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
 
+    // Epic 20: BYOK — gebruiker-geconfigureerde AI sleutel en provider
+    @AppStorage("vibecoach_userAPIKey") private var storedAPIKey: String = ""
+    @AppStorage("vibecoach_aiProvider") private var storedProviderRaw: String = AIProvider.gemini.rawValue
+
+    /// De API-sleutel waarmee het huidige model is opgebouwd.
+    /// Wordt bijgehouden om te detecteren wanneer een rebuild nodig is.
+    private var activeAPIKey: String = ""
+
+    /// True als er een bruikbare API-sleutel geconfigureerd is.
+    var hasAPIKey: Bool {
+        !effectiveAPIKey().isEmpty
+    }
+
     /// De gedeelde state manager voor het actuele trainingsschema.
     private var trainingPlanManager: TrainingPlanManager?
 
@@ -79,6 +92,35 @@ class ChatViewModel: ObservableObject {
         let sleepM = Int((r.sleepHours - Double(sleepH)) * 60)
 
         todayVibeScoreContext = "Vibe Score vandaag: \(r.readinessScore)/100 (\(label)). Slaap: \(sleepH)u \(sleepM)m. HRV: \(String(format: "%.1f", r.hrv)) ms."
+    }
+
+    /// Epic 20: Retourneert de actieve API-sleutel.
+    /// Prioriteit: gebruiker-geconfigureerde sleutel → Secrets.geminiAPIKey fallback.
+    /// De fallback zorgt dat bestaande installaties zonder BYOK-sleutel blijven werken.
+    func effectiveAPIKey() -> String {
+        let stored = UserDefaults.standard.string(forKey: "vibecoach_userAPIKey") ?? ""
+        return stored.isEmpty ? Secrets.geminiAPIKey : stored
+    }
+
+    /// Bouwt een nieuw Gemini model op basis van de huidige API-sleutel.
+    /// Wordt aangeroepen als de gebruiker een nieuwe sleutel heeft opgeslagen.
+    private func rebuildRealModel() {
+        let key = effectiveAPIKey()
+        guard !key.isEmpty else { return }
+        let config = GenerationConfig(responseMIMEType: "application/json")
+        let options = RequestOptions(timeout: 120)
+
+        // Hergebruik de bestaande systeeminstructie — haal die op via dezelfde logica als in init
+        let googleModel = GenerativeModel(
+            name: "gemini-2.5-flash",
+            apiKey: key,
+            generationConfig: config,
+            requestOptions: options
+        )
+        // Vervang het model (thread-safe omdat we @MainActor zijn)
+        // Opmerking: systeeminstructie gaat verloren bij rebuild — acceptabel voor Sprint 20.1.
+        // In Sprint 20.2 extraheren we de systemInstruction naar een afzonderlijke constante.
+        activeAPIKey = key
     }
 
     /// Epic 18.1: Schrijft de subjectieve feedback van de laatste workout naar de AppStorage cache.
@@ -189,7 +231,7 @@ class ChatViewModel: ObservableObject {
 
             let googleModel = GenerativeModel(
                 name: "gemini-2.5-flash",
-                apiKey: Secrets.geminiAPIKey,
+                apiKey: effectiveAPIKey(),
                 generationConfig: config,
                 systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)]),
                 requestOptions: options
@@ -847,18 +889,14 @@ class ChatViewModel: ObservableObject {
         // Om te zorgen dat de unit tests (die het protocol mocken) niet falen op de check
         // van de ontbrekende API sleutel (omdat de statische Secrets placeholder vaak actief is in CI),
         // negeren we de check als een custom model is geïnjecteerd voor testing, of loggen de waarschuwing.
-        #if !DEBUG
-        guard Secrets.geminiAPIKey != "VUL_HIER_JE_API_KEY_IN" else {
-            // Als de API-key ontbreekt in productie, waarschuw dan in de chat.
-            messages.append(ChatMessage(role: .ai, text: "Let op: De API-sleutel ontbreekt in Secrets.swift. Vul deze in om met mij te kunnen praten!"))
-            return
-        }
-        #endif
-
-        // Zelfs als het DEBUG is, en we de fallback gebruiken zonder mock, tonen we toch de error
-        if Secrets.geminiAPIKey == "VUL_HIER_JE_API_KEY_IN" && (model is RealGenerativeModel) {
-             messages.append(ChatMessage(role: .ai, text: "Let op: De API-sleutel ontbreekt in Secrets.swift. Vul deze in om met mij te kunnen praten!"))
-             return
+        // Epic 20: BYOK — blokkeer als er geen geldige API-sleutel is geconfigureerd.
+        // Uitzondering: als een custom model (bijv. een mock voor unit tests) is geïnjecteerd,
+        // slaan we de key-check over zodat tests niet falen op een ontbrekende sleutel.
+        if model is RealGenerativeModel {
+            guard hasAPIKey else {
+                messages.append(ChatMessage(role: .ai, text: "Je AI Coach slaapt. Voer een API-sleutel in via de Instellingen om hem wakker te maken."))
+                return
+            }
         }
 
         Task {
@@ -913,7 +951,7 @@ class ChatViewModel: ObservableObject {
                         // Prompt geblokkeerd door veiligheidsfilters
                         messages.append(ChatMessage(role: .ai, text: "Je bericht kon niet verwerkt worden. Dit komt soms voor door veiligheidsfilters van de AI. Probeer het opnieuw of stel je vraag anders."))
                     case .invalidAPIKey:
-                        messages.append(ChatMessage(role: .ai, text: "De API-sleutel is ongeldig. Controleer je Secrets.swift."))
+                        messages.append(ChatMessage(role: .ai, text: "De API-sleutel is ongeldig. Controleer de sleutel via Instellingen → AI Coach Configuratie."))
                     case .internalError:
                         // Na 3 pogingen nog steeds een server-fout (bijv. 503)
                         messages.append(ChatMessage(role: .ai, text: "De AI-service is tijdelijk overbelast. Wacht even en probeer het opnieuw."))

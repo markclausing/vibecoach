@@ -93,15 +93,18 @@ struct AddGoalView: View {
 
     /// Vraag de Gemini AI om een logische TRIMP belasting
     private func fetchAITargetTRIMP(goal: FitnessGoal, profile: AthleticProfile?) async -> Double {
-        #if !DEBUG
-        guard Secrets.geminiAPIKey != "VUL_HIER_JE_API_KEY_IN" else { return fallbackTRIMP(for: goal.targetDate) }
-        #endif
-
-        if Secrets.geminiAPIKey == "VUL_HIER_JE_API_KEY_IN" { return fallbackTRIMP(for: goal.targetDate) }
+        // Epic 20: BYOK — gebruik de actieve API-sleutel (gebruiker of Secrets-fallback).
+        let activeKey = {
+            let stored = UserDefaults.standard.string(forKey: "vibecoach_userAPIKey") ?? ""
+            return stored.isEmpty ? Secrets.geminiAPIKey : stored
+        }()
+        guard !activeKey.isEmpty && activeKey != "VUL_HIER_JE_API_KEY_IN" else {
+            return fallbackTRIMP(for: goal.targetDate)
+        }
 
         let model = GenerativeModel(
             name: "gemini-2.5-flash",
-            apiKey: Secrets.geminiAPIKey
+            apiKey: activeKey
         )
 
         var profileText = "Geen specifieke historie bekend."
