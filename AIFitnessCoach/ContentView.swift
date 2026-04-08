@@ -1444,15 +1444,9 @@ struct DashboardView: View {
                 ProactiveNotificationService.shared.updateRiskCache(
                     atRiskGoalTitles: atRiskGoals.map { $0.goal.title }
                 )
-                // EPIC 14: Vraag altijd opnieuw toestemming aan bij app-launch.
-                // HealthKit toont alleen een popup voor types die nog niet zijn goedgekeurd
-                // (bijv. heartRateVariabilitySDNN en sleepAnalysis zijn nieuw in Epic 14).
-                // Voor al-goedgekeurde types gebeurt er niets — dit is de standaard iOS-aanpak.
-                // Sprint 19: Overslaan tijdens UI-tests — simulator heeft geen echte HealthKit-data
-                // en de authorization sheet blokkeert anders alle UI-test elementen.
-                if !ProcessInfo.processInfo.arguments.contains("-isRunningUITests") {
-                    HealthKitManager().requestAuthorization { _, _ in }
-                }
+                // Sprint 20.2: HealthKit-toestemming wordt uitsluitend gevraagd via de
+                // OnboardingView (eerste gebruik) of via Instellingen (achteraf).
+                // Hier verwijderd zodat er geen abrupte popup verschijnt bij app-open.
                 // EPIC 14.4: Schrijf de Vibe Score van vandaag naar de AI-prompt cache
                 // zodat elke coach-interactie de actuele herstelstatus kent.
                 viewModel.cacheVibeScore(todayReadiness)
