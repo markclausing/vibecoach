@@ -243,7 +243,8 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         dateOrDay = try container.decode(String.self, forKey: .dateOrDay)
         activityType = try container.decode(String.self, forKey: .activityType)
-        suggestedDurationMinutes = try container.decode(Int.self, forKey: .suggestedDurationMinutes)
+        // Gemini stuurt null voor rustdagen — decodeIfPresent met fallback naar 0
+        suggestedDurationMinutes = (try? container.decodeIfPresent(Int.self, forKey: .suggestedDurationMinutes)) ?? 0
         description = try container.decode(String.self, forKey: .description)
         heartRateZone = try container.decodeIfPresent(String.self, forKey: .heartRateZone)
         targetPace = try container.decodeIfPresent(String.self, forKey: .targetPace)
