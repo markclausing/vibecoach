@@ -155,6 +155,6 @@ struct AIFitnessCoachApp: App {
                     }
                 }
         }
-        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self]) // Voeg SwiftData containers toe
+        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self, DailyReadiness.self]) // Epic 14: DailyReadiness toegevoegd
     }
 }

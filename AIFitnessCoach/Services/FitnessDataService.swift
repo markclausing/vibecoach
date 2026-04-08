@@ -648,6 +648,42 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
+    /// Haalt de gemiddelde HRV op over de afgelopen `days` dagen als persoonlijke baseline.
+    /// Wordt gebruikt door ReadinessCalculator om de HRV van vannacht te contextualiseren.
+    /// - Returns: Gemiddelde HRV in ms over het opgegeven venster, of nil als er geen data is.
+    func fetchHRVBaseline(days: Int = 7) async throws -> Double? {
+        guard let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else {
+            return nil
+        }
+
+        let now = Date()
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: now)!
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: hrvType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen HRV baseline: \(error.localizedDescription)"))
+                    return
+                }
+
+                guard let hrvSamples = samples as? [HKQuantitySample], !hrvSamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let unit = HKUnit.secondUnit(with: .milli)
+                let total = hrvSamples.reduce(0.0) { $0 + $1.quantity.doubleValue(for: unit) }
+                let average = total / Double(hrvSamples.count)
+
+                print("📊 [Epic 14] HRV baseline (\(days) dagen): \(String(format: "%.1f", average)) ms (op basis van \(hrvSamples.count) meting(en))")
+                continuation.resume(returning: average)
+            }
+            healthStore.execute(query)
+        }
+    }
+
     /// Berekent het aantal daadwerkelijk geslapen uren van de afgelopen nacht.
     /// Filtert op `.asleepCore`, `.asleepDeep` en `.asleepREM` (iOS 16+) of de generieke `.asleep` waarde
     /// om 'inBed' tijd uit te sluiten — dat zijn de minuten dat je in bed lag maar niet sliep.
@@ -730,6 +766,48 @@ final class HealthKitManager: @unchecked Sendable {
             }
             healthStore.execute(query)
         }
+    }
+}
+
+// MARK: - Epic 14: Readiness Score Algoritme
+
+/// Berekent de dagelijkse Vibe/Readiness Score (0-100) op basis van slaap en HRV.
+///
+/// **Slaap (50% weging):**
+/// - 8+ uur → 100 punten
+/// - 5 uur of minder → 0 punten
+/// - Lineair daartussen (bijv. 6.5 uur ≈ 50 punten)
+///
+/// **HRV (50% weging):**
+/// - Gelijk aan of hoger dan 7-daagse baseline → 100 punten
+/// - Meer dan 20% onder de baseline → 0 punten (rode vlag: overtraining / ziekte)
+/// - Lineair daartussen
+struct ReadinessCalculator {
+
+    /// Bereken de Vibe Score.
+    /// - Parameters:
+    ///   - sleepHours: Daadwerkelijke slaaptijd afgelopen nacht in uren.
+    ///   - hrv: Gemiddelde HRV van afgelopen nacht in ms.
+    ///   - hrvBaseline: Gemiddelde HRV van de afgelopen 7 dagen (persoonlijke baseline) in ms.
+    /// - Returns: Score van 0 t/m 100.
+    static func calculate(sleepHours: Double, hrv: Double, hrvBaseline: Double) -> Int {
+        // Slaapscore: lineair van 5 uur (0 punten) tot 8 uur (100 punten)
+        let sleepScore = min(1.0, max(0.0, (sleepHours - 5.0) / 3.0)) * 100.0
+
+        // HRV-score: vergelijken met persoonlijke baseline
+        // Ondergrens = 80% van baseline (meer dan 20% onder = volledige rode vlag)
+        let hrvLowerBound = hrvBaseline * 0.80
+        let hrvScore: Double
+        if hrv >= hrvBaseline {
+            hrvScore = 100.0
+        } else if hrv <= hrvLowerBound {
+            hrvScore = 0.0
+        } else {
+            hrvScore = ((hrv - hrvLowerBound) / (hrvBaseline - hrvLowerBound)) * 100.0
+        }
+
+        let finalScore = (sleepScore + hrvScore) / 2.0
+        return Int(finalScore.rounded())
     }
 }
 

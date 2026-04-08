@@ -243,7 +243,8 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         dateOrDay = try container.decode(String.self, forKey: .dateOrDay)
         activityType = try container.decode(String.self, forKey: .activityType)
-        suggestedDurationMinutes = try container.decode(Int.self, forKey: .suggestedDurationMinutes)
+        // Gemini stuurt null voor rustdagen — decodeIfPresent met fallback naar 0
+        suggestedDurationMinutes = (try? container.decodeIfPresent(Int.self, forKey: .suggestedDurationMinutes)) ?? 0
         description = try container.decode(String.self, forKey: .description)
         heartRateZone = try container.decodeIfPresent(String.self, forKey: .heartRateZone)
         targetPace = try container.decodeIfPresent(String.self, forKey: .targetPace)
@@ -256,6 +257,26 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         } else {
             targetTRIMP = nil
         }
+    }
+}
+
+/// Slaat de dagelijkse Readiness Score op, berekend op basis van slaap en HRV (Epic 14).
+/// Er wordt maximaal één record per dag bewaard — upsert via de ReadinessService.
+@Model
+final class DailyReadiness {
+    /// Genormaliseerd naar het begin van de dag (00:00:00) voor consistente opslag en queries.
+    var date: Date
+    var sleepHours: Double
+    /// Gemiddelde HRV van de afgelopen nacht in milliseconden.
+    var hrv: Double
+    /// De berekende Vibe/Readiness Score, 0 (volledig overtraind/uitgeput) t/m 100 (optimaal).
+    var readinessScore: Int
+
+    init(date: Date, sleepHours: Double, hrv: Double, readinessScore: Int) {
+        self.date = Calendar.current.startOfDay(for: date)
+        self.sleepHours = sleepHours
+        self.hrv = hrv
+        self.readinessScore = readinessScore
     }
 }
 
