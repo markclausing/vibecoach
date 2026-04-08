@@ -107,6 +107,8 @@ De transitie van functioneel prototype naar een release-kandidaat voor de App St
 * **Splash Screen & App Icon:** Ontwerp en implementatie van native branding.
 * **Onboarding Flow:** Een welkomst-carrousel die de gebruiker uitlegt wat VibeCoach doet (TRIMP, Readiness, AI-coaching).
 * **Graceful Permissions:** HealthKit en Push Notification permissies netjes en met context uitvragen tijdens de onboarding — in plaats van kille popups bij de eerste lancering.
+* **BYOK (Bring Your Own Key) Architectuur:** De gebruiker voert zijn eigen AI API-sleutel in om de coach te activeren — geen gedeelde backend-kosten bij schaling.
+* **Multi-Provider Support:** Een modulair instellingenscherm waar de gebruiker kiest tussen AI-providers (Gemini, OpenAI, Anthropic) en de sleutel veilig opslaat in de iOS Keychain.
 
 ---
 
