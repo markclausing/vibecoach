@@ -420,6 +420,166 @@ struct VibeScoreExplainerCard: View {
     }
 }
 
+// MARK: - EPIC 18: Post-Workout Check-in Kaart
+
+/// Kaart die verschijnt als de meest recente echte workout (≤48u, ≥15 min, TRIMP ≥15) nog geen RPE heeft.
+/// De gebruiker geeft een RPE (1-10) en een stemmings-emoji op. Na opslaan verdwijnt de kaart direct.
+/// rpe == 0 wordt gebruikt als sentinel voor 'Genegeerd' (geen training) — kaart verdwijnt ook dan.
+struct PostWorkoutCheckinCard: View {
+    @Bindable var activity: ActivityRecord
+    @Environment(\.modelContext) private var modelContext
+
+    /// Callback zodat DashboardView de AI-cache direct kan bijwerken na opslaan.
+    /// rpe == 0 betekent genegeerd — de caller slaat dit niet op als echte feedback.
+    var onSaved: ((Int, String) -> Void)? = nil
+
+    @State private var rpe: Double = 5
+    @State private var selectedMood: String? = nil
+
+    private let moods: [(emoji: String, label: String)] = [
+        ("😌", "Rustig"),
+        ("🟢", "Goed"),
+        ("🚀", "Sterk"),
+        ("🤕", "Pijn"),
+        ("🥵", "Uitgeput")
+    ]
+
+    // Kleur van de RPE-waarde op basis van het getal
+    private var rpeColor: Color {
+        switch Int(rpe) {
+        case 1...3: return .green
+        case 4...6: return .orange
+        default:    return .red
+        }
+    }
+
+    /// Opmaken van de subtitle: '[Sportnaam] • [Duur] min • [Vandaag/Gisteren]'
+    private var subtitle: String {
+        let sport = activity.sportCategory.displayName
+        let durationMin = activity.movingTime / 60
+        let calendar = Calendar.current
+        let relativeDay: String
+        if calendar.isDateInToday(activity.startDate) {
+            relativeDay = "Vandaag"
+        } else if calendar.isDateInYesterday(activity.startDate) {
+            relativeDay = "Gisteren"
+        } else {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "d MMM"
+            formatter.locale = Locale(identifier: "nl_NL")
+            relativeDay = formatter.string(from: activity.startDate)
+        }
+        return "\(sport) • \(durationMin) min • \(relativeDay)"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Header met negeer-knop rechtsboven
+            HStack(alignment: .top) {
+                Image(systemName: "checkmark.bubble.fill")
+                    .foregroundColor(.blue)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Hoe ging je laatste training?")
+                        .font(.headline)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+                Button(action: ignoreActivity) {
+                    Text("Negeer")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+
+            Divider()
+
+            // RPE Slider
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Inspanning (RPE)")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    Spacer()
+                    Text("\(Int(rpe)) / 10")
+                        .font(.system(.title3, design: .rounded))
+                        .fontWeight(.bold)
+                        .foregroundColor(rpeColor)
+                }
+                Slider(value: $rpe, in: 1...10, step: 1)
+                    .accentColor(rpeColor)
+                HStack {
+                    Text("Heel licht").font(.caption2).foregroundColor(.secondary)
+                    Spacer()
+                    Text("Maximaal").font(.caption2).foregroundColor(.secondary)
+                }
+            }
+
+            // Stemming knoppen
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Hoe voel je je?")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+
+                HStack(spacing: 10) {
+                    ForEach(moods, id: \.emoji) { mood in
+                        Button(action: { selectedMood = mood.emoji }) {
+                            VStack(spacing: 4) {
+                                Text(mood.emoji)
+                                    .font(.title2)
+                                Text(mood.label)
+                                    .font(.caption2)
+                                    .foregroundColor(selectedMood == mood.emoji ? .primary : .secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(selectedMood == mood.emoji ? Color.blue.opacity(0.12) : Color.clear)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(selectedMood == mood.emoji ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1.5)
+                            )
+                            .cornerRadius(10)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+
+            // Opslaan knop
+            Button(action: saveFeedback) {
+                Text("Opslaan")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(selectedMood == nil)
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
+    }
+
+    private func saveFeedback() {
+        guard let mood = selectedMood else { return }
+        let rpeValue = Int(rpe)
+        activity.rpe = rpeValue
+        activity.mood = mood
+        try? modelContext.save()
+        onSaved?(rpeValue, mood)
+    }
+
+    /// Markeert de activiteit als 'geen training' (rpe = 0 als sentinel).
+    /// De kaart verdwijnt direct; de AI-cache wordt niet bijgewerkt.
+    private func ignoreActivity() {
+        activity.rpe = 0
+        try? modelContext.save()
+        // rpe == 0 → onSaved wordt niet aangeroepen, cache blijft ongewijzigd
+    }
+}
+
 // MARK: - SPRINT 12.1 & 12.3: Burndown Chart View met Paging & Predictive Analytics
 struct BurndownChartView: View {
     let goals: [FitnessGoal]
@@ -932,6 +1092,22 @@ struct DashboardView: View {
         return readinessRecords.first { $0.date >= todayStart }
     }
 
+    /// Epic 18.2: Geeft de meest recente ActivityRecord terug die om een check-in vraagt.
+    /// Drempelwaarden voor 'echte training': ≤48u geleden, ≥15 min (900s), TRIMP ≥15.
+    /// rpe == nil → nog niet beoordeeld. rpe == 0 → bewust genegeerd. Beide worden uitgesloten.
+    private var recentUncheckedActivity: ActivityRecord? {
+        let fortyEightHoursAgo = Calendar.current.date(byAdding: .hour, value: -48, to: Date()) ?? Date()
+        return activities
+            .filter { record in
+                guard record.startDate >= fortyEightHoursAgo else { return false }
+                guard record.rpe == nil else { return false }          // nil = onbeoordeeld
+                guard record.movingTime >= 900 else { return false }   // ≥15 minuten
+                guard (record.trimp ?? 0) >= 15 else { return false }  // echte trainingsbelasting
+                return true
+            }
+            .max(by: { $0.startDate < $1.startDate })
+    }
+
     /// SPRINT 13.3: Tijdstip waarop de gebruiker voor het laatst 'Los dit op' heeft gedrukt.
     /// Opgeslagen als Unix timestamp (Double) zodat AppStorage er mee werkt.
     @AppStorage("vibecoach_recoveryPlanTimestamp") private var recoveryPlanTimestamp: Double = 0
@@ -1097,6 +1273,20 @@ struct DashboardView: View {
                         VibeScoreCardView(readiness: todayReadiness)
                             .padding(.horizontal)
 
+                        // EPIC 18.1: Post-Workout Check-in — toon alleen als recentste workout (≤48u) nog geen beoordeling heeft
+                        if let recentActivity = recentUncheckedActivity {
+                            PostWorkoutCheckinCard(activity: recentActivity) { rpe, mood in
+                                // Werk de AI-cache direct bij na opslaan — geen extra onAppear nodig
+                                viewModel.cacheLastWorkoutFeedback(
+                                    rpe: rpe,
+                                    mood: mood,
+                                    workoutName: recentActivity.name,
+                                    trimp: recentActivity.trimp
+                                )
+                            }
+                            .padding(.horizontal)
+                        }
+
                         if currentProfile?.isRecoveryNeeded == true {
                             HStack {
                                 Image(systemName: "exclamationmark.triangle.fill")
@@ -1245,6 +1435,17 @@ struct DashboardView: View {
                 // EPIC 14.4: Schrijf de Vibe Score van vandaag naar de AI-prompt cache
                 // zodat elke coach-interactie de actuele herstelstatus kent.
                 viewModel.cacheVibeScore(todayReadiness)
+                // EPIC 18: Schrijf de meest recente echte workout-beoordeling naar de AI-prompt cache.
+                // rpe == 0 is de 'genegeerd' sentinel — dat telt niet als echte feedback.
+                let lastRatedActivity = activities
+                    .filter { ($0.rpe ?? 0) > 0 }
+                    .max(by: { $0.startDate < $1.startDate })
+                viewModel.cacheLastWorkoutFeedback(
+                    rpe: lastRatedActivity?.rpe,
+                    mood: lastRatedActivity?.mood,
+                    workoutName: lastRatedActivity?.name,
+                    trimp: lastRatedActivity?.trimp
+                )
             }
         }
     }

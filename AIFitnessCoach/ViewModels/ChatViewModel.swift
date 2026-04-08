@@ -49,6 +49,10 @@ class ChatViewModel: ObservableObject {
     /// herstelstatus kent — ook zonder directe SwiftData-toegang in ChatViewModel.
     @AppStorage("vibecoach_todayVibeScoreContext") private var todayVibeScoreContext: String = ""
 
+    /// Epic 18.1: Cache van de subjectieve feedback (RPE + stemming) van de laatste workout.
+    /// Wordt gevuld vanuit DashboardView zodra een ActivityRecord een beoordeling heeft.
+    @AppStorage("vibecoach_lastWorkoutFeedbackContext") private var lastWorkoutFeedbackContext: String = ""
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
@@ -75,6 +79,27 @@ class ChatViewModel: ObservableObject {
         let sleepM = Int((r.sleepHours - Double(sleepH)) * 60)
 
         todayVibeScoreContext = "Vibe Score vandaag: \(r.readinessScore)/100 (\(label)). Slaap: \(sleepH)u \(sleepM)m. HRV: \(String(format: "%.1f", r.hrv)) ms."
+    }
+
+    /// Epic 18.1: Schrijft de subjectieve feedback van de laatste workout naar de AppStorage cache.
+    /// Wordt aangeroepen vanuit DashboardView zodra er een ActivityRecord is met rpe en mood.
+    /// De AI gebruikt dit om discrepanties te detecteren (bijv. laag TRIMP maar hoge RPE = overtraining signaal).
+    func cacheLastWorkoutFeedback(rpe: Int?, mood: String?, workoutName: String?, trimp: Double?) {
+        guard let rpe = rpe, let mood = mood else {
+            // Geen feedback beschikbaar — wis de cache
+            lastWorkoutFeedbackContext = ""
+            return
+        }
+        let nameStr = workoutName ?? "Laatste workout"
+        let trimpStr = trimp != nil ? String(format: "%.0f", trimp!) : "onbekend"
+        let rpeLabel: String
+        switch rpe {
+        case 1...3: rpeLabel = "licht (1-3)"
+        case 4...6: rpeLabel = "matig (4-6)"
+        case 7...8: rpeLabel = "zwaar (7-8)"
+        default:    rpeLabel = "maximaal (9-10)"
+        }
+        lastWorkoutFeedbackContext = "Laatste workout: '\(nameStr)', TRIMP: \(trimpStr), RPE: \(rpe)/10 (\(rpeLabel)), Stemming: \(mood)."
     }
 
     /// SPRINT 13.4: Geeft het meest recent opgeslagen coach-inzicht terug (uit AppStorage).
@@ -118,6 +143,12 @@ class ChatViewModel: ObservableObject {
             - Score 50-79: wees voorzichtig maar niet alarmerend. Prioriteer Zone 2 en lagere intensiteit.
             - Score < 50: dwing rust of actief herstel af. Dit is een harde rode vlag.
             - Weerspreek de Vibe Score NOOIT op basis van je eigen inschatting van de slaaptijd of andere factoren.
+
+            KRITIEKE REGEL — RPE DISCREPANTIE (Epic 18):
+            De gebruiker kan na een training een subjectieve inspanningsscore (RPE 1-10) invullen.
+            - Als de TRIMP van een workout laag of gemiddeld is (bijv. <60 TRIMP) maar de RPE ≥8: dit is een ernstig vroeg waarschuwingssignaal voor overtraining of naderende ziekte. Adviseer direct extra rust en verhoog de intensiteit van het plan NIET.
+            - Als RPE laag is (1-4) terwijl TRIMP hoog is: de atleet heeft een goede dag — benut dit in je planning.
+            - Combineer de RPE altijd met de Vibe Score voor een volledig beeld.
 
             Belangrijke context voor je analyse:
             Wij berekenen lokaal een Banister TRIMP (Training Impulse) score om de trainingsbelasting te bepalen (niet de traditionele TSS die op 100/uur cap).
@@ -205,6 +236,11 @@ class ChatViewModel: ObservableObject {
         // Epic 14.4: Injecteer de Vibe Score als harde context — de AI MOET dit volgen (zie systeeminstructie)
         if !todayVibeScoreContext.isEmpty {
             prefix += "[HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Volg de kritieke regel over de Vibe Score autoriteit strikt.]\n\n"
+        }
+
+        // Epic 18.1: Injecteer de subjectieve feedback (RPE + stemming) van de laatste workout
+        if !lastWorkoutFeedbackContext.isEmpty {
+            prefix += "[SUBJECTIEVE FEEDBACK LAATSTE WORKOUT: \(lastWorkoutFeedbackContext) Let op discrepanties: als TRIMP laag is maar RPE ≥8, is dit een vroeg signaal van overtraining of naderende ziekte.]\n\n"
         }
 
         // Epic 16: Injecteer de trainingsfase per actief doel — de AI MOET de fase-instructies strikt volgen

@@ -122,7 +122,7 @@ Na afronding van Epic 13 (Proactieve Coach) en 13.4 (Polish), evolueert VibeCoac
 
 ### Strategie & Periodisering
 
-🔄 **Epic 16: Dynamische Periodisering**
+✅ **Epic 16: Dynamische Periodisering (Afgerond)**
 * **Doel:** De lineaire 'Burndown Chart' vervangen door een fysiologisch correcte, golvende curve (Base, Build, Peak, Taper).
 * **Coach Impact:** De UI en verwachtingen passen zich aan de specifieke trainingsfase aan.
 * ✅ **Sprint 16.1: Phase Engine & AI Injectie:** `TrainingPhase` enum (`.baseBuilding`, `.buildPhase`, `.peakPhase`, `.tapering`) met harde AI-instructies per fase. `FitnessGoal.currentPhase` computed property berekent de fase op basis van weken resterend (>12w, 4-12w, 2-4w, <2w). Alle `buildContextPrefix` call sites injecteren nu een `[PERIODISERING]` blok per actief doel. Fase-badge zichtbaar in `GoalRowView` (blauw/oranje/rood/paars).
@@ -133,9 +133,11 @@ Na afronding van Epic 13 (Proactieve Coach) en 13.4 (Polish), evolueert VibeCoac
 
 ### Mentale Belastbaarheid & UX
 
-⏳ **Epic 18: Subjectieve Feedback (RPE)**
+🔄 **Epic 18: Subjectieve Feedback (RPE)**
 * **Doel:** Een korte post-workout slider (Rate of Perceived Exertion) om te meten hoe zwaar de training voelde, onafhankelijk van wat de hartslagmeter zegt.
 * **Coach Impact:** Discrepanties tussen lage hartslag en hoge RPE gebruiken als vroege indicator voor overtraining of naderende ziekte.
+* ✅ **Sprint 18.1: RPE Slider & Mood Check-in:** `rpe: Int?` en `mood: String?` toegevoegd aan `ActivityRecord`. `PostWorkoutCheckinCard` verschijnt op het Dashboard als de meest recente workout (≤48u) nog geen beoordeling heeft. Bevat een RPE-slider (1-10) en vijf stemming-knoppen (😌🟢🚀🤕🥵). Feedback wordt opgeslagen in SwiftData en gecached in `AppStorage`. AI-prompt ontvangt `[SUBJECTIEVE FEEDBACK]` blok; discrepantie-regel toegevoegd aan systeeminstructie (laag TRIMP + hoge RPE = waarschuwingssignaal).
+* ✅ **Sprint 18.2: Context & Noise Filtering:** Subtitle toont nu human-readable context via `SportCategory.displayName`: '[Sportnaam] • [Duur] min • [Vandaag/Gisteren]'. Noise filter toegevoegd: kaart verschijnt alleen bij echte trainingen (≥15 min, TRIMP ≥15) — woon-werk ritten en wandelingetjes worden overgeslagen. 'Negeer'-knop rechtsboven slaat `rpe = 0` op als sentinel; de kaart verdwijnt direct en de AI-cache wordt niet bijgewerkt.
 
 ⏳ **Epic 19: Long-Term Memory & Reflectie**
 * **Doel:** Structurele samenvattingen van wekelijkse prestaties en pijntjes (zoals kuitklachten) opslaan.
