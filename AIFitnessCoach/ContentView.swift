@@ -143,6 +143,8 @@ struct ContentView: View {
 
 // MARK: - SPRINT 12.2: TRIMP Explainer Card
 struct TRIMPExplainerCard: View {
+    /// Standaard dichtgeklapt — gebruiker opent hem als hij de details wil lezen.
+    @State private var isExpanded: Bool = false
     @State private var durationMinutes: Double = 60
     @State private var intensityZone: Double = 2.0 // 1 tot 5
 
@@ -183,15 +185,30 @@ struct TRIMPExplainerCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Wat is TRIMP?")
-                    .font(.headline)
-                Text("TRIMP meet de échte fysiologische impact van je training.")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            // Header — altijd zichtbaar, tikt om in/uit te klappen
+            Button(action: { withAnimation(.easeInOut(duration: 0.25)) { isExpanded.toggle() } }) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Wat is TRIMP?")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        Text("TRIMP meet de échte fysiologische impact van je training.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
             }
+            .buttonStyle(.plain)
 
+            if isExpanded {
+            Divider()
+            VStack(alignment: .leading, spacing: 16) {
             // Interactieve Sliders
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading) {
@@ -264,7 +281,9 @@ struct TRIMPExplainerCard: View {
             }
             .padding(.top, 4)
         }
-        .padding()
+        .padding([.horizontal, .bottom])
+        } // end if isExpanded
+        }
         .background(Color(.secondarySystemBackground))
         .cornerRadius(12)
     }
@@ -1137,6 +1156,107 @@ struct DashboardView: View {
         return Date().timeIntervalSince(planDate) < threeDays
     }
 
+    // MARK: - Contextuele TRIMP-bannerstatus (ACWR-gebaseerd)
+
+    /// De meest recente workout (afgelopen 48u) met een TRIMP-waarde.
+    private var lastWorkout: ActivityRecord? {
+        let cutoff = Calendar.current.date(byAdding: .hour, value: -48, to: Date()) ?? Date()
+        return activities
+            .filter { $0.startDate >= cutoff && ($0.trimp ?? 0) >= WorkoutCheckinConfig.minimumTRIMP }
+            .max(by: { $0.startDate < $1.startDate })
+    }
+
+    /// Gemiddelde TRIMP per sessie over de afgelopen 14 dagen (chronische belasting).
+    /// Vereist minimaal 3 sessies voor een betrouwbare baseline; anders nil.
+    private var chronicTRIMPPerSession: Double? {
+        guard let cutoff = Calendar.current.date(byAdding: .day, value: -14, to: Date()) else { return nil }
+        let recentSessions = activities.filter {
+            $0.startDate >= cutoff && ($0.trimp ?? 0) >= WorkoutCheckinConfig.minimumTRIMP
+        }
+        guard recentSessions.count >= 3 else { return nil }
+        let totalTRIMP = recentSessions.compactMap { $0.trimp }.reduce(0, +)
+        return totalTRIMP / Double(recentSessions.count)
+    }
+
+    /// Wekelijks TRIMP-doel op basis van het actieve doel met de hoogste vereiste weekrate.
+    private var weeklyTRIMPTarget: Double {
+        let now = Date()
+        let activeGoals = goals.filter { !$0.isCompleted && now < $0.targetDate }
+        guard !activeGoals.isEmpty else { return 0 }
+        return activeGoals.compactMap { goal -> Double? in
+            let weeksRemaining = max(0.1, goal.targetDate.timeIntervalSince(now) / (7 * 86400))
+            let phase = goal.currentPhase ?? .baseBuilding
+            let linearRate = goal.computedTargetTRIMP / weeksRemaining
+            return linearRate * phase.multiplier
+        }.max() ?? 0
+    }
+
+    /// Som van TRIMP over de afgelopen 7 dagen.
+    private var currentWeekTRIMP: Double {
+        guard let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) else { return 0 }
+        return activities
+            .filter { $0.startDate >= weekAgo }
+            .compactMap { $0.trimp }
+            .reduce(0, +)
+    }
+
+    enum BannerState {
+        /// Acute:Chronic ratio > 1.5 — piek te groot t.o.v. chronische belasting.
+        /// percentageAbove = hoeveel % boven de chronische norm (bijv. 73 = +73%).
+        /// injuryContext = optionele blessure-omschrijving (bijv. "kuitklachten") als de sport extra belastend is.
+        case overreached(workoutName: String, actualTRIMP: Int, chronicTRIMP: Int, percentageAbove: Int, injuryContext: String?)
+        /// Lage Vibe Score + zware training — fysiologisch dubbele stress.
+        case lowVibeHighLoad(workoutName: String, vibeScore: Int, actualTRIMP: Int)
+        /// Cumulatieve week-TRIMP is <50% van het weekdoel.
+        case behindOnPlan(currentTRIMP: Int, targetTRIMP: Int)
+        case none
+    }
+
+    private var bannerState: BannerState {
+        // Trigger 1: ACWR > 1.5 — acute belasting significant hoger dan chronisch gemiddelde.
+        // Vergelijkt de LAATSTE workout met de gemiddelde sessie-TRIMP van afgelopen 14 dagen.
+        // Blessure-penalty via InjuryImpactMatrix: bij kuitklachten telt een looptraining 1.4× zwaarder.
+        if let last = lastWorkout, let acuteTRIMP = last.trimp,
+           let chronic = chronicTRIMPPerSession, chronic > 0 {
+            let injuryPenalty = InjuryImpactMatrix.penaltyMultiplier(for: last.sportCategory, given: Array(activePreferences))
+            let effectiveTRIMP = acuteTRIMP * injuryPenalty
+            let ratio = effectiveTRIMP / chronic
+            if ratio > 1.5 {
+                let percentAbove = Int((ratio - 1.0) * 100)
+                let injury = InjuryImpactMatrix.injuryDescription(for: last.sportCategory, given: Array(activePreferences))
+                return .overreached(
+                    workoutName: last.name,
+                    actualTRIMP: Int(acuteTRIMP),
+                    chronicTRIMP: Int(chronic),
+                    percentageAbove: percentAbove,
+                    injuryContext: injury
+                )
+            }
+
+            // Trigger 2: Lage Vibe Score (<40) gecombineerd met zware training (>chronisch gemiddelde).
+            // Zelfs een normale training is te veel als het lichaam al uitgeput is.
+            if let vibe = todayReadiness?.readinessScore, vibe < 40, acuteTRIMP > chronic {
+                return .lowVibeHighLoad(
+                    workoutName: last.name,
+                    vibeScore: vibe,
+                    actualTRIMP: Int(acuteTRIMP)
+                )
+            }
+        }
+
+        // Trigger 3: Blauw — achter op weekplan (pas halverwege de week of later).
+        let target = weeklyTRIMPTarget
+        if target > 0 {
+            let dayOfWeek = Calendar.current.component(.weekday, from: Date())
+            let isHalfwayThrough = dayOfWeek >= 4 // woensdag of later
+            if isHalfwayThrough && currentWeekTRIMP < target * 0.5 {
+                return .behindOnPlan(currentTRIMP: Int(currentWeekTRIMP), targetTRIMP: Int(target))
+            }
+        }
+
+        return .none
+    }
+
     private func refreshProfileContext() {
         do {
             self.currentProfile = try profileManager.calculateProfile(context: modelContext)
@@ -1304,19 +1424,70 @@ struct DashboardView: View {
                             .padding(.horizontal)
                         }
 
-                        if currentProfile?.isRecoveryNeeded == true {
-                            HStack {
+                        // Contextuele TRIMP-banner — gebaseerd op Acute:Chronic Workload Ratio
+                        switch bannerState {
+                        case .overreached(let name, let actual, let chronic, let pct, let injury):
+                            HStack(alignment: .top, spacing: 8) {
                                 Image(systemName: "exclamationmark.triangle.fill")
-                                Text("Let op: Je trainingsvolume is erg hoog. Neem voldoende rust.")
-                                    .font(.subheadline)
-                                    .bold()
-                                Spacer()
+                                    .font(.caption)
+                                    .padding(.top, 1)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("**\(name)** was +\(pct)% boven je gemiddelde training (\(chronic) TRIMP).")
+                                        .font(.caption)
+                                    if let inj = injury {
+                                        Text("Let op: Gezien je \(inj) was deze training extra belastend voor je herstel.")
+                                            .font(.caption)
+                                    } else {
+                                        Text("Hoewel je weekdoel nog niet bereikt is, is rust nu de slimste stap.")
+                                            .font(.caption)
+                                    }
+                                }
+                                .fixedSize(horizontal: false, vertical: true)
                             }
-                            .padding(12)
-                            .background(Color.orange.opacity(0.8))
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.orange.opacity(0.15))
+                            .foregroundColor(.orange)
+                            .cornerRadius(10)
                             .padding(.horizontal)
+
+                        case .lowVibeHighLoad(let name, let vibe, let actual):
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.caption)
+                                    .padding(.top, 1)
+                                Text("Je Vibe Score is \(vibe)/100 — je lichaam is uitgeput. **\(name)** (TRIMP: \(actual)) was zwaarder dan je herstel toelaat. Neem rust.")
+                                    .font(.caption)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.orange.opacity(0.15))
+                            .foregroundColor(.orange)
+                            .cornerRadius(10)
+                            .padding(.horizontal)
+
+                        case .behindOnPlan(let current, let target):
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: "info.circle.fill")
+                                    .font(.caption)
+                                    .padding(.top, 1)
+                                Text("Je TRIMP deze week (\(current)) ligt achter op het weekdoel (\(target)). Pak de geplande trainingen op.")
+                                    .font(.caption)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.blue.opacity(0.12))
+                            .foregroundColor(.blue)
+                            .cornerRadius(10)
+                            .padding(.horizontal)
+
+                        case .none:
+                            EmptyView()
                         }
 
                         if !latestCoachInsight.isEmpty {

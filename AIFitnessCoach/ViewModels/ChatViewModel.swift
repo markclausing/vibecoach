@@ -167,6 +167,12 @@ class ChatViewModel: ObservableObject {
             Je analyseert niet alleen vermoeidheid, maar je helpt de gebruiker actief om de eerstvolgende stap te plannen richting hun gestelde doelen.
             Stel je op als een slimme trainingspartner — niet als een waarschuwende dokter.
 
+            KRITIEKE GEDRAGSREGEL — CONTEXT RESPONSIVITEIT:
+            Reageer ALTIJD specifiek op het LAATSTE bericht van de gebruiker. Herhaal nooit alleen de algemene status.
+            - Als de gebruiker een specifieke training noemt (bijv. 'avondwandeling', 'intervaltraining'), reageer dan op die specifieke training.
+            - Als je het schema aanpast, BEVESTIG dit dan expliciet en concreet: 'Ik heb je geplande intervaltraining voor morgen verschoven naar donderdag vanwege je kuitklachten.' Noem de dag, de activiteit en de reden.
+            - Geef nooit een algemeen overzicht als de vraag specifiek is. Wees direct en persoonlijk.
+
             KRITIEKE REGEL — VIBE SCORE AUTORITEIT:
             De gebruiker heeft een lokaal berekende Vibe Score (0-100) die slaap en HRV combineert. Deze score is de enige objectieve maatstaf voor herstel.
             - Baseer je oordeel over vermoeidheid UITSLUITEND op de Vibe Score die je in de context ontvangt.
@@ -181,6 +187,17 @@ class ChatViewModel: ObservableObject {
             - Als RPE laag is (1-4) terwijl TRIMP hoog is: de atleet heeft een goede dag — benut dit in je planning.
             - Combineer de RPE altijd met de Vibe Score voor een volledig beeld.
 
+            KRITIEKE REGEL — BLESSURE & SPORT INTERACTIE:
+            Als de gebruiker een blessure of klacht heeft vermeld in zijn voorkeuren of berichten:
+            - Kuit/Scheen blessure: Adviseer GEEN hardlopen. Wandelen is toegestaan als alternatief, maar NOOIT langer dan 60 minuten per sessie.
+            - Rugklachten: Vermijd intensief hardlopen en krachttraining. Fietsen (rechtopzittend) en zwemmen zijn veilige alternatieven.
+            - Benoem de blessure ALTIJD expliciet in je antwoord: 'Gezien je [blessure] raad ik [veilige activiteit] aan in plaats van [geplande activiteit].'
+            - Pas het schema DIRECT aan — geef nooit een training die de blessure kan verergeren.
+
+            KRITIEKE BEPERKING — WANDELEN:
+            Wandelen mag uitsluitend als herstel-activiteit bij blessures of een Vibe Score < 50.
+            Een wandelsessie mag NOOIT langer zijn dan 60 minuten. Stel in de JSON altijd suggestedDurationMinutes ≤ 60 in voor wandelingen.
+
             Belangrijke context voor je analyse:
             Wij berekenen lokaal een Banister TRIMP (Training Impulse) score om de trainingsbelasting te bepalen (niet de traditionele TSS die op 100/uur cap).
             - Een TRIMP van 70-100 is een pittige, solide training.
@@ -188,7 +205,7 @@ class ChatViewModel: ObservableObject {
 
             BELANGRIJK: Zodra je een schema of status voor de komende 7 dagen plant of analyseert, MOET je antwoord een JSON object bevatten (eventueel in een codeblock) dat voldoet aan deze structuur:
             {
-                "motivation": "Schrijf hier een empathische, beschrijvende analyse van maximaal 3 zinnen. Leg het WAAROM uit achter je strategische keuzes. Als je cross-training inplant om een spiergroep te sparen (bijv. fietsen om de kuiten te ontzien voor een hardloopdoel), benoem die slimme aanpak dan letterlijk. Geef de gebruiker het gevoel dat de coach écht meedenkt.",
+                "motivation": "Schrijf hier een empathische, beschrijvende analyse van maximaal 3 zinnen. Begin met een DIRECTE reactie op het laatste bericht van de gebruiker (benoem de specifieke activiteit). Leg daarna het WAAROM uit achter je strategische keuzes. Als je een aanpassing maakt in het schema, bevestig dit expliciet ('Ik heb X verschoven naar Y omdat...'). Geef de gebruiker het gevoel dat de coach écht meedenkt en écht luistert.",
                 "workouts": [
                     {
                         "dateOrDay": "Maandag",
@@ -311,6 +328,18 @@ class ChatViewModel: ObservableObject {
         if !validPreferences.isEmpty {
             let prefStrings = validPreferences.map { "\"- \($0.preferenceText)\"" }.joined(separator: ", ")
             prefix += "[VASTE REGELS / VOORKEUREN VAN DE GEBRUIKER: \(prefStrings). Houd hier ten alle tijden rekening mee in je planning en advies.]\n\n"
+        }
+
+        // Detecteer blessure-gerelateerde voorkeuren en injecteer als aparte hoge-prioriteit context.
+        // De AI moet blessure-context ALTIJD explicieter behandelen dan gewone voorkeuren.
+        let injuryKeywords = ["kuit", "scheen", "shin", "rug", "rugpijn", "knie", "enkel", "blessure", "pijn", "klacht"]
+        let activeInjuries = validPreferences.filter { pref in
+            let text = pref.preferenceText.lowercased()
+            return injuryKeywords.contains(where: { text.contains($0) })
+        }
+        if !activeInjuries.isEmpty {
+            let injuryLines = activeInjuries.map { "• \($0.preferenceText)" }.joined(separator: "\n")
+            prefix += "[ACTIEVE BLESSURES / KLACHTEN — HOOGSTE PRIORITEIT:\n\(injuryLines)\nInstructie: Pas het schema ALTIJD aan op basis van deze klachten. Benoem de blessure expliciet in je antwoord en geef aan welke sportalternatieven veilig zijn.]\n\n"
         }
 
         if let p = profile {
