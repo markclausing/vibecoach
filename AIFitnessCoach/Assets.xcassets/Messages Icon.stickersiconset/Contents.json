@@ -1,13 +1,13 @@
 {
   "images" : [
     {
-      "filename" : "58.png",
+      "filename" : "appstore Background Removed copy_58.png",
       "idiom" : "iphone",
       "scale" : "2x",
       "size" : "29x29"
     },
     {
-      "filename" : "87.png",
+      "filename" : "appstore Background Removed copy_87.png",
       "idiom" : "iphone",
       "scale" : "3x",
       "size" : "29x29"
@@ -38,7 +38,7 @@
       "size" : "74x55"
     },
     {
-      "filename" : "1024.png",
+      "filename" : "appstore Background Removed.png",
       "idiom" : "ios-marketing",
       "scale" : "1x",
       "size" : "1024x1024"
