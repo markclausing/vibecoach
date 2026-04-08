@@ -143,6 +143,8 @@ struct ContentView: View {
 
 // MARK: - SPRINT 12.2: TRIMP Explainer Card
 struct TRIMPExplainerCard: View {
+    /// Standaard dichtgeklapt — gebruiker opent hem als hij de details wil lezen.
+    @State private var isExpanded: Bool = false
     @State private var durationMinutes: Double = 60
     @State private var intensityZone: Double = 2.0 // 1 tot 5
 
@@ -183,15 +185,30 @@ struct TRIMPExplainerCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Wat is TRIMP?")
-                    .font(.headline)
-                Text("TRIMP meet de échte fysiologische impact van je training.")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 0) {
+            // Header — altijd zichtbaar, tikt om in/uit te klappen
+            Button(action: { withAnimation(.easeInOut(duration: 0.25)) { isExpanded.toggle() } }) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Wat is TRIMP?")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        Text("TRIMP meet de échte fysiologische impact van je training.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
             }
+            .buttonStyle(.plain)
 
+            if isExpanded {
+            Divider()
+            VStack(alignment: .leading, spacing: 16) {
             // Interactieve Sliders
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading) {
@@ -264,7 +281,9 @@ struct TRIMPExplainerCard: View {
             }
             .padding(.top, 4)
         }
-        .padding()
+        .padding([.horizontal, .bottom])
+        } // end if isExpanded
+        }
         .background(Color(.secondarySystemBackground))
         .cornerRadius(12)
     }
@@ -1137,6 +1156,74 @@ struct DashboardView: View {
         return Date().timeIntervalSince(planDate) < threeDays
     }
 
+    // MARK: - Contextuele TRIMP-bannerstatus
+
+    /// De meest recente workout (afgelopen 48u) met een TRIMP-waarde.
+    private var lastWorkout: ActivityRecord? {
+        let cutoff = Calendar.current.date(byAdding: .hour, value: -48, to: Date()) ?? Date()
+        return activities
+            .filter { $0.startDate >= cutoff && ($0.trimp ?? 0) >= WorkoutCheckinConfig.minimumTRIMP }
+            .max(by: { $0.startDate < $1.startDate })
+    }
+
+    /// Wekelijks TRIMP-doel op basis van het actieve doel met de hoogste vereiste weekrate.
+    private var weeklyTRIMPTarget: Double {
+        let now = Date()
+        let activeGoals = goals.filter { !$0.isCompleted && now < $0.targetDate }
+        guard !activeGoals.isEmpty else { return 0 }
+        return activeGoals.compactMap { goal -> Double? in
+            let weeksRemaining = max(0.1, goal.targetDate.timeIntervalSince(now) / (7 * 86400))
+            let phase = goal.currentPhase ?? .baseBuilding
+            let linearRate = goal.computedTargetTRIMP / weeksRemaining
+            return linearRate * phase.multiplier
+        }.max() ?? 0
+    }
+
+    /// Som van TRIMP over de afgelopen 7 dagen.
+    private var currentWeekTRIMP: Double {
+        guard let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) else { return 0 }
+        return activities
+            .filter { $0.startDate >= weekAgo }
+            .compactMap { $0.trimp }
+            .reduce(0, +)
+    }
+
+    /// Verwachte TRIMP per sessie (weekdoel / 4 trainingsdagen).
+    private var expectedSessionTRIMP: Double { weeklyTRIMPTarget / 4.0 }
+
+    enum BannerState {
+        /// Laatste workout was >50% zwaarder dan de verwachte sessie-TRIMP.
+        case overreached(workoutName: String, actualTRIMP: Int, expectedTRIMP: Int)
+        /// Cumulatieve week-TRIMP is <50% van het weekdoel.
+        case behindOnPlan(currentTRIMP: Int, targetTRIMP: Int)
+        case none
+    }
+
+    private var bannerState: BannerState {
+        let target = weeklyTRIMPTarget
+        guard target > 0 else { return .none }
+
+        // Oranje: laatste workout was significant zwaarder dan gepland
+        if let last = lastWorkout, let trimp = last.trimp, expectedSessionTRIMP > 0 {
+            if trimp > expectedSessionTRIMP * 1.5 {
+                return .overreached(
+                    workoutName: last.name,
+                    actualTRIMP: Int(trimp),
+                    expectedTRIMP: Int(expectedSessionTRIMP)
+                )
+            }
+        }
+
+        // Blauw: minder dan 50% van weekdoel behaald en het is al halverwege de week
+        let dayOfWeek = Calendar.current.component(.weekday, from: Date())
+        let isHalfwayThrough = dayOfWeek >= 4 // woensdag of later
+        if isHalfwayThrough && currentWeekTRIMP < target * 0.5 {
+            return .behindOnPlan(currentTRIMP: Int(currentWeekTRIMP), targetTRIMP: Int(target))
+        }
+
+        return .none
+    }
+
     private func refreshProfileContext() {
         do {
             self.currentProfile = try profileManager.calculateProfile(context: modelContext)
@@ -1304,19 +1391,40 @@ struct DashboardView: View {
                             .padding(.horizontal)
                         }
 
-                        if currentProfile?.isRecoveryNeeded == true {
-                            HStack {
+                        // Contextuele TRIMP-banner — oranje bij overreaching, blauw bij achterstand
+                        switch bannerState {
+                        case .overreached(let name, let actual, let expected):
+                            HStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.triangle.fill")
-                                Text("Let op: Je trainingsvolume is erg hoog. Neem voldoende rust.")
-                                    .font(.subheadline)
-                                    .bold()
-                                Spacer()
+                                    .font(.caption)
+                                Text("**\(name)** (TRIMP: \(actual)) was veel zwaarder dan gepland (TRIMP: \(expected)). Zorg voor voldoende herstel.")
+                                    .font(.caption)
                             }
-                            .padding(12)
-                            .background(Color.orange.opacity(0.8))
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.orange.opacity(0.15))
+                            .foregroundColor(.orange)
+                            .cornerRadius(10)
                             .padding(.horizontal)
+
+                        case .behindOnPlan(let current, let target):
+                            HStack(spacing: 8) {
+                                Image(systemName: "info.circle.fill")
+                                    .font(.caption)
+                                Text("Je TRIMP deze week (\(current)) ligt achter op het weekdoel (\(target)). Pak de geplande trainingen op.")
+                                    .font(.caption)
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.blue.opacity(0.12))
+                            .foregroundColor(.blue)
+                            .cornerRadius(10)
+                            .padding(.horizontal)
+
+                        case .none:
+                            EmptyView()
                         }
 
                         if !latestCoachInsight.isEmpty {
