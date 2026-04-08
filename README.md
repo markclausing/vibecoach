@@ -108,7 +108,7 @@ Na afronding van Epic 13 (Proactieve Coach) en 13.4 (Polish), evolueert VibeCoac
 
 ### Fysiologische Diepte
 
-🔄 **Epic 14: De Readiness Score (HRV & Slaap)**
+✅ **Epic 14: De Readiness Score (HRV & Slaap) (Afgerond)**
 * **Doel:** HealthKit data (`heartRateVariabilitySDNN`, `sleepAnalysis`) combineren met TRIMP om een dagelijkse "Vibe/Readiness Score" te berekenen.
 * **Coach Impact:** De Dual Engine kan voorafgaand aan een training ingrijpen ("Je zenuwstelsel is overprikkeld, neem rust") in plaats van achteraf.
 * ✅ **Sprint 14.1: HealthKit Fundering (Data ophalen):** Permissies voor `heartRateVariabilitySDNN` en `sleepAnalysis` toegevoegd. Robuuste `fetchRecentHRV()` (gemiddelde HRV afgelopen nacht) en `fetchLastNightSleep()` (daadwerkelijke slaapuren, exclusief 'inBed') functies gebouwd in `HealthKitManager`. Debug-knop in Instellingen print HRV en slaap rechtstreeks naar de Xcode console.
@@ -122,9 +122,10 @@ Na afronding van Epic 13 (Proactieve Coach) en 13.4 (Polish), evolueert VibeCoac
 
 ### Strategie & Periodisering
 
-⏳ **Epic 16: Dynamische Periodisering**
+🔄 **Epic 16: Dynamische Periodisering**
 * **Doel:** De lineaire 'Burndown Chart' vervangen door een fysiologisch correcte, golvende curve (Base, Build, Peak, Taper).
 * **Coach Impact:** De UI en verwachtingen passen zich aan de specifieke trainingsfase aan.
+* ✅ **Sprint 16.1: Phase Engine & AI Injectie:** `TrainingPhase` enum (`.baseBuilding`, `.buildPhase`, `.peakPhase`, `.tapering`) met harde AI-instructies per fase. `FitnessGoal.currentPhase` computed property berekent de fase op basis van weken resterend (>12w, 4-12w, 2-4w, <2w). Alle `buildContextPrefix` call sites injecteren nu een `[PERIODISERING]` blok per actief doel. Fase-badge zichtbaar in `GoalRowView` (blauw/oranje/rood/paars).
 
 ⏳ **Epic 17: Goal-Specific Blueprints**
 * **Doel:** AI-prompts uitbreiden met domeinspecifieke regels (bijv. de '32km long-run' regel voor marathons, of voedingsstrategieën voor meerdaagse fietstochten).

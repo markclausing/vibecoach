@@ -107,11 +107,34 @@ struct GoalRowView: View {
                 }
             }
 
-            if let sport = goal.sportCategory?.displayName, !sport.isEmpty {
-                Text(sport)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .textCase(.uppercase)
+            // Epic 16: Trainingsfase badge + sport categorie
+            HStack(spacing: 6) {
+                if let phase = goal.currentPhase {
+                    // Kleur op basis van fase
+                    let phaseColor: Color = {
+                        switch phase {
+                        case .baseBuilding: return .blue
+                        case .buildPhase:   return .orange
+                        case .peakPhase:    return .red
+                        case .tapering:     return .purple
+                        }
+                    }()
+                    Text(phase.displayName)
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(phaseColor.opacity(0.12))
+                        .foregroundColor(phaseColor)
+                        .clipShape(Capsule())
+                }
+
+                if let sport = goal.sportCategory?.displayName, !sport.isEmpty {
+                    Text(sport)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .textCase(.uppercase)
+                }
             }
 
             Text(goal.targetDate, style: .date)

@@ -21,6 +21,54 @@ final class UserPreference {
     }
 }
 
+// MARK: - Epic 16: Dynamische Periodisering
+
+/// De vier klassieke trainingsperioden van een macrocyclus.
+/// Bepaalt welke AI-instructies de coach gebruikt bij het plannen van trainingen.
+enum TrainingPhase: String, CaseIterable {
+    case baseBuilding = "Base Building"
+    case buildPhase   = "Build Phase"
+    case peakPhase    = "Peak Phase"
+    case tapering     = "Tapering"
+
+    /// Korte beschrijving die zichtbaar is als badge in de UI.
+    var displayName: String { rawValue }
+
+    /// Kleur voor de UI-badge
+    var color: String {
+        switch self {
+        case .baseBuilding: return "blue"
+        case .buildPhase:   return "orange"
+        case .peakPhase:    return "red"
+        case .tapering:     return "purple"
+        }
+    }
+
+    /// Harde AI-instructie die de coach krijgt voor deze fase.
+    var aiInstruction: String {
+        switch self {
+        case .baseBuilding:
+            return "Huidige fase: Base Building (>12 weken tot evenement). Instructie: Focus uitsluitend op laag-intensief volume (Zone 1-2). Geen intervaltraining. Bouw de wekelijkse TRIMP geleidelijk op met max. 10% per week. Leg het aerobe fundament."
+        case .buildPhase:
+            return "Huidige fase: Build Phase (4-12 weken tot evenement). Instructie: Verhoog zowel volume als intensiteit. Introduceer gecontroleerde intervaltraining (Zone 3-4). Wekelijkse TRIMP-stijging max. 12%. Afwisselen tussen belastingsweken en hersteldagen."
+        case .peakPhase:
+            return "Huidige fase: Peak Phase (2-4 weken tot evenement). Instructie: Maximale trainingsbelasting. Race-specifieke trainingen: tempo's op wedstrijdintensiteit. Hoge TRIMP, maar wel gecontroleerde hersteldagen inplannen. Dit is de laatste kans voor adaptatie."
+        case .tapering:
+            return "Huidige fase: Tapering (<2 weken tot evenement). KRITIEKE INSTRUCTIE: Verlaag het wekelijkse TRIMP-volume met minimaal 40%. Geen lange zware trainingen meer. Alleen korte, lichte sessies (max. 45 min) om de benen scherp te houden. De atleet is klaar — rust is nu de training."
+        }
+    }
+
+    /// Berekent de fase op basis van het aantal weken tot de doeldatum.
+    static func calculate(weeksRemaining: Double) -> TrainingPhase {
+        switch weeksRemaining {
+        case ..<2:    return .tapering
+        case 2..<4:   return .peakPhase
+        case 4..<12:  return .buildPhase
+        default:      return .baseBuilding
+        }
+    }
+}
+
 /// Represents a user's fitness goal.
 /// Dit model wordt opgeslagen in SwiftData om lokale doelen bij te houden.
 @Model
@@ -50,6 +98,14 @@ final class FitnessGoal {
         self.isCompleted = isCompleted
         self.sportCategory = sportCategory
         self.targetTRIMP = targetTRIMP
+    }
+
+    /// Huidige trainingsfase van dit doel op basis van weken resterend (Epic 16).
+    /// Retourneert nil als het doel is afgerond of al verlopen.
+    var currentPhase: TrainingPhase? {
+        guard !isCompleted, Date() < targetDate else { return nil }
+        let weeksRemaining = targetDate.timeIntervalSince(Date()) / (7 * 86400)
+        return TrainingPhase.calculate(weeksRemaining: weeksRemaining)
     }
 
     /// Berekent of retourneert de Target TRIMP veilig, inclusief fail-safe fallback formule
