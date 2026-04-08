@@ -503,6 +503,26 @@ class ChatViewModel: ObservableObject {
         fetchAIResponse(for: payloadText, image: imageToSend)
     }
 
+    /// Verwijdert de laatste foutmelding en stuurt het laatste gebruikersbericht opnieuw.
+    /// Wordt aangeroepen via de 'Probeer opnieuw' knop in de MessageBubble.
+    func retryLastMessage(contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
+        // Verwijder het laatste foutbericht uit de chat
+        if let lastErrorIndex = messages.indices.last(where: { messages[$0].isError }) {
+            messages.remove(at: lastErrorIndex)
+        }
+
+        // Zoek het laatste gebruikersbericht om opnieuw te versturen
+        guard let lastUserMessage = messages.last(where: { $0.role == .user }) else { return }
+
+        // Verwijder ook het gebruikersbericht zelf zodat sendMessage() het netjes opnieuw toevoegt
+        if let lastUserIndex = messages.indices.last(where: { messages[$0].role == .user }) {
+            messages.remove(at: lastUserIndex)
+        }
+
+        // Stuur opnieuw — sendMessage voegt het bericht weer toe en roept de AI aan
+        sendMessage(lastUserMessage.text, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
+    }
+
     /// Genereert een tekstprompt voor de Gemini AI op basis van de fysiologische data uit HealthKit.
     struct DailyWorkout {
         let date: Date
@@ -949,13 +969,13 @@ class ChatViewModel: ObservableObject {
                     case .invalidAPIKey:
                         messages.append(ChatMessage(role: .ai, text: "De API-sleutel is ongeldig. Controleer de sleutel via Instellingen → AI Coach Configuratie."))
                     case .internalError:
-                        // Na 3 pogingen nog steeds een server-fout (bijv. 503)
-                        messages.append(ChatMessage(role: .ai, text: "De AI-service is tijdelijk overbelast. Wacht even en probeer het opnieuw."))
+                        // Na 3 pogingen nog steeds een server-fout (bijv. 503) — herstelbaar via retry
+                        messages.append(ChatMessage(role: .ai, text: "De AI-service is tijdelijk overbelast. Wacht even en probeer het opnieuw.", isError: true))
                     default:
-                        messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem met de AI-service. Probeer het opnieuw."))
+                        messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem met de AI-service. Probeer het opnieuw.", isError: true))
                     }
                 } else {
-                    messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem. Probeer het opnieuw."))
+                    messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem. Probeer het opnieuw.", isError: true))
                 }
                 isTyping = false
                 return

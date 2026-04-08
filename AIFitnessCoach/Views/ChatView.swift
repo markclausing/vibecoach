@@ -67,6 +67,9 @@ struct ChatView: View {
                                 }, onAlternativeWorkout: { workout in
                                     refreshProfileContext()
                                     viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                }, onRetry: {
+                                    refreshProfileContext()
+                                    viewModel.retryLastMessage(contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                                 })
                                 .id(message.id)
                             }
@@ -289,6 +292,9 @@ struct MessageBubble: View {
     var onSkipWorkout: ((SuggestedWorkout) -> Void)?
     var onAlternativeWorkout: ((SuggestedWorkout) -> Void)?
 
+    /// Callback voor de 'Probeer opnieuw' knop bij foutberichten.
+    var onRetry: (() -> Void)?
+
     /// Bepaalt of de afzender de gebruiker is (rechts uitgelijnd en blauw).
     var isUser: Bool {
         message.role == .user
@@ -310,9 +316,27 @@ struct MessageBubble: View {
                 if !message.text.isEmpty {
                     Text(message.text)
                         .padding(12)
-                        .background(isUser ? Color.blue : Color(.systemGray5))
-                        .foregroundColor(isUser ? .white : .primary)
+                        .background(isUser ? Color.blue : (message.isError ? Color.orange.opacity(0.12) : Color(.systemGray5)))
+                        .foregroundColor(isUser ? .white : (message.isError ? Color.orange : .primary))
                         .cornerRadius(16)
+                }
+
+                // Retry-knop — alleen zichtbaar bij herstelbare foutberichten
+                if message.isError, let onRetry {
+                    Button(action: onRetry) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.caption)
+                            Text("Probeer opnieuw")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Color.orange.opacity(0.15))
+                        .foregroundColor(.orange)
+                        .cornerRadius(10)
+                    }
                 }
             }
 

@@ -24,6 +24,10 @@ struct ChatMessage: Identifiable, Equatable {
     /// Sprint 8.2: Een optioneel voorgesteld trainingsplan dat uit de gestructureerde JSON komt.
     let suggestedPlan: SuggestedTrainingPlan?
 
+    /// Geeft aan of dit bericht een herstelbare foutmelding is (bijv. server-timeout).
+    /// Als true, toont de MessageBubble een 'Probeer opnieuw' knop.
+    let isError: Bool
+
     /// Creëert een nieuw `ChatMessage` object.
     ///
     /// - Parameters:
@@ -33,12 +37,14 @@ struct ChatMessage: Identifiable, Equatable {
     ///   - timestamp: Het verzendmoment.
     ///   - attachedImageData: Optionele bytes van een gecomprimeerde JPEG afbeelding.
     ///   - suggestedPlan: Een dynamisch gegenereerde kalender in JSON.
-    init(id: UUID = UUID(), role: SenderRole, text: String, timestamp: Date = Date(), attachedImageData: Data? = nil, suggestedPlan: SuggestedTrainingPlan? = nil) {
+    ///   - isError: Of dit een herstelbare foutmelding is. Standaard false.
+    init(id: UUID = UUID(), role: SenderRole, text: String, timestamp: Date = Date(), attachedImageData: Data? = nil, suggestedPlan: SuggestedTrainingPlan? = nil, isError: Bool = false) {
         self.id = id
         self.role = role
         self.text = text
         self.timestamp = timestamp
         self.attachedImageData = attachedImageData
         self.suggestedPlan = suggestedPlan
+        self.isError = isError
     }
 }
