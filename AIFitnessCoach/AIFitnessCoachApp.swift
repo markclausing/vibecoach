@@ -66,16 +66,18 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             return true
         }
 
-        // Vraag toestemming voor lokale notificaties (indien nog niet bepaald).
-        // Dit zorgt dat de app verschijnt in iOS Berichtgeving-instellingen en de
-        // proactieve engines notificaties kunnen versturen.
-        ProactiveNotificationService.shared.requestNotificationPermissions()
+        // Sprint 20.2: Toestemmingen worden NIET meer hier uitgevraagd.
+        // De onboarding-flow vraagt HealthKit en Notificaties op het juiste moment.
+        // De achtergrond-engines starten pas nadat de gebruiker de onboarding heeft afgerond
+        // (zie ContentView.onAppear-guard op hasSeenOnboarding).
 
-        // SPRINT 13.2 — Engine A: Start de HKObserverQuery voor workout-detectie.
-        ProactiveNotificationService.shared.setupEngineA()
-
-        // SPRINT 13.2 — Engine B: Plan de eerste dagelijkse achtergrondcheck.
-        ProactiveNotificationService.shared.scheduleEngineB()
+        // SPRINT 13.2 — Engine A & B: Starten alleen als de gebruiker onboarding al heeft afgerond.
+        // Dit voorkomt dat de engines actief zijn voordat de gebruiker überhaupt permissie heeft gegeven.
+        let hasOnboarded = UserDefaults.standard.bool(forKey: "hasSeenOnboarding")
+        if hasOnboarded {
+            ProactiveNotificationService.shared.setupEngineA()
+            ProactiveNotificationService.shared.scheduleEngineB()
+        }
 
         return true
     }
@@ -148,18 +150,37 @@ struct AIFitnessCoachApp: App {
     // Globale shared state voor het trainingsschema (Epic 11)
     @StateObject private var planManager = TrainingPlanManager()
 
+    // Sprint 20.2: Bepaalt of de onboarding al is afgerond.
+    // false = nieuwe gebruiker → OnboardingView tonen.
+    // true  = terugkerende gebruiker → ContentView tonen.
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(appState)
-                .environmentObject(planManager)
-                .onChange(of: scenePhase) { oldPhase, newPhase in
-                    if newPhase == .active {
-                        // SPRINT 12.3: Trigger de automatische historische datasync wanneer de app open is.
-                        // We sturen hiervoor een notificatie, zodat ContentView dit netjes afhandelt met context toegang.
-                        NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
-                    }
+            Group {
+                if hasSeenOnboarding {
+                    ContentView()
+                        .environmentObject(appState)
+                        .environmentObject(planManager)
+                } else {
+                    OnboardingView()
                 }
+            }
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                if newPhase == .active && hasSeenOnboarding {
+                    // SPRINT 12.3: Trigger de automatische historische datasync wanneer de app open is.
+                    // We sturen hiervoor een notificatie, zodat ContentView dit netjes afhandelt met context toegang.
+                    NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
+                }
+            }
+            .onChange(of: hasSeenOnboarding) { _, isOnboarded in
+                // Sprint 20.2: Zodra de onboarding is afgerond, starten we de achtergrond-engines.
+                // Dit is het eerste moment dat de gebruiker permissies heeft gegeven.
+                if isOnboarded {
+                    ProactiveNotificationService.shared.setupEngineA()
+                    ProactiveNotificationService.shared.scheduleEngineB()
+                }
+            }
         }
         .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self, DailyReadiness.self]) // Epic 14: DailyReadiness toegevoegd
     }

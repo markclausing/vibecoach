@@ -5,7 +5,9 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Klaar voor Open Source / Public Release**
+**Portfolio-klaar — Volledig Afgewerkt**
+
+VibeCoach is een production-ready iOS-app met een premium user experience: native splash screen, gepolijste onboarding flow, BYOK AI-architectuur (Gemini / OpenAI / Anthropic), fysiologisch correcte trainingscoaching en een testsuite met 54% code coverage.
 
 ---
 
@@ -100,15 +102,13 @@ Uitgebreide opschoning van de codebase. Toevoeging van XCTest Unit- en UI-tests 
 
 ---
 
-### 🔄 Epic 20: App Store Ready — Onboarding & Polish (Actief)
+### ✅ Epic 20: App Store Ready — Onboarding & Polish (Afgerond)
 
-De transitie van functioneel prototype naar een release-kandidaat voor de App Store.
+De transitie van functioneel prototype naar een portfolio-klare, release-waardige app.
 
-* **Splash Screen & App Icon:** Ontwerp en implementatie van native branding.
-* **Onboarding Flow:** Een welkomst-carrousel die de gebruiker uitlegt wat VibeCoach doet (TRIMP, Readiness, AI-coaching).
-* **Graceful Permissions:** HealthKit en Push Notification permissies netjes en met context uitvragen tijdens de onboarding — in plaats van kille popups bij de eerste lancering.
-* **BYOK (Bring Your Own Key) Architectuur:** De gebruiker voert zijn eigen AI API-sleutel in om de coach te activeren — geen gedeelde backend-kosten bij schaling.
-* **Multi-Provider Support:** Een modulair instellingenscherm waar de gebruiker kiest tussen AI-providers (Gemini, OpenAI, Anthropic) en de sleutel veilig opslaat in de iOS Keychain.
+* **Sprint 20.1 — BYOK & Multi-Provider:** `AIProvider` enum (Gemini / OpenAI / Anthropic) met `displayName`, `keyPlaceholder` en `getKeyURL`. `AIProviderSettingsView` in Instellingen. `ChatViewModel` en `AddGoalView` gebruiken dynamisch de opgeslagen sleutel via `effectiveAPIKey()` (gebruiker-sleutel → Secrets-fallback). `NoAPIKeyView` lege staat in de Coach-tab als er geen sleutel is geconfigureerd.
+* **Sprint 20.2 — Onboarding Flow:** 4-pagina `TabView` carousel (Welkom → Hoe het werkt → Jouw Data/AI → Permissies). Pagina 3 bevat een inline BYOK-invoerkaart met segmented Picker, SecureField en provider-specifieke 'Hoe kom ik aan een sleutel?' links. Pagina 4 vraagt HealthKit en Notificaties netjes via `PermissionCard` componenten — uitsluitend via knoppen, nooit automatisch. `hasSeenOnboarding` AppStorage routing in de App struct: nieuwe gebruikers zien de onboarding, terugkerende gebruikers gaan direct naar het dashboard. Achtergrond-engines starten pas na voltooiing.
+* **Sprint 20.3 — Splash Screen & App Icon:** Native splash screen via `UILaunchScreen` in `Info.plist` — donkere achtergrond (`#0D1117`) met gecentreerd neon-groen logo. Gepolijst App-icoon zonder witte rand. Onboarding beveiligd: geen enkele permissie-request buiten de expliciete knoppen.
 
 ---
 
@@ -119,6 +119,7 @@ De transitie van functioneel prototype naar een release-kandidaat voor de App St
 | **Epic 15 — Biometrische & Omgevingscontext** | Integratie met lokale weersomstandigheden (hitte/kou) en hormonale cyclus via HealthKit voor contextuele TRIMP-weging. |
 | **Epic 17 — Goal-Specific Blueprints** | Hardcoded sportwetenschappelijke regels per discipline, zoals 'minimaal één 32 km duurloop voor een marathon', rechtstreeks in de LLM Manager. |
 | **Epic 21 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes (bijv. kuitklachten) — zodat de coach maanden later nog kan refereren aan chronische patronen. |
+| **Epic 22 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. *(Verre toekomst)* |
 
 ---
 
@@ -146,8 +147,11 @@ Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de na
 
 ## Tech Stack
 * **Platform:** iOS (macOS met Xcode vereist voor het bouwen)
-* **UI Framework:** SwiftUI
-* **AI Model:** Gemini Pro API
+* **UI Framework:** SwiftUI + SwiftData
+* **AI:** BYOK — Gemini 2.5 Flash (standaard), met UI-support voor OpenAI en Anthropic
+* **Data:** Apple HealthKit (HRV, slaap, workouts) + optioneel Strava OAuth2
+* **Achtergrond:** HKObserverQuery (Engine A) + BGAppRefreshTask (Engine B)
+* **Testen:** XCTest unit tests + XCUITest UI tests — 54% code coverage
 * **Versiebeheer:** GitHub
 
 ## Basisregels voor de AI (Mijn Assistent)

@@ -37,6 +37,11 @@ struct ChatView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // Epic 20: BYOK — toon lege staat als er geen API-sleutel is geconfigureerd.
+                if !viewModel.hasAPIKey {
+                    NoAPIKeyView()
+                } else {
+
                 // SPRINT 6.3 - Proactieve Waarschuwing UI
                 if currentProfile?.isRecoveryNeeded == true {
                     HStack {
@@ -163,6 +168,8 @@ struct ChatView: View {
                     .disabled(viewModel.inputText.isEmpty && viewModel.selectedImage == nil)
                 }
                 .padding()
+
+                } // end else (hasAPIKey)
             }
             .navigationTitle("Vraag de Coach")
             .navigationBarTitleDisplayMode(.inline)
@@ -233,6 +240,42 @@ struct ChatView: View {
                     try? context.save()
                 }
             }
+        }
+    }
+}
+
+/// Epic 20: Lege staat die getoond wordt als er geen API-sleutel is geconfigureerd.
+/// Stuurt de gebruiker rechtstreeks naar de AI Coach Configuratie in de Instellingen.
+struct NoAPIKeyView: View {
+    var body: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            Image(systemName: "brain.head.profile")
+                .font(.system(size: 64))
+                .foregroundColor(.secondary)
+
+            VStack(spacing: 8) {
+                Text("Je AI Coach slaapt")
+                    .font(.title2)
+                    .fontWeight(.bold)
+
+                Text("Voer een API-sleutel in via de Instellingen om hem wakker te maken.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+
+            NavigationLink(destination: AIProviderSettingsView()) {
+                Label("Naar Instellingen", systemImage: "gear")
+                    .fontWeight(.semibold)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 12)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+            }
+            Spacer()
         }
     }
 }
