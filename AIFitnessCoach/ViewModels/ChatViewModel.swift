@@ -44,12 +44,37 @@ class ChatViewModel: ObservableObject {
     /// Opgeslagen inzichten/motivatie van de coach om uit te lichten op het dashboard
     @AppStorage("latestCoachInsight") private var latestCoachInsight: String = ""
 
+    /// Epic 14.4: Cache van de Vibe Score van vandaag voor injectie in AI-prompts.
+    /// Wordt gevuld vanuit DashboardView (bij onAppear) zodat de AI altijd de actuele
+    /// herstelstatus kent — ook zonder directe SwiftData-toegang in ChatViewModel.
+    @AppStorage("vibecoach_todayVibeScoreContext") private var todayVibeScoreContext: String = ""
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
     /// Stelt de TrainingPlanManager in
     func setTrainingPlanManager(_ manager: TrainingPlanManager) {
         self.trainingPlanManager = manager
+    }
+
+    /// Epic 14.4: Schrijft de Vibe Score van vandaag naar de AppStorage cache.
+    /// Wordt aangeroepen vanuit DashboardView bij onAppear zodat de AI-prompts
+    /// altijd de actuele herstelstatus bevatten.
+    func cacheVibeScore(_ readiness: DailyReadiness?) {
+        guard let r = readiness else {
+            todayVibeScoreContext = ""
+            return
+        }
+
+        let label: String
+        if r.readinessScore >= 80 { label = "Optimaal Hersteld" }
+        else if r.readinessScore >= 50 { label = "Matig Hersteld" }
+        else { label = "Slecht Hersteld — Rust prioriteit" }
+
+        let sleepH = Int(r.sleepHours)
+        let sleepM = Int((r.sleepHours - Double(sleepH)) * 60)
+
+        todayVibeScoreContext = "Vibe Score vandaag: \(r.readinessScore)/100 (\(label)). Slaap: \(sleepH)u \(sleepM)m. HRV: \(String(format: "%.1f", r.hrv)) ms."
     }
 
     /// SPRINT 13.4: Geeft het meest recent opgeslagen coach-inzicht terug (uit AppStorage).
@@ -85,6 +110,14 @@ class ChatViewModel: ObservableObject {
             Jij bent een samenwerkende, meedenkende en proactieve AI fitness-coach.
             Je analyseert niet alleen vermoeidheid, maar je helpt de gebruiker actief om de eerstvolgende stap te plannen richting hun gestelde doelen.
             Stel je op als een slimme trainingspartner — niet als een waarschuwende dokter.
+
+            KRITIEKE REGEL — VIBE SCORE AUTORITEIT:
+            De gebruiker heeft een lokaal berekende Vibe Score (0-100) die slaap en HRV combineert. Deze score is de enige objectieve maatstaf voor herstel.
+            - Baseer je oordeel over vermoeidheid UITSLUITEND op de Vibe Score die je in de context ontvangt.
+            - Score ≥ 80: benader de gebruiker als goed hersteld. Ook als de slaap iets korter was dan ideaal.
+            - Score 50-79: wees voorzichtig maar niet alarmerend. Prioriteer Zone 2 en lagere intensiteit.
+            - Score < 50: dwing rust of actief herstel af. Dit is een harde rode vlag.
+            - Weerspreek de Vibe Score NOOIT op basis van je eigen inschatting van de slaaptijd of andere factoren.
 
             Belangrijke context voor je analyse:
             Wij berekenen lokaal een Banister TRIMP (Training Impulse) score om de trainingsbelasting te bepalen (niet de traditionele TSS die op 100/uur cap).
@@ -169,6 +202,11 @@ class ChatViewModel: ObservableObject {
         dateFormatter.dateFormat = "yyyy-MM-dd"
         prefix += "[HUIDIGE DATUM: Vandaag is het \(dateFormatter.string(from: now)). Gebruik dit voor je berekeningen rondom 'expirationDate'.]\n\n"
 
+        // Epic 14.4: Injecteer de Vibe Score als harde context — de AI MOET dit volgen (zie systeeminstructie)
+        if !todayVibeScoreContext.isEmpty {
+            prefix += "[HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Volg de kritieke regel over de Vibe Score autoriteit strikt.]\n\n"
+        }
+
         // Filter expired preferences out context
         let validPreferences = activePreferences.filter { pref in
             if let expirationDate = pref.expirationDate {
@@ -232,6 +270,12 @@ class ChatViewModel: ObservableObject {
             "RECOVERY CONTEXT — Mijn doel(en) lopen achter op schema. Maak een geleidelijk herstelplan:",
             ""
         ]
+
+        // Epic 14.4: Injecteer de Vibe Score zodat het herstelplan de actuele herstelstatus respecteert
+        if !todayVibeScoreContext.isEmpty {
+            systemLines.append("HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Pas de intensiteit van het herstelplan STRIKT aan op deze score (zie systeeminstructie).")
+            systemLines.append("")
+        }
         for risk in atRiskGoals {
             let deficit = Int(risk.requiredWeeklyRate - risk.currentWeeklyRate)
             let weeksText = String(format: "%.1f", risk.weeksRemaining)
