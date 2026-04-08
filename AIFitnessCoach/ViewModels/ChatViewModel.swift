@@ -104,22 +104,11 @@ class ChatViewModel: ObservableObject {
 
     /// Bouwt een nieuw Gemini model op basis van de huidige API-sleutel.
     /// Wordt aangeroepen als de gebruiker een nieuwe sleutel heeft opgeslagen.
+    /// Epic 20: Placeholder voor Sprint 20.2 — slaat de aktieve key op zodat toekomstige
+    /// code kan detecteren of de sleutel gewijzigd is en het model opnieuw moet bouwen.
     private func rebuildRealModel() {
         let key = effectiveAPIKey()
         guard !key.isEmpty else { return }
-        let config = GenerationConfig(responseMIMEType: "application/json")
-        let options = RequestOptions(timeout: 120)
-
-        // Hergebruik de bestaande systeeminstructie — haal die op via dezelfde logica als in init
-        let googleModel = GenerativeModel(
-            name: "gemini-2.5-flash",
-            apiKey: key,
-            generationConfig: config,
-            requestOptions: options
-        )
-        // Vervang het model (thread-safe omdat we @MainActor zijn)
-        // Opmerking: systeeminstructie gaat verloren bij rebuild — acceptabel voor Sprint 20.1.
-        // In Sprint 20.2 extraheren we de systemInstruction naar een afzonderlijke constante.
         activeAPIKey = key
     }
 
@@ -229,9 +218,16 @@ class ChatViewModel: ObservableObject {
                 timeout: 120
             )
 
+            // Epic 20: key inline berekenen — effectiveAPIKey() kan hier niet aangeroepen worden
+            // omdat self.model nog niet geïnitialiseerd is (Swift-beperking in init).
+            let initKey: String = {
+                let stored = UserDefaults.standard.string(forKey: "vibecoach_userAPIKey") ?? ""
+                return stored.isEmpty ? Secrets.geminiAPIKey : stored
+            }()
+
             let googleModel = GenerativeModel(
                 name: "gemini-2.5-flash",
-                apiKey: effectiveAPIKey(),
+                apiKey: initKey,
                 generationConfig: config,
                 systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)]),
                 requestOptions: options
