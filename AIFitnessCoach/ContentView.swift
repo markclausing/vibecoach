@@ -1203,7 +1203,8 @@ struct DashboardView: View {
     enum BannerState {
         /// Acute:Chronic ratio > 1.5 — piek te groot t.o.v. chronische belasting.
         /// percentageAbove = hoeveel % boven de chronische norm (bijv. 73 = +73%).
-        case overreached(workoutName: String, actualTRIMP: Int, chronicTRIMP: Int, percentageAbove: Int)
+        /// injuryContext = optionele blessure-omschrijving (bijv. "kuitklachten") als de sport extra belastend is.
+        case overreached(workoutName: String, actualTRIMP: Int, chronicTRIMP: Int, percentageAbove: Int, injuryContext: String?)
         /// Lage Vibe Score + zware training — fysiologisch dubbele stress.
         case lowVibeHighLoad(workoutName: String, vibeScore: Int, actualTRIMP: Int)
         /// Cumulatieve week-TRIMP is <50% van het weekdoel.
@@ -1214,17 +1215,21 @@ struct DashboardView: View {
     private var bannerState: BannerState {
         // Trigger 1: ACWR > 1.5 — acute belasting significant hoger dan chronisch gemiddelde.
         // Vergelijkt de LAATSTE workout met de gemiddelde sessie-TRIMP van afgelopen 14 dagen.
-        // Dit is onafhankelijk van het weekdoel — het gaat om relatieve belastingspiek.
+        // Blessure-penalty via InjuryImpactMatrix: bij kuitklachten telt een looptraining 1.4× zwaarder.
         if let last = lastWorkout, let acuteTRIMP = last.trimp,
            let chronic = chronicTRIMPPerSession, chronic > 0 {
-            let ratio = acuteTRIMP / chronic
+            let injuryPenalty = InjuryImpactMatrix.penaltyMultiplier(for: last.sportCategory, given: Array(activePreferences))
+            let effectiveTRIMP = acuteTRIMP * injuryPenalty
+            let ratio = effectiveTRIMP / chronic
             if ratio > 1.5 {
                 let percentAbove = Int((ratio - 1.0) * 100)
+                let injury = InjuryImpactMatrix.injuryDescription(for: last.sportCategory, given: Array(activePreferences))
                 return .overreached(
                     workoutName: last.name,
                     actualTRIMP: Int(acuteTRIMP),
                     chronicTRIMP: Int(chronic),
-                    percentageAbove: percentAbove
+                    percentageAbove: percentAbove,
+                    injuryContext: injury
                 )
             }
 
@@ -1421,14 +1426,23 @@ struct DashboardView: View {
 
                         // Contextuele TRIMP-banner — gebaseerd op Acute:Chronic Workload Ratio
                         switch bannerState {
-                        case .overreached(let name, let actual, let chronic, let pct):
+                        case .overreached(let name, let actual, let chronic, let pct, let injury):
                             HStack(alignment: .top, spacing: 8) {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .font(.caption)
                                     .padding(.top, 1)
-                                Text("Hoewel je weekdoel nog niet is bereikt, was **\(name)** (+\(pct)%) een te grote piek t.o.v. je gemiddelde training (\(chronic) TRIMP). Pas op voor blessures.")
-                                    .font(.caption)
-                                    .fixedSize(horizontal: false, vertical: true)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("**\(name)** was +\(pct)% boven je gemiddelde training (\(chronic) TRIMP).")
+                                        .font(.caption)
+                                    if let inj = injury {
+                                        Text("Let op: Gezien je \(inj) was deze training extra belastend voor je herstel.")
+                                            .font(.caption)
+                                    } else {
+                                        Text("Hoewel je weekdoel nog niet bereikt is, is rust nu de slimste stap.")
+                                            .font(.caption)
+                                    }
+                                }
+                                .fixedSize(horizontal: false, vertical: true)
                             }
                             .padding(.horizontal, 12)
                             .padding(.vertical, 7)
