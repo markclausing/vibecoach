@@ -119,7 +119,7 @@ De transitie van functioneel prototype naar een portfolio-klare, release-waardig
 | **Epic 15 — Biometrische & Omgevingscontext** | Integratie met lokale weersomstandigheden (hitte/kou) en hormonale cyclus via HealthKit voor contextuele TRIMP-weging. |
 | **Epic 17 — Goal-Specific Blueprints** | Hardcoded sportwetenschappelijke regels per discipline, zoals 'minimaal één 32 km duurloop voor een marathon', rechtstreeks in de LLM Manager. |
 | **Epic 21 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes (bijv. kuitklachten) — zodat de coach maanden later nog kan refereren aan chronische patronen. |
-| **Epic 22 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. |
+| **Epic 22 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. *(Verre toekomst)* |
 
 ---
 
