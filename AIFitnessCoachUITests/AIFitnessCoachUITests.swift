@@ -112,11 +112,11 @@ final class AIFitnessCoachUITests: XCTestCase {
         )
         coachTab.tap()
 
-        // De ChatView bevat een tekstveld voor invoer onderaan het scherm
-        let chatInputField = app.textViews.firstMatch
+        // Wacht op het invoerveld via de expliciete accessibility identifier
+        let chatInputField = app.textFields["ChatInputField"]
         XCTAssertTrue(
             chatInputField.waitForExistence(timeout: 5),
-            "Coach chat-invoerveld verschijnt niet na tikken op de Coach tab."
+            "Coach chat-invoerveld (ChatInputField) verschijnt niet na tikken op de Coach tab."
         )
     }
 

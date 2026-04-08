@@ -10,18 +10,19 @@ final class GoalsUITests: XCTestCase {
     func testCreateNewGoal_Success() throws {
         // 1. Lanceer de app.
         let app = XCUIApplication()
+        app.launchArguments.append("-isRunningUITests")
         app.launch()
 
-        // 2. Navigeer naar de 'Doelen' (Goals) tab.
-        // We zoeken naar het TabBar icoon met label "Doelen".
+        // 2. Navigeer naar de 'Doelen' tab — wacht tot de TabBar geladen is.
         let goalsTab = app.tabBars.buttons["Doelen"]
-        if goalsTab.exists {
-            goalsTab.tap()
-        }
+        XCTAssertTrue(goalsTab.waitForExistence(timeout: 5), "Tab 'Doelen' niet gevonden in de TabBar.")
+        goalsTab.tap()
 
-        // 3. Tik op de '+' knop (Toolbar Add-knop)
-        let addGoalButton = app.navigationBars.buttons["Add"] // Vaak gemapt als 'Add' bij een plus-icoon
-        XCTAssertTrue(addGoalButton.waitForExistence(timeout: 2.0), "De toevoegen-knop (+) is niet zichtbaar op het doelen scherm.")
+        // 3. Wacht op de NavigationTitle om zeker te zijn dat de view geladen is,
+        //    en zoek dan de + knop via de expliciete accessibilityIdentifier.
+        XCTAssertTrue(app.navigationBars["Mijn Doelen"].waitForExistence(timeout: 3), "'Mijn Doelen' laadt niet.")
+        let addGoalButton = app.buttons["AddGoalButton"]
+        XCTAssertTrue(addGoalButton.waitForExistence(timeout: 3), "De toevoegen-knop (AddGoalButton) is niet zichtbaar op het doelen scherm.")
         addGoalButton.tap()
 
         // Wacht tot de AddGoalView present is (bijv. op basis van de navigatie-titel)
