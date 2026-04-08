@@ -149,7 +149,11 @@ final class ActivityRecord {
     /// Berekende Trainingsbelasting (TRIMP) voor deze specifieke activiteit.
     var trimp: Double?
 
-    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil) {
+    // Epic 18: Subjectieve Feedback — Rate of Perceived Exertion (1-10) en stemming
+    var rpe: Int?    // 1 = heel makkelijk, 10 = maximale inspanning
+    var mood: String? // Bijv. "😌", "🟢", "🚀", "🤕", "🥵"
+
+    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil, rpe: Int? = nil, mood: String? = nil) {
         self.id = id
         self.name = name
         self.distance = distance
@@ -158,6 +162,8 @@ final class ActivityRecord {
         self.sportCategory = sportCategory
         self.startDate = startDate
         self.trimp = trimp
+        self.rpe = rpe
+        self.mood = mood
     }
 }
 
