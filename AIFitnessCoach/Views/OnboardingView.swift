@@ -156,6 +156,10 @@ struct OnboardingView: View {
 
     // MARK: - Permissie aanvragen
 
+    // MARK: - Permissie aanvragen
+    // Sprint 20.3: Permissies worden UITSLUITEND via knoppen op pagina 4 aangevraagd.
+    // Er zijn geen automatische requests bij onAppear of bij het laden van de OnboardingView.
+
     private func requestHealthKit() {
         healthKitManager.requestAuthorization { success, _ in
             Task { @MainActor in
