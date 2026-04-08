@@ -44,6 +44,18 @@ enum TrainingPhase: String, CaseIterable {
         }
     }
 
+    /// Sprint 16.2: Fase-multiplier voor de wekelijkse TRIMP-target.
+    /// De lineaire baseline (resterend TRIMP / resterende weken) wordt hiermee gecorrigeerd
+    /// zodat de trainingsintensiteit overeenkomt met de fysiologische fase.
+    var multiplier: Double {
+        switch self {
+        case .baseBuilding: return 1.00  // Gewone lineaire baseline
+        case .buildPhase:   return 1.15  // 15% meer belasting opbouwen
+        case .peakPhase:    return 1.30  // 30% meer — maximale adaptatiefase
+        case .tapering:     return 0.60  // 40% minder — rust is de training
+        }
+    }
+
     /// Harde AI-instructie die de coach krijgt voor deze fase.
     var aiInstruction: String {
         switch self {
