@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 /// Epic 20 — Sprint 20.2: Onboarding Flow voor nieuwe gebruikers.
 ///
@@ -43,15 +44,9 @@ struct OnboardingView: View {
                 )
                 .tag(1)
 
-                // Pagina 3: Privacy & AI
-                OnboardingPage(
-                    icon: "lock.shield.fill",
-                    iconColor: .purple,
-                    title: "Jouw Data, Jouw AI",
-                    subtitle: "Privacy first — geen dataverzameling",
-                    description: "Al jouw Apple Health data blijft **100% lokaal** op jouw iPhone. Er wordt niets naar onze servers gestuurd.\n\nDe AI-coach werkt via jouw eigen API-sleutel (BYOK). Voeg die na de onboarding toe via **Instellingen → AI Coach Configuratie** om de coach te activeren."
-                )
-                .tag(2)
+                // Pagina 3: Jouw Data, Jouw AI — inclusief BYOK API-sleutel invoer
+                APIKeyOnboardingPage()
+                    .tag(2)
 
                 // Pagina 4: Permissies
                 permissionsPage
@@ -180,7 +175,137 @@ struct OnboardingView: View {
 
 // MARK: - Herbruikbare subviews
 
-/// Één informatieve pagina in de carousel (pagina's 1–3).
+/// Pagina 3: Privacy & AI — met inline BYOK API-sleutelinvoer.
+/// De sleutel wordt opgeslagen in dezelfde AppStorage-sleutels als AIProviderSettingsView,
+/// zodat de ChatViewModel hem direct ophaalt zonder extra stap.
+private struct APIKeyOnboardingPage: View {
+    @AppStorage("vibecoach_aiProvider")  private var providerRaw: String = AIProvider.gemini.rawValue
+    @AppStorage("vibecoach_userAPIKey") private var apiKey: String = ""
+
+    @FocusState private var fieldFocused: Bool
+
+    private var selectedProvider: AIProvider {
+        AIProvider(rawValue: providerRaw) ?? .gemini
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 28) {
+                Spacer(minLength: 60)
+
+                // Icoon + titels
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 90))
+                    .foregroundStyle(.purple)
+                    .symbolRenderingMode(.hierarchical)
+
+                VStack(spacing: 8) {
+                    Text("Jouw Data, Jouw AI")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .multilineTextAlignment(.center)
+
+                    Text("Privacy first — geen dataverzameling")
+                        .font(.title3)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                Text("Al jouw Apple Health data blijft **100% lokaal** op jouw iPhone. Er wordt niets naar onze servers gestuurd.")
+                    .font(.body)
+                    .foregroundColor(.primary.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+
+                // BYOK invoerkaart
+                VStack(alignment: .leading, spacing: 16) {
+
+                    // Provider picker
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("AI Provider")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                            .textCase(.uppercase)
+
+                        Picker("Provider", selection: $providerRaw) {
+                            ForEach(AIProvider.allCases) { provider in
+                                HStack {
+                                    Text(provider.displayName)
+                                    if !provider.isSupported {
+                                        Text("· Binnenkort")
+                                            .foregroundColor(.secondary)
+                                            .font(.caption)
+                                    }
+                                }
+                                .tag(provider.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+
+                    // API-sleutel invoerveld
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("API Sleutel")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                            .textCase(.uppercase)
+
+                        HStack {
+                            SecureField(selectedProvider.keyPlaceholder, text: $apiKey)
+                                .focused($fieldFocused)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                                .font(.system(.body, design: .monospaced))
+
+                            if !apiKey.isEmpty {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                            }
+                        }
+                        .padding(12)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(10)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(apiKey.isEmpty ? Color(.separator) : Color.green.opacity(0.6), lineWidth: 1)
+                        )
+                    }
+
+                    // 'Hoe kom ik aan een sleutel?' link
+                    if let url = selectedProvider.getKeyURL {
+                        Link(destination: url) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.up.right.square")
+                                Text("Hoe kom ik aan een sleutel voor \(selectedProvider.displayName)?")
+                            }
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                        }
+                    }
+
+                    // Skip-tekst — geen harde verplichting
+                    Text("Geen sleutel? Geen probleem — je kunt dit later instellen via Instellingen.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+                .padding(16)
+                .background(Color(.systemBackground))
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 2)
+
+                // Ruimte voor de floating knop
+                Spacer(minLength: 100)
+            }
+            .padding(.horizontal, 28)
+        }
+        .onTapGesture { fieldFocused = false }
+    }
+}
+
+/// Één informatieve pagina in de carousel (pagina's 1–2).
 private struct OnboardingPage: View {
     let icon: String
     let iconColor: Color
