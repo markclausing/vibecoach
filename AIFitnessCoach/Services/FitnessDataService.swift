@@ -609,29 +609,34 @@ final class HealthKitManager: @unchecked Sendable {
 
     // MARK: - Epic 14: Readiness Score Data
 
-    /// Haalt de gemiddelde HRV (SDNN, in milliseconden) op van de afgelopen nacht (afgelopen 24 uur).
-    /// HRV is een sterke indicator voor herstel van het zenuwstelsel.
+    /// Haalt de gemiddelde HRV (SDNN, in milliseconden) op van de afgelopen 48 uur.
+    /// Kijkt 48 uur terug zodat ook gebruikers die vannacht geen Watch droegen toch data krijgen.
+    /// Apple Watch schrijft HRV metingen voornamelijk tijdens slaap.
     /// - Returns: Gemiddelde HRV in ms, of nil als er geen meting beschikbaar is.
     func fetchRecentHRV() async throws -> Double? {
         guard let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else {
+            print("❌ [HRV] HKQuantityType voor heartRateVariabilitySDNN niet beschikbaar")
             return nil
         }
 
         let now = Date()
-        // Kijken naar de afgelopen 24 uur — Apple Watch schrijft HRV vooral tijdens slaap
-        let yesterday = Calendar.current.date(byAdding: .hour, value: -24, to: now)!
-        let predicate = HKQuery.predicateForSamples(withStart: yesterday, end: now, options: .strictEndDate)
+        // Kijken naar de afgelopen 48 uur — biedt fallback als Watch gisteravond niet gedragen was
+        let windowStart = Calendar.current.date(byAdding: .hour, value: -48, to: now)!
+        let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: now, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        print("🔍 [HRV] Query gestart — venster: afgelopen 48 uur")
 
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: hrvType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
                 if let error = error {
+                    print("❌ [HRV] HealthKit fout: \(error.localizedDescription)")
                     continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen HRV: \(error.localizedDescription)"))
                     return
                 }
 
                 guard let hrvSamples = samples as? [HKQuantitySample], !hrvSamples.isEmpty else {
-                    // Geen HRV-meting beschikbaar (bijv. geen Apple Watch, of Watch niet gedragen)
+                    print("⚠️ [HRV] Geen samples gevonden in afgelopen 48 uur — Watch mogelijk niet gedragen")
                     continuation.resume(returning: nil)
                     return
                 }
@@ -641,7 +646,7 @@ final class HealthKitManager: @unchecked Sendable {
                 let totalHRV = hrvSamples.reduce(0.0) { $0 + $1.quantity.doubleValue(for: unit) }
                 let averageHRV = totalHRV / Double(hrvSamples.count)
 
-                print("📊 [Epic 14] HRV opgehaald: \(String(format: "%.1f", averageHRV)) ms (op basis van \(hrvSamples.count) meting(en))")
+                print("✅ [HRV] Data ontvangen: \(String(format: "%.1f", averageHRV)) ms (op basis van \(hrvSamples.count) meting(en))")
                 continuation.resume(returning: averageHRV)
             }
             healthStore.execute(query)
@@ -653,6 +658,7 @@ final class HealthKitManager: @unchecked Sendable {
     /// - Returns: Gemiddelde HRV in ms over het opgegeven venster, of nil als er geen data is.
     func fetchHRVBaseline(days: Int = 7) async throws -> Double? {
         guard let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else {
+            print("❌ [HRV-Baseline] HKQuantityType niet beschikbaar")
             return nil
         }
 
@@ -661,14 +667,18 @@ final class HealthKitManager: @unchecked Sendable {
         let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 
+        print("🔍 [HRV-Baseline] Query gestart — venster: \(days) dagen")
+
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: hrvType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
                 if let error = error {
+                    print("❌ [HRV-Baseline] HealthKit fout: \(error.localizedDescription)")
                     continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen HRV baseline: \(error.localizedDescription)"))
                     return
                 }
 
                 guard let hrvSamples = samples as? [HKQuantitySample], !hrvSamples.isEmpty else {
+                    print("⚠️ [HRV-Baseline] Geen samples gevonden in afgelopen \(days) dagen")
                     continuation.resume(returning: nil)
                     return
                 }
@@ -677,7 +687,7 @@ final class HealthKitManager: @unchecked Sendable {
                 let total = hrvSamples.reduce(0.0) { $0 + $1.quantity.doubleValue(for: unit) }
                 let average = total / Double(hrvSamples.count)
 
-                print("📊 [Epic 14] HRV baseline (\(days) dagen): \(String(format: "%.1f", average)) ms (op basis van \(hrvSamples.count) meting(en))")
+                print("✅ [HRV-Baseline] Data ontvangen: \(String(format: "%.1f", average)) ms (\(days) dagen, \(hrvSamples.count) meting(en))")
                 continuation.resume(returning: average)
             }
             healthStore.execute(query)
@@ -690,6 +700,7 @@ final class HealthKitManager: @unchecked Sendable {
     /// - Returns: Totale slaaptijd in uren (bijv. 7.5), of nil als geen data beschikbaar.
     func fetchLastNightSleep() async throws -> Double? {
         guard let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) else {
+            print("❌ [Slaap] HKCategoryType voor sleepAnalysis niet beschikbaar")
             return nil
         }
 
@@ -699,14 +710,18 @@ final class HealthKitManager: @unchecked Sendable {
         let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: now, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
 
+        print("🔍 [Slaap] Query gestart — venster: afgelopen 16 uur")
+
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
                 if let error = error {
+                    print("❌ [Slaap] HealthKit fout: \(error.localizedDescription)")
                     continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen slaapdata: \(error.localizedDescription)"))
                     return
                 }
 
                 guard let sleepSamples = samples as? [HKCategorySample], !sleepSamples.isEmpty else {
+                    print("⚠️ [Slaap] Geen samples gevonden in afgelopen 16 uur")
                     continuation.resume(returning: nil)
                     return
                 }

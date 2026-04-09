@@ -295,6 +295,8 @@ struct TRIMPExplainerCard: View {
 /// Wordt bovenaan het dashboard geplaatst zodat de gebruiker direct richting krijgt.
 struct VibeScoreCardView: View {
     let readiness: DailyReadiness?
+    var isLoading: Bool = false
+    var isUnavailable: Bool = false
 
     // Kleur op basis van score (groen / oranje / rood)
     private var scoreColor: Color {
@@ -312,14 +314,6 @@ struct VibeScoreCardView: View {
         return "battery.0"
     }
 
-    // Tekstlabel op basis van score
-    private var scoreLabel: String {
-        guard let r = readiness else { return "Vibe Score berekenen..." }
-        if r.readinessScore >= 80 { return "Optimaal Hersteld" }
-        if r.readinessScore >= 50 { return "Matig Hersteld" }
-        return "Focus op Herstel"
-    }
-
     // Slaap opmaken als "Xu Ym"
     private func formatSleep(_ hours: Double) -> String {
         let h = Int(hours)
@@ -331,16 +325,21 @@ struct VibeScoreCardView: View {
         HStack(spacing: 16) {
             // Score-getal + icoon
             VStack(spacing: 2) {
-                Image(systemName: scoreIcon)
-                    .font(.title2)
-                    .foregroundColor(scoreColor)
-                if let r = readiness {
-                    Text("\(r.readinessScore)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                if isLoading {
+                    ProgressView()
+                        .frame(width: 32, height: 32)
+                } else {
+                    Image(systemName: scoreIcon)
+                        .font(.title2)
                         .foregroundColor(scoreColor)
-                    Text("/ 100")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    if let r = readiness {
+                        Text("\(r.readinessScore)")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(scoreColor)
+                        Text("/ 100")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
             .frame(width: 64)
@@ -350,11 +349,28 @@ struct VibeScoreCardView: View {
                 Text("Vibe Score")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                Text(scoreLabel)
-                    .font(.headline)
-                    .foregroundColor(scoreColor)
 
-                if let r = readiness {
+                if isLoading {
+                    Text("Berekenen...")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                } else if isUnavailable {
+                    Text("Data niet beschikbaar")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                    Text("Geen HealthKit-data gevonden. Zorg dat je Apple Watch is gesynchroniseerd.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else if let r = readiness {
+                    let label: String = {
+                        if r.readinessScore >= 80 { return "Optimaal Hersteld" }
+                        if r.readinessScore >= 50 { return "Matig Hersteld" }
+                        return "Focus op Herstel"
+                    }()
+                    Text(label)
+                        .font(.headline)
+                        .foregroundColor(scoreColor)
                     HStack(spacing: 12) {
                         Label(formatSleep(r.sleepHours), systemImage: "moon.fill")
                             .font(.caption)
@@ -363,21 +379,16 @@ struct VibeScoreCardView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                } else {
-                    Text("Zorg dat je Apple Watch is gesynchroniseerd.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
 
             Spacer()
         }
         .padding()
-        .background(readiness != nil ? scoreColor.opacity(0.08) : Color(.secondarySystemBackground))
+        .background(readiness != nil && !isLoading ? scoreColor.opacity(0.08) : Color(.secondarySystemBackground))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(scoreColor.opacity(readiness != nil ? 0.3 : 0.15), lineWidth: 1)
+                .stroke(scoreColor.opacity(readiness != nil && !isLoading ? 0.3 : 0.15), lineWidth: 1)
         )
         .cornerRadius(12)
         .accessibilityIdentifier("VibeScoreCard")
@@ -1122,6 +1133,10 @@ struct DashboardView: View {
     // Epic 14.3: Haal alle DailyReadiness records op (weinig records — max 1 per dag)
     @Query(sort: \DailyReadiness.date, order: .reverse) private var readinessRecords: [DailyReadiness]
 
+    // Epic 14.3: Loading state voor de Vibe Score kaart
+    @State private var isVibeScoreLoading: Bool = false
+    @State private var isVibeScoreUnavailable: Bool = false
+
     /// Geeft het DailyReadiness record van vandaag terug, of nil als er nog geen is.
     private var todayReadiness: DailyReadiness? {
         let todayStart = Calendar.current.startOfDay(for: Date())
@@ -1407,8 +1422,12 @@ struct DashboardView: View {
                         }
 
                         // EPIC 14.3: Vibe Score Kaart — bovenaan voor directe richting
-                        VibeScoreCardView(readiness: todayReadiness)
-                            .padding(.horizontal)
+                        VibeScoreCardView(
+                            readiness: todayReadiness,
+                            isLoading: isVibeScoreLoading,
+                            isUnavailable: isVibeScoreUnavailable
+                        )
+                        .padding(.horizontal)
 
                         // EPIC 18.1: Post-Workout Check-in — toon alleen als recentste workout (≤48u) nog geen beoordeling heeft
                         if let recentActivity = recentUncheckedActivity {
@@ -1617,7 +1636,10 @@ struct DashboardView: View {
                 )
                 // Sprint 20.2: HealthKit-toestemming wordt uitsluitend gevraagd via de
                 // OnboardingView (eerste gebruik) of via Instellingen (achteraf).
-                // Hier verwijderd zodat er geen abrupte popup verschijnt bij app-open.
+                // EPIC 14.3: Bereken de Vibe Score automatisch als er nog geen record voor vandaag is.
+                if todayReadiness == nil {
+                    Task { await calculateAndSaveVibeScore() }
+                }
                 // EPIC 14.4: Schrijf de Vibe Score van vandaag naar de AI-prompt cache
                 // zodat elke coach-interactie de actuele herstelstatus kent.
                 viewModel.cacheVibeScore(todayReadiness)
@@ -1634,5 +1656,75 @@ struct DashboardView: View {
                 )
             }
         }
+    }
+
+    /// Haalt HealthKit-data op en slaat een DailyReadiness record op voor vandaag.
+    /// Gebruikt een 5 seconden time-out; bij geen data wordt de kaart op 'niet beschikbaar' gezet.
+    @MainActor
+    private func calculateAndSaveVibeScore() async {
+        isVibeScoreLoading = true
+        isVibeScoreUnavailable = false
+        defer { isVibeScoreLoading = false }
+
+        print("🏃 [VibeScore] Auto-berekening gestart")
+
+        let hkManager = HealthKitManager()
+
+        // Stel een race-conditie in: als HealthKit na 5 seconden geen antwoord geeft, stoppen we.
+        let result = await withTaskGroup(of: (Double?, Double?, Double?)?.self) { group in
+            // Taak 1: Haal HRV, baseline en slaap parallel op
+            group.addTask {
+                async let hrvTask = try? hkManager.fetchRecentHRV()
+                async let baselineTask = try? hkManager.fetchHRVBaseline(days: 7)
+                async let sleepTask = try? hkManager.fetchLastNightSleep()
+                return await (hrvTask, baselineTask, sleepTask)
+            }
+            // Taak 2: 5 seconden time-out
+            group.addTask {
+                try? await Task.sleep(nanoseconds: 5_000_000_000)
+                print("⏱️ [VibeScore] Time-out na 5 seconden — geen HealthKit-data ontvangen")
+                return nil
+            }
+            // Gebruik het resultaat van de eerste taak die klaar is (data óf time-out)
+            for await result in group {
+                group.cancelAll()
+                return result
+            }
+            return nil
+        }
+
+        guard let (hrv, baseline, sleep) = result,
+              let currentHRV = hrv,
+              let hrvBaseline = baseline,
+              let sleepHours = sleep else {
+            print("⚠️ [VibeScore] Onvoldoende data — kaart wordt op 'niet beschikbaar' gezet")
+            isVibeScoreUnavailable = true
+            return
+        }
+
+        let score = ReadinessCalculator.calculate(
+            sleepHours: sleepHours,
+            hrv: currentHRV,
+            hrvBaseline: hrvBaseline
+        )
+        print("✅ [VibeScore] Score berekend: \(score)/100 (slaap: \(String(format: "%.1f", sleepHours))u, HRV: \(String(format: "%.1f", currentHRV))ms, baseline: \(String(format: "%.1f", hrvBaseline))ms)")
+
+        // Upsert: overschrijf een bestaand record voor vandaag of maak een nieuw aan
+        let todayStart = Calendar.current.startOfDay(for: Date())
+        let tomorrowStart = Calendar.current.date(byAdding: .day, value: 1, to: todayStart)!
+        let descriptor = FetchDescriptor<DailyReadiness>(
+            predicate: #Predicate { $0.date >= todayStart && $0.date < tomorrowStart }
+        )
+        if let existing = try? modelContext.fetch(descriptor), let record = existing.first {
+            record.sleepHours = sleepHours
+            record.hrv = currentHRV
+            record.readinessScore = score
+        } else {
+            modelContext.insert(DailyReadiness(date: Date(), sleepHours: sleepHours, hrv: currentHRV, readinessScore: score))
+        }
+        try? modelContext.save()
+
+        // Werk de AI-cache bij met de nieuw berekende score
+        viewModel.cacheVibeScore(todayReadiness)
     }
 }
