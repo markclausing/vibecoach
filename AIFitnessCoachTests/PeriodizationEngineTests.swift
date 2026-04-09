@@ -60,6 +60,8 @@ final class PeriodizationEngineTests: XCTestCase {
     func testSuccessCriteria_TaperingPct_Is50Percent() {
         // Tapering: dit is een MAXIMUM, geen minimum
         XCTAssertEqual(TrainingPhase.tapering.successCriteria.longestSessionPct, 0.50)
+        // Venster is 2 weken — betrouwbaarder dan 1 week (raceweek kan nog leeg zijn)
+        XCTAssertEqual(TrainingPhase.tapering.successCriteria.sessionWindowWeeks, 2)
     }
 
     func testSuccessCriteria_AllPhasesHaveNonEmptyCoaching() {

@@ -112,10 +112,12 @@ enum TrainingPhase: String, CaseIterable {
             )
         case .tapering:
             // Afbouw: langste sessie MAXIMAAL 50% van de piekduurloop (niet te zwaar!), TRIMP terug naar 60%.
+            // Venster van 2 weken: geeft een betrouwbaar beeld of de atleet écht aan het afbouwen is
+            // (raceweek kan nog leeg zijn — 1 week terugkijken is dan te kort).
             return PhaseSuccessCriteria(
                 longestSessionPct: 0.50,
                 weeklyTrimpPct: 0.60,
-                sessionWindowWeeks: 1,
+                sessionWindowWeeks: 2,
                 coaching: "We zitten in de **Taper**-fase. Minder is meer — houd sessies kort en licht. De benen worden scherp door rust, niet door extra kilometers."
             )
         }
