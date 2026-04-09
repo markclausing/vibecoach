@@ -1043,7 +1043,7 @@ actor HealthKitSyncService {
 
             // Map de HealthKit Workout naar onze ActivityRecord (SwiftData Model)
             // Gebruik de menselijke SportCategory-naam zodat de coach "wandeling" ziet, niet "HealthKit 52"
-            let sport = SportCategory.from(hkType: workout.workoutActivityType.rawValue)
+            // `sport` is al gedeclareerd op basis van workoutActivityType (Laag 1b hierboven)
             let recordName = sport.workoutName.prefix(1).uppercased() + sport.workoutName.dropFirst()
 
             let record = ActivityRecord(
