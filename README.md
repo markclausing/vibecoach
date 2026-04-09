@@ -110,6 +110,25 @@ De transitie van functioneel prototype naar een portfolio-klare, release-waardig
 * **Sprint 20.2 — Onboarding Flow:** 4-pagina `TabView` carousel (Welkom → Hoe het werkt → Jouw Data/AI → Permissies). Pagina 3 bevat een inline BYOK-invoerkaart met segmented Picker, SecureField en provider-specifieke 'Hoe kom ik aan een sleutel?' links. Pagina 4 vraagt HealthKit en Notificaties netjes via `PermissionCard` componenten — uitsluitend via knoppen, nooit automatisch. `hasSeenOnboarding` AppStorage routing in de App struct: nieuwe gebruikers zien de onboarding, terugkerende gebruikers gaan direct naar het dashboard. Achtergrond-engines starten pas na voltooiing.
 * **Sprint 20.3 — Splash Screen & App Icon:** Native splash screen via `UILaunchScreen` in `Info.plist` — donkere achtergrond (`#0D1117`) met gecentreerd neon-groen logo. Gepolijst App-icoon zonder witte rand. Onboarding beveiligd: geen enkele permissie-request buiten de expliciete knoppen.
 
+### ✅ Epic 14b: Blessure-Impact Intelligentie & Vibe Score Stabiliteit (Afgerond)
+
+Contextuele coaching op basis van blessure-belasting en stabiele Vibe Score berekening.
+
+* **Sprint 14b.1 — Injury-Impact Matrix:** `InjuryImpactMatrix` struct vergelijkt de `SportCategory` van de laatste workout met actieve blessure-voorkeuren. Penalty-multiplier (1.0–1.4×) verhoogt de effectieve TRIMP bij risicovolle sportkoppeling (bijv. kuitklachten + hardlopen = 1.4×). Banner toont contextuele blessure-waarschuwing.
+* **Sprint 14b.2 — ACWR-Bannerlogica:** Dashboard-banner gebaseerd op Acute:Chronic Workload Ratio (drempelwaarde 1.5×). Drie states: `overreached`, `lowVibeHighLoad`, `behindOnPlan`. Geen overlap meer met weekdoel-logica. `VibeScoreExplainerCard` inklapbaar toegevoegd.
+* **Sprint 14b.3 — Chat UX & Retry:** Verbeterde prompt-suggesties, toetsenbord-gedrag in `ChatView`. `Retry`-knop bij tijdelijke AI-fouten (netwerk/rate-limit).
+* **Sprint 14b.4 — Vibe Score Auto-Berekening:** `DashboardView` berekent de Vibe Score automatisch bij `onAppear` als er geen record voor vandaag is. 5-seconden time-out via `withTaskGroup` race-conditie. `defer { isLoading = false }` garandeert reset ook bij fouten. HRV-queryvenster vergroot naar 48u (fallback als Watch gisteravond niet gedragen). Debug print-statements in alle HealthKit-queryfuncties.
+
+---
+
+### 🔄 Epic 17: Goal-Specific Blueprints (Actief)
+
+Hardcoded sportwetenschappelijke regels per discipline — coaching op basis van bewezen principes, niet alleen AI-gevoel.
+
+* **Sprint 17.1 — Architectuur & Harde Regels (Huidig):** `GoalBlueprint` struct met `minLongRunDistance`, `taperPeriodWeeks`, `weeklyTrimpTarget` en `essentialWorkouts`. Hardcoded Marathon Blueprint (verplichte 32 km duurloop 3–4 weken voor race) en Fietsdoel Blueprint (duur-intervals + TRIMP-opbouw). `BlueprintChecker` vergelijkt `ActivityHistory` met actieve blueprint en retourneert lijst van voldane en openstaande kritieke eisen.
+* **⏳ Sprint 17.2 — LLM Integratie:** De LLM-manager bewust maken van actieve blueprints voor betere coaching-context en persoonlijk advies.
+* **⏳ Sprint 17.3 — Milestone UI:** Visuele weergave van kritieke checkpoints en voortgang op het dashboard.
+
 ---
 
 ### 📅 Backlog / Toekomstvisie
@@ -117,7 +136,6 @@ De transitie van functioneel prototype naar een portfolio-klare, release-waardig
 | Epic | Beschrijving |
 |------|--------------|
 | **Epic 15 — Biometrische & Omgevingscontext** | Integratie met lokale weersomstandigheden (hitte/kou) en hormonale cyclus via HealthKit voor contextuele TRIMP-weging. |
-| **Epic 17 — Goal-Specific Blueprints** | Hardcoded sportwetenschappelijke regels per discipline, zoals 'minimaal één 32 km duurloop voor een marathon', rechtstreeks in de LLM Manager. |
 | **Epic 21 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes (bijv. kuitklachten) — zodat de coach maanden later nog kan refereren aan chronische patronen. |
 | **Epic 22 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. *(Verre toekomst)* |
 
