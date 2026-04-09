@@ -1251,7 +1251,7 @@ struct DashboardView: View {
                 let percentAbove = Int((ratio - 1.0) * 100)
                 let injury = InjuryImpactMatrix.injuryDescription(for: last.sportCategory, given: Array(activePreferences))
                 return .overreached(
-                    workoutName: last.name,
+                    workoutName: last.displayName,
                     actualTRIMP: Int(acuteTRIMP),
                     chronicTRIMP: Int(chronic),
                     percentageAbove: percentAbove,
@@ -1263,7 +1263,7 @@ struct DashboardView: View {
             // Zelfs een normale training is te veel als het lichaam al uitgeput is.
             if let vibe = todayReadiness?.readinessScore, vibe < 40, acuteTRIMP > chronic {
                 return .lowVibeHighLoad(
-                    workoutName: last.name,
+                    workoutName: last.displayName,
                     vibeScore: vibe,
                     actualTRIMP: Int(acuteTRIMP)
                 )
@@ -1447,8 +1447,9 @@ struct DashboardView: View {
                                 viewModel.cacheLastWorkoutFeedback(
                                     rpe: rpe,
                                     mood: mood,
-                                    workoutName: recentActivity.name,
-                                    trimp: recentActivity.trimp
+                                    workoutName: recentActivity.displayName,
+                                    trimp: recentActivity.trimp,
+                                    startDate: recentActivity.startDate
                                 )
                             }
                             .padding(.horizontal)
@@ -1668,8 +1669,9 @@ struct DashboardView: View {
                 viewModel.cacheLastWorkoutFeedback(
                     rpe: lastRatedActivity?.rpe,
                     mood: lastRatedActivity?.mood,
-                    workoutName: lastRatedActivity?.name,
-                    trimp: lastRatedActivity?.trimp
+                    workoutName: lastRatedActivity?.displayName,
+                    trimp: lastRatedActivity?.trimp,
+                    startDate: lastRatedActivity?.startDate
                 )
             }
         }

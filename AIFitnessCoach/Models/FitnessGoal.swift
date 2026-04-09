@@ -283,6 +283,16 @@ final class ActivityRecord {
     var rpe: Int?    // 1 = heel makkelijk, 10 = maximale inspanning
     var mood: String? // Bijv. "😌", "🟢", "🚀", "🤕", "🥵"
 
+    /// Menselijke naam voor UI en AI-context.
+    /// Legacy HealthKit-records bevatten soms 'HealthKit <rawValue>' (bijv. 'HealthKit 52') —
+    /// deze property vervangt dat altijd door de leesbare naam van de SportCategory.
+    var displayName: String {
+        if name.hasPrefix("HealthKit") {
+            return sportCategory.workoutName.prefix(1).uppercased() + sportCategory.workoutName.dropFirst()
+        }
+        return name
+    }
+
     init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil, rpe: Int? = nil, mood: String? = nil) {
         self.id = id
         self.name = name
@@ -387,6 +397,20 @@ enum SportCategory: String, Codable, CaseIterable, Identifiable {
         case .walking: return "Wandelen"
         case .triathlon: return "Triatlon"
         case .other: return "Anders"
+        }
+    }
+
+    /// Menselijke naam voor gebruik in coach-context en banners (bijv. "hardloopsessie", "fietstocht").
+    /// Zorgt dat de AI nooit technische termen zoals 'HealthKit 52' gebruikt.
+    var workoutName: String {
+        switch self {
+        case .running:   return "hardloopsessie"
+        case .cycling:   return "fietstocht"
+        case .swimming:  return "zwemsessie"
+        case .strength:  return "krachttraining"
+        case .walking:   return "wandeling"
+        case .triathlon: return "triatlonsessie"
+        case .other:     return "training"
         }
     }
 
