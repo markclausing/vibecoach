@@ -123,7 +123,7 @@ final class BlueprintCheckerTests: XCTestCase {
 
     func testCheckAllGoals_FiltersCompletedGoals() {
         let activeGoal = makeGoal(title: "Marathon", weeksAhead: 20)
-        var completedGoal = makeGoal(title: "Arnhem-Karlsruhe", weeksAhead: 10)
+        let completedGoal = makeGoal(title: "Arnhem-Karlsruhe", weeksAhead: 10)
         completedGoal.isCompleted = true
 
         let results = BlueprintChecker.checkAllGoals([activeGoal, completedGoal], activities: [])

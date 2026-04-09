@@ -175,18 +175,18 @@ final class PeriodizationEngineTests: XCTestCase {
 
     // MARK: - RequiredSessionMeters berekening
 
-    func testRequiredSessionMeters_PeakMarathon_Is25600m() {
+    func testRequiredSessionMeters_PeakMarathon_Is25600m() throws {
         let goal = makeGoal(title: "Marathon", weeksAhead: 3) // Peak fase
-        let result = PeriodizationEngine.evaluate(goal: goal, activities: [])
+        let result = try XCTUnwrap(PeriodizationEngine.evaluate(goal: goal, activities: []))
         // Marathon blueprint: minLongRunDistance = 32.000m, Peak criteria: 80%
-        XCTAssertEqual(result?.requiredSessionMeters, 32_000 * 0.80, accuracy: 1.0)
+        XCTAssertEqual(result.requiredSessionMeters, 32_000 * 0.80, accuracy: 1.0)
     }
 
     // MARK: - evaluateAllGoals
 
     func testEvaluateAllGoals_FiltersCompletedGoals() {
         let active = makeGoal(title: "Marathon", weeksAhead: 10)
-        var completed = makeGoal(title: "Arnhem-Karlsruhe", weeksAhead: 5)
+        let completed = makeGoal(title: "Arnhem-Karlsruhe", weeksAhead: 5)
         completed.isCompleted = true
 
         let results = PeriodizationEngine.evaluateAllGoals([active, completed], activities: [])
