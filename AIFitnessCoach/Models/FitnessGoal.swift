@@ -79,6 +79,136 @@ enum TrainingPhase: String, CaseIterable {
         default:      return .baseBuilding
         }
     }
+
+    // MARK: Epic 17.1 — Success Criteria per fase
+
+    /// Retourneert de sportwetenschappelijke succescriteria voor deze fase,
+    /// uitgedrukt als breuken van de blueprint-doelwaarden.
+    var successCriteria: PhaseSuccessCriteria {
+        switch self {
+        case .baseBuilding:
+            // Fundament leggen: 40% van de piekduurloop volstaat, 60% van het TRIMP-doel.
+            return PhaseSuccessCriteria(
+                longestSessionPct: 0.40,
+                weeklyTrimpPct: 0.60,
+                sessionWindowWeeks: 4,
+                coaching: "We zitten in de **Base Building**-fase. Focus op laag-intensief volume en het leggen van het aerobe fundament. Geen intervaltraining — nog niet."
+            )
+        case .buildPhase:
+            // Opbouw: 60% van de piekduurloop, 80% van het TRIMP-doel.
+            return PhaseSuccessCriteria(
+                longestSessionPct: 0.60,
+                weeklyTrimpPct: 0.80,
+                sessionWindowWeeks: 3,
+                coaching: "We zitten in de **Build**-fase — het is tijd om de intensiteit op te schroeven. Voeg gecontroleerde intervaltrainingen toe en bouw de langste sessie geleidelijk op."
+            )
+        case .peakPhase:
+            // Piek: 80% van de piekduurloop is vereist, volledig TRIMP-doel behalen.
+            return PhaseSuccessCriteria(
+                longestSessionPct: 0.80,
+                weeklyTrimpPct: 1.00,
+                sessionWindowWeeks: 3,
+                coaching: "We zitten in de **Peak**-fase — maximale trainingsbelasting. Race-specifieke trainingen op wedstrijdintensiteit. Daarna volgt de taper."
+            )
+        case .tapering:
+            // Afbouw: langste sessie MAXIMAAL 50% van de piekduurloop (niet te zwaar!), TRIMP terug naar 60%.
+            // Venster van 2 weken: geeft een betrouwbaar beeld of de atleet écht aan het afbouwen is
+            // (raceweek kan nog leeg zijn — 1 week terugkijken is dan te kort).
+            return PhaseSuccessCriteria(
+                longestSessionPct: 0.50,
+                weeklyTrimpPct: 0.60,
+                sessionWindowWeeks: 2,
+                coaching: "We zitten in de **Taper**-fase. Minder is meer — houd sessies kort en licht. De benen worden scherp door rust, niet door extra kilometers."
+            )
+        }
+    }
+}
+
+// MARK: - Epic 17.1: PeriodizationEngine — Data Types
+
+/// Sportwetenschappelijke succescriteria voor één trainingsfase.
+/// Uitgedrukt als breuk (0.0–1.0) van de blueprint-doelwaarden zodat
+/// dezelfde criteria gelden voor marathon, halve marathon én fietstochten.
+struct PhaseSuccessCriteria {
+    /// Minimale langste sessie als breuk van `GoalBlueprint.minLongRunDistance`.
+    /// Voorbeeld: 0.80 in de Peak-fase = langste sessie moet ≥80% van 32 km = ≥25.6 km zijn.
+    let longestSessionPct: Double
+    /// Minimale wekelijkse TRIMP als breuk van `GoalBlueprint.weeklyTrimpTarget`.
+    /// In de Taper-fase is dit een MAXIMUM (de atleet moet juist minder doen).
+    let weeklyTrimpPct: Double
+    /// Aantal weken terugkijken om de langste sessie te bepalen (korter in Peak/Taper).
+    let sessionWindowWeeks: Int
+    /// Coaching-boodschap die de coach meekrijgt voor deze fase.
+    let coaching: String
+}
+
+/// Resultaat van een volledige PeriodizationEngine evaluatie voor één doel.
+struct PeriodizationResult {
+    let goal: FitnessGoal
+    let blueprint: GoalBlueprint
+    let phase: TrainingPhase
+    let criteria: PhaseSuccessCriteria
+
+    /// Langste sessie (in meters) van het sport-type dat bij het blueprint past,
+    /// binnen het `criteria.sessionWindowWeeks` terugkijkvenster.
+    let longestRecentSessionMeters: Double
+
+    /// Minimaal vereiste sessielengte = `blueprint.minLongRunDistance × criteria.longestSessionPct`.
+    var requiredSessionMeters: Double {
+        blueprint.minLongRunDistance * criteria.longestSessionPct
+    }
+
+    /// True als de langste sessie aan de fase-eis voldoet.
+    /// In de Tapering-fase is de logica omgekeerd: de sessie moet juist KORTER zijn.
+    var meetsLongestSessionCriteria: Bool {
+        if phase == .tapering {
+            return longestRecentSessionMeters <= requiredSessionMeters
+        }
+        return longestRecentSessionMeters >= requiredSessionMeters
+    }
+
+    /// Wekelijkse TRIMP-target voor deze fase = `blueprint.weeklyTrimpTarget × criteria.weeklyTrimpPct`.
+    var targetWeeklyTrimp: Double {
+        blueprint.weeklyTrimpTarget * criteria.weeklyTrimpPct
+    }
+
+    /// True als de sporter op het juiste TRIMP-niveau zit voor deze fase.
+    /// In de Tapering-fase geldt ook hier de omgekeerde logica.
+    var meetsWeeklyTrimpCriteria: Bool {
+        if phase == .tapering {
+            return currentWeeklyTrimp <= targetWeeklyTrimp
+        }
+        return currentWeeklyTrimp >= targetWeeklyTrimp
+    }
+
+    /// Actueel gemiddeld wekelijks TRIMP over de afgelopen 4 weken (ongeacht fase).
+    let currentWeeklyTrimp: Double
+
+    /// True als de sporter aan BEIDE criteria voldoet.
+    var isOnTrack: Bool { meetsLongestSessionCriteria && meetsWeeklyTrimpCriteria }
+
+    /// Volledige coaching-context inclusief fase, criteria en actuele status — klaar voor AI-injectie.
+    var coachingContext: String {
+        let weeksLeft = goal.targetDate.timeIntervalSince(Date()) / (7 * 86400)
+        let weeksLeftStr = String(format: "%.1f", weeksLeft)
+        let longestKm    = String(format: "%.1f", longestRecentSessionMeters / 1000)
+        let requiredKm   = String(format: "%.1f", requiredSessionMeters / 1000)
+        let sessionCheck = meetsLongestSessionCriteria ? "✅" : "❌"
+        let trimpCheck   = meetsWeeklyTrimpCriteria    ? "✅" : "❌"
+        let trimpTarget  = String(format: "%.0f", targetWeeklyTrimp)
+        let trimpActual  = String(format: "%.0f", currentWeeklyTrimp)
+
+        var lines = [
+            "Fase: \(phase.displayName) (\(weeksLeftStr) weken resterend voor '\(goal.title)')",
+            criteria.coaching,
+            "\(sessionCheck) Langste sessie (afgelopen \(criteria.sessionWindowWeeks) weken): \(longestKm) km (eis: \(phase == .tapering ? "≤" : "≥")\(requiredKm) km)",
+            "\(trimpCheck) Wekelijkse TRIMP: \(trimpActual) (doel: \(phase == .tapering ? "≤" : "≥")\(trimpTarget))",
+        ]
+        if !isOnTrack {
+            lines.append("⚠️ De sporter voldoet nog niet aan alle criteria voor deze fase. Pas het schema aan.")
+        }
+        return lines.joined(separator: "\n")
+    }
 }
 
 /// Represents a user's fitness goal.
@@ -376,6 +506,95 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
             targetTRIMP = nil
         }
     }
+}
+
+// MARK: - Epic 17: Goal-Specific Blueprints — Data Types
+
+/// Ondersteunde blueprint-typen — gedetecteerd via sleutelwoorden in de doeltitel.
+enum GoalBlueprintType: String, CaseIterable {
+    case marathon     = "marathon"
+    case halfMarathon = "half_marathon"
+    case cyclingTour  = "cycling_tour"
+
+    /// Sleutelwoorden die in de doeltitel moeten voorkomen voor automatische detectie (lowercase).
+    var detectionKeywords: [String] {
+        switch self {
+        case .marathon:
+            return ["marathon"]
+        case .halfMarathon:
+            return ["halve marathon", "half marathon", "21km", "21 km", "21,1"]
+        case .cyclingTour:
+            return ["arnhem", "karlsruhe", "cycling tour", "fietstocht", "fietsdoel", "gran fondo", "sportieve rit"]
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .marathon:     return "Marathon"
+        case .halfMarathon: return "Halve Marathon"
+        case .cyclingTour:  return "Fietstocht"
+        }
+    }
+}
+
+/// Een kritieke trainingseis die vóór een bepaald moment behaald moet zijn.
+/// Onderdeel van een GoalBlueprint — één openstaande eis houdt de milestone rood.
+struct EssentialWorkout: Equatable {
+    /// Stabiele identifier voor de milestone-check (bijv. "marathon_long_run_32")
+    let id: String
+    /// Leesbare beschrijving voor UI en AI-context (bijv. "32 km duurloop")
+    let description: String
+    /// Minimale afstand in meters voor deze eis, of nil als duur leidend is
+    let minimumDistanceMeters: Double?
+    /// Vereiste sportsoort (type-veilig via SportCategory)
+    let requiredSportCategory: SportCategory
+    /// Aantal weken vóór de einddatum waarbinnen deze workout voltooid moet zijn
+    let mustCompleteByWeeksBefore: Int
+}
+
+/// Sportwetenschappelijk trainingsplan voor een specifiek doeltype.
+/// Bevat harde regels die — ongeacht AI-output — altijd van toepassing zijn.
+struct GoalBlueprint {
+    let goalType: GoalBlueprintType
+    /// Minimale afstand van de langste duurtraining in meters (bijv. 32.000 voor marathon)
+    let minLongRunDistance: Double
+    /// Weken vóór de race dat de afbouwperiode (taper) start
+    let taperPeriodWeeks: Int
+    /// Wekelijkse TRIMP-doelstelling tijdens de opbouwfase
+    let weeklyTrimpTarget: Double
+    /// Kritieke trainingen die verplicht in het schema moeten voorkomen
+    let essentialWorkouts: [EssentialWorkout]
+}
+
+/// Voortgangsstatus van één kritieke trainingseis t.o.v. de deadline.
+struct MilestoneStatus: Identifiable, Equatable {
+    let id: String
+    let description: String
+    /// True als er een passende activiteit gevonden is die aan de eis voldoet
+    let isSatisfied: Bool
+    /// Datum waarop de eis behaald werd (alleen ingevuld als isSatisfied == true)
+    let satisfiedByDate: Date?
+    /// Uiterste datum waarop deze workout gedaan moet zijn (berekend vanuit targetDate)
+    let deadline: Date
+    /// Aantal weken vóór de race dat deze eis uiterlijk voltooid moet zijn
+    let weeksBefore: Int
+}
+
+/// Volledige blauwdrukcheck voor één doel: blueprint + alle milestone statussen.
+struct BlueprintCheckResult {
+    let blueprint: GoalBlueprint
+    let goal: FitnessGoal
+    let milestones: [MilestoneStatus]
+
+    /// True als alle kritieke eisen waarvan de deadline al verstreken is ook behaald zijn.
+    var isOnTrack: Bool {
+        milestones
+            .filter { $0.deadline < Date() }
+            .allSatisfy { $0.isSatisfied }
+    }
+
+    var satisfiedCount: Int { milestones.filter { $0.isSatisfied }.count }
+    var totalCount: Int { milestones.count }
 }
 
 /// Slaat de dagelijkse Readiness Score op, berekend op basis van slaap en HRV (Epic 14).

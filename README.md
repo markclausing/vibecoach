@@ -125,9 +125,9 @@ Contextuele coaching op basis van blessure-belasting en stabiele Vibe Score bere
 
 Hardcoded sportwetenschappelijke regels per discipline — coaching op basis van bewezen principes, niet alleen AI-gevoel.
 
-* **Sprint 17.1 — Architectuur & Harde Regels (Huidig):** `GoalBlueprint` struct met `minLongRunDistance`, `taperPeriodWeeks`, `weeklyTrimpTarget` en `essentialWorkouts`. Hardcoded Marathon Blueprint (verplichte 32 km duurloop 3–4 weken voor race) en Fietsdoel Blueprint (duur-intervals + TRIMP-opbouw). `BlueprintChecker` vergelijkt `ActivityHistory` met actieve blueprint en retourneert lijst van voldane en openstaande kritieke eisen.
-* **⏳ Sprint 17.2 — LLM Integratie:** De LLM-manager bewust maken van actieve blueprints voor betere coaching-context en persoonlijk advies.
-* **⏳ Sprint 17.3 — Milestone UI:** Visuele weergave van kritieke checkpoints en voortgang op het dashboard.
+* **Sprint 17.1 — Architectuur & Harde Regels:** `GoalBlueprint` struct met `minLongRunDistance`, `taperPeriodWeeks`, `weeklyTrimpTarget` en `essentialWorkouts`. Hardcoded Marathon Blueprint (28+32 km), Halve Marathon (16+18 km) en Fietstocht (60+100 km — bijv. Arnhem–Karlsruhe). `BlueprintChecker` detecteert blueprint-type via sleutelwoorden of SportCategory-fallback en retourneert `BlueprintCheckResult`. `PeriodizationEngine` evalueert per doel de huidige `TrainingPhase` (Base/Build/Peak/Taper) en toetst recente activiteiten aan fase-specifieke `PhaseSuccessCriteria` (bijv. Peak = langste sessie ≥80% van doelafstand). `ChatViewModel` injecteert zowel blueprint-milestones als periodization-context (inclusief fase-coaching boodschap) in alle AI-prompts. Unit tests: `BlueprintCheckerTests.swift` (10 tests) + `PeriodizationEngineTests.swift` (14 tests).
+* **⏳ Sprint 17.2 — LLM Integratie:** Verdere verdieping van de coaching-context op basis van blueprint + fase-voortgang.
+* **⏳ Sprint 17.3 — Milestone UI:** Visuele weergave van kritieke checkpoints en fase-voortgang op het dashboard.
 
 ---
 
