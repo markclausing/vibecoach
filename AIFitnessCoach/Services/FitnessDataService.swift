@@ -505,8 +505,10 @@ final class HealthKitManager: @unchecked Sendable {
                         // Haal laatste rusthartslag op
                         let restingHR = try await self.fetchLatestRestingHeartRate(quantityType: restingHeartRateType)
 
+                        let sport = SportCategory.from(hkType: workout.workoutActivityType.rawValue)
+                        let workoutName = sport.workoutName.prefix(1).uppercased() + sport.workoutName.dropFirst()
                         let details = WorkoutDetails(
-                            name: "HealthKit Training",
+                            name: String(workoutName),
                             startDate: workout.startDate,
                             duration: workout.duration,
                             averageHeartRate: avgHR,
@@ -566,8 +568,10 @@ final class HealthKitManager: @unchecked Sendable {
                             let avgHR = heartRateData.isEmpty ? 0 : heartRateData.reduce(0) { $0 + $1.bpm } / Double(heartRateData.count)
                             let maxHR = heartRateData.max(by: { $0.bpm < $1.bpm })?.bpm ?? 0
 
+                            let wSport = SportCategory.from(hkType: workout.workoutActivityType.rawValue)
+                            let wName = wSport.workoutName.prefix(1).uppercased() + wSport.workoutName.dropFirst()
                             let details = WorkoutDetails(
-                                name: "HealthKit Training",
+                                name: String(wName),
                                 startDate: workout.startDate,
                                 duration: workout.duration,
                                 averageHeartRate: avgHR,
@@ -1038,8 +1042,9 @@ actor HealthKitSyncService {
             let trimp = (avgHR != nil) ? calcTSS : nil
 
             // Map de HealthKit Workout naar onze ActivityRecord (SwiftData Model)
-            // type wordt als string opgeslagen (we gebruiken de naam van het HKWorkoutActivityType via een simpele string mapping voor de UI)
-            let recordName = "HealthKit \(workout.workoutActivityType.rawValue)"
+            // Gebruik de menselijke SportCategory-naam zodat de coach "wandeling" ziet, niet "HealthKit 52"
+            // `sport` is al gedeclareerd op basis van workoutActivityType (Laag 1b hierboven)
+            let recordName = sport.workoutName.prefix(1).uppercased() + sport.workoutName.dropFirst()
 
             let record = ActivityRecord(
                 id: workoutId,
