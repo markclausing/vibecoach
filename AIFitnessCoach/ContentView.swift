@@ -1138,10 +1138,14 @@ struct DashboardView: View {
     @State private var isVibeScoreUnavailable: Bool = false
 
     // Epic 17: BlueprintChecker resultaten voor alle actieve doelen
-    /// Berekend op basis van de actuele doelen en activiteitenhistorie.
     /// Wordt op de achtergrond gebruikt voor coaching-context; volledige UI volgt in Sprint 17.3.
     private var blueprintResults: [BlueprintCheckResult] {
         BlueprintChecker.checkAllGoals(Array(goals), activities: Array(activities))
+    }
+
+    // Epic 17.1: PeriodizationEngine resultaten — fase + succescriteria per actief doel
+    private var periodizationResults: [PeriodizationResult] {
+        PeriodizationEngine.evaluateAllGoals(Array(goals), activities: Array(activities))
     }
 
     /// Geeft het DailyReadiness record van vandaag terug, of nil als er nog geen is.
@@ -1653,6 +1657,9 @@ struct DashboardView: View {
                 // Epic 17: Schrijf de blueprint-status naar de AI-prompt cache
                 // zodat de coach weet welke kritieke trainingen open staan per doel.
                 viewModel.cacheActiveBlueprints(blueprintResults)
+                // Epic 17.1: Schrijf de periodization-status naar de AI-prompt cache
+                // zodat de coach de actuele trainingsfase en succescriteria kent.
+                viewModel.cachePeriodizationStatus(periodizationResults)
                 // EPIC 18: Schrijf de meest recente echte workout-beoordeling naar de AI-prompt cache.
                 // rpe == WorkoutCheckinConfig.ignoredRPESentinel (0) telt niet als echte feedback.
                 let lastRatedActivity = activities

@@ -70,6 +70,10 @@ class ChatViewModel: ObservableObject {
     /// Bevat openstaande en voldane kritieke trainingen zodat de coach hierop kan bijsturen.
     @AppStorage("vibecoach_blueprintContext") private var blueprintContext: String = ""
 
+    /// Epic 17.1: Cache van de PeriodizationEngine-status per doel.
+    /// Bevat de huidige trainingsfase + succescriteria + voortgang voor gerichte fase-coaching.
+    @AppStorage("vibecoach_periodizationContext") private var periodizationContext: String = ""
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
@@ -164,6 +168,19 @@ class ChatViewModel: ObservableObject {
             }
         }
         blueprintContext = lines.joined(separator: "\n")
+    }
+
+    /// Epic 17.1: Schrijft de PeriodizationEngine-status naar de AppStorage cache.
+    /// Wordt aangeroepen vanuit DashboardView zodat de AI per doel weet in welke trainingsfase
+    /// de gebruiker zit en of hij aan de fase-specifieke succescriteria voldoet.
+    func cachePeriodizationStatus(_ results: [PeriodizationResult]) {
+        guard !results.isEmpty else {
+            periodizationContext = ""
+            return
+        }
+        periodizationContext = results
+            .map { $0.coachingContext }
+            .joined(separator: "\n\n")
     }
 
     /// SPRINT 13.4: Geeft het meest recent opgeslagen coach-inzicht terug (uit AppStorage).
@@ -334,6 +351,12 @@ class ChatViewModel: ObservableObject {
         // Epic 17: Injecteer de blueprint-status — de AI weet welke kritieke trainingen open staan
         if !blueprintContext.isEmpty {
             prefix += "[SPORTWETENSCHAPPELIJKE EISEN (BLUEPRINT):\n\(blueprintContext)\nInstructie: Controleer ALTIJD of de gebruiker op schema ligt voor zijn kritieke trainingen. Als er een openstaande (❌) eis is met een naderende deadline, maak dit dan expliciet in je advies en plan de betreffende training in.]\n\n"
+        }
+
+        // Epic 17.1: Injecteer de PeriodizationEngine-status — de AI weet in welke fase we zitten
+        // én of de sporter aan de fase-specifieke succescriteria voldoet.
+        if !periodizationContext.isEmpty {
+            prefix += "[PERIODISERING — FASE & SUCCESCRITERIA:\n\(periodizationContext)\nInstructie: Gebruik de faseboodschap LETTERLIJK in je antwoord (bijv. 'We zitten nu in de Build-fase...'). Als een criterium niet behaald is (❌), geef dan concreet aan welke training dit week de prioriteit heeft.]\n\n"
         }
 
         // Epic 16: Injecteer de trainingsfase per actief doel — de AI MOET de fase-instructies strikt volgen

@@ -1263,3 +1263,76 @@ struct BlueprintChecker {
             .sorted { !$0.isOnTrack && $1.isOnTrack }
     }
 }
+
+// MARK: - Epic 17.1: PeriodizationEngine
+
+/// Berekent per actief doel de sportwetenschappelijke voortgang op basis van de huidige
+/// trainingsfase en de bijbehorende succescriteria uit de GoalBlueprint.
+///
+/// Werkt samen met BlueprintChecker (kritieke milestone-checks) en TrainingPhase (fase-detectie)
+/// om een volledig beeld te geven: "Wat moet ik NU doen om op schema te blijven?"
+struct PeriodizationEngine {
+
+    // MARK: - Evaluatie
+
+    /// Evalueert één doel: detecteert de actieve blueprint, bepaalt de fase en toetst
+    /// de recente activiteiten aan de fase-specifieke succescriteria.
+    ///
+    /// - Returns: `PeriodizationResult` met fase, criteria, langste sessie en TRIMP-check,
+    ///   of `nil` als er geen blueprint van toepassing is of het doel al afgerond/verlopen is.
+    static func evaluate(goal: FitnessGoal, activities: [ActivityRecord]) -> PeriodizationResult? {
+        guard !goal.isCompleted, Date() < goal.targetDate else { return nil }
+        guard let blueprintType = BlueprintChecker.detectBlueprintType(for: goal) else { return nil }
+
+        let bp = BlueprintChecker.blueprint(for: blueprintType)
+        let weeksRemaining = goal.targetDate.timeIntervalSince(Date()) / (7 * 86400)
+        let phase = TrainingPhase.calculate(weeksRemaining: weeksRemaining)
+        let criteria = phase.successCriteria
+
+        // Bepaal het sport-type dat bij de blueprint past (hardlopen voor marathon, fietsen voor tour)
+        let targetSport: SportCategory
+        switch blueprintType {
+        case .marathon, .halfMarathon: targetSport = .running
+        case .cyclingTour:             targetSport = .cycling
+        }
+
+        // Langste sessie binnen het fase-specifieke terugkijkvenster
+        let windowStart = Calendar.current.date(
+            byAdding: .weekOfYear,
+            value: -criteria.sessionWindowWeeks,
+            to: Date()
+        ) ?? Date()
+
+        let longestSession = activities
+            .filter { $0.sportCategory == targetSport && $0.startDate >= windowStart }
+            .map { $0.distance }
+            .max() ?? 0.0
+
+        // Gemiddeld wekelijks TRIMP over de afgelopen 4 weken (breed venster voor stabiliteit)
+        let fourWeeksAgo = Calendar.current.date(byAdding: .weekOfYear, value: -4, to: Date()) ?? Date()
+        let recentTRIMP = activities
+            .filter { $0.startDate >= fourWeeksAgo }
+            .compactMap { $0.trimp }
+            .reduce(0, +)
+        let avgWeeklyTrimp = recentTRIMP / 4.0
+
+        return PeriodizationResult(
+            goal: goal,
+            blueprint: bp,
+            phase: phase,
+            criteria: criteria,
+            longestRecentSessionMeters: longestSession,
+            currentWeeklyTrimp: avgWeeklyTrimp
+        )
+    }
+
+    /// Evalueert alle actieve doelen en retourneert resultaten gesorteerd op urgentie
+    /// (doelen die niet op schema zijn komen eerst).
+    static func evaluateAllGoals(_ goals: [FitnessGoal], activities: [ActivityRecord]) -> [PeriodizationResult] {
+        let now = Date()
+        return goals
+            .filter { !$0.isCompleted && now < $0.targetDate }
+            .compactMap { evaluate(goal: $0, activities: activities) }
+            .sorted { !$0.isOnTrack && $1.isOnTrack }
+    }
+}
