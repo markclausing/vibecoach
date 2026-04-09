@@ -125,7 +125,7 @@ Contextuele coaching op basis van blessure-belasting en stabiele Vibe Score bere
 
 Hardcoded sportwetenschappelijke regels per discipline — coaching op basis van bewezen principes, niet alleen AI-gevoel.
 
-* **Sprint 17.1 — Architectuur & Harde Regels (Huidig):** `GoalBlueprint` struct met `minLongRunDistance`, `taperPeriodWeeks`, `weeklyTrimpTarget` en `essentialWorkouts`. Hardcoded Marathon Blueprint (verplichte 32 km duurloop 3–4 weken voor race) en Fietsdoel Blueprint (duur-intervals + TRIMP-opbouw). `BlueprintChecker` vergelijkt `ActivityHistory` met actieve blueprint en retourneert lijst van voldane en openstaande kritieke eisen.
+* **Sprint 17.1 — Architectuur & Harde Regels (Huidig):** `GoalBlueprint` struct met `minLongRunDistance`, `taperPeriodWeeks`, `weeklyTrimpTarget` en `essentialWorkouts`. Hardcoded Marathon Blueprint (verplichte 28 km en 32 km duurlopen), Halve Marathon Blueprint (16 km en 18 km) en Fietsdoel Blueprint (60 km en 100 km duurritten — bijv. Arnhem–Karlsruhe). `BlueprintChecker` detecteert het blueprint-type automatisch via sleutelwoorden in de doeltitel of SportCategory-fallback. Vergelijkt activiteitenhistorie per milestone en retourneert `BlueprintCheckResult` met voldane en openstaande eisen. `ChatViewModel.cacheActiveBlueprints()` injecteert de blueprint-status in alle AI-prompts via het gestandaardiseerde context-prefix systeem. Unit tests in `BlueprintCheckerTests.swift` (10 tests).
 * **⏳ Sprint 17.2 — LLM Integratie:** De LLM-manager bewust maken van actieve blueprints voor betere coaching-context en persoonlijk advies.
 * **⏳ Sprint 17.3 — Milestone UI:** Visuele weergave van kritieke checkpoints en voortgang op het dashboard.
 

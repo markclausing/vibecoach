@@ -66,6 +66,10 @@ class ChatViewModel: ObservableObject {
     /// Wordt gevuld vanuit DashboardView zodra een ActivityRecord een beoordeling heeft.
     @AppStorage("vibecoach_lastWorkoutFeedbackContext") private var lastWorkoutFeedbackContext: String = ""
 
+    /// Epic 17: Cache van de actieve blueprint-status per doel voor injectie in AI-prompts.
+    /// Bevat openstaande en voldane kritieke trainingen zodat de coach hierop kan bijsturen.
+    @AppStorage("vibecoach_blueprintContext") private var blueprintContext: String = ""
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
@@ -131,6 +135,35 @@ class ChatViewModel: ObservableObject {
         default:    rpeLabel = "maximaal (9-10)"
         }
         lastWorkoutFeedbackContext = "Laatste workout: '\(nameStr)', TRIMP: \(trimpStr), RPE: \(rpe)/10 (\(rpeLabel)), Stemming: \(mood)."
+    }
+
+    /// Epic 17: Schrijft de blueprint-status van alle actieve doelen naar de AppStorage cache.
+    /// Wordt aangeroepen vanuit DashboardView zodat de AI weet welke kritieke trainingen
+    /// al behaald zijn en welke nog open staan — voor gerichtere coaching.
+    func cacheActiveBlueprints(_ results: [BlueprintCheckResult]) {
+        guard !results.isEmpty else {
+            blueprintContext = ""
+            return
+        }
+
+        var lines: [String] = []
+        for result in results {
+            let weeksLeft = result.goal.targetDate.timeIntervalSince(Date()) / (7 * 86400)
+            let weeksLeftStr = String(format: "%.1f", weeksLeft)
+            let statusLabel = result.isOnTrack ? "Op schema" : "Achter op schema"
+            lines.append("• Doel '\(result.goal.title)' (\(weeksLeftStr) weken resterend) — Blueprint: \(result.blueprint.goalType.displayName), \(statusLabel) (\(result.satisfiedCount)/\(result.totalCount) kritieke eisen behaald).")
+
+            for milestone in result.milestones {
+                let check = milestone.isSatisfied ? "✅" : "❌"
+                let deadlineStr = DateFormatter.localizedString(from: milestone.deadline, dateStyle: .short, timeStyle: .none)
+                if milestone.isSatisfied {
+                    lines.append("  \(check) \(milestone.description) (behaald)")
+                } else {
+                    lines.append("  \(check) \(milestone.description) — deadline: \(deadlineStr) (\(milestone.weeksBefore) weken voor race)")
+                }
+            }
+        }
+        blueprintContext = lines.joined(separator: "\n")
     }
 
     /// SPRINT 13.4: Geeft het meest recent opgeslagen coach-inzicht terug (uit AppStorage).
@@ -296,6 +329,11 @@ class ChatViewModel: ObservableObject {
         // Epic 18.1: Injecteer de subjectieve feedback (RPE + stemming) van de laatste workout
         if !lastWorkoutFeedbackContext.isEmpty {
             prefix += "[SUBJECTIEVE FEEDBACK LAATSTE WORKOUT: \(lastWorkoutFeedbackContext) Let op discrepanties: als TRIMP laag is maar RPE ≥8, is dit een vroeg signaal van overtraining of naderende ziekte.]\n\n"
+        }
+
+        // Epic 17: Injecteer de blueprint-status — de AI weet welke kritieke trainingen open staan
+        if !blueprintContext.isEmpty {
+            prefix += "[SPORTWETENSCHAPPELIJKE EISEN (BLUEPRINT):\n\(blueprintContext)\nInstructie: Controleer ALTIJD of de gebruiker op schema ligt voor zijn kritieke trainingen. Als er een openstaande (❌) eis is met een naderende deadline, maak dit dan expliciet in je advies en plan de betreffende training in.]\n\n"
         }
 
         // Epic 16: Injecteer de trainingsfase per actief doel — de AI MOET de fase-instructies strikt volgen
