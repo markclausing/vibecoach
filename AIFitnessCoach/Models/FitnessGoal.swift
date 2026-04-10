@@ -217,7 +217,7 @@ struct PeriodizationResult {
     }
 
     var milestoneItems: [MilestoneItem] {
-        let sessionUnit = blueprint.sportCategory == .cycling ? "km rit" : "km loop"
+        let sessionUnit = blueprint.goalType == .cyclingTour ? "km rit" : "km loop"
         let sessionItem = MilestoneItem(
             label: "Langste sessie",
             detail: "\(String(format: "%.0f", requiredSessionMeters / 1000)) \(sessionUnit) \(phase == .tapering ? "(max)" : "(min)") — \(criteria.sessionWindowWeeks) weken venster",
