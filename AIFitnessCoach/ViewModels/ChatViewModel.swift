@@ -289,7 +289,8 @@ class ChatViewModel: ObservableObject {
                         "targetTRIMP": 60,
                         "description": "Herstel na de lange duurloop",
                         "heartRateZone": "Zone 2",
-                        "targetPace": "5:30 min/km"
+                        "targetPace": "5:30 min/km",
+                        "reasoning": "Zone 2 herstelloop om de aerobe basis te bewaken. TRIMP 60 = 75% van het wekelijkse Build-fase doel."
                     }
                 ],
                 "newPreferences": [
@@ -299,6 +300,8 @@ class ChatViewModel: ObservableObject {
                     }
                 ]
             }
+            Extra instructie voor `reasoning` (Sprint 17.3): Vul voor ELKE workout het `reasoning` veld in met een korte, feitelijke verklaring (max. 1 zin) waarom deze training in het schema staat. Baseer dit op de fase, de succescriteria en het doel. Bijv: "60 km = langste-sessie-eis (60%) in de Build-fase voor je fietsdoel." of "Zone 2 herstelloop om de aerobe basis te bewaken." Laat dit veld NOOIT leeg.
+
             Extra instructie voor `newPreferences`: Als je opmerkt dat de gebruiker een vaste regel, langetermijnvoorkeur, of tijdelijke kwaal/blessure doorgeeft in hun LAATSTE bericht, vul dit array dan aan. Schat in of dit feit permanent is (zoals een vaste sportdag) of tijdelijk (zoals spierpijn, een lichte blessure of kramp). Als het tijdelijk is, bereken dan een logische verloopdatum (bijv. 1 of 2 weken vanaf vandaag) en retourneer deze in de JSON onder `expirationDate` als een "YYYY-MM-DD" string. Laat `expirationDate` leeg (null) bij permanente regels. Herhaal geen regels die je al kent.
             """
 

@@ -1581,7 +1581,18 @@ struct DashboardView: View {
                             .padding(.horizontal)
                         }
 
+                        // Sprint 17.3: Mijlpalen-kaart — succescriteria per doel met voortgangsbalken
+                        if !periodizationResults.isEmpty {
+                            MilestoneProgressCard(results: periodizationResults)
+                                .padding(.horizontal)
+                        }
+
                         if let plan = planManager.activePlan {
+                            // Sprint 17.3: Fase-badge boven het schema
+                            if !periodizationResults.isEmpty {
+                                PhaseBadgeView(results: periodizationResults)
+                                    .padding(.horizontal)
+                            }
                             // Hergebruik de TrainingCalendarView uit ChatView,
                             // we geven wel de viewModel callbacks door zodat de acties werken.
                             TrainingCalendarView(
@@ -1774,5 +1785,160 @@ struct DashboardView: View {
 
         // Werk de AI-cache bij met de nieuw berekende score
         viewModel.cacheVibeScore(todayReadiness)
+    }
+}
+
+// MARK: - Sprint 17.3: Fase Status Badge
+
+/// Subtiele badge boven het schema die de actieve trainingsfase en focus toont.
+struct PhaseBadgeView: View {
+    let results: [PeriodizationResult]
+
+    private var primaryResult: PeriodizationResult? {
+        results.first(where: { !$0.isOnTrack }) ?? results.first
+    }
+
+    var body: some View {
+        if let result = primaryResult {
+            HStack(spacing: 6) {
+                Image(systemName: phaseIcon(result.phase))
+                    .font(.caption)
+                Text(result.phaseBadgeText)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                Spacer()
+                Text(result.goal.title)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(phaseColor(result.phase).opacity(0.12))
+            .foregroundColor(phaseColor(result.phase))
+            .cornerRadius(8)
+        }
+    }
+
+    private func phaseIcon(_ phase: TrainingPhase) -> String {
+        switch phase {
+        case .baseBuilding: return "figure.walk"
+        case .buildPhase:   return "figure.run"
+        case .peakPhase:    return "flame.fill"
+        case .tapering:     return "moon.zzz.fill"
+        }
+    }
+
+    private func phaseColor(_ phase: TrainingPhase) -> Color {
+        switch phase {
+        case .baseBuilding: return .blue
+        case .buildPhase:   return .orange
+        case .peakPhase:    return .red
+        case .tapering:     return .purple
+        }
+    }
+}
+
+// MARK: - Sprint 17.3: Milestone Progress Card
+
+/// Kaart die de succescriteria van de PeriodizationEngine visueel weergeeft
+/// met voortgangsbalken per doel. Maakt het 'waarom' achter het schema inzichtelijk.
+struct MilestoneProgressCard: View {
+    let results: [PeriodizationResult]
+
+    var body: some View {
+        if !results.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "checklist")
+                        .foregroundColor(.primary)
+                    Text("Fase-Mijlpalen")
+                        .font(.headline)
+                }
+
+                ForEach(results, id: \.goal.id) { result in
+                    GoalMilestonesSection(result: result)
+                    if result.goal.id != results.last?.goal.id {
+                        Divider()
+                    }
+                }
+            }
+            .padding()
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(12)
+        }
+    }
+}
+
+private struct GoalMilestonesSection: View {
+    let result: PeriodizationResult
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(result.goal.title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+                Spacer()
+                Text(result.phase.displayName)
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.accentColor.opacity(0.15))
+                    .foregroundColor(.accentColor)
+                    .cornerRadius(4)
+            }
+
+            ForEach(result.milestoneItems, id: \.label) { item in
+                MilestoneProgressRow(item: item)
+            }
+        }
+    }
+}
+
+private struct MilestoneProgressRow: View {
+    let item: PeriodizationResult.MilestoneItem
+
+    private var accentColor: Color { item.isMet ? .green : .orange }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Image(systemName: item.isMet ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(accentColor)
+                    .font(.caption)
+                Text(item.label)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                Spacer()
+                Text(progressText)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .monospacedDigit()
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color(.systemFill))
+                        .frame(height: 6)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(accentColor)
+                        .frame(width: geo.size.width * item.progress, height: 6)
+                        .animation(.easeInOut(duration: 0.4), value: item.progress)
+                }
+            }
+            .frame(height: 6)
+            Text(item.detail)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private var progressText: String {
+        if item.label.contains("belasting") {
+            return String(format: "%.0f / %.0f TRIMP", item.current, item.required)
+        }
+        return String(format: "%.1f / %.1f km", item.current, item.required)
     }
 }
