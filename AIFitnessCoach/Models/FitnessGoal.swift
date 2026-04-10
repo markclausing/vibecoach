@@ -187,9 +187,10 @@ struct PeriodizationResult {
     /// True als de sporter aan BEIDE criteria voldoet.
     var isOnTrack: Bool { meetsLongestSessionCriteria && meetsWeeklyTrimpCriteria }
 
-    /// Volledige coaching-context inclusief fase, criteria en actuele status — klaar voor AI-injectie.
+    /// Volledige coaching-context inclusief fase, criteria, status en gedragsinstructies — klaar voor AI-injectie.
+    /// Sprint 17.2: Bevat nu expliciete compliment-triggers, urgente mijlpaal-alerts en schema-verantwoordingsplicht.
     var coachingContext: String {
-        let weeksLeft = goal.targetDate.timeIntervalSince(Date()) / (7 * 86400)
+        let weeksLeft    = goal.targetDate.timeIntervalSince(Date()) / (7 * 86400)
         let weeksLeftStr = String(format: "%.1f", weeksLeft)
         let longestKm    = String(format: "%.1f", longestRecentSessionMeters / 1000)
         let requiredKm   = String(format: "%.1f", requiredSessionMeters / 1000)
@@ -197,16 +198,36 @@ struct PeriodizationResult {
         let trimpCheck   = meetsWeeklyTrimpCriteria    ? "✅" : "❌"
         let trimpTarget  = String(format: "%.0f", targetWeeklyTrimp)
         let trimpActual  = String(format: "%.0f", currentWeeklyTrimp)
+        let sessionLabel = phase == .tapering ? "≤\(requiredKm) km (tapering: bewust MINDER)" : "≥\(requiredKm) km"
 
         var lines = [
-            "Fase: \(phase.displayName) (\(weeksLeftStr) weken resterend voor '\(goal.title)')",
+            "═══ PERIODISERING: '\(goal.title)' ═══",
+            "Fase: \(phase.displayName) | \(weeksLeftStr) weken resterend",
             criteria.coaching,
-            "\(sessionCheck) Langste sessie (afgelopen \(criteria.sessionWindowWeeks) weken): \(longestKm) km (eis: \(phase == .tapering ? "≤" : "≥")\(requiredKm) km)",
-            "\(trimpCheck) Wekelijkse TRIMP: \(trimpActual) (doel: \(phase == .tapering ? "≤" : "≥")\(trimpTarget))",
+            "",
+            "SUCCESCRITERIA DEZE FASE:",
+            "\(sessionCheck) Langste sessie (afgelopen \(criteria.sessionWindowWeeks) weken): \(longestKm) km (eis: \(sessionLabel))",
+            "\(trimpCheck) Wekelijkse TRIMP: \(trimpActual) TRIMP/week (eis: \(phase == .tapering ? "≤" : "≥")\(trimpTarget))",
         ]
-        if !isOnTrack {
-            lines.append("⚠️ De sporter voldoet nog niet aan alle criteria voor deze fase. Pas het schema aan.")
+
+        // Compliment-triggers — coach MOET dit gebruiken als opening
+        if meetsLongestSessionCriteria {
+            lines.append("")
+            lines.append("🎉 COMPLIMENT TRIGGER: De langste-sessie-eis is behaald! Begin je antwoord met een oprecht compliment hierover. Benoem de specifieke afstand.")
+        } else {
+            let shortfallKm = String(format: "%.1f", max(0, requiredSessionMeters - longestRecentSessionMeters) / 1000)
+            lines.append("")
+            lines.append("🚨 KRITIEKE MIJLPAAL ACHTERSTAND: De langste sessie is \(shortfallKm) km te kort voor de \(phase.displayName). Dit is de #1 prioriteit voor het schema deze week. Wees direct maar motiverend — noem de concrete doelafstand.")
         }
+
+        if meetsWeeklyTrimpCriteria && phase != .tapering {
+            lines.append("🎉 COMPLIMENT TRIGGER: Het wekelijkse TRIMP-doel is behaald. Benoem dit als positief signaal van consistentie.")
+        }
+
+        // Schema-verantwoordingsplicht bij blessure of aanpassing
+        lines.append("")
+        lines.append("SCHEMA-VERANTWOORDINGSPLICHT: Als je het schema aanpast (bijv. wegens blessure of overbelasting), MOET je expliciet uitleggen hoe de \(phase.displayName)-eis (\(sessionLabel)) nog steeds haalbaar blijft. Gebruik sportspecifieke alternatieven als de primaire sport tijdelijk niet kan. Bijv: 'Ik vervang je hardloopsessie door fietsen, maar de aerobe basis voor \(goal.title) bewaken we zo...'")
+
         return lines.joined(separator: "\n")
     }
 }
@@ -530,6 +551,47 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
             targetTRIMP = nil
         }
     }
+
+    // MARK: - Kalenderlogica
+
+    /// Berekent de eerstvolgende kalenderdag die overeenkomt met `dateOrDay`.
+    /// Ondersteunt Nederlandse dagnamen ("Maandag"…"Zondag") en ISO-datumstrings ("2026-04-10").
+    /// Vandaag wordt als offset 0 beschouwd — een dag in het verleden krijgt +7 dagen.
+    var resolvedDate: Date {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // Probeer ISO-datum te parsen
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        if let parsed = formatter.date(from: dateOrDay) {
+            return calendar.startOfDay(for: parsed)
+        }
+
+        // Map Nederlandse dagnamen → weekday-getal (Calendar: 1=zondag … 7=zaterdag)
+        let dutchDayMap: [String: Int] = [
+            "zondag": 1, "maandag": 2, "dinsdag": 3, "woensdag": 4,
+            "donderdag": 5, "vrijdag": 6, "zaterdag": 7
+        ]
+
+        guard let targetWeekday = dutchDayMap[dateOrDay.lowercased()] else { return today }
+
+        let todayWeekday = calendar.component(.weekday, from: today)
+        var daysAhead = targetWeekday - todayWeekday
+        if daysAhead < 0 { daysAhead += 7 }
+
+        return calendar.date(byAdding: .day, value: daysAhead, to: today) ?? today
+    }
+
+    /// Geeft de dag als expliciete datum terug, bijv. "Vrijdag 10 apr".
+    /// Geen 'Vandaag'/'Morgen' — expliciete datums voorkomen verwarring bij stale data.
+    var displayDayLabel: String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "nl_NL")
+        formatter.dateFormat = "EEEE d MMM"
+        let label = formatter.string(from: resolvedDate)
+        return label.prefix(1).uppercased() + label.dropFirst()
+    }
 }
 
 // MARK: - Epic 17: Goal-Specific Blueprints — Data Types
@@ -667,18 +729,34 @@ class TrainingPlanManager: ObservableObject {
         loadPlan()
     }
 
-    /// Loads the plan from AppStorage.
+    /// Loads the plan from AppStorage — sorteert altijd chronologisch.
     private func loadPlan() {
         if let decodedPlan = try? JSONDecoder().decode(SuggestedTrainingPlan.self, from: latestSuggestedPlanData) {
-            self.activePlan = decodedPlan
+            self.activePlan = sorted(decodedPlan)
         }
     }
 
-    /// Updates the plan, publishes the change, and persists it to AppStorage.
+    /// Updates the plan, sorteert chronologisch, publiceert de wijziging en slaat op in AppStorage.
     func updatePlan(_ newPlan: SuggestedTrainingPlan) {
-        self.activePlan = newPlan
-        if let encoded = try? JSONEncoder().encode(newPlan) {
+        let sorted = sorted(newPlan)
+        self.activePlan = sorted
+        if let encoded = try? JSONEncoder().encode(sorted) {
             latestSuggestedPlanData = encoded
         }
+        // Debug: toon de chronologische volgorde na sortering
+        print("📅 [TrainingPlan] Gesorteerde volgorde na update:")
+        sorted.workouts.forEach { workout in
+            print("   \(workout.dateOrDay) → resolvedDate: \(workout.resolvedDate)")
+        }
+    }
+
+    /// Retourneert een nieuw SuggestedTrainingPlan met workouts gesorteerd op resolvedDate (chronologisch).
+    private func sorted(_ plan: SuggestedTrainingPlan) -> SuggestedTrainingPlan {
+        let chronological = plan.workouts.sorted { $0.resolvedDate < $1.resolvedDate }
+        return SuggestedTrainingPlan(
+            motivation: plan.motivation,
+            workouts: chronological,
+            newPreferences: plan.newPreferences
+        )
     }
 }
