@@ -708,18 +708,34 @@ class TrainingPlanManager: ObservableObject {
         loadPlan()
     }
 
-    /// Loads the plan from AppStorage.
+    /// Loads the plan from AppStorage — sorteert altijd chronologisch.
     private func loadPlan() {
         if let decodedPlan = try? JSONDecoder().decode(SuggestedTrainingPlan.self, from: latestSuggestedPlanData) {
-            self.activePlan = decodedPlan
+            self.activePlan = sorted(decodedPlan)
         }
     }
 
-    /// Updates the plan, publishes the change, and persists it to AppStorage.
+    /// Updates the plan, sorteert chronologisch, publiceert de wijziging en slaat op in AppStorage.
     func updatePlan(_ newPlan: SuggestedTrainingPlan) {
-        self.activePlan = newPlan
-        if let encoded = try? JSONEncoder().encode(newPlan) {
+        let sorted = sorted(newPlan)
+        self.activePlan = sorted
+        if let encoded = try? JSONEncoder().encode(sorted) {
             latestSuggestedPlanData = encoded
         }
+        // Debug: toon de chronologische volgorde na sortering
+        print("📅 [TrainingPlan] Gesorteerde volgorde na update:")
+        sorted.workouts.forEach { workout in
+            print("   \(workout.dateOrDay) → resolvedDate: \(workout.resolvedDate)")
+        }
+    }
+
+    /// Retourneert een nieuw SuggestedTrainingPlan met workouts gesorteerd op resolvedDate (chronologisch).
+    private func sorted(_ plan: SuggestedTrainingPlan) -> SuggestedTrainingPlan {
+        let chronological = plan.workouts.sorted { $0.resolvedDate < $1.resolvedDate }
+        return SuggestedTrainingPlan(
+            motivation: plan.motivation,
+            workouts: chronological,
+            newPreferences: plan.newPreferences
+        )
     }
 }

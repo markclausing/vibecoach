@@ -725,6 +725,7 @@ class ChatViewModel: ObservableObject {
 
         let dateString = now.formatted(date: .complete, time: .omitted)
         lines.append("LET OP: Vandaag is het \(dateString). Het nieuwe 7-daagse schema MOET vanaf vandaag beginnen. Verwijder dagen in het verleden en vul de week aan.")
+        lines.append("KRITIEK: Sorteer de workouts in het JSON-array ALTIJD chronologisch — dag 1 (vandaag) eerst, dag 7 (over 6 dagen) als laatste. Nooit andersom, nooit willekeurig.")
         lines.append("Vergelijk deze recente activiteiten met het actuele schema hierboven. Is het resterende schema voor deze week nog steeds optimaal en realistisch? Zo niet, herbereken het schema (retourneer altijd alle 7 dagen) en geef een korte motivatie of feedback op mijn recente trainingen.")
 
         return lines.joined(separator: "\n")
