@@ -1521,6 +1521,22 @@ struct DashboardView: View {
                             EmptyView()
                         }
 
+                        // Subtiele laadlijn bovenaan — verschijnt alleen tijdens AI-verwerking
+                        if viewModel.isFetchingWorkout || viewModel.isTyping {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text(viewModel.retryStatusMessage.isEmpty
+                                     ? "Coach analyseert schema..."
+                                     : viewModel.retryStatusMessage)
+                                    .font(.caption)
+                                    .foregroundColor(viewModel.retryStatusMessage.isEmpty ? .secondary : .orange)
+                                Spacer()
+                            }
+                            .padding(.horizontal)
+                            .padding(.vertical, 4)
+                        }
+
                         if !latestCoachInsight.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
@@ -1535,24 +1551,6 @@ struct DashboardView: View {
                             }
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.secondarySystemBackground))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
-                        }
-
-                        // Toon progressie-indicator bij asynchrone bewerkingen
-                        if viewModel.isFetchingWorkout || viewModel.isTyping {
-                            VStack(spacing: 12) {
-                                ProgressView()
-                                    .scaleEffect(1.2)
-                                Text(viewModel.retryStatusMessage.isEmpty
-                                     ? "Coach analyseert schema..."
-                                     : viewModel.retryStatusMessage)
-                                    .font(.subheadline)
-                                    .foregroundColor(viewModel.retryStatusMessage.isEmpty ? .secondary : .orange)
-                            }
-                            .padding()
-                            .frame(maxWidth: .infinity)
                             .background(Color(.secondarySystemBackground))
                             .cornerRadius(12)
                             .padding(.horizontal)

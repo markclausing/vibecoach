@@ -379,6 +379,12 @@ struct TrainingCalendarView: View {
 
     @State private var selectedWorkoutForDetail: SuggestedWorkout?
 
+    /// Filtert trainingen uit het verleden — het schema start altijd bij vandaag.
+    private var upcomingWorkouts: [SuggestedWorkout] {
+        let today = Calendar.current.startOfDay(for: Date())
+        return plan.workouts.filter { $0.resolvedDate >= today }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Jouw Plan voor de komende 7 dagen")
@@ -387,7 +393,7 @@ struct TrainingCalendarView: View {
             if isHorizontal {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(plan.workouts) { workout in
+                        ForEach(upcomingWorkouts) { workout in
                             WorkoutCardView(workout: workout, onSkip: {
                                 onSkipWorkout?(workout)
                             }, onAlternative: {
@@ -402,7 +408,7 @@ struct TrainingCalendarView: View {
                 }
             } else {
                 VStack(spacing: 16) {
-                    ForEach(plan.workouts) { workout in
+                    ForEach(upcomingWorkouts) { workout in
                         WorkoutCardView(workout: workout, onSkip: {
                             onSkipWorkout?(workout)
                         }, onAlternative: {
@@ -438,7 +444,7 @@ struct WorkoutCardView: View {
         }) {
             VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(workout.dateOrDay)
+                Text(workout.displayDayLabel)
                     .font(.caption)
                     .fontWeight(.bold)
                     .foregroundColor(.blue)
@@ -516,7 +522,7 @@ struct WorkoutDetailView: View {
 
                     // Header sectie
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(workout.dateOrDay)
+                        Text(workout.displayDayLabel)
                             .font(.headline)
                             .foregroundColor(.blue)
 

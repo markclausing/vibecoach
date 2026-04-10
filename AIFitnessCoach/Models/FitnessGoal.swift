@@ -530,6 +530,48 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
             targetTRIMP = nil
         }
     }
+
+    // MARK: - Kalenderlogica
+
+    /// Berekent de eerstvolgende kalenderdag die overeenkomt met `dateOrDay`.
+    /// Ondersteunt Nederlandse dagnamen ("Maandag"…"Zondag") en ISO-datumstrings ("2026-04-10").
+    /// Vandaag wordt als offset 0 beschouwd — een dag in het verleden krijgt +7 dagen.
+    var resolvedDate: Date {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // Probeer ISO-datum te parsen
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        if let parsed = formatter.date(from: dateOrDay) {
+            return calendar.startOfDay(for: parsed)
+        }
+
+        // Map Nederlandse dagnamen → weekday-getal (Calendar: 1=zondag … 7=zaterdag)
+        let dutchDayMap: [String: Int] = [
+            "zondag": 1, "maandag": 2, "dinsdag": 3, "woensdag": 4,
+            "donderdag": 5, "vrijdag": 6, "zaterdag": 7
+        ]
+
+        guard let targetWeekday = dutchDayMap[dateOrDay.lowercased()] else { return today }
+
+        let todayWeekday = calendar.component(.weekday, from: today)
+        var daysAhead = targetWeekday - todayWeekday
+        if daysAhead < 0 { daysAhead += 7 }
+
+        return calendar.date(byAdding: .day, value: daysAhead, to: today) ?? today
+    }
+
+    /// Geeft "Vandaag", "Morgen" of de originele dagnaam terug voor weergave.
+    var displayDayLabel: String {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let resolved = resolvedDate
+        if calendar.isDate(resolved, inSameDayAs: today) { return "Vandaag" }
+        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: today),
+           calendar.isDate(resolved, inSameDayAs: tomorrow) { return "Morgen" }
+        return dateOrDay
+    }
 }
 
 // MARK: - Epic 17: Goal-Specific Blueprints — Data Types
