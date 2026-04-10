@@ -254,6 +254,14 @@ class ChatViewModel: ObservableObject {
             - Als RPE laag is (1-4) terwijl TRIMP hoog is: de atleet heeft een goede dag — benut dit in je planning.
             - Combineer de RPE altijd met de Vibe Score voor een volledig beeld.
 
+            KRITIEKE REGEL — PERIODISERING & FASE-COACHING (Sprint 17.2):
+            Je ontvangt per doel de huidige TrainingPhase, de SuccesCriteria en de behaalde/openstaande status.
+            Gebruik deze data ACTIEF in je antwoorden:
+            - COMPLIMENTEN (🎉 COMPLIMENT TRIGGER): Als een fase-eis behaald is, open je antwoord dan met een oprecht, specifiek compliment. Noem de behaalde prestatie bij naam (bijv. 'Geweldig — je hebt afgelopen week een 28 km loop neergezet, exact wat de Build-fase vereist!').
+            - URGENTIE (🚨 KRITIEKE MIJLPAAL ACHTERSTAND): Als een kritieke eis (bijv. de langste sessie) niet behaald is, wees dan direct maar motiverend. Noem de exacte afstand of TRIMP die nog ontbreekt. Plan de betreffende mijlpaal als EERSTE PRIORITEIT in het schema.
+            - SCHEMA-VERANTWOORDINGSPLICHT: Als je het schema aanpast vanwege blessure, overbelasting of andere reden, MOET je altijd uitleggen hoe de fase-eisen ondanks de aanpassing nog steeds haalbaar zijn. Voorbeeld: 'Ik vervang je hardloopsessie door een lange fietsrit, maar de aerobe basis voor de Marathon Blueprint bewaken we zo: op zaterdag plannen we een 26 km duurloop zodra je kuit hersteld is.'
+            - Wees streng maar motiverend — de coach staat naast de sporter, niet erboven.
+
             KRITIEKE REGEL — BLESSURE & SPORT INTERACTIE:
             Als de gebruiker een blessure of klacht heeft vermeld in zijn voorkeuren of berichten:
             - Kuit/Scheen blessure: Adviseer GEEN hardlopen. Wandelen is toegestaan als alternatief, maar NOOIT langer dan 60 minuten per sessie.
@@ -365,15 +373,25 @@ class ChatViewModel: ObservableObject {
             prefix += "[SUBJECTIEVE FEEDBACK LAATSTE WORKOUT: \(lastWorkoutFeedbackContext) Let op discrepanties: als TRIMP laag is maar RPE ≥8, is dit een vroeg signaal van overtraining of naderende ziekte.]\n\n"
         }
 
-        // Epic 17: Injecteer de blueprint-status — de AI weet welke kritieke trainingen open staan
-        if !blueprintContext.isEmpty {
+        // Epic 17 / Sprint 17.2: Injecteer de blueprint + periodization context
+        // en druk de volledige inhoud af in de console voor debugging.
+        let hasBlueprintData  = !blueprintContext.isEmpty
+        let hasPeriodization  = !periodizationContext.isEmpty
+
+        if hasBlueprintData {
             prefix += "[SPORTWETENSCHAPPELIJKE EISEN (BLUEPRINT):\n\(blueprintContext)\nInstructie: Controleer ALTIJD of de gebruiker op schema ligt voor zijn kritieke trainingen. Als er een openstaande (❌) eis is met een naderende deadline, maak dit dan expliciet in je advies en plan de betreffende training in.]\n\n"
         }
 
-        // Epic 17.1: Injecteer de PeriodizationEngine-status — de AI weet in welke fase we zitten
-        // én of de sporter aan de fase-specifieke succescriteria voldoet.
-        if !periodizationContext.isEmpty {
-            prefix += "[PERIODISERING — FASE & SUCCESCRITERIA:\n\(periodizationContext)\nInstructie: Gebruik de faseboodschap LETTERLIJK in je antwoord (bijv. 'We zitten nu in de Build-fase...'). Als een criterium niet behaald is (❌), geef dan concreet aan welke training dit week de prioriteit heeft.]\n\n"
+        if hasPeriodization {
+            prefix += "[PERIODISERING — FASE, SUCCESCRITERIA & COACH-GEDRAG:\n\(periodizationContext)\n\nCoach-gedragsregels voor deze context:\n1. COMPLIMENTEN (🎉): Als een COMPLIMENT TRIGGER aanwezig is, open je antwoord dan hiermee. Noem de behaalde prestatie bij naam.\n2. URGENTIE (🚨): Als een KRITIEKE MIJLPAAL ACHTERSTAND aanwezig is, wees dan direct en motiverend. Noem de exacte afstand of TRIMP die nog ontbreekt, en plan dit als eerste prioriteit in het schema.\n3. SCHEMA-AANPASSING: Als je het schema aanpast, verklaar dan altijd hoe de fase-eisen ondanks de aanpassing nog steeds haalbaar zijn (SCHEMA-VERANTWOORDINGSPLICHT).]\n\n"
+        }
+
+        // Debug: print de volledige blueprint- en periodization-context die naar Gemini gaat
+        if hasBlueprintData || hasPeriodization {
+            print("━━━ 🧠 [Blueprint Context → Gemini] ━━━")
+            if hasBlueprintData  { print("[BLUEPRINT]\n\(blueprintContext)") }
+            if hasPeriodization  { print("[PERIODISERING]\n\(periodizationContext)") }
+            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         }
 
         // Epic 16: Injecteer de trainingsfase per actief doel — de AI MOET de fase-instructies strikt volgen

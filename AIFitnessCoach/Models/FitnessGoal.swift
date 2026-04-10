@@ -187,9 +187,10 @@ struct PeriodizationResult {
     /// True als de sporter aan BEIDE criteria voldoet.
     var isOnTrack: Bool { meetsLongestSessionCriteria && meetsWeeklyTrimpCriteria }
 
-    /// Volledige coaching-context inclusief fase, criteria en actuele status — klaar voor AI-injectie.
+    /// Volledige coaching-context inclusief fase, criteria, status en gedragsinstructies — klaar voor AI-injectie.
+    /// Sprint 17.2: Bevat nu expliciete compliment-triggers, urgente mijlpaal-alerts en schema-verantwoordingsplicht.
     var coachingContext: String {
-        let weeksLeft = goal.targetDate.timeIntervalSince(Date()) / (7 * 86400)
+        let weeksLeft    = goal.targetDate.timeIntervalSince(Date()) / (7 * 86400)
         let weeksLeftStr = String(format: "%.1f", weeksLeft)
         let longestKm    = String(format: "%.1f", longestRecentSessionMeters / 1000)
         let requiredKm   = String(format: "%.1f", requiredSessionMeters / 1000)
@@ -197,16 +198,36 @@ struct PeriodizationResult {
         let trimpCheck   = meetsWeeklyTrimpCriteria    ? "✅" : "❌"
         let trimpTarget  = String(format: "%.0f", targetWeeklyTrimp)
         let trimpActual  = String(format: "%.0f", currentWeeklyTrimp)
+        let sessionLabel = phase == .tapering ? "≤\(requiredKm) km (tapering: bewust MINDER)" : "≥\(requiredKm) km"
 
         var lines = [
-            "Fase: \(phase.displayName) (\(weeksLeftStr) weken resterend voor '\(goal.title)')",
+            "═══ PERIODISERING: '\(goal.title)' ═══",
+            "Fase: \(phase.displayName) | \(weeksLeftStr) weken resterend",
             criteria.coaching,
-            "\(sessionCheck) Langste sessie (afgelopen \(criteria.sessionWindowWeeks) weken): \(longestKm) km (eis: \(phase == .tapering ? "≤" : "≥")\(requiredKm) km)",
-            "\(trimpCheck) Wekelijkse TRIMP: \(trimpActual) (doel: \(phase == .tapering ? "≤" : "≥")\(trimpTarget))",
+            "",
+            "SUCCESCRITERIA DEZE FASE:",
+            "\(sessionCheck) Langste sessie (afgelopen \(criteria.sessionWindowWeeks) weken): \(longestKm) km (eis: \(sessionLabel))",
+            "\(trimpCheck) Wekelijkse TRIMP: \(trimpActual) TRIMP/week (eis: \(phase == .tapering ? "≤" : "≥")\(trimpTarget))",
         ]
-        if !isOnTrack {
-            lines.append("⚠️ De sporter voldoet nog niet aan alle criteria voor deze fase. Pas het schema aan.")
+
+        // Compliment-triggers — coach MOET dit gebruiken als opening
+        if meetsLongestSessionCriteria {
+            lines.append("")
+            lines.append("🎉 COMPLIMENT TRIGGER: De langste-sessie-eis is behaald! Begin je antwoord met een oprecht compliment hierover. Benoem de specifieke afstand.")
+        } else {
+            let shortfallKm = String(format: "%.1f", max(0, requiredSessionMeters - longestRecentSessionMeters) / 1000)
+            lines.append("")
+            lines.append("🚨 KRITIEKE MIJLPAAL ACHTERSTAND: De langste sessie is \(shortfallKm) km te kort voor de \(phase.displayName). Dit is de #1 prioriteit voor het schema deze week. Wees direct maar motiverend — noem de concrete doelafstand.")
         }
+
+        if meetsWeeklyTrimpCriteria && phase != .tapering {
+            lines.append("🎉 COMPLIMENT TRIGGER: Het wekelijkse TRIMP-doel is behaald. Benoem dit als positief signaal van consistentie.")
+        }
+
+        // Schema-verantwoordingsplicht bij blessure of aanpassing
+        lines.append("")
+        lines.append("SCHEMA-VERANTWOORDINGSPLICHT: Als je het schema aanpast (bijv. wegens blessure of overbelasting), MOET je expliciet uitleggen hoe de \(phase.displayName)-eis (\(sessionLabel)) nog steeds haalbaar blijft. Gebruik sportspecifieke alternatieven als de primaire sport tijdelijk niet kan. Bijv: 'Ik vervang je hardloopsessie door fietsen, maar de aerobe basis voor \(goal.title) bewaken we zo...'")
+
         return lines.joined(separator: "\n")
     }
 }
