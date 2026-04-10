@@ -438,7 +438,9 @@ import HealthKit
 
 /// Beheert de Apple HealthKit integratie en permissies
 final class HealthKitManager: @unchecked Sendable {
-    let healthStore = HKHealthStore()
+    // Lazy: HKHealthStore wordt pas aangemaakt bij het eerste echte gebruik,
+    // niet al bij app-start. Dit verkort de opstarttijd significant.
+    lazy var healthStore: HKHealthStore = HKHealthStore()
 
     /// Vraagt toestemming aan de gebruiker om benodigde gezondheidsdata (workouts, hartslag, VO2 Max) te lezen.
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {

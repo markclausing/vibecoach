@@ -22,8 +22,15 @@ class ChatViewModel: ObservableObject {
     @Published var isFetchingWorkout: Bool = false
 
     /// Het protocol waartegen we de AI-verzoeken uitvoeren.
-    /// Dit maakt Dependency Injection (DI) mogelijk voor unit tests.
-    private let model: GenerativeModelProtocol
+    /// Lazy: wordt pas aangemaakt bij het eerste AI-verzoek, niet bij app-start.
+    /// Tests kunnen een mock injecteren via de init-parameter.
+    private var _model: GenerativeModelProtocol?
+    private var model: GenerativeModelProtocol {
+        if let existing = _model { return existing }
+        let built = buildGenerativeModel()
+        _model = built
+        return built
+    }
 
     /// Service voor externe API calls (Sprint 4.2).
     private let fitnessDataService: FitnessDataService
@@ -125,6 +132,9 @@ class ChatViewModel: ObservableObject {
         let key = effectiveAPIKey()
         guard !key.isEmpty else { return }
         activeAPIKey = key
+        // Wis de gecachte instantie zodat buildGenerativeModel() opnieuw gebouwd wordt
+        // met de nieuwe sleutel bij het eerstvolgende AI-verzoek.
+        _model = nil
     }
 
     /// Epic 18.1: Schrijft de subjectieve feedback van de laatste workout naar de AppStorage cache.
@@ -244,11 +254,15 @@ class ChatViewModel: ObservableObject {
         self.fitnessDataService = fitnessDataService
         self.healthKitManager = healthKitManager
         self.fitnessCalculator = fitnessCalculator
+        // Injecteer een test-mock als die meegegeven is; anders lazy bouwen bij eerste gebruik.
+        self._model = aiModel
+    }
 
-        if let providedModel = aiModel {
-            self.model = providedModel
-        } else {
-            let systemInstruction = """
+    /// Bouwt het Gemini model met de huidige API-sleutel en system instruction.
+    /// Wordt pas aangeroepen bij het eerste echte AI-verzoek (.onAppear of gebruikerstap),
+    /// niet al tijdens app-start.
+    private func buildGenerativeModel() -> GenerativeModelProtocol {
+        let systemInstruction = """
             Jij bent een samenwerkende, meedenkende en proactieve AI fitness-coach.
             Je analyseert niet alleen vermoeidheid, maar je helpt de gebruiker actief om de eerstvolgende stap te plannen richting hun gestelde doelen.
             Stel je op als een slimme trainingspartner — niet als een waarschuwende dokter.
@@ -346,8 +360,7 @@ class ChatViewModel: ObservableObject {
                 systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)]),
                 requestOptions: options
             )
-            self.model = RealGenerativeModel(model: googleModel)
-        }
+        return RealGenerativeModel(model: googleModel)
     }
 
     /// Verwijdert de geselecteerde afbeelding uit de invoer.
