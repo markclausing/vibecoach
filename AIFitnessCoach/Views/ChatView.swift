@@ -480,6 +480,14 @@ struct WorkoutCardView: View {
             Text(workout.activityType)
                 .font(.headline)
 
+            // Sprint 17.3: Coach reasoning — waarom staat deze training in het schema?
+            if let reasoning = workout.reasoning, !reasoning.isEmpty {
+                Label(reasoning, systemImage: "info.circle")
+                    .font(.caption2)
+                    .foregroundColor(.blue.opacity(0.8))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             Text(workout.description)
                 .font(.caption)
                 .foregroundColor(.secondary)

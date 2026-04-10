@@ -297,6 +297,8 @@ struct VibeScoreCardView: View {
     let readiness: DailyReadiness?
     var isLoading: Bool = false
     var isUnavailable: Bool = false
+    /// Epic 18: Override de statuslabel als er een actief blessurerisico is.
+    var injuryRiskLevel: DashboardView.InjuryRiskLevel = .safe
 
     // Kleur op basis van score (groen / oranje / rood)
     private var scoreColor: Color {
@@ -364,13 +366,19 @@ struct VibeScoreCardView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 } else if let r = readiness {
                     let label: String = {
+                        // Epic 18: blessurerisico overschrijft de herstelstatus
+                        switch injuryRiskLevel {
+                        case .risk:    return "Voorzichtig — Blessurerisico"
+                        case .caution: return "Let op — Actieve Klachten"
+                        case .safe: break
+                        }
                         if r.readinessScore >= 80 { return "Optimaal Hersteld" }
                         if r.readinessScore >= 50 { return "Matig Hersteld" }
                         return "Focus op Herstel"
                     }()
                     Text(label)
                         .font(.headline)
-                        .foregroundColor(scoreColor)
+                        .foregroundColor(injuryRiskLevel == .safe ? scoreColor : .orange)
                     HStack(spacing: 12) {
                         Label(formatSleep(r.sleepHours), systemImage: "moon.fill")
                             .font(.caption)
@@ -1133,6 +1141,9 @@ struct DashboardView: View {
     // Epic 14.3: Haal alle DailyReadiness records op (weinig records — max 1 per dag)
     @Query(sort: \DailyReadiness.date, order: .reverse) private var readinessRecords: [DailyReadiness]
 
+    // Epic 18: Dagelijkse symptoomscores
+    @Query(sort: \Symptom.date, order: .reverse) private var symptoms: [Symptom]
+
     // Epic 14.3: Loading state voor de Vibe Score kaart
     @State private var isVibeScoreLoading: Bool = false
     @State private var isVibeScoreUnavailable: Bool = false
@@ -1152,6 +1163,35 @@ struct DashboardView: View {
     private var todayReadiness: DailyReadiness? {
         let todayStart = Calendar.current.startOfDay(for: Date())
         return readinessRecords.first { $0.date >= todayStart }
+    }
+
+    /// Epic 18: Pijnscores van vandaag.
+    private var todaySymptoms: [Symptom] {
+        let todayStart = Calendar.current.startOfDay(for: Date())
+        return symptoms.filter { $0.date >= todayStart }
+    }
+
+    /// Epic 18: Blessurerisiconiveau op basis van de hoogste pijnscore van vandaag.
+    enum InjuryRiskLevel { case safe, caution, risk }
+    private var injuryRiskLevel: InjuryRiskLevel {
+        let maxSeverity = todaySymptoms.map { $0.severity }.max() ?? 0
+        if maxSeverity >= 7 { return .risk }
+        if maxSeverity >= 4 { return .caution }
+        return .safe
+    }
+
+    /// Epic 18: Detecteer welke lichaamsdelen actief zijn op basis van UserPreference-teksten.
+    private var activeInjuryAreas: [BodyArea] {
+        let now = Date()
+        let validPrefs = activePreferences.filter {
+            $0.expirationDate == nil || $0.expirationDate! > now
+        }
+        return BodyArea.allCases.filter { area in
+            validPrefs.contains { pref in
+                let text = pref.preferenceText.lowercased()
+                return area.injuryKeywords.contains(where: { text.contains($0) })
+            }
+        }
     }
 
     /// Epic 18.2: Geeft de meest recente ActivityRecord terug die om een check-in vraagt.
@@ -1455,9 +1495,22 @@ struct DashboardView: View {
                         VibeScoreCardView(
                             readiness: todayReadiness,
                             isLoading: isVibeScoreLoading,
-                            isUnavailable: isVibeScoreUnavailable
+                            isUnavailable: isVibeScoreUnavailable,
+                            injuryRiskLevel: injuryRiskLevel
                         )
                         .padding(.horizontal)
+
+                        // Epic 18: Dagelijkse symptoom-check-in — alleen zichtbaar als er actieve blessures zijn
+                        if !activeInjuryAreas.isEmpty {
+                            SymptomCheckinCard(
+                                areas: activeInjuryAreas,
+                                todaySymptoms: todaySymptoms,
+                                onSave: { area, severity in
+                                    saveOrUpdateSymptom(area: area, severity: severity)
+                                }
+                            )
+                            .padding(.horizontal)
+                        }
 
                         // EPIC 18.1: Post-Workout Check-in — toon alleen als recentste workout (≤48u) nog geen beoordeling heeft
                         if let recentActivity = recentUncheckedActivity {
@@ -1581,7 +1634,18 @@ struct DashboardView: View {
                             .padding(.horizontal)
                         }
 
+                        // Sprint 17.3: Mijlpalen-kaart — succescriteria per doel met voortgangsbalken
+                        if !periodizationResults.isEmpty {
+                            MilestoneProgressCard(results: periodizationResults)
+                                .padding(.horizontal)
+                        }
+
                         if let plan = planManager.activePlan {
+                            // Sprint 17.3: Fase-badge boven het schema
+                            if !periodizationResults.isEmpty {
+                                PhaseBadgeView(results: periodizationResults)
+                                    .padding(.horizontal)
+                            }
                             // Hergebruik de TrainingCalendarView uit ChatView,
                             // we geven wel de viewModel callbacks door zodat de acties werken.
                             TrainingCalendarView(
@@ -1686,6 +1750,7 @@ struct DashboardView: View {
                 viewModel.cacheVibeScore(todayReadiness)
                 // Epic 17: Schrijf de blueprint-status naar de AI-prompt cache
                 // zodat de coach weet welke kritieke trainingen open staan per doel.
+                viewModel.cacheSymptomContext(Array(symptoms))
                 viewModel.cacheActiveBlueprints(blueprintResults)
                 // Epic 17.1: Schrijf de periodization-status naar de AI-prompt cache
                 // zodat de coach de actuele trainingsfase en succescriteria kent.
@@ -1704,6 +1769,20 @@ struct DashboardView: View {
                 )
             }
         }
+    }
+
+    /// Epic 18: Sla een symptoomscore op voor vandaag (upsert per lichaamsdeel per dag).
+    private func saveOrUpdateSymptom(area: BodyArea, severity: Int) {
+        let todayStart = Calendar.current.startOfDay(for: Date())
+        // Zoek bestaand record voor vandaag en dit lichaamsdeel
+        if let existing = symptoms.first(where: { $0.bodyAreaRaw == area.rawValue && $0.date >= todayStart }) {
+            existing.severity = severity
+        } else {
+            modelContext.insert(Symptom(bodyArea: area, severity: severity))
+        }
+        try? modelContext.save()
+        // Werk de AI-cache direct bij
+        viewModel.cacheSymptomContext(Array(symptoms))
     }
 
     /// Haalt HealthKit-data op en slaat een DailyReadiness record op voor vandaag.
@@ -1774,5 +1853,278 @@ struct DashboardView: View {
 
         // Werk de AI-cache bij met de nieuw berekende score
         viewModel.cacheVibeScore(todayReadiness)
+    }
+}
+
+// MARK: - Sprint 17.3: Fase Status Badge
+
+/// Subtiele badge boven het schema die de actieve trainingsfase en focus toont.
+struct PhaseBadgeView: View {
+    let results: [PeriodizationResult]
+
+    private var primaryResult: PeriodizationResult? {
+        results.first(where: { !$0.isOnTrack }) ?? results.first
+    }
+
+    var body: some View {
+        if let result = primaryResult {
+            HStack(spacing: 6) {
+                Image(systemName: phaseIcon(result.phase))
+                    .font(.caption)
+                Text(result.phaseBadgeText)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                Spacer()
+                Text(result.goal.title)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(phaseColor(result.phase).opacity(0.12))
+            .foregroundColor(phaseColor(result.phase))
+            .cornerRadius(8)
+        }
+    }
+
+    private func phaseIcon(_ phase: TrainingPhase) -> String {
+        switch phase {
+        case .baseBuilding: return "figure.walk"
+        case .buildPhase:   return "figure.run"
+        case .peakPhase:    return "flame.fill"
+        case .tapering:     return "moon.zzz.fill"
+        }
+    }
+
+    private func phaseColor(_ phase: TrainingPhase) -> Color {
+        switch phase {
+        case .baseBuilding: return .blue
+        case .buildPhase:   return .orange
+        case .peakPhase:    return .red
+        case .tapering:     return .purple
+        }
+    }
+}
+
+// MARK: - Sprint 17.3: Milestone Progress Card
+
+/// Kaart die de succescriteria van de PeriodizationEngine visueel weergeeft
+/// met voortgangsbalken per doel. Maakt het 'waarom' achter het schema inzichtelijk.
+struct MilestoneProgressCard: View {
+    let results: [PeriodizationResult]
+
+    var body: some View {
+        if !results.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "checklist")
+                        .foregroundColor(.primary)
+                    Text("Fase-Mijlpalen")
+                        .font(.headline)
+                }
+
+                ForEach(results, id: \.goal.id) { result in
+                    GoalMilestonesSection(result: result)
+                    if result.goal.id != results.last?.goal.id {
+                        Divider()
+                    }
+                }
+            }
+            .padding()
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(12)
+        }
+    }
+}
+
+private struct GoalMilestonesSection: View {
+    let result: PeriodizationResult
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(result.goal.title)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+                Spacer()
+                Text(result.phase.displayName)
+                    .font(.caption2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.accentColor.opacity(0.15))
+                    .foregroundColor(.accentColor)
+                    .cornerRadius(4)
+            }
+
+            ForEach(result.milestoneItems, id: \.label) { item in
+                MilestoneProgressRow(item: item)
+            }
+        }
+    }
+}
+
+private struct MilestoneProgressRow: View {
+    let item: PeriodizationResult.MilestoneItem
+
+    private var accentColor: Color { item.isMet ? .green : .orange }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Image(systemName: item.isMet ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(accentColor)
+                    .font(.caption)
+                Text(item.label)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                Spacer()
+                Text(progressText)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .monospacedDigit()
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Color(.systemFill))
+                        .frame(height: 6)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(accentColor)
+                        .frame(width: geo.size.width * item.progress, height: 6)
+                        .animation(.easeInOut(duration: 0.4), value: item.progress)
+                }
+            }
+            .frame(height: 6)
+            Text(item.detail)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private var progressText: String {
+        if item.label.contains("belasting") {
+            return String(format: "%.0f / %.0f TRIMP", item.current, item.required)
+        }
+        return String(format: "%.1f / %.1f km", item.current, item.required)
+    }
+}
+
+// MARK: - Epic 18: Symptoom Check-in Kaart
+
+/// Dagelijkse pijnscore-kaart. Verschijnt alleen als de gebruiker actieve blessures heeft
+/// (gedetecteerd via UserPreference-teksten). Beheert één score (0-10) per lichaamsdeel.
+struct SymptomCheckinCard: View {
+    let areas: [BodyArea]
+    let todaySymptoms: [Symptom]
+    let onSave: (BodyArea, Int) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "stethoscope")
+                    .foregroundColor(.orange)
+                Text("Hoe voelen je klachten vandaag?")
+                    .font(.headline)
+            }
+
+            ForEach(areas, id: \.rawValue) { area in
+                SymptomAreaRow(
+                    area: area,
+                    currentSeverity: todaySymptoms.first(where: { $0.bodyAreaRaw == area.rawValue })?.severity ?? 0,
+                    onSave: { severity in onSave(area, severity) }
+                )
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemBackground))
+        .cornerRadius(12)
+    }
+}
+
+private struct SymptomAreaRow: View {
+    let area: BodyArea
+    let currentSeverity: Int
+    let onSave: (Int) -> Void
+
+    @State private var severity: Int
+
+    init(area: BodyArea, currentSeverity: Int, onSave: @escaping (Int) -> Void) {
+        self.area = area
+        self.currentSeverity = currentSeverity
+        self.onSave = onSave
+        self._severity = State(initialValue: currentSeverity)
+    }
+
+    private var severityColor: Color {
+        switch severity {
+        case 0:     return .green
+        case 1...3: return .green
+        case 4...6: return .orange
+        default:    return .red
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: area.icon)
+                    .foregroundColor(severityColor)
+                    .frame(width: 20)
+                Text(area.rawValue)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                Spacer()
+                Text("\(severity)/10 — \(BodyArea.severityLabel(severity))")
+                    .font(.caption)
+                    .foregroundColor(severityColor)
+                    .monospacedDigit()
+            }
+            // Compacte +/- knoppen (0-10, stap 1)
+            HStack(spacing: 8) {
+                Button {
+                    if severity > 0 {
+                        severity -= 1
+                        onSave(severity)
+                    }
+                } label: {
+                    Image(systemName: "minus.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(severity > 0 ? .primary : .secondary)
+                }
+                .disabled(severity == 0)
+
+                // Visuele pijnbalk
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color(.systemFill))
+                            .frame(height: 8)
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(severityColor)
+                            .frame(width: severity == 0 ? 0 : geo.size.width * CGFloat(severity) / 10.0, height: 8)
+                            .animation(.easeInOut(duration: 0.2), value: severity)
+                    }
+                }
+                .frame(height: 8)
+
+                Button {
+                    if severity < 10 {
+                        severity += 1
+                        onSave(severity)
+                    }
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(severity < 10 ? .primary : .secondary)
+                }
+                .disabled(severity == 10)
+            }
+        }
+        .onChange(of: currentSeverity) { _, newValue in
+            // Synchroniseer als de waarde extern verandert (bijv. SwiftData refresh)
+            if severity != newValue { severity = newValue }
+        }
     }
 }

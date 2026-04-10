@@ -1,7 +1,71 @@
 import Foundation
-
-
 import SwiftData
+
+// MARK: - Epic 18: Symptoom & Blessure Intelligentie
+
+/// Lichaamsdelen waarvoor de gebruiker dagelijks een pijnscores kan invoeren.
+enum BodyArea: String, CaseIterable, Codable {
+    case calf      = "Kuit"
+    case hand      = "Hand"
+    case back      = "Rug"
+    case knee      = "Knie"
+    case shoulder  = "Schouder"
+    case ankle     = "Enkel"
+
+    /// Sleutelwoorden die in UserPreference-teksten duiden op een klacht in dit gebied.
+    var injuryKeywords: [String] {
+        switch self {
+        case .calf:     return ["kuit", "scheen", "shin"]
+        case .hand:     return ["hand", "pols", "vinger"]
+        case .back:     return ["rug", "rugpijn", "back pain"]
+        case .knee:     return ["knie"]
+        case .shoulder: return ["schouder"]
+        case .ankle:    return ["enkel"]
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .calf:     return "figure.run"
+        case .hand:     return "hand.raised.fill"
+        case .back:     return "figure.stand"
+        case .knee:     return "figure.walk"
+        case .shoulder: return "figure.arms.open"
+        case .ankle:    return "figure.run.circle"
+        }
+    }
+
+    /// Geeft een leesbare ernst-omschrijving voor een gegeven score.
+    static func severityLabel(_ score: Int) -> String {
+        switch score {
+        case 0:     return "Geen pijn"
+        case 1...3: return "Licht"
+        case 4...6: return "Matig"
+        case 7...9: return "Zwaar"
+        default:    return "Ernstig"
+        }
+    }
+}
+
+/// Dagelijkse pijnscore voor één lichaamsdeel. Eén record per gebied per dag (upsert-patroon).
+@Model
+final class Symptom {
+    @Attribute(.unique) var id: UUID
+    var bodyAreaRaw: String      // BodyArea.rawValue — SwiftData ondersteunt geen enum direct
+    var severity: Int            // 0 (geen pijn) t/m 10 (ernstig)
+    var date: Date               // Genormaliseerd naar startOfDay
+
+    init(bodyArea: BodyArea, severity: Int, date: Date = Date()) {
+        self.id = UUID()
+        self.bodyAreaRaw = bodyArea.rawValue
+        self.severity = min(10, max(0, severity))
+        self.date = Calendar.current.startOfDay(for: date)
+    }
+
+    var bodyArea: BodyArea {
+        BodyArea(rawValue: bodyAreaRaw) ?? .calf
+    }
+}
 
 /// Representeert een opgeslagen langetermijnvoorkeur of 'harde regel' van de gebruiker.
 @Model
@@ -57,6 +121,16 @@ enum TrainingPhase: String, CaseIterable {
     }
 
     /// Harde AI-instructie die de coach krijgt voor deze fase.
+    /// Korte focusomschrijving voor de status-badge op het dashboard.
+    var focusDescription: String {
+        switch self {
+        case .baseBuilding: return "Aerobe basis leggen"
+        case .buildPhase:   return "Uithoudingsvermogen opbouwen"
+        case .peakPhase:    return "Race-intensiteit bereiken"
+        case .tapering:     return "Herstellen en scherp worden"
+        }
+    }
+
     var aiInstruction: String {
         switch self {
         case .baseBuilding:
@@ -186,6 +260,46 @@ struct PeriodizationResult {
 
     /// True als de sporter aan BEIDE criteria voldoet.
     var isOnTrack: Bool { meetsLongestSessionCriteria && meetsWeeklyTrimpCriteria }
+
+    /// Fase + focus voor de status-badge boven het schema.
+    var phaseBadgeText: String { "\(phase.displayName) — \(phase.focusDescription)" }
+
+    /// Voortgangsitems voor de MilestoneProgressCard.
+    /// Elk item heeft een label, huidige waarde, vereiste waarde en of het behaald is.
+    struct MilestoneItem {
+        let label: String
+        let detail: String          // bijv. "60 km langste rit afgelopen 3 weken"
+        let current: Double
+        let required: Double
+        let isMet: Bool
+        let isInverted: Bool        // true bij tapering: lager is beter
+        var progress: Double {
+            guard required > 0 else { return 0 }
+            let ratio = current / required
+            return isInverted ? min(1.0, 2.0 - ratio) : min(1.0, ratio)
+        }
+    }
+
+    var milestoneItems: [MilestoneItem] {
+        let sessionUnit = blueprint.goalType == .cyclingTour ? "km rit" : "km loop"
+        let sessionItem = MilestoneItem(
+            label: "Langste sessie",
+            detail: "\(String(format: "%.0f", requiredSessionMeters / 1000)) \(sessionUnit) \(phase == .tapering ? "(max)" : "(min)") — \(criteria.sessionWindowWeeks) weken venster",
+            current: longestRecentSessionMeters / 1000,
+            required: requiredSessionMeters / 1000,
+            isMet: meetsLongestSessionCriteria,
+            isInverted: phase == .tapering
+        )
+        let trimpItem = MilestoneItem(
+            label: "Wekelijkse belasting",
+            detail: "\(String(format: "%.0f", targetWeeklyTrimp)) TRIMP/week \(phase == .tapering ? "(max)" : "(min)")",
+            current: currentWeeklyTrimp,
+            required: targetWeeklyTrimp,
+            isMet: meetsWeeklyTrimpCriteria,
+            isInverted: phase == .tapering
+        )
+        return [sessionItem, trimpItem]
+    }
 
     /// Volledige coaching-context inclusief fase, criteria, status en gedragsinstructies — klaar voor AI-injectie.
     /// Sprint 17.2: Bevat nu expliciete compliment-triggers, urgente mijlpaal-alerts en schema-verantwoordingsplicht.
@@ -511,6 +625,10 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
     /// Doel tempo, bijv. "5:30 min/km"
     let targetPace: String?
 
+    /// Sprint 17.3: Korte uitleg waarom deze training in het schema staat (fase + succescriteria basis).
+    /// Bijv: "60 km = 50% van je fietsdoel. Verplichte mijlpaal in de Build-fase."
+    let reasoning: String?
+
     enum CodingKeys: String, CodingKey {
         case dateOrDay
         case activityType
@@ -519,9 +637,10 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         case description
         case heartRateZone
         case targetPace
+        case reasoning
     }
 
-    init(id: UUID = UUID(), dateOrDay: String, activityType: String, suggestedDurationMinutes: Int, targetTRIMP: Int?, description: String, heartRateZone: String? = nil, targetPace: String? = nil) {
+    init(id: UUID = UUID(), dateOrDay: String, activityType: String, suggestedDurationMinutes: Int, targetTRIMP: Int?, description: String, heartRateZone: String? = nil, targetPace: String? = nil, reasoning: String? = nil) {
         self.id = id
         self.dateOrDay = dateOrDay
         self.activityType = activityType
@@ -530,6 +649,7 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         self.description = description
         self.heartRateZone = heartRateZone
         self.targetPace = targetPace
+        self.reasoning = reasoning
     }
 
     init(from decoder: Decoder) throws {
@@ -540,7 +660,8 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         suggestedDurationMinutes = (try? container.decodeIfPresent(Int.self, forKey: .suggestedDurationMinutes)) ?? 0
         description = try container.decode(String.self, forKey: .description)
         heartRateZone = try container.decodeIfPresent(String.self, forKey: .heartRateZone)
-        targetPace = try container.decodeIfPresent(String.self, forKey: .targetPace)
+        targetPace    = try container.decodeIfPresent(String.self, forKey: .targetPace)
+        reasoning     = try container.decodeIfPresent(String.self, forKey: .reasoning)
 
         // Probeer targetTRIMP te decoderen als Int, en anders als String en parse naar Int
         if let intTRIMP = try? container.decodeIfPresent(Int.self, forKey: .targetTRIMP) {
