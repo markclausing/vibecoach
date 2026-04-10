@@ -562,15 +562,14 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         return calendar.date(byAdding: .day, value: daysAhead, to: today) ?? today
     }
 
-    /// Geeft "Vandaag", "Morgen" of de originele dagnaam terug voor weergave.
+    /// Geeft de dag als expliciete datum terug, bijv. "Vrijdag 10 apr".
+    /// Geen 'Vandaag'/'Morgen' — expliciete datums voorkomen verwarring bij stale data.
     var displayDayLabel: String {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let resolved = resolvedDate
-        if calendar.isDate(resolved, inSameDayAs: today) { return "Vandaag" }
-        if let tomorrow = calendar.date(byAdding: .day, value: 1, to: today),
-           calendar.isDate(resolved, inSameDayAs: tomorrow) { return "Morgen" }
-        return dateOrDay
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "nl_NL")
+        formatter.dateFormat = "EEEE d MMM"
+        let label = formatter.string(from: resolvedDate)
+        return label.prefix(1).uppercased() + label.dropFirst()
     }
 }
 

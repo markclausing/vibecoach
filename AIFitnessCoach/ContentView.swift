@@ -1174,6 +1174,25 @@ struct DashboardView: View {
     /// Opgeslagen als Unix timestamp (Double) zodat AppStorage er mee werkt.
     @AppStorage("vibecoach_recoveryPlanTimestamp") private var recoveryPlanTimestamp: Double = 0
 
+    /// Tijdstip van de laatste geslaagde coach-analyse — gespiegeld vanuit ChatViewModel.
+    @AppStorage("vibecoach_lastAnalysisTimestamp") private var lastAnalysisTimestamp: Double = 0
+
+    /// Geeft een leesbare tijdstempelstring terug, bijv. "Laatste update: vandaag om 17:15".
+    private var lastAnalysisText: String {
+        guard lastAnalysisTimestamp > 0 else { return "" }
+        let date = Date(timeIntervalSince1970: lastAnalysisTimestamp)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "nl_NL")
+        if Calendar.current.isDateInToday(date) {
+            formatter.dateFormat = "'vandaag om' HH:mm"
+        } else if Calendar.current.isDateInYesterday(date) {
+            formatter.dateFormat = "'gisteren om' HH:mm"
+        } else {
+            formatter.dateFormat = "d MMM 'om' HH:mm"
+        }
+        return "Laatste update: \(formatter.string(from: date))"
+    }
+
     /// True als er een actief herstelplan is dat minder dan 3 dagen geleden is aangevraagd.
     private var hasActiveRecoveryPlan: Bool {
         guard recoveryPlanTimestamp > 0 else { return false }
@@ -1544,6 +1563,12 @@ struct DashboardView: View {
                                         .foregroundColor(.yellow)
                                     Text("Coach Insight")
                                         .font(.headline)
+                                    Spacer()
+                                    if !lastAnalysisText.isEmpty {
+                                        Text(lastAnalysisText)
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
                                 }
                                 Text(latestCoachInsight)
                                     .font(.subheadline)
@@ -1649,6 +1674,12 @@ struct DashboardView: View {
                 // EPIC 14.3: Bereken de Vibe Score automatisch als er nog geen record voor vandaag is.
                 if todayReadiness == nil {
                     Task { await calculateAndSaveVibeScore() }
+                }
+                // Auto-refresh: als de laatste analyse van een vorige dag is, vraag direct een nieuwe aan.
+                // Zo start de dag altijd met een actueel schema — ook na middernacht.
+                let lastAnalysisDate = Date(timeIntervalSince1970: lastAnalysisTimestamp)
+                if lastAnalysisTimestamp == 0 || !Calendar.current.isDateInToday(lastAnalysisDate) {
+                    viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                 }
                 // EPIC 14.4: Schrijf de Vibe Score van vandaag naar de AI-prompt cache
                 // zodat elke coach-interactie de actuele herstelstatus kent.

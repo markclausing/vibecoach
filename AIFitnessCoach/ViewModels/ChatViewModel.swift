@@ -74,6 +74,10 @@ class ChatViewModel: ObservableObject {
     /// Bevat de huidige trainingsfase + succescriteria + voortgang voor gerichte fase-coaching.
     @AppStorage("vibecoach_periodizationContext") private var periodizationContext: String = ""
 
+    /// Tijdstip van de laatste geslaagde coach-analyse (Unix timestamp).
+    /// Wordt gebruikt om automatisch te vernieuwen bij een nieuwe dag.
+    @AppStorage("vibecoach_lastAnalysisTimestamp") var lastAnalysisTimestamp: Double = 0
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
@@ -1117,6 +1121,7 @@ class ChatViewModel: ObservableObject {
                     // Sla de motivatie op voor het dashboard insight block
                     if !motivationText.isEmpty {
                         latestCoachInsight = motivationText
+                        lastAnalysisTimestamp = Date().timeIntervalSince1970
                     }
                 } catch {
                     // JSON-parsing mislukt: gebruik de fallbackMessage als die is meegegeven
