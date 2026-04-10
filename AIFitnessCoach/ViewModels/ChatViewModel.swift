@@ -78,6 +78,9 @@ class ChatViewModel: ObservableObject {
     /// Wordt gebruikt om automatisch te vernieuwen bij een nieuwe dag.
     @AppStorage("vibecoach_lastAnalysisTimestamp") var lastAnalysisTimestamp: Double = 0
 
+    /// Epic 18: Cache van de dagelijkse symptoomscores — pijncijfers per lichaamsdeel.
+    @AppStorage("vibecoach_symptomContext") private var symptomContext: String = ""
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
@@ -198,6 +201,22 @@ class ChatViewModel: ObservableObject {
         periodizationContext = results
             .map { $0.coachingContext }
             .joined(separator: "\n\n")
+    }
+
+    /// Epic 18: Schrijft de dagelijkse symptoomscores naar de AppStorage cache.
+    /// De coach kan hiermee refereren aan pijncijfers in zijn Insight-teksten.
+    func cacheSymptomContext(_ symptoms: [Symptom]) {
+        let todayStart = Calendar.current.startOfDay(for: Date())
+        let todaySymptoms = symptoms.filter { $0.date >= todayStart && $0.severity > 0 }
+        guard !todaySymptoms.isEmpty else {
+            symptomContext = ""
+            return
+        }
+        let lines = todaySymptoms.map { s in
+            let label = BodyArea.severityLabel(s.severity)
+            return "• \(s.bodyAreaRaw): \(s.severity)/10 (\(label))"
+        }
+        symptomContext = lines.joined(separator: "\n")
     }
 
     /// SPRINT 13.4: Geeft het meest recent opgeslagen coach-inzicht terug (uit AppStorage).
@@ -374,6 +393,11 @@ class ChatViewModel: ObservableObject {
         // Epic 18.1: Injecteer de subjectieve feedback (RPE + stemming) van de laatste workout
         if !lastWorkoutFeedbackContext.isEmpty {
             prefix += "[SUBJECTIEVE FEEDBACK LAATSTE WORKOUT: \(lastWorkoutFeedbackContext) Let op discrepanties: als TRIMP laag is maar RPE ≥8, is dit een vroeg signaal van overtraining of naderende ziekte.]\n\n"
+        }
+
+        // Epic 18: Injecteer de actuele pijnscores per lichaamsdeel (dagelijks bijgewerkt)
+        if !symptomContext.isEmpty {
+            prefix += "[ACTUELE KLACHTEN (dagelijks bijgewerkt door de gebruiker):\n\(symptomContext)\nInstructie: Refereer aan deze specifieke pijncijfers in je Insight wanneer je een blessure-gerelateerde training bespreekt. Als een score is gedaald t.o.v. gisteren, benoem dit als positief signaal. Als een score ≥7 is, wees dan extra voorzichtig met belasting op dat lichaamsdeel.]\n\n"
         }
 
         // Epic 17 / Sprint 17.2: Injecteer de blueprint + periodization context

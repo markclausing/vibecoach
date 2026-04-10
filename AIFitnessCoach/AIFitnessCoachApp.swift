@@ -182,6 +182,6 @@ struct AIFitnessCoachApp: App {
                 }
             }
         }
-        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self, DailyReadiness.self]) // Epic 14: DailyReadiness toegevoegd
+        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self, DailyReadiness.self, Symptom.self]) // Epic 18: Symptom toegevoegd
     }
 }
