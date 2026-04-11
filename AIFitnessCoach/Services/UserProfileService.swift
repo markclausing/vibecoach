@@ -53,9 +53,11 @@ final class UserProfileService: @unchecked Sendable {
 
     // MARK: - Constanten
 
-    /// UserDefaults-sleutels voor de lokale fallback.
-    static let weightKey = "vibecoach_userWeightKg"
-    static let heightKey = "vibecoach_userHeightCm"
+    /// UserDefaults-sleutels voor de lokale fallback en leeftijdscache.
+    static let weightKey    = "vibecoach_userWeightKg"
+    static let heightKey    = "vibecoach_userHeightCm"
+    /// Gecachte leeftijd — om te detecteren of HealthKit een gewijzigde waarde teruggeeft.
+    static let cachedAgeKey = "vibecoach_cachedAgeYears"
 
     /// Standaard-fallbacks als zowel HealthKit als UserDefaults leeg zijn.
     /// Gebaseerd op gemiddelde Nederlandse recreatieve atleet (man, 35j, 75 kg, 178 cm).
@@ -68,6 +70,59 @@ final class UserProfileService: @unchecked Sendable {
 
     init(healthStore: HKHealthStore) {
         self.healthStore = healthStore
+    }
+
+    // MARK: - Synchrone cache-toegang
+
+    /// Bouwt een profiel uitsluitend op basis van UserDefaults-cache — geen HealthKit-aanroep nodig.
+    /// Geschikt voor synchrone gebruik in SwiftUI-views (bijv. WorkoutCardView).
+    /// Volgorde: UserDefaults-waarden → generieke standaard.
+    static func cachedProfile() -> UserPhysicalProfile {
+        let weightKg = UserDefaults.standard.object(forKey: weightKey)    as? Double ?? defaultWeightKg
+        let heightCm = UserDefaults.standard.object(forKey: heightKey)    as? Double ?? defaultHeightCm
+        let ageYears = UserDefaults.standard.object(forKey: cachedAgeKey) as? Int    ?? defaultAgeYears
+        return UserPhysicalProfile(
+            weightKg:     weightKg,
+            heightCm:     heightCm,
+            ageYears:     ageYears,
+            sex:          defaultSex,       // geslacht is niet gecacht; effect op BMR ≈ 5%
+            weightSource: .local,
+            heightSource: .local
+        )
+    }
+
+    // MARK: - Autorisatie
+
+    /// Vraagt leesrechten voor het volledige fysiologische profiel op.
+    ///
+    /// Dit is een apart pad van de hoofd-HealthKit-autorisatie in `HealthKitManager`.
+    /// Gebruikers die vóór Epic 24 HealthKit koppelden, hebben nooit toestemming gegeven
+    /// voor `dateOfBirth`, `biologicalSex`, `bodyMass` of `height`. iOS toont de popup
+    /// **opnieuw** voor types die nog niet gevraagd zijn — maar pas als we ze expliciet
+    /// meegeven in een `requestAuthorization`-aanroep.
+    ///
+    /// Karakteristieke types (dateOfBirth, biologicalSex) zijn read-only in HealthKit
+    /// en mogen NIET in `toShare` zitten — alleen in `read`.
+    func requestProfileReadAuthorization() async {
+        guard HKHealthStore.isHealthDataAvailable() else { return }
+
+        var read = Set<HKObjectType>()
+        if let bodyMass   = HKQuantityType.quantityType(forIdentifier: .bodyMass)   { read.insert(bodyMass) }
+        if let height     = HKQuantityType.quantityType(forIdentifier: .height)     { read.insert(height) }
+        if let dob        = HKObjectType.characteristicType(forIdentifier: .dateOfBirth)    { read.insert(dob) }
+        if let sex        = HKObjectType.characteristicType(forIdentifier: .biologicalSex)  { read.insert(sex) }
+
+        let share: Set<HKSampleType> = [
+            HKQuantityType.quantityType(forIdentifier: .bodyMass)!,
+            HKQuantityType.quantityType(forIdentifier: .height)!
+        ]
+
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            healthStore.requestAuthorization(toShare: share, read: read) { _, _ in
+                continuation.resume()
+            }
+        }
+        print("🔑 [ProfileService] requestProfileReadAuthorization voltooid")
     }
 
     // MARK: - Profiel ophalen
@@ -147,10 +202,37 @@ final class UserProfileService: @unchecked Sendable {
     // MARK: - Private helpers
 
     /// Leest geboortedatum synchronous en berekent de leeftijd in jaren.
+    /// Logt de ruwe HealthKit-waarden zodat sync-problemen direct zichtbaar zijn in de console.
     private func fetchAge() -> Int? {
-        guard let dob = try? healthStore.dateOfBirthComponents(),
-              let birthDate = Calendar.current.date(from: dob) else { return nil }
-        return Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year
+        do {
+            let dob = try healthStore.dateOfBirthComponents()
+            print("🎂 [HealthKit] Geboortedatum components: \(dob)")
+            guard let birthDate = Calendar.current.date(from: dob) else {
+                print("🎂 [HealthKit] ⚠️ Kon DateComponents niet omzetten naar Date: \(dob)")
+                return nil
+            }
+            print("🎂 [HealthKit] Geboortedatum als Date: \(birthDate)")
+            let age = Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year
+            print("🎂 [HealthKit] Berekende leeftijd: \(age ?? -1) jaar")
+            return age
+        } catch {
+            print("🎂 [HealthKit] ⚠️ dateOfBirthComponents mislukt — geen leestoegang of niet ingevuld: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// Vergelijkt de nieuw opgehaalde leeftijd met de gecachte waarde.
+    /// Retourneert `true` als de leeftijd is gewijzigd ten opzichte van de vorige fetch.
+    /// Slaat de nieuwe leeftijd altijd op als nieuwe cache-baseline.
+    func checkAndUpdateAgeCache(newAge: Int) -> Bool {
+        let previous = UserDefaults.standard.object(forKey: Self.cachedAgeKey) as? Int
+        UserDefaults.standard.set(newAge, forKey: Self.cachedAgeKey)
+        guard let prev = previous else { return false }   // eerste keer — geen wijziging te melden
+        let changed = prev != newAge
+        if changed {
+            print("🎂 [ProfileService] Leeftijd gewijzigd: \(prev) → \(newAge) jaar")
+        }
+        return changed
     }
 
     /// Leest biologisch geslacht synchronous.

@@ -100,6 +100,11 @@ class ChatViewModel: ObservableObject {
     /// Wordt gevuld via `refreshNutritionContext()` en geïnjecteerd in elke AI-prompt.
     @AppStorage("vibecoach_nutritionContext") private var nutritionContext: String = ""
 
+    /// Epic 24 Sprint 3: Eenmalige coach-melding bij een gedetecteerde profielwijziging (bijv. leeftijd).
+    /// Wordt geschreven door `PhysicalProfileSection` en geïnjecteerd in de eerstvolgende AI-prompt.
+    /// Wordt geleegd nadat de prompt is opgebouwd zodat de melding slechts éénmaal verschijnt.
+    @AppStorage("vibecoach_profileUpdateNote") var profileUpdateNote: String = ""
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
@@ -513,6 +518,24 @@ class ChatViewModel: ObservableObject {
             - Windsnelheid > 30 km/u is specifiek relevant voor fietsen: adviseer altijd naar een dag met minder wind te verschuiven als er een alternatief in de komende 3 dagen zit.
             - Als er géén betere dag in het venster van 3 dagen is: stel een indoor-variant voor (trainer, zwemmen, krachttraining) met expliciete vermelding van de weersreden.
 
+            KRITIEKE REGEL — DUBBELE TRAINING & DAGPLANNING (anti-double-day):
+            Plan NOOIT meer dan één workout per dag. Dit is een absolute, harde beperking.
+            Uitzonderingen zijn alleen toegestaan als aan BEIDE voorwaarden is voldaan:
+              (a) de wekelijkse TRIMP-target is aantoonbaar onhaalbaar met één sessie per dag, EN
+              (b) de tweede sessie is een actieve herstelblok (TRIMP ≤ 30, uitsluitend Zone 1/wandelen).
+
+            CONFLICTRESOLUTIE — wanneer meerdere trainingen dezelfde dag claimen:
+            Volg deze prioriteitsvolgorde strikt:
+              1. Krachttraining heeft de hoogste prioriteit; een concurrerende duurtraining vervalt of schuift.
+              2. Als de duurtraining een cruciale mijlpaal vertegenwoordigt (bijv. de vereiste 60 km-rit voor de fietsblueprint binnen 7 dagen), schuift de krachttraining naar de dichtstbijzijnde vrije dag.
+              3. Een rustdag mag nooit worden omgezet in een trainingsdag alleen om een verplaatste training op te vangen — respecteer de rustdagen in het wekelijkse patroon.
+              4. Als geen vrije dag beschikbaar is: annuleer de lagere-prioriteit training volledig en compenseer via het weekvolume op de overige dagen (max. 10–15% meer TRIMP per dag).
+
+            VERPLICHTE UITLEGPLICHT bij dagconflicten:
+            Als je een training annuleert of verschuift om een dubbele dag te voorkomen, MOET je dit in het `motivation` veld expliciet benoemen.
+            Gebruik dit exact als template: "Ik heb de geplande [naam training] van [dag] laten vervallen / verschoven naar [nieuwe dag], zodat je alle focus kunt leggen op [behouden training]. [Optioneel: waarom die training de prioriteit had]."
+            Voorbeeld: "Ik heb de geplande herstelrit van dinsdag laten vervallen, zodat je alle focus kunt leggen op je krachttraining. Fietsen staat vrijdag terug in het schema."
+
             KRITIEKE BEPERKING — WANDELEN:
             Wandelen mag uitsluitend als herstel-activiteit bij blessures of een Vibe Score < 50.
             Een wandelsessie mag NOOIT langer zijn dan 60 minuten. Stel in de JSON altijd suggestedDurationMinutes ≤ 60 in voor wandelingen.
@@ -524,7 +547,7 @@ class ChatViewModel: ObservableObject {
 
             BELANGRIJK: Zodra je een schema of status voor de komende 7 dagen plant of analyseert, MOET je antwoord een JSON object bevatten (eventueel in een codeblock) dat voldoet aan deze structuur:
             {
-                "motivation": "Schrijf hier een empathische, beschrijvende analyse van maximaal 3 zinnen. Begin met een DIRECTE reactie op het laatste bericht van de gebruiker (benoem de specifieke activiteit). Leg daarna het WAAROM uit achter je strategische keuzes. Als je een aanpassing maakt in het schema, bevestig dit expliciet ('Ik heb X verschoven naar Y omdat...'). Geef de gebruiker het gevoel dat de coach écht meedenkt en écht luistert.",
+                "motivation": "Schrijf hier een empathische, beschrijvende analyse van maximaal 3 zinnen. Begin met een DIRECTE reactie op het laatste bericht van de gebruiker (benoem de specifieke activiteit). Leg daarna het WAAROM uit achter je strategische keuzes. Als je een aanpassing maakt in het schema, bevestig dit expliciet ('Ik heb X verschoven naar Y omdat...'). Als je een dubbele dag hebt opgelost door een training te annuleren of te verschuiven, benoem dit altijd: 'Ik heb [training] van [dag] laten vervallen/verschoven naar [dag], zodat je alle focus kunt leggen op [behouden training].' Geef de gebruiker het gevoel dat de coach écht meedenkt en écht luistert.",
                 "workouts": [
                     {
                         "dateOrDay": "Maandag",
@@ -683,6 +706,13 @@ class ChatViewModel: ObservableObject {
         // Epic 24 Sprint 1: Injecteer het fysiologisch profiel + voedingsplan in de prompt
         if !nutritionContext.isEmpty {
             prefix += "\(nutritionContext)\n\n"
+        }
+
+        // Epic 24 Sprint 3: Eenmalige profielwijziging-melding — slechts één keer injecteren,
+        // daarna wissen zodat de coach het niet elke keer herhaalt.
+        if !profileUpdateNote.isEmpty {
+            prefix += "\(profileUpdateNote)\n\n"
+            profileUpdateNote = ""
         }
 
         // Debug: print de volledige blueprint- en periodization-context die naar Gemini gaat

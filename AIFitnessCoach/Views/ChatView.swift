@@ -515,16 +515,8 @@ struct WorkoutCardView: View {
 
             Spacer()
 
-                HStack {
-                    if workout.suggestedDurationMinutes > 0 {
-                        Label("\(workout.suggestedDurationMinutes) min", systemImage: "clock")
-                            .font(.caption2)
-                    }
-
-                    let trimpText = workout.targetTRIMP != nil ? "\(workout.targetTRIMP!)" : "-"
-                    Label("TRIMP: \(trimpText)", systemImage: "bolt.heart")
-                        .font(.caption2)
-                }
+                // Statistieken-rij: duur | TRIMP | 💧 vocht | 🍌 koolhydraten
+            WorkoutStatsRow(workout: workout)
             }
             .padding()
             .frame(maxWidth: .infinity, minHeight: 160)
@@ -579,6 +571,12 @@ struct WorkoutDetailView: View {
                     .background(Color(.secondarySystemBackground))
                     .cornerRadius(12)
 
+                    // Voeding & Hydratatie sectie (Epic 24)
+                    let profile = UserProfileService.cachedProfile()
+                    if let plan = NutritionService.fuelingPlan(for: workout, profile: profile) {
+                        WorkoutFuelingSectionView(plan: plan)
+                    }
+
                     // Omschrijving sectie
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Omschrijving")
@@ -622,6 +620,131 @@ struct InfoRowView: View {
             Spacer()
             Text(value)
                 .fontWeight(.medium)
+        }
+    }
+}
+
+// MARK: - Epic 24 Sprint 4: Voedings UI-componenten
+
+/// Compacte rij met trainingsstatistieken onderaan een WorkoutCardView.
+/// Toont: ⏱ duur | ⚡ TRIMP | 💧 vocht | 🍌 koolhydraten
+struct WorkoutStatsRow: View {
+    let workout: SuggestedWorkout
+
+    private var fueling: WorkoutFuelingPlan? {
+        NutritionService.fuelingPlan(for: workout, profile: UserProfileService.cachedProfile())
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            if workout.suggestedDurationMinutes > 0 {
+                statChip(icon: "clock", value: "\(workout.suggestedDurationMinutes) min", color: .primary)
+            }
+
+            let trimpText = workout.targetTRIMP.map { "\($0)" } ?? "-"
+            statChip(icon: "bolt.heart", value: "TRIMP: \(trimpText)", color: .primary)
+
+            if let plan = fueling {
+                statChip(icon: "drop.fill",  value: "\(Int(plan.fluidMl.rounded())) ml",   color: .blue)
+                statChip(icon: "leaf.fill",  value: "\(Int(plan.carbsGram.rounded())) g",  color: .green)
+            }
+        }
+    }
+
+    private func statChip(icon: String, value: String, color: Color) -> some View {
+        Label(value, systemImage: icon)
+            .font(.caption2)
+            .foregroundStyle(color)
+    }
+}
+
+/// Sectie in `WorkoutDetailView` met gestructureerde voedings- en hydratatie-informatie.
+struct WorkoutFuelingSectionView: View {
+    let plan: WorkoutFuelingPlan
+
+    private var interval: NutritionService.FuelingInterval {
+        NutritionService.intervalBreakdown(plan: plan, every: 15)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Voeding & Hydratatie")
+                .font(.headline)
+
+            // Totaaloverzicht
+            VStack(spacing: 12) {
+                InfoRowView(icon: "flame.fill",
+                            title: "Verbranding",
+                            value: "~\(Int(plan.totalCaloriesBurned.rounded())) kcal")
+                InfoRowView(icon: "drop.fill",
+                            title: "Totaal vocht",
+                            value: "\(Int(plan.fluidMl.rounded())) ml")
+                    .foregroundStyle(.blue)
+                InfoRowView(icon: "leaf.fill",
+                            title: "Totaal koolhydraten",
+                            value: "\(Int(plan.carbsGram.rounded())) g")
+                    .foregroundStyle(.green)
+            }
+            .padding()
+            .background(Color(.secondarySystemBackground))
+            .cornerRadius(12)
+
+            // Interval-breakdown
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Per \(interval.intervalMinutes) minuten", systemImage: "timer")
+                    .font(.subheadline.weight(.semibold))
+
+                HStack(spacing: 12) {
+                    intervalPill(
+                        icon: "drop.fill",
+                        value: "~\(Int(interval.fluidMl.rounded())) ml",
+                        label: "drinken",
+                        color: .blue
+                    )
+                    intervalPill(
+                        icon: "leaf.fill",
+                        value: "~\(Int(interval.carbsGram.rounded())) g",
+                        label: "koolhydraten",
+                        color: .green
+                    )
+                }
+
+                // Timing tips
+                VStack(alignment: .leading, spacing: 4) {
+                    timingRow(phase: "Voor",    tip: "Drink 400–600 ml water 2 uur voor de start")
+                    timingRow(phase: "Tijdens", tip: "Drink elk kwartier \(Int(interval.fluidMl.rounded())) ml\(plan.carbsGram > 20 ? "; neem elke 30 min een gelletje of \(Int(interval.carbsGram.rounded() * 2)) g koolhydraten" : "")")
+                    timingRow(phase: "Na",      tip: "Herstel met \(Int((plan.totalCaloriesBurned * 0.25).rounded())) kcal (eiwitten + koolhydraten) binnen 30 min")
+                }
+                .padding(.top, 4)
+            }
+        }
+    }
+
+    private func intervalPill(icon: String, value: String, label: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: icon).foregroundStyle(color)
+                Text(value).fontWeight(.semibold)
+            }
+            .font(.subheadline)
+            Text(label).font(.caption2).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(color.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func timingRow(phase: String, tip: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text(phase)
+                .font(.caption.weight(.semibold))
+                .frame(width: 46, alignment: .leading)
+                .foregroundStyle(.secondary)
+            Text(tip)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

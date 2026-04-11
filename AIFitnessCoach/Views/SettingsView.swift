@@ -608,11 +608,16 @@ struct PhysicalProfileSection: View {
     @State private var heightInput: String = ""
 
     // UI state
-    @State private var isLoading   = true
-    @State private var isSaving    = false
+    @State private var isLoading     = true
+    @State private var isSaving      = false
     @State private var saveMessage: String?
     /// .savedToHealthKit → groen, .savedLocallyOnly → oranje
     @State private var saveResult: UserProfileService.SaveResult?
+    /// Tijdstip van de laatste succesvolle HealthKit-refresh — voor de sync-indicator.
+    @State private var lastRefreshed: Date?
+
+    /// Coach-melding bij profielwijziging — wordt éénmalig in de eerstvolgende AI-prompt gezet.
+    @AppStorage("vibecoach_profileUpdateNote") private var profileUpdateNote: String = ""
 
     // Detecteer of de gebruiker iets heeft gewijzigd ten opzichte van het geladen profiel
     private var hasChanges: Bool {
@@ -635,6 +640,30 @@ struct PhysicalProfileSection: View {
                         .font(.subheadline)
                 }
             } else {
+                // Sync-indicator — toont tijdstip van laatste HealthKit-refresh
+                if let ts = lastRefreshed {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.green)
+                        Text("Gesynchroniseerd om \(ts, format: .dateTime.hour().minute())")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button {
+                            Task { await loadProfile() }
+                        } label: {
+                            HStack(spacing: 3) {
+                                Image(systemName: "arrow.clockwise")
+                                Text("Ververs")
+                            }
+                            .font(.caption2)
+                            .foregroundStyle(.blue)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
                 // Leeftijd — read-only via HealthKit
                 profileRow(
                     icon: "person.circle",
@@ -708,7 +737,10 @@ struct PhysicalProfileSection: View {
                 }
             }
         }
-        .task { await loadProfile() }
+        // onAppear garandeert een verse HealthKit-fetch bij elke keer dat de sectie zichtbaar wordt,
+        // ook als de SettingsView in memory blijft (tabs). .task wordt enkel bij de eerste render
+        // uitgevoerd in statische forms — vandaar de overstap naar onAppear.
+        .onAppear { Task { await loadProfile() } }
     }
 
     // MARK: - Sub-views
@@ -791,12 +823,38 @@ struct PhysicalProfileSection: View {
 
     private func loadProfile() async {
         isLoading = true
+
+        // Vraag eerst expliciet leesrechten voor de profieltypen.
+        // Voor gebruikers die HealthKit koppelden vóór Epic 24 zijn dateOfBirth,
+        // biologicalSex, bodyMass en height nog nooit gevraagd — iOS toont de popup
+        // pas als we ze hier uitdrukkelijk opnemen in requestAuthorization.
+        await profileService.requestProfileReadAuthorization()
+
         let loaded = await profileService.fetchProfile()
+
+        // Detecteer of de leeftijd is gewijzigd ten opzichte van de vorige fetch.
+        // Als dat zo is, schrijven we een eenmalige coach-melding die bij de
+        // eerstvolgende AI-vraag wordt geïnjecteerd (via vibecoach_profileUpdateNote).
+        let ageChanged = profileService.checkAndUpdateAgeCache(newAge: loaded.ageYears)
+        if ageChanged {
+            let bmr = Int(NutritionService.calculateBMR(profile: loaded).rounded())
+            profileUpdateNote = """
+            [PROFIEL BIJGEWERKT — VERPLICHTE VERMELDING]:
+            De leeftijd van de gebruiker is bijgewerkt naar \(loaded.ageYears) jaar (eerder opgeslagen waarde was anders). \
+            Het basaal metabolisme (BMR) is herberekend naar ~\(bmr) kcal/dag op basis van het nieuwe profiel (\(loaded.coachSummary)). \
+            Vernoem dit expliciet aan het begin van je eerstvolgende Insight of antwoord: \
+            "Ik heb je profiel bijgewerkt naar \(loaded.ageYears) jaar; je dagelijkse energiebehoefte (BMR) is nu ~\(bmr) kcal/dag." \
+            Pas voedings- en trainingsadviezen hierop aan.
+            """
+            print("📣 [ProfileSection] Profielwijziging gedetecteerd — coach-note geschreven voor leeftijd \(loaded.ageYears)j, BMR ~\(bmr) kcal")
+        }
+
         await MainActor.run {
-            profile      = loaded
-            weightInput  = String(format: "%.1f", loaded.weightKg)
-            heightInput  = String(format: "%.0f", loaded.heightCm)
-            isLoading    = false
+            profile       = loaded
+            weightInput   = String(format: "%.1f", loaded.weightKg)
+            heightInput   = String(format: "%.0f", loaded.heightCm)
+            isLoading     = false
+            lastRefreshed = Date()
         }
     }
 
