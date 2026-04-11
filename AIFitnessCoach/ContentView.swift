@@ -1678,15 +1678,14 @@ struct DashboardView: View {
                                 onSkipWorkout: { workout in
                                     refreshProfileContext()
                                     viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                                    // Chat niet direct openen indien gewenst om de UI rustig te houden, maar we openen hem hier wel als we
-                                    // verwachten dat de gebruiker de chat loader wil zien
                                     appState.showingChatSheet = true
                                 },
                                 onAlternativeWorkout: { workout in
                                     refreshProfileContext()
                                     viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                                     appState.showingChatSheet = true
-                                }
+                                },
+                                weeklyForecast: WeatherManager.shared.weeklyForecast
                             )
                             .padding(.horizontal)
                         } else {

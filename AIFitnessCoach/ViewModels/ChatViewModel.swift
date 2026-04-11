@@ -417,6 +417,14 @@ class ChatViewModel: ObservableObject {
             - Als een gebied 'score nog niet ingevuld vandaag' heeft: wees voorzichtig, maar leg geen absolute verboden op.
             - Zijn er GEEN klachten vermeld? Dan mag je het schema volledig op basis van de blueprint en trainingsfase plannen.
 
+            KRITIEKE REGEL — WEERSGESTUURDE DAGPLANNING (Epic 21):
+            Je ontvangt de 7-daagse weersverwachting in de context. Gebruik dit ACTIEF bij het opstellen of aanpassen van het schema.
+            - Kijk ALTIJD naar de komende 3 dagen. Als een sleuteltraining (lange rit, tempo-run, interval) vandaag door ⚠️ SLECHT BUITENWEER niet buiten kan, maar morgen of overmorgen de omstandigheden ideaal zijn, stel dan EXPLICIET voor om de trainingen van die dagen om te wisselen.
+            - Benoem de dagwissel ALTIJD in het `motivation` veld: "Ik zie dat het zaterdag 75% kans op regen heeft maar zondag helder en windstil is. Ik heb je 60 km duurrit naar zondag verplaatst en zet vandaag een kortere Zone 2-sessie van 45 min op de indoor trainer."
+            - Als de zware sleuteltraining naar morgen of overmorgen verschuift: verlaag de TRIMP voor de huidige dag BEWUST zodat de atleet uitgerust aan de sleuteltraining begint. Adviseer max. 40-50% van het normale dagdoel als 'oplaad-dag'. Benoem dit: "Vandaag houden we je TRIMP laag zodat je morgen vers aan de start staat."
+            - Windsnelheid > 30 km/u is specifiek relevant voor fietsen: adviseer altijd naar een dag met minder wind te verschuiven als er een alternatief in de komende 3 dagen zit.
+            - Als er géén betere dag in het venster van 3 dagen is: stel een indoor-variant voor (trainer, zwemmen, krachttraining) met expliciete vermelding van de weersreden.
+
             KRITIEKE BEPERKING — WANDELEN:
             Wandelen mag uitsluitend als herstel-activiteit bij blessures of een Vibe Score < 50.
             Een wandelsessie mag NOOIT langer zijn dan 60 minuten. Stel in de JSON altijd suggestedDurationMinutes ≤ 60 in voor wandelingen.
@@ -546,10 +554,12 @@ class ChatViewModel: ObservableObject {
             [WEERSOMSTANDIGHEDEN KOMENDE 7 DAGEN (locatie gebruiker):
             \(weatherContext)
             Gedragsregels:
-            1. Als een dag met ⚠️ SLECHT BUITENWEER samenvalt met een geplande sleuteltraining (bijv. lange rit of run), stel dan ALTIJD een alternatief voor: indoor trainer, andere dag, of kortere route bij minder slecht moment op dezelfde dag.
-            2. Zeg nooit alleen "het kan regenen" — wees specifiek: "Zaterdag is 70% kans op regen, ik adviseer de 60 km indoor of verplaats naar zondag".
-            3. Temperatuur < 5°C of > 30°C → geef een expliciete tip over kleding of hydratatie.
-            4. Als het weer goed is, hoef je het niet te noemen — tenzij het een bonus is ("Zondag ziet er ideaal uit voor je lange rit").]
+            1. DAGWISSEL STRATEGIE: Als een dag met ⚠️ SLECHT BUITENWEER een sleuteltraining heeft, kijk dan naar de komende 3 dagen. Is er een betere dag? Wissel dan EXPLICIET van dag en benoem dit in het `motivation` veld.
+            2. TRIMP-VOORBEREIDING: Als de sleuteltraining naar morgen of overmorgen verschuift, adviseer vandaag max. 40-50% TRIMP als 'oplaad-dag'. Noem dit expliciet.
+            3. Wees altijd specifiek over percentages: niet "het kan regenen" maar "Zaterdag 72% neerslag → ik verplaats de 60 km naar zondag (5% neerslag, windstil)".
+            4. Wind > 30 km/u = relevant voor fietsen. Zoek altijd een windstillere dag als die er is.
+            5. Temperatuur < 5°C of > 30°C → tip over kleding of hydratatie.
+            6. Goed weer hoef je niet te vermelden tenzij het een bonus is ("Zondag ziet er ideaal uit — perfect voor je lange rit").]
             """
             prefix += weatherBlock + "\n\n"
         }
