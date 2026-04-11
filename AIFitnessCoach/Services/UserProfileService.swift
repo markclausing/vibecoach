@@ -72,6 +72,25 @@ final class UserProfileService: @unchecked Sendable {
         self.healthStore = healthStore
     }
 
+    // MARK: - Synchrone cache-toegang
+
+    /// Bouwt een profiel uitsluitend op basis van UserDefaults-cache — geen HealthKit-aanroep nodig.
+    /// Geschikt voor synchrone gebruik in SwiftUI-views (bijv. WorkoutCardView).
+    /// Volgorde: UserDefaults-waarden → generieke standaard.
+    static func cachedProfile() -> UserPhysicalProfile {
+        let weightKg = UserDefaults.standard.object(forKey: weightKey)    as? Double ?? defaultWeightKg
+        let heightCm = UserDefaults.standard.object(forKey: heightKey)    as? Double ?? defaultHeightCm
+        let ageYears = UserDefaults.standard.object(forKey: cachedAgeKey) as? Int    ?? defaultAgeYears
+        return UserPhysicalProfile(
+            weightKg:     weightKg,
+            heightCm:     heightCm,
+            ageYears:     ageYears,
+            sex:          defaultSex,       // geslacht is niet gecacht; effect op BMR ≈ 5%
+            weightSource: .local,
+            heightSource: .local
+        )
+    }
+
     // MARK: - Autorisatie
 
     /// Vraagt leesrechten voor het volledige fysiologische profiel op.

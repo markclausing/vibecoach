@@ -112,6 +112,47 @@ struct NutritionService {
         )
     }
 
+    // MARK: - SuggestedWorkout integratie
+
+    /// Bepaalt de trainingszone op basis van het hartslagzone- of beschrijvingsveld.
+    static func zone(for workout: SuggestedWorkout) -> TrainingZone {
+        let text = ((workout.heartRateZone ?? "") + " " + workout.description).lowercased()
+        let isHigh = text.contains("interval") || text.contains("tempo")
+            || text.contains("drempel") || text.contains("zone 4") || text.contains("z4")
+        return isHigh ? .zone4 : .zone2
+    }
+
+    /// Berekent het voedingsplan voor een `SuggestedWorkout` op basis van het gecachte profiel.
+    /// Geeft `nil` terug voor rustdagen of workouts zonder duur.
+    static func fuelingPlan(for workout: SuggestedWorkout, profile: UserPhysicalProfile) -> WorkoutFuelingPlan? {
+        guard workout.suggestedDurationMinutes > 0,
+              workout.activityType.lowercased() != "rust" else { return nil }
+        return fuelingPlan(
+            durationMinutes: workout.suggestedDurationMinutes,
+            zone: zone(for: workout),
+            profile: profile
+        )
+    }
+
+    // MARK: - Interval-verdeling
+
+    /// Breekt het voedingsplan op in vaste intervallen voor de detailweergave.
+    /// Bijv. elke 15 min: drink X ml, eet Y g koolhydraten.
+    struct FuelingInterval {
+        let intervalMinutes: Int
+        let fluidMl: Double
+        let carbsGram: Double
+    }
+
+    static func intervalBreakdown(plan: WorkoutFuelingPlan, every intervalMinutes: Int = 15) -> FuelingInterval {
+        let intervals = max(1.0, Double(plan.durationMinutes) / Double(intervalMinutes))
+        return FuelingInterval(
+            intervalMinutes: intervalMinutes,
+            fluidMl:   plan.fluidMl   / intervals,
+            carbsGram: plan.carbsGram / intervals
+        )
+    }
+
     // MARK: - Coach prompt blok
 
     /// Bouwt het `[VOEDING & FYSIOLOGIE]` blok voor de AI-prompt.
