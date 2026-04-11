@@ -1,23 +1,25 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - Epic 23 Sprint 1: Gap Analysis UI Component
+// MARK: - Epic 23 Sprint 1: Gap Analysis UI Component (Rolling Phase Gap)
 
-/// Kaart die de achterstand of voorsprong t.o.v. de Blueprint laat zien voor één doel.
-/// Toont TRIMP-voortgang en afstandsvoortgang als ringvormige of lineaire meter.
+/// Kaart die de cumulatieve achterstand/voorsprong binnen de huidige trainingsfase toont.
+/// De voortgangsbalk loopt van 0% (fasestart) naar 100% (faseeinde).
+/// Een "ghost" marker geeft aan waar je vandaag idealiter zou moeten staan.
 struct GapAnalysisCardView: View {
     let gap: BlueprintGap
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
 
-            // Header: doelnaam + blueprint-type badge
+            // Header: doelnaam + weken resterend
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(gap.goal.title)
                         .font(.headline)
                         .lineLimit(1)
-                    Text(gap.blueprintType.displayName)
+                    // Fase + week-context: "Build Phase (Week 3/8)"
+                    Text(gap.phaseProgressLabel)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -27,29 +29,27 @@ struct GapAnalysisCardView: View {
 
             Divider()
 
-            // TRIMP voortgangsrij
-            progressRow(
+            // TRIMP voortgangsrij met ghost marker
+            phaseProgressRow(
                 icon: "bolt.fill",
-                iconColor: trimpIconColor,
                 label: "Trainingsbelasting (TRIMP)",
-                progress: gap.trimpProgressPct,
-                progressColor: trimpBarColor,
+                actualPct: gap.trimpProgressPct,
+                referencePct: gap.trimpReferencePct,
                 statusLine: gap.trimpStatusLine
             )
 
-            // Afstandsvoortgangsrij (alleen voor doelen met een km-target > 0)
-            if gap.requiredKmToDate > 0 {
-                progressRow(
+            // Km voortgangsrij met ghost marker (alleen als er een km-target is)
+            if gap.totalPhaseKmTarget > 0 {
+                phaseProgressRow(
                     icon: distanceIcon,
-                    iconColor: kmIconColor,
-                    label: "Afstand (\(gap.blueprintType == .cyclingTour ? "km fietsen" : "km hardlopen"))",
-                    progress: gap.kmProgressPct,
-                    progressColor: kmBarColor,
+                    label: "Afstand (\(gap.blueprintType == .cyclingTour ? "fietsen" : "hardlopen"))",
+                    actualPct: gap.kmProgressPct,
+                    referencePct: gap.kmReferencePct,
                     statusLine: gap.kmStatusLine ?? ""
                 )
             }
 
-            // Bijsturingsbericht als de atleet significant achterstaat
+            // Bijsturingsbanner
             if gap.isBehindOnTRIMP || gap.isBehindOnKm {
                 catchUpBanner
             }
@@ -72,37 +72,78 @@ struct GapAnalysisCardView: View {
             .clipShape(Capsule())
     }
 
-    private func progressRow(icon: String, iconColor: Color, label: String, progress: Double, progressColor: Color, statusLine: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+    /// Voortgangsrij met gekleurde balk + ghost marker op de verwachte positie.
+    ///
+    /// - `actualPct`:    hoeveel van het fase-totaal je hebt behaald (0.0–1.0)
+    /// - `referencePct`: waar je vandaag volgens de Blueprint zou moeten staan (0.0–1.0)
+    private func phaseProgressRow(
+        icon: String,
+        label: String,
+        actualPct: Double,
+        referencePct: Double,
+        statusLine: String
+    ) -> some View {
+        let barColor = progressColor(for: actualPct, reference: referencePct)
+
+        return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(iconColor)
+                    .foregroundStyle(barColor)
                 Text(label)
                     .font(.subheadline.weight(.medium))
                 Spacer()
-                Text(String(format: "%.0f%%", progress * 100))
+                Text(String(format: "%.0f%%", actualPct * 100))
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(progressColor)
+                    .foregroundStyle(barColor)
             }
-            // Voortgangsbalk
+
+            // Voortgangsbalk + ghost marker
             GeometryReader { geo in
+                let width = geo.size.width
                 ZStack(alignment: .leading) {
+
+                    // Achtergrond
                     RoundedRectangle(cornerRadius: 4)
                         .fill(Color(.systemFill))
-                        .frame(height: 8)
+                        .frame(height: 10)
+
+                    // Gekleurde voortgangsbalk
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(progressColor)
-                        .frame(width: geo.size.width * min(1.0, progress), height: 8)
-                        .animation(.easeOut(duration: 0.5), value: progress)
+                        .fill(barColor.gradient)
+                        .frame(width: width * min(1.0, actualPct), height: 10)
+                        .animation(.easeOut(duration: 0.6), value: actualPct)
+
+                    // Ghost marker — de "Reference" streep
+                    // Een dun wit lijntje + driehoekje boven de balk
+                    let ghostX = width * min(1.0, referencePct)
+                    ghostMarker(at: ghostX)
+                        .animation(.easeOut(duration: 0.6), value: referencePct)
                 }
             }
-            .frame(height: 8)
+            .frame(height: 18) // Iets hoger voor de driehoek
+
             // Status tekst
             Text(statusLine)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    /// Bouwt de ghost marker: een smal wit lijntje + klein driehoekje erboven.
+    @ViewBuilder
+    private func ghostMarker(at x: CGFloat) -> some View {
+        // Verticale streep
+        Rectangle()
+            .fill(Color.white.opacity(0.9))
+            .frame(width: 2, height: 10)
+            .offset(x: x - 1)
+
+        // Driehoekje boven de balk
+        Image(systemName: "arrowtriangle.down.fill")
+            .font(.system(size: 7, weight: .bold))
+            .foregroundStyle(Color.white.opacity(0.9))
+            .offset(x: x - 4, y: -9)
     }
 
     private var catchUpBanner: some View {
@@ -114,14 +155,13 @@ struct GapAnalysisCardView: View {
                 Text("Bijsturing nodig")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.orange)
-                // Bereken hoeveel extra volume per week nodig is
                 if gap.isBehindOnTRIMP, gap.weeksRemaining > 0 {
                     let extra = Int((gap.trimpGap / gap.weeksRemaining).rounded())
-                    Text("Circa \(extra) extra TRIMP/week om op schema te komen.")
+                    Text("Circa \(extra) extra TRIMP/week om het fase-tekort in te halen.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                if gap.isBehindOnKm, gap.requiredKmToDate > 0, gap.weeksRemaining > 0 {
+                if gap.isBehindOnKm, gap.totalPhaseKmTarget > 0, gap.weeksRemaining > 0 {
                     let extra = String(format: "%.0f", gap.kmGap / gap.weeksRemaining)
                     Text("Circa \(extra) extra km/week voor het afstandsschema.")
                         .font(.caption)
@@ -134,37 +174,27 @@ struct GapAnalysisCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
-    // MARK: - Kleurberekeningen
+    // MARK: - Kleurlogica
 
-    private var trimpBarColor: Color {
-        switch gap.trimpProgressPct {
+    /// Kleur op basis van hoe dicht je bij de ghost marker zit.
+    /// Groen = boven/op target, oranje = licht achter, rood = significant achter.
+    private func progressColor(for actual: Double, reference: Double) -> Color {
+        guard reference > 0 else { return .green }
+        let ratio = actual / reference  // 1.0 = precies op schema
+        switch ratio {
         case 0.9...:   return .green
-        case 0.6..<0.9: return .orange
+        case 0.7..<0.9: return .orange
         default:        return .red
         }
     }
-
-    private var trimpIconColor: Color { trimpBarColor }
-
-    private var kmBarColor: Color {
-        switch gap.kmProgressPct {
-        case 0.9...:   return .green
-        case 0.6..<0.9: return .orange
-        default:        return .red
-        }
-    }
-
-    private var kmIconColor: Color { kmBarColor }
 
     private var distanceIcon: String {
         gap.blueprintType == .cyclingTour ? "bicycle" : "figure.run"
     }
 }
 
-// MARK: - Sectie voor de Doelen tab: alle gaps tegelijk
+// MARK: - Sectie in de Doelen-tab
 
-/// Sectiehoedje voor de Gap Analysis kaarten in de Doelen-tab.
-/// Toont alle actieve doelen met hun TRIMP/km-voortgang.
 struct GapAnalysisSectionView: View {
     let gaps: [BlueprintGap]
 
