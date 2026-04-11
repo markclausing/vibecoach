@@ -5,9 +5,9 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Portfolio-klaar — Volledig Afgewerkt**
+**Actief in Ontwikkeling — Epic 22 (Live Workout & Coaching) gestart**
 
-VibeCoach is een production-ready iOS-app met een premium user experience: native splash screen, gepolijste onboarding flow, BYOK AI-architectuur (Gemini / OpenAI / Anthropic), fysiologisch correcte trainingscoaching en een testsuite met 54% code coverage.
+VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 54% code coverage.
 
 ---
 
@@ -121,22 +121,32 @@ Contextuele coaching op basis van blessure-belasting en stabiele Vibe Score bere
 
 ---
 
-### 🔄 Epic 21: Externe Factoren — Weer & Slaap (Actief)
-
-Contextuele coaching op basis van omgevingsfactoren die prestatie en herstel direct beïnvloeden.
-
-* **🔄 Sprint 21.1 — WeatherKit Integratie:** `WeatherManager` haalt via Apple WeatherKit de actuele weersverwachting op voor de locatie van de gebruiker (temperatuur, neerslag, windsnelheid, UV-index). De coach ontvangt een `[WEERSOMSTANDIGHEDEN]` blok en houdt rekening met buitenactiviteiten. Bij slecht weer op een geplande sleuteldag (bijv. de 60 km-rit) suggereert de coach een alternatief: indoor trainer of dagwissel.
-* **⏳ Sprint 21.2 — Slaapfasen (Sleep Stages):** Uitbreiding van de Vibe Score met diepe slaap- en REM-percentages via HealthKit `HKCategoryType.sleepAnalysis`. Aparte coaching-instructies voor "veel lichte slaap" vs "goed herstel".
-
----
-
-### 🔄 Epic 17: Goal-Specific Blueprints (Actief)
+### ✅ Epic 17: Goal-Specific Blueprints (Afgerond)
 
 Hardcoded sportwetenschappelijke regels per discipline — coaching op basis van bewezen principes, niet alleen AI-gevoel.
 
-* **Sprint 17.1 — Architectuur & Harde Regels:** `GoalBlueprint` struct met `minLongRunDistance`, `taperPeriodWeeks`, `weeklyTrimpTarget` en `essentialWorkouts`. Hardcoded Marathon Blueprint (28+32 km), Halve Marathon (16+18 km) en Fietstocht (60+100 km — bijv. Arnhem–Karlsruhe). `BlueprintChecker` detecteert blueprint-type via sleutelwoorden of SportCategory-fallback en retourneert `BlueprintCheckResult`. `PeriodizationEngine` evalueert per doel de huidige `TrainingPhase` (Base/Build/Peak/Taper) en toetst recente activiteiten aan fase-specifieke `PhaseSuccessCriteria` (bijv. Peak = langste sessie ≥80% van doelafstand). `ChatViewModel` injecteert zowel blueprint-milestones als periodization-context (inclusief fase-coaching boodschap) in alle AI-prompts. Unit tests: `BlueprintCheckerTests.swift` (10 tests) + `PeriodizationEngineTests.swift` (14 tests).
-* **⏳ Sprint 17.2 — LLM Integratie:** Verdere verdieping van de coaching-context op basis van blueprint + fase-voortgang.
-* **⏳ Sprint 17.3 — Milestone UI:** Visuele weergave van kritieke checkpoints en fase-voortgang op het dashboard.
+* **Sprint 17.1 — Architectuur & Harde Regels:** `GoalBlueprint` struct met `minLongRunDistance`, `taperPeriodWeeks`, `weeklyTrimpTarget` en `essentialWorkouts`. Hardcoded Marathon Blueprint (28+32 km), Halve Marathon (16+18 km) en Fietstocht (60+100 km — bijv. Arnhem–Karlsruhe). `BlueprintChecker` detecteert blueprint-type via sleutelwoorden of SportCategory-fallback. Unit tests: `BlueprintCheckerTests.swift` (10 tests) + `PeriodizationEngineTests.swift` (14 tests).
+* **Sprint 17.2 — LLM Integratie:** Blueprint-milestones + periodization-context geïnjecteerd in alle AI-prompts. `[PERIODISERING]` blok met fase-coaching boodschap, succescriteria en TRIMP-targets.
+* **Sprint 17.3 — Milestone UI:** `PhaseBadgeView` boven het schema, `MilestoneProgressCard` met voortgangsbalken per doel. `reasoning`-veld per workout in `WorkoutCardView`.
+
+---
+
+### ✅ Epic 21: Externe Factoren — Weer & Slaap (Afgerond)
+
+Contextuele coaching op basis van omgevingsfactoren die prestatie en herstel direct beïnvloeden.
+
+* **Sprint 21.1 — Open-Meteo Weersverwachting:** `WeatherManager` haalt via de gratis [Open-Meteo API](https://open-meteo.com) de 7-daagse dagelijkse weersverwachting op (temperatuur, neerslag, windsnelheid, WMO-weercode). Geen Apple Developer account of WeatherKit capability vereist. WMO-codes vertaald naar Nederlandse beschrijvingen. Coach ontvangt `[WEERSOMSTANDIGHEDEN]` blok met dagwissel-strategie: bij ⚠️ SLECHT BUITENWEER op een sleuteldag kijkt de coach 3 dagen vooruit en wisselt de trainingen expliciet om. Wind >30 km/u triggert automatisch fietssuggestie naar een windstillere dag. `WeatherBadgeView` toont weericon + neerslagkans op elke `WorkoutCardView`.
+* **Sprint 21.2 — Slaapfasen (Sleep Stages):** `fetchSleepStages()` haalt `.asleepDeep`, `.asleepREM` en `.asleepCore` op (iOS 16+ Apple Watch). `SleepStages` struct berekent `deepRatio`. `ReadinessCalculator` past strafpunten toe bij onvoldoende diepe slaap (<15%). `DailyReadiness` model uitgebreid met `deepSleepMinutes`, `remSleepMinutes`, `coreSleepMinutes`. `SleepStagesBarView` toont gestapelde balk (indigo/paars/blauw) + kwaliteitslabel in de Vibe Score kaart. Coach ontvangt expliciete instructie bij <15% diepe slaap.
+
+---
+
+### 🔄 Epic 22: Live Workout & Real-Time Coaching (Actief)
+
+De coach gaat mee de training in — real-time begeleiding tijdens de workout zelf.
+
+* **⏳ Sprint 22.1 — Live Mode UI:** Dedicated workout-scherm met live hartslag, verstreken tijd en zone-indicator. Start/stop via grote knop. Minimale afleiding tijdens de training.
+* **⏳ Sprint 22.2 — Audio Cues:** Gesproken coaching via `AVSpeechSynthesizer` op sleutelmomenten (zone-overtreding, halverwege de rit, personal best). Configureerbaar (aan/uit, interval).
+* **⏳ Sprint 22.3 — Post-Workout AI Analyse:** Directe analyse na afloop op basis van de live-data. Coach vergelijkt geplande vs. gerealiseerde TRIMP en past het schema voor morgen automatisch aan.
 
 ---
 
@@ -144,8 +154,8 @@ Hardcoded sportwetenschappelijke regels per discipline — coaching op basis van
 
 | Epic | Beschrijving |
 |------|--------------|
-| **Epic 22 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes (bijv. kuitklachten) — zodat de coach maanden later nog kan refereren aan chronische patronen. |
-| **Epic 23 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. *(Verre toekomst)* |
+| **Epic 23 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes (bijv. kuitklachten) — zodat de coach maanden later nog kan refereren aan chronische patronen. |
+| **Epic 24 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. *(Verre toekomst)* |
 
 ---
 
@@ -171,11 +181,24 @@ Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de na
 
 ---
 
+## Technische Beslissingen & Afwijkingen
+
+Korte log van keuzes die afwijken van het originele plan, zodat context niet verloren gaat.
+
+| Beslissing | Reden | Alternatief dat werd overwogen |
+|-----------|-------|-------------------------------|
+| **Open-Meteo i.p.v. WeatherKit** (Epic 21.1) | WeatherKit vereist een betaald Apple Developer account en een actieve entitlement. Open-Meteo is gratis, geen API-sleutel nodig, en levert dezelfde data (temp, neerslag, wind via WMO-codes). | WeatherKit — uitgesteld tot eventuele App Store release |
+| **`deepSleepRatio` als optional parameter** in `ReadinessCalculator` | Oudere Apple Watch-modellen schrijven alleen de generieke `.asleep` waarde, geen fase-uitsplitsing. Nil = geen strafpunt, zodat de calculator ook correct werkt op oudere hardware. | Aparte calculator-variant per device-generatie |
+| **Sentinel `"GEEN_BIOMETRISCHE_DATA"`** in AppStorage | Onderscheidt 'geen Watch gedragen vannacht' van 'nog niet berekend'. Coach krijgt expliciete instructie om HRV-zinnen te vermijden als de Watch niet gedragen was. | Extra `@State` boolean (vermeden om SwiftData-race-condition te voorkomen) |
+
+---
+
 ## Tech Stack
 * **Platform:** iOS (macOS met Xcode vereist voor het bouwen)
 * **UI Framework:** SwiftUI + SwiftData
 * **AI:** BYOK — Gemini 2.5 Flash (standaard), met UI-support voor OpenAI en Anthropic
-* **Data:** Apple HealthKit (HRV, slaap, workouts) + optioneel Strava OAuth2
+* **Data:** Apple HealthKit (HRV, slaap + slaapfases, workouts) + optioneel Strava OAuth2
+* **Weer:** Open-Meteo API (gratis, geen API-sleutel) via CoreLocation + URLSession
 * **Achtergrond:** HKObserverQuery (Engine A) + BGAppRefreshTask (Engine B)
 * **Testen:** XCTest unit tests + XCUITest UI tests — 54% code coverage
 * **Versiebeheer:** GitHub
