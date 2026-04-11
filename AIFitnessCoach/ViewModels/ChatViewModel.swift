@@ -22,8 +22,15 @@ class ChatViewModel: ObservableObject {
     @Published var isFetchingWorkout: Bool = false
 
     /// Het protocol waartegen we de AI-verzoeken uitvoeren.
-    /// Dit maakt Dependency Injection (DI) mogelijk voor unit tests.
-    private let model: GenerativeModelProtocol
+    /// Lazy: wordt pas aangemaakt bij het eerste AI-verzoek, niet bij app-start.
+    /// Tests kunnen een mock injecteren via de init-parameter.
+    private var _model: GenerativeModelProtocol?
+    private var model: GenerativeModelProtocol {
+        if let existing = _model { return existing }
+        let built = buildGenerativeModel()
+        _model = built
+        return built
+    }
 
     /// Service voor externe API calls (Sprint 4.2).
     private let fitnessDataService: FitnessDataService
@@ -125,6 +132,9 @@ class ChatViewModel: ObservableObject {
         let key = effectiveAPIKey()
         guard !key.isEmpty else { return }
         activeAPIKey = key
+        // Wis de gecachte instantie zodat buildGenerativeModel() opnieuw gebouwd wordt
+        // met de nieuwe sleutel bij het eerstvolgende AI-verzoek.
+        _model = nil
     }
 
     /// Epic 18.1: Schrijft de subjectieve feedback van de laatste workout naar de AppStorage cache.
@@ -203,20 +213,116 @@ class ChatViewModel: ObservableObject {
             .joined(separator: "\n\n")
     }
 
-    /// Epic 18: Schrijft de dagelijkse symptoomscores naar de AppStorage cache.
-    /// De coach kan hiermee refereren aan pijncijfers in zijn Insight-teksten.
-    func cacheSymptomContext(_ symptoms: [Symptom]) {
+    /// Epic 18 Sprint 2: Schrijft de dagelijkse symptoomscores + hard constraints naar de AppStorage cache.
+    /// De SymptomTracker is de 'Single Source of Truth' voor blessure-status:
+    /// - Score > 0 → actieve klacht, met constraint-regels op basis van ernst
+    /// - Score == 0 → hersteld, vervangt elke nog actieve UserPreference-tekst
+    /// - Geen score ingevuld + actieve UserPreference → toon als 'onbekend, score nog niet ingevuld'
+    func cacheSymptomContext(_ symptoms: [Symptom], preferences: [UserPreference] = []) {
         let todayStart = Calendar.current.startOfDay(for: Date())
-        let todaySymptoms = symptoms.filter { $0.date >= todayStart && $0.severity > 0 }
-        guard !todaySymptoms.isEmpty else {
+        // Haal ALLE records van vandaag op — inclusief score 0 (= hersteld)
+        let todayAll    = symptoms.filter { $0.date >= todayStart }
+        let todayActive = todayAll.filter { $0.severity > 0 }
+
+        // Bepaal actieve blessure-voorkeuren (niet verlopen)
+        let now = Date()
+        let injuryKeywords = ["kuit", "scheen", "shin", "rug", "rugpijn", "knie", "enkel",
+                              "blessure", "pijn", "klacht", "hand", "pols", "schouder"]
+        let activeInjuryPrefs = preferences.filter { pref in
+            guard pref.expirationDate == nil || pref.expirationDate! > now else { return false }
+            let text = pref.preferenceText.lowercased()
+            return injuryKeywords.contains(where: { text.contains($0) })
+        }
+
+        // Alle gebieden die VANDAAG gemeten zijn (score 0 én > 0) tellen als 'tracked'
+        let allTrackedAreas = Set(todayAll.map { $0.bodyAreaRaw.lowercased() })
+
+        // Niets te rapporteren: geen meting van vandaag en geen actieve klacht-voorkeur
+        guard !todayAll.isEmpty || !activeInjuryPrefs.isEmpty else {
             symptomContext = ""
             return
         }
-        let lines = todaySymptoms.map { s in
+
+        var scoreLines:    [String] = []
+        var constraintLines:[String] = []
+        var recoveryLines: [String] = []
+
+        // 1. Actieve klachten (score > 0) — met hard constraints op basis van ernst
+        for s in todayActive {
             let label = BodyArea.severityLabel(s.severity)
-            return "• \(s.bodyAreaRaw): \(s.severity)/10 (\(label))"
+            scoreLines.append("• \(s.bodyAreaRaw): \(s.severity)/10 (\(label))")
+
+            if s.severity > 5 {
+                switch s.bodyArea {
+                case .calf:
+                    constraintLines.append("🚫 HARD CONSTRAINT Kuit (\(s.severity)/10 > 5): HARDLOPEN IS STRIKT VERBODEN. Fietsen en zwemmen zijn toegestaan.")
+                case .ankle:
+                    constraintLines.append("🚫 HARD CONSTRAINT Enkel (\(s.severity)/10 > 5): HARDLOPEN IS STRIKT VERBODEN. Fietsen is veilig.")
+                case .back:
+                    constraintLines.append("🚫 HARD CONSTRAINT Rug (\(s.severity)/10 > 5): geen hardlopen of krachttraining. Fietsen (rechtop) en zwemmen zijn veilig.")
+                case .knee:
+                    constraintLines.append("🚫 HARD CONSTRAINT Knie (\(s.severity)/10 > 5): geen hardlopen of springen. Fietsen en zwemmen zijn veilig.")
+                case .hand:
+                    constraintLines.append("🚫 HARD CONSTRAINT Hand (\(s.severity)/10 > 5): geen krachttraining of gewichtdragende oefeningen.")
+                case .shoulder:
+                    constraintLines.append("🚫 HARD CONSTRAINT Schouder (\(s.severity)/10 > 5): geen zwemmen of push-oefeningen.")
+                }
+            } else if s.severity > 0 && s.severity < 3 {
+                if s.bodyArea == .calf || s.bodyArea == .ankle {
+                    scoreLines.append("  ↳ Score < 3: voorzichtige hardloop-alternatieven bespreekbaar (kort, Zone 1, max 30 min).")
+                }
+            }
         }
-        symptomContext = lines.joined(separator: "\n")
+
+        // 2. Herstelde gebieden (score == 0 vandaag) — alleen als er een matchende blessure-voorkeur
+        //    bestaat. Zo voorkomt we valse herstelberichten voor lichaamsdelen die nooit geblesseerd waren.
+        for s in todayAll where s.severity == 0 {
+            let matchesPref = activeInjuryPrefs.contains { pref in
+                s.bodyArea.injuryKeywords.contains(where: { pref.preferenceText.lowercased().contains($0) })
+            }
+            guard matchesPref else { continue }
+            let areaName = s.bodyAreaRaw
+            recoveryLines.append(
+                "✅ HERSTELD (\(areaName): 0/10): De gebruiker is vandaag klachtenvrij voor \(areaName). " +
+                "INSTRUCTIE: Vier dit expliciet in je Insight ('Wat goed dat je \(areaName.lowercased())pijn op 0 staat!'). " +
+                "Normale belasting mag weer worden voorgesteld, maar adviseer een voorzichtige, stapsgewijze opbouw."
+            )
+        }
+
+        // 3. Blessure-voorkeuren zonder score van vandaag — alleen tonen als het gebied NIET al
+        //    gemeten is (voorkomt duplicaten met scoreLines of recoveryLines)
+        for pref in activeInjuryPrefs {
+            let alreadyTracked = BodyArea.allCases.contains { area in
+                allTrackedAreas.contains(area.rawValue.lowercased()) &&
+                area.injuryKeywords.contains(where: { pref.preferenceText.lowercased().contains($0) })
+            }
+            if !alreadyTracked {
+                scoreLines.append("• \(pref.preferenceText) (score nog niet ingevuld vandaag — gebruik voorzichtigheid)")
+            }
+        }
+
+        // Combineer in vaste volgorde: scores → hard constraints → herstelberichten
+        var combined = scoreLines
+        if !constraintLines.isEmpty {
+            combined += ["", "ACTIEVE BEPERKINGEN:"] + constraintLines
+        }
+        if !recoveryLines.isEmpty {
+            combined += ["", "HERSTEL MELDINGEN:"] + recoveryLines
+        }
+
+        // Lege context als er uitsluitend score-0 records zijn zonder matchende preference
+        // (bijv. een willekeurig lichaamsdeel op 0 ingevuld zonder eerdere klacht)
+        if combined.isEmpty {
+            symptomContext = ""
+            return
+        }
+
+        symptomContext = combined.joined(separator: "\n")
+
+        // Debug: print volledige injury-sectie die naar Gemini gaat
+        print("━━━ 🩺 [Injury Section → Gemini] ━━━")
+        print(symptomContext)
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     }
 
     /// SPRINT 13.4: Geeft het meest recent opgeslagen coach-inzicht terug (uit AppStorage).
@@ -244,11 +350,15 @@ class ChatViewModel: ObservableObject {
         self.fitnessDataService = fitnessDataService
         self.healthKitManager = healthKitManager
         self.fitnessCalculator = fitnessCalculator
+        // Injecteer een test-mock als die meegegeven is; anders lazy bouwen bij eerste gebruik.
+        self._model = aiModel
+    }
 
-        if let providedModel = aiModel {
-            self.model = providedModel
-        } else {
-            let systemInstruction = """
+    /// Bouwt het Gemini model met de huidige API-sleutel en system instruction.
+    /// Wordt pas aangeroepen bij het eerste echte AI-verzoek (.onAppear of gebruikerstap),
+    /// niet al tijdens app-start.
+    private func buildGenerativeModel() -> GenerativeModelProtocol {
+        let systemInstruction = """
             Jij bent een samenwerkende, meedenkende en proactieve AI fitness-coach.
             Je analyseert niet alleen vermoeidheid, maar je helpt de gebruiker actief om de eerstvolgende stap te plannen richting hun gestelde doelen.
             Stel je op als een slimme trainingspartner — niet als een waarschuwende dokter.
@@ -282,11 +392,12 @@ class ChatViewModel: ObservableObject {
             - Wees streng maar motiverend — de coach staat naast de sporter, niet erboven.
 
             KRITIEKE REGEL — BLESSURE & SPORT INTERACTIE:
-            Als de gebruiker een blessure of klacht heeft vermeld in zijn voorkeuren of berichten:
-            - Kuit/Scheen blessure: Adviseer GEEN hardlopen. Wandelen is toegestaan als alternatief, maar NOOIT langer dan 60 minuten per sessie.
-            - Rugklachten: Vermijd intensief hardlopen en krachttraining. Fietsen (rechtopzittend) en zwemmen zijn veilige alternatieven.
-            - Benoem de blessure ALTIJD expliciet in je antwoord: 'Gezien je [blessure] raad ik [veilige activiteit] aan in plaats van [geplande activiteit].'
-            - Pas het schema DIRECT aan — geef nooit een training die de blessure kan verergeren.
+            De dagelijkse pijnscores en beperkingen staan UITSLUITEND in de [ACTUELE KLACHTEN] context die je bij elke interactie ontvangt.
+            Dat blok is de 'Single Source of Truth' — volg de HARD CONSTRAINTS daarin strikt op.
+            - Als een 🚫 HARD CONSTRAINT aanwezig is: pas het schema ALTIJD aan, benoem de beperking expliciet ('Gezien je kuitpijn van 7/10 plannen we GEEN hardloopsessies deze week').
+            - Als een ✅ HERSTELD melding aanwezig is: vier dit in je Insight en stel voorzichtige opbouw voor.
+            - Als een gebied 'score nog niet ingevuld vandaag' heeft: wees voorzichtig, maar leg geen absolute verboden op.
+            - Zijn er GEEN klachten vermeld? Dan mag je het schema volledig op basis van de blueprint en trainingsfase plannen.
 
             KRITIEKE BEPERKING — WANDELEN:
             Wandelen mag uitsluitend als herstel-activiteit bij blessures of een Vibe Score < 50.
@@ -346,8 +457,7 @@ class ChatViewModel: ObservableObject {
                 systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)]),
                 requestOptions: options
             )
-            self.model = RealGenerativeModel(model: googleModel)
-        }
+        return RealGenerativeModel(model: googleModel)
     }
 
     /// Verwijdert de geselecteerde afbeelding uit de invoer.
@@ -397,7 +507,16 @@ class ChatViewModel: ObservableObject {
 
         // Epic 18: Injecteer de actuele pijnscores per lichaamsdeel (dagelijks bijgewerkt)
         if !symptomContext.isEmpty {
-            prefix += "[ACTUELE KLACHTEN (dagelijks bijgewerkt door de gebruiker):\n\(symptomContext)\nInstructie: Refereer aan deze specifieke pijncijfers in je Insight wanneer je een blessure-gerelateerde training bespreekt. Als een score is gedaald t.o.v. gisteren, benoem dit als positief signaal. Als een score ≥7 is, wees dan extra voorzichtig met belasting op dat lichaamsdeel.]\n\n"
+            let symptomBlock = """
+            [ACTUELE KLACHTEN — SINGLE SOURCE OF TRUTH (dagelijks bijgewerkt door de gebruiker):
+            \(symptomContext)
+            Gedragsregels:
+            1. 🚫 HARD CONSTRAINT aanwezig → volg de beperking strikt. Benoem de blessure en het alternatief expliciet.
+            2. ✅ HERSTELD aanwezig → open je Insight met een feestelijke bevestiging. Stel voorzichtige opbouw voor (bijv. 'Begin met 20 min Zone 1, bouw volgende week op naar normaal volume').
+            3. Score ≥7 → extra voorzichtig; overweeg een volledige rustdag of alternatieve sport.
+            4. Score gedaald t.o.v. gisteren → benoem dit als positief teken van herstel.]
+            """
+            prefix += symptomBlock + "\n\n"
         }
 
         // Epic 17 / Sprint 17.2: Injecteer de blueprint + periodization context
@@ -453,17 +572,9 @@ class ChatViewModel: ObservableObject {
             prefix += "[VASTE REGELS / VOORKEUREN VAN DE GEBRUIKER: \(prefStrings). Houd hier ten alle tijden rekening mee in je planning en advies.]\n\n"
         }
 
-        // Detecteer blessure-gerelateerde voorkeuren en injecteer als aparte hoge-prioriteit context.
-        // De AI moet blessure-context ALTIJD explicieter behandelen dan gewone voorkeuren.
-        let injuryKeywords = ["kuit", "scheen", "shin", "rug", "rugpijn", "knie", "enkel", "blessure", "pijn", "klacht"]
-        let activeInjuries = validPreferences.filter { pref in
-            let text = pref.preferenceText.lowercased()
-            return injuryKeywords.contains(where: { text.contains($0) })
-        }
-        if !activeInjuries.isEmpty {
-            let injuryLines = activeInjuries.map { "• \($0.preferenceText)" }.joined(separator: "\n")
-            prefix += "[ACTIEVE BLESSURES / KLACHTEN — HOOGSTE PRIORITEIT:\n\(injuryLines)\nInstructie: Pas het schema ALTIJD aan op basis van deze klachten. Benoem de blessure expliciet in je antwoord en geef aan welke sportalternatieven veilig zijn.]\n\n"
-        }
+        // Epic 18: Blessure-context wordt volledig afgehandeld via symptomContext (zie bovenaan buildContextPrefix).
+        // Het oude statische blok op basis van UserPreference-teksten is vervangen door de dynamische
+        // pijnscores + HARD CONSTRAINTS gegenereerd in cacheSymptomContext(_:preferences:).
 
         if let p = profile {
             let peakDistanceKm = String(format: "%.1f", p.peakDistanceInMeters / 1000)
