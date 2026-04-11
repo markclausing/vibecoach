@@ -96,6 +96,10 @@ class ChatViewModel: ObservableObject {
     /// Bevat het verschil tussen verwacht en werkelijk TRIMP/km op dit moment in de voorbereiding.
     @AppStorage("vibecoach_gapAnalysisContext") private var gapAnalysisContext: String = ""
 
+    /// Epic 24 Sprint 1: Cache van het fysiologische profiel + voedingsplan voor vandaag/morgen.
+    /// Wordt gevuld via `refreshNutritionContext()` en geïnjecteerd in elke AI-prompt.
+    @AppStorage("vibecoach_nutritionContext") private var nutritionContext: String = ""
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
@@ -265,6 +269,54 @@ class ChatViewModel: ObservableObject {
         gapAnalysisContext = gaps
             .map { $0.coachContext }
             .joined(separator: "\n\n")
+    }
+
+    /// Epic 24 Sprint 1: Haalt het fysiologisch profiel op via HealthKit en berekent het voedingsplan
+    /// voor de workouts van vandaag en morgen op basis van het actieve trainingsschema.
+    /// Resultaat wordt gecached in AppStorage en geïnjecteerd in elke AI-prompt.
+    func refreshNutritionContext() async {
+        let profileService = UserProfileService(healthStore: healthKitManager.healthStore)
+        let profile = await profileService.fetchProfile()
+
+        // Haal de geplande workouts op uit het actieve trainingsschema (TrainingPlanManager).
+        // We extraheren duur en zone per workout voor vandaag en morgen.
+        let todayWorkouts   = extractPlannedWorkouts(for: 0)
+        let tomorrowWorkouts = extractPlannedWorkouts(for: 1)
+
+        nutritionContext = NutritionService.buildCoachContext(
+            profile: profile,
+            todayWorkouts: todayWorkouts,
+            tomorrowWorkouts: tomorrowWorkouts
+        )
+        print("🥗 [Nutrition] Context bijgewerkt: \(profile.coachSummary)")
+    }
+
+    /// Extraheert geplande workouts (duur + zone) uit het actieve schema voor een relatieve dag.
+    /// `dayOffset` 0 = vandaag, 1 = morgen.
+    private func extractPlannedWorkouts(for dayOffset: Int) -> [(durationMinutes: Int, zone: TrainingZone)] {
+        guard let plan = trainingPlanManager?.activePlan else { return [] }
+        let targetDate = Calendar.current.date(byAdding: .day, value: dayOffset, to: Date()) ?? Date()
+        let targetDay  = Calendar.current.startOfDay(for: targetDate)
+
+        return plan.workouts.compactMap { workout -> (Int, TrainingZone)? in
+            let workoutDay = Calendar.current.startOfDay(for: workout.resolvedDate)
+            guard workoutDay == targetDay else { return nil }
+            // Geen voedingsplan voor rustdagen
+            guard workout.activityType.lowercased() != "rust" else { return nil }
+
+            // Schat de zone op basis van hartslag-zone of beschrijving in het schema.
+            let zoneText = (workout.heartRateZone ?? workout.description).lowercased()
+            let isHighIntensity = zoneText.contains("interval")
+                || zoneText.contains("tempo")
+                || zoneText.contains("drempel")
+                || zoneText.contains("zone 4")
+                || zoneText.contains("z4")
+            let zone: TrainingZone = isHighIntensity ? .zone4 : .zone2
+
+            // Gebruik de geplande duur; standaard 45 min als onbekend.
+            let duration = workout.suggestedDurationMinutes > 0 ? workout.suggestedDurationMinutes : 45
+            return (duration, zone)
+        }
     }
 
     /// Epic 18 Sprint 2: Schrijft de dagelijkse symptoomscores + hard constraints naar de AppStorage cache.
@@ -626,6 +678,11 @@ class ChatViewModel: ObservableObject {
             5. Verbind altijd aan de fase: bijsturing in de Taper-fase is onwenselijk — adviseer dan om het tekort NIET in te halen maar door te gaan met het tapering-schema.]
             """
             prefix += gapBlock + "\n\n"
+        }
+
+        // Epic 24 Sprint 1: Injecteer het fysiologisch profiel + voedingsplan in de prompt
+        if !nutritionContext.isEmpty {
+            prefix += "\(nutritionContext)\n\n"
         }
 
         // Debug: print de volledige blueprint- en periodization-context die naar Gemini gaat

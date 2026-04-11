@@ -450,13 +450,18 @@ final class HealthKitManager: @unchecked Sendable {
         }
 
         // Epic 14: HRV en SlaapAnalyse toegevoegd voor Readiness Score berekening
+        // Epic 24: Fysiologisch profiel (gewicht, lengte) toegevoegd voor BMR + voedingsadvies
         let typesToRead: Set<HKObjectType> = [
             HKObjectType.workoutType(),
             HKQuantityType.quantityType(forIdentifier: .heartRate)!,
             HKQuantityType.quantityType(forIdentifier: .restingHeartRate)!,
             HKQuantityType.quantityType(forIdentifier: .vo2Max)!,
             HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
-            HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!
+            HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!,
+            HKQuantityType.quantityType(forIdentifier: .bodyMass)!,
+            HKQuantityType.quantityType(forIdentifier: .height)!,
+            HKObjectType.characteristicType(forIdentifier: .dateOfBirth)!,
+            HKObjectType.characteristicType(forIdentifier: .biologicalSex)!
         ]
 
         healthStore.requestAuthorization(toShare: nil, read: typesToRead) { success, error in
