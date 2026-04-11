@@ -30,6 +30,10 @@ struct GoalsListView: View {
         ProgressService.analyzeGaps(for: Array(goals), activities: Array(activities))
     }
 
+    private var projections: [GoalProjection] {
+        FutureProjectionService.calculateProjections(for: Array(goals), activities: Array(activities))
+    }
+
     private var periodizationResults: [PeriodizationResult] {
         PeriodizationEngine.evaluateAllGoals(Array(goals), activities: Array(activities))
     }
@@ -134,7 +138,7 @@ struct GoalsListView: View {
                 // MARK: Blueprint voortgang (Gap Analysis — fase-cumulatief)
                 if !gapAnalysis.isEmpty {
                     Section {
-                        GapAnalysisSectionView(gaps: gapAnalysis)
+                        GapAnalysisSectionView(gaps: gapAnalysis, projections: projections)
                             .listRowInsets(EdgeInsets())
                             .listRowBackground(Color.clear)
                     }

@@ -1,13 +1,14 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - Epic 23 Sprint 1: Gap Analysis UI Component (Rolling Phase Gap)
+// MARK: - Epic 23 Sprint 1 & 2: Gap Analysis + Future Projection UI
 
-/// Kaart die de cumulatieve achterstand/voorsprong binnen de huidige trainingsfase toont.
-/// De voortgangsbalk loopt van 0% (fasestart) naar 100% (faseeinde).
-/// Een "ghost" marker geeft aan waar je vandaag idealiter zou moeten staan.
+/// Kaart die de cumulatieve achterstand/voorsprong binnen de huidige trainingsfase toont,
+/// aangevuld met een toekomstprognose ("Glazen Bol") uit de FutureProjectionService.
 struct GapAnalysisCardView: View {
     let gap: BlueprintGap
+    /// Optionele prognose voor hetzelfde doel. Nil als er geen blueprint-match is.
+    var projection: GoalProjection? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -52,6 +53,12 @@ struct GapAnalysisCardView: View {
             // Bijsturingsbanner
             if gap.isBehindOnTRIMP || gap.isBehindOnKm {
                 catchUpBanner
+            }
+
+            // MARK: Prognose-sectie (Sprint 23.2)
+            if let projection {
+                Divider()
+                projectionSection(projection)
             }
         }
         .padding()
@@ -177,6 +184,98 @@ struct GapAnalysisCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
+    // MARK: - Prognose sectie (Sprint 23.2 — Glazen Bol)
+
+    @ViewBuilder
+    private func projectionSection(_ projection: GoalProjection) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+
+            // Sectietitel
+            HStack(spacing: 6) {
+                Image(systemName: "crystal.ball.fill")
+                    .font(.subheadline)
+                    .foregroundStyle(.purple)
+                Text("Prognose")
+                    .font(.subheadline.weight(.semibold))
+            }
+
+            // Datum-vergelijking: gepland vs. verwacht
+            HStack(spacing: 0) {
+                dateColumn(
+                    label: "Gepland",
+                    date: projection.plannedPeakDate,
+                    color: .blue
+                )
+                Spacer()
+                statusBadge(projection)
+                Spacer()
+                dateColumn(
+                    label: "Verwacht",
+                    date: projection.projectedPeakDate ?? projection.plannedPeakDate,
+                    color: statusSwiftColor(projection.status)
+                )
+            }
+
+            // Uitlegzin
+            Text(projectionCaption(projection))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func dateColumn(label: String, date: Date, color: Color) -> some View {
+        let df = DateFormatter()
+        df.dateFormat = "d MMM"
+        df.locale = Locale(identifier: "nl_NL")
+        return VStack(alignment: .center, spacing: 2) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(df.string(from: date))
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(color)
+        }
+    }
+
+    private func statusBadge(_ projection: GoalProjection) -> some View {
+        let color = statusSwiftColor(projection.status)
+        return VStack(spacing: 3) {
+            Image(systemName: projection.status.icon)
+                .font(.title3)
+                .foregroundStyle(color)
+            Text(projection.status.label)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(color)
+        }
+    }
+
+    /// Vertaalt de ProjectionStatus naar een SwiftUI Color.
+    private func statusSwiftColor(_ status: ProjectionStatus) -> Color {
+        switch status {
+        case .alreadyPeaking, .onTrack: return .green
+        case .atRisk:                   return .orange
+        case .unreachable:              return .red
+        }
+    }
+
+    /// Leesbare uitlegzin onder de datum-rij.
+    private func projectionCaption(_ projection: GoalProjection) -> String {
+        let pct = Int((projection.observedGrowthRate * 100).rounded())
+        switch projection.status {
+        case .alreadyPeaking:
+            return "Je piekbelasting is al bereikt. Vasthouden en binnenkort beginnen met taperen."
+        case .onTrack:
+            let weeks = Int(abs(projection.weeksDelta).rounded())
+            return "Op basis van \(pct)% groei/week ben je \(weeks) week(en) eerder klaar dan gepland. Goed bezig!"
+        case .atRisk:
+            let weeks = Int(abs(projection.weeksDelta).rounded())
+            return "Je groeit \(pct)% per week. Je loopt \(weeks) week(en) achter op de geplande piekdatum. Schroef het volume op."
+        case .unreachable:
+            return "Zelfs met 10% groei per week is de piekbelasting niet haalbaar vóór de racedag. Bespreek dit met je coach."
+        }
+    }
+
     // MARK: - Kleurlogica
 
     /// Kleur op basis van hoe dicht je bij de ghost marker zit.
@@ -200,6 +299,8 @@ struct GapAnalysisCardView: View {
 
 struct GapAnalysisSectionView: View {
     let gaps: [BlueprintGap]
+    /// Projecties gematcht op goal.id. Wordt doorgegeven vanuit GoalsListView.
+    var projections: [GoalProjection] = []
 
     var body: some View {
         if !gaps.isEmpty {
@@ -214,7 +315,8 @@ struct GapAnalysisSectionView: View {
                 .padding(.horizontal)
 
                 ForEach(gaps, id: \.goal.id) { gap in
-                    GapAnalysisCardView(gap: gap)
+                    let projection = projections.first { $0.goal.id == gap.goal.id }
+                    GapAnalysisCardView(gap: gap, projection: projection)
                         .padding(.horizontal)
                 }
             }

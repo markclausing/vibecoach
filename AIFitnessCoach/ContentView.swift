@@ -1817,6 +1817,10 @@ struct DashboardView: View {
                 // zodat de coach weet hoeveel TRIMP/km de atleet achterloopt op het lineaire schema.
                 let gapResults = ProgressService.analyzeGaps(for: Array(goals), activities: Array(activities))
                 viewModel.cacheGapAnalysis(gapResults)
+                // Epic 23 Sprint 2: Schrijf de toekomstprognose naar de AI-prompt cache
+                // zodat de coach proactief kan waarschuwen als een doel "At Risk" of "Unreachable" is.
+                let projectionResults = FutureProjectionService.calculateProjections(for: Array(goals), activities: Array(activities))
+                viewModel.cacheProjections(projectionResults)
                 // EPIC 18: Schrijf de meest recente echte workout-beoordeling naar de AI-prompt cache.
                 // rpe == WorkoutCheckinConfig.ignoredRPESentinel (0) telt niet als echte feedback.
                 let lastRatedActivity = activities
