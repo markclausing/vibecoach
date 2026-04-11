@@ -151,16 +151,19 @@ struct GapAnalysisCardView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.orange)
                 .font(.subheadline)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text("Bijsturing nodig")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.orange)
-                if gap.isBehindOnTRIMP, gap.weeksRemaining > 0 {
-                    let extra = Int((gap.trimpGap / gap.weeksRemaining).rounded())
-                    Text("Circa \(extra) extra TRIMP/week om het fase-tekort in te halen.")
+
+                // TRIMP-bijsturing: vertaald naar concrete duur via TRIMPTranslator
+                if let hint = gap.catchUpHint {
+                    Text(hint)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                // Km-bijsturing
                 if gap.isBehindOnKm, gap.totalPhaseKmTarget > 0, gap.weeksRemaining > 0 {
                     let extra = String(format: "%.0f", gap.kmGap / gap.weeksRemaining)
                     Text("Circa \(extra) extra km/week voor het afstandsschema.")

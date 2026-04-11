@@ -1,5 +1,65 @@
 import Foundation
 
+// MARK: - Epic 23: TRIMPTranslator — van abstract getal naar concrete activiteit
+
+/// Vertaalt een TRIMP-hoeveelheid naar een begrijpelijke tijds- of afstandsindicatie.
+///
+/// Achtergrond: de Banister TRIMP-formule levert waarden die afhangen van hartslagzone.
+/// Vuistregel op basis van gemiddelde atleet (rusthartslag 60, max 190):
+///   Zone 2 (65–75% HRmax, ~145 bpm) ≈ 2,0 TRIMP/min
+///   Zone 3 (75–85% HRmax, ~160 bpm) ≈ 3,0 TRIMP/min
+///   Zone 4 (85–95% HRmax, ~170 bpm) ≈ 4,0 TRIMP/min
+enum TRIMPTranslator {
+
+    /// TRIMP per minuut per zone (gemiddelde Banister-benadering).
+    static let zone2PerMin: Double = 2.0
+    static let zone4PerMin: Double = 4.0
+
+    // MARK: - Publieke API
+
+    /// Geeft een korte, leesbare vertaling van een TRIMP-waarde naar praktische duur.
+    /// - Parameters:
+    ///   - trimp: De te vertalen TRIMP-hoeveelheid (bijv. een weekelijks tekort).
+    ///   - blueprintType: Bepaalt de sportspecifieke labels (fiets vs. hardloop).
+    /// - Returns: bijv. "+5 min rustige rit of +3 min tempo-rit"
+    static func translate(_ trimp: Double, for blueprintType: GoalBlueprintType) -> String {
+        let zone2Min = Int((trimp / zone2PerMin).rounded(.up))
+        let zone4Min = Int((trimp / zone4PerMin).rounded(.up))
+
+        let (lightLabel, hardLabel): (String, String)
+        switch blueprintType {
+        case .cyclingTour:
+            lightLabel = "rustige rit"
+            hardLabel  = "tempo-rit"
+        case .marathon, .halfMarathon:
+            lightLabel = "duurloop (Z2)"
+            hardLabel  = "intervaltraining (Z4)"
+        }
+
+        // Toon alleen de zone2-versie als beide gelijk zijn (bij kleine TRIMP-waarden)
+        if zone2Min == zone4Min {
+            return "+\(zone2Min) min \(lightLabel)"
+        }
+        return "+\(zone2Min) min \(lightLabel) of +\(zone4Min) min \(hardLabel)"
+    }
+
+    /// Volledige zin voor gebruik in de UI-banner:
+    /// "Circa 8 TRIMP/week nodig (bijv. +4 min rustige rit of +2 min tempo-rit)."
+    static func bannerText(_ trimp: Double, for blueprintType: GoalBlueprintType) -> String {
+        let trimpStr = Int(trimp.rounded())
+        let hint = translate(trimp, for: blueprintType)
+        return "Circa \(trimpStr) extra TRIMP/week (bijv. \(hint))."
+    }
+
+    /// Compacte hint voor in de coach-prompt:
+    /// "8 TRIMP ≈ +4 min rustige rit of +2 min tempo-rit"
+    static func coachHint(_ trimp: Double, for blueprintType: GoalBlueprintType) -> String {
+        let trimpStr = Int(trimp.rounded())
+        let hint = translate(trimp, for: blueprintType)
+        return "\(trimpStr) TRIMP ≈ \(hint)"
+    }
+}
+
 // MARK: - Epic 23: Blueprint Analysis & Future Projections — Sprint 1: Gap Analysis
 
 /// Uitbreiding van GoalBlueprint met sportwetenschappelijke wekelijkse km-target.
@@ -109,6 +169,21 @@ struct BlueprintGap {
     var isBehindOnTRIMP: Bool { trimpGap > requiredTRIMPToDate * 0.10 }
     var isBehindOnKm: Bool    { kmGap > requiredKmToDate * 0.10 }
 
+    // MARK: - TRIMPTranslator: bijsturingshints
+
+    /// Extra TRIMP/week nodig om het fase-tekort in te halen (0 als niet achter).
+    var extraTRIMPPerWeek: Double {
+        guard isBehindOnTRIMP, weeksRemaining > 0 else { return 0 }
+        return trimpGap / weeksRemaining
+    }
+
+    /// Leesbare bijsturingtekst voor de UI-banner, inclusief praktische tijdsindicatie.
+    /// Voorbeeld: "Circa 8 extra TRIMP/week (bijv. +4 min rustige rit of +2 min tempo-rit)."
+    var catchUpHint: String? {
+        guard isBehindOnTRIMP, extraTRIMPPerWeek > 0.5 else { return nil }
+        return TRIMPTranslator.bannerText(extraTRIMPPerWeek, for: blueprintType)
+    }
+
     // MARK: - UI-teksten
 
     /// Label boven de voortgangsbalk: "Voortgang Build Phase (Week 3/8)"
@@ -155,13 +230,15 @@ struct BlueprintGap {
         if let kmLine = kmStatusLine {
             lines.append(kmLine)
         }
-        if isBehindOnTRIMP {
-            let extraPerWeek = weeksRemaining > 0 ? (trimpGap / weeksRemaining) : 0
-            lines.append("📈 VOLUME-BIJSTURING: Om het fase-tekort in te halen, \(String(format: "%.0f", extraPerWeek)) extra TRIMP/week de komende weken.")
+        if isBehindOnTRIMP, extraTRIMPPerWeek > 0.5 {
+            // Vertaal het abstracte TRIMP-getal naar een concrete tijdsindicatie voor de coach.
+            // De coach MOET de vertaling gebruiken — nooit een los TRIMP-getal zonder uitleg.
+            let hint = TRIMPTranslator.coachHint(extraTRIMPPerWeek, for: blueprintType)
+            lines.append("📈 VOLUME-BIJSTURING: Om het fase-tekort in te halen is \(hint) extra per week nodig. Vertaal dit altijd naar een concrete aanpassing van een bestaande training: bijv. 'verleng je zaterdag-rit met X minuten' of 'voeg een extra duurloop toe op dinsdag'.")
         }
         if isBehindOnKm, totalPhaseKmTarget > 0 {
             let extraKmPerWeek = weeksRemaining > 0 ? (kmGap / weeksRemaining) : 0
-            lines.append("🚴 KM-BIJSTURING: \(String(format: "%.0f", extraKmPerWeek)) extra km/week nodig voor het afstandsschema.")
+            lines.append("🚴 KM-BIJSTURING: \(String(format: "%.0f", extraKmPerWeek)) extra km/week nodig. Koppel dit aan een specifieke dag in het huidige schema.")
         }
         return lines.joined(separator: "\n")
     }

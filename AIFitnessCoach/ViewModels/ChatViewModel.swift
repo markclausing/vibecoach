@@ -613,16 +613,17 @@ class ChatViewModel: ObservableObject {
             prefix += "[PERIODISERING — FASE, SUCCESCRITERIA & COACH-GEDRAG:\n\(periodizationContext)\n\nCoach-gedragsregels voor deze context:\n1. COMPLIMENTEN (🎉): Als een COMPLIMENT TRIGGER aanwezig is, open je antwoord dan hiermee. Noem de behaalde prestatie bij naam.\n2. URGENTIE (🚨): Als een KRITIEKE MIJLPAAL ACHTERSTAND aanwezig is, wees dan direct en motiverend. Noem de exacte afstand of TRIMP die nog ontbreekt, en plan dit als eerste prioriteit in het schema.\n3. SCHEMA-AANPASSING: Als je het schema aanpast, verklaar dan altijd hoe de fase-eisen ondanks de aanpassing nog steeds haalbaar zijn (SCHEMA-VERANTWOORDINGSPLICHT).]\n\n"
         }
 
-        // Epic 23 Sprint 1: Injecteer de gap-analyse — verschil tussen verwacht en behaald volume
+        // Epic 23 Sprint 1: Injecteer de gap-analyse met TRIMPTranslator-hints
         if !gapAnalysisContext.isEmpty {
             let gapBlock = """
             [GAP ANALYSE — BLUEPRINT VS. WERKELIJKHEID (Epic 23):
             \(gapAnalysisContext)
             Coach-gedragsregels:
-            1. Als er een 📈 VOLUME-BIJSTURING aanwezig is: benoem het concrete percentage dat de atleet meer moet trainen om op schema te komen. Gebruik exact de genoemde extra TRIMP/week.
-            2. Als er een 🚴 KM-BIJSTURING aanwezig is: geef een concreet weekschema met extra km verdeeld over de trainingen.
-            3. Als de atleet voorloopt op schema: complimenteer kort en adviseer consistentie te bewaren — geen extra volume nodig.
-            4. Verbind deze data altijd aan het actuele periodiseringsplan — een achterstand aanvullen in de Taper-fase is bijv. onwenselijk.]
+            1. TRIMP-VERTALING (VERPLICHT): Als er een 📈 VOLUME-BIJSTURING staat met een "X TRIMP ≈ +Y min …"-hint, gebruik dan ALTIJD die vertaling. Noem NOOIT een los TRIMP-getal zonder de bijbehorende tijdsindicatie. Correct: "Je hebt deze week zo'n 8 TRIMP extra nodig — dat is ongeveer +4 minuten op je zaterdag-rit." Fout: "Je hebt 8 TRIMP tekort."
+            2. KOPPEL AAN HET SCHEMA: Vertaal de bijsturing altijd naar een aanpassing van een bestaande trainingsdag. Bijv. "Verleng je dinsdag-duurloop met 5 minuten" of "Rij zaterdag 10 minuten langer door na de bekende route."
+            3. Als er een 🚴 KM-BIJSTURING staat: geef een concreet weekschema met extra km per training, niet als abstract totaal.
+            4. Als de atleet voorloopt op schema: complimenteer kort en adviseer consistentie — geen extra volume voorschrijven.
+            5. Verbind altijd aan de fase: bijsturing in de Taper-fase is onwenselijk — adviseer dan om het tekort NIET in te halen maar door te gaan met het tapering-schema.]
             """
             prefix += gapBlock + "\n\n"
         }
