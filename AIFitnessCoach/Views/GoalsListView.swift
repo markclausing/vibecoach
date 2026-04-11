@@ -4,22 +4,39 @@ import SwiftData
 struct GoalsListView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
+    @Query(sort: \ActivityRecord.startDate, order: .forward) private var activities: [ActivityRecord]
 
     @State private var showingAddSheet = false
+
+    // Epic 23 Sprint 1: Gap-analyse voor alle actieve doelen
+    private var gapAnalysis: [BlueprintGap] {
+        ProgressService.analyzeGaps(for: Array(goals), activities: Array(activities))
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(goals) { goal in
-                    NavigationLink {
-                        EditGoalView(goal: goal)
-                    } label: {
-                        GoalRowView(goal: goal)
+                // Epic 23 Sprint 1: Blueprint Voortgangskaarten boven de lijst
+                if !gapAnalysis.isEmpty {
+                    Section {
+                        GapAnalysisSectionView(gaps: gapAnalysis)
+                            .listRowInsets(EdgeInsets())
+                            .listRowBackground(Color.clear)
                     }
                 }
-                .onDelete(perform: deleteGoals)
+
+                Section("Mijn Doelen") {
+                    ForEach(goals) { goal in
+                        NavigationLink {
+                            EditGoalView(goal: goal)
+                        } label: {
+                            GoalRowView(goal: goal)
+                        }
+                    }
+                    .onDelete(perform: deleteGoals)
+                }
             }
-            .navigationTitle("Mijn Doelen")
+            .navigationTitle("Doelen")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {

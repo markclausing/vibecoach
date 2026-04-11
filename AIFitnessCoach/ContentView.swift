@@ -1880,6 +1880,10 @@ struct DashboardView: View {
                 // Epic 17.1: Schrijf de periodization-status naar de AI-prompt cache
                 // zodat de coach de actuele trainingsfase en succescriteria kent.
                 viewModel.cachePeriodizationStatus(periodizationResults)
+                // Epic 23 Sprint 1: Schrijf de gap-analyse naar de AI-prompt cache
+                // zodat de coach weet hoeveel TRIMP/km de atleet achterloopt op het lineaire schema.
+                let gapResults = ProgressService.analyzeGaps(for: Array(goals), activities: Array(activities))
+                viewModel.cacheGapAnalysis(gapResults)
                 // EPIC 18: Schrijf de meest recente echte workout-beoordeling naar de AI-prompt cache.
                 // rpe == WorkoutCheckinConfig.ignoredRPESentinel (0) telt niet als echte feedback.
                 let lastRatedActivity = activities

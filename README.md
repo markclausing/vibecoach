@@ -5,7 +5,7 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Actief in Ontwikkeling — Epic 22 (Live Workout & Coaching) gestart**
+**Actief in Ontwikkeling — Epic 23 (Blueprint Analysis & Future Projections) gestart**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 54% code coverage.
 
@@ -140,13 +140,23 @@ Contextuele coaching op basis van omgevingsfactoren die prestatie en herstel dir
 
 ---
 
-### 🔄 Epic 22: Live Workout & Real-Time Coaching (Actief)
+### ✅ Epic 17: Goal-Specific Blueprints (Afgerond)
 
 De coach gaat mee de training in — real-time begeleiding tijdens de workout zelf.
 
-* **⏳ Sprint 22.1 — Live Mode UI:** Dedicated workout-scherm met live hartslag, verstreken tijd en zone-indicator. Start/stop via grote knop. Minimale afleiding tijdens de training.
-* **⏳ Sprint 22.2 — Audio Cues:** Gesproken coaching via `AVSpeechSynthesizer` op sleutelmomenten (zone-overtreding, halverwege de rit, personal best). Configureerbaar (aan/uit, interval).
-* **⏳ Sprint 22.3 — Post-Workout AI Analyse:** Directe analyse na afloop op basis van de live-data. Coach vergelijkt geplande vs. gerealiseerde TRIMP en past het schema voor morgen automatisch aan.
+* **Sprint 17.1 — Architectuur & Harde Regels:** `GoalBlueprint` struct met `minLongRunDistance`, `taperPeriodWeeks`, `weeklyTrimpTarget` en `essentialWorkouts`. Hardcoded Marathon Blueprint (28+32 km), Halve Marathon (16+18 km) en Fietstocht (60+100 km — bijv. Arnhem–Karlsruhe). `BlueprintChecker` detecteert blueprint-type via sleutelwoorden of SportCategory-fallback. `PeriodizationEngine` evalueert per doel de huidige `TrainingPhase` en toetst recente activiteiten aan fase-specifieke `PhaseSuccessCriteria`. Unit tests: `BlueprintCheckerTests.swift` (10 tests) + `PeriodizationEngineTests.swift` (14 tests).
+* **Sprint 17.2 — LLM Integratie:** Blueprint-milestones + periodization-context geïnjecteerd in alle AI-prompts.
+* **Sprint 17.3 — Milestone UI:** `PhaseBadgeView` boven het schema, `MilestoneProgressCard` met voortgangsbalken per doel.
+
+---
+
+### 🔄 Epic 23: Blueprint Analysis & Future Projections (Actief)
+
+De app maakt de lange-termijn voorbereiding inzichtelijk — niet alleen wat je nú doet, maar of je op koers ligt voor de grote dag.
+
+* **✅ Sprint 23.1 — Target Gap Analysis:** `ProgressService` berekent het verschil (gap) tussen het lineaire verwachte trainingsvolume en het werkelijk behaalde volume. `BlueprintGap` struct bevat TRIMP-achterstand, km-achterstand en een concreet bijsturingsadvies ("je hebt X extra TRIMP/week nodig"). `GapAnalysisCardView` toont per doel een voortgangsbalk voor TRIMP en km in de Doelen-tab. Coach ontvangt een `[GAP ANALYSE]` blok met bijstuurinstructies: "We moeten deze week 15% meer volume draaien om weer in lijn te komen met de Marathon Blueprint."
+* **⏳ Sprint 23.2 — Future Projection Engine:** Een algoritme dat voorspelt in welke week je de Peak Phase zult bereiken op basis van je huidige belastingstempo.
+* **⏳ Sprint 23.3 — Visual Progress Hub:** Uitgebreide tijdlijn-visualisatie in de Doelen-tab die de volledige voorbereiding tot de racedag toont.
 
 ---
 
@@ -154,8 +164,9 @@ De coach gaat mee de training in — real-time begeleiding tijdens de workout ze
 
 | Epic | Beschrijving |
 |------|--------------|
-| **Epic 23 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes (bijv. kuitklachten) — zodat de coach maanden later nog kan refereren aan chronische patronen. |
-| **Epic 24 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. *(Verre toekomst)* |
+| **Epic 22 — Live Workout & Real-Time Coaching** | Dedicated workout-scherm met live hartslag en zone-indicator, Audio Cues via `AVSpeechSynthesizer`, directe post-workout AI-analyse. *(Uitgesteld ten gunste van Epic 23)* |
+| **Epic 24 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes — zodat de coach maanden later nog kan refereren aan chronische patronen. |
+| **Epic 25 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. *(Verre toekomst)* |
 
 ---
 
