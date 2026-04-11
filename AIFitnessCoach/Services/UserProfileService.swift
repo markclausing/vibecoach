@@ -113,19 +113,35 @@ final class UserProfileService: @unchecked Sendable {
 
     // MARK: - Two-Way Sync: opslaan
 
-    /// Slaat een nieuw gewicht op in UserDefaults én HealthKit.
-    /// UserDefaults wordt direct bijgewerkt; HealthKit is async maar ook de 'bron van waarheid'.
-    func saveWeight(kg: Double) async throws {
-        guard kg > 0 else { return }
-        UserDefaults.standard.set(kg, forKey: Self.weightKey)
-        try await saveQuantity(value: kg, identifier: .bodyMass, unit: .gramUnit(with: .kilo))
+    /// Het resultaat van een save-actie.
+    /// Ongeacht het resultaat is de waarde altijd al lokaal opgeslagen in UserDefaults.
+    enum SaveResult {
+        case savedToHealthKit               // Zowel UserDefaults als HealthKit bijgewerkt
+        case savedLocallyOnly(String)       // Alleen UserDefaults; HealthKit geweigerd of niet beschikbaar
     }
 
-    /// Slaat een nieuwe lengte op in UserDefaults én HealthKit.
-    func saveHeight(cm: Double) async throws {
-        guard cm > 0 else { return }
+    /// Slaat een nieuw gewicht op.
+    /// UserDefaults wordt altijd direct bijgewerkt.
+    /// HealthKit-autorisatie wordt gevraagd vóór de schrijfactie (pop-up als nog niet bepaald).
+    func saveWeight(kg: Double) async -> SaveResult {
+        guard kg > 0 else { return .savedLocallyOnly("Ongeldig gewicht.") }
+        UserDefaults.standard.set(kg, forKey: Self.weightKey)
+        return await saveQuantityIfAuthorized(
+            value: kg,
+            identifier: .bodyMass,
+            unit: .gramUnit(with: .kilo)
+        )
+    }
+
+    /// Slaat een nieuwe lengte op.
+    func saveHeight(cm: Double) async -> SaveResult {
+        guard cm > 0 else { return .savedLocallyOnly("Ongeldige lengte.") }
         UserDefaults.standard.set(cm, forKey: Self.heightKey)
-        try await saveQuantity(value: cm, identifier: .height, unit: .meterUnit(with: .centi))
+        return await saveQuantityIfAuthorized(
+            value: cm,
+            identifier: .height,
+            unit: .meterUnit(with: .centi)
+        )
     }
 
     // MARK: - Private helpers
@@ -166,20 +182,53 @@ final class UserProfileService: @unchecked Sendable {
         }
     }
 
-    /// Schrijft een kwantitatieve meting als nieuw HKQuantitySample naar HealthKit.
-    private func saveQuantity(value: Double, identifier: HKQuantityTypeIdentifier, unit: HKUnit) async throws {
-        guard let type = HKQuantityType.quantityType(forIdentifier: identifier) else { return }
+    /// Vraagt schrijftoestemming voor het gegeven type op (als nog niet bepaald),
+    /// en schrijft daarna pas het sample naar HealthKit.
+    /// Geeft altijd een `SaveResult` terug — gooit nooit — zodat de UI altijd een
+    /// bruikbare toestand bereikt, ook bij weigering.
+    private func saveQuantityIfAuthorized(
+        value: Double,
+        identifier: HKQuantityTypeIdentifier,
+        unit: HKUnit
+    ) async -> SaveResult {
+        guard let type = HKQuantityType.quantityType(forIdentifier: identifier) else {
+            return .savedLocallyOnly("HealthKit type niet beschikbaar op dit apparaat.")
+        }
+
+        // Stap 1: Vraag autorisatie op als deze nog niet is bepaald.
+        // requestAuthorization toont de iOS pop-up bij .notDetermined.
+        // Bij .sharingAuthorized of .sharingDenied slaat iOS de aanvraag over.
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            healthStore.requestAuthorization(toShare: [type], read: [type]) { _, _ in
+                // success geeft alleen aan of de aanvraag kon worden gedaan,
+                // niet of de gebruiker 'ja' heeft gezegd. Controleer de status apart.
+                continuation.resume()
+            }
+        }
+
+        // Stap 2: Controleer de daadwerkelijke schrijfstatus na de aanvraag.
+        let status = healthStore.authorizationStatus(for: type)
+        guard status == .sharingAuthorized else {
+            return .savedLocallyOnly("Geen schrijftoegang tot HealthKit. Pas dit aan via Instellingen → Gezondheid.")
+        }
+
+        // Stap 3: Schrijf het sample naar HealthKit.
         let quantity = HKQuantity(unit: unit, doubleValue: value)
         let sample   = HKQuantitySample(type: type, quantity: quantity, start: Date(), end: Date())
 
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            healthStore.save(sample) { success, error in
-                if let error = error {
-                    continuation.resume(throwing: error)
-                } else {
-                    continuation.resume()
+        do {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                healthStore.save(sample) { _, error in
+                    if let error = error {
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume()
+                    }
                 }
             }
+            return .savedToHealthKit
+        } catch {
+            return .savedLocallyOnly("HealthKit schrijven mislukt: \(error.localizedDescription)")
         }
     }
 }

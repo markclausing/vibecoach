@@ -608,10 +608,11 @@ struct PhysicalProfileSection: View {
     @State private var heightInput: String = ""
 
     // UI state
-    @State private var isLoading = true
-    @State private var isSaving  = false
+    @State private var isLoading   = true
+    @State private var isSaving    = false
     @State private var saveMessage: String?
-    @State private var saveSuccess: Bool = true
+    /// .savedToHealthKit → groen, .savedLocallyOnly → oranje
+    @State private var saveResult: UserProfileService.SaveResult?
 
     // Detecteer of de gebruiker iets heeft gewijzigd ten opzichte van het geladen profiel
     private var hasChanges: Bool {
@@ -694,9 +695,16 @@ struct PhysicalProfileSection: View {
 
                 // Feedback na opslaan
                 if let msg = saveMessage {
-                    Label(msg, systemImage: saveSuccess ? "checkmark.circle" : "xmark.circle")
+                    let (icon, color): (String, Color) = {
+                        switch saveResult {
+                        case .savedToHealthKit:   return ("checkmark.circle.fill", .green)
+                        case .savedLocallyOnly:   return ("exclamationmark.circle.fill", .orange)
+                        case nil:                 return ("xmark.circle.fill", .red)
+                        }
+                    }()
+                    Label(msg, systemImage: icon)
                         .font(.caption)
-                        .foregroundStyle(saveSuccess ? .green : .red)
+                        .foregroundStyle(color)
                 }
             }
         }
@@ -797,25 +805,45 @@ struct PhysicalProfileSection: View {
         let newWeight = Double(weightInput.replacingOccurrences(of: ",", with: ".")) ?? p.weightKg
         let newHeight = Double(heightInput.replacingOccurrences(of: ",", with: ".")) ?? p.heightCm
 
-        isSaving = true
+        isSaving    = true
         saveMessage = nil
+        saveResult  = nil
 
         Task {
-            do {
-                if newWeight != p.weightKg { try await profileService.saveWeight(kg: newWeight) }
-                if newHeight != p.heightCm { try await profileService.saveHeight(cm: newHeight) }
-                // Herlaad het profiel na opslaan zodat de bronbadge bijgewerkt wordt
-                await loadProfile()
-                await MainActor.run {
-                    isSaving     = false
-                    saveSuccess  = true
-                    saveMessage  = "Opgeslagen en gesynchroniseerd met HealthKit."
-                }
-            } catch {
-                await MainActor.run {
-                    isSaving    = false
-                    saveSuccess = false
-                    saveMessage = "Fout bij opslaan: \(error.localizedDescription)"
+            // Sla elke gewijzigde waarde op en verzamel de resultaten.
+            // UserDefaults wordt altijd bijgewerkt; HealthKit alleen bij toestemming.
+            var results: [UserProfileService.SaveResult] = []
+            if newWeight != p.weightKg { results.append(await profileService.saveWeight(kg: newWeight)) }
+            if newHeight != p.heightCm { results.append(await profileService.saveHeight(cm: newHeight)) }
+
+            // Herlaad het profiel zodat bronbadges bijgewerkt worden
+            await loadProfile()
+
+            // Samenvoegen: als minstens één waarde naar HealthKit ging → groen, anders → oranje
+            let combinedResult: UserProfileService.SaveResult
+            let allHealthKit = results.allSatisfy {
+                if case .savedToHealthKit = $0 { return true }
+                return false
+            }
+            let firstLocalReason: String? = results.compactMap {
+                if case .savedLocallyOnly(let reason) = $0 { return reason }
+                return nil
+            }.first
+
+            if allHealthKit {
+                combinedResult = .savedToHealthKit
+            } else {
+                combinedResult = .savedLocallyOnly(firstLocalReason ?? "Lokaal opgeslagen.")
+            }
+
+            await MainActor.run {
+                isSaving   = false
+                saveResult = combinedResult
+                switch combinedResult {
+                case .savedToHealthKit:
+                    saveMessage = "Opgeslagen en gesynchroniseerd met HealthKit."
+                case .savedLocallyOnly(let reason):
+                    saveMessage = "Lokaal opgeslagen. \(reason)"
                 }
             }
         }
