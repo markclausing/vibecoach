@@ -92,6 +92,10 @@ class ChatViewModel: ObservableObject {
     /// Wordt geïnjecteerd in de AI-prompt zodat de coach rekening houdt met buitenactiviteiten.
     @AppStorage("vibecoach_weatherContext") var weatherContext: String = ""
 
+    /// Epic 23 Sprint 1: Cache van de gap-analyse per actief doel.
+    /// Bevat het verschil tussen verwacht en werkelijk TRIMP/km op dit moment in de voorbereiding.
+    @AppStorage("vibecoach_gapAnalysisContext") private var gapAnalysisContext: String = ""
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
@@ -247,6 +251,19 @@ class ChatViewModel: ObservableObject {
         }
         periodizationContext = results
             .map { $0.coachingContext }
+            .joined(separator: "\n\n")
+    }
+
+    /// Epic 23 Sprint 1: Schrijft de gap-analyse (verschil gepland vs. gerealiseerd) naar de AppStorage cache.
+    /// De coach gebruikt dit om concrete bijsturingsadviezen te geven:
+    /// "Je ligt X km achter op schema — deze week 15% meer volume om dat in te halen."
+    func cacheGapAnalysis(_ gaps: [BlueprintGap]) {
+        guard !gaps.isEmpty else {
+            gapAnalysisContext = ""
+            return
+        }
+        gapAnalysisContext = gaps
+            .map { $0.coachContext }
             .joined(separator: "\n\n")
     }
 
@@ -594,6 +611,20 @@ class ChatViewModel: ObservableObject {
 
         if hasPeriodization {
             prefix += "[PERIODISERING — FASE, SUCCESCRITERIA & COACH-GEDRAG:\n\(periodizationContext)\n\nCoach-gedragsregels voor deze context:\n1. COMPLIMENTEN (🎉): Als een COMPLIMENT TRIGGER aanwezig is, open je antwoord dan hiermee. Noem de behaalde prestatie bij naam.\n2. URGENTIE (🚨): Als een KRITIEKE MIJLPAAL ACHTERSTAND aanwezig is, wees dan direct en motiverend. Noem de exacte afstand of TRIMP die nog ontbreekt, en plan dit als eerste prioriteit in het schema.\n3. SCHEMA-AANPASSING: Als je het schema aanpast, verklaar dan altijd hoe de fase-eisen ondanks de aanpassing nog steeds haalbaar zijn (SCHEMA-VERANTWOORDINGSPLICHT).]\n\n"
+        }
+
+        // Epic 23 Sprint 1: Injecteer de gap-analyse — verschil tussen verwacht en behaald volume
+        if !gapAnalysisContext.isEmpty {
+            let gapBlock = """
+            [GAP ANALYSE — BLUEPRINT VS. WERKELIJKHEID (Epic 23):
+            \(gapAnalysisContext)
+            Coach-gedragsregels:
+            1. Als er een 📈 VOLUME-BIJSTURING aanwezig is: benoem het concrete percentage dat de atleet meer moet trainen om op schema te komen. Gebruik exact de genoemde extra TRIMP/week.
+            2. Als er een 🚴 KM-BIJSTURING aanwezig is: geef een concreet weekschema met extra km verdeeld over de trainingen.
+            3. Als de atleet voorloopt op schema: complimenteer kort en adviseer consistentie te bewaren — geen extra volume nodig.
+            4. Verbind deze data altijd aan het actuele periodiseringsplan — een achterstand aanvullen in de Taper-fase is bijv. onwenselijk.]
+            """
+            prefix += gapBlock + "\n\n"
         }
 
         // Debug: print de volledige blueprint- en periodization-context die naar Gemini gaat

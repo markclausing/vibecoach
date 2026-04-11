@@ -5,9 +5,9 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Portfolio-klaar — Volledig Afgewerkt**
+**Actief in Ontwikkeling — Epic 23 (Blueprint Analysis & Future Projections) gestart**
 
-VibeCoach is een production-ready iOS-app met een premium user experience: native splash screen, gepolijste onboarding flow, BYOK AI-architectuur (Gemini / OpenAI / Anthropic), fysiologisch correcte trainingscoaching en een testsuite met 54% code coverage.
+VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 54% code coverage.
 
 ---
 
@@ -130,13 +130,23 @@ Contextuele coaching op basis van omgevingsfactoren die prestatie en herstel dir
 
 ---
 
-### 🔄 Epic 17: Goal-Specific Blueprints (Actief)
+### ✅ Epic 17: Goal-Specific Blueprints (Afgerond)
 
 Hardcoded sportwetenschappelijke regels per discipline — coaching op basis van bewezen principes, niet alleen AI-gevoel.
 
-* **Sprint 17.1 — Architectuur & Harde Regels:** `GoalBlueprint` struct met `minLongRunDistance`, `taperPeriodWeeks`, `weeklyTrimpTarget` en `essentialWorkouts`. Hardcoded Marathon Blueprint (28+32 km), Halve Marathon (16+18 km) en Fietstocht (60+100 km — bijv. Arnhem–Karlsruhe). `BlueprintChecker` detecteert blueprint-type via sleutelwoorden of SportCategory-fallback en retourneert `BlueprintCheckResult`. `PeriodizationEngine` evalueert per doel de huidige `TrainingPhase` (Base/Build/Peak/Taper) en toetst recente activiteiten aan fase-specifieke `PhaseSuccessCriteria` (bijv. Peak = langste sessie ≥80% van doelafstand). `ChatViewModel` injecteert zowel blueprint-milestones als periodization-context (inclusief fase-coaching boodschap) in alle AI-prompts. Unit tests: `BlueprintCheckerTests.swift` (10 tests) + `PeriodizationEngineTests.swift` (14 tests).
-* **⏳ Sprint 17.2 — LLM Integratie:** Verdere verdieping van de coaching-context op basis van blueprint + fase-voortgang.
-* **⏳ Sprint 17.3 — Milestone UI:** Visuele weergave van kritieke checkpoints en fase-voortgang op het dashboard.
+* **Sprint 17.1 — Architectuur & Harde Regels:** `GoalBlueprint` struct met `minLongRunDistance`, `taperPeriodWeeks`, `weeklyTrimpTarget` en `essentialWorkouts`. Hardcoded Marathon Blueprint (28+32 km), Halve Marathon (16+18 km) en Fietstocht (60+100 km — bijv. Arnhem–Karlsruhe). `BlueprintChecker` detecteert blueprint-type via sleutelwoorden of SportCategory-fallback. `PeriodizationEngine` evalueert per doel de huidige `TrainingPhase` en toetst recente activiteiten aan fase-specifieke `PhaseSuccessCriteria`. Unit tests: `BlueprintCheckerTests.swift` (10 tests) + `PeriodizationEngineTests.swift` (14 tests).
+* **Sprint 17.2 — LLM Integratie:** Blueprint-milestones + periodization-context geïnjecteerd in alle AI-prompts.
+* **Sprint 17.3 — Milestone UI:** `PhaseBadgeView` boven het schema, `MilestoneProgressCard` met voortgangsbalken per doel.
+
+---
+
+### 🔄 Epic 23: Blueprint Analysis & Future Projections (Actief)
+
+De app maakt de lange-termijn voorbereiding inzichtelijk — niet alleen wat je nú doet, maar of je op koers ligt voor de grote dag.
+
+* **✅ Sprint 23.1 — Target Gap Analysis:** `ProgressService` berekent het verschil (gap) tussen het lineaire verwachte trainingsvolume en het werkelijk behaalde volume. `BlueprintGap` struct bevat TRIMP-achterstand, km-achterstand en een concreet bijsturingsadvies ("je hebt X extra TRIMP/week nodig"). `GapAnalysisCardView` toont per doel een voortgangsbalk voor TRIMP en km in de Doelen-tab. Coach ontvangt een `[GAP ANALYSE]` blok met bijstuurinstructies: "We moeten deze week 15% meer volume draaien om weer in lijn te komen met de Marathon Blueprint."
+* **⏳ Sprint 23.2 — Future Projection Engine:** Een algoritme dat voorspelt in welke week je de Peak Phase zult bereiken op basis van je huidige belastingstempo.
+* **⏳ Sprint 23.3 — Visual Progress Hub:** Uitgebreide tijdlijn-visualisatie in de Doelen-tab die de volledige voorbereiding tot de racedag toont.
 
 ---
 
@@ -144,8 +154,9 @@ Hardcoded sportwetenschappelijke regels per discipline — coaching op basis van
 
 | Epic | Beschrijving |
 |------|--------------|
-| **Epic 22 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes (bijv. kuitklachten) — zodat de coach maanden later nog kan refereren aan chronische patronen. |
-| **Epic 23 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. *(Verre toekomst)* |
+| **Epic 22 — Live Workout & Real-Time Coaching** | Dedicated workout-scherm met live hartslag en zone-indicator, Audio Cues via `AVSpeechSynthesizer`, directe post-workout AI-analyse. *(Uitgesteld ten gunste van Epic 23)* |
+| **Epic 24 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes — zodat de coach maanden later nog kan refereren aan chronische patronen. |
+| **Epic 25 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. *(Verre toekomst)* |
 
 ---
 
