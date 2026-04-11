@@ -53,9 +53,11 @@ final class UserProfileService: @unchecked Sendable {
 
     // MARK: - Constanten
 
-    /// UserDefaults-sleutels voor de lokale fallback.
-    static let weightKey = "vibecoach_userWeightKg"
-    static let heightKey = "vibecoach_userHeightCm"
+    /// UserDefaults-sleutels voor de lokale fallback en leeftijdscache.
+    static let weightKey    = "vibecoach_userWeightKg"
+    static let heightKey    = "vibecoach_userHeightCm"
+    /// Gecachte leeftijd — om te detecteren of HealthKit een gewijzigde waarde teruggeeft.
+    static let cachedAgeKey = "vibecoach_cachedAgeYears"
 
     /// Standaard-fallbacks als zowel HealthKit als UserDefaults leeg zijn.
     /// Gebaseerd op gemiddelde Nederlandse recreatieve atleet (man, 35j, 75 kg, 178 cm).
@@ -147,10 +149,37 @@ final class UserProfileService: @unchecked Sendable {
     // MARK: - Private helpers
 
     /// Leest geboortedatum synchronous en berekent de leeftijd in jaren.
+    /// Logt de ruwe HealthKit-waarden zodat sync-problemen direct zichtbaar zijn in de console.
     private func fetchAge() -> Int? {
-        guard let dob = try? healthStore.dateOfBirthComponents(),
-              let birthDate = Calendar.current.date(from: dob) else { return nil }
-        return Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year
+        do {
+            let dob = try healthStore.dateOfBirthComponents()
+            print("🎂 [HealthKit] Geboortedatum components: \(dob)")
+            guard let birthDate = Calendar.current.date(from: dob) else {
+                print("🎂 [HealthKit] ⚠️ Kon DateComponents niet omzetten naar Date: \(dob)")
+                return nil
+            }
+            print("🎂 [HealthKit] Geboortedatum als Date: \(birthDate)")
+            let age = Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year
+            print("🎂 [HealthKit] Berekende leeftijd: \(age ?? -1) jaar")
+            return age
+        } catch {
+            print("🎂 [HealthKit] ⚠️ dateOfBirthComponents mislukt — geen leestoegang of niet ingevuld: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    /// Vergelijkt de nieuw opgehaalde leeftijd met de gecachte waarde.
+    /// Retourneert `true` als de leeftijd is gewijzigd ten opzichte van de vorige fetch.
+    /// Slaat de nieuwe leeftijd altijd op als nieuwe cache-baseline.
+    func checkAndUpdateAgeCache(newAge: Int) -> Bool {
+        let previous = UserDefaults.standard.object(forKey: Self.cachedAgeKey) as? Int
+        UserDefaults.standard.set(newAge, forKey: Self.cachedAgeKey)
+        guard let prev = previous else { return false }   // eerste keer — geen wijziging te melden
+        let changed = prev != newAge
+        if changed {
+            print("🎂 [ProfileService] Leeftijd gewijzigd: \(prev) → \(newAge) jaar")
+        }
+        return changed
     }
 
     /// Leest biologisch geslacht synchronous.

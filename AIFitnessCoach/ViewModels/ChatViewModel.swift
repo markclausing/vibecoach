@@ -100,6 +100,11 @@ class ChatViewModel: ObservableObject {
     /// Wordt gevuld via `refreshNutritionContext()` en geïnjecteerd in elke AI-prompt.
     @AppStorage("vibecoach_nutritionContext") private var nutritionContext: String = ""
 
+    /// Epic 24 Sprint 3: Eenmalige coach-melding bij een gedetecteerde profielwijziging (bijv. leeftijd).
+    /// Wordt geschreven door `PhysicalProfileSection` en geïnjecteerd in de eerstvolgende AI-prompt.
+    /// Wordt geleegd nadat de prompt is opgebouwd zodat de melding slechts éénmaal verschijnt.
+    @AppStorage("vibecoach_profileUpdateNote") var profileUpdateNote: String = ""
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
@@ -683,6 +688,13 @@ class ChatViewModel: ObservableObject {
         // Epic 24 Sprint 1: Injecteer het fysiologisch profiel + voedingsplan in de prompt
         if !nutritionContext.isEmpty {
             prefix += "\(nutritionContext)\n\n"
+        }
+
+        // Epic 24 Sprint 3: Eenmalige profielwijziging-melding — slechts één keer injecteren,
+        // daarna wissen zodat de coach het niet elke keer herhaalt.
+        if !profileUpdateNote.isEmpty {
+            prefix += "\(profileUpdateNote)\n\n"
+            profileUpdateNote = ""
         }
 
         // Debug: print de volledige blueprint- en periodization-context die naar Gemini gaat
