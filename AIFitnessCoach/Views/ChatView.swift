@@ -377,12 +377,23 @@ struct TrainingCalendarView: View {
     // Optie om de weergave te bepalen (horizontaal voor chat, verticaal voor dashboard)
     var isHorizontal: Bool = false
 
+    // Epic 21: Optionele weersverwachting voor weers-badges op trainingskaarten
+    var weeklyForecast: [DayForecast] = []
+
     @State private var selectedWorkoutForDetail: SuggestedWorkout?
 
     /// Filtert trainingen uit het verleden — het schema start altijd bij vandaag.
     private var upcomingWorkouts: [SuggestedWorkout] {
         let today = Calendar.current.startOfDay(for: Date())
         return plan.workouts.filter { $0.resolvedDate >= today }
+    }
+
+    /// Zoekt de passende DayForecast op voor de datum van een workout.
+    private func forecast(for workout: SuggestedWorkout) -> DayForecast? {
+        let cal = Calendar.current
+        return weeklyForecast.first {
+            cal.isDate($0.date, inSameDayAs: workout.resolvedDate)
+        }
     }
 
     var body: some View {
@@ -394,14 +405,14 @@ struct TrainingCalendarView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(upcomingWorkouts) { workout in
-                            WorkoutCardView(workout: workout, onSkip: {
-                                onSkipWorkout?(workout)
-                            }, onAlternative: {
-                                onAlternativeWorkout?(workout)
-                            }, onSelect: {
-                                selectedWorkoutForDetail = workout
-                            })
-                            .frame(width: 220) // Fixeer breedte in horizontale chat-bubble
+                            WorkoutCardView(
+                                workout: workout,
+                                weatherForecast: forecast(for: workout),
+                                onSkip: { onSkipWorkout?(workout) },
+                                onAlternative: { onAlternativeWorkout?(workout) },
+                                onSelect: { selectedWorkoutForDetail = workout }
+                            )
+                            .frame(width: 220)
                         }
                     }
                     .padding(.horizontal, 4)
@@ -409,14 +420,13 @@ struct TrainingCalendarView: View {
             } else {
                 VStack(spacing: 16) {
                     ForEach(upcomingWorkouts) { workout in
-                        WorkoutCardView(workout: workout, onSkip: {
-                            onSkipWorkout?(workout)
-                        }, onAlternative: {
-                            onAlternativeWorkout?(workout)
-                        }, onSelect: {
-                            selectedWorkoutForDetail = workout
-                        })
-                        // In de VStack neemt de kaart de volledige breedte (maxWidth: .infinity is ingesteld in de WorkoutCardView)
+                        WorkoutCardView(
+                            workout: workout,
+                            weatherForecast: forecast(for: workout),
+                            onSkip: { onSkipWorkout?(workout) },
+                            onAlternative: { onAlternativeWorkout?(workout) },
+                            onSelect: { selectedWorkoutForDetail = workout }
+                        )
                     }
                 }
                 .padding(.horizontal, 4)
@@ -432,6 +442,8 @@ struct TrainingCalendarView: View {
 
 struct WorkoutCardView: View {
     let workout: SuggestedWorkout
+    /// Epic 21: Optionele weersverwachting voor de dag van deze training.
+    var weatherForecast: DayForecast? = nil
     var onSkip: (() -> Void)?
     var onAlternative: (() -> Void)?
     var onSelect: (() -> Void)?
@@ -448,7 +460,14 @@ struct WorkoutCardView: View {
                     .font(.caption)
                     .fontWeight(.bold)
                     .foregroundColor(.blue)
-                Spacer()
+
+                // Epic 21: Weers-badge — alleen tonen als er voorspellingsdata is
+                if let forecast = weatherForecast {
+                    Spacer()
+                    WeatherBadgeView(forecast: forecast)
+                } else {
+                    Spacer()
+                }
 
                 if isProcessingAction {
                     ProgressView()
@@ -604,5 +623,53 @@ struct InfoRowView: View {
             Text(value)
                 .fontWeight(.medium)
         }
+    }
+}
+
+// MARK: - WeatherBadgeView
+
+/// Epic 21: Compacte weers-badge die op een WorkoutCardView wordt getoond.
+/// Toont een weericon + neerslagkans. Oranje/rood bij slecht buitenweer.
+struct WeatherBadgeView: View {
+    let forecast: DayForecast
+
+    private var badgeColor: Color {
+        forecast.isRiskyForOutdoorTraining ? .orange : Color(.secondaryLabel)
+    }
+
+    private var weatherIcon: String {
+        let rain = forecast.precipitationProbability
+        let wind = forecast.windSpeedKmh
+        if rain > 0.7 || forecast.conditionDescription.contains("regen") { return "cloud.rain.fill" }
+        if rain > 0.4                                                      { return "cloud.drizzle.fill" }
+        if wind > 40                                                        { return "wind" }
+        if forecast.conditionDescription.contains("bewolkt")               { return "cloud.fill" }
+        if forecast.conditionDescription.contains("Mistig")                { return "cloud.fog.fill" }
+        if forecast.conditionDescription.contains("sneeuw")                { return "snowflake" }
+        if forecast.conditionDescription.contains("Onweer")                { return "cloud.bolt.rain.fill" }
+        return "sun.max.fill"
+    }
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: weatherIcon)
+                .font(.caption2)
+                .foregroundColor(badgeColor)
+            Text(String(format: "%.0f%%", forecast.precipitationProbability * 100))
+                .font(.caption2)
+                .foregroundColor(badgeColor)
+            if forecast.windSpeedKmh > 30 {
+                Image(systemName: "wind")
+                    .font(.caption2)
+                    .foregroundColor(badgeColor)
+                Text(String(format: "%.0f", forecast.windSpeedKmh))
+                    .font(.caption2)
+                    .foregroundColor(badgeColor)
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(badgeColor.opacity(0.12))
+        .cornerRadius(6)
     }
 }

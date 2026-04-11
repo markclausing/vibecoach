@@ -816,11 +816,21 @@ final class DailyReadiness {
     /// De berekende Vibe/Readiness Score, 0 (volledig overtraind/uitgeput) t/m 100 (optimaal).
     var readinessScore: Int
 
-    init(date: Date, sleepHours: Double, hrv: Double, readinessScore: Int) {
-        self.date = Calendar.current.startOfDay(for: date)
-        self.sleepHours = sleepHours
-        self.hrv = hrv
-        self.readinessScore = readinessScore
+    // Epic 21 Sprint 2 — Slaapfases (iOS 16+ Apple Watch).
+    // Waarde 0 = ouder device / Watch niet gedragen → geen strafpunt in ReadinessCalculator.
+    var deepSleepMinutes: Int = 0
+    var remSleepMinutes: Int  = 0
+    var coreSleepMinutes: Int = 0
+
+    init(date: Date, sleepHours: Double, hrv: Double, readinessScore: Int,
+         deepSleepMinutes: Int = 0, remSleepMinutes: Int = 0, coreSleepMinutes: Int = 0) {
+        self.date              = Calendar.current.startOfDay(for: date)
+        self.sleepHours        = sleepHours
+        self.hrv               = hrv
+        self.readinessScore    = readinessScore
+        self.deepSleepMinutes  = deepSleepMinutes
+        self.remSleepMinutes   = remSleepMinutes
+        self.coreSleepMinutes  = coreSleepMinutes
     }
 }
 

@@ -394,6 +394,16 @@ struct VibeScoreCardView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
+                    // Epic 21 Sprint 2: Slaapfases — alleen tonen als stage-data beschikbaar is
+                    let totalStageMins = r.deepSleepMinutes + r.remSleepMinutes + r.coreSleepMinutes
+                    if totalStageMins > 0 {
+                        SleepStagesBarView(
+                            deepMinutes:  r.deepSleepMinutes,
+                            remMinutes:   r.remSleepMinutes,
+                            coreMinutes:  r.coreSleepMinutes
+                        )
+                        .padding(.top, 2)
+                    }
                 }
             }
 
@@ -411,6 +421,88 @@ struct VibeScoreCardView: View {
         )
         .cornerRadius(12)
         .accessibilityIdentifier("VibeScoreCard")
+    }
+}
+
+// MARK: - Epic 21 Sprint 2: SleepStagesBarView
+
+/// Horizontale gestapelde balk + labels voor diepe slaap, REM en kernslaap.
+/// Wordt getoond in de VibeScoreCard als stage-data beschikbaar is.
+private struct SleepStagesBarView: View {
+    let deepMinutes:  Int
+    let remMinutes:   Int
+    let coreMinutes:  Int
+
+    private var total: Int { deepMinutes + remMinutes + coreMinutes }
+
+    private func ratio(_ minutes: Int) -> Double {
+        total > 0 ? Double(minutes) / Double(total) : 0
+    }
+
+    private var deepRatio: Double { ratio(deepMinutes) }
+
+    private var qualityColor: Color {
+        if deepRatio >= 0.20 { return .green }
+        if deepRatio >= 0.15 { return Color(.systemGreen).opacity(0.7) }
+        if deepRatio >= 0.10 { return .orange }
+        return .red
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            // Gestapelde balk
+            GeometryReader { geo in
+                HStack(spacing: 2) {
+                    // Diepe slaap — donkerblauw/indigo
+                    if deepMinutes > 0 {
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.indigo)
+                            .frame(width: max(4, geo.size.width * ratio(deepMinutes)))
+                    }
+                    // REM — paars
+                    if remMinutes > 0 {
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.purple.opacity(0.7))
+                            .frame(width: max(4, geo.size.width * ratio(remMinutes)))
+                    }
+                    // Kernslaap — blauw
+                    if coreMinutes > 0 {
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.blue.opacity(0.5))
+                            .frame(width: max(4, geo.size.width * ratio(coreMinutes)))
+                    }
+                }
+            }
+            .frame(height: 8)
+
+            // Labels onder de balk
+            HStack(spacing: 10) {
+                Label(SleepStages.formatMinutes(deepMinutes), systemImage: "moon.stars.fill")
+                    .font(.caption2)
+                    .foregroundColor(.indigo)
+                Label(SleepStages.formatMinutes(remMinutes), systemImage: "eye.fill")
+                    .font(.caption2)
+                    .foregroundColor(.purple.opacity(0.8))
+                Label(SleepStages.formatMinutes(coreMinutes), systemImage: "moon.fill")
+                    .font(.caption2)
+                    .foregroundColor(.blue.opacity(0.7))
+
+                Spacer()
+
+                // Kwaliteitslabel rechts
+                let deepR = ratio(deepMinutes)
+                let qualLabel: String = {
+                    if deepR >= 0.20 { return "Uitstekend" }
+                    if deepR >= 0.15 { return "Goed" }
+                    if deepR >= 0.10 { return "Matig" }
+                    return "Onvoldoende"
+                }()
+                Text(qualLabel)
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(qualityColor)
+            }
+        }
     }
 }
 
@@ -1678,15 +1770,14 @@ struct DashboardView: View {
                                 onSkipWorkout: { workout in
                                     refreshProfileContext()
                                     viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                                    // Chat niet direct openen indien gewenst om de UI rustig te houden, maar we openen hem hier wel als we
-                                    // verwachten dat de gebruiker de chat loader wil zien
                                     appState.showingChatSheet = true
                                 },
                                 onAlternativeWorkout: { workout in
                                     refreshProfileContext()
                                     viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                                     appState.showingChatSheet = true
-                                }
+                                },
+                                weeklyForecast: WeatherManager.shared.weeklyForecast
                             )
                             .padding(.horizontal)
                         } else {
@@ -1840,13 +1931,15 @@ struct DashboardView: View {
         let hkManager = HealthKitManager()
 
         // Stel een race-conditie in: als HealthKit na 5 seconden geen antwoord geeft, stoppen we.
-        let result = await withTaskGroup(of: (Double?, Double?, Double?)?.self) { group in
-            // Taak 1: Haal HRV, baseline en slaap parallel op
+        // Epic 21 Sprint 2: Haal HRV, baseline, slaap EN slaapfases parallel op.
+        let result = await withTaskGroup(of: (Double?, Double?, Double?, SleepStages?)?.self) { group in
+            // Taak 1: alle HealthKit-data parallel
             group.addTask {
-                async let hrvTask = try? hkManager.fetchRecentHRV()
+                async let hrvTask      = try? hkManager.fetchRecentHRV()
                 async let baselineTask = try? hkManager.fetchHRVBaseline(days: 7)
-                async let sleepTask = try? hkManager.fetchLastNightSleep()
-                return await (hrvTask, baselineTask, sleepTask)
+                async let sleepTask    = try? hkManager.fetchLastNightSleep()
+                async let stagesTask   = try? hkManager.fetchSleepStages()
+                return await (hrvTask, baselineTask, sleepTask, stagesTask)
             }
             // Taak 2: 5 seconden time-out
             group.addTask {
@@ -1854,7 +1947,6 @@ struct DashboardView: View {
                 print("⏱️ [VibeScore] Time-out na 5 seconden — geen HealthKit-data ontvangen")
                 return nil
             }
-            // Gebruik het resultaat van de eerste taak die klaar is (data óf time-out)
             for await result in group {
                 group.cancelAll()
                 return result
@@ -1862,36 +1954,52 @@ struct DashboardView: View {
             return nil
         }
 
-        guard let (hrv, baseline, sleep) = result,
+        guard let (hrv, baseline, sleep, _) = result,
               let currentHRV = hrv,
               let hrvBaseline = baseline,
               let sleepHours = sleep else {
             print("⚠️ [VibeScore] Onvoldoende data — kaart wordt op 'niet beschikbaar' gezet")
             isVibeScoreUnavailable = true
-            // Informeer de AI-cache zodat de coach de juiste fallback-toon gebruikt
             viewModel.cacheVibeScoreUnavailable()
             return
         }
 
+        // Slaapfases zijn optioneel — nil = ouder device → geen strafpunt
+        let stages: SleepStages? = result?.3 ?? nil
+
         let score = ReadinessCalculator.calculate(
-            sleepHours: sleepHours,
-            hrv: currentHRV,
-            hrvBaseline: hrvBaseline
+            sleepHours:    sleepHours,
+            hrv:           currentHRV,
+            hrvBaseline:   hrvBaseline,
+            deepSleepRatio: stages?.deepRatio
         )
-        print("✅ [VibeScore] Score berekend: \(score)/100 (slaap: \(String(format: "%.1f", sleepHours))u, HRV: \(String(format: "%.1f", currentHRV))ms, baseline: \(String(format: "%.1f", hrvBaseline))ms)")
+
+        let stagesLog = stages.map { "diep: \($0.deepMinutes)m, REM: \($0.remMinutes)m, kern: \($0.coreMinutes)m, ratio: \(String(format: "%.0f%%", $0.deepRatio * 100))" } ?? "geen stage-data"
+        print("✅ [VibeScore] Score berekend: \(score)/100 (slaap: \(String(format: "%.1f", sleepHours))u, HRV: \(String(format: "%.1f", currentHRV))ms, \(stagesLog))")
 
         // Upsert: overschrijf een bestaand record voor vandaag of maak een nieuw aan
-        let todayStart = Calendar.current.startOfDay(for: Date())
+        let todayStart   = Calendar.current.startOfDay(for: Date())
         let tomorrowStart = Calendar.current.date(byAdding: .day, value: 1, to: todayStart)!
-        let descriptor = FetchDescriptor<DailyReadiness>(
+        let descriptor   = FetchDescriptor<DailyReadiness>(
             predicate: #Predicate { $0.date >= todayStart && $0.date < tomorrowStart }
         )
         if let existing = try? modelContext.fetch(descriptor), let record = existing.first {
-            record.sleepHours = sleepHours
-            record.hrv = currentHRV
-            record.readinessScore = score
+            record.sleepHours       = sleepHours
+            record.hrv              = currentHRV
+            record.readinessScore   = score
+            record.deepSleepMinutes = stages?.deepMinutes  ?? 0
+            record.remSleepMinutes  = stages?.remMinutes   ?? 0
+            record.coreSleepMinutes = stages?.coreMinutes  ?? 0
         } else {
-            modelContext.insert(DailyReadiness(date: Date(), sleepHours: sleepHours, hrv: currentHRV, readinessScore: score))
+            modelContext.insert(DailyReadiness(
+                date:             Date(),
+                sleepHours:       sleepHours,
+                hrv:              currentHRV,
+                readinessScore:   score,
+                deepSleepMinutes: stages?.deepMinutes  ?? 0,
+                remSleepMinutes:  stages?.remMinutes   ?? 0,
+                coreSleepMinutes: stages?.coreMinutes  ?? 0
+            ))
         }
         try? modelContext.save()
 
