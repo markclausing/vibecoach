@@ -1,7 +1,7 @@
 import Foundation
 import HealthKit
 
-// MARK: - Epic 24 Sprint 1: Fysiologisch Profiel
+// MARK: - Epic 24 Sprint 1 & 2: Fysiologisch Profiel + Two-Way Sync
 
 /// Beschrijft het biologische geslacht van de gebruiker, nodig voor de BMR-formule.
 enum BiologicalSex: String, Codable {
@@ -15,6 +15,12 @@ struct UserPhysicalProfile {
     let heightCm: Double        // lichaamslengte in centimeter
     let ageYears: Int           // leeftijd in jaren
     let sex: BiologicalSex      // biologisch geslacht voor BMR-formule
+
+    /// Geeft aan of dit profiel van HealthKit komt of van de lokale fallback.
+    let weightSource: DataSource
+    let heightSource: DataSource
+
+    enum DataSource { case healthKit, local, defaultValue }
 
     /// True als het profiel volledig is (geen defaults gebruikt).
     var isComplete: Bool {
@@ -34,17 +40,28 @@ struct UserPhysicalProfile {
     }
 }
 
-/// Haalt het fysiologische profiel op uit HealthKit.
-/// Karakteristieke types (geboortedatum, geslacht) vereisen geen async query —
-/// ze zijn direct synchronous beschikbaar als de gebruiker toestemming heeft verleend.
-/// Kwantitatieve types (gewicht, lengte) worden via HKSampleQuery opgehaald.
+/// Beheert het fysiologische profiel van de gebruiker.
+///
+/// **Resolutie-hiërarchie (van hoog naar laag):**
+/// 1. Recente HealthKit data (single source of truth)
+/// 2. Lokale UserDefaults fallback (door gebruiker zelf ingevoerd)
+/// 3. Generieke standaardwaarden ("Average Joe")
+///
+/// **Two-Way Sync:** wijzigingen worden zowel naar UserDefaults als HealthKit geschreven
+/// zodat het gehele iOS-ecosysteem up-to-date blijft.
 final class UserProfileService: @unchecked Sendable {
 
-    // Standaard-fallbacks als HealthKit-data ontbreekt.
-    // Gebaseerd op gemiddelde Nederlandse recreatieve atleet (man, 35j, 75 kg, 178 cm).
-    static let defaultWeightKg: Double  = 75.0
-    static let defaultHeightCm: Double  = 178.0
-    static let defaultAgeYears: Int     = 35
+    // MARK: - Constanten
+
+    /// UserDefaults-sleutels voor de lokale fallback.
+    static let weightKey = "vibecoach_userWeightKg"
+    static let heightKey = "vibecoach_userHeightCm"
+
+    /// Standaard-fallbacks als zowel HealthKit als UserDefaults leeg zijn.
+    /// Gebaseerd op gemiddelde Nederlandse recreatieve atleet (man, 35j, 75 kg, 178 cm).
+    static let defaultWeightKg: Double   = 75.0
+    static let defaultHeightCm: Double   = 178.0
+    static let defaultAgeYears: Int      = 35
     static let defaultSex: BiologicalSex = .male
 
     private let healthStore: HKHealthStore
@@ -53,23 +70,62 @@ final class UserProfileService: @unchecked Sendable {
         self.healthStore = healthStore
     }
 
-    /// Haalt het volledige profiel op. Valt terug op defaults als HealthKit data niet beschikbaar is.
-    func fetchProfile() async -> UserPhysicalProfile {
-        async let weight = fetchLatestQuantity(identifier: .bodyMass, unit: .gramUnit(with: .kilo))
-        async let height = fetchLatestQuantity(identifier: .height,   unit: .meterUnit(with: .centi))
-        let (weightResult, heightResult) = await (weight, height)
+    // MARK: - Profiel ophalen
 
-        let ageYears  = fetchAge()    ?? Self.defaultAgeYears
-        let sex       = fetchSex()    ?? Self.defaultSex
-        let weightKg  = weightResult  ?? Self.defaultWeightKg
-        let heightCm  = heightResult  ?? Self.defaultHeightCm
+    /// Haalt het volledige profiel op via de 3-tier resolutie-hiërarchie.
+    func fetchProfile() async -> UserPhysicalProfile {
+        async let hkWeight = fetchLatestQuantity(identifier: .bodyMass, unit: .gramUnit(with: .kilo))
+        async let hkHeight = fetchLatestQuantity(identifier: .height,   unit: .meterUnit(with: .centi))
+        let (hkWeightResult, hkHeightResult) = await (hkWeight, hkHeight)
+
+        let ageYears = fetchAge() ?? Self.defaultAgeYears
+        let sex      = fetchSex() ?? Self.defaultSex
+
+        // Gewicht: HealthKit → UserDefaults → Default
+        let (weightKg, weightSource): (Double, UserPhysicalProfile.DataSource)
+        if let hk = hkWeightResult {
+            (weightKg, weightSource) = (hk, .healthKit)
+        } else if let local = UserDefaults.standard.object(forKey: Self.weightKey) as? Double, local > 0 {
+            (weightKg, weightSource) = (local, .local)
+        } else {
+            (weightKg, weightSource) = (Self.defaultWeightKg, .defaultValue)
+        }
+
+        // Lengte: HealthKit → UserDefaults → Default
+        let (heightCm, heightSource): (Double, UserPhysicalProfile.DataSource)
+        if let hk = hkHeightResult {
+            (heightCm, heightSource) = (hk, .healthKit)
+        } else if let local = UserDefaults.standard.object(forKey: Self.heightKey) as? Double, local > 0 {
+            (heightCm, heightSource) = (local, .local)
+        } else {
+            (heightCm, heightSource) = (Self.defaultHeightCm, .defaultValue)
+        }
 
         return UserPhysicalProfile(
-            weightKg:  weightKg,
-            heightCm:  heightCm,
-            ageYears:  ageYears,
-            sex:       sex
+            weightKg:      weightKg,
+            heightCm:      heightCm,
+            ageYears:      ageYears,
+            sex:           sex,
+            weightSource:  weightSource,
+            heightSource:  heightSource
         )
+    }
+
+    // MARK: - Two-Way Sync: opslaan
+
+    /// Slaat een nieuw gewicht op in UserDefaults én HealthKit.
+    /// UserDefaults wordt direct bijgewerkt; HealthKit is async maar ook de 'bron van waarheid'.
+    func saveWeight(kg: Double) async throws {
+        guard kg > 0 else { return }
+        UserDefaults.standard.set(kg, forKey: Self.weightKey)
+        try await saveQuantity(value: kg, identifier: .bodyMass, unit: .gramUnit(with: .kilo))
+    }
+
+    /// Slaat een nieuwe lengte op in UserDefaults én HealthKit.
+    func saveHeight(cm: Double) async throws {
+        guard cm > 0 else { return }
+        UserDefaults.standard.set(cm, forKey: Self.heightKey)
+        try await saveQuantity(value: cm, identifier: .height, unit: .meterUnit(with: .centi))
     }
 
     // MARK: - Private helpers
@@ -107,6 +163,23 @@ final class UserProfileService: @unchecked Sendable {
                 continuation.resume(returning: sample.quantity.doubleValue(for: unit))
             }
             healthStore.execute(query)
+        }
+    }
+
+    /// Schrijft een kwantitatieve meting als nieuw HKQuantitySample naar HealthKit.
+    private func saveQuantity(value: Double, identifier: HKQuantityTypeIdentifier, unit: HKUnit) async throws {
+        guard let type = HKQuantityType.quantityType(forIdentifier: identifier) else { return }
+        let quantity = HKQuantity(unit: unit, doubleValue: value)
+        let sample   = HKQuantitySample(type: type, quantity: quantity, start: Date(), end: Date())
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            healthStore.save(sample) { success, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume()
+                }
+            }
         }
     }
 }
