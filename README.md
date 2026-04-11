@@ -5,7 +5,7 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Actief in Ontwikkeling — Epic 23 (Blueprint Analysis & Future Projections) gestart**
+**Actief in Ontwikkeling — Epic 24 (Nutrition & Fueling Engine) afgerond | Epic 25 (Route Intelligence) gepland**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 54% code coverage.
 
@@ -160,13 +160,13 @@ De app maakt de lange-termijn voorbereiding inzichtelijk — niet alleen wat je 
 
 ---
 
-### 🔄 Epic 24: Nutrition & Fueling Engine (Actief)
+### ✅ Epic 24: Nutrition & Fueling Engine (Afgerond)
 
 Fysiologisch correcte voedingsadviezen op basis van wie je bent en wat je van plan bent te doen.
 
 * **✅ Sprint 24.1 — Fysiologisch Profiel (Baseline):** `UserProfileService` haalt gewicht, lengte, leeftijd en geslacht op via HealthKit met graceful fallbacks (HealthKit → UserDefaults → generieke standaardwaarden). `NutritionService` berekent het BMR (Mifflin-St Jeor) en de koolhydraten/vocht-behoefte per trainingszone (Zone 2: 0.5 g/min + 500 ml/uur; Zone 4: 1.0 g/min + 800 ml/uur). `[VOEDING & FYSIOLOGIE]` blok geïnjecteerd in elke AI-prompt met concrete gram/ml-adviezen per geplande workout.
 * **✅ Sprint 24.2 — Two-Way Sync (Instellingen UI):** HealthKit-schrijfrechten toegevoegd voor `bodyMass` en `height`. `PhysicalProfileSection` in de Instellingen-tab toont leeftijd/geslacht als read-only (HealthKit, vergrendeld) en gewicht/lengte als bewerkbare velden. Wijzigingen worden gesynchroniseerd naar zowel UserDefaults (instant) als HealthKit (async). Bronbadge toont per waarde de herkomst: ❤️ HealthKit / 📱 Lokaal / ⚠️ Standaard.
-* **⏳ Sprint 24.3 — Pre/During/Post Timing:** Coach geeft timing-adviezen op basis van workout-type (koolhydraten laden 2u voor lange rit; herstelshake binnen 30 min na intervaltraining).
+* **✅ Sprint 24.3 — Voedings UI & Coach-Integratie:** `WorkoutStatsRow` toont fueling-chips (⏱/⚡/💧/🍌) op elke `WorkoutCardView`. `WorkoutFuelingSectionView` in het detailscherm geeft totalen + per-15-min timing-advies (voor/tijdens/na). Anti-double-day regel toegevoegd aan de coach-prompt met conflictresolutie-prioriteiten.
 
 ---
 
@@ -174,9 +174,8 @@ Fysiologisch correcte voedingsadviezen op basis van wie je bent en wat je van pl
 
 | Epic | Beschrijving |
 |------|--------------|
-| **Epic 22 — Live Workout & Real-Time Coaching** | Dedicated workout-scherm met live hartslag en zone-indicator, Audio Cues via `AVSpeechSynthesizer`, directe post-workout AI-analyse. *(Uitgesteld ten gunste van Epic 23)* |
-| **Epic 24 — Nutrition & Fueling Engine** | Fysiologisch profiel via HealthKit (gewicht, leeftijd, geslacht, lengte). BMR-berekening (Mifflin-St Jeor). Koolhydraten + vocht per minuut per trainingszone. Coach geeft concrete bijvoedings- en hydratatie-adviezen op basis van geplande workout. |
-| **Epic 25 — Route Intelligence** | Hoogteprofiel-analyse van geplande Strava-routes. Automatische TRIMP-correctie voor klimmetjes. Coach geeft zone-advies op basis van stijgingspercentage. |
+| **Epic 22 — Live Workout & Real-Time Coaching** | Dedicated workout-scherm met live hartslag en zone-indicator, Audio Cues via `AVSpeechSynthesizer`, directe post-workout AI-analyse. *(Uitgesteld ten gunste van Epic 23/24)* |
+| **Epic 25 — Route Intelligence** | MapKit-integratie: interactieve routekaart met hoogteprofiel-visualisatie. Automatische TRIMP-correctie voor klimmetjes. Coach geeft zone-advies per segment op basis van stijgingspercentage. Import van Strava GPX-routes direct in de app. |
 
 ---
 
