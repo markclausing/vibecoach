@@ -10,8 +10,6 @@ struct ContentView: View {
     // voor pull-to-refresh en de ChatView als overlay.
     @StateObject private var sharedChatViewModel = ChatViewModel()
 
-    // Epic 21: WeatherManager voor weersverwachting-injectie in de AI-prompt
-    @StateObject private var weatherManager = WeatherManager.shared
 
     // Auto-Sync Dependencies (Sprint 12.3)
     @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
@@ -1803,12 +1801,12 @@ struct DashboardView: View {
                     trimp: lastRatedActivity?.trimp,
                     startDate: lastRatedActivity?.startDate
                 )
-                // Epic 21: Vraag weerdata op (vraagt locatie-toestemming als dat nog niet is gedaan).
-                // De callback schrijft de context direct naar viewModel.weatherContext.
-                weatherManager.onWeatherUpdated = { context in
+                // Epic 21: Vraag weerdata op via de singleton (vraagt locatie-toestemming als dat nog niet is gedaan).
+                // WeatherManager.shared is een singleton — geen property-doorgave nodig vanuit ContentView.
+                WeatherManager.shared.onWeatherUpdated = { context in
                     viewModel.weatherContext = context
                 }
-                weatherManager.requestWeatherIfNeeded()
+                WeatherManager.shared.requestWeatherIfNeeded()
             }
         }
     }
