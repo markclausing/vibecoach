@@ -762,6 +762,72 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
+    /// Epic 21 Sprint 2: Haalt de slaapfases op van de afgelopen nacht.
+    /// Retourneert nil als HealthKit niet beschikbaar is of als er geen stage-specifieke data is
+    /// (bijv. ouder Apple Watch-model dat alleen de generieke `.asleep` waarde registreert).
+    func fetchSleepStages() async throws -> SleepStages? {
+        guard let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) else {
+            print("❌ [Slaapfases] HKCategoryType niet beschikbaar")
+            return nil
+        }
+
+        let now = Date()
+        let windowStart = Calendar.current.date(byAdding: .hour, value: -16, to: now)!
+        let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: now, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+
+        print("🔍 [Slaapfases] Query gestart — venster: afgelopen 16 uur")
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
+                if let error = error {
+                    print("❌ [Slaapfases] HealthKit fout: \(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                guard let sleepSamples = samples as? [HKCategorySample], !sleepSamples.isEmpty else {
+                    print("⚠️ [Slaapfases] Geen samples gevonden")
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                // Bereken seconden per fasesoort
+                let deepSec = sleepSamples
+                    .filter { $0.value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue }
+                    .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                let remSec = sleepSamples
+                    .filter { $0.value == HKCategoryValueSleepAnalysis.asleepREM.rawValue }
+                    .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                let coreSec = sleepSamples
+                    .filter { $0.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue }
+                    .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+
+                // Als alle stage-specifieke waarden nul zijn is dit een ouder apparaat
+                // dat alleen de generieke `.asleep` waarde schrijft — geen zinvolle ratio.
+                guard deepSec + remSec + coreSec > 0 else {
+                    print("⚠️ [Slaapfases] Geen stage-specifieke data — ouder device")
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                // Totaal = som van de drie fases (generieke `.asleep` telt NIET mee voor de ratio,
+                // want die wordt gebruikt als strafpunt-drempel voor diepe slaap).
+                let totalSec = deepSec + remSec + coreSec
+                let stages = SleepStages(
+                    deepMinutes:  Int(deepSec  / 60),
+                    remMinutes:   Int(remSec   / 60),
+                    coreMinutes:  Int(coreSec  / 60),
+                    totalMinutes: Int(totalSec / 60)
+                )
+
+                print("🌙 [Slaapfases] Diep: \(stages.deepMinutes)m · REM: \(stages.remMinutes)m · Kern: \(stages.coreMinutes)m · Ratio diep: \(String(format: "%.0f%%", stages.deepRatio * 100))")
+                continuation.resume(returning: stages)
+            }
+            healthStore.execute(query)
+        }
+    }
+
     /// Hulpfunctie om de meest recente rusthartslag op te halen.
     private func fetchLatestRestingHeartRate(quantityType: HKQuantityType) async throws -> Double {
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
@@ -803,6 +869,48 @@ final class HealthKitManager: @unchecked Sendable {
 /// - Gelijk aan of hoger dan 7-daagse baseline → 100 punten
 /// - Meer dan 20% onder de baseline → 0 punten (rode vlag: overtraining / ziekte)
 /// - Lineair daartussen
+// MARK: - SleepStages
+
+/// Epic 21 Sprint 2: Gedetailleerde uitsplitsing van slaapfases van de afgelopen nacht.
+/// Bevat alleen stage-specifieke data (iOS 16+ Apple Watch). Nil = ouder device of Watch niet gedragen.
+struct SleepStages {
+    let deepMinutes:  Int
+    let remMinutes:   Int
+    let coreMinutes:  Int
+    let totalMinutes: Int
+
+    /// Verhouding diepe slaap t.o.v. totale slaaptijd (0.0–1.0).
+    var deepRatio: Double {
+        totalMinutes > 0 ? Double(deepMinutes) / Double(totalMinutes) : 0
+    }
+
+    /// Kwaliteitslabel op basis van de diepeslaap-ratio.
+    /// Wetenschap: gezonde volwassen heeft ~15–25% diepe slaap.
+    var qualityLabel: String {
+        if deepRatio >= 0.20 { return "Uitstekend" }
+        if deepRatio >= 0.15 { return "Goed" }
+        if deepRatio >= 0.10 { return "Matig" }
+        return "Onvoldoende"
+    }
+
+    /// SF Symbol passend bij de slaapkwaliteit.
+    var qualityIcon: String {
+        if deepRatio >= 0.15 { return "moon.stars.fill" }
+        if deepRatio >= 0.10 { return "moon.fill" }
+        return "moon.zzz.fill"
+    }
+
+    /// Helperformatter: X u Y m string.
+    static func formatMinutes(_ minutes: Int) -> String {
+        if minutes < 60 { return "\(minutes)m" }
+        let h = minutes / 60
+        let m = minutes % 60
+        return m > 0 ? "\(h)u \(m)m" : "\(h)u"
+    }
+}
+
+// MARK: - ReadinessCalculator
+
 struct ReadinessCalculator {
 
     /// Bereken de Vibe Score.
@@ -810,8 +918,12 @@ struct ReadinessCalculator {
     ///   - sleepHours: Daadwerkelijke slaaptijd afgelopen nacht in uren.
     ///   - hrv: Gemiddelde HRV van afgelopen nacht in ms.
     ///   - hrvBaseline: Gemiddelde HRV van de afgelopen 7 dagen (persoonlijke baseline) in ms.
+    ///   - deepSleepRatio: Optioneel — verhouding diepe slaap t.o.v. totaal (0.0–1.0).
+    ///     Nil = ouder device of geen stage-data → geen strafpunt toegepast.
+    ///     < 0.10 → -15 punten | 0.10–0.15 → -8 punten | ≥ 0.15 → geen straf.
     /// - Returns: Score van 0 t/m 100.
-    static func calculate(sleepHours: Double, hrv: Double, hrvBaseline: Double) -> Int {
+    static func calculate(sleepHours: Double, hrv: Double, hrvBaseline: Double,
+                          deepSleepRatio: Double? = nil) -> Int {
         // Slaapscore: lineair van 5 uur (0 punten) tot 8 uur (100 punten)
         let sleepScore = min(1.0, max(0.0, (sleepHours - 5.0) / 3.0)) * 100.0
 
@@ -827,8 +939,19 @@ struct ReadinessCalculator {
             hrvScore = ((hrv - hrvLowerBound) / (hrvBaseline - hrvLowerBound)) * 100.0
         }
 
-        let finalScore = (sleepScore + hrvScore) / 2.0
-        return Int(finalScore.rounded())
+        var finalScore = (sleepScore + hrvScore) / 2.0
+
+        // Strafpunt bij onvoldoende diepe slaap — herstel is minder effectief ondanks voldoende uren.
+        // Alleen toegepast als er stage-specifieke data beschikbaar is.
+        if let ratio = deepSleepRatio {
+            if ratio < 0.10 {
+                finalScore -= 15.0
+            } else if ratio < 0.15 {
+                finalScore -= 8.0
+            }
+        }
+
+        return Int(min(100, max(0, finalScore)).rounded())
     }
 }
 

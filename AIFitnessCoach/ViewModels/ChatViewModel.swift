@@ -131,7 +131,26 @@ class ChatViewModel: ObservableObject {
         let sleepH = Int(r.sleepHours)
         let sleepM = Int((r.sleepHours - Double(sleepH)) * 60)
 
-        todayVibeScoreContext = "Vibe Score vandaag: \(r.readinessScore)/100 (\(label)). Slaap: \(sleepH)u \(sleepM)m. HRV: \(String(format: "%.1f", r.hrv)) ms."
+        // Epic 21 Sprint 2: voeg slaapfase-kwaliteit toe als stage-data beschikbaar is
+        var sleepQualityNote = ""
+        let totalStageMins = r.deepSleepMinutes + r.remSleepMinutes + r.coreSleepMinutes
+        if totalStageMins > 0 {
+            let deepRatio = Double(r.deepSleepMinutes) / Double(totalStageMins)
+            let qualLabel: String = {
+                if deepRatio >= 0.20 { return "Uitstekend" }
+                if deepRatio >= 0.15 { return "Goed" }
+                if deepRatio >= 0.10 { return "Matig" }
+                return "Onvoldoende"
+            }()
+            sleepQualityNote = " Slaapfases: diep \(r.deepSleepMinutes)m · REM \(r.remSleepMinutes)m · kern \(r.coreSleepMinutes)m (kwaliteit: \(qualLabel), \(String(format: "%.0f%%", deepRatio * 100)) diepe slaap)."
+
+            // Geef de coach een expliciete instructie bij slechte diepe slaap
+            if deepRatio < 0.15 {
+                sleepQualityNote += " INSTRUCTIE: Benoem de slaapkwaliteit expliciet in je Insight ('Je hebt \(sleepH)u \(sleepM)m geslapen maar de diepe slaap was maar \(String(format: "%.0f%%", deepRatio * 100)) — herstel is daardoor minder effectief'). Houd de intensiteit dienovereenkomstig lager."
+            }
+        }
+
+        todayVibeScoreContext = "Vibe Score vandaag: \(r.readinessScore)/100 (\(label)). Slaap: \(sleepH)u \(sleepM)m. HRV: \(String(format: "%.1f", r.hrv)) ms.\(sleepQualityNote)"
     }
 
     /// Epic 20: Retourneert de actieve API-sleutel.
