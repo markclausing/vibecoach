@@ -127,35 +127,36 @@ struct BlueprintTimelineView: View {
             points.append(TimelinePoint(weekStart: weekStart, volume: actualVolume, series: .actual))
         }
 
-        // MARK: 3. Prognose Lijn — extrapolatie vanuit FutureProjectionService
-        // Start bij vandaag (week) en groeit met effectiveGrowthRate tot plannedPeakDate
+        // MARK: 3. Prognose Lijn — extrapolatie vanuit FutureProjectionService (bottleneck-bewust)
+        // TRIMP-modus: gebruik effectiveGrowthRate op currentWeeklyTRIMP
+        // KM-modus:    gebruik effectiveKmGrowthRate op currentWeeklyKm (sport-gefilterd)
+        // Dit voorkomt dat fietsen-TRIMP een hardloop-km-achterstand maskeert in de grafiek.
         if let proj = projection, proj.status != .alreadyPeaking {
             let todayWeekStart = calendar.startOfWeek(for: now)
             let futureWeeks    = weekStarts.filter { $0 >= todayWeekStart && $0 <= endDate }
-            var projectedVolume = proj.currentWeeklyTRIMP
+
+            // Startvolume en groeisnelheid hangen af van de geselecteerde metriek
+            var projectedVolume: Double
+            let growthRate: Double
+            let peakStopDate: Date?
+
+            switch metric {
+            case .trimp:
+                projectedVolume = proj.currentWeeklyTRIMP
+                growthRate      = proj.effectiveGrowthRate
+                peakStopDate    = proj.projectedPeakDateTRIMP ?? proj.projectedPeakDate
+            case .km:
+                projectedVolume = proj.currentWeeklyKm
+                growthRate      = proj.effectiveKmGrowthRate
+                peakStopDate    = proj.projectedPeakDateKm ?? proj.projectedPeakDate
+            }
 
             for (index, weekStart) in futureWeeks.enumerated() {
-                // Groei per week toepassen (begrensd op het effectiveGrowthRate-plafond)
                 if index > 0 {
-                    projectedVolume *= (1.0 + proj.effectiveGrowthRate)
+                    projectedVolume *= (1.0 + growthRate)
                 }
-
-                // Voor km-modus: schaal de prognose met de km/TRIMP-verhouding van de blueprint
-                let displayVolume: Double
-                switch metric {
-                case .trimp:
-                    displayVolume = projectedVolume
-                case .km:
-                    // Benader km-prognose via TRIMP→km-ratio uit de blauwdruk (geen aparte km-groeitrend)
-                    let trimpTarget = max(1, blueprint.weeklyTrimpTarget)
-                    let kmTarget    = blueprint.weeklyKmTarget
-                    displayVolume   = projectedVolume * (kmTarget / trimpTarget)
-                }
-
-                points.append(TimelinePoint(weekStart: weekStart, volume: displayVolume, series: .projection))
-
-                // Stop als we voorbij de verwachte piekdatum zijn
-                if let projPeak = proj.projectedPeakDate, weekStart > projPeak { break }
+                points.append(TimelinePoint(weekStart: weekStart, volume: projectedVolume, series: .projection))
+                if let stop = peakStopDate, weekStart > stop { break }
             }
         }
 

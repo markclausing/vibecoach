@@ -371,47 +371,72 @@ struct GoalDetailContainer: View {
         Divider().padding(.horizontal)
     }
 
-    /// Compacte samenvatting van de projectiestatus (datum + label).
+    /// Compacte samenvatting van de projectiestatus — toont ook de bottleneck-metric.
     private func projectionSummaryBadge(_ proj: GoalProjection) -> some View {
         let df = DateFormatter()
         df.dateFormat = "d MMM yyyy"
         df.locale = Locale(identifier: "nl_NL")
 
-        let plannedStr   = df.string(from: proj.plannedPeakDate)
-        let color        = statusColor(proj.status)
-        let statusLabel  = proj.status.label
+        let plannedStr  = df.string(from: proj.plannedPeakDate)
+        let color       = statusColor(proj.status)
 
-        return HStack(spacing: 10) {
-            Image(systemName: proj.status.icon)
-                .font(.title3)
-                .foregroundStyle(color)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(statusLabel)
-                    .font(.caption.weight(.semibold))
+        return VStack(alignment: .leading, spacing: 6) {
+            // Statusrij
+            HStack(spacing: 10) {
+                Image(systemName: proj.status.icon)
+                    .font(.title3)
                     .foregroundStyle(color)
-                HStack(spacing: 4) {
-                    Text("Gepland:")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    Text(plannedStr)
-                        .font(.caption2.weight(.medium))
 
-                    if let projDate = proj.projectedPeakDate {
-                        Text("· Verwacht:")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(proj.status.label)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(color)
+                    HStack(spacing: 4) {
+                        Text("Gepland:")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                        Text(df.string(from: projDate))
+                        Text(plannedStr)
                             .font(.caption2.weight(.medium))
-                            .foregroundStyle(color)
+
+                        if let projDate = proj.projectedPeakDate {
+                            Text("· Verwacht:")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text(df.string(from: projDate))
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(color)
+                        }
                     }
                 }
+                Spacer()
             }
-            Spacer()
+
+            // Bottleneck-label (alleen tonen als er een achterstand is)
+            if proj.bottleneck == .km || proj.bottleneck == .both {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.orange)
+                    Text(bottleneckLabel(proj))
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                }
+            }
         }
         .padding(10)
         .background(color.opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func bottleneckLabel(_ proj: GoalProjection) -> String {
+        let kmStr = String(format: "%.1f", proj.currentWeeklyKm)
+        let reqStr = String(format: "%.1f", proj.requiredPeakKm)
+        let sportLabel: String
+        switch proj.blueprintType {
+        case .marathon, .halfMarathon: sportLabel = "hardloop-km"
+        case .cyclingTour:             sportLabel = "fiets-km"
+        }
+        return "Bottleneck: \(sportLabel) \(kmStr)/\(reqStr) km/week — TRIMP van andere sporten telt hier niet mee."
     }
 
     private func statusColor(_ status: ProjectionStatus) -> Color {

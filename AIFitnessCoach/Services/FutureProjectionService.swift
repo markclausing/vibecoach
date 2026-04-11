@@ -1,10 +1,35 @@
 import Foundation
 
-// MARK: - Epic 23 Sprint 2: Future Projection Engine
+// MARK: - Epic 23 Sprint 2 (Fix): Future Projection Engine — Bottleneck-gebaseerde projectie
+
+// ──────────────────────────────────────────────────────────────────────────────
+// BUGFIX RATIONALE
+// ──────────────────────────────────────────────────────────────────────────────
+// Origineel probleem: het algoritme berekende de projectiedatum puur op basis van
+// TRIMP (alle activiteiten), zonder onderscheid tussen sport-types. Een marathonloper
+// met een blessure die tijdelijk fietst, accumuleerde fietsen-TRIMP waardoor de
+// marathon-projectie optimistisch werd — terwijl de hardloop-km nog ver achterliep.
+//
+// De fix bestaat uit drie lagen:
+//   1. SPORT-ISOLATIE: km-trend wordt uitsluitend berekend op activiteiten van
+//      het doelsport-type (hardlopen → .running, fietsen → .cycling).
+//   2. BOTTLENECK-REGEL: projectedPeakDate = max(TRIMP-datum, km-datum).
+//      De langzaamst groeiende of verst achterlopende metric bepaalt de datum.
+//   3. VEILIGHEIDSCHECK: als de cumulatieve km-achterstand > 5% van de target
+//      is, kan de projectie nooit vroeger vallen dan de plannedPeakDate.
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// Welke metric de projectiedatum bepaalt (voor UI-toelichting en coach-context).
+enum BottleneckMetric {
+    case trimp       // TRIMP is de beperkende factor (km loopt voor)
+    case km          // Km is de bottleneck (sport-specifiek volume loopt achter)
+    case both        // Beide unreachable of beide gelijk
+    case alreadyMet  // Atleet voldoet al aan beide eisen
+}
 
 /// Projectiestatus — of de atleet de Peak Phase haalt vóór zijn racedag.
 enum ProjectionStatus {
-    /// Het huidige wekelijkse TRIMP voldoet al aan de Peak Phase-eis.
+    /// Het huidige wekelijkse TRIMP én km voldoen al aan de Peak Phase-eis.
     case alreadyPeaking
     /// Prognose: de atleet haalt de Peak Phase vóór de geplande peakdatum.
     case onTrack
@@ -15,7 +40,6 @@ enum ProjectionStatus {
     /// vóór de racedag, of het huidige volume is nul/negatief.
     case unreachable
 
-    /// Icoon voor de UI.
     var icon: String {
         switch self {
         case .alreadyPeaking: return "checkmark.seal.fill"
@@ -25,7 +49,6 @@ enum ProjectionStatus {
         }
     }
 
-    /// Kleur voor de UI-badge.
     var color: String {
         switch self {
         case .alreadyPeaking, .onTrack: return "green"
@@ -34,7 +57,6 @@ enum ProjectionStatus {
         }
     }
 
-    /// Korte beschrijving voor in de UI.
     var label: String {
         switch self {
         case .alreadyPeaking: return "Peak Phase bereikt"
@@ -45,45 +67,45 @@ enum ProjectionStatus {
     }
 }
 
-/// De volledige toekomstprognose voor één doel.
-///
-/// Beantwoordt de vraag: "Wanneer bereikt de atleet de Peak Phase
-/// op basis van zijn huidige groeitempo?"
+/// De volledige toekomstprognose voor één doel — bottleneck-gebaseerd.
 struct GoalProjection {
     let goal: FitnessGoal
     let blueprintType: GoalBlueprintType
 
-    // MARK: - Huidig volume (gemiddelde laatste 2 weken)
+    // MARK: - TRIMP metrics (alle activiteiten — sport-onafhankelijk)
 
-    /// Gemiddeld wekelijks TRIMP over de afgelopen 2 weken (referentiepunt voor projectie).
     let currentWeeklyTRIMP: Double
-
-    /// Gemiddelde procentuele TRIMP-groei per week over de afgelopen 3 weken.
-    /// Kan negatief zijn bij dalend volume.
     let observedGrowthRate: Double
-
-    /// De daadwerkelijk toegepaste groeisnelheid (begrensd op 10% per week als veiligheidsgrens).
     let effectiveGrowthRate: Double
-
-    // MARK: - Peak Phase vereiste
-
-    /// Benodigde wekelijkse TRIMP voor de Peak Phase (blueprint × 1.30).
     let requiredPeakTRIMP: Double
 
-    /// Gepland begin van de Peak Phase — 4 weken vóór de racedag.
+    // MARK: - KM metrics (STRIKT sport-gefilterd)
+    // Marathon/halve marathon → alleen .running activiteiten
+    // Fietstocht             → alleen .cycling activiteiten
+
+    let currentWeeklyKm: Double
+    let kmObservedGrowthRate: Double
+    let effectiveKmGrowthRate: Double
+    let requiredPeakKm: Double
+
+    // MARK: - Projectieresultaten per metric
+
+    /// Datum waarop TRIMP de piekeis bereikt (nil als al voldaan of onbereikbaar).
+    let projectedPeakDateTRIMP: Date?
+
+    /// Datum waarop km de piekeis bereikt (nil als al voldaan of onbereikbaar).
+    let projectedPeakDateKm: Date?
+
+    // MARK: - Bottleneck: de bepaler van de finale projectiedatum
+
+    /// De metric die de einddatum bepaalt.
+    let bottleneck: BottleneckMetric
+
+    // MARK: - Finale projectieresultaten (UI + coach)
+
     let plannedPeakDate: Date
-
-    // MARK: - Projectieresultaat
-
-    /// Berekende datum waarop het huidige groeitempo de Peak Phase-eis bereikt.
-    /// Nil bij `alreadyPeaking` of wanneer groei nul/negatief is en status `unreachable`.
     let projectedPeakDate: Date?
-
-    /// Aantal weken dat de projectie afwijkt van het plan.
-    /// Positief = te laat (achter), negatief = eerder dan gepland (voorsprong).
     let weeksDelta: Double
-
-    /// De definitieve projectiestatus.
     let status: ProjectionStatus
 
     // MARK: - Coach context
@@ -93,39 +115,63 @@ struct GoalProjection {
         df.dateFormat = "d MMM"
         df.locale = Locale(identifier: "nl_NL")
 
-        let plannedStr    = df.string(from: plannedPeakDate)
-        let targetStr     = df.string(from: goal.targetDate)
-        let currentInt    = Int(currentWeeklyTRIMP.rounded())
-        let requiredInt   = Int(requiredPeakTRIMP.rounded())
-        let growthPct     = Int((observedGrowthRate * 100).rounded())
+        let plannedStr   = df.string(from: plannedPeakDate)
+        let targetStr    = df.string(from: goal.targetDate)
+        let trimpInt     = Int(currentWeeklyTRIMP.rounded())
+        let kmStr        = String(format: "%.1f", currentWeeklyKm)
+        let reqTRIMPInt  = Int(requiredPeakTRIMP.rounded())
+        let reqKmStr     = String(format: "%.1f", requiredPeakKm)
+        let growthPct    = Int((observedGrowthRate * 100).rounded())
+        let kmGrowthPct  = Int((kmObservedGrowthRate * 100).rounded())
 
         var lines: [String] = [
             "Doel: '\(goal.title)' — racedag \(targetStr)",
-            "Huidig wekelijks volume: ~\(currentInt) TRIMP/week | Peak Phase-eis: ~\(requiredInt) TRIMP/week",
-            "Gemeten groeitempo: \(growthPct)% per week (max toegestaan: 10%)"
+            "Huidig wekelijks TRIMP: ~\(trimpInt) (piek-eis: ~\(reqTRIMPInt)) | "
+                + "Huidig wekelijks \(kmLabel): ~\(kmStr) km (piek-eis: ~\(reqKmStr) km)",
+            "TRIMP-groei: \(growthPct)%/week | \(kmLabel)-groei: \(kmGrowthPct)%/week (max 10%)",
         ]
+
+        switch bottleneck {
+        case .km:
+            lines.append("⚠️ BOTTLENECK: Het sport-specifieke kilometers-volume (\(kmLabel)) is de beperkende factor. "
+                + "Hoge TRIMP van andere sporten (bijv. fietsen bij een hardloopblessure) telt NIET mee voor deze projectie.")
+        case .trimp:
+            lines.append("ℹ️ TRIMP is de beperkende factor. Het \(kmLabel)-volume ligt al op schema.")
+        case .both:
+            lines.append("⚠️ BEIDE metrics (TRIMP én \(kmLabel)) lopen achter op schema.")
+        case .alreadyMet:
+            break
+        }
 
         switch status {
         case .alreadyPeaking:
-            lines.append("✅ PROGNOSE: Atleet bevindt zich al op Peak Phase-belasting. Geen extra opbouw nodig — vasthouden en straks taperen.")
+            lines.append("✅ PROGNOSE: Atleet bevindt zich al op Peak Phase-belasting voor beide metrics. Vasthouden en taperen.")
 
         case .onTrack:
             let projStr = projectedPeakDate.map { df.string(from: $0) } ?? "—"
             let delta   = Int(abs(weeksDelta).rounded())
-            lines.append("🟢 PROGNOSE: Peak Phase wordt bereikt ~\(projStr) — \(delta) week(en) vóór het geplande piekmoment (\(plannedStr)). Atleet ligt voor op schema.")
+            lines.append("🟢 PROGNOSE: Peak Phase bereikt ~\(projStr) — \(delta) week(en) vóór \(plannedStr). Op schema.")
 
         case .atRisk:
             let projStr = projectedPeakDate.map { df.string(from: $0) } ?? "—"
             let delta   = Int(abs(weeksDelta).rounded())
-            lines.append("🟠 PROGNOSE: Peak Phase bereikt pas ~\(projStr) — \(delta) week(en) ná het geplande piekmoment (\(plannedStr)). De voorbereiding loopt achter. Coach MOET het weekvolume verhogen om dit in te halen.")
-            lines.append("Instructie: Verhoog het wekelijkse trainingsvolume de komende weken geleidelijk met maximaal 10% per week om de prognose te verbeteren. Geef een concreet voorbeeld van hoe de gebruiker één training kan verlengen.")
+            lines.append("🟠 PROGNOSE: Peak Phase pas ~\(projStr) — \(delta) week(en) ná \(plannedStr). "
+                + "Coach MOET het volume verhogen. Instructie: geef concreet voorbeeld hoe één training verlengd kan worden.")
 
         case .unreachable:
-            lines.append("🔴 PROGNOSE: Wiskundig onhaalbaar om de Peak Phase te bereiken vóór de racedag \(targetStr) met de huidige groeisnelheid van \(growthPct)%. Zelfs met het maximaal toegestane groeiplafond van 10%/week is de Peak Phase niet haalbaar zonder overtraining.")
-            lines.append("KRITIEKE INSTRUCTIE: Bespreek dit open met de atleet. Opties: (1) de doeldatum uitstellen, (2) het doeltype aanpassen (bijv. marathonambities naar halve marathon), (3) de resterende tijd maximaal benutten en de race als 'trainingsrace' beschouwen.")
+            lines.append("🔴 PROGNOSE: Wiskundig onhaalbaar vóór racedag \(targetStr). "
+                + "KRITIEKE INSTRUCTIE: Bespreek met de atleet: (1) doeldatum uitstellen, "
+                + "(2) doeltype aanpassen of (3) race als trainingsrace beschouwen.")
         }
 
         return lines.joined(separator: "\n")
+    }
+
+    private var kmLabel: String {
+        switch blueprintType {
+        case .marathon, .halfMarathon: return "hardloop-km"
+        case .cyclingTour:             return "fiets-km"
+        }
     }
 }
 
@@ -133,15 +179,18 @@ struct GoalProjection {
 
 struct FutureProjectionService {
 
-    /// Maximaal toegestane wekelijkse TRIMP-groei (sportwetenschappelijke 10%-regel).
+    /// Maximaal toegestane wekelijkse groei (sportwetenschappelijke 10%-regel).
     static let maxWeeklyGrowthRate: Double = 0.10
 
-    /// Aantal weken vóór de racedag dat de Peak Phase idealiter begint.
+    /// Weken vóór racedag dat Peak Phase idealiter begint.
     static let peakPhaseStartWeeksBefore: Int = 4
+
+    /// Km-achterstand t.o.v. target waarbij de veiligheidscap actief wordt.
+    /// 5% onder de piek-eis = projectie nooit eerder dan plannedPeakDate.
+    static let kmSafetyThreshold: Double = 0.95
 
     // MARK: - Publieke API
 
-    /// Berekent de toekomstprognose voor alle actieve doelen met een blueprint.
     static func calculateProjections(
         for goals: [FitnessGoal],
         activities: [ActivityRecord]
@@ -151,7 +200,7 @@ struct FutureProjectionService {
             .compactMap { calculateProjection(for: $0, activities: activities) }
     }
 
-    // MARK: - Interne berekening
+    // MARK: - Kernalgoritme
 
     static func calculateProjection(
         for goal: FitnessGoal,
@@ -162,131 +211,176 @@ struct FutureProjectionService {
         let calendar  = Calendar.current
         let now       = Date()
 
-        // STAP 1: Wekelijkse TRIMP berekenen over de afgelopen 4 weken (sliding windows).
-        // Week 0 = afgelopen 7 dagen (meest recent), week 3 = 21–28 dagen geleden.
-        let weeklyTRIMP = (0..<4).map { weekIndex -> Double in
-            let end   = calendar.date(byAdding: .day, value: -(weekIndex * 7),     to: now) ?? now
-            let start = calendar.date(byAdding: .day, value: -((weekIndex + 1) * 7), to: now) ?? now
+        // ── Stap 1: Doelsport bepalen (strikt — geen cross-sport compensatie) ──
+        let targetSport: SportCategory
+        switch blueprintType {
+        case .marathon, .halfMarathon: targetSport = .running
+        case .cyclingTour:             targetSport = .cycling
+        }
+
+        // ── Stap 2: Wekelijkse sliding windows (afgelopen 4 weken) ──
+        // week[0] = meest recent (0–7 dagen geleden)
+        // week[3] = oudst (21–28 dagen geleden)
+        let weeklyTRIMP: [Double] = (0..<4).map { i in
+            let end   = calendar.date(byAdding: .day, value: -(i * 7),       to: now) ?? now
+            let start = calendar.date(byAdding: .day, value: -((i + 1) * 7), to: now) ?? now
             return activities
                 .filter { $0.startDate >= start && $0.startDate < end }
                 .compactMap { $0.trimp }
                 .reduce(0, +)
         }
-        // weeklyTRIMP[0] = meest recente week, [3] = oudste week
 
-        // STAP 2: Huidig volume = gemiddelde van de twee meest recente weken.
-        let currentWeeklyTRIMP = (weeklyTRIMP[0] + weeklyTRIMP[1]) / 2.0
-
-        // STAP 3: Groeitempo berekenen op basis van de drie meest recente complete weken.
-        // Gebruik week[1] (1w oud) en week[3] (3w oud) voor een stabielere schatting.
-        // Groei = (recent - oud) / oud / periodelengte
-        let observedGrowthRate: Double
-        let olderTRIMP = (weeklyTRIMP[2] + weeklyTRIMP[3]) / 2.0  // gemiddelde week 2–3 geleden
-        if olderTRIMP > 5 {
-            // Procentuele groei over de 2-weeks periode (van week 2-3 naar week 0-1)
-            let recentAvg = currentWeeklyTRIMP
-            observedGrowthRate = (recentAvg - olderTRIMP) / olderTRIMP / 2.0  // /2 = per week
-        } else {
-            // Onvoldoende historische data — neem 0% groei als conservatieve schatting
-            observedGrowthRate = 0.0
+        // Km: ALLEEN de doelsport — fiets-km tellen niet mee voor een hardloopdoel
+        let weeklyKm: [Double] = (0..<4).map { i in
+            let end   = calendar.date(byAdding: .day, value: -(i * 7),       to: now) ?? now
+            let start = calendar.date(byAdding: .day, value: -((i + 1) * 7), to: now) ?? now
+            let sportActivities = activities.filter {
+                $0.startDate >= start && $0.startDate < end && $0.sportCategory == targetSport
+            }
+            return sportActivities.map { $0.distance / 1000.0 }.reduce(0, +)
         }
 
-        // Begrenzen op het 10%-plafond (sportwetenschappelijke veiligheidsgrens)
-        let effectiveGrowthRate = min(observedGrowthRate, maxWeeklyGrowthRate)
+        // ── Stap 3: Huidig volume (gemiddelde laatste 2 weken) ──
+        let currentWeeklyTRIMP = (weeklyTRIMP[0] + weeklyTRIMP[1]) / 2.0
+        let currentWeeklyKm    = (weeklyKm[0]    + weeklyKm[1])    / 2.0
 
-        // STAP 4: Peak Phase-eis berekenen.
-        // Peak Phase-multiplier = 1.30 (zie TrainingPhase.peakPhase.multiplier)
-        let requiredPeakTRIMP  = blueprint.weeklyTrimpTarget * TrainingPhase.peakPhase.multiplier
-        let plannedPeakDate    = calendar.date(
+        // ── Stap 4: Groeisnelheid per metric ──
+        // Vergelijk gemiddelde week 0–1 met gemiddelde week 2–3, gedeeld door 2 weken.
+        let olderTRIMP = (weeklyTRIMP[2] + weeklyTRIMP[3]) / 2.0
+        let observedTRIMPGrowth: Double = olderTRIMP > 5
+            ? (currentWeeklyTRIMP - olderTRIMP) / olderTRIMP / 2.0
+            : 0.0
+
+        let olderKm = (weeklyKm[2] + weeklyKm[3]) / 2.0
+        let observedKmGrowth: Double = olderKm > 0.5
+            ? (currentWeeklyKm - olderKm) / olderKm / 2.0
+            : 0.0
+
+        let effectiveGrowthRate   = min(observedTRIMPGrowth, maxWeeklyGrowthRate)
+        let effectiveKmGrowthRate = min(observedKmGrowth,    maxWeeklyGrowthRate)
+
+        // ── Stap 5: Piek-eisen (blueprint × Peak Phase multiplier 1.30) ──
+        let requiredPeakTRIMP = blueprint.weeklyTrimpTarget * TrainingPhase.peakPhase.multiplier
+        let requiredPeakKm    = blueprint.weeklyKmTarget    * TrainingPhase.peakPhase.multiplier
+
+        let plannedPeakDate = calendar.date(
             byAdding: .weekOfYear,
             value: -peakPhaseStartWeeksBefore,
             to: goal.targetDate
         ) ?? goal.targetDate
 
-        // STAP 5: Status bepalen.
-        // Geval A: Atleet zit al op of boven de Peak Phase-eis.
-        if currentWeeklyTRIMP >= requiredPeakTRIMP {
+        // ── Stap 6: Projectiedatum per metric ──
+        let projectedPeakDateTRIMP = projectDate(
+            current:       currentWeeklyTRIMP,
+            required:      requiredPeakTRIMP,
+            effectiveRate: effectiveGrowthRate,
+            from:          now,
+            calendar:      calendar
+        )
+
+        let projectedPeakDateKm = projectDate(
+            current:       currentWeeklyKm,
+            required:      requiredPeakKm,
+            effectiveRate: effectiveKmGrowthRate,
+            from:          now,
+            calendar:      calendar
+        )
+
+        // ── Stap 7: Bottleneck — de final datum is de LATEST van de twee ──
+        let trimpAlreadyMet = currentWeeklyTRIMP >= requiredPeakTRIMP
+        let kmAlreadyMet    = currentWeeklyKm    >= requiredPeakKm
+
+        if trimpAlreadyMet && kmAlreadyMet {
             return GoalProjection(
-                goal: goal,
-                blueprintType: blueprintType,
+                goal: goal, blueprintType: blueprintType,
                 currentWeeklyTRIMP: currentWeeklyTRIMP,
-                observedGrowthRate: observedGrowthRate,
-                effectiveGrowthRate: effectiveGrowthRate,
+                observedGrowthRate: observedTRIMPGrowth, effectiveGrowthRate: effectiveGrowthRate,
                 requiredPeakTRIMP: requiredPeakTRIMP,
-                plannedPeakDate: plannedPeakDate,
-                projectedPeakDate: nil,
-                weeksDelta: 0,
-                status: .alreadyPeaking
+                currentWeeklyKm: currentWeeklyKm,
+                kmObservedGrowthRate: observedKmGrowth, effectiveKmGrowthRate: effectiveKmGrowthRate,
+                requiredPeakKm: requiredPeakKm,
+                projectedPeakDateTRIMP: nil, projectedPeakDateKm: nil,
+                bottleneck: .alreadyMet,
+                plannedPeakDate: plannedPeakDate, projectedPeakDate: nil,
+                weeksDelta: 0, status: .alreadyPeaking
             )
         }
 
-        // Geval B: Volume is (bijna) nul of groei is nul/negatief.
-        // Dan is de Peak Phase nooit haalbaar — controleer eerst of capped growth >= 0.
-        guard currentWeeklyTRIMP > 5, effectiveGrowthRate > 0 else {
+        // Beide unreachable (geen data of nul groei)?
+        let trimpUnreachable = !trimpAlreadyMet && projectedPeakDateTRIMP == nil
+        let kmUnreachable    = !kmAlreadyMet    && projectedPeakDateKm    == nil
+
+        if trimpUnreachable && kmUnreachable {
             return GoalProjection(
-                goal: goal,
-                blueprintType: blueprintType,
+                goal: goal, blueprintType: blueprintType,
                 currentWeeklyTRIMP: currentWeeklyTRIMP,
-                observedGrowthRate: observedGrowthRate,
-                effectiveGrowthRate: effectiveGrowthRate,
+                observedGrowthRate: observedTRIMPGrowth, effectiveGrowthRate: effectiveGrowthRate,
                 requiredPeakTRIMP: requiredPeakTRIMP,
-                plannedPeakDate: plannedPeakDate,
-                projectedPeakDate: nil,
+                currentWeeklyKm: currentWeeklyKm,
+                kmObservedGrowthRate: observedKmGrowth, effectiveKmGrowthRate: effectiveKmGrowthRate,
+                requiredPeakKm: requiredPeakKm,
+                projectedPeakDateTRIMP: nil, projectedPeakDateKm: nil,
+                bottleneck: .both,
+                plannedPeakDate: plannedPeakDate, projectedPeakDate: nil,
                 weeksDelta: goal.targetDate.timeIntervalSince(now) / (7 * 86400),
                 status: .unreachable
             )
         }
 
-        // STAP 6: Berekenen hoeveel weken er nodig zijn om de Peak Phase-eis te bereiken.
-        // Formule: currentTRIMP × (1 + r)^n = requiredTRIMP
-        //       → n = log(required / current) / log(1 + r)
-        let weeksNeeded = log(requiredPeakTRIMP / currentWeeklyTRIMP) / log(1.0 + effectiveGrowthRate)
+        // ── Stap 8: Bottleneck bepalen en finale datum berekenen ──
+        // Gebruik een ver-toekomst sentinel voor metrices die al voldaan zijn
+        let sentinel = Date.distantPast  // voor "al voldaan" gevallen
+        let trimpDate = trimpAlreadyMet ? sentinel : (projectedPeakDateTRIMP ?? goal.targetDate.addingTimeInterval(86400))
+        let kmDate    = kmAlreadyMet    ? sentinel : (projectedPeakDateKm    ?? goal.targetDate.addingTimeInterval(86400))
 
-        guard weeksNeeded.isFinite, weeksNeeded >= 0 else {
-            return GoalProjection(
-                goal: goal,
-                blueprintType: blueprintType,
-                currentWeeklyTRIMP: currentWeeklyTRIMP,
-                observedGrowthRate: observedGrowthRate,
-                effectiveGrowthRate: effectiveGrowthRate,
-                requiredPeakTRIMP: requiredPeakTRIMP,
-                plannedPeakDate: plannedPeakDate,
-                projectedPeakDate: nil,
-                weeksDelta: 0,
-                status: .unreachable
-            )
+        let bottleneck: BottleneckMetric
+        var rawProjectedDate: Date
+
+        if kmUnreachable || (!trimpUnreachable && kmDate > trimpDate) {
+            bottleneck = .km
+            rawProjectedDate = kmDate
+        } else if trimpUnreachable || trimpDate > kmDate {
+            bottleneck = .trimp
+            rawProjectedDate = trimpDate
+        } else {
+            bottleneck = .both
+            rawProjectedDate = max(trimpDate, kmDate)
         }
 
-        let projectedPeakDate = calendar.date(
-            byAdding: .day,
-            value: Int((weeksNeeded * 7).rounded()),
-            to: now
-        ) ?? now
+        // ── Stap 9: Veiligheidscap ──
+        // Als de wekelijkse km structureel onder de piek-eis zit (< 95%), kan de
+        // projectie nooit eerder vallen dan de gepland peakdatum.
+        // Dit voorkomt dat een TRIMP-voorsprong (door cross-training) een km-achterstand maskeert.
+        let kmRatio = requiredPeakKm > 0 ? currentWeeklyKm / requiredPeakKm : 1.0
+        if kmRatio < kmSafetyThreshold && rawProjectedDate < plannedPeakDate {
+            rawProjectedDate = plannedPeakDate
+        }
 
-        // Weken afwijking t.o.v. geplande peakdatum:
-        // positief = projectedDate is ná plannedPeakDate (achter)
-        // negatief = projectedDate is vóór plannedPeakDate (voor)
-        let weeksDelta = projectedPeakDate.timeIntervalSince(plannedPeakDate) / (7 * 86400)
+        // ── Stap 10: Status bepalen ──
+        let weeksDelta = rawProjectedDate.timeIntervalSince(plannedPeakDate) / (7 * 86400)
 
-        // Status bepalen
         let status: ProjectionStatus
-        if projectedPeakDate <= plannedPeakDate {
+        if rawProjectedDate <= plannedPeakDate {
             status = .onTrack
-        } else if projectedPeakDate <= goal.targetDate {
+        } else if rawProjectedDate <= goal.targetDate {
             status = .atRisk
         } else {
             status = .unreachable
         }
 
         return GoalProjection(
-            goal: goal,
-            blueprintType: blueprintType,
+            goal: goal, blueprintType: blueprintType,
             currentWeeklyTRIMP: currentWeeklyTRIMP,
-            observedGrowthRate: observedGrowthRate,
-            effectiveGrowthRate: effectiveGrowthRate,
+            observedGrowthRate: observedTRIMPGrowth, effectiveGrowthRate: effectiveGrowthRate,
             requiredPeakTRIMP: requiredPeakTRIMP,
+            currentWeeklyKm: currentWeeklyKm,
+            kmObservedGrowthRate: observedKmGrowth, effectiveKmGrowthRate: effectiveKmGrowthRate,
+            requiredPeakKm: requiredPeakKm,
+            projectedPeakDateTRIMP: projectedPeakDateTRIMP,
+            projectedPeakDateKm: projectedPeakDateKm,
+            bottleneck: bottleneck,
             plannedPeakDate: plannedPeakDate,
-            projectedPeakDate: projectedPeakDate,
+            projectedPeakDate: rawProjectedDate,
             weeksDelta: weeksDelta,
             status: status
         )
@@ -294,7 +388,6 @@ struct FutureProjectionService {
 
     // MARK: - Coach context builder
 
-    /// Bouwt het `[PROGNOSE]` blok voor de AI-prompt.
     static func buildCoachContext(from projections: [GoalProjection]) -> String {
         guard !projections.isEmpty else { return "" }
         var lines = ["[PROGNOSE — TOEKOMSTPROJECTIE (Sprint 23.2):"]
@@ -302,7 +395,37 @@ struct FutureProjectionService {
             lines.append(projection.coachContext)
             lines.append("")
         }
-        lines.append("Gedragsregel: Als de prognose 'Risico' of 'Onhaalbaar' toont, MOET de coach proactief een concreet bijsturingsplan voorstellen — zonder dat de gebruiker er om vraagt.]")
+        lines.append("""
+        Gedragsregel:
+        - Bij bottleneck .km: wijs altijd expliciet op de sport-specifieke achterstand.
+          Noem nooit de TRIMP-score als de km-achterstand de limiterende factor is.
+        - Bij 'Risico' of 'Onhaalbaar': stel proactief een bijsturingsplan voor.
+        - Verbind de prognose altijd aan de huidig lopende trainingsfase.]
+        """)
         return lines.joined(separator: "\n")
+    }
+
+    // MARK: - Private helper
+
+    /// Berekent via de logaritmische projectieformule hoeveel weken er nodig zijn
+    /// om van `current` naar `required` te groeien bij `effectiveRate` per week.
+    /// Geeft `nil` terug als de berekening niet mogelijk of negatief is.
+    private static func projectDate(
+        current: Double,
+        required: Double,
+        effectiveRate: Double,
+        from now: Date,
+        calendar: Calendar
+    ) -> Date? {
+        // Al voldaan
+        if current >= required { return nil }
+        // Geen positieve groei → onbereikbaar
+        guard current > 0, effectiveRate > 0 else { return nil }
+
+        // n = log(required / current) / log(1 + r)
+        let weeksNeeded = log(required / current) / log(1.0 + effectiveRate)
+        guard weeksNeeded.isFinite, weeksNeeded > 0 else { return nil }
+
+        return calendar.date(byAdding: .day, value: Int((weeksNeeded * 7).rounded()), to: now)
     }
 }
