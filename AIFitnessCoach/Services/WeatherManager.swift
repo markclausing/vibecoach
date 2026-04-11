@@ -1,34 +1,58 @@
 import Foundation
 import CoreLocation
-import WeatherKit
 
-/// Weerscondities die relevant zijn voor trainingsadvies.
-struct TrainingWeatherCondition: Equatable {
-    let temperatureCelsius: Double
-    let precipitationProbability: Double  // 0.0–1.0
-    let windSpeedKmh: Double
-    let conditionDescription: String      // "Zwaar bewolkt", "Lichte regen", etc.
-    let uvIndex: Int
+// MARK: - Open-Meteo API response modellen
 
-    /// Geeft een leesbare samenvatting terug voor de AI-prompt.
-    var aiSummary: String {
-        let tempStr   = String(format: "%.0f°C", temperatureCelsius)
-        let windStr   = String(format: "%.0f km/u", windSpeedKmh)
-        let rainStr   = String(format: "%.0f%%", precipitationProbability * 100)
-        return "\(conditionDescription), \(tempStr), wind \(windStr), neerslag \(rainStr), UV-index \(uvIndex)"
-    }
+/// Decoderingsmodel voor de Open-Meteo /v1/forecast daily-respons.
+/// Documentatie: https://open-meteo.com/en/docs
+private struct OpenMeteoResponse: Decodable {
+    let daily: OpenMeteoDailyData
+}
 
-    /// True als de omstandigheden slecht zijn voor een buitentraining.
-    var isOutdoorTrainingRisky: Bool {
-        precipitationProbability > 0.60 ||
-        windSpeedKmh > 50 ||
-        temperatureCelsius < -5 ||
-        temperatureCelsius > 38
+private struct OpenMeteoDailyData: Decodable {
+    let time: [String]                          // "yyyy-MM-dd"
+    let temperature2mMax: [Double?]             // °C
+    let temperature2mMin: [Double?]             // °C
+    let precipitationProbabilityMax: [Double?]  // %  (0–100)
+    let windSpeed10mMax: [Double?]              // km/h
+    let weatherCode: [Int?]                     // WMO weather code
+
+    enum CodingKeys: String, CodingKey {
+        case time
+        case temperature2mMax             = "temperature_2m_max"
+        case temperature2mMin             = "temperature_2m_min"
+        case precipitationProbabilityMax  = "precipitation_probability_max"
+        case windSpeed10mMax              = "wind_speed_10m_max"
+        case weatherCode                  = "weather_code"
     }
 }
 
-/// Haalt via Apple WeatherKit de weersverwachting op voor de komende 7 dagen.
-/// Vereist WeatherKit capability + een actieve Apple Developer sessie.
+// MARK: - DayForecast
+
+/// Een compacte dagelijkse weersverwachting voor trainingsadvies.
+struct DayForecast: Identifiable {
+    let id = UUID()
+    let date: Date
+    let highCelsius: Double
+    let lowCelsius: Double
+    /// Neerslagkans als fractie 0.0–1.0.
+    let precipitationProbability: Double
+    let windSpeedKmh: Double
+    let conditionDescription: String
+
+    /// True als de omstandigheden slecht zijn voor een buitentraining.
+    var isRiskyForOutdoorTraining: Bool {
+        precipitationProbability > 0.60 ||
+        windSpeedKmh > 50 ||
+        highCelsius < -5 ||
+        highCelsius > 38
+    }
+}
+
+// MARK: - WeatherManager
+
+/// Haalt via de gratis Open-Meteo API de weersverwachting op voor de komende 7 dagen.
+/// Vereist alleen locatietoestemming — geen API-sleutel of betaald developer account nodig.
 @MainActor
 class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
@@ -44,9 +68,9 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var errorMessage: String? = nil
 
     private let locationManager = CLLocationManager()
-    private let weatherService = WeatherService.shared
 
     /// Callback die wordt aangeroepen zodra de weerdata beschikbaar is.
+    /// Het argument is de geformatteerde AI-context string.
     var onWeatherUpdated: ((String) -> Void)?
 
     private override init() {
@@ -58,6 +82,7 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: - Publieke API
 
     /// Vraagt locatiepermissie en start het ophalen van het weer.
+    /// Bij al verleende toestemming wordt direct een locatie-update gevraagd.
     func requestWeatherIfNeeded() {
         let status = locationManager.authorizationStatus
         switch status {
@@ -75,8 +100,8 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         Task { @MainActor in
-            if manager.authorizationStatus == .authorizedWhenInUse ||
-               manager.authorizationStatus == .authorizedAlways {
+            let status = manager.authorizationStatus
+            if status == .authorizedWhenInUse || status == .authorizedAlways {
                 manager.requestLocation()
             }
         }
@@ -91,44 +116,76 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         Task { @MainActor in
-            // Locatiefout — stil negeren, coach werkt zonder weerdata
+            // Locatiefout — stil negeren, coach werkt gewoon zonder weerdata
             print("⚠️ WeatherManager: Locatiefout — \(error.localizedDescription)")
         }
     }
 
-    // MARK: - WeatherKit fetch
+    // MARK: - Open-Meteo fetch
 
     private func fetchWeather(for location: CLLocation) async {
         isLoading = true
         defer { isLoading = false }
 
+        let lat = location.coordinate.latitude
+        let lon = location.coordinate.longitude
+
+        // Open-Meteo gratis endpoint — geen API-sleutel vereist.
+        // daily-parameters: temperatuur (min/max), neerslagkans, windsnelheid, weercode.
+        var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
+        components.queryItems = [
+            URLQueryItem(name: "latitude",                        value: String(format: "%.4f", lat)),
+            URLQueryItem(name: "longitude",                       value: String(format: "%.4f", lon)),
+            URLQueryItem(name: "daily",                           value: "temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,weather_code"),
+            URLQueryItem(name: "timezone",                        value: "auto"),
+            URLQueryItem(name: "forecast_days",                   value: "7"),
+        ]
+
+        guard let url = components.url else {
+            print("❌ WeatherManager: Ongeldige URL")
+            return
+        }
+
         do {
-            let weather = try await weatherService.weather(
-                for: location,
-                including: .daily
-            )
+            let (data, _) = try await URLSession.shared.data(from: url)
+            let response  = try JSONDecoder().decode(OpenMeteoResponse.self, from: data)
+            weeklyForecast = parseForecast(from: response.daily)
 
-            // Bouw een compacte DayForecast-array op voor de komende 7 dagen
-            weeklyForecast = weather.forecast.prefix(7).map { day in
-                DayForecast(
-                    date:                     day.date,
-                    highCelsius:              day.highTemperature.converted(to: .celsius).value,
-                    lowCelsius:               day.lowTemperature.converted(to: .celsius).value,
-                    precipitationProbability: day.precipitationChance,
-                    windSpeedKmh:             day.wind.speed.converted(to: .kilometersPerHour).value,
-                    conditionDescription:     day.condition.dutchDescription,
-                    uvIndex:                  day.uvIndex.value
-                )
-            }
-
-            // Stuur de gegenereerde AI-context terug via de callback
             let context = buildAIContext()
             onWeatherUpdated?(context)
-            print("☀️ WeatherManager: \(weeklyForecast.count) dag(en) weerdata geladen")
+            print("☀️ WeatherManager: \(weeklyForecast.count) dag(en) weerdata geladen via Open-Meteo")
 
         } catch {
             errorMessage = error.localizedDescription
             print("❌ WeatherManager: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Parser
+
+    private func parseForecast(from daily: OpenMeteoDailyData) -> [DayForecast] {
+        let dateParser = DateFormatter()
+        dateParser.dateFormat = "yyyy-MM-dd"
+        dateParser.locale = Locale(identifier: "en_US_POSIX")
+
+        return daily.time.enumerated().compactMap { index, dateString in
+            guard
+                let date  = dateParser.date(from: dateString),
+                let high  = daily.temperature2mMax[index],
+                let low   = daily.temperature2mMin[index],
+                let rain  = daily.precipitationProbabilityMax[index],
+                let wind  = daily.windSpeed10mMax[index],
+                let code  = daily.weatherCode[index]
+            else { return nil }
+
+            return DayForecast(
+                date:                    date,
+                highCelsius:             high,
+                lowCelsius:              low,
+                precipitationProbability: rain / 100.0,   // Open-Meteo geeft % terug, wij willen 0–1
+                windSpeedKmh:            wind,
+                conditionDescription:    wmoDescription(code)
+            )
         }
     }
 
@@ -148,7 +205,7 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             let tempStr = String(format: "%.0f–%.0f°C", day.lowCelsius, day.highCelsius)
             let rainStr = String(format: "%.0f%%", day.precipitationProbability * 100)
             let windStr = String(format: "%.0f km/u", day.windSpeedKmh)
-            var line = "• \(dayName): \(day.conditionDescription), \(tempStr), neerslag \(rainStr), wind \(windStr)"
+            var line    = "• \(dayName): \(day.conditionDescription), \(tempStr), neerslag \(rainStr), wind \(windStr)"
             if day.isRiskyForOutdoorTraining {
                 line += " ⚠️ SLECHT BUITENWEER"
             }
@@ -157,62 +214,32 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
         return lines.joined(separator: "\n")
     }
-}
 
-// MARK: - DayForecast
+    // MARK: - WMO weercodes → Nederlandse beschrijving
+    // WMO code definitie: https://open-meteo.com/en/docs (paragraaf "Weather variable descriptions")
 
-/// Een compacte dagelijkse weersverwachting voor trainingsadvies.
-struct DayForecast: Identifiable {
-    let id = UUID()
-    let date: Date
-    let highCelsius: Double
-    let lowCelsius: Double
-    let precipitationProbability: Double
-    let windSpeedKmh: Double
-    let conditionDescription: String
-    let uvIndex: Int
-
-    var isRiskyForOutdoorTraining: Bool {
-        precipitationProbability > 0.60 ||
-        windSpeedKmh > 50 ||
-        highCelsius < -5 ||
-        highCelsius > 38
-    }
-}
-
-// MARK: - WeatherCondition Lokalisatie
-
-extension WeatherCondition {
-    /// Vertaalt de Apple WeatherKit conditie naar een Nederlandse beschrijving.
-    var dutchDescription: String {
-        switch self {
-        case .clear:             return "Helder"
-        case .mostlyClear:       return "Overwegend helder"
-        case .partlyCloudy:      return "Gedeeltelijk bewolkt"
-        case .mostlyCloudy:      return "Overwegend bewolkt"
-        case .cloudy:            return "Bewolkt"
-        case .foggy:             return "Mistig"
-        case .haze:              return "Wazig"
-        case .windy:             return "Winderig"
-        case .breezy:            return "Fris briesje"
-        case .drizzle:           return "Motregen"
-        case .rain:              return "Regen"
-        case .heavyRain:         return "Zware regen"
-        case .flurries:          return "Sneeuwbuien"
-        case .snow:              return "Sneeuw"
-        case .blizzard:          return "Sneeuwstorm"
-        case .sleet:             return "Ijzel"
-        case .freezingDrizzle:   return "Bevriezing nevel"
-        case .freezingRain:      return "Bevriezende regen"
-        case .thunderstorms:     return "Onweer"
-        case .hurricane:         return "Orkaan"
-        case .tropicalStorm:     return "Tropische storm"
-        case .hail:              return "Hagel"
-        case .hot:               return "Erg heet"
-        case .blowingDust:       return "Stof"
-        case .smoky:             return "Rookoverlast"
-        case .frigid:            return "Strenge vorst"
-        @unknown default:        return "Onbekend"
+    private func wmoDescription(_ code: Int) -> String {
+        switch code {
+        case 0:          return "Helder"
+        case 1:          return "Overwegend helder"
+        case 2:          return "Gedeeltelijk bewolkt"
+        case 3:          return "Bewolkt"
+        case 45, 48:     return "Mistig"
+        case 51, 53:     return "Lichte motregen"
+        case 55:         return "Dichte motregen"
+        case 56, 57:     return "Bevriezende motregen"
+        case 61, 63:     return "Lichte regen"
+        case 65:         return "Zware regen"
+        case 66, 67:     return "Bevriezende regen"
+        case 71, 73:     return "Lichte sneeuw"
+        case 75:         return "Zware sneeuw"
+        case 77:         return "Sneeuwkorrels"
+        case 80, 81:     return "Regenbuien"
+        case 82:         return "Zware regenbuien"
+        case 85, 86:     return "Sneeuwbuien"
+        case 95:         return "Onweer"
+        case 96, 99:     return "Onweer met hagel"
+        default:         return "Wisselvallig"
         }
     }
 }
