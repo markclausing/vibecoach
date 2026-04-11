@@ -371,6 +371,9 @@ struct SettingsView: View {
                     }
                 }
 
+                // Epic 24 Sprint 2: Fysiologisch profiel — Two-Way Sync met HealthKit
+                PhysicalProfileSection()
+
                 Section(
                     header: Text("Notificaties"),
                     footer: Text("Ontvang direct een analyse van je AI coach nadat je een nieuwe activiteit hebt geüpload.").font(.caption)
@@ -585,6 +588,247 @@ struct SettingsView: View {
         }
     }
     #endif
+}
+
+// MARK: - Epic 24 Sprint 2: Fysiologisch Profiel Sectie
+
+/// Toont en beheert het fysiologische profiel van de gebruiker.
+/// Leeftijd en geslacht zijn read-only (komen uit HealthKit Gezondheid-app).
+/// Gewicht en lengte zijn bewerkbaar en worden gesynchroniseerd met HealthKit.
+struct PhysicalProfileSection: View {
+    // De manager wordt als property gehouden zodat healthStore niet direct-deallocated wordt.
+    private let hkManager = HealthKitManager()
+    private var profileService: UserProfileService { UserProfileService(healthStore: hkManager.healthStore) }
+
+    // Huidig geladen profiel
+    @State private var profile: UserPhysicalProfile?
+
+    // Bewerkbare velden (als String voor TextField)
+    @State private var weightInput: String = ""
+    @State private var heightInput: String = ""
+
+    // UI state
+    @State private var isLoading = true
+    @State private var isSaving  = false
+    @State private var saveMessage: String?
+    @State private var saveSuccess: Bool = true
+
+    // Detecteer of de gebruiker iets heeft gewijzigd ten opzichte van het geladen profiel
+    private var hasChanges: Bool {
+        guard let p = profile else { return false }
+        return weightInput != String(format: "%.1f", p.weightKg)
+            || heightInput != String(format: "%.0f", p.heightCm)
+    }
+
+    var body: some View {
+        Section(
+            header: Text("Fysiologisch Profiel"),
+            footer: profileFooter
+        ) {
+            if isLoading {
+                HStack {
+                    ProgressView()
+                        .padding(.trailing, 6)
+                    Text("Profiel ophalen via HealthKit…")
+                        .foregroundStyle(.secondary)
+                        .font(.subheadline)
+                }
+            } else {
+                // Leeftijd — read-only via HealthKit
+                profileRow(
+                    icon: "person.circle",
+                    iconColor: .blue,
+                    label: "Leeftijd",
+                    value: profile.map { "\($0.ageYears) jaar" } ?? "Onbekend",
+                    isReadOnly: true
+                )
+
+                // Geslacht — read-only via HealthKit
+                profileRow(
+                    icon: "figure.stand",
+                    iconColor: .indigo,
+                    label: "Geslacht",
+                    value: profile.map { sexLabel($0.sex) } ?? "Onbekend",
+                    isReadOnly: true
+                )
+
+                // Gewicht — bewerkbaar
+                editableRow(
+                    icon: "scalemass",
+                    iconColor: .orange,
+                    label: "Gewicht",
+                    unit: "kg",
+                    binding: $weightInput,
+                    source: profile?.weightSource
+                )
+
+                // Lengte — bewerkbaar
+                editableRow(
+                    icon: "ruler",
+                    iconColor: .teal,
+                    label: "Lengte",
+                    unit: "cm",
+                    binding: $heightInput,
+                    source: profile?.heightSource
+                )
+
+                // Opslaan-knop (alleen zichtbaar bij wijzigingen)
+                if hasChanges {
+                    Button {
+                        saveProfile()
+                    } label: {
+                        HStack {
+                            if isSaving {
+                                ProgressView().padding(.trailing, 4)
+                                Text("Opslaan…")
+                            } else {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                Text("Opslaan & Sync met HealthKit")
+                                    .fontWeight(.medium)
+                            }
+                        }
+                    }
+                    .disabled(isSaving)
+                }
+
+                // Feedback na opslaan
+                if let msg = saveMessage {
+                    Label(msg, systemImage: saveSuccess ? "checkmark.circle" : "xmark.circle")
+                        .font(.caption)
+                        .foregroundStyle(saveSuccess ? .green : .red)
+                }
+            }
+        }
+        .task { await loadProfile() }
+    }
+
+    // MARK: - Sub-views
+
+    /// Rij voor een read-only waarde (leeftijd, geslacht — komen uit HealthKit).
+    private func profileRow(icon: String, iconColor: Color, label: String, value: String, isReadOnly: Bool) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundStyle(iconColor)
+                .frame(width: 26)
+            Text(label)
+            Spacer()
+            Text(value)
+                .foregroundStyle(.secondary)
+            if isReadOnly {
+                Image(systemName: "lock.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    /// Rij voor een bewerkbare waarde (gewicht, lengte).
+    private func editableRow(
+        icon: String,
+        iconColor: Color,
+        label: String,
+        unit: String,
+        binding: Binding<String>,
+        source: UserPhysicalProfile.DataSource?
+    ) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .foregroundStyle(iconColor)
+                .frame(width: 26)
+            Text(label)
+            Spacer()
+            TextField("0", text: binding)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 70)
+            Text(unit)
+                .foregroundStyle(.secondary)
+                .frame(width: 28, alignment: .leading)
+            // Bronbadge
+            if let src = source {
+                sourceBadge(src)
+            }
+        }
+    }
+
+    /// Klein badge dat aangeeft waar de waarde vandaan komt.
+    @ViewBuilder
+    private func sourceBadge(_ source: UserPhysicalProfile.DataSource) -> some View {
+        switch source {
+        case .healthKit:
+            Image(systemName: "heart.fill")
+                .font(.caption2)
+                .foregroundStyle(.red)
+        case .local:
+            Image(systemName: "iphone")
+                .font(.caption2)
+                .foregroundStyle(.blue)
+        case .defaultValue:
+            Image(systemName: "exclamationmark.circle")
+                .font(.caption2)
+                .foregroundStyle(.orange)
+        }
+    }
+
+    private var profileFooter: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Leeftijd en geslacht worden gelezen uit de iOS Gezondheid-app en zijn hier niet te bewerken.")
+            Text("Gewicht en lengte worden gesynchroniseerd naar HealthKit zodat het hele iOS-ecosysteem up-to-date blijft.")
+        }
+        .font(.caption)
+    }
+
+    // MARK: - Logica
+
+    private func loadProfile() async {
+        isLoading = true
+        let loaded = await profileService.fetchProfile()
+        await MainActor.run {
+            profile      = loaded
+            weightInput  = String(format: "%.1f", loaded.weightKg)
+            heightInput  = String(format: "%.0f", loaded.heightCm)
+            isLoading    = false
+        }
+    }
+
+    private func saveProfile() {
+        guard let p = profile else { return }
+        let newWeight = Double(weightInput.replacingOccurrences(of: ",", with: ".")) ?? p.weightKg
+        let newHeight = Double(heightInput.replacingOccurrences(of: ",", with: ".")) ?? p.heightCm
+
+        isSaving = true
+        saveMessage = nil
+
+        Task {
+            do {
+                if newWeight != p.weightKg { try await profileService.saveWeight(kg: newWeight) }
+                if newHeight != p.heightCm { try await profileService.saveHeight(cm: newHeight) }
+                // Herlaad het profiel na opslaan zodat de bronbadge bijgewerkt wordt
+                await loadProfile()
+                await MainActor.run {
+                    isSaving     = false
+                    saveSuccess  = true
+                    saveMessage  = "Opgeslagen en gesynchroniseerd met HealthKit."
+                }
+            } catch {
+                await MainActor.run {
+                    isSaving    = false
+                    saveSuccess = false
+                    saveMessage = "Fout bij opslaan: \(error.localizedDescription)"
+                }
+            }
+        }
+    }
+
+    private func sexLabel(_ sex: BiologicalSex) -> String {
+        switch sex {
+        case .male:    return "Man"
+        case .female:  return "Vrouw"
+        case .other:   return "Divers"
+        case .unknown: return "Onbekend"
+        }
+    }
 }
 
 // MARK: - Epic 20: AI Coach Configuratie (BYOK)

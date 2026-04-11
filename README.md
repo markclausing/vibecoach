@@ -160,6 +160,16 @@ De app maakt de lange-termijn voorbereiding inzichtelijk — niet alleen wat je 
 
 ---
 
+### 🔄 Epic 24: Nutrition & Fueling Engine (Actief)
+
+Fysiologisch correcte voedingsadviezen op basis van wie je bent en wat je van plan bent te doen.
+
+* **✅ Sprint 24.1 — Fysiologisch Profiel (Baseline):** `UserProfileService` haalt gewicht, lengte, leeftijd en geslacht op via HealthKit met graceful fallbacks (HealthKit → UserDefaults → generieke standaardwaarden). `NutritionService` berekent het BMR (Mifflin-St Jeor) en de koolhydraten/vocht-behoefte per trainingszone (Zone 2: 0.5 g/min + 500 ml/uur; Zone 4: 1.0 g/min + 800 ml/uur). `[VOEDING & FYSIOLOGIE]` blok geïnjecteerd in elke AI-prompt met concrete gram/ml-adviezen per geplande workout.
+* **✅ Sprint 24.2 — Two-Way Sync (Instellingen UI):** HealthKit-schrijfrechten toegevoegd voor `bodyMass` en `height`. `PhysicalProfileSection` in de Instellingen-tab toont leeftijd/geslacht als read-only (HealthKit, vergrendeld) en gewicht/lengte als bewerkbare velden. Wijzigingen worden gesynchroniseerd naar zowel UserDefaults (instant) als HealthKit (async). Bronbadge toont per waarde de herkomst: ❤️ HealthKit / 📱 Lokaal / ⚠️ Standaard.
+* **⏳ Sprint 24.3 — Pre/During/Post Timing:** Coach geeft timing-adviezen op basis van workout-type (koolhydraten laden 2u voor lange rit; herstelshake binnen 30 min na intervaltraining).
+
+---
+
 ### 📅 Backlog / Toekomstvisie
 
 | Epic | Beschrijving |
