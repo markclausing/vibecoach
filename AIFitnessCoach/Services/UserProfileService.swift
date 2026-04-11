@@ -72,6 +72,40 @@ final class UserProfileService: @unchecked Sendable {
         self.healthStore = healthStore
     }
 
+    // MARK: - Autorisatie
+
+    /// Vraagt leesrechten voor het volledige fysiologische profiel op.
+    ///
+    /// Dit is een apart pad van de hoofd-HealthKit-autorisatie in `HealthKitManager`.
+    /// Gebruikers die vóór Epic 24 HealthKit koppelden, hebben nooit toestemming gegeven
+    /// voor `dateOfBirth`, `biologicalSex`, `bodyMass` of `height`. iOS toont de popup
+    /// **opnieuw** voor types die nog niet gevraagd zijn — maar pas als we ze expliciet
+    /// meegeven in een `requestAuthorization`-aanroep.
+    ///
+    /// Karakteristieke types (dateOfBirth, biologicalSex) zijn read-only in HealthKit
+    /// en mogen NIET in `toShare` zitten — alleen in `read`.
+    func requestProfileReadAuthorization() async {
+        guard HKHealthStore.isHealthDataAvailable() else { return }
+
+        var read = Set<HKObjectType>()
+        if let bodyMass   = HKQuantityType.quantityType(forIdentifier: .bodyMass)   { read.insert(bodyMass) }
+        if let height     = HKQuantityType.quantityType(forIdentifier: .height)     { read.insert(height) }
+        if let dob        = HKObjectType.characteristicType(forIdentifier: .dateOfBirth)    { read.insert(dob) }
+        if let sex        = HKObjectType.characteristicType(forIdentifier: .biologicalSex)  { read.insert(sex) }
+
+        let share: Set<HKSampleType> = [
+            HKQuantityType.quantityType(forIdentifier: .bodyMass)!,
+            HKQuantityType.quantityType(forIdentifier: .height)!
+        ]
+
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            healthStore.requestAuthorization(toShare: share, read: read) { _, _ in
+                continuation.resume()
+            }
+        }
+        print("🔑 [ProfileService] requestProfileReadAuthorization voltooid")
+    }
+
     // MARK: - Profiel ophalen
 
     /// Haalt het volledige profiel op via de 3-tier resolutie-hiërarchie.

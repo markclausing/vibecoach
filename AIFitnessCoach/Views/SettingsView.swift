@@ -823,6 +823,13 @@ struct PhysicalProfileSection: View {
 
     private func loadProfile() async {
         isLoading = true
+
+        // Vraag eerst expliciet leesrechten voor de profieltypen.
+        // Voor gebruikers die HealthKit koppelden vóór Epic 24 zijn dateOfBirth,
+        // biologicalSex, bodyMass en height nog nooit gevraagd — iOS toont de popup
+        // pas als we ze hier uitdrukkelijk opnemen in requestAuthorization.
+        await profileService.requestProfileReadAuthorization()
+
         let loaded = await profileService.fetchProfile()
 
         // Detecteer of de leeftijd is gewijzigd ten opzichte van de vorige fetch.
