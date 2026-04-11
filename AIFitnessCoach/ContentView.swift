@@ -1217,6 +1217,10 @@ struct DashboardView: View {
     /// Tijdstip van de laatste geslaagde coach-analyse — gespiegeld vanuit ChatViewModel.
     @AppStorage("vibecoach_lastAnalysisTimestamp") private var lastAnalysisTimestamp: Double = 0
 
+    /// Epic 18: Wordt true zodra de gebruiker een symptoomscore aanpast na de laatste analyse.
+    /// Geeft aan dat de CoachInsight verouderd is en een nieuwe analyse nodig heeft.
+    @State private var symptomChangedSinceAnalysis: Bool = false
+
     /// Geeft een leesbare tijdstempelstring terug, bijv. "Laatste update: vandaag om 17:15".
     private var lastAnalysisText: String {
         guard lastAnalysisTimestamp > 0 else { return "" }
@@ -1617,7 +1621,17 @@ struct DashboardView: View {
                                     Text("Coach Insight")
                                         .font(.headline)
                                     Spacer()
-                                    if !lastAnalysisText.isEmpty {
+                                    // Epic 18: Toon een badge als de gebruiker een symptoomscore heeft
+                                    // aangepast na de laatste analyse — advies is mogelijk verouderd.
+                                    if symptomChangedSinceAnalysis {
+                                        Text("Verouderd — score gewijzigd")
+                                            .font(.caption2)
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.orange)
+                                            .cornerRadius(6)
+                                    } else if !lastAnalysisText.isEmpty {
                                         Text(lastAnalysisText)
                                             .font(.caption2)
                                             .foregroundColor(.secondary)
@@ -1715,6 +1729,10 @@ struct DashboardView: View {
                 }
             }
             .navigationTitle("Overzicht")
+            // Epic 18: Reset de staleness-badge zodra er een nieuwe analyse is afgerond.
+            .onChange(of: lastAnalysisTimestamp) { _, _ in
+                symptomChangedSinceAnalysis = false
+            }
             .onChange(of: appState.targetActivityId) { oldValue, newValue in
                 if let activityId = newValue {
                     refreshProfileContext()
@@ -1750,7 +1768,7 @@ struct DashboardView: View {
                 viewModel.cacheVibeScore(todayReadiness)
                 // Epic 17: Schrijf de blueprint-status naar de AI-prompt cache
                 // zodat de coach weet welke kritieke trainingen open staan per doel.
-                viewModel.cacheSymptomContext(Array(symptoms))
+                viewModel.cacheSymptomContext(Array(symptoms), preferences: Array(activePreferences))
                 viewModel.cacheActiveBlueprints(blueprintResults)
                 // Epic 17.1: Schrijf de periodization-status naar de AI-prompt cache
                 // zodat de coach de actuele trainingsfase en succescriteria kent.
@@ -1781,8 +1799,10 @@ struct DashboardView: View {
             modelContext.insert(Symptom(bodyArea: area, severity: severity))
         }
         try? modelContext.save()
-        // Werk de AI-cache direct bij
-        viewModel.cacheSymptomContext(Array(symptoms))
+        // Werk de AI-cache direct bij met de nieuwste scores én actieve voorkeuren
+        viewModel.cacheSymptomContext(Array(symptoms), preferences: Array(activePreferences))
+        // Markeer de CoachInsight als verouderd — de scores zijn veranderd na de laatste analyse
+        symptomChangedSinceAnalysis = true
     }
 
     /// Haalt HealthKit-data op en slaat een DailyReadiness record op voor vandaag.
