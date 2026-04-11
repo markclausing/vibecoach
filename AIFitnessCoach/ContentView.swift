@@ -300,8 +300,9 @@ struct VibeScoreCardView: View {
     /// Epic 18: Override de statuslabel als er een actief blessurerisico is.
     var injuryRiskLevel: DashboardView.InjuryRiskLevel = .safe
 
-    // Kleur op basis van score (groen / oranje / rood)
+    // Kleur op basis van score (groen / oranje / rood), lichtblauw bij geen Watch-data
     private var scoreColor: Color {
+        if isUnavailable { return Color(red: 0.3, green: 0.6, blue: 0.9) }
         guard let r = readiness else { return .gray }
         if r.readinessScore >= 80 { return .green }
         if r.readinessScore >= 50 { return .orange }
@@ -310,7 +311,8 @@ struct VibeScoreCardView: View {
 
     // SF Symbol op basis van score (batterij-metafoor)
     private var scoreIcon: String {
-        guard let r = readiness else { return "battery.0" }
+        if isUnavailable { return "applewatch.slash" }
+        guard let r = readiness else { return "applewatch.slash" }
         if r.readinessScore >= 80 { return "bolt.fill" }
         if r.readinessScore >= 50 { return "battery.50" }
         return "battery.0"
@@ -357,13 +359,17 @@ struct VibeScoreCardView: View {
                         .font(.headline)
                         .foregroundColor(.secondary)
                 } else if isUnavailable {
-                    Text("Data niet beschikbaar")
+                    Text("Vibe Score op pauze")
                         .font(.headline)
-                        .foregroundColor(.secondary)
-                    Text("Geen HealthKit-data gevonden. Zorg dat je Apple Watch is gesynchroniseerd.")
+                        .foregroundColor(Color(red: 0.3, green: 0.6, blue: 0.9))
+                    Text("Geen recente Watch-data gevonden. We baseren je advies vandaag op je handmatige check-in.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
+                    Text("Swipe omlaag om opnieuw te proberen")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 2)
                 } else if let r = readiness {
                     let label: String = {
                         // Epic 18: blessurerisico overschrijft de herstelstatus
@@ -393,10 +399,14 @@ struct VibeScoreCardView: View {
             Spacer()
         }
         .padding()
-        .background(readiness != nil && !isLoading ? scoreColor.opacity(0.08) : Color(.secondarySystemBackground))
+        .background(
+            isUnavailable
+                ? scoreColor.opacity(0.06)
+                : (readiness != nil && !isLoading ? scoreColor.opacity(0.08) : Color(.secondarySystemBackground))
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(scoreColor.opacity(readiness != nil && !isLoading ? 0.3 : 0.15), lineWidth: 1)
+                .stroke(scoreColor.opacity(isUnavailable ? 0.25 : (readiness != nil && !isLoading ? 0.3 : 0.15)), lineWidth: 1)
         )
         .cornerRadius(12)
         .accessibilityIdentifier("VibeScoreCard")
@@ -1720,6 +1730,11 @@ struct DashboardView: View {
                 .refreshable {
                     NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
                     refreshProfileContext()
+                    // Reset de Vibe Score kaart zodat hij opnieuw probeert Watch-data op te halen.
+                    // Handig als de gebruiker zijn horloge net heeft omgedaan en de data alsnog binnenkomt.
+                    isVibeScoreUnavailable = false
+                    await calculateAndSaveVibeScore()
+                    viewModel.cacheVibeScore(todayReadiness)
                     viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                     // SPRINT 13.2: Werk de risicocache bij voor de achtergrond-engines na refresh
                     ProactiveNotificationService.shared.updateRiskCache(
@@ -1846,6 +1861,8 @@ struct DashboardView: View {
               let sleepHours = sleep else {
             print("⚠️ [VibeScore] Onvoldoende data — kaart wordt op 'niet beschikbaar' gezet")
             isVibeScoreUnavailable = true
+            // Informeer de AI-cache zodat de coach de juiste fallback-toon gebruikt
+            viewModel.cacheVibeScoreUnavailable()
             return
         }
 

@@ -99,9 +99,23 @@ class ChatViewModel: ObservableObject {
     /// Epic 14.4: Schrijft de Vibe Score van vandaag naar de AppStorage cache.
     /// Wordt aangeroepen vanuit DashboardView bij onAppear zodat de AI-prompts
     /// altijd de actuele herstelstatus bevatten.
+    /// Sentinel-waarde die aangeeft dat er vandaag geen Watch-data beschikbaar was.
+    /// Wordt herkend in buildContextPrefix om de AI de juiste instructie te geven.
+    private static let noVibeDataSentinel = "GEEN_BIOMETRISCHE_DATA"
+
+    /// Markeert in de AI-cache dat de Vibe Score ontbreekt omdat de Watch niet gedragen werd.
+    /// De coach krijgt dan expliciet de instructie om op symptoomscores en eigen gevoel te vertrouwen.
+    func cacheVibeScoreUnavailable() {
+        todayVibeScoreContext = Self.noVibeDataSentinel
+    }
+
     func cacheVibeScore(_ readiness: DailyReadiness?) {
         guard let r = readiness else {
-            todayVibeScoreContext = ""
+            // Niet overschrijven als er al een 'unavailable' sentinel staat —
+            // die is waardevoller dan gewoon leeeg.
+            if todayVibeScoreContext != Self.noVibeDataSentinel {
+                todayVibeScoreContext = ""
+            }
             return
         }
 
@@ -496,7 +510,10 @@ class ChatViewModel: ObservableObject {
         prefix += "[HUIDIGE DATUM: Vandaag is het \(dateFormatter.string(from: now)). Gebruik dit voor je berekeningen rondom 'expirationDate'.]\n\n"
 
         // Epic 14.4: Injecteer de Vibe Score als harde context — de AI MOET dit volgen (zie systeeminstructie)
-        if !todayVibeScoreContext.isEmpty {
+        if todayVibeScoreContext == Self.noVibeDataSentinel {
+            // Geen Watch-data beschikbaar — geef de coach expliciete instructie om dit correct te communiceren
+            prefix += "[HERSTELSTATUS VANDAAG: Er is geen objectieve biometrische data beschikbaar (gebruiker droeg de Apple Watch waarschijnlijk niet 's nachts). Vertrouw volledig op de Symptom Tracker scores en de geplande doelen. Gebruik NOOIT zinnen als 'Ik zie aan je HRV dat...' of 'Je biometrie geeft aan...'. Zeg in plaats daarvan: 'Omdat we vandaag geen Watch-data hebben, gaan we uit van je eigen gevoel en de ingevoerde scores.']\n\n"
+        } else if !todayVibeScoreContext.isEmpty {
             prefix += "[HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Volg de kritieke regel over de Vibe Score autoriteit strikt.]\n\n"
         }
 
@@ -628,7 +645,10 @@ class ChatViewModel: ObservableObject {
         ]
 
         // Epic 14.4: Injecteer de Vibe Score zodat het herstelplan de actuele herstelstatus respecteert
-        if !todayVibeScoreContext.isEmpty {
+        if todayVibeScoreContext == Self.noVibeDataSentinel {
+            systemLines.append("HERSTELSTATUS VANDAAG: Geen Watch-data beschikbaar. Baseer het herstelplan op de Symptom Tracker scores en eigen gevoel van de gebruiker.")
+            systemLines.append("")
+        } else if !todayVibeScoreContext.isEmpty {
             systemLines.append("HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Pas de intensiteit van het herstelplan STRIKT aan op deze score (zie systeeminstructie).")
             systemLines.append("")
         }
