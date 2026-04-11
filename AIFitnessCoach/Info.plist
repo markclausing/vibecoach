@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.markclausing.aifitnesscoach.dailygoalcheck</string>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -34,13 +38,11 @@
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>AI Fitness Coach analyseert je workouts, hartslag en VO2 Max om gepersonaliseerd trainingsadvies te geven.</string>
+	<string>VibeCoach analyseert je workouts, hartslag en VO2 Max om gepersonaliseerd trainingsadvies te geven.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>AI Fitness Coach heeft toegang nodig om trainingsdata te synchroniseren.</string>
-	<key>BGTaskSchedulerPermittedIdentifiers</key>
-	<array>
-		<string>com.markclausing.aifitnesscoach.dailygoalcheck</string>
-	</array>
+	<string>VibeCoach heeft toegang nodig om trainingsdata te synchroniseren.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>VibeCoach heeft je locatie nodig om het lokale weer op te halen voor je trainingsadvies.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

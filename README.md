@@ -121,6 +121,15 @@ Contextuele coaching op basis van blessure-belasting en stabiele Vibe Score bere
 
 ---
 
+### 🔄 Epic 21: Externe Factoren — Weer & Slaap (Actief)
+
+Contextuele coaching op basis van omgevingsfactoren die prestatie en herstel direct beïnvloeden.
+
+* **🔄 Sprint 21.1 — WeatherKit Integratie:** `WeatherManager` haalt via Apple WeatherKit de actuele weersverwachting op voor de locatie van de gebruiker (temperatuur, neerslag, windsnelheid, UV-index). De coach ontvangt een `[WEERSOMSTANDIGHEDEN]` blok en houdt rekening met buitenactiviteiten. Bij slecht weer op een geplande sleuteldag (bijv. de 60 km-rit) suggereert de coach een alternatief: indoor trainer of dagwissel.
+* **⏳ Sprint 21.2 — Slaapfasen (Sleep Stages):** Uitbreiding van de Vibe Score met diepe slaap- en REM-percentages via HealthKit `HKCategoryType.sleepAnalysis`. Aparte coaching-instructies voor "veel lichte slaap" vs "goed herstel".
+
+---
+
 ### 🔄 Epic 17: Goal-Specific Blueprints (Actief)
 
 Hardcoded sportwetenschappelijke regels per discipline — coaching op basis van bewezen principes, niet alleen AI-gevoel.
@@ -135,9 +144,8 @@ Hardcoded sportwetenschappelijke regels per discipline — coaching op basis van
 
 | Epic | Beschrijving |
 |------|--------------|
-| **Epic 15 — Biometrische & Omgevingscontext** | Integratie met lokale weersomstandigheden (hitte/kou) en hormonale cyclus via HealthKit voor contextuele TRIMP-weging. |
-| **Epic 21 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes (bijv. kuitklachten) — zodat de coach maanden later nog kan refereren aan chronische patronen. |
-| **Epic 22 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. *(Verre toekomst)* |
+| **Epic 22 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes (bijv. kuitklachten) — zodat de coach maanden later nog kan refereren aan chronische patronen. |
+| **Epic 23 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. *(Verre toekomst)* |
 
 ---
 

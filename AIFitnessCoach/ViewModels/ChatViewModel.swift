@@ -88,6 +88,10 @@ class ChatViewModel: ObservableObject {
     /// Epic 18: Cache van de dagelijkse symptoomscores — pijncijfers per lichaamsdeel.
     @AppStorage("vibecoach_symptomContext") private var symptomContext: String = ""
 
+    /// Epic 21: Cache van de 7-daagse weersverwachting — wordt gevuld door WeatherManager.
+    /// Wordt geïnjecteerd in de AI-prompt zodat de coach rekening houdt met buitenactiviteiten.
+    @AppStorage("vibecoach_weatherContext") var weatherContext: String = ""
+
     /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
@@ -534,6 +538,20 @@ class ChatViewModel: ObservableObject {
             4. Score gedaald t.o.v. gisteren → benoem dit als positief teken van herstel.]
             """
             prefix += symptomBlock + "\n\n"
+        }
+
+        // Epic 21: Injecteer de 7-daagse weersverwachting voor buitenactiviteiten-coaching
+        if !weatherContext.isEmpty {
+            let weatherBlock = """
+            [WEERSOMSTANDIGHEDEN KOMENDE 7 DAGEN (locatie gebruiker):
+            \(weatherContext)
+            Gedragsregels:
+            1. Als een dag met ⚠️ SLECHT BUITENWEER samenvalt met een geplande sleuteltraining (bijv. lange rit of run), stel dan ALTIJD een alternatief voor: indoor trainer, andere dag, of kortere route bij minder slecht moment op dezelfde dag.
+            2. Zeg nooit alleen "het kan regenen" — wees specifiek: "Zaterdag is 70% kans op regen, ik adviseer de 60 km indoor of verplaats naar zondag".
+            3. Temperatuur < 5°C of > 30°C → geef een expliciete tip over kleding of hydratatie.
+            4. Als het weer goed is, hoef je het niet te noemen — tenzij het een bonus is ("Zondag ziet er ideaal uit voor je lange rit").]
+            """
+            prefix += weatherBlock + "\n\n"
         }
 
         // Epic 17 / Sprint 17.2: Injecteer de blueprint + periodization context

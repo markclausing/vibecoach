@@ -10,6 +10,7 @@ struct ContentView: View {
     // voor pull-to-refresh en de ChatView als overlay.
     @StateObject private var sharedChatViewModel = ChatViewModel()
 
+
     // Auto-Sync Dependencies (Sprint 12.3)
     @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
     @Environment(\.modelContext) private var modelContext
@@ -1800,6 +1801,12 @@ struct DashboardView: View {
                     trimp: lastRatedActivity?.trimp,
                     startDate: lastRatedActivity?.startDate
                 )
+                // Epic 21: Vraag weerdata op via de singleton (vraagt locatie-toestemming als dat nog niet is gedaan).
+                // WeatherManager.shared is een singleton — geen property-doorgave nodig vanuit ContentView.
+                WeatherManager.shared.onWeatherUpdated = { context in
+                    viewModel.weatherContext = context
+                }
+                WeatherManager.shared.requestWeatherIfNeeded()
             }
         }
     }
