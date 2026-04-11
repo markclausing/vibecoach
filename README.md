@@ -5,7 +5,7 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Actief in Ontwikkeling — Epic 23 Sprint 2 (Future Projection Engine) afgerond | Epic 24 ✅ | Epic 25 gepland**
+**Actief in Ontwikkeling — Epic 23 Sprint 3 (Visual Progress Hub) in uitvoering**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 54% code coverage.
 
@@ -156,7 +156,7 @@ De app maakt de lange-termijn voorbereiding inzichtelijk — niet alleen wat je 
 
 * **✅ Sprint 23.1 — Target Gap Analysis:** `ProgressService` berekent het verschil (gap) tussen het lineaire verwachte trainingsvolume en het werkelijk behaalde volume. `BlueprintGap` struct bevat TRIMP-achterstand, km-achterstand en een concreet bijsturingsadvies ("je hebt X extra TRIMP/week nodig"). `GapAnalysisCardView` toont per doel een voortgangsbalk voor TRIMP en km in de Doelen-tab. Coach ontvangt een `[GAP ANALYSE]` blok met bijstuurinstructies: "We moeten deze week 15% meer volume draaien om weer in lijn te komen met de Marathon Blueprint."
 * **✅ Sprint 23.2 — Future Projection Engine:** `FutureProjectionService` berekent het wekelijkse TRIMP-groeitempo (3-weeks sliding window) en extrapoleerttrendlijn naar de Peak Phase-eis (blueprint × 1.30). Veiligheidslimiet: max 10% groei per week. `ProjectionStatus`: `alreadyPeaking / onTrack / atRisk / unreachable`. `GapAnalysisCardView` toont nieuwe 'Prognose'-sectie met gepland vs. verwacht piekdatum + kleur-badge. Coach ontvangt `[PROGNOSE]` blok met instructie om proactief te waarschuwen als het doel "At Risk" is.
-* **⏳ Sprint 23.3 — Visual Progress Hub:** Uitgebreide tijdlijn-visualisatie in de Doelen-tab die de volledige voorbereiding tot de racedag toont.
+* **🔄 Sprint 23.3 — Visual Progress Hub:** `BlueprintTimelineView` gecombineerde lijngrafiek (SwiftUI Charts) met drie lijnen: 🩶 Ideaal (fase-gecorrigeerde blauwdruk, gestippeld) / 🔵 Actueel (behaald volume t/m vandaag, vol + schaduw) / 🟠 Prognose (FutureProjectionService-extrapolatie, gestreept). Toggle TRIMP/km. RuleMark 'Vandaag' + fase-grenzen (Build/Peak/Taper). Scrollbaar horizontaal via `chartScrollableAxes` — 16-wekenvenster met initiële positie bij vandaag. Carrousel voor meerdere doelen. Bovenaan de Doelen-tab geplaatst als 'Trainingstraject'.
 
 ---
 

@@ -135,6 +135,18 @@ struct GoalsListView: View {
                     }
                 }
 
+                // MARK: Sprint 23.3 — Visual Progress Hub (bovenaan, prominent)
+                // De tijdlijn toont de volledige reis: Ideaal / Actueel / Prognose
+                Section {
+                    BlueprintTimelineSectionView(
+                        goals: uncompletedGoals,
+                        activities: Array(activities),
+                        projections: projections
+                    )
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+                }
+
                 // MARK: Blueprint voortgang (Gap Analysis — fase-cumulatief)
                 if !gapAnalysis.isEmpty {
                     Section {
@@ -153,7 +165,7 @@ struct GoalsListView: View {
                     }
                 }
 
-                // MARK: Progressie & Prognoses grafiek (verplaatst van Dashboard)
+                // MARK: Progressie & Burndown (resterende TRIMP richting nul)
                 if !uncompletedGoals.isEmpty {
                     Section {
                         BurndownChartView(goals: uncompletedGoals, activities: Array(activities))
