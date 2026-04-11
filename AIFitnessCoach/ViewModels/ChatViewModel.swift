@@ -96,6 +96,11 @@ class ChatViewModel: ObservableObject {
     /// Bevat het verschil tussen verwacht en werkelijk TRIMP/km op dit moment in de voorbereiding.
     @AppStorage("vibecoach_gapAnalysisContext") private var gapAnalysisContext: String = ""
 
+    /// Epic 23 Sprint 2: Cache van de toekomstprognose per doel (Future Projection Engine).
+    /// Beantwoordt de vraag: "Wanneer bereikt de atleet de Peak Phase op basis van zijn groeitempo?"
+    /// Wordt gevuld via `cacheProjections(_:)` vanuit GoalsListView en geïnjecteerd in de AI-prompt.
+    @AppStorage("vibecoach_projectionContext") private var projectionContext: String = ""
+
     /// Epic 24 Sprint 1: Cache van het fysiologische profiel + voedingsplan voor vandaag/morgen.
     /// Wordt gevuld via `refreshNutritionContext()` en geïnjecteerd in elke AI-prompt.
     @AppStorage("vibecoach_nutritionContext") private var nutritionContext: String = ""
@@ -274,6 +279,13 @@ class ChatViewModel: ObservableObject {
         gapAnalysisContext = gaps
             .map { $0.coachContext }
             .joined(separator: "\n\n")
+    }
+
+    /// Epic 23 Sprint 2: Schrijft de toekomstprognose per doel naar de AppStorage cache.
+    /// De coach gebruikt dit om proactief te waarschuwen als een doel "At Risk" of "Unreachable" is:
+    /// "Op basis van je huidige tempo ben je pas in juli klaar voor de marathon."
+    func cacheProjections(_ projections: [GoalProjection]) {
+        projectionContext = FutureProjectionService.buildCoachContext(from: projections)
     }
 
     /// Epic 24 Sprint 1: Haalt het fysiologisch profiel op via HealthKit en berekent het voedingsplan
@@ -701,6 +713,11 @@ class ChatViewModel: ObservableObject {
             5. Verbind altijd aan de fase: bijsturing in de Taper-fase is onwenselijk — adviseer dan om het tekort NIET in te halen maar door te gaan met het tapering-schema.]
             """
             prefix += gapBlock + "\n\n"
+        }
+
+        // Epic 23 Sprint 2: Injecteer de toekomstprognose (Future Projection Engine)
+        if !projectionContext.isEmpty {
+            prefix += "\(projectionContext)\n\n"
         }
 
         // Epic 24 Sprint 1: Injecteer het fysiologisch profiel + voedingsplan in de prompt
