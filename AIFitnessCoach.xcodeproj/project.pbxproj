@@ -31,6 +31,8 @@
 		A3BB100A32BF93E6C7587F72 /* FitnessGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */; };
 		A9B8C7D6E5F4A3B2C1D0E9F8 /* ProactiveNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */; };
 		B1C2D3E4F5A6B7C8D9E0F1A2 /* WeatherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */; };
+		E24A1B4C5D6E7F8A9B0C1D2F /* UserProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */; };
+		E35A2B5C6D7E8F9A0B1C2D3E /* NutritionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */; };
 		B49CB5209082C67DC40F4FA5 /* FitnessDataError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* TrainingPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */; };
 		CC54A4B0A24ABC7666AB3222 /* ChatViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */; };
@@ -114,6 +116,8 @@
 		F6DDC1DD36DFE9FDBEB93ED1 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataService.swift; sourceTree = "<group>"; };
 		F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProactiveNotificationService.swift; sourceTree = "<group>"; };
+		F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserProfileService.swift; sourceTree = "<group>"; };
+		F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NutritionService.swift; sourceTree = "<group>"; };
 		FAE95B5B0D96FB302BFE3145 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		H8I9J0K1L2M3N4O5P6Q7R8S9 /* PeriodizationEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PeriodizationEngineTests.swift; sourceTree = "<group>"; };
 		F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgressService.swift; sourceTree = "<group>"; };
@@ -213,6 +217,8 @@
 				F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */,
 				F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */,
 				F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */,
+				F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */,
+				F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */,
 				C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */,
 				AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */,
 			);
@@ -482,6 +488,8 @@
 				26CFC95E9F1D535817250215 /* FitnessDataService.swift in Sources */,
 				A9B8C7D6E5F4A3B2C1D0E9F8 /* ProactiveNotificationService.swift in Sources */,
 				E23A1B4C5D6E7F8A9B0C1D2E /* ProgressService.swift in Sources */,
+				E24A1B4C5D6E7F8A9B0C1D2F /* UserProfileService.swift in Sources */,
+				E35A2B5C6D7E8F9A0B1C2D3E /* NutritionService.swift in Sources */,
 				B1C2D3E4F5A6B7C8D9E0F1A2 /* WeatherManager.swift in Sources */,
 				13CD8B16330404CA41A93BDE /* NetworkSession.swift in Sources */,
 			);

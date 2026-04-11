@@ -165,8 +165,8 @@ De app maakt de lange-termijn voorbereiding inzichtelijk — niet alleen wat je 
 | Epic | Beschrijving |
 |------|--------------|
 | **Epic 22 — Live Workout & Real-Time Coaching** | Dedicated workout-scherm met live hartslag en zone-indicator, Audio Cues via `AVSpeechSynthesizer`, directe post-workout AI-analyse. *(Uitgesteld ten gunste van Epic 23)* |
-| **Epic 24 — Long-Term Memory** | Wekelijkse AI-samenvattingen van prestaties en terugkerende pijntjes — zodat de coach maanden later nog kan refereren aan chronische patronen. |
-| **Epic 25 — App Store Submission** | Screenshots, App Store beschrijving, Privacy Policy URL, leeftijdsclassificatie en TestFlight beta-distributie. *(Verre toekomst)* |
+| **Epic 24 — Nutrition & Fueling Engine** | Fysiologisch profiel via HealthKit (gewicht, leeftijd, geslacht, lengte). BMR-berekening (Mifflin-St Jeor). Koolhydraten + vocht per minuut per trainingszone. Coach geeft concrete bijvoedings- en hydratatie-adviezen op basis van geplande workout. |
+| **Epic 25 — Route Intelligence** | Hoogteprofiel-analyse van geplande Strava-routes. Automatische TRIMP-correctie voor klimmetjes. Coach geeft zone-advies op basis van stijgingspercentage. |
 
 ---
 

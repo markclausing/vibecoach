@@ -1829,6 +1829,9 @@ struct DashboardView: View {
                     trimp: lastRatedActivity?.trimp,
                     startDate: lastRatedActivity?.startDate
                 )
+                // Epic 24 Sprint 1: Haal het fysiologisch profiel op en bereken het voedingsplan
+                // voor de workouts van vandaag en morgen. Gecached in AppStorage voor de AI-prompt.
+                Task { await viewModel.refreshNutritionContext() }
                 // Epic 21: Vraag weerdata op via de singleton (vraagt locatie-toestemming als dat nog niet is gedaan).
                 // WeatherManager.shared is een singleton — geen property-doorgave nodig vanuit ContentView.
                 WeatherManager.shared.onWeatherUpdated = { context in
