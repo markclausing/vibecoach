@@ -123,10 +123,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             print("  ➡️ Strava Activity ID (String) gedetecteerd in payload: \(activityId)")
             AppNavigationState.shared.openActivityAnalysis(activityId: activityId)
         } else if let type = userInfo["type"] as? String, type == "goalRisk" {
-            // SPRINT 13.2: Proactieve coach-notificatie — open direct de coach
-            print("  ➡️ Doel-risico notificatie gedetecteerd — Coach openen")
+            // SPRINT 13.2 / Epic 23: Proactieve coach-notificatie — open de Doelen tab
+            // De herstelplan-banner staat nu in de Doelen tab, niet op het Dashboard.
+            print("  ➡️ Doel-risico notificatie gedetecteerd — Doelen tab openen")
             Task { @MainActor in
-                AppNavigationState.shared.showingChatSheet = true
+                AppNavigationState.shared.selectedTab = .goals
             }
         } else {
             print("  ⚠️ Geen geldig activityId gevonden in payload: \(userInfo)")

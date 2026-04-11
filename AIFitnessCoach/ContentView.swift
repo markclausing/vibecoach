@@ -91,8 +91,8 @@ struct ContentView: View {
                 }
                 .tag(AppNavigationState.Tab.dashboard)
 
-            // Tab 2: Doelen
-            GoalsListView()
+            // Tab 2: Doelen — lange-termijn analysecentrum (Epic 23)
+            GoalsListView(viewModel: sharedChatViewModel)
                 .tabItem {
                     Label("Doelen", systemImage: "target")
                 }
@@ -1313,10 +1313,6 @@ struct DashboardView: View {
             .max(by: { $0.startDate < $1.startDate })
     }
 
-    /// SPRINT 13.3: Tijdstip waarop de gebruiker voor het laatst 'Los dit op' heeft gedrukt.
-    /// Opgeslagen als Unix timestamp (Double) zodat AppStorage er mee werkt.
-    @AppStorage("vibecoach_recoveryPlanTimestamp") private var recoveryPlanTimestamp: Double = 0
-
     /// Tijdstip van de laatste geslaagde coach-analyse — gespiegeld vanuit ChatViewModel.
     @AppStorage("vibecoach_lastAnalysisTimestamp") private var lastAnalysisTimestamp: Double = 0
 
@@ -1338,14 +1334,6 @@ struct DashboardView: View {
             formatter.dateFormat = "d MMM 'om' HH:mm"
         }
         return "Laatste update: \(formatter.string(from: date))"
-    }
-
-    /// True als er een actief herstelplan is dat minder dan 3 dagen geleden is aangevraagd.
-    private var hasActiveRecoveryPlan: Bool {
-        guard recoveryPlanTimestamp > 0 else { return false }
-        let planDate = Date(timeIntervalSince1970: recoveryPlanTimestamp)
-        let threeDays: TimeInterval = 3 * 24 * 3600
-        return Date().timeIntervalSince(planDate) < threeDays
     }
 
     // MARK: - Contextuele TRIMP-bannerstatus (ACWR-gebaseerd)
@@ -1556,48 +1544,6 @@ struct DashboardView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 4)
 
-                        // SPRINT 13.1 & 13.3: Banner logica op basis van recovery plan status
-                        if !atRiskGoals.isEmpty {
-                            if hasActiveRecoveryPlan {
-                                // Herstelplan is actief (< 3 dagen geleden aangevraagd): toon blauwe banner
-                                RecoveryPlanActiveBannerView {
-                                    appState.showingChatSheet = true
-                                }
-                                .padding(.horizontal)
-                            } else {
-                                // Geen actief herstelplan: toon rode waarschuwingsbanner
-                                ProactiveWarningBannerView(
-                                    atRiskGoals: atRiskGoals,
-                                    onCoachTapped: {
-                                        appState.showingChatSheet = true
-                                    },
-                                    onRecoveryPlanTapped: {
-                                        // SPRINT 13.3: Bouw recovery context en stuur naar AI
-                                        refreshProfileContext()
-                                        let riskInfos = atRiskGoals.map { status in
-                                            let weeksRemaining = max(0.1, status.goal.targetDate.timeIntervalSince(Date()) / (7 * 86400))
-                                            return ChatViewModel.GoalRiskInfo(
-                                                title: status.goal.title,
-                                                currentWeeklyRate: status.currentWeeklyRate,
-                                                requiredWeeklyRate: status.requiredWeeklyRate,
-                                                weeksRemaining: weeksRemaining
-                                            )
-                                        }
-                                        viewModel.requestRecoveryPlan(
-                                            atRiskGoals: riskInfos,
-                                            contextProfile: currentProfile,
-                                            activeGoals: goals,
-                                            activePreferences: activePreferences
-                                        )
-                                        // Sla het tijdstip op zodat de banner 3 dagen blauw blijft
-                                        recoveryPlanTimestamp = Date().timeIntervalSince1970
-                                        appState.showingChatSheet = true
-                                    }
-                                )
-                                .padding(.horizontal)
-                            }
-                        }
-
                         // EPIC 14.3: Vibe Score Kaart — bovenaan voor directe richting
                         VibeScoreCardView(
                             readiness: todayReadiness,
@@ -1751,14 +1697,8 @@ struct DashboardView: View {
                             .padding(.horizontal)
                         }
 
-                        // Sprint 17.3: Mijlpalen-kaart — succescriteria per doel met voortgangsbalken
-                        if !periodizationResults.isEmpty {
-                            MilestoneProgressCard(results: periodizationResults)
-                                .padding(.horizontal)
-                        }
-
                         if let plan = planManager.activePlan {
-                            // Sprint 17.3: Fase-badge boven het schema
+                            // Sprint 17.3: Fase-badge boven het wekelijkse schema
                             if !periodizationResults.isEmpty {
                                 PhaseBadgeView(results: periodizationResults)
                                     .padding(.horizontal)
@@ -1800,13 +1740,6 @@ struct DashboardView: View {
                             .padding()
                             .frame(maxWidth: .infinity)
                             .padding(.top, 40)
-                        }
-
-                        // SPRINT 12.1: Multi-Goal Burndown Chart
-                        let uncompletedGoals = goals.filter { !$0.isCompleted }
-                        if !uncompletedGoals.isEmpty {
-                            BurndownChartView(goals: uncompletedGoals, activities: activities)
-                                .padding(.horizontal)
                         }
 
                         // SPRINT 12.2: Interactieve TRIMP Explainer
