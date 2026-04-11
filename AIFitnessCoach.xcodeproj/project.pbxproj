@@ -34,6 +34,7 @@
 		9E9427B7C484EE11E612C120 /* StravaActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */; };
 		A3BB100A32BF93E6C7587F72 /* FitnessGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */; };
 		A9B8C7D6E5F4A3B2C1D0E9F8 /* ProactiveNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */; };
+		B1C2D3E4F5A6B7C8D9E0F1A2 /* WeatherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */; };
 		B49CB5209082C67DC40F4FA5 /* FitnessDataError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */; };
 		CC54A4B0A24ABC7666AB3222 /* ChatViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */; };
 		D8A5CC6C6399BF876493D66B /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA86D03EE20341A8CB8173EE /* ChatView.swift */; };
@@ -44,6 +45,7 @@
 		E541659C316B9F8EBCCD6AA3 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF9454A3119F7BF71A5331E4 /* ChatMessage.swift */; };
 		E632BCD343E9A620341BD347 /* EditGoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 203C295EF5D568151B5D1BEF /* EditGoalView.swift */; };
 		E6E8BD3E3A715A18D4957878 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B16CF484B776C9214345E29 /* Foundation.framework */; };
+		A2B3C4D5E6F7A8B9C0D1E2F3 /* WeatherKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F3 /* WeatherKit.framework */; };
 		E767E8F495D10156A93BCC15 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE95B5B0D96FB302BFE3145 /* ContentView.swift */; };
 		EDF73C6C2B12F9FC2BDB6140 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5493D0D3C44442CCF82489CA /* Preview Assets.xcassets */; };
 		F00D4D082A5D0B980C536185 /* StravaAuthServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C2BF572AF13DE2A83E51CF /* StravaAuthServiceTests.swift */; };
@@ -70,6 +72,7 @@
 /* Begin PBXFileReference section */
 		07262F9AE3513E421E9B387F /* AIFitnessCoachTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIFitnessCoachTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0B16CF484B776C9214345E29 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		A1B2C3D4E5F6A7B8C9D0E1F3 /* WeatherKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WeatherKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/WeatherKit.framework; sourceTree = DEVELOPER_DIR; };
 		0D235CA77C73BA3BBA685143 /* Secrets-template.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "Secrets-template.swift"; sourceTree = "<group>"; };
 		0DE3DDF83AB44095AF4FA0CE /* MockNetworkSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockNetworkSession.swift; sourceTree = "<group>"; };
 		136CF190D3B3F2D63ADC3225 /* KeychainService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
@@ -111,6 +114,7 @@
 		F6DDC1DD36DFE9FDBEB93ED1 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataService.swift; sourceTree = "<group>"; };
 		F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProactiveNotificationService.swift; sourceTree = "<group>"; };
+		C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeatherManager.swift; sourceTree = "<group>"; };
 		FAE95B5B0D96FB302BFE3145 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -125,6 +129,7 @@
 			files = (
 				E6E8BD3E3A715A18D4957878 /* Foundation.framework in Frameworks */,
 				626955C541119438634E5B32 /* GoogleGenerativeAI in Frameworks */,
+				A2B3C4D5E6F7A8B9C0D1E2F3 /* WeatherKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -205,6 +210,7 @@
 				60758C181F9C986190D5A369 /* StravaAuthService.swift */,
 				F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */,
 				F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */,
+				C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */,
 				AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */,
 			);
 			path = Services;
@@ -262,6 +268,7 @@
 			isa = PBXGroup;
 			children = (
 				0B16CF484B776C9214345E29 /* Foundation.framework */,
+				A1B2C3D4E5F6A7B8C9D0E1F3 /* WeatherKit.framework */,
 			);
 			name = iOS;
 			sourceTree = "<group>";
@@ -471,6 +478,7 @@
 				06C5198C4908FF10CCF1E836 /* StravaAuthService.swift in Sources */,
 				26CFC95E9F1D535817250215 /* FitnessDataService.swift in Sources */,
 				A9B8C7D6E5F4A3B2C1D0E9F8 /* ProactiveNotificationService.swift in Sources */,
+				B1C2D3E4F5A6B7C8D9E0F1A2 /* WeatherManager.swift in Sources */,
 				13CD8B16330404CA41A93BDE /* NetworkSession.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
