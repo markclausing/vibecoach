@@ -20,6 +20,7 @@ struct AddGoalView: View {
             Form {
                 Section(header: Text("Details")) {
                     TextField("Titel (bijv. Marathon onder 3:30)", text: $title)
+                        .accessibilityIdentifier("GoalTitleField")
                     TextField("Extra notities (optioneel)", text: $details, axis: .vertical)
                         .lineLimit(3...6)
                 }
@@ -43,6 +44,7 @@ struct AddGoalView: View {
                     Button("Annuleer") {
                         dismiss()
                     }
+                    .accessibilityIdentifier("GoalCancelButton")
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: saveGoal) {
@@ -53,6 +55,7 @@ struct AddGoalView: View {
                         }
                     }
                     .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+                    .accessibilityIdentifier("GoalSaveButton")
                 }
             }
         }

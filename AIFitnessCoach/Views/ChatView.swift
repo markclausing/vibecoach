@@ -185,6 +185,7 @@ struct ChatView: View {
                             .foregroundColor(viewModel.inputText.isEmpty && viewModel.selectedImage == nil ? .gray : .blue)
                     }
                     .disabled(viewModel.inputText.isEmpty && viewModel.selectedImage == nil)
+                    .accessibilityIdentifier("ChatSendButton")
                 }
                 .padding()
 
