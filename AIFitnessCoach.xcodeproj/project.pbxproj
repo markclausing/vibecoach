@@ -103,6 +103,7 @@
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadinessCalculatorTests.swift; sourceTree = "<group>"; };
 		B852004D2F719C9900F5B5E9 /* AIFitnessCoachUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIFitnessCoachUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B88E085E2F6B22120063C085 /* AIFitnessCoach.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIFitnessCoach.entitlements; sourceTree = "<group>"; };
+		B8FB790F2F8C242C0068C328 /* AIFitnessCoach.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = file; path = AIFitnessCoach.xctestplan; sourceTree = "<group>"; };
 		BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsViewTests.swift; sourceTree = "<group>"; };
 		BB37CC48DD59EE60FF71AA26 /* UITestMockEnvironment.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UITestMockEnvironment.swift; sourceTree = "<group>"; };
 		BDF699C6B7148ACD66E857D7 /* AddGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddGoalView.swift; sourceTree = "<group>"; };
@@ -254,6 +255,7 @@
 		5E2E25462E75CD2AA9086296 = {
 			isa = PBXGroup;
 			children = (
+				B8FB790F2F8C242C0068C328 /* AIFitnessCoach.xctestplan */,
 				B852004E2F719C9900F5B5E9 /* AIFitnessCoachUITests */,
 				12C5691C1D9812D6840FF85F /* Products */,
 				4F7D89EBC189B89F3F8A2186 /* Frameworks */,
