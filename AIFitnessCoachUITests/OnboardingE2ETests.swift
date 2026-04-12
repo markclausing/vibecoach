@@ -78,14 +78,30 @@ final class OnboardingE2ETests: XCTestCase {
             "Pagina 3 (API-sleutel) verschijnt niet."
         )
 
-        // Typ een dummy API-sleutel in het beveiligde invoerveld.
+        // Verifieer dat het sleutelveld aanwezig is — de UITestMockEnvironment heeft al een
+        // dummy-sleutel gezet, dus we hoeven maar een korte string te typen.
         let apiKeyField = app.secureTextFields["OnboardingAPIKeyField"]
         XCTAssertTrue(apiKeyField.waitForExistence(timeout: 3), "OnboardingAPIKeyField niet gevonden.")
         apiKeyField.tap()
-        apiKeyField.typeText("test-dummy-api-key-1234567890")
+        apiKeyField.typeText("TEST123")
 
-        // Sluit het toetsenbord en ga naar de volgende pagina.
-        app.tap()
+        // Sluit het toetsenbord door op de titel te tikken (zit boven het toetsenbord,
+        // waardoor de tap gegarandeerd de SwiftUI .onTapGesture bereikt).
+        // Dit is betrouwbaarder dan app.tap() dat het toetsenbord zelf kan raken.
+        let titleText = app.staticTexts["Jouw Data, Jouw AI"]
+        if titleText.isHittable {
+            titleText.tap()
+        } else if app.keyboards.buttons["Done"].exists {
+            app.keyboards.buttons["Done"].tap()
+        } else if app.keyboards.buttons["Return"].exists {
+            app.keyboards.buttons["Return"].tap()
+        }
+
+        // Wacht tot het toetsenbord weg is zodat de Volgende-knop hittable is.
+        let volgendeHittable = NSPredicate(format: "isHittable == true")
+        expectation(for: volgendeHittable, evaluatedWith: volgende)
+        waitForExpectations(timeout: 3)
+
         volgende.tap()
 
         // ── Pagina 4: Permissies ──────────────────────────────────────────
