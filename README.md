@@ -5,7 +5,7 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Actief in Ontwikkeling — Epic 23 Sprint 2 (Future Projection Engine) afgerond | Epic 24 ✅ | Epic 25 gepland**
+**Actief in Ontwikkeling — Epic 23 (Blueprint Analysis & Future Projections) afgerond ✅**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 54% code coverage.
 
@@ -150,13 +150,13 @@ De coach gaat mee de training in — real-time begeleiding tijdens de workout ze
 
 ---
 
-### 🔄 Epic 23: Blueprint Analysis & Future Projections (Actief)
+### ✅ Epic 23: Blueprint Analysis & Future Projections (Afgerond)
 
 De app maakt de lange-termijn voorbereiding inzichtelijk — niet alleen wat je nú doet, maar of je op koers ligt voor de grote dag.
 
 * **✅ Sprint 23.1 — Target Gap Analysis:** `ProgressService` berekent het verschil (gap) tussen het lineaire verwachte trainingsvolume en het werkelijk behaalde volume. `BlueprintGap` struct bevat TRIMP-achterstand, km-achterstand en een concreet bijsturingsadvies ("je hebt X extra TRIMP/week nodig"). `GapAnalysisCardView` toont per doel een voortgangsbalk voor TRIMP en km in de Doelen-tab. Coach ontvangt een `[GAP ANALYSE]` blok met bijstuurinstructies: "We moeten deze week 15% meer volume draaien om weer in lijn te komen met de Marathon Blueprint."
 * **✅ Sprint 23.2 — Future Projection Engine:** `FutureProjectionService` berekent het wekelijkse TRIMP-groeitempo (3-weeks sliding window) en extrapoleerttrendlijn naar de Peak Phase-eis (blueprint × 1.30). Veiligheidslimiet: max 10% groei per week. `ProjectionStatus`: `alreadyPeaking / onTrack / atRisk / unreachable`. `GapAnalysisCardView` toont nieuwe 'Prognose'-sectie met gepland vs. verwacht piekdatum + kleur-badge. Coach ontvangt `[PROGNOSE]` blok met instructie om proactief te waarschuwen als het doel "At Risk" is.
-* **⏳ Sprint 23.3 — Visual Progress Hub:** Uitgebreide tijdlijn-visualisatie in de Doelen-tab die de volledige voorbereiding tot de racedag toont.
+* **✅ Sprint 23.3 — Visual Progress Hub + Goal-Centric UI:** `BlueprintTimelineView` gecombineerde lijngrafiek (SwiftUI Charts): 🩶 Ideaal / 🔵 Actueel / 🟠 Prognose · Toggle TRIMP/km · RuleMark 'Vandaag' + fase-grenzen · scrollbaar 16-wekenvenster. `GoalDetailContainer` herstructureert de Doelen-tab in één overkoepelende kaart per doel met vaste secties: 'Huidige Fase & Mijlpalen' → 'Blueprint Voortgang' → 'Prognose & Tijdlijn' → 'Herstelplan' (optioneel). Gebruiker ziet het complete verhaal van een doel in één oogopslag.
 
 ---
 
