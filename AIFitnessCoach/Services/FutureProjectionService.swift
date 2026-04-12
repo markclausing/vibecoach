@@ -36,8 +36,11 @@ enum ProjectionStatus {
     /// Prognose: de atleet haalt de Peak Phase pas ná de geplande peakdatum,
     /// maar nog vóór de racedag — risico.
     case atRisk
-    /// Wiskundig onhaalbaar: zelfs met 10% groei per week is de Peak Phase niet haalbaar
-    /// vóór de racedag, of het huidige volume is nul/negatief.
+    /// Wiskundig onhaalbaar met huidige groei, maar race > 12 weken weg —
+    /// voldoende tijd voor een gerichte inhaalslag. Oranje, niet rood.
+    case catchUpNeeded
+    /// Wiskundig onhaalbaar: zelfs met maximale groeicap is de Peak Phase niet haalbaar
+    /// vóór de racedag (race < 12 weken weg), of het huidige volume is nul/negatief.
     case unreachable
 
     var icon: String {
@@ -45,15 +48,16 @@ enum ProjectionStatus {
         case .alreadyPeaking: return "checkmark.seal.fill"
         case .onTrack:        return "arrow.up.right.circle.fill"
         case .atRisk:         return "exclamationmark.triangle.fill"
+        case .catchUpNeeded:  return "arrow.up.circle.fill"
         case .unreachable:    return "xmark.circle.fill"
         }
     }
 
     var color: String {
         switch self {
-        case .alreadyPeaking, .onTrack: return "green"
-        case .atRisk:                   return "orange"
-        case .unreachable:              return "red"
+        case .alreadyPeaking, .onTrack:    return "green"
+        case .atRisk, .catchUpNeeded:      return "orange"
+        case .unreachable:                 return "red"
         }
     }
 
@@ -62,6 +66,7 @@ enum ProjectionStatus {
         case .alreadyPeaking: return "Peak Phase bereikt"
         case .onTrack:        return "Op koers"
         case .atRisk:         return "Risico"
+        case .catchUpNeeded:  return "Inhaalslag nodig"
         case .unreachable:    return "Onhaalbaar"
         }
     }
@@ -108,6 +113,10 @@ struct GoalProjection {
     let weeksDelta: Double
     let status: ProjectionStatus
 
+    /// True als de Cross-Training Bonus actief was: TRIMP ≥ 90% van basisweekdoel,
+    /// waardoor de km-groeicap verhoogd werd van 10% naar 17%.
+    let hasCrossTrainingBonus: Bool
+
     // MARK: - Coach context
 
     var coachContext: String {
@@ -123,18 +132,28 @@ struct GoalProjection {
         let reqKmStr     = String(format: "%.1f", requiredPeakKm)
         let growthPct    = Int((observedGrowthRate * 100).rounded())
         let kmGrowthPct  = Int((kmObservedGrowthRate * 100).rounded())
+        let kmCapPct     = hasCrossTrainingBonus ? 17 : 10
 
         var lines: [String] = [
             "Doel: '\(goal.title)' — racedag \(targetStr)",
             "Huidig wekelijks TRIMP: ~\(trimpInt) (piek-eis: ~\(reqTRIMPInt)) | "
                 + "Huidig wekelijks \(kmLabel): ~\(kmStr) km (piek-eis: ~\(reqKmStr) km)",
-            "TRIMP-groei: \(growthPct)%/week | \(kmLabel)-groei: \(kmGrowthPct)%/week (max 10%)",
+            "TRIMP-groei: \(growthPct)%/week | \(kmLabel)-groei: \(kmGrowthPct)%/week (max \(kmCapPct)%"
+                + (hasCrossTrainingBonus ? " — Cross-Training Bonus actief" : "") + ")",
         ]
 
         switch bottleneck {
         case .km:
-            lines.append("⚠️ BOTTLENECK: Het sport-specifieke kilometers-volume (\(kmLabel)) is de beperkende factor. "
-                + "Hoge TRIMP van andere sporten (bijv. fietsen bij een hardloopblessure) telt NIET mee voor deze projectie.")
+            if hasCrossTrainingBonus {
+                lines.append("⚠️ BOTTLENECK: \(kmLabel) is de beperkende factor. "
+                    + "MAAR: de aerobe basis (TRIMP) is sterk genoeg (≥ 90% van basisweekdoel). "
+                    + "Cross-Training Bonus: groeicap km verhoogd naar 17%/week. "
+                    + "Zodra de atleet hersteld is van de blessure, kan het loopvolume sneller worden opgebouwd. "
+                    + "Instructie: focus op herstel van de specifieke sport — niet op meer algemene cardio.")
+            } else {
+                lines.append("⚠️ BOTTLENECK: Het sport-specifieke kilometers-volume (\(kmLabel)) is de beperkende factor. "
+                    + "Hoge TRIMP van andere sporten (bijv. fietsen bij een hardloopblessure) telt NIET mee voor deze projectie.")
+            }
         case .trimp:
             lines.append("ℹ️ TRIMP is de beperkende factor. Het \(kmLabel)-volume ligt al op schema.")
         case .both:
@@ -157,6 +176,14 @@ struct GoalProjection {
             let delta   = Int(abs(weeksDelta).rounded())
             lines.append("🟠 PROGNOSE: Peak Phase pas ~\(projStr) — \(delta) week(en) ná \(plannedStr). "
                 + "Coach MOET het volume verhogen. Instructie: geef concreet voorbeeld hoe één training verlengd kan worden.")
+
+        case .catchUpNeeded:
+            let projStr = projectedPeakDate.map { df.string(from: $0) } ?? "—"
+            let delta   = Int(abs(weeksDelta).rounded())
+            lines.append("🟠 PROGNOSE: Race > 12 weken weg — er is tijd voor een inhaalslag. "
+                + "Piekbelasting verwacht ~\(projStr) — \(delta) week(en) ná \(plannedStr). "
+                + "INSTRUCTIE: Stel een geleidelijk opbouwplan voor de komende 4–6 weken. "
+                + "Noem de situatie constructief — niet alarmerend.")
 
         case .unreachable:
             lines.append("🔴 PROGNOSE: Wiskundig onhaalbaar vóór racedag \(targetStr). "
@@ -181,6 +208,18 @@ struct FutureProjectionService {
 
     /// Maximaal toegestane wekelijkse groei (sportwetenschappelijke 10%-regel).
     static let maxWeeklyGrowthRate: Double = 0.10
+
+    /// Verhoogde groeicap bij Cross-Training Bonus: atleet heeft sterke aerobe basis
+    /// (TRIMP ≥ 90% van basisweekdoel) maar loopt achter op sport-specifieke km.
+    /// Sportwetenschappelijk verantwoord: goede aeroob-getrainde atleet kan sneller opbouwen.
+    static let maxWeeklyGrowthRateCrossTraining: Double = 0.17
+
+    /// Minimale TRIMP-ratio t.o.v. basisweekdoel om Cross-Training Bonus te activeren.
+    static let trimpOnScheduleThreshold: Double = 0.90
+
+    /// Weken tot racedag waarbij 'Onhaalbaar' (rood) mag worden getoond.
+    /// Daarboven toont de app 'Inhaalslag nodig' (oranje) — er is nog genoeg tijd.
+    static let gracePeriodWeeks: Int = 12
 
     /// Weken vóór racedag dat Peak Phase idealiter begint.
     static let peakPhaseStartWeeksBefore: Int = 4
@@ -244,6 +283,13 @@ struct FutureProjectionService {
         let currentWeeklyTRIMP = (weeklyTRIMP[0] + weeklyTRIMP[1]) / 2.0
         let currentWeeklyKm    = (weeklyKm[0]    + weeklyKm[1])    / 2.0
 
+        // ── Stap 3b: Cross-Training Bonus ──
+        // Als de algehele TRIMP (inclusief cross-training) op schema is maar de
+        // sport-specifieke km achterlopen (bijv. kuitblessure), krijgt de atleet
+        // een hogere km-groeicap. Een goede aerobe basis versnelt het herstel.
+        let hasCrossTrainingBonus = currentWeeklyTRIMP >= trimpOnScheduleThreshold * blueprint.weeklyTrimpTarget
+        let kmGrowthCap = hasCrossTrainingBonus ? maxWeeklyGrowthRateCrossTraining : maxWeeklyGrowthRate
+
         // ── Stap 4: Groeisnelheid per metric ──
         // Vergelijk gemiddelde week 0–1 met gemiddelde week 2–3, gedeeld door 2 weken.
         let olderTRIMP = (weeklyTRIMP[2] + weeklyTRIMP[3]) / 2.0
@@ -257,7 +303,7 @@ struct FutureProjectionService {
             : 0.0
 
         let effectiveGrowthRate   = min(observedTRIMPGrowth, maxWeeklyGrowthRate)
-        let effectiveKmGrowthRate = min(observedKmGrowth,    maxWeeklyGrowthRate)
+        let effectiveKmGrowthRate = min(observedKmGrowth,    kmGrowthCap)
 
         // ── Stap 5: Piek-eisen (blueprint × Peak Phase multiplier 1.30) ──
         let requiredPeakTRIMP = blueprint.weeklyTrimpTarget * TrainingPhase.peakPhase.multiplier
@@ -302,7 +348,8 @@ struct FutureProjectionService {
                 projectedPeakDateTRIMP: nil, projectedPeakDateKm: nil,
                 bottleneck: .alreadyMet,
                 plannedPeakDate: plannedPeakDate, projectedPeakDate: nil,
-                weeksDelta: 0, status: .alreadyPeaking
+                weeksDelta: 0, status: .alreadyPeaking,
+                hasCrossTrainingBonus: false
             )
         }
 
@@ -311,6 +358,9 @@ struct FutureProjectionService {
         let kmUnreachable    = !kmAlreadyMet    && projectedPeakDateKm    == nil
 
         if trimpUnreachable && kmUnreachable {
+            let weeksUntilRace = goal.targetDate.timeIntervalSince(now) / (7 * 86400)
+            let earlyStatus: ProjectionStatus = weeksUntilRace > Double(gracePeriodWeeks)
+                ? .catchUpNeeded : .unreachable
             return GoalProjection(
                 goal: goal, blueprintType: blueprintType,
                 currentWeeklyTRIMP: currentWeeklyTRIMP,
@@ -322,8 +372,9 @@ struct FutureProjectionService {
                 projectedPeakDateTRIMP: nil, projectedPeakDateKm: nil,
                 bottleneck: .both,
                 plannedPeakDate: plannedPeakDate, projectedPeakDate: nil,
-                weeksDelta: goal.targetDate.timeIntervalSince(now) / (7 * 86400),
-                status: .unreachable
+                weeksDelta: weeksUntilRace,
+                status: earlyStatus,
+                hasCrossTrainingBonus: hasCrossTrainingBonus
             )
         }
 
@@ -358,14 +409,21 @@ struct FutureProjectionService {
 
         // ── Stap 10: Status bepalen ──
         let weeksDelta = rawProjectedDate.timeIntervalSince(plannedPeakDate) / (7 * 86400)
+        let weeksUntilRace = goal.targetDate.timeIntervalSince(now) / (7 * 86400)
 
-        let status: ProjectionStatus
+        var status: ProjectionStatus
         if rawProjectedDate <= plannedPeakDate {
             status = .onTrack
         } else if rawProjectedDate <= goal.targetDate {
             status = .atRisk
         } else {
             status = .unreachable
+        }
+
+        // Grace Period: race nog > 12 weken weg → 'Onhaalbaar' niet tonen.
+        // De atleet heeft genoeg tijd om bij te sturen; rood demotiveert onnodig.
+        if status == .unreachable && weeksUntilRace > Double(gracePeriodWeeks) {
+            status = .catchUpNeeded
         }
 
         return GoalProjection(
@@ -382,7 +440,8 @@ struct FutureProjectionService {
             plannedPeakDate: plannedPeakDate,
             projectedPeakDate: rawProjectedDate,
             weeksDelta: weeksDelta,
-            status: status
+            status: status,
+            hasCrossTrainingBonus: hasCrossTrainingBonus
         )
     }
 
@@ -399,6 +458,10 @@ struct FutureProjectionService {
         Gedragsregel:
         - Bij bottleneck .km: wijs altijd expliciet op de sport-specifieke achterstand.
           Noem nooit de TRIMP-score als de km-achterstand de limiterende factor is.
+        - Bij Cross-Training Bonus (hasCrossTrainingBonus = true): toon empathie voor de blessure
+          en benadruk dat het SNELLER beter kan gaan omdat de aerobe basis sterk is.
+        - Bij 'Inhaalslag nodig' (.catchUpNeeded): NOOIT alarmerend. Wees constructief —
+          er is genoeg tijd. Stel een concreet opbouwplan voor.
         - Bij 'Risico' of 'Onhaalbaar': stel proactief een bijsturingsplan voor.
         - Verbind de prognose altijd aan de huidig lopende trainingsfase.]
         """)

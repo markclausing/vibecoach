@@ -262,9 +262,9 @@ struct GapAnalysisCardView: View {
     /// Vertaalt de ProjectionStatus naar een SwiftUI Color.
     private func statusSwiftColor(_ status: ProjectionStatus) -> Color {
         switch status {
-        case .alreadyPeaking, .onTrack: return .green
-        case .atRisk:                   return .orange
-        case .unreachable:              return .red
+        case .alreadyPeaking, .onTrack:    return .green
+        case .atRisk, .catchUpNeeded:      return .orange
+        case .unreachable:                 return .red
         }
     }
 
@@ -280,8 +280,17 @@ struct GapAnalysisCardView: View {
         case .atRisk:
             let weeks = Int(abs(projection.weeksDelta).rounded())
             return "Je groeit \(pct)% per week. Je loopt \(weeks) week(en) achter op de geplande piekdatum. Schroef het volume op."
+        case .catchUpNeeded:
+            let weeks = Int(abs(projection.weeksDelta).rounded())
+            if projection.hasCrossTrainingBonus {
+                return "Bottleneck: \(projection.blueprintType == .cyclingTour ? "fiets" : "hardloop")-volume. "
+                    + "Omdat je aerobe basis (TRIMP) sterk is, kunnen we dit gat de komende weken sneller dichten zodra je hersteld bent. "
+                    + "Nog \(weeks) week(en) bij te sturen — ruim op tijd."
+            } else {
+                return "Je loopt \(weeks) week(en) achter, maar de racedag is nog ver genoeg weg voor een gerichte inhaalslag. Stap voor stap opbouwen."
+            }
         case .unreachable:
-            return "Zelfs met 10% groei per week is de piekbelasting niet haalbaar vóór de racedag. Bespreek dit met je coach."
+            return "Zelfs met maximale wekelijkse groei is de piekbelasting niet haalbaar vóór de racedag. Bespreek dit met je coach."
         }
     }
 

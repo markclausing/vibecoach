@@ -436,14 +436,19 @@ struct GoalDetailContainer: View {
         case .marathon, .halfMarathon: sportLabel = "hardloop-km"
         case .cyclingTour:             sportLabel = "fiets-km"
         }
-        return "Bottleneck: \(sportLabel) \(kmStr)/\(reqStr) km/week — TRIMP van andere sporten telt hier niet mee."
+        if proj.hasCrossTrainingBonus {
+            return "Bottleneck: \(sportLabel) \(kmStr)/\(reqStr) km/week. "
+                + "Omdat je aerobe basis (TRIMP) sterk is, kunnen we dit gat sneller dichten zodra je hersteld bent."
+        } else {
+            return "Bottleneck: \(sportLabel) \(kmStr)/\(reqStr) km/week — TRIMP van andere sporten telt hier niet mee."
+        }
     }
 
     private func statusColor(_ status: ProjectionStatus) -> Color {
         switch status {
-        case .alreadyPeaking, .onTrack: return .green
-        case .atRisk:                   return .orange
-        case .unreachable:              return .red
+        case .alreadyPeaking, .onTrack:    return .green
+        case .atRisk, .catchUpNeeded:      return .orange
+        case .unreachable:                 return .red
         }
     }
 
