@@ -3,32 +3,41 @@ import SwiftData
 
 // MARK: - Epic 23 Sprint 1 & 2: Gap Analysis + Future Projection UI
 
-/// Kaart die de cumulatieve achterstand/voorsprong binnen de huidige trainingsfase toont,
-/// aangevuld met een toekomstprognose ("Glazen Bol") uit de FutureProjectionService.
+/// Kaart die de cumulatieve achterstand/voorsprong binnen de huidige trainingsfase toont.
+///
+/// - `isEmbedded`: gebruik `true` als de kaart binnen een `GoalDetailContainer` staat —
+///   verbergt dan de doeltitel-header en de eigen achtergrond (container heeft die al).
 struct GapAnalysisCardView: View {
     let gap: BlueprintGap
-    /// Optionele prognose voor hetzelfde doel. Nil als er geen blueprint-match is.
+    /// Optionele prognose — alleen getoond als `isEmbedded == false` (standalone gebruik).
     var projection: GoalProjection? = nil
+    /// True = geen eigen header/achtergrond; de container levert de context.
+    var isEmbedded: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
 
-            // Header: doelnaam + weken resterend
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(gap.goal.title)
-                        .font(.headline)
-                        .lineLimit(1)
-                    // Fase + week-context: "Build Phase (Week 3/8)"
-                    Text(gap.phaseProgressLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            // Header: alleen tonen buiten een GoalDetailContainer
+            if !isEmbedded {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(gap.goal.title)
+                            .font(.headline)
+                            .lineLimit(1)
+                        Text(gap.phaseProgressLabel)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    weeksRemainingBadge
                 }
-                Spacer()
-                weeksRemainingBadge
+                Divider()
             }
 
-            Divider()
+            // Fase-context label (altijd zichtbaar — ook embedded)
+            Text(gap.phaseProgressLabel)
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
             // TRIMP voortgangsrij met ghost marker
             phaseProgressRow(
@@ -55,15 +64,15 @@ struct GapAnalysisCardView: View {
                 catchUpBanner
             }
 
-            // MARK: Prognose-sectie (Sprint 23.2)
-            if let projection {
+            // Prognose-sectie alleen buiten de container (embedded toont dit al apart)
+            if !isEmbedded, let projection {
                 Divider()
                 projectionSection(projection)
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .padding(isEmbedded ? 0 : 16)
+        .background(isEmbedded ? Color.clear : Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: isEmbedded ? 0 : 14))
     }
 
     // MARK: - Sub-views
@@ -253,9 +262,9 @@ struct GapAnalysisCardView: View {
     /// Vertaalt de ProjectionStatus naar een SwiftUI Color.
     private func statusSwiftColor(_ status: ProjectionStatus) -> Color {
         switch status {
-        case .alreadyPeaking, .onTrack: return .green
-        case .atRisk:                   return .orange
-        case .unreachable:              return .red
+        case .alreadyPeaking, .onTrack:    return .green
+        case .atRisk, .catchUpNeeded:      return .orange
+        case .unreachable:                 return .red
         }
     }
 
@@ -271,8 +280,17 @@ struct GapAnalysisCardView: View {
         case .atRisk:
             let weeks = Int(abs(projection.weeksDelta).rounded())
             return "Je groeit \(pct)% per week. Je loopt \(weeks) week(en) achter op de geplande piekdatum. Schroef het volume op."
+        case .catchUpNeeded:
+            let weeks = Int(abs(projection.weeksDelta).rounded())
+            if projection.hasCrossTrainingBonus {
+                return "Bottleneck: \(projection.blueprintType == .cyclingTour ? "fiets" : "hardloop")-volume. "
+                    + "Omdat je aerobe basis (TRIMP) sterk is, kunnen we dit gat de komende weken sneller dichten zodra je hersteld bent. "
+                    + "Nog \(weeks) week(en) bij te sturen — ruim op tijd."
+            } else {
+                return "Je loopt \(weeks) week(en) achter, maar de racedag is nog ver genoeg weg voor een gerichte inhaalslag. Stap voor stap opbouwen."
+            }
         case .unreachable:
-            return "Zelfs met 10% groei per week is de piekbelasting niet haalbaar vóór de racedag. Bespreek dit met je coach."
+            return "Zelfs met maximale wekelijkse groei is de piekbelasting niet haalbaar vóór de racedag. Bespreek dit met je coach."
         }
     }
 
