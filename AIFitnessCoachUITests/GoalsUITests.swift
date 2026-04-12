@@ -11,6 +11,8 @@ final class GoalsUITests: XCTestCase {
         // 1. Lanceer de app.
         let app = XCUIApplication()
         app.launchArguments.append("-isRunningUITests")
+        // Sprint 26.1: -UITesting activeert UITestMockEnvironment (hasSeenOnboarding = true).
+        app.launchArguments.append("-UITesting")
         app.launch()
 
         // 2. Navigeer naar de 'Doelen' tab — wacht tot de TabBar geladen is.
