@@ -170,12 +170,11 @@ Fysiologisch correcte voedingsadviezen op basis van wie je bent en wat je van pl
 
 ---
 
-### 📅 Backlog / Toekomstvisie
+### 📋 Actieve Ontwikkeling & Backlog
 
-| Epic | Beschrijving |
-|------|--------------|
-| **Epic 22 — Live Workout & Real-Time Coaching** | Dedicated workout-scherm met live hartslag en zone-indicator, Audio Cues via `AVSpeechSynthesizer`, directe post-workout AI-analyse. *(Uitgesteld ten gunste van Epic 23/24)* |
-| **Epic 25 — Route Intelligence** | MapKit-integratie: interactieve routekaart met hoogteprofiel-visualisatie. Automatische TRIMP-correctie voor klimmetjes. Coach geeft zone-advies per segment op basis van stijgingspercentage. Import van Strava GPX-routes direct in de app. |
+De actieve ontwikkeling en backlog worden beheerd in ons **[GitHub Project Kanban-bord](https://github.com/markclausing/vibecoach/issues)**.
+
+Alle openstaande Epics en Sprints staan als GitHub Issues en worden van daaruit geprioriteerd, bijgehouden en gereviewd.
 
 ---
 

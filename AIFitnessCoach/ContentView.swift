@@ -489,18 +489,16 @@ private struct SleepStagesBarView: View {
 
                 Spacer()
 
-                // Kwaliteitslabel rechts
+                // Kwaliteitslabel rechts — alleen tonen bij matige of onvoldoende diepe slaap
+                // (Management by Exception: geen label bij goed/uitstekend)
                 let deepR = ratio(deepMinutes)
-                let qualLabel: String = {
-                    if deepR >= 0.20 { return "Uitstekend" }
-                    if deepR >= 0.15 { return "Goed" }
-                    if deepR >= 0.10 { return "Matig" }
-                    return "Onvoldoende"
-                }()
-                Text(qualLabel)
-                    .font(.caption2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(qualityColor)
+                if deepR < 0.15 {
+                    let qualLabel = deepR >= 0.10 ? "Diep: Matig" : "Diep: Onvoldoende"
+                    Text(qualLabel)
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(qualityColor)
+                }
             }
         }
     }
