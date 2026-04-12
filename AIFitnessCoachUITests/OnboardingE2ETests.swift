@@ -145,51 +145,24 @@ final class OnboardingE2ETests: XCTestCase {
         )
 
         // ── Voeg doel 1 toe ───────────────────────────────────────────────
-        let addButton = app.buttons["AddGoalButton"]
-        XCTAssertTrue(addButton.waitForExistence(timeout: 3), "AddGoalButton niet gevonden.")
-        addButton.tap()
-
+        try addGoal("E2E Marathon Doel")
         XCTAssertTrue(
-            app.navigationBars["Nieuw Doel"].waitForExistence(timeout: 3),
-            "AddGoalView opent niet."
-        )
-
-        let titleField = app.textFields["GoalTitleField"]
-        XCTAssertTrue(titleField.waitForExistence(timeout: 3), "GoalTitleField niet gevonden.")
-        titleField.tap()
-        titleField.typeText("E2E Marathon Doel")
-
-        let saveButton = app.buttons["GoalSaveButton"]
-        XCTAssertTrue(saveButton.waitForExistence(timeout: 2), "GoalSaveButton niet gevonden.")
-        saveButton.tap()
-
-        // Wacht tot het formulier gesloten is.
-        XCTAssertTrue(
-            app.navigationBars["Doelen"].waitForExistence(timeout: 5),
-            "Na opslaan keert de app niet terug naar de doelen-lijst."
-        )
-        XCTAssertTrue(
-            app.staticTexts["E2E Marathon Doel"].waitForExistence(timeout: 3),
+            findGoalText("E2E Marathon Doel"),
             "Doel 'E2E Marathon Doel' verschijnt niet in de lijst na opslaan."
         )
 
         // ── Voeg doel 2 toe ───────────────────────────────────────────────
-        addButton.tap()
-        XCTAssertTrue(app.navigationBars["Nieuw Doel"].waitForExistence(timeout: 3))
-        titleField.tap()
-        titleField.typeText("E2E Fietsdoel")
-        saveButton.tap()
-
-        XCTAssertTrue(app.navigationBars["Doelen"].waitForExistence(timeout: 5))
+        try addGoal("E2E Fietsdoel")
         XCTAssertTrue(
-            app.staticTexts["E2E Fietsdoel"].waitForExistence(timeout: 3),
+            findGoalText("E2E Fietsdoel"),
             "Doel 'E2E Fietsdoel' verschijnt niet in de lijst na opslaan."
         )
 
-        // ── Bewerk doel 1: tik op de rij om naar EditGoalView te gaan ────
-        let goalOneCell = app.staticTexts["E2E Marathon Doel"]
-        XCTAssertTrue(goalOneCell.waitForExistence(timeout: 3))
-        goalOneCell.tap()
+        // ── Bewerk doel 1 ────────────────────────────────────────────────
+        // Scroll naar de "Mijn Doelen" sectie en tik op de rij voor doel 1.
+        let goalOneText = app.staticTexts["E2E Marathon Doel"].firstMatch
+        XCTAssertTrue(goalOneText.waitForExistence(timeout: 3), "Kan 'E2E Marathon Doel' niet vinden om te bewerken.")
+        goalOneText.tap()
 
         XCTAssertTrue(
             app.navigationBars["Bewerk Doel"].waitForExistence(timeout: 3),
@@ -200,43 +173,96 @@ final class OnboardingE2ETests: XCTestCase {
         let editTitleField = app.textFields["Titel"]
         XCTAssertTrue(editTitleField.waitForExistence(timeout: 3), "Titel-veld in EditGoalView niet gevonden.")
         editTitleField.tap()
-        // Selecteer alles en vervang
-        editTitleField.press(forDuration: 1.2)
-        if app.menuItems["Selecteer alles"].waitForExistence(timeout: 2) {
-            app.menuItems["Selecteer alles"].tap()
-        }
+        // Selecteer-alles via triple tap (werkt consistent in simulator)
+        editTitleField.tap(withNumberOfTaps: 3, numberOfTouches: 1)
         editTitleField.typeText("E2E Marathon Doel - Aangepast")
 
-        // Ga terug naar de lijst (EditGoalView slaat op bij onDisappear).
+        // Terug naar lijst — EditGoalView slaat op bij onDisappear.
         app.navigationBars["Bewerk Doel"].buttons.firstMatch.tap()
 
         XCTAssertTrue(
-            app.staticTexts["E2E Marathon Doel - Aangepast"].waitForExistence(timeout: 4),
+            findGoalText("E2E Marathon Doel - Aangepast"),
             "Gewijzigde doelnaam verschijnt niet in de lijst."
         )
 
-        // ── Verwijder doel 2 via swipe ────────────────────────────────────
+        // ── Verwijder doel 2 ─────────────────────────────────────────────
+        // Scroll tot de cel met 'E2E Fietsdoel' zichtbaar is en swipe left.
         let goalTwoCell = app.cells.containing(.staticText, identifier: "E2E Fietsdoel").firstMatch
-        XCTAssertTrue(goalTwoCell.waitForExistence(timeout: 3), "Cel voor 'E2E Fietsdoel' niet gevonden voor swipe.")
+        XCTAssertTrue(
+            goalTwoCell.waitForExistence(timeout: 4),
+            "Cel voor 'E2E Fietsdoel' niet gevonden voor swipe."
+        )
         goalTwoCell.swipeLeft()
 
-        let deleteButton = app.buttons["Verwijder"]
-        if !deleteButton.waitForExistence(timeout: 2) {
-            // Alternatief: sommige iOS-versies tonen "Delete"
-            app.buttons["Delete"].tap()
-        } else {
-            deleteButton.tap()
-        }
+        // iOS toont "Delete" (EN) of "Verwijder" (NL) afhankelijk van de simlatortaal.
+        let deleteButton = app.buttons.matching(
+            NSPredicate(format: "label == 'Delete' OR label == 'Verwijder'")
+        ).firstMatch
+        XCTAssertTrue(deleteButton.waitForExistence(timeout: 3), "Verwijder-knop verschijnt niet na swipe.")
+        deleteButton.tap()
 
-        // Verifieer dat doel 2 weg is maar doel 1 (aangepast) nog aanwezig is.
+        // Doel 2 moet weg zijn; doel 1 (aangepast) moet nog aanwezig zijn.
         XCTAssertFalse(
             app.staticTexts["E2E Fietsdoel"].waitForExistence(timeout: 3),
             "Verwijderd doel 'E2E Fietsdoel' is nog steeds zichtbaar."
         )
         XCTAssertTrue(
-            app.staticTexts["E2E Marathon Doel - Aangepast"].exists,
+            findGoalText("E2E Marathon Doel - Aangepast"),
             "Doel 'E2E Marathon Doel - Aangepast' verdween onverwacht na de verwijdering."
         )
+    }
+
+    // MARK: - Helpers voor Goal Management
+
+    /// Opent AddGoalView, vult de titel in en slaat op.
+    /// Wacht expliciet tot de SaveButton enabled is vóórdat hij getikt wordt —
+    /// dit voorkomt race-conditions waarbij de knop nog disabled is na het typen.
+    private func addGoal(_ title: String) throws {
+        let addButton = app.buttons["AddGoalButton"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 5), "AddGoalButton niet gevonden.")
+        addButton.tap()
+
+        XCTAssertTrue(
+            app.navigationBars["Nieuw Doel"].waitForExistence(timeout: 5),
+            "AddGoalView opent niet."
+        )
+
+        // Gebruik een verse query per aanroep — geen stale referenties.
+        let titleField = app.textFields["GoalTitleField"]
+        XCTAssertTrue(titleField.waitForExistence(timeout: 3), "GoalTitleField niet gevonden.")
+        titleField.tap()
+        titleField.typeText(title)
+
+        // Wacht expliciet tot de SaveButton enabled wordt (title is niet meer leeg).
+        let saveButton = app.buttons["GoalSaveButton"]
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 3), "GoalSaveButton niet gevonden.")
+        let enabledPredicate = NSPredicate(format: "isEnabled == true")
+        let enabledExpectation = expectation(for: enabledPredicate, evaluatedWith: saveButton)
+        wait(for: [enabledExpectation], timeout: 3)
+
+        saveButton.tap()
+
+        // Wacht tot het sheet gesloten is.
+        XCTAssertTrue(
+            app.navigationBars["Doelen"].waitForExistence(timeout: 6),
+            "Na opslaan van '\(title)' keert de app niet terug naar de doelen-lijst."
+        )
+    }
+
+    /// Zoekt naar een doel-tekst in de lijst, inclusief scrollen als het buiten beeld valt.
+    /// Na het toevoegen van een doel verschijnt er een GoalDetailContainer boven 'Mijn Doelen',
+    /// waardoor de rij mogelijk beneden de vouwlijn staat.
+    private func findGoalText(_ title: String) -> Bool {
+        let textElement = app.staticTexts[title].firstMatch
+        if textElement.waitForExistence(timeout: 2) { return true }
+
+        // Scroll naar beneden om de "Mijn Doelen" sectie te vinden.
+        app.swipeUp()
+        if textElement.waitForExistence(timeout: 3) { return true }
+
+        // Nog een keer scrollen voor langere lijsten.
+        app.swipeUp()
+        return textElement.waitForExistence(timeout: 3)
     }
 
     // MARK: - Test 3: Coach Memory
