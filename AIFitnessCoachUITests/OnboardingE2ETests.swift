@@ -175,21 +175,32 @@ final class OnboardingE2ETests: XCTestCase {
         )
 
         // ── Bewerk doel 1 ────────────────────────────────────────────────
-        // Scroll naar de "Mijn Doelen" sectie en tik op de rij voor doel 1.
-        let goalOneText = app.staticTexts["E2E Marathon Doel"].firstMatch
-        XCTAssertTrue(goalOneText.waitForExistence(timeout: 3), "Kan 'E2E Marathon Doel' niet vinden om te bewerken.")
-        goalOneText.tap()
-
+        // Gebruik de unieke cel-identifier op de NavigationLink, NIET firstMatch op
+        // de statische tekst — die zou ook de GoalDetailContainer-header pakken
+        // (gewone Text, geen NavigationLink → tikken doet niets).
+        let goalOneRow = app.cells["GoalRow_E2E Marathon Doel"]
+        if !goalOneRow.waitForExistence(timeout: 2) {
+            // Scroll naar beneden als de "Mijn Doelen" sectie nog buiten beeld is.
+            app.swipeUp()
+        }
         XCTAssertTrue(
-            app.navigationBars["Bewerk Doel"].waitForExistence(timeout: 3),
-            "EditGoalView opent niet na tikken op doel."
+            goalOneRow.waitForExistence(timeout: 5),
+            "NavigationLink-cel 'GoalRow_E2E Marathon Doel' niet gevonden in de doelen-lijst."
+        )
+        goalOneRow.tap()
+
+        // Verhoogde timeout: navigatie-animatie naar EditGoalView kan op trage simulatoren
+        // langer dan 3 seconden duren.
+        XCTAssertTrue(
+            app.navigationBars["Bewerk Doel"].waitForExistence(timeout: 5),
+            "EditGoalView opent niet na tikken op de NavigationLink-cel."
         )
 
         // Wis de bestaande tekst en typ een nieuwe naam.
         let editTitleField = app.textFields["Titel"]
         XCTAssertTrue(editTitleField.waitForExistence(timeout: 3), "Titel-veld in EditGoalView niet gevonden.")
         editTitleField.tap()
-        // Selecteer-alles via triple tap (werkt consistent in simulator)
+        // Triple tap = selecteer alles — werkt consistent in de simulator.
         editTitleField.tap(withNumberOfTaps: 3, numberOfTouches: 1)
         editTitleField.typeText("E2E Marathon Doel - Aangepast")
 
@@ -202,11 +213,14 @@ final class OnboardingE2ETests: XCTestCase {
         )
 
         // ── Verwijder doel 2 ─────────────────────────────────────────────
-        // Scroll tot de cel met 'E2E Fietsdoel' zichtbaar is en swipe left.
-        let goalTwoCell = app.cells.containing(.staticText, identifier: "E2E Fietsdoel").firstMatch
+        // Gebruik de cel-identifier op de NavigationLink voor een betrouwbare hit.
+        let goalTwoCell = app.cells["GoalRow_E2E Fietsdoel"]
+        if !goalTwoCell.waitForExistence(timeout: 2) {
+            app.swipeUp()
+        }
         XCTAssertTrue(
             goalTwoCell.waitForExistence(timeout: 4),
-            "Cel voor 'E2E Fietsdoel' niet gevonden voor swipe."
+            "Cel 'GoalRow_E2E Fietsdoel' niet gevonden voor swipe."
         )
         goalTwoCell.swipeLeft()
 
