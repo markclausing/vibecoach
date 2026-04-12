@@ -21,6 +21,11 @@ final class AIFitnessCoachUITests: XCTestCase {
         // zodat er geen systeem-popups verschijnen die de tests blokkeren.
         app.launchArguments.append("-isRunningUITests")
 
+        // Sprint 26.1: Voeg -UITesting toe zodat UITestMockEnvironment.setup() actief is.
+        // Dit zet hasSeenOnboarding = true en injecteert mock-data — ongeacht de
+        // simulator-staat die eventueel gereset is door de E2E Onboarding-test.
+        app.launchArguments.append("-UITesting")
+
         // Vang eventuele resterende OS-alerts automatisch af (bijv. als de simulator
         // al eerder toestemming heeft gevraagd en de status 'notDetermined' is).
         // De monitor zoekt naar de meest voorkomende knoplabels in NL en EN.
@@ -132,10 +137,10 @@ final class AIFitnessCoachUITests: XCTestCase {
         )
         goalsTab.tap()
 
-        let goalsNavBar = app.navigationBars["Mijn Doelen"]
+        let goalsNavBar = app.navigationBars["Doelen"]
         XCTAssertTrue(
             goalsNavBar.waitForExistence(timeout: 3),
-            "NavigationTitle 'Mijn Doelen' verschijnt niet na tikken op de Doelen tab."
+            "NavigationTitle 'Doelen' verschijnt niet na tikken op de Doelen tab."
         )
     }
 

@@ -1,0 +1,37 @@
+{
+  "configurations" : [
+    {
+      "id" : "76BA69E3-4CFF-4AE1-BA09-62D4F28D06E5",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:AIFitnessCoach.xcodeproj",
+      "identifier" : "4419CD2F42E5A79D3ED51D11",
+      "name" : "AIFitnessCoach"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:AIFitnessCoach.xcodeproj",
+        "identifier" : "F32768720C1B6E0AEEABA687",
+        "name" : "AIFitnessCoachTests"
+      }
+    },
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:AIFitnessCoach.xcodeproj",
+        "identifier" : "B852004C2F719C9900F5B5E9",
+        "name" : "AIFitnessCoachUITests"
+      }
+    }
+  ],
+  "version" : 1
+}
