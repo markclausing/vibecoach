@@ -156,6 +156,16 @@ struct AIFitnessCoachApp: App {
     // true  = terugkerende gebruiker → ContentView tonen.
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
+    init() {
+        // Sprint 26.1: Activeer de mock-omgeving als de app via XCUITest gestart is.
+        // Dit injecteert reproduceerbare testdata en bypassed live API-calls.
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-UITesting") {
+            UITestMockEnvironment.setup()
+        }
+        #endif
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {

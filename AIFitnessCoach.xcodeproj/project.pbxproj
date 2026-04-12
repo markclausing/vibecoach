@@ -27,13 +27,12 @@
 		89B083BDD5A2948D191971E5 /* FitnessGoalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FDDDD26172C97669936B5B8 /* FitnessGoalTests.swift */; };
 		9673922FF2B9CCC9D666596F /* MockTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70418E8B60B3D7CA1BC426AA /* MockTokenStore.swift */; };
 		9E9427B7C484EE11E612C120 /* StravaActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */; };
+		A12B3C4D5E6F7A8B9C0D1E2F /* GapAnalysisCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B23C4D5E6F7A8B9C0D1E2F3A /* GapAnalysisCardView.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */; };
 		A3BB100A32BF93E6C7587F72 /* FitnessGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */; };
 		A9B8C7D6E5F4A3B2C1D0E9F8 /* ProactiveNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */; };
+		AA26BB37CC48DD59EE60FF71 /* UITestMockEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB37CC48DD59EE60FF71AA26 /* UITestMockEnvironment.swift */; };
 		B1C2D3E4F5A6B7C8D9E0F1A2 /* WeatherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */; };
-		E24A1B4C5D6E7F8A9B0C1D2F /* UserProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */; };
-		E35A2B5C6D7E8F9A0B1C2D3E /* NutritionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */; };
-		E46B3C6D7E8F9A0B1C2D3E4F /* FutureProjectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F46C4D7E8F9A0B1C2D3E4F5A /* FutureProjectionService.swift */; };
 		B49CB5209082C67DC40F4FA5 /* FitnessDataError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* TrainingPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */; };
 		CC54A4B0A24ABC7666AB3222 /* ChatViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */; };
@@ -42,7 +41,11 @@
 		D9D6946898CF838A86E276DC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B16CF484B776C9214345E29 /* Foundation.framework */; };
 		DB076B94561F03C4EB2D8C5E /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDA9519ECAE22F903D67C756 /* TokenStore.swift */; };
 		DEBB8672AFBDB80CA6D79AA6 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 892FA4CC13985F26BA4BB4DE /* ChatViewModel.swift */; };
+		E23A1B4C5D6E7F8A9B0C1D2E /* ProgressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */; };
+		E24A1B4C5D6E7F8A9B0C1D2F /* UserProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */; };
+		E35A2B5C6D7E8F9A0B1C2D3E /* NutritionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */; };
 		E37298633D0B4EB1FD27458D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2757E95543939CACDB8D35DE /* Assets.xcassets */; };
+		E46B3C6D7E8F9A0B1C2D3E4F /* FutureProjectionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F46C4D7E8F9A0B1C2D3E4F5A /* FutureProjectionService.swift */; };
 		E541659C316B9F8EBCCD6AA3 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF9454A3119F7BF71A5331E4 /* ChatMessage.swift */; };
 		E5F6A7B8C9D0E1F2A3B4C5D6 /* BlueprintCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A7B8C9D0E1F2A3B4C5D6E7 /* BlueprintCheckerTests.swift */; };
 		E632BCD343E9A620341BD347 /* EditGoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 203C295EF5D568151B5D1BEF /* EditGoalView.swift */; };
@@ -50,11 +53,9 @@
 		E767E8F495D10156A93BCC15 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE95B5B0D96FB302BFE3145 /* ContentView.swift */; };
 		EDF73C6C2B12F9FC2BDB6140 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5493D0D3C44442CCF82489CA /* Preview Assets.xcassets */; };
 		F00D4D082A5D0B980C536185 /* StravaAuthServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C2BF572AF13DE2A83E51CF /* StravaAuthServiceTests.swift */; };
+		F57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift */; };
 		FA26082FD3260BAC05A7AAEB /* MockNetworkSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE3DDF83AB44095AF4FA0CE /* MockNetworkSession.swift */; };
 		G7H8I9J0K1L2M3N4O5P6Q7R8 /* PeriodizationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = H8I9J0K1L2M3N4O5P6Q7R8S9 /* PeriodizationEngineTests.swift */; };
-		E23A1B4C5D6E7F8A9B0C1D2E /* ProgressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */; };
-		A12B3C4D5E6F7A8B9C0D1E2F /* GapAnalysisCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B23C4D5E6F7A8B9C0D1E2F3A /* GapAnalysisCardView.swift */; };
-		F57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -94,13 +95,16 @@
 		7FDDDD26172C97669936B5B8 /* FitnessGoalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoalTests.swift; sourceTree = "<group>"; };
 		892FA4CC13985F26BA4BB4DE /* ChatViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		984AC8DD2D26E4CA3247251E /* Secrets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
+		A57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlueprintTimelineView.swift; sourceTree = "<group>"; };
 		AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NetworkSession.swift; sourceTree = "<group>"; };
 		AF9454A3119F7BF71A5331E4 /* ChatMessage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
 		AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaActivity.swift; sourceTree = "<group>"; };
+		B23C4D5E6F7A8B9C0D1E2F3A /* GapAnalysisCardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GapAnalysisCardView.swift; sourceTree = "<group>"; };
 		B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadinessCalculatorTests.swift; sourceTree = "<group>"; };
 		B852004D2F719C9900F5B5E9 /* AIFitnessCoachUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIFitnessCoachUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B88E085E2F6B22120063C085 /* AIFitnessCoach.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIFitnessCoach.entitlements; sourceTree = "<group>"; };
 		BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsViewTests.swift; sourceTree = "<group>"; };
+		BB37CC48DD59EE60FF71AA26 /* UITestMockEnvironment.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UITestMockEnvironment.swift; sourceTree = "<group>"; };
 		BDF699C6B7148ACD66E857D7 /* AddGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddGoalView.swift; sourceTree = "<group>"; };
 		C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "UIImage+Extensions.swift"; sourceTree = "<group>"; };
 		C1C2BF572AF13DE2A83E51CF /* StravaAuthServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaAuthServiceTests.swift; sourceTree = "<group>"; };
@@ -114,18 +118,16 @@
 		DD88EE22FF4433AA66BB9955 /* OnboardingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataError.swift; sourceTree = "<group>"; };
 		EDA9519ECAE22F903D67C756 /* TokenStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
+		F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserProfileService.swift; sourceTree = "<group>"; };
+		F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgressService.swift; sourceTree = "<group>"; };
+		F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NutritionService.swift; sourceTree = "<group>"; };
+		F46C4D7E8F9A0B1C2D3E4F5A /* FutureProjectionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FutureProjectionService.swift; sourceTree = "<group>"; };
 		F6A7B8C9D0E1F2A3B4C5D6E7 /* BlueprintCheckerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlueprintCheckerTests.swift; sourceTree = "<group>"; };
 		F6DDC1DD36DFE9FDBEB93ED1 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataService.swift; sourceTree = "<group>"; };
 		F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProactiveNotificationService.swift; sourceTree = "<group>"; };
-		F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserProfileService.swift; sourceTree = "<group>"; };
-		F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NutritionService.swift; sourceTree = "<group>"; };
 		FAE95B5B0D96FB302BFE3145 /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		H8I9J0K1L2M3N4O5P6Q7R8S9 /* PeriodizationEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PeriodizationEngineTests.swift; sourceTree = "<group>"; };
-		F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgressService.swift; sourceTree = "<group>"; };
-		B23C4D5E6F7A8B9C0D1E2F3A /* GapAnalysisCardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GapAnalysisCardView.swift; sourceTree = "<group>"; };
-		F46C4D7E8F9A0B1C2D3E4F5A /* FutureProjectionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FutureProjectionService.swift; sourceTree = "<group>"; };
-		A57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlueprintTimelineView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -227,6 +229,7 @@
 				F46C4D7E8F9A0B1C2D3E4F5A /* FutureProjectionService.swift */,
 				C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */,
 				AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */,
+				BB37CC48DD59EE60FF71AA26 /* UITestMockEnvironment.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -500,6 +503,7 @@
 				E46B3C6D7E8F9A0B1C2D3E4F /* FutureProjectionService.swift in Sources */,
 				B1C2D3E4F5A6B7C8D9E0F1A2 /* WeatherManager.swift in Sources */,
 				13CD8B16330404CA41A93BDE /* NetworkSession.swift in Sources */,
+				AA26BB37CC48DD59EE60FF71 /* UITestMockEnvironment.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

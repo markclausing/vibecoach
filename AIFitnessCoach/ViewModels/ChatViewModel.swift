@@ -480,7 +480,15 @@ class ChatViewModel: ObservableObject {
     /// Bouwt het Gemini model met de huidige API-sleutel en system instruction.
     /// Wordt pas aangeroepen bij het eerste echte AI-verzoek (.onAppear of gebruikerstap),
     /// niet al tijdens app-start.
+    ///
+    /// Sprint 26.1: Als `-UITesting` actief is, wordt een mock-model teruggegeven
+    /// zodat de Gemini API niet aangeroepen wordt tijdens E2E-tests.
     private func buildGenerativeModel() -> GenerativeModelProtocol {
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-UITesting") {
+            return UITestMockGenerativeModel()
+        }
+        #endif
         let systemInstruction = """
             Jij bent een samenwerkende, meedenkende en proactieve AI fitness-coach.
             Je analyseert niet alleen vermoeidheid, maar je helpt de gebruiker actief om de eerstvolgende stap te plannen richting hun gestelde doelen.

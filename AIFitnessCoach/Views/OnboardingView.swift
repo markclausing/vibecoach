@@ -98,7 +98,8 @@ struct OnboardingView: View {
                         title: "Apple Health",
                         description: "Om trainingen, HRV en slaapdata te lezen voor TRIMP en je Vibe Score.",
                         isGranted: healthKitGranted,
-                        buttonLabel: "Koppel Apple Health"
+                        buttonLabel: "Koppel Apple Health",
+                        buttonIdentifier: "OnboardingHealthKitButton"
                     ) {
                         requestHealthKit()
                     }
@@ -109,7 +110,8 @@ struct OnboardingView: View {
                         title: "Notificaties",
                         description: "Voor proactieve coaching-alerts als je doel op rood staat of je te lang inactief bent.",
                         isGranted: notificationsGranted,
-                        buttonLabel: "Sta Notificaties toe"
+                        buttonLabel: "Sta Notificaties toe",
+                        buttonIdentifier: "OnboardingNotificationsButton"
                     ) {
                         requestNotifications()
                     }
@@ -138,6 +140,7 @@ struct OnboardingView: View {
                         .foregroundColor(.white)
                         .cornerRadius(14)
                 }
+                .accessibilityIdentifier("OnboardingVolgendeButton")
             } else {
                 Button(action: {
                     hasSeenOnboarding = true
@@ -150,6 +153,7 @@ struct OnboardingView: View {
                         .foregroundColor(.white)
                         .cornerRadius(14)
                 }
+                .accessibilityIdentifier("OnboardingStartButton")
             }
         }
     }
@@ -161,6 +165,13 @@ struct OnboardingView: View {
     // Er zijn geen automatische requests bij onAppear of bij het laden van de OnboardingView.
 
     private func requestHealthKit() {
+        // Sprint 26.1: Bypass HealthKit popup in UI-testmodus — simuleer direct succes.
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-UITesting") {
+            Task { @MainActor in healthKitGranted = true }
+            return
+        }
+        #endif
         healthKitManager.requestAuthorization { success, _ in
             Task { @MainActor in
                 healthKitGranted = success
@@ -169,6 +180,13 @@ struct OnboardingView: View {
     }
 
     private func requestNotifications() {
+        // Sprint 26.1: Bypass notificatie-popup in UI-testmodus — simuleer direct succes.
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-UITesting") {
+            Task { @MainActor in notificationsGranted = true }
+            return
+        }
+        #endif
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
             Task { @MainActor in
                 notificationsGranted = granted
@@ -262,6 +280,7 @@ private struct APIKeyOnboardingPage: View {
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
                                 .font(.system(.body, design: .monospaced))
+                                .accessibilityIdentifier("OnboardingAPIKeyField")
 
                             if !apiKey.isEmpty {
                                 Image(systemName: "checkmark.circle.fill")
@@ -361,6 +380,8 @@ private struct PermissionCard: View {
     let description: String
     let isGranted: Bool
     let buttonLabel: String
+    /// Sprint 26.1: Accessibility identifier voor de actieknop — zodat XCUITest hem feilloos vindt.
+    var buttonIdentifier: String = ""
     let action: () -> Void
 
     var body: some View {
@@ -390,6 +411,7 @@ private struct PermissionCard: View {
                     .padding(.vertical, 10)
                     .background(Color.green.opacity(0.12))
                     .cornerRadius(10)
+                    .accessibilityIdentifier("\(buttonIdentifier)_Granted")
             } else {
                 Button(action: action) {
                     Text(buttonLabel)
@@ -401,6 +423,7 @@ private struct PermissionCard: View {
                         .foregroundColor(iconColor)
                         .cornerRadius(10)
                 }
+                .accessibilityIdentifier(buttonIdentifier)
             }
         }
         .padding(16)
