@@ -175,17 +175,21 @@ final class OnboardingE2ETests: XCTestCase {
         )
 
         // ── Bewerk doel 1 ────────────────────────────────────────────────
-        // Gebruik de unieke cel-identifier op de NavigationLink, NIET firstMatch op
-        // de statische tekst — die zou ook de GoalDetailContainer-header pakken
-        // (gewone Text, geen NavigationLink → tikken doet niets).
-        let goalOneRow = app.cells["GoalRow_E2E Marathon Doel"]
-        if !goalOneRow.waitForExistence(timeout: 2) {
-            // Scroll naar beneden als de "Mijn Doelen" sectie nog buiten beeld is.
+        // GoalDetailContainers zijn meerdere schermhoogtes (header + chart + prognose).
+        // Gebruik een scroll-lus zodat de "Mijn Doelen" sectie gegarandeerd in beeld
+        // komt — ongeacht hoe lang de containers zijn.
+        // Gebruik descendants(matching: .any) zodat het element-type (button/cell/other)
+        // niet uitmaakt; op iOS 26 kan NavigationLink anders gerenderd worden.
+        let goalOnePredicate = NSPredicate(format: "identifier == 'GoalRow_E2E Marathon Doel'")
+        let goalOneRow = app.descendants(matching: .any).matching(goalOnePredicate).firstMatch
+        var scrollTries = 0
+        while !goalOneRow.exists && scrollTries < 15 {
             app.swipeUp()
+            scrollTries += 1
         }
         XCTAssertTrue(
-            goalOneRow.waitForExistence(timeout: 5),
-            "NavigationLink-cel 'GoalRow_E2E Marathon Doel' niet gevonden in de doelen-lijst."
+            goalOneRow.waitForExistence(timeout: 3),
+            "NavigationLink-rij 'GoalRow_E2E Marathon Doel' niet gevonden (geprobeerd \(scrollTries)× te scrollen)."
         )
         goalOneRow.tap()
 
@@ -213,14 +217,16 @@ final class OnboardingE2ETests: XCTestCase {
         )
 
         // ── Verwijder doel 2 ─────────────────────────────────────────────
-        // Gebruik de cel-identifier op de NavigationLink voor een betrouwbare hit.
-        let goalTwoCell = app.cells["GoalRow_E2E Fietsdoel"]
-        if !goalTwoCell.waitForExistence(timeout: 2) {
+        let goalTwoPredicate = NSPredicate(format: "identifier == 'GoalRow_E2E Fietsdoel'")
+        let goalTwoCell = app.descendants(matching: .any).matching(goalTwoPredicate).firstMatch
+        scrollTries = 0
+        while !goalTwoCell.exists && scrollTries < 10 {
             app.swipeUp()
+            scrollTries += 1
         }
         XCTAssertTrue(
-            goalTwoCell.waitForExistence(timeout: 4),
-            "Cel 'GoalRow_E2E Fietsdoel' niet gevonden voor swipe."
+            goalTwoCell.waitForExistence(timeout: 3),
+            "Rij 'GoalRow_E2E Fietsdoel' niet gevonden voor swipe."
         )
         goalTwoCell.swipeLeft()
 
@@ -232,9 +238,15 @@ final class OnboardingE2ETests: XCTestCase {
         deleteButton.tap()
 
         // Doel 2 moet weg zijn; doel 1 (aangepast) moet nog aanwezig zijn.
-        XCTAssertFalse(
-            app.staticTexts["E2E Fietsdoel"].waitForExistence(timeout: 3),
-            "Verwijderd doel 'E2E Fietsdoel' is nog steeds zichtbaar."
+        // waitForExistence wacht op verschijning, niet op verdwijning.
+        // Gebruik een NSPredicate-expectation om te wachten tot het element weg is.
+        let deletedGoalText = app.staticTexts["E2E Fietsdoel"]
+        let gonePredicate = NSPredicate(format: "exists == false")
+        let goneExpectation = XCTNSPredicateExpectation(predicate: gonePredicate, object: deletedGoalText)
+        let goneResult = XCTWaiter.wait(for: [goneExpectation], timeout: 5)
+        XCTAssertEqual(
+            goneResult, .completed,
+            "Verwijderd doel 'E2E Fietsdoel' is nog steeds zichtbaar na 5 seconden."
         )
         XCTAssertTrue(
             findGoalText("E2E Marathon Doel - Aangepast"),
