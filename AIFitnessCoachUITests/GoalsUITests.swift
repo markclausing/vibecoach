@@ -11,6 +11,8 @@ final class GoalsUITests: XCTestCase {
         // 1. Lanceer de app.
         let app = XCUIApplication()
         app.launchArguments.append("-isRunningUITests")
+        // Sprint 26.1: -UITesting activeert UITestMockEnvironment (hasSeenOnboarding = true).
+        app.launchArguments.append("-UITesting")
         app.launch()
 
         // 2. Navigeer naar de 'Doelen' tab — wacht tot de TabBar geladen is.
@@ -20,7 +22,7 @@ final class GoalsUITests: XCTestCase {
 
         // 3. Wacht op de NavigationTitle om zeker te zijn dat de view geladen is,
         //    en zoek dan de + knop via de expliciete accessibilityIdentifier.
-        XCTAssertTrue(app.navigationBars["Mijn Doelen"].waitForExistence(timeout: 3), "'Mijn Doelen' laadt niet.")
+        XCTAssertTrue(app.navigationBars["Doelen"].waitForExistence(timeout: 3), "'Doelen' laadt niet.")
         let addGoalButton = app.buttons["AddGoalButton"]
         XCTAssertTrue(addGoalButton.waitForExistence(timeout: 3), "De toevoegen-knop (AddGoalButton) is niet zichtbaar op het doelen scherm.")
         addGoalButton.tap()

@@ -156,6 +156,15 @@ struct AIFitnessCoachApp: App {
     // true  = terugkerende gebruiker → ContentView tonen.
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
+    /// True alleen in DEBUG builds met het -UITesting launch argument.
+    private var isUITestingEnvironment: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-UITesting")
+        #else
+        return false
+        #endif
+    }
+
     init() {
         // Sprint 26.1: Activeer de mock-omgeving als de app via XCUITest gestart is.
         // Dit injecteert reproduceerbare testdata en bypassed live API-calls.
@@ -193,6 +202,8 @@ struct AIFitnessCoachApp: App {
                 }
             }
         }
-        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self, DailyReadiness.self, Symptom.self]) // Epic 18: Symptom toegevoegd
+        // Sprint 26.1: gebruik in-memory store tijdens UI-tests zodat elke run
+        // met een lege database start en goals van vorige runs niet lekken.
+        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self, DailyReadiness.self, Symptom.self], inMemory: isUITestingEnvironment) // Epic 18: Symptom toegevoegd
     }
 }
