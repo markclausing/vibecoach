@@ -60,6 +60,7 @@
 		CC33DD44EE55FF6677AA8899 /* ProgressServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD44EE55FF6677AA88990011 /* ProgressServiceTests.swift */; };
 		EE55FF6677AA889900112233 /* FutureProjectionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6677AA88990011223344EE /* FutureProjectionServiceTests.swift */; };
 		1122334455667788990011AA /* UserProfileServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2233445566778899001122BB /* UserProfileServiceTests.swift */; };
+		3344556677889900112233CC /* PhysiologicalCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4455667788990011223344DD /* PhysiologicalCalculatorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -113,6 +114,7 @@
 		DD44EE55FF6677AA88990011 /* ProgressServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgressServiceTests.swift; sourceTree = "<group>"; };
 		FF6677AA88990011223344EE /* FutureProjectionServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FutureProjectionServiceTests.swift; sourceTree = "<group>"; };
 		2233445566778899001122BB /* UserProfileServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserProfileServiceTests.swift; sourceTree = "<group>"; };
+		4455667788990011223344DD /* PhysiologicalCalculatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalCalculatorTests.swift; sourceTree = "<group>"; };
 		BB37CC48DD59EE60FF71AA26 /* UITestMockEnvironment.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UITestMockEnvironment.swift; sourceTree = "<group>"; };
 		BDF699C6B7148ACD66E857D7 /* AddGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddGoalView.swift; sourceTree = "<group>"; };
 		C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "UIImage+Extensions.swift"; sourceTree = "<group>"; };
@@ -209,6 +211,7 @@
 				DD44EE55FF6677AA88990011 /* ProgressServiceTests.swift */,
 				FF6677AA88990011223344EE /* FutureProjectionServiceTests.swift */,
 				2233445566778899001122BB /* UserProfileServiceTests.swift */,
+				4455667788990011223344DD /* PhysiologicalCalculatorTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -483,6 +486,7 @@
 				CC33DD44EE55FF6677AA8899 /* ProgressServiceTests.swift in Sources */,
 				EE55FF6677AA889900112233 /* FutureProjectionServiceTests.swift in Sources */,
 				1122334455667788990011AA /* UserProfileServiceTests.swift in Sources */,
+				3344556677889900112233CC /* PhysiologicalCalculatorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
