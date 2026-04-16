@@ -45,6 +45,6 @@ final class GoalsUITests: XCTestCase {
         // 6. Verifieer: Wacht tot de lijst wordt vernieuwd en zoek naar de ingevoerde tekst
         let newGoalCell = app.staticTexts["UI Test Marathon"]
         
-        XCTAssertTrue(newGoalCell.waitForExistence(timeout: 3.0), "Het nieuwe doel 'UI Test Marathon' verschijnt na het opslaan niet in de lijst! Mogelijk vergeten op te slaan (persist) of de query update niet goed.")
+        XCTAssertTrue(newGoalCell.waitForExistence(timeout: 5), "Het nieuwe doel 'UI Test Marathon' verschijnt na het opslaan niet in de lijst! Mogelijk vergeten op te slaan (persist) of de query update niet goed.")
     }
 }

@@ -240,9 +240,9 @@ final class OnboardingE2ETests: XCTestCase {
         // Doel 2 moet weg zijn; doel 1 (aangepast) moet nog aanwezig zijn.
         // waitForExistence wacht op verschijning, niet op verdwijning.
         // Gebruik een NSPredicate-expectation om te wachten tot het element weg is.
-        let deletedGoalText = app.staticTexts["E2E Fietsdoel"]
+        let deletedGoalCell = app.cells["GoalRow_E2E Fietsdoel"] // Gebruik hier de identifier van je cel
         let gonePredicate = NSPredicate(format: "exists == false")
-        let goneExpectation = XCTNSPredicateExpectation(predicate: gonePredicate, object: deletedGoalText)
+        let goneExpectation = XCTNSPredicateExpectation(predicate: gonePredicate, object: deletedGoalCell)
         let goneResult = XCTWaiter.wait(for: [goneExpectation], timeout: 5)
         XCTAssertEqual(
             goneResult, .completed,
