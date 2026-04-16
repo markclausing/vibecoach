@@ -219,7 +219,7 @@ Korte log van keuzes die afwijken van het originele plan, zodat context niet ver
 * **Data:** Apple HealthKit (HRV, slaap + slaapfases, workouts) + optioneel Strava OAuth2
 * **Weer:** Open-Meteo API (gratis, geen API-sleutel) via CoreLocation + URLSession
 * **Achtergrond:** HKObserverQuery (Engine A) + BGAppRefreshTask (Engine B)
-* **Testen:** XCTest unit tests + XCUITest UI tests — 54% code coverage
+* **Testen:** XCTest unit tests + XCUITest UI tests — 62% code coverage
 * **Versiebeheer:** GitHub
 
 ## Basisregels voor de AI (Mijn Assistent)
