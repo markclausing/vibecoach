@@ -80,7 +80,7 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
         self.authSession?.start()
     }
 
-    private func exchangeCodeForToken(code: String) async {
+    func exchangeCodeForToken(code: String) async {
         guard let url = URL(string: "https://www.strava.com/oauth/token") else {
             self.authError = "Ongeldige token URL"
             return
