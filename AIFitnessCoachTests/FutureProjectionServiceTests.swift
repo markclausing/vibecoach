@@ -267,7 +267,7 @@ final class FutureProjectionServiceTests: XCTestCase {
         // Km-target is 71.5; TRIMP al voldaan (700) maar km niet (30 < 71.5) → bottleneck km.
         XCTAssertEqual(result?.bottleneck, .km,
                        "Fiets-km mogen NIET worden meegeteld voor een marathondoel.")
-        XCTAssertEqual(result?.currentWeeklyKm ?? 0, 30, accuracy: 1,
+        XCTAssertEqual(result?.currentWeeklyKm ?? 0, 30.0, accuracy: 1.0,
                        "currentWeeklyKm moet uitsluitend hardloop-km bevatten.")
     }
 
@@ -287,7 +287,7 @@ final class FutureProjectionServiceTests: XCTestCase {
         let result = FutureProjectionService.calculateProjection(for: goal, activities: runActivities + cycleActivities)
 
         XCTAssertNotNil(result)
-        XCTAssertEqual(result?.currentWeeklyKm ?? 0, 60, accuracy: 1,
+        XCTAssertEqual(result?.currentWeeklyKm ?? 0, 60.0, accuracy: 1.0,
                        "currentWeeklyKm moet uitsluitend fiets-km bevatten voor een fietsdoel.")
     }
 
@@ -452,8 +452,8 @@ final class FutureProjectionServiceTests: XCTestCase {
 
         XCTAssertNotNil(result)
         XCTAssertEqual(result?.status, .alreadyPeaking)
-        XCTAssertEqual(result?.requiredPeakTRIMP, 455, accuracy: 1)
-        XCTAssertEqual(result?.requiredPeakKm,    52,  accuracy: 1)
+        XCTAssertEqual(result?.requiredPeakTRIMP ?? 0, 455.0, accuracy: 1.0)
+        XCTAssertEqual(result?.requiredPeakKm ?? 0,    52.0,  accuracy: 1.0)
     }
 
     // MARK: - 8. Effectieve groeisnelheid (cap-gedrag)
