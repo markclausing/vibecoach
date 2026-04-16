@@ -75,14 +75,20 @@ struct AddGoalView: View {
 
         // Bepaal via AI of fallback de Target TRIMP asynchroon
         Task {
-            do {
-                let currentProfile = try profileManager.calculateProfile(context: modelContext)
-                let trimp = await fetchAITargetTRIMP(goal: newGoal, profile: currentProfile)
-                newGoal.targetTRIMP = trimp
-            } catch {
-                // Fallback: ruwe schatting als we geen profiel kunnen inladen
-                let days = max(1.0, targetDate.timeIntervalSince(Date()) / 86400)
-                newGoal.targetTRIMP = (days / 7.0) * 350.0
+            // Sprint 26.1: sla de Gemini-netwerkaanroep over in UI-test modus
+            // zodat het doel direct opgeslagen wordt zonder netwerklatentie.
+            if ProcessInfo.processInfo.arguments.contains("-UITesting") {
+                newGoal.targetTRIMP = fallbackTRIMP(for: targetDate)
+            } else {
+                do {
+                    let currentProfile = try profileManager.calculateProfile(context: modelContext)
+                    let trimp = await fetchAITargetTRIMP(goal: newGoal, profile: currentProfile)
+                    newGoal.targetTRIMP = trimp
+                } catch {
+                    // Fallback: ruwe schatting als we geen profiel kunnen inladen
+                    let days = max(1.0, targetDate.timeIntervalSince(Date()) / 86400)
+                    newGoal.targetTRIMP = (days / 7.0) * 350.0
+                }
             }
 
             await MainActor.run {

@@ -149,6 +149,9 @@ struct GoalsListView: View {
                             } label: {
                                 GoalRowView(goal: goal)
                             }
+                            // Sprint 26.1: unieke identifier per rij zodat XCUITest
+                            // de NavigationLink cel vindt, niet de GoalDetailContainer-tekst.
+                            .accessibilityIdentifier("GoalRow_\(goal.title)")
                         }
                         .onDelete(perform: deleteGoals)
                     }
@@ -618,5 +621,8 @@ struct GoalRowView: View {
                 .foregroundColor(.secondary)
         }
         .padding(.vertical, 4)
+        // Sprint 26.1: contentShape zorgt dat XCUITest de volledige rij als hittable
+        // beschouwt, ook transparante ruimtes tussen tekstvelden.
+        .contentShape(Rectangle())
     }
 }
