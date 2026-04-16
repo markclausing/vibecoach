@@ -5,9 +5,9 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Actief in Ontwikkeling — Epic 23 (Blueprint Analysis & Future Projections) afgerond ✅**
+**Actief in Ontwikkeling — Epic 27 (Test Coverage Verbeteren) 🔄**
 
-VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 54% code coverage.
+VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 62% code coverage.
 
 ---
 
@@ -93,12 +93,20 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 
 ### ✅ Epic 19: Tech Debt, MVVM Refactor & UI Testing (Afgerond)
 
-Uitgebreide opschoning van de codebase. Toevoeging van XCTest Unit- en UI-tests voor de core gebruikersflows en fysiologische rekenmodellen. De testsuite is succesvol afgerond met een Code Coverage van **54%**.
+Uitgebreide opschoning van de codebase. Toevoeging van XCTest Unit- en UI-tests voor de core gebruikersflows en fysiologische rekenmodellen. De testsuite is succesvol afgerond met een Code Coverage van **62%**.
 
 * **Magic Numbers → Constanten:** `WorkoutCheckinConfig` enum centraliseert de RPE check-in drempelwaarden (minimumDurationSeconds, minimumTRIMP, ignoredRPESentinel).
 * **Accessibility Identifiers:** Kerncomponenten gemarkeerd (`VibeScoreCard`, `RPECheckinCard`, `RPESlider`, `ChatInputField`, `AddGoalButton`) voor robuuste UI-testbaarheid.
 * **UI-testsuite:** 8 XCUITests voor TabBar-volledigheid, Dashboard rendering, navigatie naar Coach/Doelen/Instellingen en de RPE check-in kaart. HealthKit- en notificatie-popups worden gebypassed via `-isRunningUITests` launch argument.
 * **Unit Tests (Epic 14 & 16):** `ReadinessCalculatorTests` (8 tests) verifieert grenscases van het Vibe Score algoritme. `TrainingPhaseTests` (11 tests) verifieert fase-detectie, multipliers en fase-gecorrigeerde TRIMP-berekeningen.
+
+### ✅ Epic 26: UI Test Suite Fixes & ProgressService Unit Tests (Afgerond)
+
+Stabilisatie van de volledige testsuite na refactors en uitbreiding van unit test coverage voor core services.
+
+* **UI Test Suite Reparatie:** Timing-animaties en race-condities in XCUITests opgelost. Alle 8 UI-tests draaien nu stabiel en slagen consistent in CI.
+* **ProgressService Unit Tests:** `ProgressServiceTests` uitgebreid met tests voor burndown-berekeningen, gap-analyse en edge-cases (lege data, toekomstige doelen). Volledige happy-path dekking voor de core burndown-logica.
+* **Coverage groei:** Code coverage gestegen van 54% naar **62%** over de volledige testsuite.
 
 ---
 
@@ -170,6 +178,16 @@ Fysiologisch correcte voedingsadviezen op basis van wie je bent en wat je van pl
 
 ---
 
+### 🔄 Epic 27: Test Coverage Verbeteren (Actief)
+
+De unit test coverage van de core services verhogen naar een solide standaard. Focus ligt op services die fysiologische berekeningen en gebruikersprofiel-logica bevatten — code die hoge correctheidseisen heeft en tot nu toe onvoldoende gedekt was.
+
+* **FutureProjectionService:** Tests voor het trendlijn-algoritme (3-weeks sliding window), de veiligheidslimiet (max 10% groei/week) en alle vier `ProjectionStatus`-varianten (`alreadyPeaking / onTrack / atRisk / unreachable`).
+* **UserProfileService:** Tests voor HealthKit-fallback-keten (HealthKit → UserDefaults → standaardwaarden), de BMR-berekening (Mifflin-St Jeor) en het synchronisatiegedrag bij gewijzigde gewichts-/lengtewaarden.
+* **Doel:** Coverage verhogen van 62% naar ≥75% voor de core service-laag.
+
+---
+
 ### 📋 Actieve Ontwikkeling & Backlog
 
 De actieve ontwikkeling en backlog worden beheerd in ons **[GitHub Project Kanban-bord](https://github.com/markclausing/vibecoach/issues)**.
@@ -219,7 +237,7 @@ Korte log van keuzes die afwijken van het originele plan, zodat context niet ver
 * **Data:** Apple HealthKit (HRV, slaap + slaapfases, workouts) + optioneel Strava OAuth2
 * **Weer:** Open-Meteo API (gratis, geen API-sleutel) via CoreLocation + URLSession
 * **Achtergrond:** HKObserverQuery (Engine A) + BGAppRefreshTask (Engine B)
-* **Testen:** XCTest unit tests + XCUITest UI tests — 62% code coverage
+* **Testen:** XCTest unit tests + XCUITest UI tests — 62% code coverage (target: ≥75%)
 * **Versiebeheer:** GitHub
 
 ## Basisregels voor de AI (Mijn Assistent)
