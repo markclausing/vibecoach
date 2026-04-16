@@ -1,4 +1,5 @@
 import XCTest
+import HealthKit
 @testable import AIFitnessCoach
 
 /// Unit tests voor UserProfileService (Epic 27).
