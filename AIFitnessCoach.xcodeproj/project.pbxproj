@@ -57,6 +57,7 @@
 		FA26082FD3260BAC05A7AAEB /* MockNetworkSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DE3DDF83AB44095AF4FA0CE /* MockNetworkSession.swift */; };
 		G7H8I9J0K1L2M3N4O5P6Q7R8 /* PeriodizationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = H8I9J0K1L2M3N4O5P6Q7R8S9 /* PeriodizationEngineTests.swift */; };
 		AA11BB22CC33DD44EE55FF66 /* NutritionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22CC33DD44EE55FF6677AA /* NutritionServiceTests.swift */; };
+		CC33DD44EE55FF6677AA8899 /* ProgressServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD44EE55FF6677AA88990011 /* ProgressServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -107,6 +108,7 @@
 		B88E085E2F6B22120063C085 /* AIFitnessCoach.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AIFitnessCoach.entitlements; sourceTree = "<group>"; };
 		BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsViewTests.swift; sourceTree = "<group>"; };
 		BB22CC33DD44EE55FF6677AA /* NutritionServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NutritionServiceTests.swift; sourceTree = "<group>"; };
+		DD44EE55FF6677AA88990011 /* ProgressServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgressServiceTests.swift; sourceTree = "<group>"; };
 		BB37CC48DD59EE60FF71AA26 /* UITestMockEnvironment.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UITestMockEnvironment.swift; sourceTree = "<group>"; };
 		BDF699C6B7148ACD66E857D7 /* AddGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddGoalView.swift; sourceTree = "<group>"; };
 		C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "UIImage+Extensions.swift"; sourceTree = "<group>"; };
@@ -200,6 +202,7 @@
 				F6A7B8C9D0E1F2A3B4C5D6E7 /* BlueprintCheckerTests.swift */,
 				H8I9J0K1L2M3N4O5P6Q7R8S9 /* PeriodizationEngineTests.swift */,
 				BB22CC33DD44EE55FF6677AA /* NutritionServiceTests.swift */,
+				DD44EE55FF6677AA88990011 /* ProgressServiceTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -471,6 +474,7 @@
 				E5F6A7B8C9D0E1F2A3B4C5D6 /* BlueprintCheckerTests.swift in Sources */,
 				G7H8I9J0K1L2M3N4O5P6Q7R8 /* PeriodizationEngineTests.swift in Sources */,
 				AA11BB22CC33DD44EE55FF66 /* NutritionServiceTests.swift in Sources */,
+				CC33DD44EE55FF6677AA8899 /* ProgressServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
