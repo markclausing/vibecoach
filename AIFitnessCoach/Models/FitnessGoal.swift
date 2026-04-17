@@ -416,10 +416,16 @@ final class FitnessGoal {
     var sportCategory: SportCategory?
     var targetTRIMP: Double? // Sprint 12.1: Benodigde belasting om dit doel te halen.
 
-    // Epic Doel-Intenties
-    var format: EventFormat
-    var intent: PrimaryIntent
+    // Epic Doel-Intenties — Optionals zodat SwiftData oude records veilig als nil inlaadt
+    var format: EventFormat?
+    var intent: PrimaryIntent?
     var stretchGoalTime: TimeInterval?
+
+    /// Veilige fallback: geeft altijd een geldige EventFormat terug, ook voor records zonder waarde.
+    var resolvedFormat: EventFormat { format ?? .singleDayRace }
+
+    /// Veilige fallback: geeft altijd een geldige PrimaryIntent terug, ook voor records zonder waarde.
+    var resolvedIntent: PrimaryIntent { intent ?? .peakPerformance }
 
     init(id: UUID = UUID(),
          title: String,
@@ -429,8 +435,8 @@ final class FitnessGoal {
          isCompleted: Bool = false,
          sportCategory: SportCategory? = nil,
          targetTRIMP: Double? = nil,
-         format: EventFormat = .singleDayRace,
-         intent: PrimaryIntent = .peakPerformance,
+         format: EventFormat? = .singleDayRace,
+         intent: PrimaryIntent? = .peakPerformance,
          stretchGoalTime: TimeInterval? = nil) {
         self.id = id
         self.title = title

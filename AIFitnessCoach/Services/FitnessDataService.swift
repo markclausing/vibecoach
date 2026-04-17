@@ -1545,10 +1545,10 @@ struct PeriodizationEngine {
     ) -> IntentModifier {
         let vibeScore = readinessScore ?? 70          // onbekend → neutraal
         let isHighReadiness = vibeScore > 65
-        let isMultiDay      = goal.format == .multiDayStage
+        let isMultiDay      = goal.resolvedFormat == .multiDayStage
 
         // Completion-modus: altijd aerobe basis, nooit hoge intensiteit
-        if goal.intent == .completion {
+        if goal.resolvedIntent == .completion {
             return IntentModifier(
                 weeklyTrimpMultiplier: 0.90,
                 allowHighIntensity: false,
