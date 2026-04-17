@@ -626,27 +626,35 @@ final class HealthKitManager: @unchecked Sendable {
     // MARK: - Epic 14: Readiness Score Data
 
     /// Haalt de gemiddelde HRV (SDNN, in milliseconden) op van de afgelopen nacht.
-    /// Gebruikt hetzelfde vaste nachtvenster als de slaapquery (gisteren 18:00 → vandaag 14:00)
-    /// zodat post-workout HRV-metingen nooit de dagelijkse baseline vertroebelen.
+    /// Wanneer `sleepStart`/`sleepEnd` worden meegegeven, wordt uitsluitend de HRV
+    /// binnen die exacte slaapsessie gebruikt — post-workout drops worden zo definitief
+    /// uitgesloten. Zonder slaapvenster valt de query terug op het vaste nachtvenster
+    /// (gisteren 18:00 → vandaag 14:00).
     /// - Returns: Gemiddelde HRV in ms, of nil als er geen meting beschikbaar is.
-    func fetchRecentHRV() async throws -> Double? {
+    func fetchRecentHRV(sleepStart: Date? = nil, sleepEnd: Date? = nil) async throws -> Double? {
         guard let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else {
             print("❌ [HRV] HKQuantityType voor heartRateVariabilitySDNN niet beschikbaar")
             return nil
         }
 
-        // Vast nachtvenster: gisteren 18:00 tot vandaag 14:00.
-        // Dit venster verschuift niet naarmate de middag vordert en sluit workout-HRV uit.
+        // Gebruik het exacte slaapvenster als dat bekend is; anders het vaste nachtvenster.
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let windowEnd = calendar.date(byAdding: .hour, value: 14, to: today)!
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
-        let windowStart = calendar.date(byAdding: .hour, value: 18, to: yesterday)!
+        let defaultEnd   = calendar.date(byAdding: .hour, value: 14, to: today)!
+        let yesterday    = calendar.date(byAdding: .day, value: -1, to: today)!
+        let defaultStart = calendar.date(byAdding: .hour, value: 18, to: yesterday)!
+
+        let windowStart = sleepStart ?? defaultStart
+        let windowEnd   = sleepEnd   ?? defaultEnd
 
         let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: windowEnd, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 
-        print("🔍 [HRV] Query gestart — venster: gisteren 18:00 → vandaag 14:00")
+        if sleepStart != nil {
+            print("🔍 [HRV] Query gestart — gekoppeld aan slaapvenster: \(windowStart) → \(windowEnd)")
+        } else {
+            print("🔍 [HRV] Query gestart — standaard nachtvenster: gisteren 18:00 → vandaag 14:00")
+        }
 
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: hrvType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
@@ -716,8 +724,11 @@ final class HealthKitManager: @unchecked Sendable {
     }
 
     /// Berekent het aantal daadwerkelijk geslapen uren van de afgelopen nacht.
-    /// Filtert op `.asleepCore`, `.asleepDeep` en `.asleepREM` (iOS 16+) of de generieke `.asleep` waarde
-    /// om 'inBed' tijd uit te sluiten — dat zijn de minuten dat je in bed lag maar niet sliep.
+    /// Telt uitsluitend `.asleepCore`, `.asleepDeep` en `.asleepREM` op (iOS 16+ / watchOS 9+).
+    /// Dit voorkomt dubbeltelling: op moderne hardware schrijft Apple Watch de stage-specifieke
+    /// samples, maar sommige third-party bronnen schrijven ook een generiek `.asleep`-aggregate.
+    /// Door alleen de drie fases te tellen sluiten we zowel inBed als dubbeltellingen uit.
+    /// Fallback naar `.asleep` (legacy) als er geen stage-data aanwezig is.
     /// - Returns: Totale slaaptijd in uren (bijv. 7.5), of nil als geen data beschikbaar.
     func fetchLastNightSleep() async throws -> Double? {
         guard let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) else {
@@ -726,8 +737,6 @@ final class HealthKitManager: @unchecked Sendable {
         }
 
         // Vast nachtvenster: gisteren 18:00 tot vandaag 14:00.
-        // Een schuivend "-16 uur" venster verliest in de middag vroege slaapsamples;
-        // dit vaste venster blijft de hele dag stabiel.
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let windowEnd = calendar.date(byAdding: .hour, value: 14, to: today)!
@@ -748,24 +757,32 @@ final class HealthKitManager: @unchecked Sendable {
                 }
 
                 guard let sleepSamples = samples as? [HKCategorySample], !sleepSamples.isEmpty else {
-                    print("⚠️ [Slaap] Geen samples gevonden in afgelopen 16 uur")
+                    print("⚠️ [Slaap] Geen samples gevonden in nachtvenster")
                     continuation.resume(returning: nil)
                     return
                 }
 
-                // Filter op echte slaapfases — sluit HKCategoryValueSleepAnalysis.inBed (waarde 0) uit.
-                // iOS 16+: asleepCore (3), asleepDeep (4), asleepREM (5)
-                // Oudere Watch firmware: asleep (1) — ook acceptabel
-                let asleepValues: Set<Int> = [
-                    HKCategoryValueSleepAnalysis.asleep.rawValue,
+                // Fase 1: probeer stage-specifieke waarden (watchOS 9+ / iOS 16+).
+                // Door ALLEEN deze drie te tellen vermijden we dubbeltelling met legacy .asleep.
+                let stageValues: Set<Int> = [
                     HKCategoryValueSleepAnalysis.asleepCore.rawValue,
                     HKCategoryValueSleepAnalysis.asleepDeep.rawValue,
                     HKCategoryValueSleepAnalysis.asleepREM.rawValue
                 ]
+                let stageSamples = sleepSamples.filter { stageValues.contains($0.value) }
 
-                let totalSleepSeconds = sleepSamples
-                    .filter { asleepValues.contains($0.value) }
-                    .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                let totalSleepSeconds: Double
+                if stageSamples.isEmpty {
+                    // Fase 2 (fallback): ouder Apple Watch-model — gebruik generieke .asleep waarde.
+                    totalSleepSeconds = sleepSamples
+                        .filter { $0.value == HKCategoryValueSleepAnalysis.asleep.rawValue }
+                        .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                    print("🔄 [Slaap] Geen stage-data — fallback naar generieke .asleep waarde")
+                } else {
+                    // Moderne Apple Watch: som Core + Deep + REM
+                    totalSleepSeconds = stageSamples
+                        .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                }
 
                 guard totalSleepSeconds > 0 else {
                     continuation.resume(returning: nil)
@@ -776,7 +793,7 @@ final class HealthKitManager: @unchecked Sendable {
                 let hours = Int(totalSleepHours)
                 let minutes = Int((totalSleepHours - Double(hours)) * 60)
 
-                print("😴 [Epic 14] Slaap afgelopen nacht: \(hours)u \(minutes)m (\(String(format: "%.2f", totalSleepHours)) uur totaal)")
+                print("😴 [Slaap] Afgelopen nacht: \(hours)u \(minutes)m (Core+Deep+REM = \(String(format: "%.2f", totalSleepHours)) uur)")
                 continuation.resume(returning: totalSleepHours)
             }
             healthStore.execute(query)
@@ -786,6 +803,8 @@ final class HealthKitManager: @unchecked Sendable {
     /// Epic 21 Sprint 2: Haalt de slaapfases op van de afgelopen nacht.
     /// Retourneert nil als HealthKit niet beschikbaar is of als er geen stage-specifieke data is
     /// (bijv. ouder Apple Watch-model dat alleen de generieke `.asleep` waarde registreert).
+    /// De teruggegeven `SleepStages` bevat ook `sessionStart`/`sessionEnd` — de exacte grenzen
+    /// van de slaapsessie — zodat de HRV-query daar naadloos op kan aansluiten.
     func fetchSleepStages() async throws -> SleepStages? {
         guard let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) else {
             print("❌ [Slaapfases] HKCategoryType niet beschikbaar")
@@ -818,33 +837,36 @@ final class HealthKitManager: @unchecked Sendable {
                     return
                 }
 
-                // Bereken seconden per fasesoort
-                let deepSec = sleepSamples
-                    .filter { $0.value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue }
-                    .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
-                let remSec = sleepSamples
-                    .filter { $0.value == HKCategoryValueSleepAnalysis.asleepREM.rawValue }
-                    .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
-                let coreSec = sleepSamples
-                    .filter { $0.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue }
-                    .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                // Filter op de drie stage-specifieke waarden (watchOS 9+ / iOS 16+).
+                let deepSamples = sleepSamples.filter { $0.value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue }
+                let remSamples  = sleepSamples.filter { $0.value == HKCategoryValueSleepAnalysis.asleepREM.rawValue  }
+                let coreSamples = sleepSamples.filter { $0.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue }
 
-                // Als alle stage-specifieke waarden nul zijn is dit een ouder apparaat
-                // dat alleen de generieke `.asleep` waarde schrijft — geen zinvolle ratio.
+                let deepSec = deepSamples.reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                let remSec  = remSamples.reduce(0.0)  { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                let coreSec = coreSamples.reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+
+                // Als alle stage-specifieke waarden nul zijn is dit een ouder apparaat.
                 guard deepSec + remSec + coreSec > 0 else {
                     print("⚠️ [Slaapfases] Geen stage-specifieke data — ouder device")
                     continuation.resume(returning: nil)
                     return
                 }
 
-                // Totaal = som van de drie fases (generieke `.asleep` telt NIET mee voor de ratio,
-                // want die wordt gebruikt als strafpunt-drempel voor diepe slaap).
+                // Slaapvenster: vroegste start en laatste eind van de echte slaapfases.
+                // Dit venster wordt doorgegeven aan fetchRecentHRV() om post-workout HRV uit te sluiten.
+                let allStageSamples = deepSamples + remSamples + coreSamples
+                let sessionStart = allStageSamples.map { $0.startDate }.min()
+                let sessionEnd   = allStageSamples.map { $0.endDate   }.max()
+
                 let totalSec = deepSec + remSec + coreSec
                 let stages = SleepStages(
                     deepMinutes:  Int(deepSec  / 60),
                     remMinutes:   Int(remSec   / 60),
                     coreMinutes:  Int(coreSec  / 60),
-                    totalMinutes: Int(totalSec / 60)
+                    totalMinutes: Int(totalSec / 60),
+                    sessionStart: sessionStart,
+                    sessionEnd:   sessionEnd
                 )
 
                 print("🌙 [Slaapfases] Diep: \(stages.deepMinutes)m · REM: \(stages.remMinutes)m · Kern: \(stages.coreMinutes)m · Ratio diep: \(String(format: "%.0f%%", stages.deepRatio * 100))")
@@ -904,6 +926,11 @@ struct SleepStages {
     let remMinutes:   Int
     let coreMinutes:  Int
     let totalMinutes: Int
+    /// Exacte start van de slaapsessie (vroegste Core/Deep/REM sample).
+    /// Wordt doorgegeven aan fetchRecentHRV() om het HRV-venster te begrenzen.
+    let sessionStart: Date?
+    /// Exacte eind van de slaapsessie (laatste Core/Deep/REM sample).
+    let sessionEnd: Date?
 
     /// Verhouding diepe slaap t.o.v. totale slaaptijd (0.0–1.0).
     var deepRatio: Double {

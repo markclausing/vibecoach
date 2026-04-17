@@ -1872,42 +1872,45 @@ struct DashboardView: View {
 
         let hkManager = HealthKitManager()
 
-        // Stel een race-conditie in: als HealthKit na 5 seconden geen antwoord geeft, stoppen we.
-        // Epic 21 Sprint 2: Haal HRV, baseline, slaap EN slaapfases parallel op.
-        let result = await withTaskGroup(of: (Double?, Double?, Double?, SleepStages?)?.self) { group in
-            // Taak 1: alle HealthKit-data parallel
+        // Stap 1 (parallel + 5s timeout): slaap, fases en HRV-baseline tegelijk ophalen.
+        // HRV loopt pas in stap 2 zodat het exacte slaapvenster als filter kan worden gebruikt.
+        let step1 = await withTaskGroup(of: (Double?, Double?, SleepStages?)?.self) { group in
             group.addTask {
-                async let hrvTask      = try? hkManager.fetchRecentHRV()
-                async let baselineTask = try? hkManager.fetchHRVBaseline(days: 7)
                 async let sleepTask    = try? hkManager.fetchLastNightSleep()
+                async let baselineTask = try? hkManager.fetchHRVBaseline(days: 7)
                 async let stagesTask   = try? hkManager.fetchSleepStages()
-                return await (hrvTask, baselineTask, sleepTask, stagesTask)
+                return await (sleepTask, baselineTask, stagesTask)
             }
-            // Taak 2: 5 seconden time-out
             group.addTask {
                 try? await Task.sleep(nanoseconds: 5_000_000_000)
-                print("⏱️ [VibeScore] Time-out na 5 seconden — geen HealthKit-data ontvangen")
+                print("⏱️ [VibeScore] Time-out stap 1 na 5 seconden")
                 return nil
             }
-            for await result in group {
-                group.cancelAll()
-                return result
-            }
+            for await result in group { group.cancelAll(); return result }
             return nil
         }
 
-        guard let (hrv, baseline, sleep, _) = result,
-              let currentHRV = hrv,
-              let hrvBaseline = baseline,
-              let sleepHours = sleep else {
-            print("⚠️ [VibeScore] Onvoldoende data — kaart wordt op 'niet beschikbaar' gezet")
+        guard let (sleep, baseline, stages) = step1,
+              let sleepHours  = sleep,
+              let hrvBaseline = baseline else {
+            print("⚠️ [VibeScore] Onvoldoende slaap/baseline data — kaart wordt op 'niet beschikbaar' gezet")
             isVibeScoreUnavailable = true
             viewModel.cacheVibeScoreUnavailable()
             return
         }
 
-        // Slaapfases zijn optioneel — nil = ouder device → geen strafpunt
-        let stages: SleepStages? = result?.3 ?? nil
+        // Stap 2: HRV met het exacte slaapvenster — post-workout drops worden zo definitief uitgesloten.
+        let currentHRV: Double? = try? await hkManager.fetchRecentHRV(
+            sleepStart: stages?.sessionStart,
+            sleepEnd:   stages?.sessionEnd
+        )
+
+        guard let currentHRV else {
+            print("⚠️ [VibeScore] Geen HRV-data — kaart wordt op 'niet beschikbaar' gezet")
+            isVibeScoreUnavailable = true
+            viewModel.cacheVibeScoreUnavailable()
+            return
+        }
 
         let score = ReadinessCalculator.calculate(
             sleepHours:    sleepHours,
