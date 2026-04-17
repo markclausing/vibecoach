@@ -200,6 +200,23 @@ enum TrainingPhase: String, CaseIterable {
 
 // MARK: - Epic 17.1: PeriodizationEngine — Data Types
 
+// MARK: Epic Doel-Intenties: IntentModifier
+
+/// Trainingsmodifier op basis van de gebruiker's doel-intentie, evenementformaat en VibeScore.
+/// Gegenereerd door PeriodizationEngine en doorgegeven aan de AI-coach via coachingContext.
+struct IntentModifier {
+    /// Vermenigvuldigingsfactor op de wekelijkse TRIMP-target (1.0 = ongewijzigd, 0.90 = uitlopen-modus).
+    let weeklyTrimpMultiplier: Double
+    /// Of hoge intensiteit (lactaat/tempo-intervallen) deze week toegestaan is.
+    let allowHighIntensity: Bool
+    /// Of back-to-back zware sessies benadrukt worden (true bij .multiDayStage).
+    let backToBackEmphasis: Bool
+    /// Of stretch-pace trainingen gepland mogen worden (alleen bij .peakPerformance + VibeScore > 65).
+    let stretchPaceAllowed: Bool
+    /// AI-instructie voor de coach — gegenereerd op basis van intentie + formaat + VibeScore.
+    let coachingInstruction: String
+}
+
 /// Sportwetenschappelijke succescriteria voor één trainingsfase.
 /// Uitgedrukt als breuk (0.0–1.0) van de blueprint-doelwaarden zodat
 /// dezelfde criteria gelden voor marathon, halve marathon én fietstochten.
@@ -257,6 +274,12 @@ struct PeriodizationResult {
 
     /// Actueel gemiddeld wekelijks TRIMP over de afgelopen 4 weken (ongeacht fase).
     let currentWeeklyTrimp: Double
+
+    /// Modifier op basis van intentie, formaat en VibeScore — gegenereerd door PeriodizationEngine.
+    let intentModifier: IntentModifier
+
+    /// Gecorrigeerd wekelijks TRIMP-target na toepassing van de intentie-multiplier.
+    var adjustedWeeklyTrimpTarget: Double { targetWeeklyTrimp * intentModifier.weeklyTrimpMultiplier }
 
     /// True als de sporter aan BEIDE criteria voldoet.
     var isOnTrack: Bool { meetsLongestSessionCriteria && meetsWeeklyTrimpCriteria }
@@ -341,6 +364,10 @@ struct PeriodizationResult {
         // Schema-verantwoordingsplicht bij blessure of aanpassing
         lines.append("")
         lines.append("SCHEMA-VERANTWOORDINGSPLICHT: Als je het schema aanpast (bijv. wegens blessure of overbelasting), MOET je expliciet uitleggen hoe de \(phase.displayName)-eis (\(sessionLabel)) nog steeds haalbaar blijft. Gebruik sportspecifieke alternatieven als de primaire sport tijdelijk niet kan. Bijv: 'Ik vervang je hardloopsessie door fietsen, maar de aerobe basis voor \(goal.title) bewaken we zo...'")
+
+        // Doel-Intentie sectie — altijd injecteren zodat de coach weet hoe te prioriteren
+        lines.append("")
+        lines.append(intentModifier.coachingInstruction)
 
         return lines.joined(separator: "\n")
     }

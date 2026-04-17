@@ -10,9 +10,23 @@ final class PeriodizationEngineTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeGoal(title: String, sport: SportCategory? = nil, weeksAhead: Int) -> FitnessGoal {
+    private func makeGoal(
+        title: String,
+        sport: SportCategory? = nil,
+        weeksAhead: Int,
+        format: EventFormat = .singleDayRace,
+        intent: PrimaryIntent = .peakPerformance,
+        stretchGoalTime: TimeInterval? = nil
+    ) -> FitnessGoal {
         let target = calendar.date(byAdding: .weekOfYear, value: weeksAhead, to: Date())!
-        return FitnessGoal(title: title, targetDate: target, sportCategory: sport)
+        return FitnessGoal(
+            title: title,
+            targetDate: target,
+            sportCategory: sport,
+            format: format,
+            intent: intent,
+            stretchGoalTime: stretchGoalTime
+        )
     }
 
     private func makeRun(distanceMeters: Double, weeksAgo: Int = 1, trimp: Double = 80) -> ActivityRecord {
@@ -209,5 +223,87 @@ final class PeriodizationEngineTests: XCTestCase {
             XCTAssertFalse(results[0].isOnTrack,
                            "Het eerste resultaat moet het doel zijn dat NIET op schema is.")
         }
+    }
+
+    // MARK: - Epic Doel-Intenties: IntentModifier tests
+
+    func testIntentModifier_CompletionIntent_NoHighIntensity() {
+        let goal = makeGoal(title: "Marathon", weeksAhead: 10, intent: .completion)
+        let result = PeriodizationEngine.evaluate(goal: goal, activities: [], latestReadinessScore: 80)
+        XCTAssertFalse(result?.intentModifier.allowHighIntensity ?? true,
+                       "Completion-intent mag nooit hoge intensiteit toestaan, ook niet bij hoge VibeScore.")
+    }
+
+    func testIntentModifier_CompletionIntent_LowerTrimpMultiplier() {
+        let goal = makeGoal(title: "Marathon", weeksAhead: 10, intent: .completion)
+        let result = PeriodizationEngine.evaluate(goal: goal, activities: [], latestReadinessScore: 80)
+        XCTAssertLessThan(result?.intentModifier.weeklyTrimpMultiplier ?? 1.0, 1.0,
+                          "Completion-intent moet een verlaagde TRIMP-multiplier geven (<1.0).")
+    }
+
+    func testIntentModifier_MultiDayStage_BackToBackEmphasis() {
+        let goal = makeGoal(title: "Marathon", weeksAhead: 10, format: .multiDayStage)
+        let result = PeriodizationEngine.evaluate(goal: goal, activities: [], latestReadinessScore: 75)
+        XCTAssertTrue(result?.intentModifier.backToBackEmphasis ?? false,
+                      "MultiDayStage moet back-to-back training benadrukken.")
+    }
+
+    func testIntentModifier_SingleDayRace_NoBackToBack() {
+        let goal = makeGoal(title: "Marathon", weeksAhead: 10, format: .singleDayRace)
+        let result = PeriodizationEngine.evaluate(goal: goal, activities: [], latestReadinessScore: 75)
+        XCTAssertFalse(result?.intentModifier.backToBackEmphasis ?? true,
+                       "SingleDayRace mag geen back-to-back benadrukking hebben.")
+    }
+
+    func testIntentModifier_MultiDayStage_LowerTrimpMultiplierThanSingleDay() {
+        let multiDay = makeGoal(title: "Marathon", weeksAhead: 10, format: .multiDayStage, intent: .peakPerformance)
+        let singleDay = makeGoal(title: "Marathon", weeksAhead: 10, format: .singleDayRace, intent: .peakPerformance)
+
+        let multiResult  = PeriodizationEngine.evaluate(goal: multiDay, activities: [], latestReadinessScore: 80)
+        let singleResult = PeriodizationEngine.evaluate(goal: singleDay, activities: [], latestReadinessScore: 80)
+
+        let multiMult  = multiResult?.intentModifier.weeklyTrimpMultiplier ?? 1.0
+        let singleMult = singleResult?.intentModifier.weeklyTrimpMultiplier ?? 1.0
+        XCTAssertLessThan(multiMult, singleMult,
+                          "MultiDayStage moet een lagere TRIMP-multiplier hebben dan SingleDayRace.")
+    }
+
+    func testIntentModifier_StretchGoal_AllowedWhenHighReadiness() {
+        let goal = makeGoal(title: "Marathon", weeksAhead: 10, intent: .peakPerformance,
+                            stretchGoalTime: 3 * 3600) // doeltijd 3 uur
+        let result = PeriodizationEngine.evaluate(goal: goal, activities: [], latestReadinessScore: 80)
+        XCTAssertTrue(result?.intentModifier.stretchPaceAllowed ?? false,
+                      "Stretch-pace moet toegestaan zijn bij VibeScore > 65 en peakPerformance.")
+    }
+
+    func testIntentModifier_StretchGoal_BlockedWhenLowReadiness() {
+        let goal = makeGoal(title: "Marathon", weeksAhead: 10, intent: .peakPerformance,
+                            stretchGoalTime: 3 * 3600)
+        let result = PeriodizationEngine.evaluate(goal: goal, activities: [], latestReadinessScore: 50)
+        XCTAssertFalse(result?.intentModifier.stretchPaceAllowed ?? true,
+                       "Stretch-pace moet geblokkeerd worden als VibeScore ≤ 65.")
+    }
+
+    func testIntentModifier_PeakPerformance_HighReadiness_HighIntensityAllowed() {
+        let goal = makeGoal(title: "Marathon", weeksAhead: 8, intent: .peakPerformance)
+        let result = PeriodizationEngine.evaluate(goal: goal, activities: [], latestReadinessScore: 85)
+        XCTAssertTrue(result?.intentModifier.allowHighIntensity ?? false,
+                      "PeakPerformance met hoge VibeScore moet hoge intensiteit toestaan.")
+    }
+
+    func testIntentModifier_PeakPerformance_LowReadiness_HighIntensityBlocked() {
+        let goal = makeGoal(title: "Marathon", weeksAhead: 8, intent: .peakPerformance)
+        let result = PeriodizationEngine.evaluate(goal: goal, activities: [], latestReadinessScore: 55)
+        XCTAssertFalse(result?.intentModifier.allowHighIntensity ?? true,
+                       "PeakPerformance met lage VibeScore moet hoge intensiteit blokkeren.")
+    }
+
+    func testAdjustedWeeklyTrimpTarget_CompletionIsLowerThanRaw() {
+        let goal = makeGoal(title: "Marathon", weeksAhead: 10, intent: .completion)
+        guard let result = PeriodizationEngine.evaluate(goal: goal, activities: [], latestReadinessScore: 80) else {
+            return XCTFail("Evaluatie zou niet nil mogen zijn.")
+        }
+        XCTAssertLessThan(result.adjustedWeeklyTrimpTarget, result.targetWeeklyTrimp,
+                          "Gecorrigeerd TRIMP-target moet lager zijn bij completion-intent.")
     }
 }
