@@ -27,6 +27,38 @@ private struct OpenMeteoDailyData: Decodable {
     }
 }
 
+// MARK: - WeatherSafetyEvaluator
+
+/// Pure beslissingslogica voor het evalueren van weersomstandigheden voor buitentraining.
+/// Bevat geen netwerk-, locatie- of UI-afhankelijkheden — volledig unit-testbaar.
+struct WeatherSafetyEvaluator {
+
+    /// Neerslagkans boven deze drempel (fractie 0–1) geldt als risico.
+    static let precipitationRiskThreshold: Double = 0.60
+    /// Windsnelheid (km/h) boven deze waarde geldt als risico.
+    static let windRiskThresholdKmh: Double = 50.0
+    /// Maximumtemperatuur (°C) onder deze waarde: te koud risico.
+    static let coldRiskCelsius: Double = -5.0
+    /// Maximumtemperatuur (°C) boven deze waarde: hittestress risico.
+    static let heatRiskCelsius: Double = 38.0
+
+    /// Retourneert true als de omstandigheden een risico vormen voor een buitentraining.
+    /// - Parameters:
+    ///   - precipitationProbability: Neerslagkans als fractie 0.0–1.0.
+    ///   - windSpeedKmh: Windsnelheid in km/h.
+    ///   - highCelsius: Maximumtemperatuur van de dag in °C.
+    static func isRisky(
+        precipitationProbability: Double,
+        windSpeedKmh: Double,
+        highCelsius: Double
+    ) -> Bool {
+        precipitationProbability > precipitationRiskThreshold ||
+        windSpeedKmh             > windRiskThresholdKmh       ||
+        highCelsius              < coldRiskCelsius             ||
+        highCelsius              > heatRiskCelsius
+    }
+}
+
 // MARK: - DayForecast
 
 /// Een compacte dagelijkse weersverwachting voor trainingsadvies.
@@ -41,11 +73,13 @@ struct DayForecast: Identifiable {
     let conditionDescription: String
 
     /// True als de omstandigheden slecht zijn voor een buitentraining.
+    /// Delegeert naar WeatherSafetyEvaluator voor geïsoleerde testbaarheid.
     var isRiskyForOutdoorTraining: Bool {
-        precipitationProbability > 0.60 ||
-        windSpeedKmh > 50 ||
-        highCelsius < -5 ||
-        highCelsius > 38
+        WeatherSafetyEvaluator.isRisky(
+            precipitationProbability: precipitationProbability,
+            windSpeedKmh: windSpeedKmh,
+            highCelsius: highCelsius
+        )
     }
 }
 
