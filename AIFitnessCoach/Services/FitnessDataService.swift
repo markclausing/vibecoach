@@ -625,9 +625,9 @@ final class HealthKitManager: @unchecked Sendable {
 
     // MARK: - Epic 14: Readiness Score Data
 
-    /// Haalt de gemiddelde HRV (SDNN, in milliseconden) op van de afgelopen 48 uur.
-    /// Kijkt 48 uur terug zodat ook gebruikers die vannacht geen Watch droegen toch data krijgen.
-    /// Apple Watch schrijft HRV metingen voornamelijk tijdens slaap.
+    /// Haalt de gemiddelde HRV (SDNN, in milliseconden) op van de afgelopen nacht.
+    /// Gebruikt hetzelfde vaste nachtvenster als de slaapquery (gisteren 18:00 → vandaag 14:00)
+    /// zodat post-workout HRV-metingen nooit de dagelijkse baseline vertroebelen.
     /// - Returns: Gemiddelde HRV in ms, of nil als er geen meting beschikbaar is.
     func fetchRecentHRV() async throws -> Double? {
         guard let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else {
@@ -635,13 +635,18 @@ final class HealthKitManager: @unchecked Sendable {
             return nil
         }
 
-        let now = Date()
-        // Kijken naar de afgelopen 48 uur — biedt fallback als Watch gisteravond niet gedragen was
-        let windowStart = Calendar.current.date(byAdding: .hour, value: -48, to: now)!
-        let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: now, options: .strictEndDate)
+        // Vast nachtvenster: gisteren 18:00 tot vandaag 14:00.
+        // Dit venster verschuift niet naarmate de middag vordert en sluit workout-HRV uit.
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let windowEnd = calendar.date(byAdding: .hour, value: 14, to: today)!
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let windowStart = calendar.date(byAdding: .hour, value: 18, to: yesterday)!
+
+        let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: windowEnd, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 
-        print("🔍 [HRV] Query gestart — venster: afgelopen 48 uur")
+        print("🔍 [HRV] Query gestart — venster: gisteren 18:00 → vandaag 14:00")
 
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: hrvType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
@@ -720,13 +725,19 @@ final class HealthKitManager: @unchecked Sendable {
             return nil
         }
 
-        let now = Date()
-        // Slaapdata van de afgelopen 16 uur ophalen — dit vangt de nacht van gisteravond t/m nu
-        let windowStart = Calendar.current.date(byAdding: .hour, value: -16, to: now)!
-        let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: now, options: .strictEndDate)
+        // Vast nachtvenster: gisteren 18:00 tot vandaag 14:00.
+        // Een schuivend "-16 uur" venster verliest in de middag vroege slaapsamples;
+        // dit vaste venster blijft de hele dag stabiel.
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let windowEnd = calendar.date(byAdding: .hour, value: 14, to: today)!
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let windowStart = calendar.date(byAdding: .hour, value: 18, to: yesterday)!
+
+        let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: windowEnd, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
 
-        print("🔍 [Slaap] Query gestart — venster: afgelopen 16 uur")
+        print("🔍 [Slaap] Query gestart — venster: gisteren 18:00 → vandaag 14:00")
 
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
@@ -781,12 +792,17 @@ final class HealthKitManager: @unchecked Sendable {
             return nil
         }
 
-        let now = Date()
-        let windowStart = Calendar.current.date(byAdding: .hour, value: -16, to: now)!
-        let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: now, options: .strictEndDate)
+        // Zelfde vaste nachtvenster als fetchLastNightSleep(): gisteren 18:00 → vandaag 14:00.
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let windowEnd = calendar.date(byAdding: .hour, value: 14, to: today)!
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
+        let windowStart = calendar.date(byAdding: .hour, value: 18, to: yesterday)!
+
+        let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: windowEnd, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
 
-        print("🔍 [Slaapfases] Query gestart — venster: afgelopen 16 uur")
+        print("🔍 [Slaapfases] Query gestart — venster: gisteren 18:00 → vandaag 14:00")
 
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
