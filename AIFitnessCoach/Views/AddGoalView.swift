@@ -11,6 +11,12 @@ struct AddGoalView: View {
     @State private var targetDate = Date().addingTimeInterval(86400 * 30) // +30 dagen
     @State private var sportCategory: SportCategory = .running
 
+    // Epic Doel-Intenties
+    @State private var eventFormat: EventFormat = .singleDayRace
+    @State private var primaryIntent: PrimaryIntent = .peakPerformance
+    @State private var hasStretchGoal: Bool = false
+    @State private var stretchGoalPickerDate: Date = Calendar.current.startOfDay(for: Date()).addingTimeInterval(3 * 3600) // standaard 3:00
+
     @State private var isSaving = false
 
     private let profileManager = AthleticProfileManager()
@@ -30,6 +36,29 @@ struct AddGoalView: View {
                         ForEach(SportCategory.allCases) { category in
                             Text(category.displayName).tag(category)
                         }
+                    }
+                }
+
+                Section(header: Text("Type Evenement & Intentie")) {
+                    Picker("Evenement", selection: $eventFormat) {
+                        Text("Eendaagse Race").tag(EventFormat.singleDayRace)
+                        Text("Eendaagse Tocht").tag(EventFormat.singleDayTour)
+                        Text("Meerdaagse Etappe").tag(EventFormat.multiDayStage)
+                    }
+
+                    Picker("Doel", selection: $primaryIntent) {
+                        Text("Uitlopen / Genieten").tag(PrimaryIntent.completion)
+                        Text("Presteren / Zo snel mogelijk").tag(PrimaryIntent.peakPerformance)
+                    }
+
+                    Toggle("Streeftijd instellen", isOn: $hasStretchGoal)
+
+                    if hasStretchGoal {
+                        DatePicker(
+                            "Doeltijd (u:min)",
+                            selection: $stretchGoalPickerDate,
+                            displayedComponents: .hourAndMinute
+                        )
                     }
                 }
 
@@ -65,12 +94,16 @@ struct AddGoalView: View {
     private func saveGoal() {
         isSaving = true
         let finalDetails = details.isEmpty ? nil : details
+        let stretchTime: TimeInterval? = hasStretchGoal ? stretchTimeInterval(from: stretchGoalPickerDate) : nil
 
         let newGoal = FitnessGoal(
             title: title,
             details: finalDetails,
             targetDate: targetDate,
-            sportCategory: sportCategory
+            sportCategory: sportCategory,
+            format: eventFormat,
+            intent: primaryIntent,
+            stretchGoalTime: stretchTime
         )
 
         // Bepaal via AI of fallback de Target TRIMP asynchroon
@@ -151,6 +184,14 @@ struct AddGoalView: View {
         }
 
         return fallbackTRIMP(for: goal.targetDate)
+    }
+
+    /// Converteert de uur:minuut-waarde van een Date naar een TimeInterval (seconden).
+    private func stretchTimeInterval(from date: Date) -> TimeInterval {
+        let cal = Calendar.current
+        let h = cal.component(.hour, from: date)
+        let m = cal.component(.minute, from: date)
+        return TimeInterval(h * 3600 + m * 60)
     }
 
     private func fallbackTRIMP(for date: Date) -> Double {
