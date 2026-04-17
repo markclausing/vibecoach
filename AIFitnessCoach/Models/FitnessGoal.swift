@@ -346,6 +346,36 @@ struct PeriodizationResult {
     }
 }
 
+// MARK: - Epic Doel-Intenties: Enums
+
+/// Het formaat van het evenement waarvoor de gebruiker traint.
+enum EventFormat: String, Codable, CaseIterable {
+    case singleDayRace  = "single_day_race"
+    case singleDayTour  = "single_day_tour"
+    case multiDayStage  = "multi_day_stage"
+
+    var displayName: String {
+        switch self {
+        case .singleDayRace:  return "Eendaagse wedstrijd"
+        case .singleDayTour:  return "Eendaagse toertocht"
+        case .multiDayStage:  return "Meerdaagse etapperit"
+        }
+    }
+}
+
+/// De primaire intentie van de gebruiker voor het evenement.
+enum PrimaryIntent: String, Codable, CaseIterable {
+    case completion      = "completion"
+    case peakPerformance = "peak_performance"
+
+    var displayName: String {
+        switch self {
+        case .completion:      return "Uitlopen / overleven"
+        case .peakPerformance: return "Zo snel mogelijk"
+        }
+    }
+}
+
 /// Represents a user's fitness goal.
 /// Dit model wordt opgeslagen in SwiftData om lokale doelen bij te houden.
 @Model
@@ -359,6 +389,11 @@ final class FitnessGoal {
     var sportCategory: SportCategory?
     var targetTRIMP: Double? // Sprint 12.1: Benodigde belasting om dit doel te halen.
 
+    // Epic Doel-Intenties
+    var format: EventFormat
+    var intent: PrimaryIntent
+    var stretchGoalTime: TimeInterval?
+
     init(id: UUID = UUID(),
          title: String,
          details: String? = nil,
@@ -366,7 +401,10 @@ final class FitnessGoal {
          createdAt: Date = Date(),
          isCompleted: Bool = false,
          sportCategory: SportCategory? = nil,
-         targetTRIMP: Double? = nil) {
+         targetTRIMP: Double? = nil,
+         format: EventFormat = .singleDayRace,
+         intent: PrimaryIntent = .peakPerformance,
+         stretchGoalTime: TimeInterval? = nil) {
         self.id = id
         self.title = title
         self.details = details
@@ -375,6 +413,9 @@ final class FitnessGoal {
         self.isCompleted = isCompleted
         self.sportCategory = sportCategory
         self.targetTRIMP = targetTRIMP
+        self.format = format
+        self.intent = intent
+        self.stretchGoalTime = stretchGoalTime
     }
 
     /// Huidige trainingsfase van dit doel op basis van weken resterend (Epic 16).
