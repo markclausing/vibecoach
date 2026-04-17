@@ -1256,8 +1256,14 @@ struct DashboardView: View {
     }
 
     // Epic 17.1: PeriodizationEngine resultaten — fase + succescriteria per actief doel
+    // Epic Doel-Intenties: geef de actuele VibeScore mee zodat de IntentModifier
+    // de VibeScore-drempel (> 65) correct kan evalueren voor stretch-pace en intensiteit.
     private var periodizationResults: [PeriodizationResult] {
-        PeriodizationEngine.evaluateAllGoals(Array(goals), activities: Array(activities))
+        PeriodizationEngine.evaluateAllGoals(
+            Array(goals),
+            activities: Array(activities),
+            latestReadinessScore: todayReadiness?.readinessScore
+        )
     }
 
     /// Geeft het DailyReadiness record van vandaag terug, of nil als er nog geen is.
@@ -1811,6 +1817,9 @@ struct DashboardView: View {
                 // Epic 17.1: Schrijf de periodization-status naar de AI-prompt cache
                 // zodat de coach de actuele trainingsfase en succescriteria kent.
                 viewModel.cachePeriodizationStatus(periodizationResults)
+                // Epic Doel-Intenties: schrijf de intent-instructies naar de aparte cache
+                // zodat de coach een gerichte [DOEL INTENTIES EN BENADERING] sectie ontvangt.
+                viewModel.cacheIntentContext(periodizationResults)
                 // Epic 23 Sprint 1: Schrijf de gap-analyse naar de AI-prompt cache
                 // zodat de coach weet hoeveel TRIMP/km de atleet achterloopt op het lineaire schema.
                 let gapResults = ProgressService.analyzeGaps(for: Array(goals), activities: Array(activities))
