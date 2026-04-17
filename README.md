@@ -178,13 +178,13 @@ Fysiologisch correcte voedingsadviezen op basis van wie je bent en wat je van pl
 
 ---
 
-### 🔄 Epic 27: Test Coverage Verbeteren (Actief)
+### ✅ Epic 27: Test Coverage Verbeteren (Afgerond)
 
 De unit test coverage van de core services verhogen naar een solide standaard. Focus ligt op services die fysiologische berekeningen en gebruikersprofiel-logica bevatten — code die hoge correctheidseisen heeft en tot nu toe onvoldoende gedekt was.
 
 * **FutureProjectionService:** Tests voor het trendlijn-algoritme (3-weeks sliding window), de veiligheidslimiet (max 10% groei/week) en alle vier `ProjectionStatus`-varianten (`alreadyPeaking / onTrack / atRisk / unreachable`).
 * **UserProfileService:** Tests voor HealthKit-fallback-keten (HealthKit → UserDefaults → standaardwaarden), de BMR-berekening (Mifflin-St Jeor) en het synchronisatiegedrag bij gewijzigde gewichts-/lengtewaarden.
-* **Doel:** Coverage verhogen van 62% naar ≥75% voor de core service-laag.
+* **Doel:** Coverage verhogen van 62% naar ≥75% voor de core service-laag. Doel niet gehaald: we zijn op 63% uitgekomen.
 
 ---
 
@@ -237,7 +237,7 @@ Korte log van keuzes die afwijken van het originele plan, zodat context niet ver
 * **Data:** Apple HealthKit (HRV, slaap + slaapfases, workouts) + optioneel Strava OAuth2
 * **Weer:** Open-Meteo API (gratis, geen API-sleutel) via CoreLocation + URLSession
 * **Achtergrond:** HKObserverQuery (Engine A) + BGAppRefreshTask (Engine B)
-* **Testen:** XCTest unit tests + XCUITest UI tests — 62% code coverage (target: ≥75%)
+* **Testen:** XCTest unit tests + XCUITest UI tests — 63% code coverage (target: ≥75%)
 * **Versiebeheer:** GitHub
 
 ## Basisregels voor de AI (Mijn Assistent)
