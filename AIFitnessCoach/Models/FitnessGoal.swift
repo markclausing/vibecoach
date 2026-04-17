@@ -676,7 +676,8 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
     // MARK: - Kalenderlogica
 
     /// Berekent de eerstvolgende kalenderdag die overeenkomt met `dateOrDay`.
-    /// Ondersteunt Nederlandse dagnamen ("Maandag"…"Zondag") en ISO-datumstrings ("2026-04-10").
+    /// Ondersteunt Nederlandse dagnamen ("Maandag"…"Zondag"), Engelse dagnamen ("Monday"…"Sunday"),
+    /// samengestelde strings ("Maandag 21 apr") en ISO-datumstrings ("2026-04-10").
     /// Vandaag wordt als offset 0 beschouwd — een dag in het verleden krijgt +7 dagen.
     var resolvedDate: Date {
         let calendar = Calendar.current
@@ -689,13 +690,21 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
             return calendar.startOfDay(for: parsed)
         }
 
-        // Map Nederlandse dagnamen → weekday-getal (Calendar: 1=zondag … 7=zaterdag)
-        let dutchDayMap: [String: Int] = [
-            "zondag": 1, "maandag": 2, "dinsdag": 3, "woensdag": 4,
-            "donderdag": 5, "vrijdag": 6, "zaterdag": 7
+        // Map dagnamen → weekday-getal (Calendar: 1=zondag … 7=zaterdag)
+        // Ondersteunt Nederlands én Engels zodat ook Gemini-fallback-responses correct worden verwerkt.
+        let dayMap: [String: Int] = [
+            "zondag": 1, "sunday": 1,
+            "maandag": 2, "monday": 2,
+            "dinsdag": 3, "tuesday": 3,
+            "woensdag": 4, "wednesday": 4,
+            "donderdag": 5, "thursday": 5,
+            "vrijdag": 6, "friday": 6,
+            "zaterdag": 7, "saturday": 7
         ]
 
-        guard let targetWeekday = dutchDayMap[dateOrDay.lowercased()] else { return today }
+        // Gebruik alleen het eerste woord zodat "Maandag 21 apr" correct als "maandag" wordt herkend.
+        let firstWord = dateOrDay.lowercased().components(separatedBy: .whitespaces).first ?? dateOrDay.lowercased()
+        guard let targetWeekday = dayMap[firstWord] else { return today }
 
         let todayWeekday = calendar.component(.weekday, from: today)
         var daysAhead = targetWeekday - todayWeekday
