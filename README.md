@@ -200,14 +200,6 @@ De coach begrijpt niet alleen *wat* je wil bereiken, maar ook *hoe* — afmaken 
 
 ---
 
-### 📋 Actieve Ontwikkeling & Backlog
-
-De actieve ontwikkeling en backlog worden beheerd in ons **[GitHub Project Kanban-bord](https://github.com/markclausing/vibecoach/issues)**.
-
-Alle openstaande Epics en Sprints staan als GitHub Issues en worden van daaruit geprioriteerd, bijgehouden en gereviewd.
-
----
-
 ## Testing Push Notifications in Simulator
 Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de naam `test-push.apns` aanmaken en deze letterlijk naar de draaiende simulator slepen (Drag & Drop).
 
