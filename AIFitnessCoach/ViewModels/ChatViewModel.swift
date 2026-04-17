@@ -483,7 +483,9 @@ class ChatViewModel: ObservableObject {
     ///
     /// Sprint 26.1: Als `-UITesting` actief is, wordt een mock-model teruggegeven
     /// zodat de Gemini API niet aangeroepen wordt tijdens E2E-tests.
-    private func buildGenerativeModel() -> GenerativeModelProtocol {
+    ///
+    /// - Parameter modelName: De Gemini modelnaam. Standaard "gemini-2.5-flash".
+    private func buildGenerativeModel(modelName: String = "gemini-2.5-flash") -> GenerativeModelProtocol {
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-UITesting") {
             return UITestMockGenerativeModel()
@@ -608,13 +610,19 @@ class ChatViewModel: ObservableObject {
             }()
 
             let googleModel = GenerativeModel(
-                name: "gemini-2.5-flash",
+                name: modelName,
                 apiKey: initKey,
                 generationConfig: config,
                 systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)]),
                 requestOptions: options
             )
         return RealGenerativeModel(model: googleModel)
+    }
+
+    /// Bouwt een fallback model (gemini-flash-latest) met dezelfde system instruction.
+    /// Wordt onzichtbaar gebruikt wanneer het primaire model een 503 of 429 retourneert.
+    private func buildFallbackGenerativeModel() -> GenerativeModelProtocol {
+        return buildGenerativeModel(modelName: "gemini-flash-latest")
     }
 
     /// Verwijdert de geselecteerde afbeelding uit de invoer.
@@ -1406,29 +1414,29 @@ class ChatViewModel: ObservableObject {
 
             print("DEBUG PROMPT: \(text)")
 
-            // Retry logica: probeer maximaal 3 keer bij tijdelijke server-fouten (bijv. 503 overbelasting).
-            let maxPogingen = 3
+            // Waterfall fallback: probeer het primaire model (gemini-2.5-flash) en schakel bij
+            // een 503/429-fout onzichtbaar over op gemini-flash-latest. Pas bij falen van beide
+            // modellen wordt een fout naar de UI gestuurd.
             var responseText: String? = nil
             var finalError: Error? = nil
 
-            for poging in 1...maxPogingen {
-                do {
-                    responseText = try await model.generateContent(promptParts)
-                    finalError = nil
-                    break // Gelukt — stop de retry loop
-                } catch let error as GenerateContentError {
-                    if case .internalError = error, poging < maxPogingen {
-                        // Tijdelijke server-fout (bijv. 503) — wacht even en probeer opnieuw
-                        retryStatusMessage = "Server tijdelijk overbelast, opnieuw proberen (\(poging)/\(maxPogingen))..."
-                        try? await Task.sleep(nanoseconds: UInt64(poging) * 2_000_000_000)
-                        continue
+            do {
+                responseText = try await model.generateContent(promptParts)
+            } catch let primaryError as GenerateContentError {
+                if case .internalError = primaryError {
+                    // Primaire model overbelast (503/429) — stil overschakelen naar fallback model.
+                    retryStatusMessage = "Model tijdelijk overbelast, overschakelen naar fallback..."
+                    let fallbackModel = buildFallbackGenerativeModel()
+                    do {
+                        responseText = try await fallbackModel.generateContent(promptParts)
+                    } catch {
+                        finalError = error
                     }
-                    finalError = error
-                    break
-                } catch {
-                    finalError = error
-                    break
+                } else {
+                    finalError = primaryError
                 }
+            } catch {
+                finalError = error
             }
 
             // Reset retry-statusbericht
@@ -1444,7 +1452,7 @@ class ChatViewModel: ObservableObject {
                     case .invalidAPIKey:
                         messages.append(ChatMessage(role: .ai, text: "De API-sleutel is ongeldig. Controleer de sleutel via Instellingen → AI Coach Configuratie."))
                     case .internalError:
-                        // Na 3 pogingen nog steeds een server-fout (bijv. 503) — herstelbaar via retry
+                        // Zowel primair als fallback model faalden (503/429)
                         messages.append(ChatMessage(role: .ai, text: "De AI-service is tijdelijk overbelast. Wacht even en probeer het opnieuw.", isError: true))
                     default:
                         messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem met de AI-service. Probeer het opnieuw.", isError: true))

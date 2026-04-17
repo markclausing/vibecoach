@@ -135,6 +135,17 @@ struct AddGoalView: View {
             if let text = response.text?.trimmingCharacters(in: .whitespacesAndNewlines), let trimp = Double(text) {
                 return trimp
             }
+        } catch let error as GenerateContentError {
+            if case .internalError = error {
+                // Primaire model overbelast (503/429) — stil proberen met fallback model.
+                let fallback = GenerativeModel(name: "gemini-flash-latest", apiKey: activeKey)
+                if let response = try? await fallback.generateContent(prompt),
+                   let text = response.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   let trimp = Double(text) {
+                    return trimp
+                }
+            }
+            print("AI TRIMP Fetch failed: \(error)")
         } catch {
             print("AI TRIMP Fetch failed: \(error)")
         }
