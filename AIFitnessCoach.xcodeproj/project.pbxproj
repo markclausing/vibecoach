@@ -61,6 +61,7 @@
 		EE55FF6677AA889900112233 /* FutureProjectionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6677AA88990011223344EE /* FutureProjectionServiceTests.swift */; };
 		1122334455667788990011AA /* UserProfileServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2233445566778899001122BB /* UserProfileServiceTests.swift */; };
 		3344556677889900112233CC /* PhysiologicalCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4455667788990011223344DD /* PhysiologicalCalculatorTests.swift */; };
+		5566778899001122334455EE /* WeatherManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6677889900112233445566FF /* WeatherManagerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -115,6 +116,7 @@
 		FF6677AA88990011223344EE /* FutureProjectionServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FutureProjectionServiceTests.swift; sourceTree = "<group>"; };
 		2233445566778899001122BB /* UserProfileServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserProfileServiceTests.swift; sourceTree = "<group>"; };
 		4455667788990011223344DD /* PhysiologicalCalculatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalCalculatorTests.swift; sourceTree = "<group>"; };
+		6677889900112233445566FF /* WeatherManagerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeatherManagerTests.swift; sourceTree = "<group>"; };
 		BB37CC48DD59EE60FF71AA26 /* UITestMockEnvironment.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UITestMockEnvironment.swift; sourceTree = "<group>"; };
 		BDF699C6B7148ACD66E857D7 /* AddGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddGoalView.swift; sourceTree = "<group>"; };
 		C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "UIImage+Extensions.swift"; sourceTree = "<group>"; };
@@ -212,6 +214,7 @@
 				FF6677AA88990011223344EE /* FutureProjectionServiceTests.swift */,
 				2233445566778899001122BB /* UserProfileServiceTests.swift */,
 				4455667788990011223344DD /* PhysiologicalCalculatorTests.swift */,
+				6677889900112233445566FF /* WeatherManagerTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -487,6 +490,7 @@
 				EE55FF6677AA889900112233 /* FutureProjectionServiceTests.swift in Sources */,
 				1122334455667788990011AA /* UserProfileServiceTests.swift in Sources */,
 				3344556677889900112233CC /* PhysiologicalCalculatorTests.swift in Sources */,
+				5566778899001122334455EE /* WeatherManagerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
