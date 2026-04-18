@@ -5,7 +5,7 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Actief in Ontwikkeling — Epic: Doel-Intentie, Meerdaagse Evenementen & Stretch Goals 🔄**
+**Actief in Ontwikkeling — Epic: Visual Overhaul ('Serene' thema) 🔄**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 63% code coverage.
 
@@ -188,7 +188,7 @@ De unit test coverage van de core services verhogen naar een solide standaard. F
 
 ---
 
-### 🔄 Epic: Doel-Intentie, Meerdaagse Evenementen & Stretch Goals (Actief)
+### ✅ Epic #28: Doel-Intentie, Meerdaagse Evenementen & Stretch Goals (Afgerond)
 
 De coach begrijpt niet alleen *wat* je wil bereiken, maar ook *hoe* — afmaken vs. presteren. Meerdaagse evenementen (tochtjes, etappekoersen) krijgen een eigen trainingslogica.
 
@@ -197,6 +197,17 @@ De coach begrijpt niet alleen *wat* je wil bereiken, maar ook *hoe* — afmaken 
 * **Stap 2 — PeriodizationEngine Refactor:** De planningslogica aanpassen zodat het schema matcht met de intentie. Bij een meerdaagse tocht krijgt de engine instructie om back-to-back duurtrainingen te plannen (cumulatief herstelgedrag). Het schema prioriteert altijd het `PrimaryIntent` (uitlopen/overleven). Het `StretchGoal` (tempo/tijd) wordt alleen in trainingen geïnjecteerd wanneer de actuele Vibe Score én het herstel dat toelaten.
 
 * **Stap 3 — AI Coach Context:** De system prompt in de Gemini `CoachService` updaten. De AI leert dat een "tocht" om comfort, voeding en pacing draait — niet om racen. Bij een dubbel doel (finish én doeltijd) geldt als harde systeeminstructie: de finishlijn heeft altijd prioriteit boven de doeltijd zodra de atleet vermoeid is.
+
+---
+
+### ⏳ Epic #29: Visual Overhaul — 'Serene' Thema (Backlog)
+
+Een complete redesign van de app naar een rustgevend, minimalistisch thema.
+
+* **Thema & Kleurenpalet:** Vervanging van harde, felle accentkleuren door een natuurlijk palet van zachte tinten — Moss (groen), Stone (grijs), Mist (blauw-grijs), Clay (terracotta) en Sakura (roze). Semantische kleurrollen zodat elke tint een vaste betekenis krijgt (bijv. Moss = succes/voortgang, Clay = waarschuwing).
+* **Light & Dark Mode:** Naadloze ondersteuning voor beide modi. Alle kleuren gedefinieerd als adaptive `Color`-assets in de Asset Catalog — geen hardcoded hex-waarden in de Views.
+* **Dynamische Typografie-schaling:** Gebruiker kan via Instellingen de lettergroottes aanpassen — afzonderlijke sliders (of een preset-keuze) voor Heading- en Body-tekstgrootte. Alle Views gebruiken uitsluitend relatieve font-sizes die mee-schalen.
+* **Componentbibliotheek:** Centrale `VibeTheme`-struct bundelt alle kleuren, typografie-tokens en afrondings-radii zodat één wijziging de hele app update.
 
 ---
 
