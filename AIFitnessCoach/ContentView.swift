@@ -1540,252 +1540,186 @@ struct DashboardView: View {
         }
     }
 
+    /// V2.0: Naam van de training van vandaag voor de coach-hint in de Vibe Score kaart.
+    private var todayPlanWorkoutName: String? {
+        planManager.activePlan?.workouts
+            .first {
+                Calendar.current.isDateInToday($0.resolvedDate) &&
+                !$0.activityType.lowercased().contains("rust") &&
+                $0.suggestedDurationMinutes > 0
+            }
+            .map { $0.activityType }
+    }
+
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
 
-                        // Pull-to-refresh hint: als eerste VStack-item zodat hij meescrollt
-                        // en niet over andere UI-elementen heen komt
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.down")
-                                .font(.caption2)
-                            Text("Swipe omlaag om te verversen")
-                                .font(.caption2)
-                        }
-                        .foregroundStyle(.tertiary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 4)
+                    // V2.0: Contextuele header (dag · fase · week)
+                    DashboardHeaderView(
+                        periodizationResults: periodizationResults,
+                        goals: Array(goals)
+                    )
 
-                        // EPIC 14.3: Vibe Score Kaart — bovenaan voor directe richting
-                        VibeScoreCardView(
-                            readiness: todayReadiness,
-                            isLoading: isVibeScoreLoading,
-                            isUnavailable: isVibeScoreUnavailable,
-                            injuryRiskLevel: injuryRiskLevel
+                    // V2.0: Geïntegreerde Vibe Score kaart met metrics-grid
+                    VibeScoreCardV2(
+                        readiness: todayReadiness,
+                        isLoading: isVibeScoreLoading,
+                        isUnavailable: isVibeScoreUnavailable,
+                        injuryRiskLevel: injuryRiskLevel,
+                        todayWorkoutName: todayPlanWorkoutName,
+                        onAskWhy: { appState.showingChatSheet = true }
+                    )
+                    .padding(.horizontal)
+
+                    // Epic 18: Symptoom check-in — alleen zichtbaar bij actieve blessures
+                    if !activeInjuryAreas.isEmpty {
+                        SymptomCheckinCard(
+                            areas: activeInjuryAreas,
+                            todaySymptoms: todaySymptoms,
+                            onSave: { area, severity in
+                                saveOrUpdateSymptom(area: area, severity: severity)
+                            }
                         )
                         .padding(.horizontal)
-
-                        // Epic 18: Dagelijkse symptoom-check-in — alleen zichtbaar als er actieve blessures zijn
-                        if !activeInjuryAreas.isEmpty {
-                            SymptomCheckinCard(
-                                areas: activeInjuryAreas,
-                                todaySymptoms: todaySymptoms,
-                                onSave: { area, severity in
-                                    saveOrUpdateSymptom(area: area, severity: severity)
-                                }
-                            )
-                            .padding(.horizontal)
-                        }
-
-                        // EPIC 18.1: Post-Workout Check-in — toon alleen als recentste workout (≤48u) nog geen beoordeling heeft
-                        if let recentActivity = recentUncheckedActivity {
-                            PostWorkoutCheckinCard(activity: recentActivity) { rpe, mood in
-                                // Werk de AI-cache direct bij na opslaan — geen extra onAppear nodig
-                                viewModel.cacheLastWorkoutFeedback(
-                                    rpe: rpe,
-                                    mood: mood,
-                                    workoutName: recentActivity.displayName,
-                                    trimp: recentActivity.trimp,
-                                    startDate: recentActivity.startDate
-                                )
-                            }
-                            .padding(.horizontal)
-                        }
-
-                        // Contextuele TRIMP-banner — gebaseerd op Acute:Chronic Workload Ratio
-                        switch bannerState {
-                        case .overreached(let name, let actual, let chronic, let pct, let injury):
-                            HStack(alignment: .top, spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.caption)
-                                    .padding(.top, 1)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("**\(name)** was +\(pct)% boven je gemiddelde training (\(chronic) TRIMP).")
-                                        .font(.caption)
-                                    if let inj = injury {
-                                        Text("Let op: Gezien je \(inj) was deze training extra belastend voor je herstel.")
-                                            .font(.caption)
-                                    } else {
-                                        Text("Hoewel je weekdoel nog niet bereikt is, is rust nu de slimste stap.")
-                                            .font(.caption)
-                                    }
-                                }
-                                .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.orange.opacity(0.15))
-                            .foregroundColor(.orange)
-                            .cornerRadius(10)
-                            .padding(.horizontal)
-
-                        case .lowVibeHighLoad(let name, let vibe, let actual):
-                            HStack(alignment: .top, spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.caption)
-                                    .padding(.top, 1)
-                                Text("Je Vibe Score is \(vibe)/100 — je lichaam is uitgeput. **\(name)** (TRIMP: \(actual)) was zwaarder dan je herstel toelaat. Neem rust.")
-                                    .font(.caption)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.orange.opacity(0.15))
-                            .foregroundColor(.orange)
-                            .cornerRadius(10)
-                            .padding(.horizontal)
-
-                        case .behindOnPlan(let current, let target):
-                            HStack(alignment: .top, spacing: 8) {
-                                Image(systemName: "info.circle.fill")
-                                    .font(.caption)
-                                    .padding(.top, 1)
-                                Text("Je TRIMP deze week (\(current)) ligt achter op het weekdoel (\(target)). Pak de geplande trainingen op.")
-                                    .font(.caption)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(themeManager.primaryAccentColor.opacity(0.12))
-                            .foregroundStyle(themeManager.primaryAccentColor)
-                            .cornerRadius(10)
-                            .padding(.horizontal)
-
-                        case .none:
-                            EmptyView()
-                        }
-
-                        // Subtiele laadlijn bovenaan — verschijnt alleen tijdens AI-verwerking
-                        if viewModel.isFetchingWorkout || viewModel.isTyping {
-                            HStack(spacing: 8) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text(viewModel.retryStatusMessage.isEmpty
-                                     ? "Coach analyseert schema..."
-                                     : viewModel.retryStatusMessage)
-                                    .font(.caption)
-                                    .foregroundColor(viewModel.retryStatusMessage.isEmpty ? .secondary : .orange)
-                                Spacer()
-                            }
-                            .padding(.horizontal)
-                            .padding(.vertical, 4)
-                        }
-
-                        if !latestCoachInsight.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Image(systemName: "lightbulb.fill")
-                                        .foregroundStyle(themeManager.primaryAccentColor)
-                                    Text("Coach Insight")
-                                        .font(.headline)
-                                    Spacer()
-                                    // Epic 18: Toon een badge als de gebruiker een symptoomscore heeft
-                                    // aangepast na de laatste analyse — advies is mogelijk verouderd.
-                                    if symptomChangedSinceAnalysis {
-                                        Text("Verouderd — score gewijzigd")
-                                            .font(.caption2)
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Color.orange)
-                                            .cornerRadius(6)
-                                    } else if !lastAnalysisText.isEmpty {
-                                        Text(lastAnalysisText)
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                Text(latestCoachInsight)
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(.ultraThinMaterial)
-                            .cornerRadius(12)
-                            .padding(.horizontal)
-                        }
-
-                        if let plan = planManager.activePlan {
-                            // Sprint 17.3: Fase-badge boven het wekelijkse schema
-                            if !periodizationResults.isEmpty {
-                                PhaseBadgeView(results: periodizationResults)
-                                    .padding(.horizontal)
-                            }
-                            // Hergebruik de TrainingCalendarView uit ChatView,
-                            // we geven wel de viewModel callbacks door zodat de acties werken.
-                            TrainingCalendarView(
-                                plan: plan,
-                                onSkipWorkout: { workout in
-                                    refreshProfileContext()
-                                    viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                                    appState.showingChatSheet = true
-                                },
-                                onAlternativeWorkout: { workout in
-                                    refreshProfileContext()
-                                    viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                                    appState.showingChatSheet = true
-                                },
-                                weeklyForecast: WeatherManager.shared.weeklyForecast
-                            )
-                            .padding(.horizontal)
-                        } else {
-                            VStack(spacing: 16) {
-                                Image(systemName: "calendar.badge.plus")
-                                    .font(.system(size: 48))
-                                    .foregroundColor(.gray)
-                                Text("Nog geen schema gepland.")
-                                    .font(.headline)
-                                Text("Vraag de coach om een nieuw schema te maken op basis van je doelen en data.")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                    .multilineTextAlignment(.center)
-
-                                Button("Open Chat") {
-                                    appState.showingChatSheet = true
-                                }
-                                .buttonStyle(.borderedProminent)
-                            }
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 40)
-                        }
-
-                        // SPRINT 12.2: Interactieve TRIMP Explainer
-                        TRIMPExplainerCard()
-                            .padding(.horizontal)
-
-                        // EPIC 14.3: Educatieve Vibe Score uitlegkaart
-                        VibeScoreExplainerCard()
-                            .padding(.horizontal)
                     }
-                    .padding(.bottom, 40) // Zorg voor wat extra scroll-ruimte
-                }
-                .refreshable {
-                    NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
-                    refreshProfileContext()
-                    // Reset de Vibe Score kaart zodat hij opnieuw probeert Watch-data op te halen.
-                    // Handig als de gebruiker zijn horloge net heeft omgedaan en de data alsnog binnenkomt.
-                    isVibeScoreUnavailable = false
-                    await calculateAndSaveVibeScore()
-                    viewModel.cacheVibeScore(todayReadiness)
-                    viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                    // SPRINT 13.2: Werk de risicocache bij voor de achtergrond-engines na refresh
-                    ProactiveNotificationService.shared.updateRiskCache(
-                        atRiskGoalTitles: atRiskGoals.map { $0.goal.title }
+
+                    // Post-workout RPE check-in
+                    if let recentActivity = recentUncheckedActivity {
+                        PostWorkoutCheckinCard(activity: recentActivity) { rpe, mood in
+                            viewModel.cacheLastWorkoutFeedback(
+                                rpe: rpe,
+                                mood: mood,
+                                workoutName: recentActivity.displayName,
+                                trimp: recentActivity.trimp,
+                                startDate: recentActivity.startDate
+                            )
+                        }
+                        .padding(.horizontal)
+                    }
+
+                    // ACWR-banners — gebaseerd op Acute:Chronic Workload Ratio
+                    switch bannerState {
+                    case .overreached(let name, _, let chronic, let pct, let injury):
+                        DashboardBannerView(icon: "exclamationmark.triangle.fill", color: .orange) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("**\(name)** was +\(pct)% boven je gemiddelde training (\(chronic) TRIMP).")
+                                    .font(.caption)
+                                if let inj = injury {
+                                    Text("Let op: Gezien je \(inj) was deze training extra belastend voor je herstel.")
+                                        .font(.caption)
+                                } else {
+                                    Text("Hoewel je weekdoel nog niet bereikt is, is rust nu de slimste stap.")
+                                        .font(.caption)
+                                }
+                            }
+                        }
+                    case .lowVibeHighLoad(let name, let vibe, let actual):
+                        DashboardBannerView(icon: "exclamationmark.triangle.fill", color: .orange) {
+                            Text("Je Vibe Score is \(vibe)/100 — je lichaam is uitgeput. **\(name)** (TRIMP: \(actual)) was zwaarder dan je herstel toelaat. Neem rust.")
+                                .font(.caption)
+                        }
+                    case .behindOnPlan(let current, let target):
+                        DashboardBannerView(icon: "info.circle.fill", color: themeManager.primaryAccentColor) {
+                            Text("Je TRIMP deze week (\(current)) ligt achter op het weekdoel (\(target)). Pak de geplande trainingen op.")
+                                .font(.caption)
+                        }
+                    case .none:
+                        EmptyView()
+                    }
+
+                    // AI-analyse laadindicator
+                    if viewModel.isFetchingWorkout || viewModel.isTyping {
+                        HStack(spacing: 8) {
+                            ProgressView().controlSize(.small)
+                            Text(viewModel.retryStatusMessage.isEmpty
+                                 ? "Coach analyseert schema..."
+                                 : viewModel.retryStatusMessage)
+                                .font(.caption)
+                                .foregroundColor(viewModel.retryStatusMessage.isEmpty ? .secondary : .orange)
+                            Spacer()
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 4)
+                    }
+
+                    // Coach Insight kaart — V2.0 stijl
+                    if !latestCoachInsight.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: "lightbulb.fill")
+                                    .foregroundStyle(themeManager.primaryAccentColor)
+                                Text("Coach Insight")
+                                    .font(.headline)
+                                Spacer()
+                                if symptomChangedSinceAnalysis {
+                                    Text("Verouderd — score gewijzigd")
+                                        .font(.caption2)
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.orange)
+                                        .cornerRadius(6)
+                                } else if !lastAnalysisText.isEmpty {
+                                    Text(lastAnalysisText)
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            Text(latestCoachInsight)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.systemBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                        .padding(.horizontal)
+                    }
+
+                    // V2.0: Week tijdlijn + dagelijks workout-overzicht
+                    WeekTimelineView(
+                        plan: planManager.activePlan,
+                        activities: Array(activities),
+                        currentWeekTRIMP: currentWeekTRIMP,
+                        weeklyTRIMPTarget: weeklyTRIMPTarget,
+                        weeklyForecast: WeatherManager.shared.weeklyForecast,
+                        onSkipWorkout: { workout in
+                            refreshProfileContext()
+                            viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                            appState.showingChatSheet = true
+                        },
+                        onAlternativeWorkout: { workout in
+                            refreshProfileContext()
+                            viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                            appState.showingChatSheet = true
+                        }
                     )
-                    try? await Task.sleep(nanoseconds: 1_000_000_000)
+
+                    // TRIMP & Vibe Score educatiekaarten
+                    TRIMPExplainerCard()
+                        .padding(.horizontal)
+                    VibeScoreExplainerCard()
+                        .padding(.horizontal)
                 }
+                .padding(.bottom, 40)
             }
-            .navigationTitle("Overzicht")
-            .navigationBarTitleDisplayMode(.large)
-            .background(themeManager.backgroundGradient.ignoresSafeArea())
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .refreshable {
+                NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
+                refreshProfileContext()
+                isVibeScoreUnavailable = false
+                await calculateAndSaveVibeScore()
+                viewModel.cacheVibeScore(todayReadiness)
+                viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                ProactiveNotificationService.shared.updateRiskCache(
+                    atRiskGoalTitles: atRiskGoals.map { $0.goal.title }
+                )
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .background(Color(.secondarySystemBackground).ignoresSafeArea())
             // Epic 18: Reset de staleness-badge zodra er een nieuwe analyse is afgerond.
             .onChange(of: lastAnalysisTimestamp) { _, _ in
                 symptomChangedSinceAnalysis = false
@@ -2023,6 +1957,33 @@ struct PhaseBadgeView: View {
         case .peakPhase:    return .red
         case .tapering:     return .purple
         }
+    }
+}
+
+// MARK: - V2.0: DashboardBannerView
+
+/// Herbruikbare kaartbanner voor ACWR-waarschuwingen en informatieve meldingen.
+struct DashboardBannerView<Content: View>: View {
+    let icon: String
+    let color: Color
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundColor(color)
+                .padding(.top, 1)
+            content()
+                .foregroundColor(color)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(color.opacity(0.10))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal)
     }
 }
 
