@@ -5,7 +5,7 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Actief in Ontwikkeling — Epic #29: Visual Overhaul ('Serene' thema) 🔄**
+**Actief in Ontwikkeling — Epic #30: V2.0 Card-Based UX Overhaul ⏳**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 63% code coverage.
 
@@ -200,7 +200,7 @@ De coach begrijpt niet alleen *wat* je wil bereiken, maar ook *hoe* — afmaken 
 
 ---
 
-### 🔄 Epic #29: Visual Overhaul — 'Serene' Thema (Actief)
+### ✅ Epic #29: Visual Overhaul — 'Serene' Thema (Afgerond)
 
 Een complete redesign van de app naar een rustgevend, minimalistisch thema met volledige ondersteuning voor meerdere kleurthema's, Light & Dark mode en dynamische UI-injectie in alle hoofdcomponenten. Niet alleen kleuren en typografie, maar ook de iconografie en illustraties veranderen naadloos mee met het gekozen thema — de hele visuele laag is thema-bewust.
 
@@ -211,6 +211,18 @@ Een complete redesign van de app naar een rustgevend, minimalistisch thema met v
 * **✅ Sprint 29.3 — Instellingen & UI Injectie:** `ThemePicker` gebouwd in `SettingsView` met visuele kleurstalen en live preview. Dynamische tab-iconen via `ThemeManager.icon(for:)`. Typografie-instellingen (kop/body grootte) opgeslagen in `UserDefaults`.
 
 * **✅ Sprint 29.4 — Global Theme Injection & Refactor:** Alle hardcoded `Color.blue` en `Color.accentColor` referenties in `DashboardView`, `RecoveryPlanActiveBannerView`, `PostWorkoutCheckinCard`, `GoalMilestonesSection` (ContentView.swift), `GoalRowView` (GoalsListView.swift), en `NoAPIKeyView` + `MessageBubble` (ChatView.swift) vervangen door `themeManager.primaryAccentColor`. Elk betrokken component krijgt `@EnvironmentObject var themeManager: ThemeManager`. Gebruikerberichten in de chat en actieknoppen tonen nu de actieve themakleur.
+
+---
+
+### ⏳ Epic #30: V2.0 Card-Based UX Overhaul (Gepland)
+
+Een volledige herontwerp van de drie kernschermen naar een moderne, kaartgebaseerde lay-out. De nadruk ligt op visuele hiërarchie, actiegerichte UI-patronen en een informatiedichte maar rustige presentatie van data.
+
+* **⏳ Sprint 30.1 — Dashboard V2:** Transitie naar een "floating card" lay-out op een lichte achtergrond. Compleet nieuwe Vibe Score-kaart met HRV- en Slaap-sub-metrics als inline badges. Horizontale week-tijdlijn bovenaan het scherm voor directe training-navigatie.
+
+* **⏳ Sprint 30.2 — Interactive Coach Chat:** Refactor van `ChatView` van simpele tekstbubbels naar gestructureerde, actiegerichte UI-kaarten. Vaste secties per coach-bericht: "Wat ik zie", "Aanpassing in je plan", "Toepassen"-knop en contextgevoelige suggestie-chips onderaan het scherm.
+
+* **⏳ Sprint 30.3 — Goals & Settings Grid:** Nieuwe visuele voortgangsbalken per trainingsfase (Base / Build / Peak / Taper) in de Doelen-tab. Grid-gebaseerde lay-out voor de Instellingen-tab en Connecties-overzicht — overzichtelijker en consistenter met de nieuwe kaartstructuur.
 
 ---
 
