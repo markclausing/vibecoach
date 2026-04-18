@@ -928,6 +928,21 @@ struct SuggestedTrainingPlan: Codable, Equatable {
     let motivation: String
     let workouts: [SuggestedWorkout]
     let newPreferences: [ExtractedPreference]?
+
+    // Custom init zodat een Gemini-response met alleen {"motivation": "..."} niet crasht.
+    // Ontbrekende arrays krijgen een lege standaardwaarde in plaats van een decode-fout.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        motivation     = try c.decode(String.self, forKey: .motivation)
+        workouts       = (try? c.decodeIfPresent([SuggestedWorkout].self,     forKey: .workouts))       ?? []
+        newPreferences = (try? c.decodeIfPresent([ExtractedPreference].self,  forKey: .newPreferences)) ?? nil
+    }
+
+    init(motivation: String, workouts: [SuggestedWorkout], newPreferences: [ExtractedPreference]? = nil) {
+        self.motivation     = motivation
+        self.workouts       = workouts
+        self.newPreferences = newPreferences
+    }
 }
 
 import SwiftUI
