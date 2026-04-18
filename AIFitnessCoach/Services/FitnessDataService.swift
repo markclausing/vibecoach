@@ -1547,14 +1547,16 @@ struct PeriodizationEngine {
         let isHighReadiness = vibeScore > 65
         let isMultiDay      = goal.resolvedFormat == .multiDayStage
 
-        // Completion-modus: altijd aerobe basis, nooit hoge intensiteit
+        // Completion-modus: aerobe basis, TENZIJ er een stretchGoalTime is én VibeScore hoog genoeg is.
+        // Dan staat één temposessie per week toe — sporter wil finishen maar heeft ook een tijdsdoel.
         if goal.resolvedIntent == .completion {
+            let hasStretchWithReadiness = goal.stretchGoalTime != nil && isHighReadiness
             return IntentModifier(
                 weeklyTrimpMultiplier: 0.90,
-                allowHighIntensity: false,
+                allowHighIntensity: hasStretchWithReadiness,
                 backToBackEmphasis: isMultiDay,
-                stretchPaceAllowed: false,
-                coachingInstruction: completionInstruction(goal: goal, vibeScore: vibeScore, isMultiDay: isMultiDay)
+                stretchPaceAllowed: hasStretchWithReadiness,
+                coachingInstruction: completionInstruction(goal: goal, vibeScore: vibeScore, isMultiDay: isMultiDay, stretchAllowed: hasStretchWithReadiness)
             )
         }
 
@@ -1578,13 +1580,22 @@ struct PeriodizationEngine {
 
     // MARK: - Coaching Instructie Builders
 
-    private static func completionInstruction(goal: FitnessGoal, vibeScore: Int, isMultiDay: Bool) -> String {
-        var lines = [
-            "══ DOEL-INTENTIE: UITLOPEN / OVERLEVEN ══",
-            "De gebruiker wil dit evenement uitlopen en veilig finishen — géén racestrategie.",
-            "INSTRUCTIE: Prioriteer Zone 1-2 (aerobe basis). GEEN lactaat-intervallen of tempo-blokken.",
-            "Schema-principe: duurvermogen > intensiteit. Lange, rustige trainingen staan centraal.",
-        ]
+    private static func completionInstruction(goal: FitnessGoal, vibeScore: Int, isMultiDay: Bool, stretchAllowed: Bool) -> String {
+        var lines = ["══ DOEL-INTENTIE: UITLOPEN / OVERLEVEN ══"]
+
+        if stretchAllowed, let stretchTime = goal.stretchGoalTime {
+            let totalSec = Int(stretchTime)
+            let hours    = totalSec / 3600
+            let minutes  = (totalSec % 3600) / 60
+            let timeStr  = hours > 0 ? "\(hours)u\(String(format: "%02d", minutes))" : "\(minutes) min"
+            lines.append("Primaire intentie: FINISHEN — maar er is een doeltijd van \(timeStr) ingesteld.")
+            lines.append("VibeScore (\(vibeScore)) is hoog genoeg: Voeg maximaal 1 temposessie per week toe op doelpace. Basis blijft Zone 1-2; tempo is additioneel, niet leidend.")
+        } else {
+            lines.append("De gebruiker wil dit evenement uitlopen en veilig finishen — géén racestrategie.")
+            lines.append("INSTRUCTIE: Prioriteer Zone 1-2 (aerobe basis). GEEN lactaat-intervallen of tempo-blokken.")
+            lines.append("Schema-principe: duurvermogen > intensiteit. Lange, rustige trainingen staan centraal.")
+        }
+
         if isMultiDay {
             lines.append("FORMAAT — MEERDAAGSE ETAPPERIT: Verspreid de belasting over opeenvolgende dagen (bijv. Za + Zo back-to-back duurtraining). Verminder hoge intensiteit verder — gewenning aan accumulatievermoeidheid is het primaire doel.")
         }
