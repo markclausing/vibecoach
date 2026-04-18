@@ -124,6 +124,7 @@ struct ContentView: View {
             }
             .tag(AppNavigationState.Tab.settings)
         }
+        .tint(themeManager.primaryAccentColor)
         // SPRINT 13.4: showingChatSheet = true redirecteert nu naar de Coach tab
         // zodat alle bestaande callsites (banners, notificaties, deep links) blijven werken
         // zonder aanpassingen, en de TabBar altijd zichtbaar blijft.
@@ -1777,6 +1778,9 @@ struct DashboardView: View {
                 }
             }
             .navigationTitle("Overzicht")
+            .background(themeManager.backgroundGradient.ignoresSafeArea())
+            .toolbarBackground(themeManager.backgroundColor, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             // Epic 18: Reset de staleness-badge zodra er een nieuwe analyse is afgerond.
             .onChange(of: lastAnalysisTimestamp) { _, _ in
                 symptomChangedSinceAnalysis = false

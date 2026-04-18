@@ -162,7 +162,11 @@ struct GoalsListView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(themeManager.backgroundGradient.ignoresSafeArea())
             .navigationTitle("Doelen")
+            .toolbarBackground(themeManager.backgroundColor, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingAddSheet = true } label: {

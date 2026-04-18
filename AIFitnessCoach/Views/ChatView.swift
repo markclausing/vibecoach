@@ -12,6 +12,7 @@ struct ChatView: View {
 
     /// De globale app status om notificatie-tap acties af te vangen.
     @EnvironmentObject var appState: AppNavigationState
+    @EnvironmentObject var themeManager: ThemeManager
 
     /// SwiftData Context voor het berekenen van het atletisch profiel.
     @Environment(\.modelContext) private var modelContext
@@ -191,8 +192,11 @@ struct ChatView: View {
 
                 } // end else (hasAPIKey)
             }
+            .background(themeManager.backgroundGradient.ignoresSafeArea())
             .navigationTitle("Vraag de Coach")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(themeManager.backgroundColor, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .onChange(of: appState.targetActivityId) { oldValue, newValue in
                 if let activityId = newValue {
                     // Start de analyse en clear daarna de target uit de state zodat
