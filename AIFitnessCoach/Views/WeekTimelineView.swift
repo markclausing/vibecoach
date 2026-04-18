@@ -19,9 +19,7 @@ struct WeekTimelineView: View {
     private var currentWeekDays: [Date] {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
-        let daysSinceMon = (cal.component(.weekday, from: today) + 5) % 7
-        let monday = cal.date(byAdding: .day, value: -daysSinceMon, to: today)!
-        return (0..<7).map { cal.date(byAdding: .day, value: $0, to: monday)! }
+        return (0..<7).map { cal.date(byAdding: .day, value: $0, to: today)! }
     }
 
     private func planWorkout(for date: Date) -> SuggestedWorkout? {
