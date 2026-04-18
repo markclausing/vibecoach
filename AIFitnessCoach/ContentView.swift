@@ -583,6 +583,7 @@ enum WorkoutCheckinConfig {
 struct PostWorkoutCheckinCard: View {
     @Bindable var activity: ActivityRecord
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var themeManager: ThemeManager
 
     /// Callback zodat DashboardView de AI-cache direct kan bijwerken na opslaan.
     /// rpe == 0 betekent genegeerd — de caller slaat dit niet op als echte feedback.
@@ -691,10 +692,10 @@ struct PostWorkoutCheckinCard: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
-                            .background(selectedMood == mood.emoji ? Color.blue.opacity(0.12) : Color.clear)
+                            .background(selectedMood == mood.emoji ? themeManager.primaryAccentColor.opacity(0.12) : Color.clear)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .stroke(selectedMood == mood.emoji ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1.5)
+                                    .stroke(selectedMood == mood.emoji ? themeManager.primaryAccentColor : Color.gray.opacity(0.3), lineWidth: 1.5)
                             )
                             .cornerRadius(10)
                         }
@@ -1178,12 +1179,13 @@ struct ProactiveWarningBannerView: View {
 /// Verdwijnt automatisch na 3 dagen.
 struct RecoveryPlanActiveBannerView: View {
     let onCoachTapped: () -> Void
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.blue)
+                    .foregroundStyle(themeManager.primaryAccentColor)
                 Text("Herstelplan Actief")
                     .font(.headline)
                     .foregroundColor(.primary)
@@ -1205,16 +1207,16 @@ struct RecoveryPlanActiveBannerView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
-                .background(Color.blue.opacity(0.12))
+                .background(themeManager.primaryAccentColor.opacity(0.12))
                 .cornerRadius(10)
-                .foregroundColor(.blue)
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.blue.opacity(0.3), lineWidth: 1))
+                .foregroundStyle(themeManager.primaryAccentColor)
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(themeManager.primaryAccentColor.opacity(0.3), lineWidth: 1))
             }
         }
         .padding()
-        .background(Color.blue.opacity(0.07))
+        .background(themeManager.primaryAccentColor.opacity(0.07))
         .cornerRadius(14)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.blue.opacity(0.2), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(themeManager.primaryAccentColor.opacity(0.2), lineWidth: 1))
     }
 }
 
@@ -1227,6 +1229,7 @@ struct RecoveryPlanActiveBannerView: View {
 struct DashboardView: View {
     @EnvironmentObject var appState: AppNavigationState
     @EnvironmentObject var planManager: TrainingPlanManager
+    @EnvironmentObject var themeManager: ThemeManager
     @ObservedObject var viewModel: ChatViewModel
 
     @Environment(\.modelContext) private var modelContext
@@ -1642,8 +1645,8 @@ struct DashboardView: View {
                             .padding(.horizontal, 12)
                             .padding(.vertical, 7)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.blue.opacity(0.12))
-                            .foregroundColor(.blue)
+                            .background(themeManager.primaryAccentColor.opacity(0.12))
+                            .foregroundStyle(themeManager.primaryAccentColor)
                             .cornerRadius(10)
                             .padding(.horizontal)
 
@@ -2047,6 +2050,7 @@ struct MilestoneProgressCard: View {
 
 private struct GoalMilestonesSection: View {
     let result: PeriodizationResult
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -2060,8 +2064,8 @@ private struct GoalMilestonesSection: View {
                     .font(.caption2)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color.accentColor.opacity(0.15))
-                    .foregroundColor(.accentColor)
+                    .background(themeManager.primaryAccentColor.opacity(0.15))
+                    .foregroundStyle(themeManager.primaryAccentColor)
                     .cornerRadius(4)
             }
 

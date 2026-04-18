@@ -559,6 +559,7 @@ private struct MilestoneProgressRowEmbed: View {
 
 struct GoalRowView: View {
     let goal: FitnessGoal
+    @EnvironmentObject var themeManager: ThemeManager
 
     var daysRemaining: Int {
         Calendar.current.dateComponents([.day], from: Date(), to: goal.targetDate).day ?? 0
@@ -580,8 +581,8 @@ struct GoalRowView: View {
                         .font(.caption)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.1))
-                        .foregroundColor(.blue)
+                        .background(themeManager.primaryAccentColor.opacity(0.1))
+                        .foregroundStyle(themeManager.primaryAccentColor)
                         .clipShape(Capsule())
                 } else {
                     Text("Verlopen")

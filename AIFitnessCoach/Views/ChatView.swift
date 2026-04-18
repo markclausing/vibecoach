@@ -267,6 +267,8 @@ struct ChatView: View {
 /// Epic 20: Lege staat die getoond wordt als er geen API-sleutel is geconfigureerd.
 /// Stuurt de gebruiker rechtstreeks naar de AI Coach Configuratie in de Instellingen.
 struct NoAPIKeyView: View {
+    @EnvironmentObject var themeManager: ThemeManager
+
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
@@ -291,7 +293,7 @@ struct NoAPIKeyView: View {
                     .fontWeight(.semibold)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
-                    .background(Color.blue)
+                    .background(themeManager.primaryAccentColor)
                     .foregroundColor(.white)
                     .cornerRadius(12)
             }
@@ -304,6 +306,7 @@ struct NoAPIKeyView: View {
 struct MessageBubble: View {
     /// Het bericht dat getoond moet worden.
     let message: ChatMessage
+    @EnvironmentObject var themeManager: ThemeManager
 
     // Callbacks voor de workout kaartjes
     var onSkipWorkout: ((SuggestedWorkout) -> Void)?
@@ -333,7 +336,7 @@ struct MessageBubble: View {
                 if !message.text.isEmpty {
                     Text(message.text)
                         .padding(12)
-                        .background(isUser ? Color.blue : (message.isError ? Color.orange.opacity(0.12) : Color(.systemGray5)))
+                        .background(isUser ? themeManager.primaryAccentColor : (message.isError ? Color.orange.opacity(0.12) : Color(.systemGray5)))
                         .foregroundColor(isUser ? .white : (message.isError ? Color.orange : .primary))
                         .cornerRadius(16)
                 }
