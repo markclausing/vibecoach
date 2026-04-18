@@ -278,7 +278,26 @@ class ChatViewModel: ObservableObject {
     func cacheIntentContext(_ results: [PeriodizationResult]) {
         let instructions = results
             .filter { !$0.intentModifier.coachingInstruction.isEmpty }
-            .map { "• \($0.goal.title):\n\($0.intentModifier.coachingInstruction)" }
+            .map { result -> String in
+                var text = "• \(result.goal.title):\n\(result.intentModifier.coachingInstruction)"
+
+                // Expliciete toertocht-context: de coach mag NIET redeneren als bij een wedstrijd
+                let format = result.goal.resolvedFormat
+                if format == .multiDayStage || format == .singleDayTour {
+                    text += "\n⚠️ LET OP: Dit is een TOERTOCHT, geen race. Beoordeel de voortgang op basis van rustig touren, comfort en meerdaags duurvermogen, NIET op race-snelheid."
+                }
+
+                // Expliciete stretch goal doeltijd in leesbaar formaat
+                if let stretchTime = result.goal.stretchGoalTime {
+                    let totalSec = Int(stretchTime)
+                    let hours    = totalSec / 3600
+                    let minutes  = (totalSec % 3600) / 60
+                    let timeStr  = hours > 0 ? "\(hours) uur en \(minutes) minuten" : "\(minutes) minuten"
+                    text += "\n✅ Stretch Goal Doeltijd: \(timeStr). Bouw af en toe tempo-oefeningen in het schema in om deze snelheid op te bouwen, mits de actuele VibeScore / herstel dit toelaat."
+                }
+
+                return text
+            }
         intentContext = instructions.isEmpty ? "" : instructions.joined(separator: "\n\n")
     }
 
