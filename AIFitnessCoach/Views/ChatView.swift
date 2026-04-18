@@ -60,13 +60,14 @@ struct ChatView: View {
                         } label: {
                             Image(systemName: "xmark")
                                 .font(.caption2)
-                                .foregroundColor(.white.opacity(0.8))
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
-                    .background(Color.orange.opacity(0.85))
-                    .foregroundColor(.white)
+                    .background(.ultraThinMaterial)
+                    .overlay(Color.orange.opacity(0.10))
+                    .foregroundStyle(.primary)
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
@@ -155,9 +156,9 @@ struct ChatView: View {
                     PhotosPicker(selection: $selectedItem, matching: .images, photoLibrary: .shared()) {
                         Image(systemName: "plus")
                             .font(.system(size: 20))
-                            .foregroundColor(.blue)
+                            .foregroundStyle(themeManager.primaryAccentColor)
                             .padding(8)
-                            .background(Color(.systemGray6))
+                            .background(themeManager.primaryAccentColor.opacity(0.1))
                             .clipShape(Circle())
                     }
                     .onChange(of: selectedItem) { _, newItem in
@@ -183,7 +184,7 @@ struct ChatView: View {
                     }) {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.system(size: 32))
-                            .foregroundColor(viewModel.inputText.isEmpty && viewModel.selectedImage == nil ? .gray : .blue)
+                            .foregroundStyle(viewModel.inputText.isEmpty && viewModel.selectedImage == nil ? Color.secondary : themeManager.primaryAccentColor)
                     }
                     .disabled(viewModel.inputText.isEmpty && viewModel.selectedImage == nil)
                     .accessibilityIdentifier("ChatSendButton")
@@ -339,7 +340,7 @@ struct MessageBubble: View {
                 if !message.text.isEmpty {
                     Text(message.text)
                         .padding(12)
-                        .background(isUser ? themeManager.primaryAccentColor : (message.isError ? Color.orange.opacity(0.12) : Color(.systemGray5)))
+                        .background(isUser ? themeManager.primaryAccentColor : (message.isError ? Color.orange.opacity(0.12) : Color(.systemGray5).opacity(0.6)))
                         .foregroundColor(isUser ? .white : (message.isError ? Color.orange : .primary))
                         .cornerRadius(16)
                 }
@@ -454,6 +455,7 @@ struct WorkoutCardView: View {
     var onSkip: (() -> Void)?
     var onAlternative: (() -> Void)?
     var onSelect: (() -> Void)?
+    @EnvironmentObject var themeManager: ThemeManager
 
     @State private var isProcessingAction: Bool = false
 
@@ -466,7 +468,7 @@ struct WorkoutCardView: View {
                 Text(workout.displayDayLabel)
                     .font(.caption)
                     .fontWeight(.bold)
-                    .foregroundColor(.blue)
+                    .foregroundStyle(themeManager.primaryAccentColor.opacity(0.75))
 
                 // Epic 21: Weers-badge — alleen tonen als er voorspellingsdata is
                 if let forecast = weatherForecast {
@@ -510,7 +512,7 @@ struct WorkoutCardView: View {
             if let reasoning = workout.reasoning, !reasoning.isEmpty {
                 Label(reasoning, systemImage: "info.circle")
                     .font(.caption2)
-                    .foregroundColor(.blue.opacity(0.8))
+                    .foregroundStyle(themeManager.primaryAccentColor.opacity(0.65))
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -540,6 +542,7 @@ struct WorkoutCardView: View {
 struct WorkoutDetailView: View {
     let workout: SuggestedWorkout
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         NavigationStack {
@@ -550,7 +553,7 @@ struct WorkoutDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(workout.displayDayLabel)
                             .font(.headline)
-                            .foregroundColor(.blue)
+                            .foregroundStyle(themeManager.primaryAccentColor.opacity(0.75))
 
                         Text(workout.activityType)
                             .font(.largeTitle)
@@ -616,12 +619,13 @@ struct InfoRowView: View {
     let icon: String
     let title: String
     let value: String
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         HStack {
             Image(systemName: icon)
                 .frame(width: 24)
-                .foregroundColor(.blue)
+                .foregroundStyle(themeManager.primaryAccentColor.opacity(0.75))
             Text(title)
                 .foregroundColor(.secondary)
             Spacer()

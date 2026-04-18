@@ -88,14 +88,14 @@ struct ContentView: View {
             // Tab 1: Overzicht (Dashboard & Kalender)
             DashboardView(viewModel: sharedChatViewModel)
                 .tabItem {
-                    Label("Overzicht", systemImage: themeManager.icon(for: .home))
+                    Label("Overzicht", systemImage: "house.fill")
                 }
                 .tag(AppNavigationState.Tab.dashboard)
 
             // Tab 2: Doelen — lange-termijn analysecentrum (Epic 23)
             GoalsListView(viewModel: sharedChatViewModel)
                 .tabItem {
-                    Label("Doelen", systemImage: themeManager.icon(for: .goal))
+                    Label("Doelen", systemImage: "flag.fill")
                 }
                 .tag(AppNavigationState.Tab.goals)
 
@@ -589,19 +589,19 @@ struct PostWorkoutCheckinCard: View {
     @State private var rpe: Double = 5
     @State private var selectedMood: String? = nil
 
-    private let moods: [(emoji: String, label: String)] = [
-        ("😌", "Rustig"),
-        ("🟢", "Goed"),
-        ("🚀", "Sterk"),
-        ("🤕", "Pijn"),
-        ("🥵", "Uitgeput")
+    private let moods: [(icon: String, label: String)] = [
+        ("moon.fill",            "Rustig"),
+        ("checkmark.circle.fill","Goed"),
+        ("bolt.fill",            "Sterk"),
+        ("bandage.fill",         "Pijn"),
+        ("zzz",                  "Uitgeput")
     ]
 
     // Kleur van de RPE-waarde op basis van het getal
     private var rpeColor: Color {
         switch Int(rpe) {
         case 1...3: return .green
-        case 4...6: return .orange
+        case 4...6: return Color(red: 0.88, green: 0.58, blue: 0.32)
         default:    return .red
         }
     }
@@ -630,7 +630,7 @@ struct PostWorkoutCheckinCard: View {
             // Header met negeer-knop rechtsboven
             HStack(alignment: .top) {
                 Image(systemName: "checkmark.bubble.fill")
-                    .foregroundColor(.blue)
+                    .foregroundStyle(themeManager.primaryAccentColor)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Hoe ging je laatste training?")
                         .font(.headline)
@@ -678,21 +678,23 @@ struct PostWorkoutCheckinCard: View {
                     .fontWeight(.medium)
 
                 HStack(spacing: 10) {
-                    ForEach(moods, id: \.emoji) { mood in
-                        Button(action: { selectedMood = mood.emoji }) {
+                    ForEach(moods, id: \.icon) { mood in
+                        Button(action: { selectedMood = mood.icon }) {
                             VStack(spacing: 4) {
-                                Text(mood.emoji)
+                                Image(systemName: mood.icon)
                                     .font(.title2)
+                                    .symbolRenderingMode(.hierarchical)
+                                    .foregroundStyle(selectedMood == mood.icon ? themeManager.primaryAccentColor : Color.secondary)
                                 Text(mood.label)
                                     .font(.caption2)
-                                    .foregroundColor(selectedMood == mood.emoji ? .primary : .secondary)
+                                    .foregroundColor(selectedMood == mood.icon ? .primary : .secondary)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
-                            .background(selectedMood == mood.emoji ? themeManager.primaryAccentColor.opacity(0.12) : Color.clear)
+                            .background(selectedMood == mood.icon ? themeManager.primaryAccentColor.opacity(0.12) : Color.clear)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .stroke(selectedMood == mood.emoji ? themeManager.primaryAccentColor : Color.gray.opacity(0.3), lineWidth: 1.5)
+                                    .stroke(selectedMood == mood.icon ? themeManager.primaryAccentColor : Color.gray.opacity(0.3), lineWidth: 1.5)
                             )
                             .cornerRadius(10)
                         }
@@ -2173,7 +2175,7 @@ private struct SymptomAreaRow: View {
         switch severity {
         case 0:     return .green
         case 1...3: return .green
-        case 4...6: return .orange
+        case 4...6: return Color(red: 0.88, green: 0.58, blue: 0.32)
         default:    return .red
         }
     }

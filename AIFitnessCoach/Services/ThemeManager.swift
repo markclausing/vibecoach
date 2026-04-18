@@ -12,25 +12,9 @@ final class ThemeManager: ObservableObject {
         didSet { UserDefaults.standard.set(currentTheme.rawValue, forKey: "vibecoach_selected_theme") }
     }
 
-    /// Schaalfactor voor koppen (0.8 = kleiner, 1.2 = groter).
-    @Published var headingSizeMultiplier: Double {
-        didSet { UserDefaults.standard.set(headingSizeMultiplier, forKey: "vibecoach_heading_size_multiplier") }
-    }
-
-    /// Schaalfactor voor bodytekst.
-    @Published var bodySizeMultiplier: Double {
-        didSet { UserDefaults.standard.set(bodySizeMultiplier, forKey: "vibecoach_body_size_multiplier") }
-    }
-
     init() {
         let raw = UserDefaults.standard.string(forKey: "vibecoach_selected_theme") ?? ""
         currentTheme = Theme(rawValue: raw) ?? .moss
-
-        let h = UserDefaults.standard.double(forKey: "vibecoach_heading_size_multiplier")
-        headingSizeMultiplier = h == 0 ? 1.0 : h
-
-        let b = UserDefaults.standard.double(forKey: "vibecoach_body_size_multiplier")
-        bodySizeMultiplier = b == 0 ? 1.0 : b
     }
 
     // MARK: - Adaptieve kleuren (light/dark bewust)
@@ -106,17 +90,6 @@ final class ThemeManager: ObservableObject {
         }
     }
 
-    // MARK: - Typografie helpers
-
-    /// Schaalt een font op basis van de heading-multiplier instelling.
-    func scaledHeadingFont(_ style: Font.TextStyle = .headline) -> Font {
-        Font.system(style).weight(.semibold).leading(.tight)
-    }
-
-    /// Schaalt een font op basis van de body-multiplier instelling.
-    func scaledBodyFont(_ style: Font.TextStyle = .body) -> Font {
-        Font.system(style).leading(.standard)
-    }
 }
 
 /// UI-contexten waarvoor een themabewust icoon beschikbaar is.

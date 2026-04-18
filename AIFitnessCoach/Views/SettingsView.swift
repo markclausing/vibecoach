@@ -215,9 +215,8 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-                // Epic 29: Serene Visual Overhaul — thema en typografie
+                // Epic 29: Serene Visual Overhaul — thema
                 ThemePickerSection(themeManager: themeManager)
-                TypographySection(themeManager: themeManager)
 
                 // Epic 20: BYOK AI Configuratie — bovenaan voor directe vindbaarheid
                 Section(header: Text("AI Coach")) {
@@ -667,70 +666,6 @@ private struct ThemeCircleButton: View {
             }
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Epic 29 Sprint 3: Typografie Sectie
-
-struct TypographySection: View {
-    @ObservedObject var themeManager: ThemeManager
-
-    var body: some View {
-        Section(
-            header: Text("Typografie"),
-            footer: Text("Pas de tekstgrootte van koppen en bodytekst aan. Standaard is 1.0.").font(.caption)
-        ) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Koppen")
-                        .font(.subheadline)
-                    Spacer()
-                    Text(String(format: "%.2f×", themeManager.headingSizeMultiplier))
-                        .font(.caption)
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                }
-                Slider(value: $themeManager.headingSizeMultiplier, in: 0.75...1.50, step: 0.05)
-                    .tint(themeManager.primaryAccentColor)
-
-                // Live preview van de heading-schaal
-                Text("Voorbeeld Kop")
-                    .font(.system(.headline).weight(.semibold))
-                    .scaleEffect(themeManager.headingSizeMultiplier, anchor: .leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 2)
-            }
-            .padding(.vertical, 4)
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Bodytekst")
-                        .font(.subheadline)
-                    Spacer()
-                    Text(String(format: "%.2f×", themeManager.bodySizeMultiplier))
-                        .font(.caption)
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                }
-                Slider(value: $themeManager.bodySizeMultiplier, in: 0.75...1.50, step: 0.05)
-                    .tint(themeManager.primaryAccentColor)
-
-                Text("Voorbeeld bodytekst zoals in analyses.")
-                    .font(.system(.body))
-                    .scaleEffect(themeManager.bodySizeMultiplier, anchor: .leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 2)
-            }
-            .padding(.vertical, 4)
-
-            Button("Herstel standaard") {
-                withAnimation {
-                    themeManager.headingSizeMultiplier = 1.0
-                    themeManager.bodySizeMultiplier    = 1.0
-                }
-            }
-            .foregroundStyle(.secondary)
-        }
     }
 }
 

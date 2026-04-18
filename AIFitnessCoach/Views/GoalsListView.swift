@@ -137,8 +137,7 @@ struct GoalsListView: View {
                 // MARK: Doelen lijst — navigatie naar EditGoalView
                 Section(header:
                     Text("Mijn Doelen")
-                        .font(themeManager.scaledHeadingFont())
-                        .scaleEffect(themeManager.headingSizeMultiplier, anchor: .leading)
+                        .font(.headline)
                 ) {
                     if goals.isEmpty {
                         ContentUnavailableView(
