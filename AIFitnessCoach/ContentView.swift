@@ -125,6 +125,7 @@ struct ContentView: View {
             .tag(AppNavigationState.Tab.settings)
         }
         .tint(themeManager.primaryAccentColor)
+        .saturation(themeManager.themeSaturation)
         // SPRINT 13.4: showingChatSheet = true redirecteert nu naar de Coach tab
         // zodat alle bestaande callsites (banners, notificaties, deep links) blijven werken
         // zonder aanpassingen, en de TabBar altijd zichtbaar blijft.

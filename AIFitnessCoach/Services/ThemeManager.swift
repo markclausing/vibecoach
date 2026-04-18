@@ -12,9 +12,17 @@ final class ThemeManager: ObservableObject {
         didSet { UserDefaults.standard.set(currentTheme.rawValue, forKey: "vibecoach_selected_theme") }
     }
 
+    /// Kleurintensiteit van de hele app — 0.3 = zeer mat, 1.0 = volle kleur.
+    @Published var themeSaturation: Double {
+        didSet { UserDefaults.standard.set(themeSaturation, forKey: "vibecoach_theme_saturation") }
+    }
+
     init() {
         let raw = UserDefaults.standard.string(forKey: "vibecoach_selected_theme") ?? ""
         currentTheme = Theme(rawValue: raw) ?? .moss
+
+        let s = UserDefaults.standard.double(forKey: "vibecoach_theme_saturation")
+        themeSaturation = s == 0 ? 1.0 : s
     }
 
     // MARK: - Adaptieve kleuren (light/dark bewust)

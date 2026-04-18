@@ -629,6 +629,24 @@ struct ThemePickerSection: View {
                 }
             }
             .padding(.vertical, 4)
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Kleurintensiteit")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 10) {
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(.gray.opacity(0.4))
+                        .font(.caption)
+                    Slider(value: $themeManager.themeSaturation, in: 0.3...1.0, step: 0.05)
+                        .tint(themeManager.primaryAccentColor)
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(themeManager.primaryAccentColor)
+                        .font(.caption)
+                }
+            }
+            .padding(.vertical, 4)
         }
     }
 }
