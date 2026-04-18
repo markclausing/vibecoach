@@ -5,6 +5,7 @@ import Charts
 struct ContentView: View {
     @EnvironmentObject var appState: AppNavigationState
     @EnvironmentObject var planManager: TrainingPlanManager
+    @EnvironmentObject var themeManager: ThemeManager
 
     // We maken de ViewModel hier aan zodat we hem kunnen delen met de DashboardView
     // voor pull-to-refresh en de ChatView als overlay.
@@ -94,7 +95,7 @@ struct ContentView: View {
             // Tab 2: Doelen — lange-termijn analysecentrum (Epic 23)
             GoalsListView(viewModel: sharedChatViewModel)
                 .tabItem {
-                    Label("Doelen", systemImage: "target")
+                    Label("Doelen", systemImage: "flag.fill")
                 }
                 .tag(AppNavigationState.Tab.goals)
 
@@ -123,6 +124,8 @@ struct ContentView: View {
             }
             .tag(AppNavigationState.Tab.settings)
         }
+        .tint(themeManager.primaryAccentColor)
+        .saturation(themeManager.themeSaturation)
         // SPRINT 13.4: showingChatSheet = true redirecteert nu naar de Coach tab
         // zodat alle bestaande callsites (banners, notificaties, deep links) blijven werken
         // zonder aanpassingen, en de TabBar altijd zichtbaar blijft.
@@ -285,7 +288,7 @@ struct TRIMPExplainerCard: View {
         .padding([.horizontal, .bottom])
         } // end if isExpanded
         }
-        .background(Color(.secondarySystemBackground))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
 }
@@ -410,14 +413,10 @@ struct VibeScoreCardView: View {
             Spacer()
         }
         .padding()
-        .background(
-            isUnavailable
-                ? scoreColor.opacity(0.06)
-                : (readiness != nil && !isLoading ? scoreColor.opacity(0.08) : Color(.secondarySystemBackground))
-        )
+        .background(.ultraThinMaterial)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(scoreColor.opacity(isUnavailable ? 0.25 : (readiness != nil && !isLoading ? 0.3 : 0.15)), lineWidth: 1)
+                .stroke(scoreColor.opacity(readiness != nil && !isLoading ? 0.4 : 0.15), lineWidth: 1)
         )
         .cornerRadius(12)
         .accessibilityIdentifier("VibeScoreCard")
@@ -555,7 +554,7 @@ struct VibeScoreExplainerCard: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
 }
@@ -582,6 +581,7 @@ enum WorkoutCheckinConfig {
 struct PostWorkoutCheckinCard: View {
     @Bindable var activity: ActivityRecord
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var themeManager: ThemeManager
 
     /// Callback zodat DashboardView de AI-cache direct kan bijwerken na opslaan.
     /// rpe == 0 betekent genegeerd — de caller slaat dit niet op als echte feedback.
@@ -590,19 +590,19 @@ struct PostWorkoutCheckinCard: View {
     @State private var rpe: Double = 5
     @State private var selectedMood: String? = nil
 
-    private let moods: [(emoji: String, label: String)] = [
-        ("😌", "Rustig"),
-        ("🟢", "Goed"),
-        ("🚀", "Sterk"),
-        ("🤕", "Pijn"),
-        ("🥵", "Uitgeput")
+    private let moods: [(icon: String, label: String)] = [
+        ("moon.fill",            "Rustig"),
+        ("checkmark.circle.fill","Goed"),
+        ("bolt.fill",            "Sterk"),
+        ("bandage.fill",         "Pijn"),
+        ("zzz",                  "Uitgeput")
     ]
 
     // Kleur van de RPE-waarde op basis van het getal
     private var rpeColor: Color {
         switch Int(rpe) {
         case 1...3: return .green
-        case 4...6: return .orange
+        case 4...6: return Color(red: 0.88, green: 0.58, blue: 0.32)
         default:    return .red
         }
     }
@@ -631,7 +631,7 @@ struct PostWorkoutCheckinCard: View {
             // Header met negeer-knop rechtsboven
             HStack(alignment: .top) {
                 Image(systemName: "checkmark.bubble.fill")
-                    .foregroundColor(.blue)
+                    .foregroundStyle(themeManager.primaryAccentColor)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Hoe ging je laatste training?")
                         .font(.headline)
@@ -679,21 +679,23 @@ struct PostWorkoutCheckinCard: View {
                     .fontWeight(.medium)
 
                 HStack(spacing: 10) {
-                    ForEach(moods, id: \.emoji) { mood in
-                        Button(action: { selectedMood = mood.emoji }) {
+                    ForEach(moods, id: \.icon) { mood in
+                        Button(action: { selectedMood = mood.icon }) {
                             VStack(spacing: 4) {
-                                Text(mood.emoji)
+                                Image(systemName: mood.icon)
                                     .font(.title2)
+                                    .symbolRenderingMode(.hierarchical)
+                                    .foregroundStyle(selectedMood == mood.icon ? themeManager.primaryAccentColor : Color.secondary)
                                 Text(mood.label)
                                     .font(.caption2)
-                                    .foregroundColor(selectedMood == mood.emoji ? .primary : .secondary)
+                                    .foregroundColor(selectedMood == mood.icon ? .primary : .secondary)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
-                            .background(selectedMood == mood.emoji ? Color.blue.opacity(0.12) : Color.clear)
+                            .background(selectedMood == mood.icon ? themeManager.primaryAccentColor.opacity(0.12) : Color.clear)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .stroke(selectedMood == mood.emoji ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1.5)
+                                    .stroke(selectedMood == mood.icon ? themeManager.primaryAccentColor : Color.gray.opacity(0.3), lineWidth: 1.5)
                             )
                             .cornerRadius(10)
                         }
@@ -708,13 +710,19 @@ struct PostWorkoutCheckinCard: View {
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(selectedMood == nil
+                        ? themeManager.primaryAccentColor.opacity(0.35)
+                        : themeManager.primaryAccentColor)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.plain)
             .disabled(selectedMood == nil)
             .accessibilityIdentifier("RPEOpslaanButton")
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
         .accessibilityIdentifier("RPECheckinCard")
     }
@@ -758,7 +766,7 @@ struct BurndownChartView: View {
             .frame(height: 420) // Ruimte voor chart + padding + text + pager
         }
         .padding(.vertical)
-        .background(Color(.secondarySystemBackground))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
 }
@@ -1156,7 +1164,7 @@ struct ProactiveWarningBannerView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(Color(.secondarySystemBackground))
+                    .background(.ultraThinMaterial)
                     .cornerRadius(10)
                     .foregroundColor(.secondary)
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.3), lineWidth: 1))
@@ -1177,12 +1185,13 @@ struct ProactiveWarningBannerView: View {
 /// Verdwijnt automatisch na 3 dagen.
 struct RecoveryPlanActiveBannerView: View {
     let onCoachTapped: () -> Void
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.blue)
+                    .foregroundStyle(themeManager.primaryAccentColor)
                 Text("Herstelplan Actief")
                     .font(.headline)
                     .foregroundColor(.primary)
@@ -1204,16 +1213,16 @@ struct RecoveryPlanActiveBannerView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
-                .background(Color.blue.opacity(0.12))
+                .background(themeManager.primaryAccentColor.opacity(0.12))
                 .cornerRadius(10)
-                .foregroundColor(.blue)
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.blue.opacity(0.3), lineWidth: 1))
+                .foregroundStyle(themeManager.primaryAccentColor)
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(themeManager.primaryAccentColor.opacity(0.3), lineWidth: 1))
             }
         }
         .padding()
-        .background(Color.blue.opacity(0.07))
+        .background(themeManager.primaryAccentColor.opacity(0.07))
         .cornerRadius(14)
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color.blue.opacity(0.2), lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(themeManager.primaryAccentColor.opacity(0.2), lineWidth: 1))
     }
 }
 
@@ -1226,6 +1235,7 @@ struct RecoveryPlanActiveBannerView: View {
 struct DashboardView: View {
     @EnvironmentObject var appState: AppNavigationState
     @EnvironmentObject var planManager: TrainingPlanManager
+    @EnvironmentObject var themeManager: ThemeManager
     @ObservedObject var viewModel: ChatViewModel
 
     @Environment(\.modelContext) private var modelContext
@@ -1641,8 +1651,8 @@ struct DashboardView: View {
                             .padding(.horizontal, 12)
                             .padding(.vertical, 7)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.blue.opacity(0.12))
-                            .foregroundColor(.blue)
+                            .background(themeManager.primaryAccentColor.opacity(0.12))
+                            .foregroundStyle(themeManager.primaryAccentColor)
                             .cornerRadius(10)
                             .padding(.horizontal)
 
@@ -1670,7 +1680,7 @@ struct DashboardView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
                                     Image(systemName: "lightbulb.fill")
-                                        .foregroundColor(.yellow)
+                                        .foregroundStyle(themeManager.primaryAccentColor)
                                     Text("Coach Insight")
                                         .font(.headline)
                                     Spacer()
@@ -1696,7 +1706,7 @@ struct DashboardView: View {
                             }
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.secondarySystemBackground))
+                            .background(.ultraThinMaterial)
                             .cornerRadius(12)
                             .padding(.horizontal)
                         }
@@ -1773,6 +1783,9 @@ struct DashboardView: View {
                 }
             }
             .navigationTitle("Overzicht")
+            .navigationBarTitleDisplayMode(.large)
+            .background(themeManager.backgroundGradient.ignoresSafeArea())
+            .toolbarBackground(.hidden, for: .navigationBar)
             // Epic 18: Reset de staleness-badge zodra er een nieuwe analyse is afgerond.
             .onChange(of: lastAnalysisTimestamp) { _, _ in
                 symptomChangedSinceAnalysis = false
@@ -2038,7 +2051,7 @@ struct MilestoneProgressCard: View {
                 }
             }
             .padding()
-            .background(Color(.secondarySystemBackground))
+            .background(.ultraThinMaterial)
             .cornerRadius(12)
         }
     }
@@ -2046,6 +2059,7 @@ struct MilestoneProgressCard: View {
 
 private struct GoalMilestonesSection: View {
     let result: PeriodizationResult
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -2059,8 +2073,8 @@ private struct GoalMilestonesSection: View {
                     .font(.caption2)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color.accentColor.opacity(0.15))
-                    .foregroundColor(.accentColor)
+                    .background(themeManager.primaryAccentColor.opacity(0.15))
+                    .foregroundStyle(themeManager.primaryAccentColor)
                     .cornerRadius(4)
             }
 
@@ -2125,12 +2139,13 @@ struct SymptomCheckinCard: View {
     let areas: [BodyArea]
     let todaySymptoms: [Symptom]
     let onSave: (BodyArea, Int) -> Void
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "stethoscope")
-                    .foregroundColor(.orange)
+                    .foregroundStyle(themeManager.primaryAccentColor)
                 Text("Hoe voelen je klachten vandaag?")
                     .font(.headline)
             }
@@ -2144,7 +2159,7 @@ struct SymptomCheckinCard: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
 }
@@ -2167,7 +2182,7 @@ private struct SymptomAreaRow: View {
         switch severity {
         case 0:     return .green
         case 1...3: return .green
-        case 4...6: return .orange
+        case 4...6: return Color(red: 0.88, green: 0.58, blue: 0.32)
         default:    return .red
         }
     }

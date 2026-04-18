@@ -33,6 +33,8 @@
 		A9B8C7D6E5F4A3B2C1D0E9F8 /* ProactiveNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */; };
 		B1C2D3E4F5A6B7C8D9E0F1A2 /* WeatherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */; };
 		B49CB5209082C67DC40F4FA5 /* FitnessDataError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */; };
+		AF5BAC3C2362460FA4F3E823 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54462929885341098579ABB5 /* Theme.swift */; };
+		F754D7AF116C4FDFBCDA66E3 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 268DC6609F434E5DA4FF63F7 /* ThemeManager.swift */; };
 		B81B710C2F8D65A80062BC61 /* UITestMockEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81B710B2F8D65A80062BC61 /* UITestMockEnvironment.swift */; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* TrainingPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */; };
 		CC54A4B0A24ABC7666AB3222 /* ChatViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */; };
@@ -130,6 +132,8 @@
 		DA86D03EE20341A8CB8173EE /* ChatView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		DD88EE22FF4433AA66BB9955 /* OnboardingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataError.swift; sourceTree = "<group>"; };
+		54462929885341098579ABB5 /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		268DC6609F434E5DA4FF63F7 /* ThemeManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		EDA9519ECAE22F903D67C756 /* TokenStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
 		F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserProfileService.swift; sourceTree = "<group>"; };
 		F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgressService.swift; sourceTree = "<group>"; };
@@ -249,6 +253,7 @@
 				F46C4D7E8F9A0B1C2D3E4F5A /* FutureProjectionService.swift */,
 				C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */,
 				AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */,
+				268DC6609F434E5DA4FF63F7 /* ThemeManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -297,6 +302,7 @@
 				6D6902F6A369E69FC0F8BC5C /* StravaTokenResponse.swift */,
 				AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */,
 				E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */,
+				54462929885341098579ABB5 /* Theme.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -529,6 +535,8 @@
 				E46B3C6D7E8F9A0B1C2D3E4F /* FutureProjectionService.swift in Sources */,
 				B1C2D3E4F5A6B7C8D9E0F1A2 /* WeatherManager.swift in Sources */,
 				13CD8B16330404CA41A93BDE /* NetworkSession.swift in Sources */,
+				AF5BAC3C2362460FA4F3E823 /* Theme.swift in Sources */,
+				F754D7AF116C4FDFBCDA66E3 /* ThemeManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

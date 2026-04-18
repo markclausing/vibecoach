@@ -151,6 +151,9 @@ struct AIFitnessCoachApp: App {
     // Globale shared state voor het trainingsschema (Epic 11)
     @StateObject private var planManager = TrainingPlanManager()
 
+    // Epic 29: Globale theme-engine voor de Serene Visual Overhaul
+    @StateObject private var themeManager = ThemeManager()
+
     // Sprint 20.2: Bepaalt of de onboarding al is afgerond.
     // false = nieuwe gebruiker → OnboardingView tonen.
     // true  = terugkerende gebruiker → ContentView tonen.
@@ -182,6 +185,7 @@ struct AIFitnessCoachApp: App {
                     ContentView()
                         .environmentObject(appState)
                         .environmentObject(planManager)
+                        .environmentObject(themeManager)
                 } else {
                     OnboardingView()
                 }

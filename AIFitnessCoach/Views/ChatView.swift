@@ -12,6 +12,7 @@ struct ChatView: View {
 
     /// De globale app status om notificatie-tap acties af te vangen.
     @EnvironmentObject var appState: AppNavigationState
+    @EnvironmentObject var themeManager: ThemeManager
 
     /// SwiftData Context voor het berekenen van het atletisch profiel.
     @Environment(\.modelContext) private var modelContext
@@ -59,13 +60,14 @@ struct ChatView: View {
                         } label: {
                             Image(systemName: "xmark")
                                 .font(.caption2)
-                                .foregroundColor(.white.opacity(0.8))
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
-                    .background(Color.orange.opacity(0.85))
-                    .foregroundColor(.white)
+                    .background(.ultraThinMaterial)
+                    .overlay(Color.orange.opacity(0.10))
+                    .foregroundStyle(.primary)
                     .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
@@ -154,9 +156,9 @@ struct ChatView: View {
                     PhotosPicker(selection: $selectedItem, matching: .images, photoLibrary: .shared()) {
                         Image(systemName: "plus")
                             .font(.system(size: 20))
-                            .foregroundColor(.blue)
+                            .foregroundStyle(themeManager.primaryAccentColor)
                             .padding(8)
-                            .background(Color(.systemGray6))
+                            .background(themeManager.primaryAccentColor.opacity(0.1))
                             .clipShape(Circle())
                     }
                     .onChange(of: selectedItem) { _, newItem in
@@ -182,7 +184,7 @@ struct ChatView: View {
                     }) {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.system(size: 32))
-                            .foregroundColor(viewModel.inputText.isEmpty && viewModel.selectedImage == nil ? .gray : .blue)
+                            .foregroundStyle(viewModel.inputText.isEmpty && viewModel.selectedImage == nil ? Color.secondary : themeManager.primaryAccentColor)
                     }
                     .disabled(viewModel.inputText.isEmpty && viewModel.selectedImage == nil)
                     .accessibilityIdentifier("ChatSendButton")
@@ -191,8 +193,10 @@ struct ChatView: View {
 
                 } // end else (hasAPIKey)
             }
+            .background(themeManager.backgroundGradient.ignoresSafeArea())
             .navigationTitle("Vraag de Coach")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .onChange(of: appState.targetActivityId) { oldValue, newValue in
                 if let activityId = newValue {
                     // Start de analyse en clear daarna de target uit de state zodat
@@ -267,6 +271,8 @@ struct ChatView: View {
 /// Epic 20: Lege staat die getoond wordt als er geen API-sleutel is geconfigureerd.
 /// Stuurt de gebruiker rechtstreeks naar de AI Coach Configuratie in de Instellingen.
 struct NoAPIKeyView: View {
+    @EnvironmentObject var themeManager: ThemeManager
+
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
@@ -291,7 +297,7 @@ struct NoAPIKeyView: View {
                     .fontWeight(.semibold)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
-                    .background(Color.blue)
+                    .background(themeManager.primaryAccentColor)
                     .foregroundColor(.white)
                     .cornerRadius(12)
             }
@@ -304,6 +310,7 @@ struct NoAPIKeyView: View {
 struct MessageBubble: View {
     /// Het bericht dat getoond moet worden.
     let message: ChatMessage
+    @EnvironmentObject var themeManager: ThemeManager
 
     // Callbacks voor de workout kaartjes
     var onSkipWorkout: ((SuggestedWorkout) -> Void)?
@@ -332,10 +339,19 @@ struct MessageBubble: View {
 
                 if !message.text.isEmpty {
                     Text(message.text)
+                        .font(.subheadline)
                         .padding(12)
-                        .background(isUser ? Color.blue : (message.isError ? Color.orange.opacity(0.12) : Color(.systemGray5)))
-                        .foregroundColor(isUser ? .white : (message.isError ? Color.orange : .primary))
-                        .cornerRadius(16)
+                        .background {
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(isUser
+                                    ? AnyShapeStyle(themeManager.primaryAccentColor)
+                                    : (message.isError
+                                        ? AnyShapeStyle(Color.orange.opacity(0.12))
+                                        : AnyShapeStyle(Material.ultraThin)))
+                        }
+                        .foregroundStyle(isUser
+                            ? Color.white.opacity(0.92)
+                            : (message.isError ? Color.orange : Color.primary))
                 }
 
                 // Retry-knop — alleen zichtbaar bij herstelbare foutberichten
@@ -448,6 +464,7 @@ struct WorkoutCardView: View {
     var onSkip: (() -> Void)?
     var onAlternative: (() -> Void)?
     var onSelect: (() -> Void)?
+    @EnvironmentObject var themeManager: ThemeManager
 
     @State private var isProcessingAction: Bool = false
 
@@ -460,7 +477,7 @@ struct WorkoutCardView: View {
                 Text(workout.displayDayLabel)
                     .font(.caption)
                     .fontWeight(.bold)
-                    .foregroundColor(.blue)
+                    .foregroundStyle(themeManager.primaryAccentColor.opacity(0.75))
 
                 // Epic 21: Weers-badge — alleen tonen als er voorspellingsdata is
                 if let forecast = weatherForecast {
@@ -504,7 +521,7 @@ struct WorkoutCardView: View {
             if let reasoning = workout.reasoning, !reasoning.isEmpty {
                 Label(reasoning, systemImage: "info.circle")
                     .font(.caption2)
-                    .foregroundColor(.blue.opacity(0.8))
+                    .foregroundStyle(themeManager.primaryAccentColor.opacity(0.65))
                     .fixedSize(horizontal: false, vertical: true)
             }
 
@@ -521,7 +538,7 @@ struct WorkoutCardView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, minHeight: 160)
-            .background(Color(.secondarySystemBackground))
+            .background(.ultraThinMaterial)
             .cornerRadius(12)
             .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
             .opacity(isProcessingAction ? 0.5 : 1.0)
@@ -534,6 +551,7 @@ struct WorkoutCardView: View {
 struct WorkoutDetailView: View {
     let workout: SuggestedWorkout
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         NavigationStack {
@@ -544,7 +562,7 @@ struct WorkoutDetailView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(workout.displayDayLabel)
                             .font(.headline)
-                            .foregroundColor(.blue)
+                            .foregroundStyle(themeManager.primaryAccentColor.opacity(0.75))
 
                         Text(workout.activityType)
                             .font(.largeTitle)
@@ -569,7 +587,7 @@ struct WorkoutDetailView: View {
                         }
                     }
                     .padding()
-                    .background(Color(.secondarySystemBackground))
+                    .background(.ultraThinMaterial)
                     .cornerRadius(12)
 
                     // Voeding & Hydratatie sectie (Epic 24)
@@ -610,12 +628,13 @@ struct InfoRowView: View {
     let icon: String
     let title: String
     let value: String
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         HStack {
             Image(systemName: icon)
                 .frame(width: 24)
-                .foregroundColor(.blue)
+                .foregroundStyle(themeManager.primaryAccentColor.opacity(0.75))
             Text(title)
                 .foregroundColor(.secondary)
             Spacer()
@@ -687,7 +706,7 @@ struct WorkoutFuelingSectionView: View {
                     .foregroundStyle(.green)
             }
             .padding()
-            .background(Color(.secondarySystemBackground))
+            .background(.ultraThinMaterial)
             .cornerRadius(12)
 
             // Interval-breakdown

@@ -10,6 +10,7 @@ struct GoalsListView: View {
     @ObservedObject var viewModel: ChatViewModel
 
     @EnvironmentObject var appState: AppNavigationState
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
     @Query(sort: \ActivityRecord.startDate, order: .forward) private var activities: [ActivityRecord]
@@ -134,7 +135,10 @@ struct GoalsListView: View {
                 }
 
                 // MARK: Doelen lijst — navigatie naar EditGoalView
-                Section("Mijn Doelen") {
+                Section(header:
+                    Text("Mijn Doelen")
+                        .font(.headline)
+                ) {
                     if goals.isEmpty {
                         ContentUnavailableView(
                             "Geen doelen",
@@ -157,7 +161,11 @@ struct GoalsListView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(themeManager.backgroundGradient.ignoresSafeArea())
             .navigationTitle("Doelen")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingAddSheet = true } label: {
@@ -287,7 +295,7 @@ struct GoalDetailContainer: View {
 
             Spacer(minLength: 16)
         }
-        .background(Color(.secondarySystemBackground))
+        .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal)
         .padding(.vertical, 6)
@@ -318,7 +326,7 @@ struct GoalDetailContainer: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(Color(.tertiarySystemBackground))
+            .background(.ultraThinMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
     }
@@ -554,6 +562,7 @@ private struct MilestoneProgressRowEmbed: View {
 
 struct GoalRowView: View {
     let goal: FitnessGoal
+    @EnvironmentObject var themeManager: ThemeManager
 
     var daysRemaining: Int {
         Calendar.current.dateComponents([.day], from: Date(), to: goal.targetDate).day ?? 0
@@ -575,8 +584,8 @@ struct GoalRowView: View {
                         .font(.caption)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.1))
-                        .foregroundColor(.blue)
+                        .background(themeManager.primaryAccentColor.opacity(0.1))
+                        .foregroundStyle(themeManager.primaryAccentColor)
                         .clipShape(Capsule())
                 } else {
                     Text("Verlopen")
