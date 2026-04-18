@@ -306,8 +306,17 @@ struct FutureProjectionService {
         let effectiveKmGrowthRate = min(observedKmGrowth,    kmGrowthCap)
 
         // ── Stap 5: Piek-eisen (blueprint × Peak Phase multiplier 1.30) ──
+        // Voor toertochten (.singleDayTour / .multiDayStage) ligt de piek-eis lager dan voor een wedstrijd:
+        // een fondo of etapperit vereist duurvermogen over meerdere dagen, niet een absoluut weekpiek-volume.
+        let peakKmFormatMultiplier: Double = {
+            switch goal.resolvedFormat {
+            case .singleDayRace:  return 1.00
+            case .singleDayTour:  return 0.75
+            case .multiDayStage:  return 0.65
+            }
+        }()
         let requiredPeakTRIMP = blueprint.weeklyTrimpTarget * TrainingPhase.peakPhase.multiplier
-        let requiredPeakKm    = blueprint.weeklyKmTarget    * TrainingPhase.peakPhase.multiplier
+        let requiredPeakKm    = blueprint.weeklyKmTarget    * TrainingPhase.peakPhase.multiplier * peakKmFormatMultiplier
 
         let plannedPeakDate = calendar.date(
             byAdding: .weekOfYear,

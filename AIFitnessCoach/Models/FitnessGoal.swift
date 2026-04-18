@@ -200,6 +200,23 @@ enum TrainingPhase: String, CaseIterable {
 
 // MARK: - Epic 17.1: PeriodizationEngine — Data Types
 
+// MARK: Epic Doel-Intenties: IntentModifier
+
+/// Trainingsmodifier op basis van de gebruiker's doel-intentie, evenementformaat en VibeScore.
+/// Gegenereerd door PeriodizationEngine en doorgegeven aan de AI-coach via coachingContext.
+struct IntentModifier {
+    /// Vermenigvuldigingsfactor op de wekelijkse TRIMP-target (1.0 = ongewijzigd, 0.90 = uitlopen-modus).
+    let weeklyTrimpMultiplier: Double
+    /// Of hoge intensiteit (lactaat/tempo-intervallen) deze week toegestaan is.
+    let allowHighIntensity: Bool
+    /// Of back-to-back zware sessies benadrukt worden (true bij .multiDayStage).
+    let backToBackEmphasis: Bool
+    /// Of stretch-pace trainingen gepland mogen worden (alleen bij .peakPerformance + VibeScore > 65).
+    let stretchPaceAllowed: Bool
+    /// AI-instructie voor de coach — gegenereerd op basis van intentie + formaat + VibeScore.
+    let coachingInstruction: String
+}
+
 /// Sportwetenschappelijke succescriteria voor één trainingsfase.
 /// Uitgedrukt als breuk (0.0–1.0) van de blueprint-doelwaarden zodat
 /// dezelfde criteria gelden voor marathon, halve marathon én fietstochten.
@@ -257,6 +274,12 @@ struct PeriodizationResult {
 
     /// Actueel gemiddeld wekelijks TRIMP over de afgelopen 4 weken (ongeacht fase).
     let currentWeeklyTrimp: Double
+
+    /// Modifier op basis van intentie, formaat en VibeScore — gegenereerd door PeriodizationEngine.
+    let intentModifier: IntentModifier
+
+    /// Gecorrigeerd wekelijks TRIMP-target na toepassing van de intentie-multiplier.
+    var adjustedWeeklyTrimpTarget: Double { targetWeeklyTrimp * intentModifier.weeklyTrimpMultiplier }
 
     /// True als de sporter aan BEIDE criteria voldoet.
     var isOnTrack: Bool { meetsLongestSessionCriteria && meetsWeeklyTrimpCriteria }
@@ -342,7 +365,41 @@ struct PeriodizationResult {
         lines.append("")
         lines.append("SCHEMA-VERANTWOORDINGSPLICHT: Als je het schema aanpast (bijv. wegens blessure of overbelasting), MOET je expliciet uitleggen hoe de \(phase.displayName)-eis (\(sessionLabel)) nog steeds haalbaar blijft. Gebruik sportspecifieke alternatieven als de primaire sport tijdelijk niet kan. Bijv: 'Ik vervang je hardloopsessie door fietsen, maar de aerobe basis voor \(goal.title) bewaken we zo...'")
 
+        // Doel-Intentie sectie — altijd injecteren zodat de coach weet hoe te prioriteren
+        lines.append("")
+        lines.append(intentModifier.coachingInstruction)
+
         return lines.joined(separator: "\n")
+    }
+}
+
+// MARK: - Epic Doel-Intenties: Enums
+
+/// Het formaat van het evenement waarvoor de gebruiker traint.
+enum EventFormat: String, Codable, CaseIterable {
+    case singleDayRace  = "single_day_race"
+    case singleDayTour  = "single_day_tour"
+    case multiDayStage  = "multi_day_stage"
+
+    var displayName: String {
+        switch self {
+        case .singleDayRace:  return "Eendaagse wedstrijd"
+        case .singleDayTour:  return "Eendaagse toertocht"
+        case .multiDayStage:  return "Meerdaagse etapperit"
+        }
+    }
+}
+
+/// De primaire intentie van de gebruiker voor het evenement.
+enum PrimaryIntent: String, Codable, CaseIterable {
+    case completion      = "completion"
+    case peakPerformance = "peak_performance"
+
+    var displayName: String {
+        switch self {
+        case .completion:      return "Uitlopen / overleven"
+        case .peakPerformance: return "Zo snel mogelijk"
+        }
     }
 }
 
@@ -359,6 +416,17 @@ final class FitnessGoal {
     var sportCategory: SportCategory?
     var targetTRIMP: Double? // Sprint 12.1: Benodigde belasting om dit doel te halen.
 
+    // Epic Doel-Intenties — Optionals zodat SwiftData oude records veilig als nil inlaadt
+    var format: EventFormat?
+    var intent: PrimaryIntent?
+    var stretchGoalTime: TimeInterval?
+
+    /// Veilige fallback: geeft altijd een geldige EventFormat terug, ook voor records zonder waarde.
+    var resolvedFormat: EventFormat { format ?? .singleDayRace }
+
+    /// Veilige fallback: geeft altijd een geldige PrimaryIntent terug, ook voor records zonder waarde.
+    var resolvedIntent: PrimaryIntent { intent ?? .peakPerformance }
+
     init(id: UUID = UUID(),
          title: String,
          details: String? = nil,
@@ -366,7 +434,10 @@ final class FitnessGoal {
          createdAt: Date = Date(),
          isCompleted: Bool = false,
          sportCategory: SportCategory? = nil,
-         targetTRIMP: Double? = nil) {
+         targetTRIMP: Double? = nil,
+         format: EventFormat? = .singleDayRace,
+         intent: PrimaryIntent? = .peakPerformance,
+         stretchGoalTime: TimeInterval? = nil) {
         self.id = id
         self.title = title
         self.details = details
@@ -375,6 +446,9 @@ final class FitnessGoal {
         self.isCompleted = isCompleted
         self.sportCategory = sportCategory
         self.targetTRIMP = targetTRIMP
+        self.format = format
+        self.intent = intent
+        self.stretchGoalTime = stretchGoalTime
     }
 
     /// Huidige trainingsfase van dit doel op basis van weken resterend (Epic 16).
@@ -854,6 +928,21 @@ struct SuggestedTrainingPlan: Codable, Equatable {
     let motivation: String
     let workouts: [SuggestedWorkout]
     let newPreferences: [ExtractedPreference]?
+
+    // Custom init zodat een Gemini-response met alleen {"motivation": "..."} niet crasht.
+    // Ontbrekende arrays krijgen een lege standaardwaarde in plaats van een decode-fout.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        motivation     = try c.decode(String.self, forKey: .motivation)
+        workouts       = (try? c.decodeIfPresent([SuggestedWorkout].self,     forKey: .workouts))       ?? []
+        newPreferences = (try? c.decodeIfPresent([ExtractedPreference].self,  forKey: .newPreferences)) ?? nil
+    }
+
+    init(motivation: String, workouts: [SuggestedWorkout], newPreferences: [ExtractedPreference]? = nil) {
+        self.motivation     = motivation
+        self.workouts       = workouts
+        self.newPreferences = newPreferences
+    }
 }
 
 import SwiftUI

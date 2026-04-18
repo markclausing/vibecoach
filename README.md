@@ -5,9 +5,9 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Actief in Ontwikkeling — Epic 27 (Test Coverage Verbeteren) 🔄**
+**Actief in Ontwikkeling — Epic: Doel-Intentie, Meerdaagse Evenementen & Stretch Goals 🔄**
 
-VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 62% code coverage.
+VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 63% code coverage.
 
 ---
 
@@ -188,11 +188,15 @@ De unit test coverage van de core services verhogen naar een solide standaard. F
 
 ---
 
-### 📋 Actieve Ontwikkeling & Backlog
+### 🔄 Epic: Doel-Intentie, Meerdaagse Evenementen & Stretch Goals (Actief)
 
-De actieve ontwikkeling en backlog worden beheerd in ons **[GitHub Project Kanban-bord](https://github.com/markclausing/vibecoach/issues)**.
+De coach begrijpt niet alleen *wat* je wil bereiken, maar ook *hoe* — afmaken vs. presteren. Meerdaagse evenementen (tochtjes, etappekoersen) krijgen een eigen trainingslogica.
 
-Alle openstaande Epics en Sprints staan als GitHub Issues en worden van daaruit geprioriteerd, bijgehouden en gereviewd.
+* **Stap 1 — Datamodel Uitbreiding:** Verrijken van het `Goal`/`Event`-model met `EventFormat` (bijv. `.singleDayRace`, `.multiDayStage`), `PrimaryIntent` (`.completion` vs. `.peakPerformance`) en een optioneel `StretchGoal` (bijv. een doeltijd). Type-veilige enums, direct gemapt bij het opslaan — conform het SwiftData Strictness-principe.
+
+* **Stap 2 — PeriodizationEngine Refactor:** De planningslogica aanpassen zodat het schema matcht met de intentie. Bij een meerdaagse tocht krijgt de engine instructie om back-to-back duurtrainingen te plannen (cumulatief herstelgedrag). Het schema prioriteert altijd het `PrimaryIntent` (uitlopen/overleven). Het `StretchGoal` (tempo/tijd) wordt alleen in trainingen geïnjecteerd wanneer de actuele Vibe Score én het herstel dat toelaten.
+
+* **Stap 3 — AI Coach Context:** De system prompt in de Gemini `CoachService` updaten. De AI leert dat een "tocht" om comfort, voeding en pacing draait — niet om racen. Bij een dubbel doel (finish én doeltijd) geldt als harde systeeminstructie: de finishlijn heeft altijd prioriteit boven de doeltijd zodra de atleet vermoeid is.
 
 ---
 

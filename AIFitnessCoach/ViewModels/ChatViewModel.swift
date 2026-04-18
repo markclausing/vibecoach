@@ -96,6 +96,10 @@ class ChatViewModel: ObservableObject {
     /// Bevat het verschil tussen verwacht en werkelijk TRIMP/km op dit moment in de voorbereiding.
     @AppStorage("vibecoach_gapAnalysisContext") private var gapAnalysisContext: String = ""
 
+    /// Epic Doel-Intenties: Cache van de intent-instructies per actief doel.
+    /// Bevat de gegenereerde coachingInstruction per doel (formaat, intentie, VibeScore-aanpassing).
+    @AppStorage("vibecoach_intentContext") private var intentContext: String = ""
+
     /// Epic 23 Sprint 2: Cache van de toekomstprognose per doel (Future Projection Engine).
     /// Beantwoordt de vraag: "Wanneer bereikt de atleet de Peak Phase op basis van zijn groeitempo?"
     /// Wordt gevuld via `cacheProjections(_:)` vanuit GoalsListView en geïnjecteerd in de AI-prompt.
@@ -266,6 +270,35 @@ class ChatViewModel: ObservableObject {
         periodizationContext = results
             .map { $0.coachingContext }
             .joined(separator: "\n\n")
+    }
+
+    /// Epic Doel-Intenties: Schrijft de intent-instructies per doel naar de AppStorage cache.
+    /// Wordt aangeroepen vanuit ContentView (na cachePeriodizationStatus) zodat de AI een aparte
+    /// [DOEL INTENTIES EN BENADERING] sectie ontvangt met format-, intentie- en VibeScore-instructies.
+    func cacheIntentContext(_ results: [PeriodizationResult]) {
+        let instructions = results
+            .filter { !$0.intentModifier.coachingInstruction.isEmpty }
+            .map { result -> String in
+                var text = "• \(result.goal.title):\n\(result.intentModifier.coachingInstruction)"
+
+                // Expliciete toertocht-context: de coach mag NIET redeneren als bij een wedstrijd
+                let format = result.goal.resolvedFormat
+                if format == .multiDayStage || format == .singleDayTour {
+                    text += "\n⚠️ LET OP: Dit is een TOERTOCHT, geen race. Beoordeel de voortgang op basis van rustig touren, comfort en meerdaags duurvermogen, NIET op race-snelheid."
+                }
+
+                // Expliciete stretch goal doeltijd in leesbaar formaat
+                if let stretchTime = result.goal.stretchGoalTime {
+                    let totalSec = Int(stretchTime)
+                    let hours    = totalSec / 3600
+                    let minutes  = (totalSec % 3600) / 60
+                    let timeStr  = hours > 0 ? "\(hours) uur en \(minutes) minuten" : "\(minutes) minuten"
+                    text += "\n✅ Stretch Goal Doeltijd: \(timeStr). Bouw af en toe tempo-oefeningen in het schema in om deze snelheid op te bouwen, mits de actuele VibeScore / herstel dit toelaat."
+                }
+
+                return text
+            }
+        intentContext = instructions.isEmpty ? "" : instructions.joined(separator: "\n\n")
     }
 
     /// Epic 23 Sprint 1: Schrijft de gap-analyse (verschil gepland vs. gerealiseerd) naar de AppStorage cache.
@@ -714,6 +747,23 @@ class ChatViewModel: ObservableObject {
 
         if hasPeriodization {
             prefix += "[PERIODISERING — FASE, SUCCESCRITERIA & COACH-GEDRAG:\n\(periodizationContext)\n\nCoach-gedragsregels voor deze context:\n1. COMPLIMENTEN (🎉): Als een COMPLIMENT TRIGGER aanwezig is, open je antwoord dan hiermee. Noem de behaalde prestatie bij naam.\n2. URGENTIE (🚨): Als een KRITIEKE MIJLPAAL ACHTERSTAND aanwezig is, wees dan direct en motiverend. Noem de exacte afstand of TRIMP die nog ontbreekt, en plan dit als eerste prioriteit in het schema.\n3. SCHEMA-AANPASSING: Als je het schema aanpast, verklaar dan altijd hoe de fase-eisen ondanks de aanpassing nog steeds haalbaar zijn (SCHEMA-VERANTWOORDINGSPLICHT).]\n\n"
+        }
+
+        // Epic Doel-Intenties: injecteer de intent- en formaat-instructies als aparte sectie.
+        // Dit vertelt de coach HOE te trainen (uitlopen vs. presteren, etapperit vs. eendaags)
+        // en of stretch-pace trainingen veilig zijn op basis van de actuele VibeScore.
+        if !intentContext.isEmpty {
+            let intentBlock = """
+            [DOEL INTENTIES EN BENADERING — LEES DIT VÓÓR JE HET SCHEMA OPSTELT:
+            \(intentContext)
+
+            Bindende coach-regels:
+            1. INTENTIE HEEFT PRIORITEIT: Pas het schema ALTIJD aan op de intentie en het formaat. Een 'uitlopen'-doel krijgt NOOIT interval- of tempotraining tenzij expliciet gevraagd.
+            2. BACK-TO-BACK (meerdaagse etappe): Plan zware sessies op opeenvolgende dagen (bijv. Za+Zo). Verlaag single-session piekbelasting t.o.v. een eendaagse race.
+            3. STRETCH GOAL VEILIGHEID: Als '✅ DOELTIJD' aanwezig is, plan dan één temposessie per week op doelsnelheid. Als '🔴 DOELTIJD' aanwezig is, schrap alle tempo-elementen en ga terug naar pure duurtraining.
+            4. VIBE SCORE OVERRIDE: Als VibeScore < 65 wordt vermeld, heeft herstel absolute prioriteit — schrap intensieve elementen ongeacht de rest van het plan.]
+            """
+            prefix += intentBlock + "\n\n"
         }
 
         // Epic 23 Sprint 1: Injecteer de gap-analyse met TRIMPTranslator-hints
