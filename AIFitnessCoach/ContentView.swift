@@ -287,7 +287,7 @@ struct TRIMPExplainerCard: View {
         .padding([.horizontal, .bottom])
         } // end if isExpanded
         }
-        .background(Color(.secondarySystemBackground))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
 }
@@ -412,14 +412,10 @@ struct VibeScoreCardView: View {
             Spacer()
         }
         .padding()
-        .background(
-            isUnavailable
-                ? scoreColor.opacity(0.06)
-                : (readiness != nil && !isLoading ? scoreColor.opacity(0.08) : Color(.secondarySystemBackground))
-        )
+        .background(.ultraThinMaterial)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(scoreColor.opacity(isUnavailable ? 0.25 : (readiness != nil && !isLoading ? 0.3 : 0.15)), lineWidth: 1)
+                .stroke(scoreColor.opacity(readiness != nil && !isLoading ? 0.4 : 0.15), lineWidth: 1)
         )
         .cornerRadius(12)
         .accessibilityIdentifier("VibeScoreCard")
@@ -557,7 +553,7 @@ struct VibeScoreExplainerCard: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
 }
@@ -717,7 +713,7 @@ struct PostWorkoutCheckinCard: View {
             .accessibilityIdentifier("RPEOpslaanButton")
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
         .accessibilityIdentifier("RPECheckinCard")
     }
@@ -761,7 +757,7 @@ struct BurndownChartView: View {
             .frame(height: 420) // Ruimte voor chart + padding + text + pager
         }
         .padding(.vertical)
-        .background(Color(.secondarySystemBackground))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
 }
@@ -1159,7 +1155,7 @@ struct ProactiveWarningBannerView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
-                    .background(Color(.secondarySystemBackground))
+                    .background(.ultraThinMaterial)
                     .cornerRadius(10)
                     .foregroundColor(.secondary)
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.secondary.opacity(0.3), lineWidth: 1))
@@ -1675,7 +1671,7 @@ struct DashboardView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
                                     Image(systemName: "lightbulb.fill")
-                                        .foregroundColor(.yellow)
+                                        .foregroundStyle(themeManager.primaryAccentColor)
                                     Text("Coach Insight")
                                         .font(.headline)
                                     Spacer()
@@ -1701,7 +1697,7 @@ struct DashboardView: View {
                             }
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.secondarySystemBackground))
+                            .background(.ultraThinMaterial)
                             .cornerRadius(12)
                             .padding(.horizontal)
                         }
@@ -1778,9 +1774,9 @@ struct DashboardView: View {
                 }
             }
             .navigationTitle("Overzicht")
+            .navigationBarTitleDisplayMode(.large)
             .background(themeManager.backgroundGradient.ignoresSafeArea())
-            .toolbarBackground(themeManager.backgroundColor, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(.hidden, for: .navigationBar)
             // Epic 18: Reset de staleness-badge zodra er een nieuwe analyse is afgerond.
             .onChange(of: lastAnalysisTimestamp) { _, _ in
                 symptomChangedSinceAnalysis = false
@@ -2046,7 +2042,7 @@ struct MilestoneProgressCard: View {
                 }
             }
             .padding()
-            .background(Color(.secondarySystemBackground))
+            .background(.ultraThinMaterial)
             .cornerRadius(12)
         }
     }
@@ -2134,12 +2130,13 @@ struct SymptomCheckinCard: View {
     let areas: [BodyArea]
     let todaySymptoms: [Symptom]
     let onSave: (BodyArea, Int) -> Void
+    @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "stethoscope")
-                    .foregroundColor(.orange)
+                    .foregroundStyle(themeManager.primaryAccentColor)
                 Text("Hoe voelen je klachten vandaag?")
                     .font(.headline)
             }
@@ -2153,7 +2150,7 @@ struct SymptomCheckinCard: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
+        .background(.ultraThinMaterial)
         .cornerRadius(12)
     }
 }

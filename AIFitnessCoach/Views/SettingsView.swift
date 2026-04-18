@@ -529,8 +529,7 @@ struct SettingsView: View {
         .background(themeManager.backgroundGradient.ignoresSafeArea())
         .navigationTitle("Instellingen")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(themeManager.backgroundColor, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             // Controleer of de view is gepresenteerd als sheet (via onDismiss/dismiss), of als root tab.
             // Aangezien het nu een Tab is, is de "Opslaan" knop (die dismiss() aanroept) overbodig.

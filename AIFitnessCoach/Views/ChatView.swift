@@ -195,8 +195,7 @@ struct ChatView: View {
             .background(themeManager.backgroundGradient.ignoresSafeArea())
             .navigationTitle("Vraag de Coach")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(themeManager.backgroundColor, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .onChange(of: appState.targetActivityId) { oldValue, newValue in
                 if let activityId = newValue {
                     // Start de analyse en clear daarna de target uit de state zodat
@@ -528,7 +527,7 @@ struct WorkoutCardView: View {
             }
             .padding()
             .frame(maxWidth: .infinity, minHeight: 160)
-            .background(Color(.secondarySystemBackground))
+            .background(.ultraThinMaterial)
             .cornerRadius(12)
             .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
             .opacity(isProcessingAction ? 0.5 : 1.0)
@@ -576,7 +575,7 @@ struct WorkoutDetailView: View {
                         }
                     }
                     .padding()
-                    .background(Color(.secondarySystemBackground))
+                    .background(.ultraThinMaterial)
                     .cornerRadius(12)
 
                     // Voeding & Hydratatie sectie (Epic 24)
@@ -694,7 +693,7 @@ struct WorkoutFuelingSectionView: View {
                     .foregroundStyle(.green)
             }
             .padding()
-            .background(Color(.secondarySystemBackground))
+            .background(.ultraThinMaterial)
             .cornerRadius(12)
 
             // Interval-breakdown

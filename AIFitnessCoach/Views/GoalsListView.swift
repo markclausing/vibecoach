@@ -165,8 +165,8 @@ struct GoalsListView: View {
             .scrollContentBackground(.hidden)
             .background(themeManager.backgroundGradient.ignoresSafeArea())
             .navigationTitle("Doelen")
-            .toolbarBackground(themeManager.backgroundColor, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingAddSheet = true } label: {
@@ -296,7 +296,7 @@ struct GoalDetailContainer: View {
 
             Spacer(minLength: 16)
         }
-        .background(Color(.secondarySystemBackground))
+        .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(.horizontal)
         .padding(.vertical, 6)
@@ -327,7 +327,7 @@ struct GoalDetailContainer: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(Color(.tertiarySystemBackground))
+            .background(.ultraThinMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 10))
         }
     }
