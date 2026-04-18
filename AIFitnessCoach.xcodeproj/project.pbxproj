@@ -67,6 +67,7 @@
 		AA10BB20CC30DD40EE50FF60 /* DashboardHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA01BB02CC03DD04EE05FF06 /* DashboardHeaderView.swift */; };
 		BB10CC20DD30EE40FF50AA60 /* VibeScoreCardV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB01CC02DD03EE04FF05AA06 /* VibeScoreCardV2.swift */; };
 		CC10DD20EE30FF40AA50BB60 /* WeekTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01DD02EE03FF04AA05BB06 /* WeekTimelineView.swift */; };
+		DD10EE20FF30AA40BB50CC60 /* TrendWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD01EE02FF03AA04BB05CC06 /* TrendWidgetView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -151,6 +152,7 @@
 		AA01BB02CC03DD04EE05FF06 /* DashboardHeaderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardHeaderView.swift; sourceTree = "<group>"; };
 		BB01CC02DD03EE04FF05AA06 /* VibeScoreCardV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VibeScoreCardV2.swift; sourceTree = "<group>"; };
 		CC01DD02EE03FF04AA05BB06 /* WeekTimelineView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeekTimelineView.swift; sourceTree = "<group>"; };
+		DD01EE02FF03AA04BB05CC06 /* TrendWidgetView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrendWidgetView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -243,6 +245,7 @@
 				AA01BB02CC03DD04EE05FF06 /* DashboardHeaderView.swift */,
 				BB01CC02DD03EE04FF05AA06 /* VibeScoreCardV2.swift */,
 				CC01DD02EE03FF04AA05BB06 /* WeekTimelineView.swift */,
+				DD01EE02FF03AA04BB05CC06 /* TrendWidgetView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -535,6 +538,7 @@
 				AA10BB20CC30DD40EE50FF60 /* DashboardHeaderView.swift in Sources */,
 				BB10CC20DD30EE40FF50AA60 /* VibeScoreCardV2.swift in Sources */,
 				CC10DD20EE30FF40AA50BB60 /* WeekTimelineView.swift in Sources */,
+				DD10EE20FF30AA40BB50CC60 /* TrendWidgetView.swift in Sources */,
 				48E3320BE9BDAC79B8060EEE /* KeychainService.swift in Sources */,
 				DB076B94561F03C4EB2D8C5E /* TokenStore.swift in Sources */,
 				06C5198C4908FF10CCF1E836 /* StravaAuthService.swift in Sources */,

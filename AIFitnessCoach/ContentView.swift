@@ -88,21 +88,21 @@ struct ContentView: View {
             // Tab 1: Overzicht (Dashboard & Kalender)
             DashboardView(viewModel: sharedChatViewModel)
                 .tabItem {
-                    Label("Overzicht", systemImage: "house.fill")
+                    Label("Overzicht", systemImage: "house")
                 }
                 .tag(AppNavigationState.Tab.dashboard)
 
             // Tab 2: Doelen — lange-termijn analysecentrum (Epic 23)
             GoalsListView(viewModel: sharedChatViewModel)
                 .tabItem {
-                    Label("Doelen", systemImage: "flag.fill")
+                    Label("Doelen", systemImage: "scope")
                 }
                 .tag(AppNavigationState.Tab.goals)
 
             // Tab 3: Coach — echte tab zodat de TabBar altijd zichtbaar blijft (Sprint 13.4)
             ChatView(viewModel: sharedChatViewModel)
                 .tabItem {
-                    Label("Coach", systemImage: "message.fill")
+                    Label("Coach", systemImage: "bubble.left")
                 }
                 .tag(AppNavigationState.Tab.coach)
 
@@ -111,7 +111,7 @@ struct ContentView: View {
                 PreferencesListView()
             }
             .tabItem {
-                Label("Geheugen", systemImage: "brain.head.profile")
+                Label("Geheugen", systemImage: "person.and.background.dotted")
             }
             .tag(AppNavigationState.Tab.memory)
 
@@ -120,7 +120,7 @@ struct ContentView: View {
                 SettingsView()
             }
             .tabItem {
-                Label("Instellingen", systemImage: "gearshape.fill")
+                Label("Instellingen", systemImage: "gearshape")
             }
             .tag(AppNavigationState.Tab.settings)
         }
@@ -1698,6 +1698,12 @@ struct DashboardView: View {
                         }
                     )
 
+                    // V2.0: 14-daagse trend-widget
+                    TrendWidgetView(
+                        readinessRecords: Array(readinessRecords),
+                        activities: Array(activities)
+                    )
+
                     // TRIMP & Vibe Score educatiekaarten
                     TRIMPExplainerCard()
                         .padding(.horizontal)
@@ -2120,8 +2126,9 @@ struct SymptomCheckinCard: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial)
-        .cornerRadius(12)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
     }
 }
 
