@@ -2131,6 +2131,7 @@ private struct SymptomAreaRow: View {
     let onSave: (Int) -> Void
 
     @State private var severity: Int
+    @EnvironmentObject var themeManager: ThemeManager
 
     init(area: BodyArea, currentSeverity: Int, onSave: @escaping (Int) -> Void) {
         self.area = area
@@ -2141,8 +2142,8 @@ private struct SymptomAreaRow: View {
 
     private var severityColor: Color {
         switch severity {
-        case 0:     return .green
-        case 1...3: return .green
+        case 0:     return themeManager.primaryAccentColor
+        case 1...3: return themeManager.primaryAccentColor
         case 4...6: return Color(red: 0.88, green: 0.58, blue: 0.32)
         default:    return .red
         }
