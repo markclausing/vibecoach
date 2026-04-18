@@ -5,7 +5,7 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Actief in Ontwikkeling — Epic: Visual Overhaul ('Serene' thema) 🔄**
+**Actief in Ontwikkeling — Epic #29: Visual Overhaul ('Serene' thema) 🔄**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 63% code coverage.
 
@@ -200,14 +200,15 @@ De coach begrijpt niet alleen *wat* je wil bereiken, maar ook *hoe* — afmaken 
 
 ---
 
-### ⏳ Epic #29: Visual Overhaul — 'Serene' Thema (Backlog)
+### 🔄 Epic #29: Visual Overhaul — 'Serene' Thema (Actief)
 
-Een complete redesign van de app naar een rustgevend, minimalistisch thema.
+Een complete redesign van de app naar een rustgevend, minimalistisch thema met volledige ondersteuning voor meerdere kleurthema's, Light & Dark mode en dynamische UI-injectie in alle hoofdcomponenten.
 
-* **Thema & Kleurenpalet:** Vervanging van harde, felle accentkleuren door een natuurlijk palet van zachte tinten — Moss (groen), Stone (grijs), Mist (blauw-grijs), Clay (terracotta) en Sakura (roze). Semantische kleurrollen zodat elke tint een vaste betekenis krijgt (bijv. Moss = succes/voortgang, Clay = waarschuwing).
-* **Light & Dark Mode:** Naadloze ondersteuning voor beide modi. Alle kleuren gedefinieerd als adaptive `Color`-assets in de Asset Catalog — geen hardcoded hex-waarden in de Views.
-* **Dynamische Typografie-schaling:** Gebruiker kan via Instellingen de lettergroottes aanpassen — afzonderlijke sliders (of een preset-keuze) voor Heading- en Body-tekstgrootte. Alle Views gebruiken uitsluitend relatieve font-sizes die mee-schalen.
-* **Componentbibliotheek:** Centrale `VibeTheme`-struct bundelt alle kleuren, typografie-tokens en afrondings-radii zodat één wijziging de hele app update.
+* **⏳ Sprint 29.1 — Theme Engine & State:** Implementeer een `ThemeManager` (ObservableObject) en een `Theme` enum met cases `Moss`, `Stone`, `Mist`, `Clay` en `Sakura`. Voeg een `@AppStorage("selectedTheme")` variabele toe zodat de gebruikerskeuze persistent wordt opgeslagen tussen sessies. De `ThemeManager` wordt als `@EnvironmentObject` door de hele app-hiërarchie geïnjecteerd.
+
+* **⏳ Sprint 29.2 — Serene Design System:** Definieer de kleurenpaletten voor elk thema in `Assets.xcassets` via adaptive `Color`-assets (Light/Dark variant per tint). Elke kleur krijgt een semantische rol: `accentColor` (primaire actieknop), `backgroundColor` (schermachtergrond), `surfaceColor` (kaart-achtergrond), `textPrimary` en `textSecondary`. Kleuren zijn nooit hardcoded in Views — uitsluitend via een `ThemeConfig` struct die de actieve `Theme` case vertaalt naar concrete `Color`-waarden die passen bij de "Serene" visie (zachte, natuurlijke tinten voor zowel Light als Dark mode).
+
+* **⏳ Sprint 29.3 — Instellingen & UI Injectie:** Bouw een `ThemePicker` component in `SettingsView` met een visuele preview per thema (kleurstalen + naam). Refactor de hoofdcomponenten (`DashboardView`, `CoachView`, `GoalsView`) zodat ze dynamisch reageren op de `accentColor` en `backgroundColor` van het actieve thema via de geïnjecteerde `ThemeManager`. Alle hardcoded kleurreferenties worden vervangen door semantische theme-tokens.
 
 ---
 
