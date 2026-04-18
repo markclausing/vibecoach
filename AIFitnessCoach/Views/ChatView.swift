@@ -339,10 +339,19 @@ struct MessageBubble: View {
 
                 if !message.text.isEmpty {
                     Text(message.text)
+                        .font(.subheadline)
                         .padding(12)
-                        .background(isUser ? themeManager.primaryAccentColor : (message.isError ? Color.orange.opacity(0.12) : Color(.systemGray5).opacity(0.6)))
-                        .foregroundColor(isUser ? .white : (message.isError ? Color.orange : .primary))
-                        .cornerRadius(16)
+                        .background {
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(isUser
+                                    ? AnyShapeStyle(themeManager.primaryAccentColor)
+                                    : (message.isError
+                                        ? AnyShapeStyle(Color.orange.opacity(0.12))
+                                        : AnyShapeStyle(Material.ultraThin)))
+                        }
+                        .foregroundStyle(isUser
+                            ? Color.white.opacity(0.92)
+                            : (message.isError ? Color.orange : Color.primary))
                 }
 
                 // Retry-knop — alleen zichtbaar bij herstelbare foutberichten

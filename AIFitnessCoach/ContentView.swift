@@ -709,8 +709,14 @@ struct PostWorkoutCheckinCard: View {
                     .font(.subheadline)
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(selectedMood == nil
+                        ? themeManager.primaryAccentColor.opacity(0.35)
+                        : themeManager.primaryAccentColor)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.plain)
             .disabled(selectedMood == nil)
             .accessibilityIdentifier("RPEOpslaanButton")
         }

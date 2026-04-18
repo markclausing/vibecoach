@@ -223,7 +223,7 @@ struct SettingsView: View {
                     NavigationLink(destination: AIProviderSettingsView()) {
                         HStack {
                             Image(systemName: "brain.head.profile")
-                                .foregroundColor(.blue)
+                                .foregroundStyle(themeManager.primaryAccentColor)
                                 .frame(width: 28)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("AI Coach Configuratie")
@@ -232,7 +232,9 @@ struct SettingsView: View {
                                      ? "Sleutel geconfigureerd ✓"
                                      : "Geen sleutel ingesteld")
                                     .font(.caption)
-                                    .foregroundColor(UserDefaults.standard.string(forKey: "vibecoach_userAPIKey")?.isEmpty == false ? .green : .orange)
+                                    .foregroundStyle(UserDefaults.standard.string(forKey: "vibecoach_userAPIKey")?.isEmpty == false
+                                        ? themeManager.primaryAccentColor
+                                        : Color.orange.opacity(0.8))
                             }
                         }
                     }
@@ -254,14 +256,15 @@ struct SettingsView: View {
                     if stravaAuthService.isAuthenticated {
                         HStack {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
+                                .foregroundStyle(themeManager.primaryAccentColor)
                             Text("Gekoppeld aan Strava")
                         }
 
-                        Button(role: .destructive, action: {
+                        Button(action: {
                             stravaAuthService.logout()
                         }) {
                             Text("Koppel los (Uitloggen)")
+                                .foregroundStyle(Color(red: 0.75, green: 0.25, blue: 0.25).opacity(0.85))
                         }
                     } else {
                         Button(action: {
@@ -277,7 +280,7 @@ struct SettingsView: View {
 
                     if let errorMsg = stravaAuthService.authError {
                         Text(errorMsg)
-                            .foregroundColor(.red)
+                            .foregroundStyle(Color.red.opacity(0.65))
                             .font(.caption)
                     }
                 }
@@ -294,7 +297,7 @@ struct SettingsView: View {
                         }) {
                             HStack {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.green)
+                                    .foregroundStyle(themeManager.primaryAccentColor)
                                 Text("Gekoppeld aan Apple Health")
                                     .foregroundColor(.primary)
                             }
@@ -1003,6 +1006,7 @@ struct PhysicalProfileSection: View {
 struct AIProviderSettingsView: View {
     @AppStorage("vibecoach_aiProvider")  private var providerRaw: String = AIProvider.gemini.rawValue
     @AppStorage("vibecoach_userAPIKey") private var apiKey: String = ""
+    @EnvironmentObject private var themeManager: ThemeManager
 
     private var selectedProvider: AIProvider {
         AIProvider(rawValue: providerRaw) ?? .gemini
@@ -1063,7 +1067,7 @@ struct AIProviderSettingsView: View {
                 Section {
                     HStack(spacing: 10) {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                            .foregroundStyle(themeManager.primaryAccentColor)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Sleutel geconfigureerd")
                                 .fontWeight(.medium)
