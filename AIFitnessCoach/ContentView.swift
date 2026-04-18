@@ -5,6 +5,7 @@ import Charts
 struct ContentView: View {
     @EnvironmentObject var appState: AppNavigationState
     @EnvironmentObject var planManager: TrainingPlanManager
+    @EnvironmentObject var themeManager: ThemeManager
 
     // We maken de ViewModel hier aan zodat we hem kunnen delen met de DashboardView
     // voor pull-to-refresh en de ChatView als overlay.
@@ -87,14 +88,14 @@ struct ContentView: View {
             // Tab 1: Overzicht (Dashboard & Kalender)
             DashboardView(viewModel: sharedChatViewModel)
                 .tabItem {
-                    Label("Overzicht", systemImage: "house.fill")
+                    Label("Overzicht", systemImage: themeManager.icon(for: .home))
                 }
                 .tag(AppNavigationState.Tab.dashboard)
 
             // Tab 2: Doelen — lange-termijn analysecentrum (Epic 23)
             GoalsListView(viewModel: sharedChatViewModel)
                 .tabItem {
-                    Label("Doelen", systemImage: "target")
+                    Label("Doelen", systemImage: themeManager.icon(for: .goal))
                 }
                 .tag(AppNavigationState.Tab.goals)
 

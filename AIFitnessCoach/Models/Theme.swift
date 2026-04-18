@@ -23,6 +23,18 @@ enum Theme: String, Codable, CaseIterable {
         }
     }
 
+    /// Vaste previewkleur voor de thema-picker (niet light/dark adaptief).
+    var previewColor: Color {
+        switch self {
+        case .moss:   return Color(red: 0.30, green: 0.50, blue: 0.30)
+        case .stone:  return Color(red: 0.47, green: 0.45, blue: 0.43)
+        case .mist:   return Color(red: 0.38, green: 0.54, blue: 0.68)
+        case .clay:   return Color(red: 0.68, green: 0.40, blue: 0.26)
+        case .sakura: return Color(red: 0.80, green: 0.52, blue: 0.62)
+        case .ink:    return Color(red: 0.22, green: 0.28, blue: 0.46)
+        }
+    }
+
     var defaultIcon: String {
         switch self {
         case .moss:   return "leaf.fill"

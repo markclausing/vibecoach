@@ -10,6 +10,7 @@ struct GoalsListView: View {
     @ObservedObject var viewModel: ChatViewModel
 
     @EnvironmentObject var appState: AppNavigationState
+    @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
     @Query(sort: \ActivityRecord.startDate, order: .forward) private var activities: [ActivityRecord]
@@ -134,7 +135,11 @@ struct GoalsListView: View {
                 }
 
                 // MARK: Doelen lijst — navigatie naar EditGoalView
-                Section("Mijn Doelen") {
+                Section(header:
+                    Text("Mijn Doelen")
+                        .font(themeManager.scaledHeadingFont())
+                        .scaleEffect(themeManager.headingSizeMultiplier, anchor: .leading)
+                ) {
                     if goals.isEmpty {
                         ContentUnavailableView(
                             "Geen doelen",

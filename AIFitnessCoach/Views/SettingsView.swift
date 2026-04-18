@@ -8,6 +8,7 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var themeManager: ThemeManager
 
     // Authenticatie service voor Strava OAuth web flow
     @StateObject private var stravaAuthService = StravaAuthService()
@@ -214,6 +215,10 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+                // Epic 29: Serene Visual Overhaul — thema en typografie
+                ThemePickerSection(themeManager: themeManager)
+                TypographySection(themeManager: themeManager)
+
                 // Epic 20: BYOK AI Configuratie — bovenaan voor directe vindbaarheid
                 Section(header: Text("AI Coach")) {
                     NavigationLink(destination: AIProviderSettingsView()) {
@@ -588,6 +593,142 @@ struct SettingsView: View {
         }
     }
     #endif
+}
+
+// MARK: - Epic 29 Sprint 2 & 3: Thema Picker Sectie
+
+struct ThemePickerSection: View {
+    @ObservedObject var themeManager: ThemeManager
+
+    var body: some View {
+        Section(header: Text("Uiterlijk")) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Thema")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 20) {
+                        ForEach(Theme.allCases, id: \.id) { theme in
+                            ThemeCircleButton(
+                                theme: theme,
+                                isSelected: themeManager.currentTheme == theme
+                            ) {
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    themeManager.currentTheme = theme
+                                }
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+}
+
+private struct ThemeCircleButton: View {
+    let theme: Theme
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(theme.previewColor)
+                        .frame(width: 44, height: 44)
+
+                    if isSelected {
+                        Circle()
+                            .strokeBorder(Color.primary.opacity(0.8), lineWidth: 2.5)
+                            .frame(width: 52, height: 52)
+                        Image(systemName: "checkmark")
+                            .font(.caption.bold())
+                            .foregroundStyle(.white)
+                            .shadow(radius: 1)
+                    }
+
+                    Image(systemName: theme.defaultIcon)
+                        .font(.system(size: 14))
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(isSelected ? .white : .white.opacity(0.8))
+                }
+
+                Text(theme.displayName)
+                    .font(.caption2)
+                    .foregroundStyle(isSelected ? .primary : .secondary)
+                    .fontWeight(isSelected ? .semibold : .regular)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Epic 29 Sprint 3: Typografie Sectie
+
+struct TypographySection: View {
+    @ObservedObject var themeManager: ThemeManager
+
+    var body: some View {
+        Section(
+            header: Text("Typografie"),
+            footer: Text("Pas de tekstgrootte van koppen en bodytekst aan. Standaard is 1.0.").font(.caption)
+        ) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Koppen")
+                        .font(.subheadline)
+                    Spacer()
+                    Text(String(format: "%.2f×", themeManager.headingSizeMultiplier))
+                        .font(.caption)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+                Slider(value: $themeManager.headingSizeMultiplier, in: 0.75...1.50, step: 0.05)
+                    .tint(themeManager.primaryAccentColor)
+
+                // Live preview van de heading-schaal
+                Text("Voorbeeld Kop")
+                    .font(.system(.headline).weight(.semibold))
+                    .scaleEffect(themeManager.headingSizeMultiplier, anchor: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 2)
+            }
+            .padding(.vertical, 4)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Bodytekst")
+                        .font(.subheadline)
+                    Spacer()
+                    Text(String(format: "%.2f×", themeManager.bodySizeMultiplier))
+                        .font(.caption)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+                Slider(value: $themeManager.bodySizeMultiplier, in: 0.75...1.50, step: 0.05)
+                    .tint(themeManager.primaryAccentColor)
+
+                Text("Voorbeeld bodytekst zoals in analyses.")
+                    .font(.system(.body))
+                    .scaleEffect(themeManager.bodySizeMultiplier, anchor: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 2)
+            }
+            .padding(.vertical, 4)
+
+            Button("Herstel standaard") {
+                withAnimation {
+                    themeManager.headingSizeMultiplier = 1.0
+                    themeManager.bodySizeMultiplier    = 1.0
+                }
+            }
+            .foregroundStyle(.secondary)
+        }
+    }
 }
 
 // MARK: - Epic 24 Sprint 2: Fysiologisch Profiel Sectie
