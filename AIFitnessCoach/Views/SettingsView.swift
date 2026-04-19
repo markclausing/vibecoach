@@ -387,14 +387,6 @@ struct SettingsView: View {
                             )
                             settingsDivider
                             SettingsRowV2(
-                                icon: "lungs.fill",
-                                iconColor: Color(red: 0.27, green: 0.55, blue: 0.91),
-                                title: "VO₂max",
-                                subtitle: "Geschatte conditiescore (Apple Watch)",
-                                value: vo2Max.map { String(format: "%.0f ml/kg/min", $0) } ?? "--"
-                            )
-                            settingsDivider
-                            SettingsRowV2(
                                 icon: "calendar",
                                 iconColor: themeManager.primaryAccentColor,
                                 title: "Dagen sinds laatste training",
@@ -413,6 +405,15 @@ struct SettingsView: View {
                             }
                             settingsDivider
                         }
+                        settingsDivider
+                        SettingsRowV2(
+                            icon: "lungs.fill",
+                            iconColor: Color(red: 0.27, green: 0.55, blue: 0.91),
+                            title: "VO₂max",
+                            subtitle: "Geschatte conditiescore (Apple Watch)",
+                            value: vo2Max.map { String(format: "%.0f ml/kg/min", $0) } ?? "--"
+                        )
+                        settingsDivider
                         Button { syncHistoricalData() } label: {
                             SettingsRowV2(
                                 icon: "arrow.triangle.2.circlepath",

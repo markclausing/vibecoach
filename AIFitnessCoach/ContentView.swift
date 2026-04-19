@@ -1258,6 +1258,7 @@ struct DashboardView: View {
     // Epic 14.3: Loading state voor de Vibe Score kaart
     @State private var isVibeScoreLoading: Bool = false
     @State private var isVibeScoreUnavailable: Bool = false
+    @State private var dashboardRestingHR: Double? = nil
 
     // Epic 17: BlueprintChecker resultaten voor alle actieve doelen
     /// Wordt op de achtergrond gebruikt voor coaching-context; volledige UI volgt in Sprint 17.3.
@@ -1569,7 +1570,8 @@ struct DashboardView: View {
                         isUnavailable: isVibeScoreUnavailable,
                         injuryRiskLevel: injuryRiskLevel,
                         todayWorkoutName: todayPlanWorkoutName,
-                        onAskWhy: { appState.showingChatSheet = true }
+                        onAskWhy: { appState.showingChatSheet = true },
+                        liveRestingHeartRate: dashboardRestingHR
                     )
                     .padding(.horizontal)
 
@@ -1753,6 +1755,12 @@ struct DashboardView: View {
                 // EPIC 14.3: Bereken de Vibe Score automatisch als er nog geen record voor vandaag is.
                 if todayReadiness == nil {
                     Task { await calculateAndSaveVibeScore() }
+                }
+                // Haal rusthartslag live op zodat de kaart altijd actueel is,
+                // ook als het DailyReadiness-record van vóór onze wijziging stamt.
+                Task {
+                    let hk = HealthKitManager()
+                    dashboardRestingHR = await hk.fetchRestingHeartRate()
                 }
                 // Auto-refresh: als de laatste analyse van een vorige dag is, vraag direct een nieuwe aan.
                 // Zo start de dag altijd met een actueel schema — ook na middernacht.

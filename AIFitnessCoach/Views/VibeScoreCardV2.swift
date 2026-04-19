@@ -10,9 +10,10 @@ struct VibeScoreCardV2: View {
     var isLoading: Bool = false
     var isUnavailable: Bool = false
     var injuryRiskLevel: DashboardView.InjuryRiskLevel = .safe
-    /// Optionele naam van de training van vandaag voor de coach-hint onderaan.
     var todayWorkoutName: String? = nil
     var onAskWhy: (() -> Void)? = nil
+    /// Live rusthartslag direct vanuit HealthKit — overschrijft de opgeslagen waarde in readiness.
+    var liveRestingHeartRate: Double? = nil
 
     @EnvironmentObject var themeManager: ThemeManager
 
@@ -140,7 +141,7 @@ struct VibeScoreCardV2: View {
             Divider().frame(height: 48)
             MetricColumnV2(
                 label: "RUST-HR",
-                value: readiness?.restingHeartRate.map { String(format: "%.0f", $0) } ?? "--",
+                value: (liveRestingHeartRate ?? readiness?.restingHeartRate).map { String(format: "%.0f", $0) } ?? "--",
                 unit: "bpm",
                 detail: nil
             )
