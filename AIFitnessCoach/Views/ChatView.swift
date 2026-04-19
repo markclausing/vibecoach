@@ -141,38 +141,6 @@ struct ChatView: View {
                                     accentColor: themeManager.primaryAccentColor
                                 )
 
-                                ForEach(activePreferences) { pref in
-                                    MemoryContextCard(
-                                        text: pref.preferenceText,
-                                        expirationDate: pref.expirationDate,
-                                        accentColor: themeManager.primaryAccentColor,
-                                        onEdit: {}
-                                    )
-                                }
-
-                                // ── Actieknoppen
-                                HStack(spacing: 12) {
-                                    Button {} label: {
-                                        Label("Plan aanpassen", systemImage: "arrow.triangle.2.circlepath")
-                                            .font(.subheadline).fontWeight(.semibold)
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 20).padding(.vertical, 12)
-                                            .background(themeManager.primaryAccentColor)
-                                            .clipShape(Capsule())
-                                    }
-                                    Button {} label: {
-                                        Text("Niet nu")
-                                            .font(.subheadline).fontWeight(.medium)
-                                            .foregroundColor(.primary)
-                                            .padding(.horizontal, 20).padding(.vertical, 12)
-                                            .background(Color(.systemBackground))
-                                            .clipShape(Capsule())
-                                            .overlay(Capsule().stroke(Color(.separator), lineWidth: 1))
-                                    }
-                                    Spacer()
-                                }
-                                .padding(.top, 4)
-
                                 // ── Bestaande chatberichten (onder scheidingslijn)
                                 if !viewModel.messages.isEmpty {
                                     HStack {
@@ -701,62 +669,6 @@ struct PlanAdjustmentCard: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
-    }
-}
-
-// MARK: MemoryContextCard
-
-struct MemoryContextCard: View {
-    let text: String
-    var expirationDate: Date? = nil
-    let accentColor: Color
-    var onEdit: () -> Void
-
-    private var expirationLabel: String? {
-        guard let date = expirationDate else { return nil }
-        let df = DateFormatter()
-        df.dateStyle = .long
-        df.locale = Locale(identifier: "nl_NL")
-        return "verloopt op: \(df.string(from: date))"
-    }
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(Color(.secondarySystemBackground))
-                    .frame(width: 38, height: 38)
-                Image(systemName: "pin.fill")
-                    .font(.system(size: 14))
-                    .foregroundColor(.secondary)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("ONTHOUDEN")
-                    .font(.caption2).fontWeight(.bold)
-                    .foregroundColor(.secondary).kerning(0.5)
-                Text(text)
-                    .font(.subheadline)
-                    .foregroundColor(.primary)
-                if let label = expirationLabel {
-                    Text(label)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-            }
-
-            Spacer()
-
-            Button(action: onEdit) {
-                Image(systemName: "square.and.pencil")
-                    .font(.system(size: 16))
-                    .foregroundColor(.secondary)
-            }
-        }
-        .padding(14)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
     }
 }
 
