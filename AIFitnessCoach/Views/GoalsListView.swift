@@ -105,6 +105,7 @@ struct GoalsListView: View {
                     Spacer(minLength: 40)
                 }
             }
+            .accessibilityIdentifier("GoalsScrollView")
             .background(Color(.secondarySystemBackground).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingAddSheet) {

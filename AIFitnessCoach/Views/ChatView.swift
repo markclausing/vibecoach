@@ -64,9 +64,10 @@ struct ChatView: View {
     private var coachPhaseLabel: String {
         let goal = goals.first(where: { !$0.isCompleted })
         guard let phase = goal?.currentPhase else { return "Kent je plan" }
+        let cal = Calendar.current
         let weeksRemaining = goal.flatMap { g -> Double? in
             guard g.targetDate > Date() else { return nil }
-            return g.targetDate.timeIntervalSince(Date()) / (7 * 86400)
+            return Double(cal.dateComponents([.weekOfYear], from: Date(), to: g.targetDate).weekOfYear ?? 0)
         } ?? 0
         let weekInPhase: Int
         switch phase {
@@ -80,7 +81,10 @@ struct ChatView: View {
         case .buildPhase:  totalWeeks = 8
         case .peakPhase:   totalWeeks = 2
         case .tapering:    totalWeeks = 2
-        default:           totalWeeks = max(1, Int((goal?.targetDate.timeIntervalSince(goal?.createdAt ?? Date()) ?? 0) / (7 * 86400)) - 12)
+        default:
+            let created = goal?.createdAt ?? Date()
+            let target  = goal?.targetDate ?? Date()
+            totalWeeks  = max(1, (cal.dateComponents([.weekOfYear], from: created, to: target).weekOfYear ?? 12) - 12)
         }
         return "Kent je plan • \(phase.displayName) • wk \(weekInPhase)/\(totalWeeks)"
     }
@@ -130,7 +134,8 @@ struct ChatView: View {
                         ScrollView {
                             VStack(spacing: 12) {
 
-                                // ── V2 coach response kaarten (Sprint 2 Part 1: dummy data)
+                                // ── V2 coach response kaarten (Sprint 2 Part 1: dummy data — alleen in debug)
+                                #if DEBUG
                                 CoachTextCard(
                                     text: dummySummary,
                                     accentColor: themeManager.primaryAccentColor
@@ -140,6 +145,7 @@ struct ChatView: View {
                                     insights: dummyInsights,
                                     accentColor: themeManager.primaryAccentColor
                                 )
+                                #endif
 
                                 // ── Bestaande chatberichten (onder scheidingslijn)
                                 if !viewModel.messages.isEmpty {
@@ -486,6 +492,7 @@ struct CoachV2HeaderView: View {
             }
             Spacer()
         }
+        .accessibilityIdentifier("CoachView")
     }
 }
 
@@ -881,7 +888,7 @@ struct WorkoutCardView: View {
             .frame(maxWidth: .infinity, minHeight: 160)
             .background(.ultraThinMaterial)
             .cornerRadius(12)
-            .shadow(color: ColorColor(.label).opacity(0.05), radius: 4, x: 0, y: 2)
+            .shadow(color: Color(.label).opacity(0.05), radius: 4, x: 0, y: 2)
             .opacity(isProcessingAction ? 0.5 : 1.0)
         }
         .buttonStyle(PlainButtonStyle())

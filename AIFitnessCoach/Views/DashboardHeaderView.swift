@@ -28,8 +28,9 @@ struct DashboardHeaderView: View {
             parts.append(result.phase.displayName.uppercased())
 
             if let goal = goals.first(where: { !$0.isCompleted && Date() < $0.targetDate }) {
-                let totalWeeks = max(1, Int(goal.targetDate.timeIntervalSince(goal.createdAt) / (7 * 86400)))
-                let elapsedWeeks = max(1, Int(Date().timeIntervalSince(goal.createdAt) / (7 * 86400)))
+                let cal = Calendar.current
+                let totalWeeks = max(1, cal.dateComponents([.weekOfYear], from: goal.createdAt, to: goal.targetDate).weekOfYear ?? 1)
+                let elapsedWeeks = max(1, cal.dateComponents([.weekOfYear], from: goal.createdAt, to: Date()).weekOfYear ?? 1)
                 parts.append("WK \(min(elapsedWeeks, totalWeeks))/\(totalWeeks)")
             }
         }
@@ -51,5 +52,6 @@ struct DashboardHeaderView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
         .padding(.top, 8)
+        .accessibilityIdentifier("DashboardHeaderView")
     }
 }

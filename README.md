@@ -214,15 +214,19 @@ Een complete redesign van de app naar een rustgevend, minimalistisch thema met v
 
 ---
 
-### ⏳ Epic #30: V2.0 Card-Based UX Overhaul (Gepland)
+### 🔄 Epic #30: V2.0 Card-Based UX Overhaul (In Ontwikkeling)
 
 Een volledige herontwerp van de drie kernschermen naar een moderne, kaartgebaseerde lay-out. De nadruk ligt op visuele hiërarchie, actiegerichte UI-patronen en een informatiedichte maar rustige presentatie van data.
 
-* **⏳ Sprint 30.1 — Dashboard V2:** Transitie naar een "floating card" lay-out op een lichte achtergrond. Compleet nieuwe Vibe Score-kaart met HRV- en Slaap-sub-metrics als inline badges. Horizontale week-tijdlijn bovenaan het scherm voor directe training-navigatie.
+* **✅ Sprint 30.1 — Dashboard V2:** Transitie naar "floating card" lay-out op een lichte achtergrond (`secondarySystemBackground`). `DashboardHeaderView` met contextuele begroeting + dag/fase/week-indicator. `VibeScoreCardV2` met HRV-, slaap- en VO₂max-sub-metrics als inline badges. `WeekTimelineView` voor directe week-navigatie. `TrendWidgetView` voor 14-daagse trendanalyse. `DashboardBannerView` herbruikbare component vervangt gedupliceerde ACWR-bannercode. Rusthartsslag live opgehaald uit HealthKit naast VibeScore-berekening. Kleurmodus-instelling (light/dark/auto) via `AppStorage`. Build number automatisch gezet via CI (`agvtool`).
 
-* **⏳ Sprint 30.2 — Interactive Coach Chat:** Refactor van `ChatView` van simpele tekstbubbels naar gestructureerde, actiegerichte UI-kaarten. Vaste secties per coach-bericht: "Wat ik zie", "Aanpassing in je plan", "Toepassen"-knop en contextgevoelige suggestie-chips onderaan het scherm.
+* **✅ Sprint 30.2 — Interactive Coach Chat:** Refactor van `ChatView` naar gestructureerde V2.0 coach-kaarten. `CoachV2HeaderView` met live fase-label. `CoachTextCard` ("KORT"), `CoachInsightCard` ("WAT IK ZIE") en `PlanAdjustmentCard` ("AANPASSING IN JE PLAN"). Suggestie-chips onderaan het scherm. Tab-iconen bijgewerkt naar outlined stijl voor consistentie met V2.0 esthetiek. Dummy data achter `#if DEBUG` guard zodat productie-UI alleen echte coach-berichten toont.
 
-* **⏳ Sprint 30.3 — Goals & Settings Grid:** Nieuwe visuele voortgangsbalken per trainingsfase (Base / Build / Peak / Taper) in de Doelen-tab. Grid-gebaseerde lay-out voor de Instellingen-tab en Connecties-overzicht — overzichtelijker en consistenter met de nieuwe kaartstructuur.
+* **✅ Sprint 30.3 — Goals V2:** `GoalsListView` omgebouwd van `List` naar card-gebaseerde `ScrollView`. Inline `activeGoalCard` per doel met sport-icoon, fase-balk, risico-indicator, voortgangs- en mijlpaal-secties. `completedGoals` sectie onderaan. Voortgangsbalken per trainingsfase (Base / Build / Peak / Taper) zichtbaar per doelkaart.
+
+* **✅ Bugfixes & Kwaliteit (PR #169):** `ColorColor` typo opgelost in `WorkoutCardView`. `TimeInterval`-wiskunde vervangen door `Calendar.dateComponents` in `DashboardHeaderView` en `ChatView.coachPhaseLabel` (conform CLAUDE.md §3). `recoveryReason` toegevoegd aan `AthleticProfile` met unit tests. UI-testsuite volledig bijgewerkt voor V2.0 (geen `navigationBars` meer — `accessibilityIdentifier`-gebaseerde checks op `DashboardHeaderView`, `GoalsScrollView`, `CoachView`). `testGoalManagement` vereenvoudigd: swipe-delete en GoalRow-navigatie verwijderd (V2.0 card-UI heeft geen List meer). 3 nieuwe `AthleticProfileManagerTests` voor `recoveryReason` (volume-overbelasting, aaneengesloten dagen, nil-geval).
+
+* **⏳ Sprint 30.4 — Settings Grid:** Grid-gebaseerde lay-out voor de Instellingen-tab en Connecties-overzicht — overzichtelijker en consistent met de V2.0 kaartstructuur.
 
 ---
 

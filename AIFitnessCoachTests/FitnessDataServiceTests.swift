@@ -341,4 +341,60 @@ final class AthleticProfileManagerTests: XCTestCase {
         XCTAssertNotNil(profile)
         XCTAssertTrue(profile?.isRecoveryNeeded ?? false, "Should trigger recovery warning for 4 consecutive days of training")
     }
+
+    func testRecoveryReason_IsSetWhenConsecutiveDaysTriggered() throws {
+        // Dezelfde 4-aaneengesloten-dagen setup als bovenstaand
+        let now = Date()
+        let cal = Calendar.current
+        for offset in 0...3 {
+            let date = cal.date(byAdding: .day, value: -offset, to: now)!
+            context.insert(ActivityRecord(id: "consec_\(offset)", name: "Run", distance: 5000, movingTime: 1800, averageHeartrate: nil, sportCategory: .running, startDate: date))
+        }
+        try context.save()
+
+        let profile = try manager.calculateProfile(context: context)
+
+        XCTAssertNotNil(profile?.recoveryReason, "recoveryReason moet ingesteld zijn bij 4 aaneengesloten trainingsdagen")
+        XCTAssertTrue(
+            profile?.recoveryReason?.contains("op rij getraind") ?? false,
+            "recoveryReason verwacht 'op rij getraind', kreeg: \(profile?.recoveryReason ?? "nil")"
+        )
+    }
+
+    func testRecoveryReason_IsSetWhenVolumeExceedsThreshold() throws {
+        // Basislijn: 3 weken met 7200 sec/week zodat gemiddelde > 7200
+        // Deze week: 14000 sec — ratio ≈ 1.57 (>1.5) triggert Regel 1
+        let now = Date()
+        let cal = Calendar.current
+        for week in 1...3 {
+            let date = cal.date(byAdding: .weekOfYear, value: -week, to: now)!
+            context.insert(ActivityRecord(id: "base_\(week)", name: "Run", distance: 10000, movingTime: 7200, averageHeartrate: nil, sportCategory: .running, startDate: date))
+        }
+        context.insert(ActivityRecord(id: "thisweek", name: "Zware run", distance: 20000, movingTime: 14000, averageHeartrate: nil, sportCategory: .running, startDate: now))
+        try context.save()
+
+        let profile = try manager.calculateProfile(context: context)
+
+        XCTAssertNotNil(profile)
+        XCTAssertTrue(profile?.isRecoveryNeeded ?? false, "isRecoveryNeeded moet true zijn bij volume > 150%")
+        XCTAssertNotNil(profile?.recoveryReason, "recoveryReason moet ingesteld zijn bij volume-overbelasting")
+        XCTAssertTrue(
+            profile?.recoveryReason?.contains("boven je gemiddelde") ?? false,
+            "recoveryReason verwacht 'boven je gemiddelde', kreeg: \(profile?.recoveryReason ?? "nil")"
+        )
+    }
+
+    func testRecoveryReason_IsNilWhenNoRecoveryNeeded() throws {
+        // Milde belasting — geen hersteladvies verwacht
+        let now = Date()
+        let twoDaysAgo = Calendar.current.date(byAdding: .day, value: -2, to: now)!
+        context.insert(ActivityRecord(id: "mild", name: "Easy run", distance: 5000, movingTime: 1800, averageHeartrate: nil, sportCategory: .running, startDate: twoDaysAgo))
+        try context.save()
+
+        let profile = try manager.calculateProfile(context: context)
+
+        XCTAssertNotNil(profile)
+        XCTAssertFalse(profile?.isRecoveryNeeded ?? true)
+        XCTAssertNil(profile?.recoveryReason, "recoveryReason moet nil zijn als er geen herstel nodig is")
+    }
 }
