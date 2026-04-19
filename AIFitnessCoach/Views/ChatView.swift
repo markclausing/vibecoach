@@ -492,6 +492,7 @@ struct CoachV2HeaderView: View {
             }
             Spacer()
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("CoachView")
     }
 }

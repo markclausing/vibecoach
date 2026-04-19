@@ -52,6 +52,7 @@ struct DashboardHeaderView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
         .padding(.top, 8)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("DashboardHeaderView")
     }
 }
