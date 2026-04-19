@@ -22,10 +22,8 @@ struct GoalsListView: View {
         goals.filter { !$0.isCompleted }
     }
 
-    private var activeGoal: FitnessGoal? { uncompletedGoals.first }
-
-    private var alternativeGoals: [FitnessGoal] {
-        Array(uncompletedGoals.dropFirst())
+    private var completedGoals: [FitnessGoal] {
+        goals.filter { $0.isCompleted }
     }
 
     private var gapAnalysis: [BlueprintGap] {
@@ -95,11 +93,11 @@ struct GoalsListView: View {
                         emptyStateCard
                             .padding(.horizontal)
                     } else {
-                        if let goal = activeGoal {
+                        ForEach(uncompletedGoals) { goal in
                             activeGoalCard(goal)
-                                .padding(.bottom, 20)
+                                .padding(.bottom, 24)
                         }
-                        if !alternativeGoals.isEmpty {
+                        if !completedGoals.isEmpty {
                             alternativeGoalsSection
                         }
                     }
@@ -121,10 +119,11 @@ struct GoalsListView: View {
     private var goalsHeader: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
-                let altCount = alternativeGoals.count
-                Text(uncompletedGoals.isEmpty
+                let activeCount = uncompletedGoals.count
+                let cmpCount    = completedGoals.count
+                Text(activeCount == 0
                      ? "GEEN DOELEN"
-                     : "1 ACTIEF • \(altCount) ALTERNATIEV\(altCount == 1 ? "F" : "EN")")
+                     : "\(activeCount) ACTIEF\(activeCount == 1 ? "" : "E") • \(cmpCount) VOLTOOID\(cmpCount == 1 ? "" : "E")")
                     .font(.caption).fontWeight(.semibold)
                     .foregroundColor(.secondary).kerning(0.5)
                 Spacer()
@@ -409,14 +408,14 @@ struct GoalsListView: View {
 
     private var alternativeGoalsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("ALTERNATIEVE DOELEN")
+            Text("VOLTOOIDE DOELEN")
                 .font(.caption).fontWeight(.semibold)
                 .foregroundColor(.secondary).kerning(0.5)
                 .padding(.horizontal)
 
             VStack(spacing: 8) {
-                ForEach(alternativeGoals) { goal in
-                    alternativeGoalRow(goal)
+                ForEach(completedGoals) { goal in
+                    completedGoalRow(goal)
                         .accessibilityIdentifier("GoalRow_\(goal.title)")
                 }
             }
@@ -424,8 +423,7 @@ struct GoalsListView: View {
         }
     }
 
-    private func alternativeGoalRow(_ goal: FitnessGoal) -> some View {
-        let daysLeft = max(0, Calendar.current.dateComponents([.day], from: Date(), to: goal.targetDate).day ?? 0)
+    private func completedGoalRow(_ goal: FitnessGoal) -> some View {
         let df = DateFormatter()
         df.dateStyle = .medium
         df.locale = Locale(identifier: "nl_NL")
@@ -443,6 +441,8 @@ struct GoalsListView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(goal.title)
                     .font(.subheadline).fontWeight(.semibold)
+                    .strikethrough(true, color: .secondary)
+                    .foregroundColor(.secondary)
                     .lineLimit(1)
                 Text(df.string(from: goal.targetDate))
                     .font(.caption)
@@ -451,11 +451,8 @@ struct GoalsListView: View {
 
             Spacer()
 
-            NavigationLink(destination: EditGoalView(goal: goal)) {
-                Text("Activeer \(Image(systemName: "chevron.right"))")
-                    .font(.caption).fontWeight(.semibold)
-                    .foregroundColor(themeManager.primaryAccentColor)
-            }
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(.green)
         }
         .padding(14)
         .background(Color(.systemBackground))
