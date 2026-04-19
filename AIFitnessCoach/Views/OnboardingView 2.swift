@@ -298,7 +298,7 @@ private struct APIKeyOnboardingPage: View {
                 .padding(16)
                 .background(Color(.systemBackground))
                 .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 2)
+                .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
 
                 // Ruimte voor de floating knop
                 Spacer(minLength: 100)

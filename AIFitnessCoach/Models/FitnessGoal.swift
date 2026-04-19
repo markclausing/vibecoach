@@ -904,9 +904,12 @@ final class DailyReadiness {
     var deepSleepMinutes: Int = 0
     var remSleepMinutes: Int  = 0
     var coreSleepMinutes: Int = 0
+    /// Rusthartslag in slagen per minuut, direct vanuit HealthKit. Nil als geen data beschikbaar.
+    var restingHeartRate: Double? = nil
 
     init(date: Date, sleepHours: Double, hrv: Double, readinessScore: Int,
-         deepSleepMinutes: Int = 0, remSleepMinutes: Int = 0, coreSleepMinutes: Int = 0) {
+         deepSleepMinutes: Int = 0, remSleepMinutes: Int = 0, coreSleepMinutes: Int = 0,
+         restingHeartRate: Double? = nil) {
         self.date              = Calendar.current.startOfDay(for: date)
         self.sleepHours        = sleepHours
         self.hrv               = hrv
@@ -914,6 +917,7 @@ final class DailyReadiness {
         self.deepSleepMinutes  = deepSleepMinutes
         self.remSleepMinutes   = remSleepMinutes
         self.coreSleepMinutes  = coreSleepMinutes
+        self.restingHeartRate  = restingHeartRate
     }
 }
 

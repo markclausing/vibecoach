@@ -26,15 +26,46 @@ struct SettingsView: View {
     @State private var isSyncingHistory: Bool = false
     @State private var athleticProfile: AthleticProfile?
 
+    // V2.0 extra state
+    @AppStorage("vibecoach_userName")        private var userName: String = ""
+    @AppStorage("vibecoach_userAPIKey")      private var apiKey: String = ""
+    @AppStorage("vibecoach_aiProvider")      private var providerRaw: String = AIProvider.gemini.rawValue
+    @AppStorage("vibecoach_notifPost")       private var notifPostWorkout: Bool = true
+    @AppStorage("vibecoach_notifInactive")   private var notifInactivity: Bool = true
+    @AppStorage("vibecoach_notifGoals")      private var notifGoalUpdates: Bool = true
+    @AppStorage("vibecoach_notifWeekly")     private var notifWeeklyReport: Bool = false
+    @AppStorage("vibecoach_bgSync")          private var backgroundSyncEnabled: Bool = true
+    @AppStorage("vibecoach_colorScheme")     private var colorSchemeRaw: String = "auto"
+    @State private var physicalProfile: UserPhysicalProfile?
+
+    @State private var weeklyAvgMinutes: Int?
+    @State private var vo2Max: Double?
+
+    private let settingsHKManager = HealthKitManager()
+    private var settingsProfileService: UserProfileService {
+        UserProfileService(healthStore: settingsHKManager.healthStore)
+    }
+
     // Dependency injection (voor tests of preview)
     var tokenStore: TokenStore = KeychainService.shared
 
     // Laden van opgeslagen waarden en rechten
     private func loadTokens() {
         stravaAuthService.checkAuthStatus()
-
         checkNotificationStatus()
         refreshProfile()
+        Task {
+            await settingsProfileService.requestProfileReadAuthorization()
+            let p = await settingsProfileService.fetchProfile()
+            async let secsTask = settingsHKManager.fetchAverageWeeklyDurationSeconds()
+            async let vo2Task  = settingsHKManager.fetchVO2Max()
+            let (secs, vo2) = await (secsTask, vo2Task)
+            await MainActor.run {
+                physicalProfile  = p
+                weeklyAvgMinutes = secs / 60
+                vo2Max           = vo2
+            }
+        }
     }
 
     // Herbereken het lokale atletisch profiel op basis van SwiftData
@@ -213,333 +244,477 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - V2.0 Body
+
     var body: some View {
-        Form {
-                // Epic 29: Serene Visual Overhaul — thema
-                ThemePickerSection(themeManager: themeManager)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
 
-                // Epic 20: BYOK AI Configuratie — bovenaan voor directe vindbaarheid
-                Section(header: Text("AI Coach")) {
-                    NavigationLink(destination: AIProviderSettingsView()) {
-                        HStack {
-                            Image(systemName: "brain.head.profile")
-                                .foregroundStyle(themeManager.primaryAccentColor)
-                                .frame(width: 28)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("AI Coach Configuratie")
-                                    .fontWeight(.medium)
-                                Text(UserDefaults.standard.string(forKey: "vibecoach_userAPIKey")?.isEmpty == false
-                                     ? "Sleutel geconfigureerd ✓"
-                                     : "Geen sleutel ingesteld")
+                    // ── Header
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("V\(Bundle.main.appVersion) · BUILD \(Bundle.main.buildNumber)")
+                            .font(.caption).fontWeight(.semibold)
+                            .foregroundColor(.secondary).kerning(0.5)
+                        Text("Instellingen")
+                            .font(.largeTitle).fontWeight(.bold)
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 56)
+                    .padding(.bottom, 24)
+
+                    // ── VERBINDINGEN
+                    settingsSectionLabel("VERBINDINGEN")
+                    HStack(spacing: 10) {
+                        SettingsConnectionCard(
+                            icon: "applewatch",
+                            title: "HealthKit",
+                            subtitle: isHealthKitLinked ? "Primair · Live" : "Niet gekoppeld",
+                            isConnected: isHealthKitLinked,
+                            accentColor: themeManager.primaryAccentColor
+                        )
+                        SettingsConnectionCard(
+                            icon: "figure.run",
+                            title: "Strava",
+                            subtitle: stravaAuthService.isAuthenticated ? "Backup" : "Niet gekoppeld",
+                            isConnected: stravaAuthService.isAuthenticated,
+                            accentColor: themeManager.primaryAccentColor
+                        )
+                        SettingsConnectionCard(
+                            icon: "sparkles",
+                            title: "AI Coach",
+                            subtitle: AIProvider(rawValue: providerRaw)?.displayName.components(separatedBy: " ").first ?? "Gemini",
+                            isConnected: !apiKey.isEmpty,
+                            accentColor: themeManager.primaryAccentColor
+                        )
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 24)
+
+                    // ── JOUW PROFIEL
+                    settingsSectionLabel("JOUW PROFIEL")
+                    settingsCard {
+                        HStack(spacing: 14) {
+                            ZStack {
+                                Circle()
+                                    .fill(themeManager.primaryAccentColor.opacity(0.18))
+                                    .frame(width: 54, height: 54)
+                                Text(userInitials)
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(themeManager.primaryAccentColor)
+                            }
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(userName.isEmpty ? "Gebruiker" : userName)
+                                    .font(.headline)
+                                Text(demographicsLine)
                                     .font(.caption)
-                                    .foregroundStyle(UserDefaults.standard.string(forKey: "vibecoach_userAPIKey")?.isEmpty == false
-                                        ? themeManager.primaryAccentColor
-                                        : Color.orange.opacity(0.8))
+                                    .foregroundColor(.secondary)
                             }
+                            Spacer()
                         }
+                        .padding(16)
                     }
-                }
+                    .padding(.bottom, 24)
 
-                Section(header: Text("Primaire Databron"), footer: Text("Kies welke bron als eerste aangesproken wordt voor analyses en historie.").font(.caption)) {
-                    Picker("Databron", selection: $selectedDataSource) {
-                        ForEach(DataSource.allCases) { source in
-                            Text(source.rawValue).tag(source)
-                        }
+                    // ── FYSIOLOGISCH PROFIEL
+                    settingsSectionLabel("FYSIOLOGISCH PROFIEL")
+                    settingsCard {
+                        NavigationLink(destination: PhysicalProfileEditView()) {
+                            SettingsRowV2(
+                                icon: "person.fill",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Leeftijd",
+                                value: physicalProfile.map { "\($0.ageYears) j" },
+                                isLocked: true
+                            )
+                        }.buttonStyle(.plain)
+                        settingsDivider
+                        NavigationLink(destination: PhysicalProfileEditView()) {
+                            SettingsRowV2(
+                                icon: "figure.stand",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Geslacht",
+                                value: physicalProfile.map { physSexLabel($0.sex) },
+                                isLocked: true
+                            )
+                        }.buttonStyle(.plain)
+                        settingsDivider
+                        NavigationLink(destination: PhysicalProfileEditView()) {
+                            SettingsRowV2(
+                                icon: "scalemass.fill",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Gewicht",
+                                value: physicalProfile.map { String(format: "%.1f kg", $0.weightKg) },
+                                hasChevron: true,
+                                showHealthKitBadge: physicalProfile?.weightSource == .healthKit
+                            )
+                        }.buttonStyle(.plain)
+                        settingsDivider
+                        NavigationLink(destination: PhysicalProfileEditView()) {
+                            SettingsRowV2(
+                                icon: "ruler.fill",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Lengte",
+                                value: physicalProfile.map { String(format: "%.0f cm", $0.heightCm) },
+                                hasChevron: true,
+                                showHealthKitBadge: physicalProfile?.heightSource == .healthKit
+                            )
+                        }.buttonStyle(.plain)
                     }
-                    .pickerStyle(SegmentedPickerStyle())
-                }
+                    Text("Leeftijd en geslacht worden gelezen uit Apple Gezondheid en zijn hier niet te bewerken. Gewicht en lengte schrijven we terug naar HealthKit.")
+                        .font(.caption).foregroundColor(.secondary)
+                        .padding(.horizontal).padding(.top, 6)
+                    Spacer(minLength: 24)
 
-                Section(
-                    header: Text("Strava Connectie"),
-                    footer: Text("Koppel veilig met Strava via de officiële OAuth web flow. Tokens worden lokaal versleuteld opgeslagen.").font(.caption)
-                ) {
-                    if stravaAuthService.isAuthenticated {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(themeManager.primaryAccentColor)
-                            Text("Gekoppeld aan Strava")
-                        }
-
-                        Button(action: {
-                            stravaAuthService.logout()
-                        }) {
-                            Text("Koppel los (Uitloggen)")
-                                .foregroundStyle(Color(red: 0.75, green: 0.25, blue: 0.25).opacity(0.85))
-                        }
-                    } else {
-                        Button(action: {
-                            stravaAuthService.authenticate()
-                        }) {
-                            HStack {
-                                Image(systemName: "figure.run.circle.fill")
-                                Text("Log in met Strava")
-                                    .fontWeight(.bold)
-                            }
-                        }
-                    }
-
-                    if let errorMsg = stravaAuthService.authError {
-                        Text(errorMsg)
-                            .foregroundStyle(Color.red.opacity(0.65))
-                            .font(.caption)
-                    }
-                }
-
-                Section(
-                    header: Text("Apple Health Integratie"),
-                    footer: Text("Koppel lokaal met Apple Health voor fysiologische data. Er gaat geen data naar externe servers.").font(.caption)
-                ) {
-                    if isHealthKitLinked {
-                        Button(action: {
-                            if let url = URL(string: UIApplication.openSettingsURLString) {
-                                UIApplication.shared.open(url)
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(themeManager.primaryAccentColor)
-                                Text("Gekoppeld aan Apple Health")
-                                    .foregroundColor(.primary)
-                            }
-                        }
-                    } else {
-                        Button(action: {
-                            koppelAppleHealth()
-                        }) {
-                            HStack {
-                                Image(systemName: "heart.fill")
-                                    .foregroundColor(.red)
-                                Text("Koppel Apple Health")
-                                    .fontWeight(.bold)
-                            }
-                        }
-                    }
-                }
-
-                Section(
-                    header: Text("Historische Data & Atletisch Profiel"),
-                    footer: Text("Haal 1 jaar (365 dagen) aan historie op uit de gekozen databron om de AI-coach context te geven over jouw fitnessniveau. Omdat de berekening asynchroon is, blijft de app gewoon bruikbaar.").font(.caption)
-                ) {
-                    Button(action: {
-                        syncHistoricalData()
-                    }) {
-                        HStack {
-                            if isSyncingHistory {
-                                ProgressView()
-                                    .padding(.trailing, 8)
-                                Text("Bezig met ophalen (1 jaar)...")
-                            } else {
-                                Image(systemName: "arrow.triangle.2.circlepath")
-                                Text("Synchroniseer Geschiedenis (1 Jaar)")
-                            }
-                        }
-                    }
-                    .disabled(isSyncingHistory || (selectedDataSource == .strava && !stravaAuthService.isAuthenticated))
-
-                    if let profile = athleticProfile {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Atletisch Profiel")
-                                .font(.headline)
-                                .padding(.bottom, 4)
-
-                            HStack {
-                                Image(systemName: "trophy")
-                                    .foregroundColor(.yellow)
-                                Text("Piekprestatie: \(String(format: "%.1f", profile.peakDistanceInMeters / 1000)) km / \(profile.peakDurationInSeconds / 60) min")
-                                    .font(.subheadline)
-                            }
-
-                            HStack {
-                                Image(systemName: "chart.bar")
-                                    .foregroundColor(.blue)
-                                Text("Wekelijks Volume: \(profile.averageWeeklyVolumeInSeconds / 60) min (gem. laatste 4 weken)")
-                                    .font(.subheadline)
-                            }
-
-                            HStack {
-                                Image(systemName: "calendar.badge.clock")
-                                    .foregroundColor(profile.daysSinceLastTraining > 5 ? .red : .green)
-                                Text("Dagen sinds laatste training: \(profile.daysSinceLastTraining)")
-                                    .font(.subheadline)
-                            }
-
+                    // ── ATLETISCH PROFIEL
+                    settingsSectionLabel("ATLETISCH PROFIEL")
+                    settingsCard {
+                        if let profile = athleticProfile {
+                            SettingsRowV2(
+                                icon: "trophy.fill",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Piekprestatie",
+                                subtitle: "Langste activiteit in 365 dagen",
+                                value: "\(String(format: "%.1f", profile.peakDistanceInMeters/1000)) km / \(profile.peakDurationInSeconds/60) min"
+                            )
+                            settingsDivider
+                            SettingsRowV2(
+                                icon: "chart.bar.fill",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Wekelijks volume",
+                                subtitle: "Gem. laatste 4 weken (HealthKit)",
+                                value: weeklyAvgMinutes.map { "\($0) min" } ?? "\(profile.averageWeeklyVolumeInSeconds/60) min"
+                            )
+                            settingsDivider
+                            SettingsRowV2(
+                                icon: "calendar",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Dagen sinds laatste training",
+                                subtitle: "Herstel-indicator",
+                                value: "\(profile.daysSinceLastTraining) dagen"
+                            )
                             if profile.isRecoveryNeeded {
-                                HStack {
-                                    Image(systemName: "exclamationmark.triangle.fill")
-                                        .foregroundColor(.orange)
-                                    Text("Overtrainingsrisico! Rust wordt aanbevolen.")
-                                        .font(.subheadline)
-                                        .bold()
-                                        .foregroundColor(.orange)
+                                settingsDivider
+                                SettingsRowV2(
+                                    icon: "exclamationmark.triangle.fill",
+                                    iconColor: .orange,
+                                    title: "Overtrainingsrisico",
+                                    subtitle: profile.recoveryReason ?? "Rust wordt aanbevolen.",
+                                    isWarning: true
+                                )
+                            }
+                            settingsDivider
+                        }
+                        settingsDivider
+                        SettingsRowV2(
+                            icon: "lungs.fill",
+                            iconColor: Color(red: 0.27, green: 0.55, blue: 0.91),
+                            title: "VO₂max",
+                            subtitle: "Geschatte conditiescore (Apple Watch)",
+                            value: vo2Max.map { String(format: "%.0f ml/kg/min", $0) } ?? "--"
+                        )
+                        settingsDivider
+                        Button { syncHistoricalData() } label: {
+                            SettingsRowV2(
+                                icon: "arrow.triangle.2.circlepath",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: isSyncingHistory ? "Bezig..." : "Synchroniseer historie",
+                                subtitle: "Haal 1 jaar (365 dagen) op",
+                                value: isSyncingHistory ? nil : "1 jaar",
+                                hasChevron: !isSyncingHistory
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isSyncingHistory)
+                    }
+                    Text("Afgeleid uit je trainingsgeschiedenis. Sync 1 jaar aan historie om de coach context te geven over je fitnessniveau.")
+                        .font(.caption).foregroundColor(.secondary)
+                        .padding(.horizontal).padding(.top, 6)
+                    Spacer(minLength: 24)
+
+                    // ── UITERLIJK
+                    settingsSectionLabel("UITERLIJK")
+                    settingsCard {
+                        HStack {
+                            Text("Thema")
+                                .font(.subheadline)
+                                .padding(.leading, 14)
+                            Spacer()
+                            HStack(spacing: 10) {
+                                ForEach(Theme.allCases.prefix(3), id: \.id) { theme in
+                                    Button {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            themeManager.currentTheme = theme
+                                        }
+                                    } label: {
+                                        Circle()
+                                            .fill(theme.previewColor)
+                                            .frame(width: 30, height: 30)
+                                            .overlay(
+                                                Circle().strokeBorder(
+                                                    themeManager.currentTheme == theme
+                                                        ? Color.primary.opacity(0.8) : Color.clear,
+                                                    lineWidth: 2.5
+                                                )
+                                            )
+                                    }
                                 }
                             }
+                            .padding(.trailing, 14)
                         }
-                        .padding(.vertical, 4)
-                    }
-                }
-
-                // Epic 24 Sprint 2: Fysiologisch profiel — Two-Way Sync met HealthKit
-                PhysicalProfileSection()
-
-                Section(
-                    header: Text("Notificaties"),
-                    footer: Text("Ontvang direct een analyse van je AI coach nadat je een nieuwe activiteit hebt geüpload.").font(.caption)
-                ) {
-                    if notificationsEnabled {
+                        .padding(.vertical, 14)
+                        settingsDivider
                         HStack {
-                            Image(systemName: "bell.badge.fill")
-                                .foregroundColor(.green)
-                            Text("Notificaties zijn ingeschakeld")
+                            Text("Modus")
+                                .font(.subheadline)
+                                .padding(.leading, 14)
+                            Spacer()
+                            Picker("", selection: $colorSchemeRaw) {
+                                Text("Licht").tag("light")
+                                Text("Donker").tag("dark")
+                                Text("Auto").tag("auto")
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 180)
+                            .padding(.trailing, 14)
                         }
-                    } else {
-                        Button(action: {
-                            requestNotificationPermission()
-                        }) {
-                            HStack {
-                                Image(systemName: "bell.badge")
-                                Text("Schakel Push Notificaties in")
+                        .padding(.vertical, 10)
+                    }
+                    .padding(.bottom, 24)
+
+                    // ── PRIMAIRE DATABRON
+                    settingsSectionLabel("PRIMAIRE DATABRON")
+                    settingsCard {
+                        Picker("", selection: $selectedDataSource) {
+                            ForEach(DataSource.allCases) { source in
+                                Text(source.rawValue).tag(source)
                             }
                         }
+                        .pickerStyle(.segmented)
+                        .padding(14)
                     }
-                }
+                    Text("Welke bron wordt als eerste aangesproken voor analyses en historie.")
+                        .font(.caption).foregroundColor(.secondary)
+                        .padding(.horizontal).padding(.top, 6)
+                    Spacer(minLength: 24)
 
-                if let msg = feedbackMessage {
-                    Section {
+                    // ── AI COACH
+                    settingsSectionLabel("AI COACH")
+                    settingsCard {
+                        NavigationLink(destination: AIProviderSettingsView()) {
+                            SettingsRowV2(
+                                icon: "sparkles",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Provider",
+                                value: AIProvider(rawValue: providerRaw)?.displayName ?? "Gemini",
+                                hasChevron: true
+                            )
+                        }.buttonStyle(.plain)
+                        settingsDivider
+                        NavigationLink(destination: AIProviderSettingsView()) {
+                            SettingsRowV2(
+                                icon: "key.fill",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "API-sleutel",
+                                value: apiKey.isEmpty ? "Niet ingesteld" : "···· \(String(apiKey.suffix(4)))",
+                                hasChevron: true
+                            )
+                        }.buttonStyle(.plain)
+                        settingsDivider
+                        HStack {
+                            Text("Achtergrond-sync")
+                                .font(.subheadline)
+                                .padding(.leading, 14)
+                            Spacer()
+                            Toggle("", isOn: $backgroundSyncEnabled)
+                                .labelsHidden()
+                                .tint(themeManager.primaryAccentColor)
+                                .padding(.trailing, 14)
+                        }
+                        .padding(.vertical, 12)
+                    }
+                    Text("Sleutels worden lokaal versleuteld in de iOS Keychain opgeslagen.")
+                        .font(.caption).foregroundColor(.secondary)
+                        .padding(.horizontal).padding(.top, 6)
+                    Spacer(minLength: 24)
+
+                    // ── NOTIFICATIES
+                    settingsSectionLabel("NOTIFICATIES")
+                    settingsCard {
+                        notifRow(icon: "bell.fill",     title: "Analyse na activiteit",
+                                 subtitle: "Coach-bericht na upload van een nieuwe workout",
+                                 binding: $notifPostWorkout)
+                        settingsDivider
+                        notifRow(icon: "moon.fill",     title: "Inactiviteitscheck",
+                                 subtitle: "Herinnering na 48 uur zonder beweging",
+                                 binding: $notifInactivity)
+                        settingsDivider
+                        notifRow(icon: "flag.fill",     title: "Doel-updates",
+                                 subtitle: "Voortgang richting weekdoel",
+                                 binding: $notifGoalUpdates)
+                        settingsDivider
+                        notifRow(icon: "chart.bar.fill", title: "Wekelijks rapport",
+                                 subtitle: "Elke zondag 20:00",
+                                 binding: $notifWeeklyReport)
+                    }
+                    Text("Gedetailleerde permissies beheer je in iOS Instellingen › VibeCoach.")
+                        .font(.caption).foregroundColor(.secondary)
+                        .padding(.horizontal).padding(.top, 6)
+                    Spacer(minLength: 24)
+
+                    // ── VERBINDINGSDETAILS
+                    settingsSectionLabel("VERBINDINGSDETAILS")
+                    settingsCard {
+                        Button {
+                            if isHealthKitLinked {
+                                if let url = URL(string: UIApplication.openSettingsURLString) {
+                                    UIApplication.shared.open(url)
+                                }
+                            } else { koppelAppleHealth() }
+                        } label: {
+                            SettingsRowV2(
+                                icon: "applewatch",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Apple HealthKit",
+                                subtitle: isHealthKitLinked ? "Laatste sync bekijken" : "Koppel Apple Health",
+                                value: "Beheer",
+                                hasChevron: true
+                            )
+                        }.buttonStyle(.plain)
+                        settingsDivider
+                        Button {
+                            stravaAuthService.isAuthenticated
+                                ? stravaAuthService.logout()
+                                : stravaAuthService.authenticate()
+                        } label: {
+                            SettingsRowV2(
+                                icon: "figure.run",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Strava",
+                                subtitle: stravaAuthService.isAuthenticated ? "Gekoppeld" : "Niet gekoppeld",
+                                value: "Beheer",
+                                hasChevron: true
+                            )
+                        }.buttonStyle(.plain)
+                    }
+                    .padding(.bottom, 24)
+
+                    // ── Developer Tools (behouden voor debug)
+                    #if targetEnvironment(simulator)
+                    settingsSectionLabel("DEVELOPER (SIMULATOR)")
+                    settingsCard {
+                        Button { generateDummyData() } label: {
+                            SettingsRowV2(icon: "hammer.fill", iconColor: .purple,
+                                          title: "Genereer Test Data")
+                        }.buttonStyle(.plain)
+                    }.padding(.bottom, 24)
+                    #endif
+
+                    #if DEBUG
+                    settingsSectionLabel("DEVELOPER (DEBUG)")
+                    settingsCard {
+                        Button {
+                            feedbackMessage = "Engines worden afgevuurd..."
+                            Task {
+                                await ProactiveNotificationService.shared.debugTriggerEngines()
+                                await MainActor.run { feedbackMessage = "Klaar! Controleer je notificaties." }
+                            }
+                        } label: {
+                            SettingsRowV2(icon: "bolt.fill", iconColor: .orange,
+                                          title: "Forceer Achtergrond Sync")
+                        }.buttonStyle(.plain)
+                        settingsDivider
+                        Button { removeDuplicateRecords() } label: {
+                            SettingsRowV2(icon: "trash.slash.fill", iconColor: .red,
+                                          title: "Verwijder Dubbele Activiteiten")
+                        }.buttonStyle(.plain)
+                    }.padding(.bottom, 24)
+                    #endif
+
+                    if let msg = feedbackMessage {
                         Text(msg)
-                            .foregroundColor(msg == "Opslaan mislukt." ? .red : .green)
+                            .font(.caption)
+                            .foregroundColor(msg.contains("mislukt") ? .red : .green)
+                            .padding(.horizontal)
+                            .padding(.bottom, 12)
                     }
+
+                    Spacer(minLength: 40)
                 }
-
-                #if targetEnvironment(simulator)
-                Section(header: Text("Developer Tools (Simulator Only)")) {
-                    Button("Genereer Test Data (Epic 12)") {
-                        generateDummyData()
-                    }
-                    .foregroundColor(.purple)
-                }
-                #endif
-
-                Section(
-                    header: Text("Data Beheer"),
-                    footer: Text("Verwijdert dubbele activiteiten met dezelfde ID die door een race-condition in de sync zijn ontstaan.").font(.caption)
-                ) {
-                    Button(action: {
-                        removeDuplicateRecords()
-                    }) {
-                        HStack {
-                            Image(systemName: "trash.slash")
-                                .foregroundColor(.red)
-                            Text("Verwijder Dubbele Activiteiten")
-                                .foregroundColor(.red)
-                        }
-                    }
-                }
-
-                #if DEBUG
-                Section(
-                    header: Text("Developer Tools (Debug)"),
-                    footer: Text("Simuleert exact de logica van Engine A (workout detectie) én Engine B (inactiviteitscheck). Reset de 24-uurs cooldown zodat de notificatie écht verstuurd wordt.").font(.caption)
-                ) {
-                    Button(action: {
-                        feedbackMessage = "Engines worden afgevuurd..."
-                        Task {
-                            await ProactiveNotificationService.shared.debugTriggerEngines()
-                            await MainActor.run {
-                                feedbackMessage = "Klaar! Controleer je notificaties."
-                            }
-                        }
-                    }) {
-                        HStack {
-                            Image(systemName: "bolt.fill")
-                                .foregroundColor(.orange)
-                            Text("Forceer Achtergrond Sync (Debug)")
-                                .foregroundColor(.orange)
-                        }
-                    }
-
-                    // Epic 14: Bereken Vibe Score en sla op in SwiftData (upsert voor vandaag)
-                    Button(action: {
-                        feedbackMessage = "Vibe Score berekenen..."
-                        Task {
-                            let hkManager = HealthKitManager()
-
-                            // Haal de drie inputs parallel op
-                            async let hrvTask = try? hkManager.fetchRecentHRV()
-                            async let baselineTask = try? hkManager.fetchHRVBaseline(days: 7)
-                            async let sleepTask = try? hkManager.fetchLastNightSleep()
-                            let (hrv, baseline, sleep) = await (hrvTask, baselineTask, sleepTask)
-
-                            await MainActor.run {
-                                guard let sleepHours = sleep, let currentHRV = hrv, let hrvBaseline = baseline else {
-                                    // Geef aan welke data ontbreekt voor duidelijke debugging
-                                    var missing: [String] = []
-                                    if sleep == nil { missing.append("Slaap") }
-                                    if hrv == nil { missing.append("HRV") }
-                                    if baseline == nil { missing.append("HRV-baseline") }
-                                    feedbackMessage = "Geen data: \(missing.joined(separator: ", ")) ontbreekt."
-                                    return
-                                }
-
-                                let score = ReadinessCalculator.calculate(
-                                    sleepHours: sleepHours,
-                                    hrv: currentHRV,
-                                    hrvBaseline: hrvBaseline
-                                )
-
-                                // Upsert: zoek een bestaand record voor vandaag en overschrijf, anders nieuw aanmaken
-                                let todayStart = Calendar.current.startOfDay(for: Date())
-                                let tomorrowStart = Calendar.current.date(byAdding: .day, value: 1, to: todayStart)!
-                                let descriptor = FetchDescriptor<DailyReadiness>(
-                                    predicate: #Predicate { $0.date >= todayStart && $0.date < tomorrowStart }
-                                )
-                                if let existing = try? modelContext.fetch(descriptor), let record = existing.first {
-                                    // Record bestaat al voor vandaag — bijwerken
-                                    record.sleepHours = sleepHours
-                                    record.hrv = currentHRV
-                                    record.readinessScore = score
-                                } else {
-                                    // Nieuw record aanmaken voor vandaag
-                                    let record = DailyReadiness(
-                                        date: Date(),
-                                        sleepHours: sleepHours,
-                                        hrv: currentHRV,
-                                        readinessScore: score
-                                    )
-                                    modelContext.insert(record)
-                                }
-                                try? modelContext.save()
-
-                                let hrs = Int(sleepHours)
-                                let mins = Int((sleepHours - Double(hrs)) * 60)
-                                let message = "Vibe Score: \(score)/100 (Slaap: \(hrs)u\(mins)m, HRV: \(String(format: "%.1f", currentHRV))ms)"
-                                feedbackMessage = message
-                                print("✅ [Epic 14] \(message)")
-                            }
-                        }
-                    }) {
-                        HStack {
-                            Image(systemName: "heart.text.square")
-                                .foregroundColor(.purple)
-                            Text("Bereken Vibe Score (Epic 14)")
-                                .foregroundColor(.purple)
-                        }
-                    }
-                }
-                #endif
+            }
+            .background(Color(.secondarySystemBackground).ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
+            .onAppear { loadTokens() }
         }
-        .scrollContentBackground(.hidden)
-        .background(themeManager.backgroundGradient.ignoresSafeArea())
-        .navigationTitle("Instellingen")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbar {
-            // Controleer of de view is gepresenteerd als sheet (via onDismiss/dismiss), of als root tab.
-            // Aangezien het nu een Tab is, is de "Opslaan" knop (die dismiss() aanroept) overbodig.
-            // We verbergen de knop voor een cleanere UI. Instellingen worden in de AppStorage / Keychain
-            // toch al opgeslagen bij interactie (behalve tokens, maar dat gaat via webflow).
+    }
+
+    // MARK: - V2.0 Helper views
+
+    private var settingsDivider: some View {
+        Divider().padding(.leading, 60)
+    }
+
+    @ViewBuilder
+    private func settingsSectionLabel(_ label: String) -> some View {
+        Text(label)
+            .font(.caption).fontWeight(.semibold)
+            .foregroundColor(.secondary).kerning(0.5)
+            .padding(.horizontal)
+            .padding(.bottom, 8)
+    }
+
+    @ViewBuilder
+    private func settingsCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(spacing: 0) {
+            content()
         }
-        .onAppear {
-            loadTokens()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
+        .padding(.horizontal)
+    }
+
+    private func notifRow(icon: String, title: String, subtitle: String, binding: Binding<Bool>) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(themeManager.primaryAccentColor.opacity(0.12))
+                    .frame(width: 34, height: 34)
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(themeManager.primaryAccentColor)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.subheadline).fontWeight(.medium)
+                Text(subtitle).font(.caption).foregroundColor(.secondary)
+            }
+            Spacer()
+            Toggle("", isOn: binding)
+                .labelsHidden()
+                .tint(themeManager.primaryAccentColor)
+        }
+        .padding(.vertical, 11)
+        .padding(.horizontal, 14)
+    }
+
+    // MARK: - Helpers
+
+    private var userInitials: String {
+        let parts = userName.split(separator: " ")
+        return parts.compactMap { $0.first }.prefix(2).map(String.init).joined().uppercased()
+    }
+
+    private var demographicsLine: String {
+        guard let p = physicalProfile else { return "Profiel laden…" }
+        return "\(p.ageYears) j · \(physSexLabel(p.sex)) · \(String(format: "%.0f", p.weightKg)) kg · \(String(format: "%.0f", p.heightCm)) cm"
+    }
+
+    private func physSexLabel(_ sex: BiologicalSex) -> String {
+        switch sex {
+        case .male:    return "Man"
+        case .female:  return "Vrouw"
+        case .other:   return "Divers"
+        case .unknown: return "Onbekend"
         }
     }
 
@@ -598,6 +773,114 @@ struct SettingsView: View {
         }
     }
     #endif
+}
+
+// MARK: - V2.0 Componenten
+
+struct SettingsConnectionCard: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let isConnected: Bool
+    let accentColor: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(accentColor.opacity(0.12))
+                        .frame(width: 34, height: 34)
+                    Image(systemName: icon)
+                        .font(.system(size: 14))
+                        .foregroundColor(accentColor)
+                }
+                Spacer()
+                Circle()
+                    .fill(isConnected ? Color.green : Color(.systemGray4))
+                    .frame(width: 8, height: 8)
+            }
+            Text(title)
+                .font(.subheadline).fontWeight(.semibold)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .lineLimit(1)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
+    }
+}
+
+struct SettingsRowV2: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    var subtitle: String? = nil
+    var value: String? = nil
+    var hasChevron: Bool = false
+    var isLocked: Bool = false
+    var isWarning: Bool = false
+    var showHealthKitBadge: Bool = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isWarning ? Color.orange.opacity(0.12) : iconColor.opacity(0.12))
+                    .frame(width: 34, height: 34)
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(isWarning ? .orange : iconColor)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(isWarning ? .orange : .primary)
+                if let sub = subtitle {
+                    Text(sub)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            Spacer()
+            if let val = value {
+                Text(val)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            if showHealthKitBadge {
+                Image(systemName: "applewatch")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            if isLocked {
+                Image(systemName: "lock.fill")
+                    .font(.caption)
+                    .foregroundColor(Color(.systemGray3))
+            } else if hasChevron {
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(Color(.systemGray3))
+            }
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 14)
+        .background(isWarning ? Color.orange.opacity(0.05) : Color.clear)
+    }
+}
+
+struct PhysicalProfileEditView: View {
+    var body: some View {
+        Form {
+            PhysicalProfileSection()
+        }
+        .navigationTitle("Fysiologisch Profiel")
+    }
 }
 
 // MARK: - Epic 29 Sprint 2 & 3: Thema Picker Sectie
@@ -1101,61 +1384,321 @@ struct AIProviderSettingsView: View {
     }
 }
 
-/// Lijst met actieve voorkeuren en regels van de gebruiker (AI Context).
+// MARK: - V2.0 Geheugen / Memory View
+
 struct PreferencesListView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \UserPreference.createdAt, order: .reverse) private var preferences: [UserPreference]
+    @EnvironmentObject private var themeManager: ThemeManager
+    @AppStorage("vibecoach_userName") private var userName: String = ""
 
-    var body: some View {
-        List {
-            if preferences.isEmpty {
-                Text("Geen voorkeuren gevonden. Vertel de coach in de chat wat je wensen of blessures zijn, en hij onthoudt het hier!")
-                    .foregroundColor(.secondary)
-                    .italic()
-            } else {
-                ForEach(preferences) { preference in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(preference.preferenceText)
-                                .font(.body)
-                                .foregroundColor(.primary)
+    @Query(sort: \UserPreference.createdAt, order: .reverse) private var allPreferences: [UserPreference]
 
-                            Text("Gedetecteerd op: \(preference.createdAt, formatter: itemFormatter)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+    @State private var selectedSegment: MemorySegment = .pins
+    @State private var selectedFilter: MemoryTypeFilter = .all
 
-                            if let expirationDate = preference.expirationDate {
-                                let isExpired = expirationDate < Date()
-                                Text(isExpired ? "Verlopen" : "Verloopt op: \(expirationDate, formatter: itemFormatter)")
-                                    .font(.caption)
-                                    .foregroundColor(isExpired ? .red : .orange)
-                            }
-                        }
-                        Spacer()
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
+    enum MemorySegment { case pins, history }
+    enum MemoryTypeFilter: CaseIterable {
+        case all, injury, preference, context
+        var label: String {
+            switch self { case .all: "Alles"; case .injury: "Blessure"; case .preference: "Voorkeur"; case .context: "Context" }
         }
-        .navigationTitle("Coach Geheugen")
-        .toolbar {
-            EditButton()
+        var icon: String {
+            switch self { case .all: "square.grid.2x2"; case .injury: "exclamationmark.triangle"; case .preference: "star"; case .context: "info.circle" }
         }
     }
 
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(preferences[index])
+    private var activePreferences: [UserPreference] {
+        allPreferences.filter { $0.isActive && ($0.expirationDate == nil || $0.expirationDate! > Date()) }
+    }
+
+    private var historicPreferences: [UserPreference] {
+        allPreferences.filter { !$0.isActive || ($0.expirationDate.map { $0 < Date() } ?? false) }
+    }
+
+    private var filteredPreferences: [UserPreference] {
+        guard selectedFilter != .all else { return activePreferences }
+        return activePreferences.filter { memoryType(for: $0.preferenceText) == selectedFilter }
+    }
+
+    private func countFor(_ filter: MemoryTypeFilter) -> Int {
+        filter == .all ? activePreferences.count : activePreferences.filter { memoryType(for: $0.preferenceText) == filter }.count
+    }
+
+    private var userInitials: String {
+        userName.split(separator: " ").compactMap(\.first).prefix(2).map(String.init).joined().uppercased()
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+
+                    // ── Header
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("WAT IK ONTHOU · \(activePreferences.count) ACTIEVE · \(historicPreferences.count) VERLOPEN")
+                                .font(.caption).fontWeight(.semibold)
+                                .foregroundColor(.secondary).kerning(0.4)
+                            Text("Geheugen")
+                                .font(.largeTitle).fontWeight(.bold)
+                        }
+                        Spacer()
+                        ZStack {
+                            Circle().fill(themeManager.primaryAccentColor.opacity(0.18)).frame(width: 40, height: 40)
+                            Text(userInitials.isEmpty ? "?" : userInitials)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(themeManager.primaryAccentColor)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 56)
+                    .padding(.bottom, 20)
+
+                    // ── Segmented Control
+                    HStack(spacing: 0) {
+                        ForEach([MemorySegment.pins, .history], id: \.self) { seg in
+                            let isSelected = selectedSegment == seg
+                            Button { withAnimation(.easeInOut(duration: 0.2)) { selectedSegment = seg } } label: {
+                                Text(seg == .pins ? "PINS & CONTEXT" : "HISTORIE")
+                                    .font(.caption).fontWeight(.semibold).kerning(0.3)
+                                    .foregroundColor(isSelected ? .primary : .secondary)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                            }
+                        }
+                    }
+                    .background(
+                        GeometryReader { geo in
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemBackground))
+                                .frame(width: geo.size.width / 2)
+                                .offset(x: selectedSegment == .pins ? 0 : geo.size.width / 2)
+                                .animation(.easeInOut(duration: 0.2), value: selectedSegment)
+                        }
+                    )
+                    .background(Color(.systemGray5))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(.horizontal)
+                    .padding(.bottom, 16)
+
+                    if selectedSegment == .pins {
+                        // ── Filter Pills
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(MemoryTypeFilter.allCases, id: \.self) { filter in
+                                    let isSelected = selectedFilter == filter
+                                    let count = countFor(filter)
+                                    Button { withAnimation { selectedFilter = filter } } label: {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: filter.icon).font(.caption2)
+                                            Text("\(filter.label) · \(count)")
+                                                .font(.caption).fontWeight(.semibold)
+                                        }
+                                        .foregroundColor(isSelected ? .white : .primary)
+                                        .padding(.horizontal, 12).padding(.vertical, 7)
+                                        .background(isSelected ? themeManager.primaryAccentColor : Color(.systemBackground))
+                                        .clipShape(Capsule())
+                                        .shadow(color: Color(.label).opacity(isSelected ? 0 : 0.05), radius: 4, x: 0, y: 1)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                        .padding(.bottom, 16)
+
+                        // ── Preference Cards
+                        if filteredPreferences.isEmpty {
+                            VStack(spacing: 12) {
+                                Image(systemName: "brain").font(.system(size: 40)).foregroundColor(.secondary)
+                                Text("Nog geen herinneringen")
+                                    .font(.headline).foregroundColor(.secondary)
+                                Text("Vertel de coach in de chat over je blessures, voorkeuren of doelen.")
+                                    .font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(40)
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(filteredPreferences) { pref in
+                                    MemoryPreferenceCard(
+                                        preference: pref,
+                                        accentColor: themeManager.primaryAccentColor
+                                    ) { delete(pref) }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+
+                    } else {
+                        // ── Historie tab
+                        if historicPreferences.isEmpty {
+                            Text("Geen verlopen herinneringen.")
+                                .font(.subheadline).foregroundColor(.secondary)
+                                .padding()
+                        } else {
+                            LazyVStack(spacing: 0) {
+                                ForEach(historicPreferences) { pref in
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "clock.arrow.circlepath")
+                                            .foregroundColor(.secondary).font(.caption)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(pref.preferenceText)
+                                                .font(.subheadline).lineLimit(2)
+                                            Text(pref.createdAt, formatter: memoryDateFormatter)
+                                                .font(.caption).foregroundColor(.secondary)
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 12)
+                                    .background(Color(.systemBackground))
+                                    if pref.id != historicPreferences.last?.id {
+                                        Divider().padding(.leading, 48)
+                                    }
+                                }
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
+                            .padding(.horizontal)
+                        }
+                    }
+
+                    Spacer(minLength: 40)
+                }
             }
-            try? modelContext.save()
+            .background(Color(.secondarySystemBackground).ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
         }
+    }
+
+    private func delete(_ pref: UserPreference) {
+        modelContext.delete(pref)
+        try? modelContext.save()
     }
 }
 
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .medium
-    formatter.timeStyle = .none
-    return formatter
+// MARK: - Memory type classificatie (keyword-gebaseerd)
+
+private enum MemoryType: Equatable { case injury, preference, context }
+
+private func memoryType(for text: String) -> PreferencesListView.MemoryTypeFilter {
+    let lower = text.lowercased()
+    if lower.contains("blessure") || lower.contains("pijn") || lower.contains("last ") || lower.contains("stijf") || lower.contains("geblesseerd") || lower.contains("klacht") {
+        return .injury
+    } else if lower.contains("geen ") || lower.contains("nooit") || lower.contains("niet ") || lower.contains("voorkeur") || lower.contains("rustig") {
+        return .preference
+    }
+    return .context
+}
+
+private func memoryTypeStyle(for text: String) -> (label: String, color: Color, icon: String) {
+    switch memoryType(for: text) {
+    case .injury:     return ("Blessure", .orange, "exclamationmark.triangle")
+    case .preference: return ("Voorkeur", Color(red: 0.3, green: 0.55, blue: 0.3), "star")
+    case .context:    return ("Context",  Color(red: 0.35, green: 0.55, blue: 0.85), "info.circle")
+    case .all:        return ("Context",  Color(red: 0.35, green: 0.55, blue: 0.85), "info.circle")
+    }
+}
+
+// MARK: - MemoryPreferenceCard
+
+struct MemoryPreferenceCard: View {
+    let preference: UserPreference
+    let accentColor: Color
+    let onDelete: () -> Void
+
+    private var typeStyle: (label: String, color: Color, icon: String) { memoryTypeStyle(for: preference.preferenceText) }
+    private var isPinned: Bool { preference.expirationDate == nil }
+
+    private var expirationBadgeLabel: String? {
+        guard let exp = preference.expirationDate, exp > Date() else { return nil }
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "nl_NL")
+        df.dateFormat = "d MMM"
+        return "tot \(df.string(from: exp))"
+    }
+
+    private var createdLabel: String {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "nl_NL")
+        df.dateFormat = "d MMM yyyy"
+        return df.string(from: preference.createdAt)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+
+            // Badges + menu
+            HStack(spacing: 6) {
+                Label(typeStyle.label, systemImage: typeStyle.icon)
+                    .font(.caption).fontWeight(.semibold)
+                    .foregroundColor(typeStyle.color)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(typeStyle.color.opacity(0.12))
+                    .clipShape(Capsule())
+
+                if let expLabel = expirationBadgeLabel {
+                    Label(expLabel, systemImage: "calendar")
+                        .font(.caption).fontWeight(.medium)
+                        .foregroundColor(.orange)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Color.orange.opacity(0.10))
+                        .clipShape(Capsule())
+                } else if isPinned {
+                    Label("Vastgepind", systemImage: "star.fill")
+                        .font(.caption).fontWeight(.medium)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Color(.systemGray5))
+                        .clipShape(Capsule())
+                }
+
+                Spacer()
+
+                Menu {
+                    Button(role: .destructive, action: onDelete) {
+                        Label("Verwijder", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundColor(.secondary)
+                        .frame(width: 32, height: 32)
+                }
+            }
+
+            // Hoofdtekst
+            Text(preference.preferenceText)
+                .font(.headline)
+                .foregroundColor(.primary)
+
+            // Footer
+            HStack {
+                Text("Onthouden op \(createdLabel)")
+                    .font(.caption).foregroundColor(.secondary)
+                Spacer()
+            }
+        }
+        .padding(16)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
+    }
+}
+
+private let memoryDateFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.locale = Locale(identifier: "nl_NL")
+    f.dateFormat = "d MMM yyyy"
+    return f
 }()
+
+// MARK: - Bundle helpers
+
+private extension Bundle {
+    var appVersion: String {
+        infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+    }
+    var buildNumber: String {
+        infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    }
+}

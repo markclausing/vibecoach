@@ -323,6 +323,7 @@ struct AthleticProfile {
     var averageWeeklyVolumeInSeconds: Int
     var daysSinceLastTraining: Int
     var isRecoveryNeeded: Bool // SPRINT 6.3 - Proactieve Waarschuwing status
+    var recoveryReason: String? // Reden voor het hersteladvies (welke regel heeft getriggerd)
     var averagePacePerKmInSeconds: Int? // SPRINT 9.3 - Gemiddeld hardlooptempo
 }
 
@@ -364,6 +365,7 @@ class AthleticProfileManager {
                                    averageWeeklyVolumeInSeconds: 0,
                                    daysSinceLastTraining: daysSinceLast,
                                    isRecoveryNeeded: false,
+                                   recoveryReason: nil,
                                    averagePacePerKmInSeconds: nil)
         }
 
@@ -373,6 +375,7 @@ class AthleticProfileManager {
 
         // 4. SPRINT 6.3: Overtrainingslogica
         var needsRecovery = false
+        var recoveryReason: String? = nil
 
         // Bereken volume van *alleen* de afgelopen week
         guard let oneWeekAgo = Calendar.current.date(byAdding: .day, value: -7, to: now) else {
@@ -381,29 +384,31 @@ class AthleticProfileManager {
                                    averageWeeklyVolumeInSeconds: averageWeeklyVolume,
                                    daysSinceLastTraining: daysSinceLast,
                                    isRecoveryNeeded: false,
+                                   recoveryReason: nil,
                                    averagePacePerKmInSeconds: nil)
         }
         let thisWeekActivities = recentActivities.filter { $0.startDate >= oneWeekAgo }
         let thisWeekVolume = thisWeekActivities.reduce(0) { $0 + $1.movingTime }
 
         // Regel 1: Volume deze week is > 50% hoger dan het gemiddelde
-        // Zorg dat we niet delen door 0, en stel een ondergrens (b.v. average minimaal 2 uur) om false positives bij beginners te voorkomen
         if averageWeeklyVolume > 7200 {
             let ratio = Double(thisWeekVolume) / Double(averageWeeklyVolume)
             if ratio > 1.5 {
                 needsRecovery = true
+                let pct = Int((ratio - 1.0) * 100)
+                recoveryReason = "Volume deze week is \(pct)% boven je gemiddelde. Plan 1–2 rustdagen."
             }
         }
 
         // Regel 2: Traint al 4 of meer dagen op rij
-        // Voor een simpeler algoritme: als er 4 trainingen zijn in de afgelopen 4 dagen (we negeren multi-a-days voor deze simpele check)
         guard let fourDaysAgo = Calendar.current.date(byAdding: .day, value: -4, to: now) else {
-            return AthleticProfile(peakDistanceInMeters: peakDistance, peakDurationInSeconds: peakDuration, averageWeeklyVolumeInSeconds: averageWeeklyVolume, daysSinceLastTraining: max(0, daysSinceLast), isRecoveryNeeded: needsRecovery, averagePacePerKmInSeconds: nil)
+            return AthleticProfile(peakDistanceInMeters: peakDistance, peakDurationInSeconds: peakDuration, averageWeeklyVolumeInSeconds: averageWeeklyVolume, daysSinceLastTraining: max(0, daysSinceLast), isRecoveryNeeded: needsRecovery, recoveryReason: recoveryReason, averagePacePerKmInSeconds: nil)
         }
         let daysTrainedInLast4Days = Set(thisWeekActivities.filter { $0.startDate >= fourDaysAgo }.map { Calendar.current.startOfDay(for: $0.startDate) }).count
 
         if daysTrainedInLast4Days >= 4 {
             needsRecovery = true
+            recoveryReason = "\(daysTrainedInLast4Days) dagen op rij getraind. Neem vandaag rust."
         }
 
         // 5. SPRINT 9.3: Gemiddeld tempo berekenen (baseline pace)
@@ -429,6 +434,7 @@ class AthleticProfileManager {
             averageWeeklyVolumeInSeconds: averageWeeklyVolume,
             daysSinceLastTraining: max(0, daysSinceLast),
             isRecoveryNeeded: needsRecovery,
+            recoveryReason: recoveryReason,
             averagePacePerKmInSeconds: averagePace
         )
     }
@@ -471,6 +477,30 @@ final class HealthKitManager: @unchecked Sendable {
 
         healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
             completion(success, error)
+        }
+    }
+
+    /// Berekent het gemiddeld wekelijks trainingsvolume (in seconden) direct vanuit HealthKit.
+    /// Vraagt geen SwiftData aan — altijd actuele data.
+    func fetchAverageWeeklyDurationSeconds(weeks: Int = 4) async -> Int {
+        guard HKHealthStore.isHealthDataAvailable() else { return 0 }
+        let now = Date()
+        guard let startDate = Calendar.current.date(byAdding: .weekOfYear, value: -weeks, to: now) else { return 0 }
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: HKObjectType.workoutType(),
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [sortDescriptor]
+            ) { _, samples, _ in
+                let workouts = samples as? [HKWorkout] ?? []
+                let totalSeconds = Int(workouts.reduce(0.0) { $0 + $1.duration })
+                continuation.resume(returning: totalSeconds / max(1, weeks))
+            }
+            healthStore.execute(query)
         }
     }
 
@@ -774,10 +804,16 @@ final class HealthKitManager: @unchecked Sendable {
                 let totalSleepSeconds: Double
                 if stageSamples.isEmpty {
                     // Fase 2 (fallback): ouder Apple Watch-model — gebruik generieke .asleep waarde.
+                    let asleepValue: Int
+                    if #available(iOS 16.0, *) {
+                        asleepValue = HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue
+                    } else {
+                        asleepValue = HKCategoryValueSleepAnalysis.asleep.rawValue
+                    }
                     totalSleepSeconds = sleepSamples
-                        .filter { $0.value == HKCategoryValueSleepAnalysis.asleep.rawValue }
+                        .filter { $0.value == asleepValue }
                         .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
-                    print("🔄 [Slaap] Geen stage-data — fallback naar generieke .asleep waarde")
+                    print("🔄 [Slaap] Geen stage-data — fallback naar generieke slaapwaarde")
                 } else {
                     // Moderne Apple Watch: som Core + Deep + REM
                     totalSleepSeconds = stageSamples
@@ -871,6 +907,50 @@ final class HealthKitManager: @unchecked Sendable {
 
                 print("🌙 [Slaapfases] Diep: \(stages.deepMinutes)m · REM: \(stages.remMinutes)m · Kern: \(stages.coreMinutes)m · Ratio diep: \(String(format: "%.0f%%", stages.deepRatio * 100))")
                 continuation.resume(returning: stages)
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// Haalt de meest recente VO2max schatting op uit HealthKit (ml/kg/min). Geeft nil als geen data.
+    func fetchVO2Max() async -> Double? {
+        guard HKHealthStore.isHealthDataAvailable(),
+              let type = HKQuantityType.quantityType(forIdentifier: .vo2Max) else { return nil }
+        let now = Date()
+        let pastDate = Calendar.current.date(byAdding: .month, value: -6, to: now)!
+        let predicate = HKQuery.predicateForSamples(withStart: pastDate, end: now, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(sampleType: type, predicate: predicate, limit: 1, sortDescriptors: [sortDescriptor]) { _, samples, _ in
+                guard let sample = samples?.first as? HKQuantitySample else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let vo2 = sample.quantity.doubleValue(for: HKUnit(from: "ml/kg·min"))
+                continuation.resume(returning: vo2)
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// Haalt de meest recente rusthartslag op uit HealthKit. Geeft nil terug als er geen meting is.
+    func fetchRestingHeartRate() async -> Double? {
+        guard HKHealthStore.isHealthDataAvailable() else { return nil }
+        let type = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
+        let now = Date()
+        let pastDate = Calendar.current.date(byAdding: .month, value: -1, to: now)!
+        let predicate = HKQuery.predicateForSamples(withStart: pastDate, end: now, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(sampleType: type, predicate: predicate, limit: 1, sortDescriptors: [sortDescriptor]) { _, samples, _ in
+                guard let sample = samples?.first as? HKQuantitySample else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let bpm = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                continuation.resume(returning: bpm)
             }
             healthStore.execute(query)
         }
