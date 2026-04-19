@@ -804,10 +804,16 @@ final class HealthKitManager: @unchecked Sendable {
                 let totalSleepSeconds: Double
                 if stageSamples.isEmpty {
                     // Fase 2 (fallback): ouder Apple Watch-model — gebruik generieke .asleep waarde.
+                    let asleepValue: Int
+                    if #available(iOS 16.0, *) {
+                        asleepValue = HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue
+                    } else {
+                        asleepValue = HKCategoryValueSleepAnalysis.asleep.rawValue
+                    }
                     totalSleepSeconds = sleepSamples
-                        .filter { $0.value == HKCategoryValueSleepAnalysis.asleep.rawValue }
+                        .filter { $0.value == asleepValue }
                         .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
-                    print("🔄 [Slaap] Geen stage-data — fallback naar generieke .asleep waarde")
+                    print("🔄 [Slaap] Geen stage-data — fallback naar generieke slaapwaarde")
                 } else {
                     // Moderne Apple Watch: som Core + Deep + REM
                     totalSleepSeconds = stageSamples

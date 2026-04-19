@@ -494,7 +494,7 @@ struct CoachV2HeaderView: View {
                 Circle()
                     .fill(accentColor.opacity(0.12))
                     .frame(width: 52, height: 52)
-                Image(systemName: "bubble.left.and.person.fill")
+                Image(systemName: "person.fill")
                     .font(.system(size: 22))
                     .foregroundColor(accentColor)
                 Circle()
@@ -924,7 +924,7 @@ struct WorkoutCardView: View {
                         Button(role: .destructive, action: {
                             isProcessingAction = true
                             onSkip?()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { isProcessingAction = false }
+                            Task { @MainActor in try? await Task.sleep(nanoseconds: 5_000_000_000); isProcessingAction = false }
                         }) {
                             Label("Overslaan", systemImage: "trash")
                         }
@@ -932,7 +932,7 @@ struct WorkoutCardView: View {
                         Button(action: {
                             isProcessingAction = true
                             onAlternative?()
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { isProcessingAction = false }
+                            Task { @MainActor in try? await Task.sleep(nanoseconds: 5_000_000_000); isProcessingAction = false }
                         }) {
                             Label("Geef alternatief", systemImage: "arrow.triangle.2.circlepath")
                         }
