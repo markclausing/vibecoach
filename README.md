@@ -252,6 +252,20 @@ Van gemiddelden naar granulaire fysiologische patronen. De coach analyseert niet
 
 ---
 
+### ⏳ Epic #33: Geavanceerde Sessie-architectuur (Backlog)
+
+Trainingen zijn geen uniforme 'workouts' meer, maar sessies met een expliciete fysiologische intentie. De app onderscheidt sessie-typen, laat de gebruiker sessies flexibel ruilen zonder de weekbelasting te verpesten, omarmt sociale ritten als volwaardige herstel-bouwstenen en evalueert achteraf of de intentie ook daadwerkelijk is uitgevoerd.
+
+* **⏳ Story 33.1 — Sessie-Type Taxonomie:** Breid het datamodel uit zodat elke training een specifiek type kan hebben: `VO2maxSession`, `TempoRun`, `LongRun`, `Intervals`, `SocialRideRun`, en `Recovery`. Type-veilige enums conform CLAUDE.md §2, direct gemapt bij het opslaan — geen ruwe strings.
+
+* **⏳ Story 33.2 — Flexibele Planning (The 'Swap'):** Ontwikkel een UI-actie waarmee de gebruiker een geplande sessie kan 'swappen'. Bijvoorbeeld: vervang een voorgestelde 'Tempo' door een 'Social Ride'. De coach herberekent de resterende weekbelasting (TRIMP) automatisch en past de overige sessies aan zodat het weekdoel nog steeds binnen bereik blijft.
+
+* **⏳ Story 33.3 — Sociale Modus:** Implementeer een specifieke logica voor sociale ritten. De coach beoordeelt hierbij de fysiologische data (HRV/HR) minder streng op zones en focust meer op de positieve impact op mentaal herstel en de Vibe Score. Een sociale rit mag de trainingsdag dus niet 'verpesten' in de analyse.
+
+* **⏳ Story 33.4 — Intentie vs. Uitvoering:** Update de analyse-engine. Na de training vergelijkt de coach het geplande type (bijv. VO2max) met de werkelijkheid (bijv. was de hartslag hoog genoeg, de interval-verhouding gehaald?) en geeft daar specifieke feedback op — inclusief voorstel tot bijsturing als de intentie structureel niet wordt waargemaakt.
+
+---
+
 ## Testing Push Notifications in Simulator
 Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de naam `test-push.apns` aanmaken en deze letterlijk naar de draaiende simulator slepen (Drag & Drop).
 
