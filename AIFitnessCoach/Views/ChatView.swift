@@ -36,185 +36,293 @@ struct ChatView: View {
         }
     }
 
+    // MARK: - Sprint 2 Part 1: Dummy data voor UI-preview
+
+    private let dummySummary = "Goed bezig deze week — je langste rit (74 km) én alle TRIMP-doelen gehaald. Ik zie wel een lichte kuitblessure (4/10); daarom hou ik vandaag en morgen rust aan en verschuif ik je fietstraining van maandag naar woensdag."
+
+    private let dummyInsights = [
+        "Je hebt deze week consistent boven doel gezeten (TRIMP 520/500) en je kuit meldt 4/10.",
+        "HRV dipte afgelopen 2 nachten met 8 ms.",
+        "Je slaapkwaliteit was gemiddeld 7,2 uur — voldoende voor herstel.",
+        "Trainingsbelasting is deze fase 12% boven gemiddeld voor Build Week 2."
+    ]
+
+    private let dummyAdjustments: [PlanAdjustment] = [
+        PlanAdjustment(dayAbbr: "MA", dayNum: 21, original: "Fietsrit · Z2 · 45 min", replacement: "Indoor trainer · Z1–Z2 · 30 min"),
+        PlanAdjustment(dayAbbr: "WO", dayNum: 23, original: "Fietsrit · Z2 · 45 min", replacement: "Duurrit · Z2 · 75 min")
+    ]
+
+    private let dummyMemory = "Kuitblessure 4/10 — rust tot 0/10"
+
+    private let suggestionChips = [
+        "Wat moet ik morgen doen?",
+        "Hoe is mijn herstel?",
+        "Pas mijn plan aan",
+        "Verklaar mijn HRV"
+    ]
+
+    // MARK: - Fase-label uit doelen
+
+    private var coachPhaseLabel: String {
+        let goal = goals.first(where: { !$0.isCompleted })
+        guard let phase = goal?.currentPhase else { return "Kent je plan" }
+        let weeksRemaining = goal.flatMap { g -> Double? in
+            guard g.targetDate > Date() else { return nil }
+            return g.targetDate.timeIntervalSince(Date()) / (7 * 86400)
+        } ?? 0
+        let weekInPhase: Int
+        switch phase {
+        case .buildPhase:  weekInPhase = max(1, Int(12 - weeksRemaining) + 1)
+        case .peakPhase:   weekInPhase = max(1, Int(4  - weeksRemaining) + 1)
+        case .tapering:    weekInPhase = max(1, Int(2  - weeksRemaining) + 1)
+        default:           weekInPhase = 1
+        }
+        let totalWeeks: Int
+        switch phase {
+        case .buildPhase:  totalWeeks = 8
+        case .peakPhase:   totalWeeks = 2
+        case .tapering:    totalWeeks = 2
+        default:           totalWeeks = max(1, Int((goal?.targetDate.timeIntervalSince(goal?.createdAt ?? Date()) ?? 0) / (7 * 86400)) - 12)
+        }
+        return "Kent je plan • \(phase.displayName) • wk \(weekInPhase)/\(totalWeeks)"
+    }
+
+    // MARK: - Body
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Epic 20: BYOK — toon lege staat als er geen API-sleutel is geconfigureerd.
+
+                // ── V2 Custom header
+                CoachV2HeaderView(
+                    phaseLabel: coachPhaseLabel,
+                    accentColor: themeManager.primaryAccentColor
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 56)
+                .padding(.bottom, 12)
+                .background(Color(.secondarySystemBackground))
+
                 if !viewModel.hasAPIKey {
                     NoAPIKeyView()
                 } else {
 
-                // SPRINT 6.3 - Proactieve Waarschuwing UI (compacter + dismissable)
-                if currentProfile?.isRecoveryNeeded == true && !warningDismissed {
-                    HStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.caption)
-                        Text("Trainingsvolume te hoog — neem rust.")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                        Spacer()
-                        Button {
-                            withAnimation(.easeOut(duration: 0.2)) {
-                                warningDismissed = true
+                    // Waarschuwingsbanner (behouden)
+                    if currentProfile?.isRecoveryNeeded == true && !warningDismissed {
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill").font(.caption)
+                            Text("Trainingsvolume te hoog — neem rust.")
+                                .font(.caption).fontWeight(.medium)
+                            Spacer()
+                            Button {
+                                withAnimation(.easeOut(duration: 0.2)) { warningDismissed = true }
+                            } label: {
+                                Image(systemName: "xmark").font(.caption2).foregroundStyle(.secondary)
                             }
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
                         }
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(.ultraThinMaterial)
+                        .overlay(Color.orange.opacity(0.10))
+                        .foregroundStyle(.primary)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(.ultraThinMaterial)
-                    .overlay(Color.orange.opacity(0.10))
-                    .foregroundStyle(.primary)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                }
 
-                // Lijst met chatberichten
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            ForEach(viewModel.messages) { message in
-                                MessageBubble(message: message, onSkipWorkout: { workout in
-                                    refreshProfileContext()
-                                    viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                                }, onAlternativeWorkout: { workout in
-                                    refreshProfileContext()
-                                    viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                                }, onRetry: {
-                                    refreshProfileContext()
-                                    viewModel.retryLastMessage(contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                                })
-                                .id(message.id)
-                            }
+                    // ── Scroll area
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            VStack(spacing: 12) {
 
-                            // Laadindicator (toont retry-status als de server overbelast is)
-                            if viewModel.isTyping {
-                                HStack {
-                                    ProgressView()
-                                        .padding(.trailing, 8)
-                                    Text(viewModel.retryStatusMessage.isEmpty
-                                         ? "Coach is aan het typen..."
-                                         : viewModel.retryStatusMessage)
-                                        .font(.caption)
-                                        .foregroundColor(viewModel.retryStatusMessage.isEmpty ? .gray : .orange)
+                                // ── V2 coach response kaarten (Sprint 2 Part 1: dummy data)
+                                CoachTextCard(
+                                    text: dummySummary,
+                                    accentColor: themeManager.primaryAccentColor
+                                )
+
+                                CoachInsightCard(
+                                    insights: dummyInsights,
+                                    accentColor: themeManager.primaryAccentColor
+                                )
+
+                                PlanAdjustmentCard(
+                                    adjustments: dummyAdjustments,
+                                    accentColor: themeManager.primaryAccentColor,
+                                    onApply: {},
+                                    onView: {}
+                                )
+
+                                MemoryContextCard(
+                                    text: dummyMemory,
+                                    accentColor: themeManager.primaryAccentColor,
+                                    onEdit: {}
+                                )
+
+                                // ── Actieknoppen
+                                HStack(spacing: 12) {
+                                    Button {} label: {
+                                        Label("Plan aanpassen", systemImage: "arrow.triangle.2.circlepath")
+                                            .font(.subheadline).fontWeight(.semibold)
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 20).padding(.vertical, 12)
+                                            .background(themeManager.primaryAccentColor)
+                                            .clipShape(Capsule())
+                                    }
+                                    Button {} label: {
+                                        Text("Niet nu")
+                                            .font(.subheadline).fontWeight(.medium)
+                                            .foregroundColor(.primary)
+                                            .padding(.horizontal, 20).padding(.vertical, 12)
+                                            .background(Color(.systemBackground))
+                                            .clipShape(Capsule())
+                                            .overlay(Capsule().stroke(Color(.separator), lineWidth: 1))
+                                    }
                                     Spacer()
                                 }
-                                .padding()
-                                .id("typingIndicator")
-                            }
-                        }
-                        .padding()
-                    }
-                    .scrollDismissesKeyboard(.interactively)
-                    .onTapGesture {
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                    }
-                    .onChange(of: viewModel.messages) { _, _ in
-                        if let lastMessage = viewModel.messages.last {
-                            withAnimation {
-                                proxy.scrollTo(lastMessage.id, anchor: .bottom)
-                            }
-                        }
-                    }
-                    .onChange(of: viewModel.isTyping) { _, isTyping in
-                        if isTyping {
-                            withAnimation {
-                                proxy.scrollTo("typingIndicator", anchor: .bottom)
-                            }
-                        }
-                    }
-                }
+                                .padding(.top, 4)
 
-                // Geselecteerde afbeelding preview (indien aanwezig)
-                if let image = viewModel.selectedImage {
-                    HStack {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 60, height: 60)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                // ── Bestaande chatberichten (onder scheidingslijn)
+                                if !viewModel.messages.isEmpty {
+                                    HStack {
+                                        Rectangle()
+                                            .fill(Color(.separator))
+                                            .frame(height: 1)
+                                        Text("CHATGESCHIEDENIS")
+                                            .font(.caption2).fontWeight(.semibold)
+                                            .foregroundColor(.secondary).kerning(0.5)
+                                            .fixedSize()
+                                        Rectangle()
+                                            .fill(Color(.separator))
+                                            .frame(height: 1)
+                                    }
+                                    .padding(.vertical, 8)
 
-                        Button {
-                            viewModel.clearImage()
+                                    ForEach(viewModel.messages) { message in
+                                        MessageBubble(
+                                            message: message,
+                                            onSkipWorkout: { workout in
+                                                refreshProfileContext()
+                                                viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                            },
+                                            onAlternativeWorkout: { workout in
+                                                refreshProfileContext()
+                                                viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                            },
+                                            onRetry: {
+                                                refreshProfileContext()
+                                                viewModel.retryLastMessage(contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                            }
+                                        )
+                                        .id(message.id)
+                                    }
+                                }
+
+                                // Laadindicator
+                                if viewModel.isTyping {
+                                    HStack {
+                                        ProgressView().padding(.trailing, 8)
+                                        Text(viewModel.retryStatusMessage.isEmpty
+                                             ? "Coach is aan het typen..."
+                                             : viewModel.retryStatusMessage)
+                                            .font(.caption)
+                                            .foregroundColor(viewModel.retryStatusMessage.isEmpty ? .gray : .orange)
+                                        Spacer()
+                                    }
+                                    .padding()
+                                    .id("typingIndicator")
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                        }
+                        .scrollDismissesKeyboard(.interactively)
+                        .onTapGesture {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }
+                        .onChange(of: viewModel.messages) { _, _ in
+                            if let last = viewModel.messages.last {
+                                withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
+                            }
+                        }
+                        .onChange(of: viewModel.isTyping) { _, isTyping in
+                            if isTyping { withAnimation { proxy.scrollTo("typingIndicator", anchor: .bottom) } }
+                        }
+                    }
+
+                    // Afbeelding preview
+                    if let image = viewModel.selectedImage {
+                        HStack {
+                            Image(uiImage: image)
+                                .resizable().scaledToFill()
+                                .frame(width: 60, height: 60)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            Button { viewModel.clearImage(); selectedItem = nil } label: {
+                                Image(systemName: "xmark.circle.fill").foregroundColor(.gray)
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal).padding(.top, 8)
+                    }
+
+                    // ── OF VRAAG chips
+                    SuggestionChipsView(suggestions: suggestionChips) { suggestion in
+                        viewModel.inputText = suggestion
+                    }
+
+                    Divider()
+
+                    // ── Invoerbalk
+                    HStack(alignment: .bottom, spacing: 12) {
+                        PhotosPicker(selection: $selectedItem, matching: .images, photoLibrary: .shared()) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 20))
+                                .foregroundStyle(themeManager.primaryAccentColor)
+                                .padding(8)
+                                .background(themeManager.primaryAccentColor.opacity(0.1))
+                                .clipShape(Circle())
+                        }
+                        .onChange(of: selectedItem) { _, newItem in
+                            Task {
+                                if let data = try? await newItem?.loadTransferable(type: Data.self),
+                                   let uiImage = UIImage(data: data) {
+                                    viewModel.selectedImage = uiImage
+                                }
+                            }
+                        }
+
+                        TextField("Bericht...", text: $viewModel.inputText, axis: .vertical)
+                            .padding(10)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(20)
+                            .lineLimit(1...5)
+                            .accessibilityIdentifier("ChatInputField")
+
+                        Button(action: {
+                            refreshProfileContext()
+                            viewModel.sendMessage(contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                             selectedItem = nil
-                        } label: {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.gray)
+                        }) {
+                            Image(systemName: "arrow.up.circle.fill")
+                                .font(.system(size: 32))
+                                .foregroundStyle(viewModel.inputText.isEmpty && viewModel.selectedImage == nil ? Color.secondary : themeManager.primaryAccentColor)
                         }
-                        Spacer()
+                        .disabled(viewModel.inputText.isEmpty && viewModel.selectedImage == nil)
+                        .accessibilityIdentifier("ChatSendButton")
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                }
-
-                Divider()
-
-                // Onderste invoerbalk voor tekst en foto's
-                HStack(alignment: .bottom, spacing: 12) {
-                    PhotosPicker(selection: $selectedItem, matching: .images, photoLibrary: .shared()) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 20))
-                            .foregroundStyle(themeManager.primaryAccentColor)
-                            .padding(8)
-                            .background(themeManager.primaryAccentColor.opacity(0.1))
-                            .clipShape(Circle())
-                    }
-                    .onChange(of: selectedItem) { _, newItem in
-                        Task {
-                            if let data = try? await newItem?.loadTransferable(type: Data.self),
-                               let uiImage = UIImage(data: data) {
-                                viewModel.selectedImage = uiImage
-                            }
-                        }
-                    }
-
-                    TextField("Bericht...", text: $viewModel.inputText, axis: .vertical)
-                        .padding(10)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(20)
-                        .lineLimit(1...5)
-                        .accessibilityIdentifier("ChatInputField")
-
-                    Button(action: {
-                        refreshProfileContext()
-                        viewModel.sendMessage(contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                        selectedItem = nil
-                    }) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .font(.system(size: 32))
-                            .foregroundStyle(viewModel.inputText.isEmpty && viewModel.selectedImage == nil ? Color.secondary : themeManager.primaryAccentColor)
-                    }
-                    .disabled(viewModel.inputText.isEmpty && viewModel.selectedImage == nil)
-                    .accessibilityIdentifier("ChatSendButton")
-                }
-                .padding()
+                    .padding()
 
                 } // end else (hasAPIKey)
             }
-            .background(themeManager.backgroundGradient.ignoresSafeArea())
-            .navigationTitle("Vraag de Coach")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.hidden, for: .navigationBar)
-            .onChange(of: appState.targetActivityId) { oldValue, newValue in
+            .background(Color(.secondarySystemBackground).ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
+            .onChange(of: appState.targetActivityId) { _, newValue in
                 if let activityId = newValue {
-                    // Start de analyse en clear daarna de target uit de state zodat
-                    // hij later opnieuw getriggerd kan worden indien nodig
                     refreshProfileContext()
                     viewModel.analyzeWorkout(withId: activityId, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-
-                    Task { @MainActor in
-                        appState.targetActivityId = nil
-                    }
+                    Task { @MainActor in appState.targetActivityId = nil }
                 }
             }
             .onAppear {
                 refreshProfileContext()
                 setupPreferenceCallback()
-                // SPRINT 13.4: Toon het laatste coach-inzicht als welkomstbericht als de chat nog leeg is.
-                // Dit zorgt dat de gebruiker na een herstelplan direct de uitleg van de coach ziet
-                // zodra ze naar de Coach-tab navigeren, ook als de AI al klaar was.
                 showWelcomeInsightIfNeeded()
             }
         }
@@ -376,6 +484,319 @@ struct MessageBubble: View {
             if !isUser { Spacer() }
         }
     }
+}
+
+// MARK: - V2.0 Coach Card Components (Sprint 2 Part 1)
+
+// MARK: CoachV2HeaderView
+
+struct CoachV2HeaderView: View {
+    let phaseLabel: String
+    let accentColor: Color
+
+    var body: some View {
+        HStack(spacing: 14) {
+            ZStack(alignment: .bottomTrailing) {
+                Circle()
+                    .fill(accentColor.opacity(0.12))
+                    .frame(width: 52, height: 52)
+                Image(systemName: "bubble.left.and.person.fill")
+                    .font(.system(size: 22))
+                    .foregroundColor(accentColor)
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 11, height: 11)
+                    .overlay(Circle().stroke(Color(.secondarySystemBackground), lineWidth: 2))
+                    .offset(x: 3, y: 3)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Coach")
+                    .font(.title2).fontWeight(.bold)
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 6, height: 6)
+                    Text(phaseLabel)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            Spacer()
+        }
+    }
+}
+
+// MARK: CoachTextCard
+
+struct CoachTextCard: View {
+    let text: String
+    let accentColor: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            coachAvatar(accentColor)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("KORT")
+                    .font(.caption2).fontWeight(.bold)
+                    .foregroundColor(accentColor).kerning(0.8)
+                Text(text)
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(14)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+        }
+    }
+}
+
+// MARK: CoachInsightCard
+
+struct CoachInsightCard: View {
+    let insights: [String]
+    let accentColor: Color
+
+    @State private var isExpanded = false
+
+    private var visibleCount: Int { isExpanded ? insights.count : min(1, insights.count) }
+    private var hiddenCount: Int  { max(0, insights.count - 1) }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            coachAvatar(accentColor)
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 5) {
+                    Image(systemName: "sparkles")
+                        .font(.caption).foregroundColor(accentColor)
+                    Text("WAT IK ZIE")
+                        .font(.caption2).fontWeight(.bold)
+                        .foregroundColor(.secondary).kerning(0.8)
+                }
+                ForEach(Array(insights.prefix(visibleCount).enumerated()), id: \.offset) { _, insight in
+                    Text(insight)
+                        .font(.subheadline)
+                        .foregroundColor(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if hiddenCount > 0 {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(isExpanded ? "Minder tonen" : "Meer uitleg (\(hiddenCount))")
+                                .font(.caption).fontWeight(.medium)
+                                .foregroundColor(.secondary)
+                            Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.top, 2)
+                }
+            }
+            .padding(14)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+        }
+    }
+}
+
+// MARK: PlanAdjustmentCard
+
+struct PlanAdjustment: Identifiable {
+    let id = UUID()
+    let dayAbbr: String
+    let dayNum: Int
+    let original: String
+    let replacement: String
+}
+
+struct PlanAdjustmentCard: View {
+    let adjustments: [PlanAdjustment]
+    let accentColor: Color
+    var onApply: () -> Void
+    var onView: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.caption).foregroundColor(accentColor)
+                    Text("AANPASSING IN JE PLAN")
+                        .font(.caption2).fontWeight(.bold)
+                        .foregroundColor(.secondary).kerning(0.5)
+                }
+                Spacer()
+                Text("Voorstel")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 14).padding(.top, 14).padding(.bottom, 10)
+
+            Divider().padding(.horizontal, 14)
+
+            // Aanpassingsrijen
+            VStack(spacing: 14) {
+                ForEach(adjustments) { adj in
+                    HStack(alignment: .top, spacing: 14) {
+                        VStack(spacing: 0) {
+                            Text(adj.dayAbbr)
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(.secondary)
+                            Text("\(adj.dayNum)")
+                                .font(.system(size: 22, weight: .bold, design: .rounded))
+                                .foregroundColor(.primary)
+                        }
+                        .frame(width: 30)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(adj.original)
+                                .font(.subheadline)
+                                .strikethrough(true, color: .secondary)
+                                .foregroundColor(.secondary)
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.right")
+                                    .font(.caption2)
+                                    .foregroundColor(accentColor)
+                                Text(adj.replacement)
+                                    .font(.subheadline).fontWeight(.semibold)
+                                    .foregroundColor(.primary)
+                            }
+                        }
+                        Spacer()
+                    }
+                }
+            }
+            .padding(.horizontal, 14).padding(.vertical, 12)
+
+            Divider().padding(.horizontal, 14)
+
+            // Actieknoppen
+            HStack(spacing: 10) {
+                Button(action: onApply) {
+                    Text("Toepassen")
+                        .font(.subheadline).fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(accentColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                Button(action: onView) {
+                    HStack(spacing: 4) {
+                        Text("Bekijk")
+                        Image(systemName: "chevron.right")
+                    }
+                    .font(.subheadline).fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                    .padding(.vertical, 14).padding(.horizontal, 20)
+                    .background(Color(.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color(.separator), lineWidth: 1))
+                }
+            }
+            .padding(14)
+        }
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+    }
+}
+
+// MARK: MemoryContextCard
+
+struct MemoryContextCard: View {
+    let text: String
+    let accentColor: Color
+    var onEdit: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(Color(.secondarySystemBackground))
+                    .frame(width: 38, height: 38)
+                Image(systemName: "pin.fill")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("ONTHOUDEN")
+                    .font(.caption2).fontWeight(.bold)
+                    .foregroundColor(.secondary).kerning(0.5)
+                Text(text)
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+            }
+
+            Spacer()
+
+            Button(action: onEdit) {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 16))
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(14)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+    }
+}
+
+// MARK: SuggestionChipsView
+
+struct SuggestionChipsView: View {
+    let suggestions: [String]
+    var onTap: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("OF VRAAG")
+                .font(.caption2).fontWeight(.semibold)
+                .foregroundColor(.secondary).kerning(0.5)
+                .padding(.horizontal, 16)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(suggestions, id: \.self) { suggestion in
+                        Button { onTap(suggestion) } label: {
+                            Text(suggestion)
+                                .font(.caption)
+                                .foregroundColor(.primary)
+                                .padding(.horizontal, 14).padding(.vertical, 8)
+                                .background(Color(.systemBackground))
+                                .clipShape(Capsule())
+                                .overlay(Capsule().stroke(Color(.separator), lineWidth: 1))
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+// MARK: Gedeelde coach avatar helper
+
+private func coachAvatar(_ accentColor: Color) -> some View {
+    ZStack {
+        Circle()
+            .fill(accentColor.opacity(0.10))
+            .frame(width: 30, height: 30)
+        Image(systemName: "bubble.left.fill")
+            .font(.system(size: 12))
+            .foregroundColor(accentColor)
+    }
+    .padding(.top, 14)
 }
 
 #Preview {
