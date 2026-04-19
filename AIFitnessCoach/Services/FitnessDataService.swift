@@ -323,6 +323,7 @@ struct AthleticProfile {
     var averageWeeklyVolumeInSeconds: Int
     var daysSinceLastTraining: Int
     var isRecoveryNeeded: Bool // SPRINT 6.3 - Proactieve Waarschuwing status
+    var recoveryReason: String? // Reden voor het hersteladvies (welke regel heeft getriggerd)
     var averagePacePerKmInSeconds: Int? // SPRINT 9.3 - Gemiddeld hardlooptempo
 }
 
@@ -364,6 +365,7 @@ class AthleticProfileManager {
                                    averageWeeklyVolumeInSeconds: 0,
                                    daysSinceLastTraining: daysSinceLast,
                                    isRecoveryNeeded: false,
+                                   recoveryReason: nil,
                                    averagePacePerKmInSeconds: nil)
         }
 
@@ -373,6 +375,7 @@ class AthleticProfileManager {
 
         // 4. SPRINT 6.3: Overtrainingslogica
         var needsRecovery = false
+        var recoveryReason: String? = nil
 
         // Bereken volume van *alleen* de afgelopen week
         guard let oneWeekAgo = Calendar.current.date(byAdding: .day, value: -7, to: now) else {
@@ -381,29 +384,31 @@ class AthleticProfileManager {
                                    averageWeeklyVolumeInSeconds: averageWeeklyVolume,
                                    daysSinceLastTraining: daysSinceLast,
                                    isRecoveryNeeded: false,
+                                   recoveryReason: nil,
                                    averagePacePerKmInSeconds: nil)
         }
         let thisWeekActivities = recentActivities.filter { $0.startDate >= oneWeekAgo }
         let thisWeekVolume = thisWeekActivities.reduce(0) { $0 + $1.movingTime }
 
         // Regel 1: Volume deze week is > 50% hoger dan het gemiddelde
-        // Zorg dat we niet delen door 0, en stel een ondergrens (b.v. average minimaal 2 uur) om false positives bij beginners te voorkomen
         if averageWeeklyVolume > 7200 {
             let ratio = Double(thisWeekVolume) / Double(averageWeeklyVolume)
             if ratio > 1.5 {
                 needsRecovery = true
+                let pct = Int((ratio - 1.0) * 100)
+                recoveryReason = "Volume deze week is \(pct)% boven je gemiddelde. Plan 1–2 rustdagen."
             }
         }
 
         // Regel 2: Traint al 4 of meer dagen op rij
-        // Voor een simpeler algoritme: als er 4 trainingen zijn in de afgelopen 4 dagen (we negeren multi-a-days voor deze simpele check)
         guard let fourDaysAgo = Calendar.current.date(byAdding: .day, value: -4, to: now) else {
-            return AthleticProfile(peakDistanceInMeters: peakDistance, peakDurationInSeconds: peakDuration, averageWeeklyVolumeInSeconds: averageWeeklyVolume, daysSinceLastTraining: max(0, daysSinceLast), isRecoveryNeeded: needsRecovery, averagePacePerKmInSeconds: nil)
+            return AthleticProfile(peakDistanceInMeters: peakDistance, peakDurationInSeconds: peakDuration, averageWeeklyVolumeInSeconds: averageWeeklyVolume, daysSinceLastTraining: max(0, daysSinceLast), isRecoveryNeeded: needsRecovery, recoveryReason: recoveryReason, averagePacePerKmInSeconds: nil)
         }
         let daysTrainedInLast4Days = Set(thisWeekActivities.filter { $0.startDate >= fourDaysAgo }.map { Calendar.current.startOfDay(for: $0.startDate) }).count
 
         if daysTrainedInLast4Days >= 4 {
             needsRecovery = true
+            recoveryReason = "\(daysTrainedInLast4Days) dagen op rij getraind. Neem vandaag rust."
         }
 
         // 5. SPRINT 9.3: Gemiddeld tempo berekenen (baseline pace)
@@ -429,6 +434,7 @@ class AthleticProfileManager {
             averageWeeklyVolumeInSeconds: averageWeeklyVolume,
             daysSinceLastTraining: max(0, daysSinceLast),
             isRecoveryNeeded: needsRecovery,
+            recoveryReason: recoveryReason,
             averagePacePerKmInSeconds: averagePace
         )
     }

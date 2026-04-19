@@ -395,7 +395,7 @@ struct SettingsView: View {
                                     icon: "exclamationmark.triangle.fill",
                                     iconColor: .orange,
                                     title: "Overtrainingsrisico",
-                                    subtitle: "Rust wordt aanbevolen de komende 1–2 dagen.",
+                                    subtitle: profile.recoveryReason ?? "Rust wordt aanbevolen.",
                                     isWarning: true
                                 )
                             }
