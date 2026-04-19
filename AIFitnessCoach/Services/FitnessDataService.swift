@@ -474,6 +474,30 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
+    /// Berekent het gemiddeld wekelijks trainingsvolume (in seconden) direct vanuit HealthKit.
+    /// Vraagt geen SwiftData aan — altijd actuele data.
+    func fetchAverageWeeklyDurationSeconds(weeks: Int = 4) async -> Int {
+        guard HKHealthStore.isHealthDataAvailable() else { return 0 }
+        let now = Date()
+        guard let startDate = Calendar.current.date(byAdding: .weekOfYear, value: -weeks, to: now) else { return 0 }
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: HKObjectType.workoutType(),
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [sortDescriptor]
+            ) { _, samples, _ in
+                let workouts = samples as? [HKWorkout] ?? []
+                let totalSeconds = Int(workouts.reduce(0.0) { $0 + $1.duration })
+                continuation.resume(returning: totalSeconds / max(1, weeks))
+            }
+            healthStore.execute(query)
+        }
+    }
+
     /// Haalt de meest recente workout op uit HealthKit (ongeacht het type)
     /// Inclusief de duur, hartslagstatistieken en ruwe hartslagsamples.
     func fetchLatestWorkoutDetails() async throws -> WorkoutDetails? {

@@ -38,6 +38,8 @@ struct SettingsView: View {
     @AppStorage("vibecoach_colorScheme")     private var colorSchemeRaw: String = "auto"
     @State private var physicalProfile: UserPhysicalProfile?
 
+    @State private var weeklyAvgMinutes: Int?
+
     private let settingsHKManager = HealthKitManager()
     private var settingsProfileService: UserProfileService {
         UserProfileService(healthStore: settingsHKManager.healthStore)
@@ -54,7 +56,11 @@ struct SettingsView: View {
         Task {
             await settingsProfileService.requestProfileReadAuthorization()
             let p = await settingsProfileService.fetchProfile()
-            await MainActor.run { physicalProfile = p }
+            let secs = await settingsHKManager.fetchAverageWeeklyDurationSeconds()
+            await MainActor.run {
+                physicalProfile = p
+                weeklyAvgMinutes = secs / 60
+            }
         }
     }
 
@@ -372,8 +378,8 @@ struct SettingsView: View {
                                 icon: "chart.bar.fill",
                                 iconColor: themeManager.primaryAccentColor,
                                 title: "Wekelijks volume",
-                                subtitle: "Gem. laatste 4 weken",
-                                value: "\(profile.averageWeeklyVolumeInSeconds/60) min"
+                                subtitle: "Gem. laatste 4 weken (HealthKit)",
+                                value: weeklyAvgMinutes.map { "\($0) min" } ?? "\(profile.averageWeeklyVolumeInSeconds/60) min"
                             )
                             settingsDivider
                             SettingsRowV2(
