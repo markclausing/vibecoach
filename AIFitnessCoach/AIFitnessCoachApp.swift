@@ -155,9 +155,18 @@ struct AIFitnessCoachApp: App {
     @StateObject private var themeManager = ThemeManager()
 
     // Sprint 20.2: Bepaalt of de onboarding al is afgerond.
-    // false = nieuwe gebruiker → OnboardingView tonen.
-    // true  = terugkerende gebruiker → ContentView tonen.
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+
+    // Epic 30: Kleurmodus instelling (light / dark / auto)
+    @AppStorage("vibecoach_colorScheme") private var colorSchemeRaw: String = "auto"
+
+    private var preferredColorScheme: ColorScheme? {
+        switch colorSchemeRaw {
+        case "light": return .light
+        case "dark":  return .dark
+        default:      return nil
+        }
+    }
 
     /// True alleen in DEBUG builds met het -UITesting launch argument.
     private var isUITestingEnvironment: Bool {
@@ -190,6 +199,7 @@ struct AIFitnessCoachApp: App {
                     OnboardingView()
                 }
             }
+            .preferredColorScheme(preferredColorScheme)
             .onChange(of: scenePhase) { oldPhase, newPhase in
                 if newPhase == .active && hasSeenOnboarding {
                     // SPRINT 12.3: Trigger de automatische historische datasync wanneer de app open is.
