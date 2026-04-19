@@ -5,7 +5,7 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Actief in Ontwikkeling — Epic #30: V2.0 Card-Based UX Overhaul ⏳**
+**Actief in Ontwikkeling — Epic #31 ⏳**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 63% code coverage.
 
@@ -214,7 +214,7 @@ Een complete redesign van de app naar een rustgevend, minimalistisch thema met v
 
 ---
 
-### 🔄 Epic #30: V2.0 Card-Based UX Overhaul (In Ontwikkeling)
+### ✅ Epic #30: V2.0 Card-Based UX Overhaul (Afgerond)
 
 Een volledige herontwerp van de drie kernschermen naar een moderne, kaartgebaseerde lay-out. De nadruk ligt op visuele hiërarchie, actiegerichte UI-patronen en een informatiedichte maar rustige presentatie van data.
 
@@ -226,7 +226,7 @@ Een volledige herontwerp van de drie kernschermen naar een moderne, kaartgebasee
 
 * **✅ Bugfixes & Kwaliteit (PR #169):** `ColorColor` typo opgelost in `WorkoutCardView`. `TimeInterval`-wiskunde vervangen door `Calendar.dateComponents` in `DashboardHeaderView` en `ChatView.coachPhaseLabel` (conform CLAUDE.md §3). `recoveryReason` toegevoegd aan `AthleticProfile` met unit tests. UI-testsuite volledig bijgewerkt voor V2.0 (geen `navigationBars` meer — `accessibilityIdentifier`-gebaseerde checks op `DashboardHeaderView`, `GoalsScrollView`, `CoachView`). `testGoalManagement` vereenvoudigd: swipe-delete en GoalRow-navigatie verwijderd (V2.0 card-UI heeft geen List meer). 3 nieuwe `AthleticProfileManagerTests` voor `recoveryReason` (volume-overbelasting, aaneengesloten dagen, nil-geval).
 
-* **⏳ Sprint 30.4 — Settings Grid:** Grid-gebaseerde lay-out voor de Instellingen-tab en Connecties-overzicht — overzichtelijker en consistent met de V2.0 kaartstructuur.
+* **⏳ Epic #31 — Volgende stap:** TBD.
 
 ---
 
