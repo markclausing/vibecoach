@@ -542,7 +542,7 @@ struct CoachTextCard: View {
             .padding(14)
             .background(Color(.systemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 14))
-            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+            .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
         }
     }
 }
@@ -595,7 +595,7 @@ struct CoachInsightCard: View {
             .padding(14)
             .background(Color(.systemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 14))
-            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+            .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
         }
     }
 }
@@ -700,7 +700,7 @@ struct PlanAdjustmentCard: View {
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 }
 
@@ -756,7 +756,7 @@ struct MemoryContextCard: View {
         .padding(14)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+        .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
     }
 }
 
@@ -969,7 +969,7 @@ struct WorkoutCardView: View {
             .frame(maxWidth: .infinity, minHeight: 160)
             .background(.ultraThinMaterial)
             .cornerRadius(12)
-            .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+            .shadow(color: ColorColor(.label).opacity(0.05), radius: 4, x: 0, y: 2)
             .opacity(isProcessingAction ? 0.5 : 1.0)
         }
         .buttonStyle(PlainButtonStyle())

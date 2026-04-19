@@ -75,7 +75,7 @@ struct VibeScoreCardV2: View {
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.07), radius: 10, x: 0, y: 3)
+        .shadow(color: Color(.label).opacity(0.07), radius: 10, x: 0, y: 3)
         .accessibilityIdentifier("VibeScoreCard")
     }
 

@@ -127,7 +127,7 @@ struct WeekTimelineView: View {
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
         .padding(.horizontal)
     }
 
@@ -244,7 +244,7 @@ struct WeekTimelineView: View {
         .frame(maxWidth: .infinity).padding(.vertical, 32)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
         .padding(.horizontal)
     }
 }

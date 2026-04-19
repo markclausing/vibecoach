@@ -670,7 +670,7 @@ struct SettingsView: View {
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+        .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
         .padding(.horizontal)
     }
 
@@ -811,7 +811,7 @@ struct SettingsConnectionCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+        .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
     }
 }
 
@@ -1498,7 +1498,7 @@ struct PreferencesListView: View {
                                         .padding(.horizontal, 12).padding(.vertical, 7)
                                         .background(isSelected ? themeManager.primaryAccentColor : Color(.systemBackground))
                                         .clipShape(Capsule())
-                                        .shadow(color: .black.opacity(isSelected ? 0 : 0.05), radius: 4, x: 0, y: 1)
+                                        .shadow(color: Color(.label).opacity(isSelected ? 0 : 0.05), radius: 4, x: 0, y: 1)
                                     }
                                 }
                             }
@@ -1558,7 +1558,7 @@ struct PreferencesListView: View {
                                 }
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+                            .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
                             .padding(.horizontal)
                         }
                     }
@@ -1681,7 +1681,7 @@ struct MemoryPreferenceCard: View {
         .padding(16)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 }
 

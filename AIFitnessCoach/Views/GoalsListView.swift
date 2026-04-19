@@ -228,7 +228,7 @@ struct GoalsListView: View {
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
         .padding(.horizontal)
     }
 
@@ -457,7 +457,7 @@ struct GoalsListView: View {
         .padding(14)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.04), radius: 4, x: 0, y: 1)
+        .shadow(color: Color(.label).opacity(0.04), radius: 4, x: 0, y: 1)
     }
 
     // MARK: - Empty State
@@ -486,7 +486,7 @@ struct GoalsListView: View {
         .frame(maxWidth: .infinity)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
     // MARK: - Helpers
