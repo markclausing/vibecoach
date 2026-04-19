@@ -240,6 +240,18 @@ Een 5-schermen tellende, conversie-geoptimaliseerde onboarding flow in de nieuwe
 
 ---
 
+### ⏳ Epic #32: Deep-Dive Fysiologische Analyse (Backlog)
+
+Van gemiddelden naar granulaire fysiologische patronen. De coach analyseert niet langer alleen de samenvatting van een workout, maar leest het volledige verhaal uit de ruwe tijdreeksdata — zodat fenomenen als aerobe ontkoppeling en cadans-verloop zichtbaar en bespreekbaar worden.
+
+* **⏳ Story 32.1 — Time-Series Data Pipeline:** Breid de data-sync uit (HealthKit/Strava) om gedetailleerde samples op te halen van hartslag, vermogen, snelheid en cadans (per 5–10 seconden) in plaats van alleen gemiddelden. Granulaire opslag als aparte `@Model` voor workout-samples met efficiënte query-paden.
+
+* **⏳ Story 32.2 — Annotated Charts UI:** Ontwikkel een interactieve grafiek-interface (met Swift Charts) die meerdere datastromen over elkaar kan leggen. De coach moet specifieke tijdstempels kunnen 'pinnen' met annotaties (bijv. "hier begon de ontkoppeling"), zodat inzichten direct zichtbaar blijven in het workout-detail.
+
+* **⏳ Story 32.3 — AI Pattern Recognition:** Update de AI-prompting zodat de coach specifiek zoekt naar fysiologische fenomenen zoals ontkoppeling (decoupling), cadans-verloop en herstelvermogen tijdens intervallen. Detecteerde patronen worden als annotaties op de grafiek én als contextuele coaching-insights naar de gebruiker gecommuniceerd.
+
+---
+
 ## Testing Push Notifications in Simulator
 Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de naam `test-push.apns` aanmaken en deze letterlijk naar de draaiende simulator slepen (Drag & Drop).
 
