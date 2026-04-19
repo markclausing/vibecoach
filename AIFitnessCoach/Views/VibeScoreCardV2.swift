@@ -14,6 +14,8 @@ struct VibeScoreCardV2: View {
     var onAskWhy: (() -> Void)? = nil
     /// Live rusthartslag direct vanuit HealthKit — overschrijft de opgeslagen waarde in readiness.
     var liveRestingHeartRate: Double? = nil
+    /// Live VO₂max direct vanuit HealthKit.
+    var liveVO2Max: Double? = nil
 
     @EnvironmentObject var themeManager: ThemeManager
 
@@ -143,6 +145,13 @@ struct VibeScoreCardV2: View {
                 label: "RUST-HR",
                 value: (liveRestingHeartRate ?? readiness?.restingHeartRate).map { String(format: "%.0f", $0) } ?? "--",
                 unit: "bpm",
+                detail: nil
+            )
+            Divider().frame(height: 48)
+            MetricColumnV2(
+                label: "VO₂MAX",
+                value: liveVO2Max.map { String(format: "%.0f", $0) } ?? "--",
+                unit: "ml/kg",
                 detail: nil
             )
         }

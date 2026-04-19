@@ -1259,6 +1259,7 @@ struct DashboardView: View {
     @State private var isVibeScoreLoading: Bool = false
     @State private var isVibeScoreUnavailable: Bool = false
     @State private var dashboardRestingHR: Double? = nil
+    @State private var dashboardVO2Max: Double? = nil
 
     // Epic 17: BlueprintChecker resultaten voor alle actieve doelen
     /// Wordt op de achtergrond gebruikt voor coaching-context; volledige UI volgt in Sprint 17.3.
@@ -1571,7 +1572,8 @@ struct DashboardView: View {
                         injuryRiskLevel: injuryRiskLevel,
                         todayWorkoutName: todayPlanWorkoutName,
                         onAskWhy: { appState.showingChatSheet = true },
-                        liveRestingHeartRate: dashboardRestingHR
+                        liveRestingHeartRate: dashboardRestingHR,
+                        liveVO2Max: dashboardVO2Max
                     )
                     .padding(.horizontal)
 
@@ -1761,6 +1763,7 @@ struct DashboardView: View {
                 Task {
                     let hk = HealthKitManager()
                     dashboardRestingHR = await hk.fetchRestingHeartRate()
+                    dashboardVO2Max = await hk.fetchVO2Max()
                 }
                 // Auto-refresh: als de laatste analyse van een vorige dag is, vraag direct een nieuwe aan.
                 // Zo start de dag altijd met een actueel schema — ook na middernacht.
