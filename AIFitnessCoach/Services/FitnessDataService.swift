@@ -906,6 +906,28 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
+    /// Haalt de meest recente VO2max schatting op uit HealthKit (ml/kg/min). Geeft nil als geen data.
+    func fetchVO2Max() async -> Double? {
+        guard HKHealthStore.isHealthDataAvailable(),
+              let type = HKQuantityType.quantityType(forIdentifier: .vo2Max) else { return nil }
+        let now = Date()
+        let pastDate = Calendar.current.date(byAdding: .month, value: -6, to: now)!
+        let predicate = HKQuery.predicateForSamples(withStart: pastDate, end: now, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(sampleType: type, predicate: predicate, limit: 1, sortDescriptors: [sortDescriptor]) { _, samples, _ in
+                guard let sample = samples?.first as? HKQuantitySample else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let vo2 = sample.quantity.doubleValue(for: HKUnit(from: "ml/kg·min"))
+                continuation.resume(returning: vo2)
+            }
+            healthStore.execute(query)
+        }
+    }
+
     /// Haalt de meest recente rusthartslag op uit HealthKit. Geeft nil terug als er geen meting is.
     func fetchRestingHeartRate() async -> Double? {
         guard HKHealthStore.isHealthDataAvailable() else { return nil }

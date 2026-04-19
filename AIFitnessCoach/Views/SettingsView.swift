@@ -39,6 +39,7 @@ struct SettingsView: View {
     @State private var physicalProfile: UserPhysicalProfile?
 
     @State private var weeklyAvgMinutes: Int?
+    @State private var vo2Max: Double?
 
     private let settingsHKManager = HealthKitManager()
     private var settingsProfileService: UserProfileService {
@@ -56,10 +57,13 @@ struct SettingsView: View {
         Task {
             await settingsProfileService.requestProfileReadAuthorization()
             let p = await settingsProfileService.fetchProfile()
-            let secs = await settingsHKManager.fetchAverageWeeklyDurationSeconds()
+            async let secsTask = settingsHKManager.fetchAverageWeeklyDurationSeconds()
+            async let vo2Task  = settingsHKManager.fetchVO2Max()
+            let (secs, vo2) = await (secsTask, vo2Task)
             await MainActor.run {
-                physicalProfile = p
+                physicalProfile  = p
                 weeklyAvgMinutes = secs / 60
+                vo2Max           = vo2
             }
         }
     }
@@ -380,6 +384,14 @@ struct SettingsView: View {
                                 title: "Wekelijks volume",
                                 subtitle: "Gem. laatste 4 weken (HealthKit)",
                                 value: weeklyAvgMinutes.map { "\($0) min" } ?? "\(profile.averageWeeklyVolumeInSeconds/60) min"
+                            )
+                            settingsDivider
+                            SettingsRowV2(
+                                icon: "lungs.fill",
+                                iconColor: Color(red: 0.27, green: 0.55, blue: 0.91),
+                                title: "VO₂max",
+                                subtitle: "Geschatte conditiescore (Apple Watch)",
+                                value: vo2Max.map { String(format: "%.0f ml/kg/min", $0) } ?? "--"
                             )
                             settingsDivider
                             SettingsRowV2(
