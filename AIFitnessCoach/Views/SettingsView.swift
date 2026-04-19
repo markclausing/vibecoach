@@ -249,7 +249,7 @@ struct SettingsView: View {
 
                     // ── Header
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("V1.0.2 · BUILD 42")
+                        Text("V\(Bundle.main.appVersion) · BUILD \(Bundle.main.buildNumber)")
                             .font(.caption).fontWeight(.semibold)
                             .foregroundColor(.secondary).kerning(0.5)
                         Text("Instellingen")
@@ -1429,3 +1429,15 @@ private let itemFormatter: DateFormatter = {
     formatter.timeStyle = .none
     return formatter
 }()
+
+
+// MARK: - Bundle helpers
+
+private extension Bundle {
+    var appVersion: String {
+        infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+    }
+    var buildNumber: String {
+        infoDictionary?["CFBundleVersion"] as? String ?? "1"
+    }
+}
