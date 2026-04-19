@@ -226,7 +226,17 @@ Een volledige herontwerp van de drie kernschermen naar een moderne, kaartgebasee
 
 * **✅ Bugfixes & Kwaliteit (PR #169):** `ColorColor` typo opgelost in `WorkoutCardView`. `TimeInterval`-wiskunde vervangen door `Calendar.dateComponents` in `DashboardHeaderView` en `ChatView.coachPhaseLabel` (conform CLAUDE.md §3). `recoveryReason` toegevoegd aan `AthleticProfile` met unit tests. UI-testsuite volledig bijgewerkt voor V2.0 (geen `navigationBars` meer — `accessibilityIdentifier`-gebaseerde checks op `DashboardHeaderView`, `GoalsScrollView`, `CoachView`). `testGoalManagement` vereenvoudigd: swipe-delete en GoalRow-navigatie verwijderd (V2.0 card-UI heeft geen List meer). 3 nieuwe `AthleticProfileManagerTests` voor `recoveryReason` (volume-overbelasting, aaneengesloten dagen, nil-geval).
 
-* **⏳ Epic #31 — Volgende stap:** TBD.
+---
+
+### ⏳ Epic #31: V2.0 Onboarding Experience (In Ontwikkeling)
+
+Een 5-schermen tellende, conversie-geoptimaliseerde onboarding flow in de nieuwe Serene/Mos stijl. Maakt gebruik van 'live visuals' (mock-UI componenten) in plaats van statische illustraties om de waarde van de app te demonstreren voordat cruciale permissies (HealthKit, Notificaties) worden gevraagd.
+
+* **⏳ Sprint 31.1 — State & Navigatie-structuur:** Setup van `@AppStorage("hasCompletedOnboarding")` in de root van de app. Implementatie van een `TabView` met `PageTabViewStyle` (of een custom step-navigatie) en de herbruikbare layout-wrapper (voortgangsbalk boven, hoofdtitel, dynamische content-area, vaste knoppen-layout onder).
+
+* **⏳ Sprint 31.2 — Live Visuals & Mockups:** Bouwen van de specifieke content-views voor de 5 schermen: Welkom (Hero icon), Uitleg (Mock Vibe Score & TRIMP grafiek), AI Setup (Provider toggle & kosten-uitleg), HealthKit (Permissie visual), Notificaties (Mock iOS notificatie bubble).
+
+* **⏳ Sprint 31.3 — Permissie Logica & Afronding:** Koppelen van de 'Koppel Apple Health' en 'Sta notificaties toe' knoppen aan de daadwerkelijke systeem-prompts. Verfijnen van de copy en de transities.
 
 ---
 
