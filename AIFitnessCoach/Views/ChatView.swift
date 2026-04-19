@@ -143,13 +143,6 @@ struct ChatView: View {
                                     accentColor: themeManager.primaryAccentColor
                                 )
 
-                                PlanAdjustmentCard(
-                                    adjustments: dummyAdjustments,
-                                    accentColor: themeManager.primaryAccentColor,
-                                    onApply: {},
-                                    onView: {}
-                                )
-
                                 MemoryContextCard(
                                     text: dummyMemory,
                                     accentColor: themeManager.primaryAccentColor,
