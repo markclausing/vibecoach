@@ -268,7 +268,7 @@ struct GoalsListView: View {
             HStack(spacing: 0) {
                 ForEach(segments, id: \.phase.rawValue) { seg in
                     let isActive = seg.phase == currentPhase
-                    let totalWD = Double(totalW)
+                    let _ = Double(totalW)
                     Text(phaseShortLabel(seg.phase) + " \(seg.weeks)w")
                         .font(.system(size: 9, weight: isActive ? .bold : .regular))
                         .foregroundColor(isActive ? themeManager.primaryAccentColor : .secondary)

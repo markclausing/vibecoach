@@ -335,8 +335,8 @@ struct SettingsView: View {
                                 iconColor: themeManager.primaryAccentColor,
                                 title: "Gewicht",
                                 value: physicalProfile.map { String(format: "%.1f kg", $0.weightKg) },
-                                showHealthKitBadge: physicalProfile?.weightSource == .healthKit,
-                                hasChevron: true
+                                hasChevron: true,
+                                showHealthKitBadge: physicalProfile?.weightSource == .healthKit
                             )
                         }.buttonStyle(.plain)
                         settingsDivider
@@ -346,8 +346,8 @@ struct SettingsView: View {
                                 iconColor: themeManager.primaryAccentColor,
                                 title: "Lengte",
                                 value: physicalProfile.map { String(format: "%.0f cm", $0.heightCm) },
-                                showHealthKitBadge: physicalProfile?.heightSource == .healthKit,
-                                hasChevron: true
+                                hasChevron: true,
+                                showHealthKitBadge: physicalProfile?.heightSource == .healthKit
                             )
                         }.buttonStyle(.plain)
                     }
