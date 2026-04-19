@@ -1383,65 +1383,313 @@ struct AIProviderSettingsView: View {
     }
 }
 
-/// Lijst met actieve voorkeuren en regels van de gebruiker (AI Context).
+// MARK: - V2.0 Geheugen / Memory View
+
 struct PreferencesListView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \UserPreference.createdAt, order: .reverse) private var preferences: [UserPreference]
+    @EnvironmentObject private var themeManager: ThemeManager
+    @AppStorage("vibecoach_userName") private var userName: String = ""
 
-    var body: some View {
-        List {
-            if preferences.isEmpty {
-                Text("Geen voorkeuren gevonden. Vertel de coach in de chat wat je wensen of blessures zijn, en hij onthoudt het hier!")
-                    .foregroundColor(.secondary)
-                    .italic()
-            } else {
-                ForEach(preferences) { preference in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(preference.preferenceText)
-                                .font(.body)
-                                .foregroundColor(.primary)
+    @Query(sort: \UserPreference.createdAt, order: .reverse) private var allPreferences: [UserPreference]
 
-                            Text("Gedetecteerd op: \(preference.createdAt, formatter: itemFormatter)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+    @State private var selectedSegment: MemorySegment = .pins
+    @State private var selectedFilter: MemoryTypeFilter = .all
 
-                            if let expirationDate = preference.expirationDate {
-                                let isExpired = expirationDate < Date()
-                                Text(isExpired ? "Verlopen" : "Verloopt op: \(expirationDate, formatter: itemFormatter)")
-                                    .font(.caption)
-                                    .foregroundColor(isExpired ? .red : .orange)
-                            }
-                        }
-                        Spacer()
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
+    enum MemorySegment { case pins, history }
+    enum MemoryTypeFilter: CaseIterable {
+        case all, injury, preference, context
+        var label: String {
+            switch self { case .all: "Alles"; case .injury: "Blessure"; case .preference: "Voorkeur"; case .context: "Context" }
         }
-        .navigationTitle("Coach Geheugen")
-        .toolbar {
-            EditButton()
+        var icon: String {
+            switch self { case .all: "square.grid.2x2"; case .injury: "exclamationmark.triangle"; case .preference: "star"; case .context: "info.circle" }
         }
     }
 
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(preferences[index])
+    private var activePreferences: [UserPreference] {
+        allPreferences.filter { $0.isActive && ($0.expirationDate == nil || $0.expirationDate! > Date()) }
+    }
+
+    private var historicPreferences: [UserPreference] {
+        allPreferences.filter { !$0.isActive || ($0.expirationDate.map { $0 < Date() } ?? false) }
+    }
+
+    private var filteredPreferences: [UserPreference] {
+        guard selectedFilter != .all else { return activePreferences }
+        return activePreferences.filter { memoryType(for: $0.preferenceText) == selectedFilter }
+    }
+
+    private func countFor(_ filter: MemoryTypeFilter) -> Int {
+        filter == .all ? activePreferences.count : activePreferences.filter { memoryType(for: $0.preferenceText) == filter }.count
+    }
+
+    private var userInitials: String {
+        userName.split(separator: " ").compactMap(\.first).prefix(2).map(String.init).joined().uppercased()
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+
+                    // ── Header
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("WAT IK ONTHOU · \(activePreferences.count) ACTIEVE · \(historicPreferences.count) VERLOPEN")
+                                .font(.caption).fontWeight(.semibold)
+                                .foregroundColor(.secondary).kerning(0.4)
+                            Text("Geheugen")
+                                .font(.largeTitle).fontWeight(.bold)
+                        }
+                        Spacer()
+                        ZStack {
+                            Circle().fill(themeManager.primaryAccentColor.opacity(0.18)).frame(width: 40, height: 40)
+                            Text(userInitials.isEmpty ? "?" : userInitials)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(themeManager.primaryAccentColor)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 56)
+                    .padding(.bottom, 20)
+
+                    // ── Segmented Control
+                    HStack(spacing: 0) {
+                        ForEach([MemorySegment.pins, .history], id: \.self) { seg in
+                            let isSelected = selectedSegment == seg
+                            Button { withAnimation(.easeInOut(duration: 0.2)) { selectedSegment = seg } } label: {
+                                Text(seg == .pins ? "PINS & CONTEXT" : "HISTORIE")
+                                    .font(.caption).fontWeight(.semibold).kerning(0.3)
+                                    .foregroundColor(isSelected ? .primary : .secondary)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                            }
+                        }
+                    }
+                    .background(
+                        GeometryReader { geo in
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemBackground))
+                                .frame(width: geo.size.width / 2)
+                                .offset(x: selectedSegment == .pins ? 0 : geo.size.width / 2)
+                                .animation(.easeInOut(duration: 0.2), value: selectedSegment)
+                        }
+                    )
+                    .background(Color(.systemGray5))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(.horizontal)
+                    .padding(.bottom, 16)
+
+                    if selectedSegment == .pins {
+                        // ── Filter Pills
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(MemoryTypeFilter.allCases, id: \.self) { filter in
+                                    let isSelected = selectedFilter == filter
+                                    let count = countFor(filter)
+                                    Button { withAnimation { selectedFilter = filter } } label: {
+                                        HStack(spacing: 4) {
+                                            Image(systemName: filter.icon).font(.caption2)
+                                            Text("\(filter.label) · \(count)")
+                                                .font(.caption).fontWeight(.semibold)
+                                        }
+                                        .foregroundColor(isSelected ? .white : .primary)
+                                        .padding(.horizontal, 12).padding(.vertical, 7)
+                                        .background(isSelected ? themeManager.primaryAccentColor : Color(.systemBackground))
+                                        .clipShape(Capsule())
+                                        .shadow(color: .black.opacity(isSelected ? 0 : 0.05), radius: 4, x: 0, y: 1)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                        .padding(.bottom, 16)
+
+                        // ── Preference Cards
+                        if filteredPreferences.isEmpty {
+                            VStack(spacing: 12) {
+                                Image(systemName: "brain").font(.system(size: 40)).foregroundColor(.secondary)
+                                Text("Nog geen herinneringen")
+                                    .font(.headline).foregroundColor(.secondary)
+                                Text("Vertel de coach in de chat over je blessures, voorkeuren of doelen.")
+                                    .font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(40)
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(filteredPreferences) { pref in
+                                    MemoryPreferenceCard(
+                                        preference: pref,
+                                        accentColor: themeManager.primaryAccentColor
+                                    ) { delete(pref) }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+
+                    } else {
+                        // ── Historie tab
+                        if historicPreferences.isEmpty {
+                            Text("Geen verlopen herinneringen.")
+                                .font(.subheadline).foregroundColor(.secondary)
+                                .padding()
+                        } else {
+                            LazyVStack(spacing: 0) {
+                                ForEach(historicPreferences) { pref in
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "clock.arrow.circlepath")
+                                            .foregroundColor(.secondary).font(.caption)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(pref.preferenceText)
+                                                .font(.subheadline).lineLimit(2)
+                                            Text(pref.createdAt, formatter: memoryDateFormatter)
+                                                .font(.caption).foregroundColor(.secondary)
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 12)
+                                    .background(Color(.systemBackground))
+                                    if pref.id != historicPreferences.last?.id {
+                                        Divider().padding(.leading, 48)
+                                    }
+                                }
+                            }
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .shadow(color: .black.opacity(0.05), radius: 6, x: 0, y: 2)
+                            .padding(.horizontal)
+                        }
+                    }
+
+                    Spacer(minLength: 40)
+                }
             }
-            try? modelContext.save()
+            .background(Color(.secondarySystemBackground).ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
         }
+    }
+
+    private func delete(_ pref: UserPreference) {
+        modelContext.delete(pref)
+        try? modelContext.save()
     }
 }
 
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .medium
-    formatter.timeStyle = .none
-    return formatter
-}()
+// MARK: - Memory type classificatie (keyword-gebaseerd)
 
+private enum MemoryType: Equatable { case injury, preference, context }
+
+private func memoryType(for text: String) -> PreferencesListView.MemoryTypeFilter {
+    let lower = text.lowercased()
+    if lower.contains("blessure") || lower.contains("pijn") || lower.contains("last ") || lower.contains("stijf") || lower.contains("geblesseerd") || lower.contains("klacht") {
+        return .injury
+    } else if lower.contains("geen ") || lower.contains("nooit") || lower.contains("niet ") || lower.contains("voorkeur") || lower.contains("rustig") {
+        return .preference
+    }
+    return .context
+}
+
+private func memoryTypeStyle(for text: String) -> (label: String, color: Color, icon: String) {
+    switch memoryType(for: text) {
+    case .injury:     return ("Blessure", .orange, "exclamationmark.triangle")
+    case .preference: return ("Voorkeur", Color(red: 0.3, green: 0.55, blue: 0.3), "star")
+    case .context:    return ("Context",  Color(red: 0.35, green: 0.55, blue: 0.85), "info.circle")
+    case .all:        return ("Context",  Color(red: 0.35, green: 0.55, blue: 0.85), "info.circle")
+    }
+}
+
+// MARK: - MemoryPreferenceCard
+
+struct MemoryPreferenceCard: View {
+    let preference: UserPreference
+    let accentColor: Color
+    let onDelete: () -> Void
+
+    private var typeStyle: (label: String, color: Color, icon: String) { memoryTypeStyle(for: preference.preferenceText) }
+    private var isPinned: Bool { preference.expirationDate == nil }
+
+    private var expirationBadgeLabel: String? {
+        guard let exp = preference.expirationDate, exp > Date() else { return nil }
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "nl_NL")
+        df.dateFormat = "d MMM"
+        return "tot \(df.string(from: exp))"
+    }
+
+    private var createdLabel: String {
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "nl_NL")
+        df.dateFormat = "d MMM yyyy"
+        return df.string(from: preference.createdAt)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+
+            // Badges + menu
+            HStack(spacing: 6) {
+                Label(typeStyle.label, systemImage: typeStyle.icon)
+                    .font(.caption).fontWeight(.semibold)
+                    .foregroundColor(typeStyle.color)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(typeStyle.color.opacity(0.12))
+                    .clipShape(Capsule())
+
+                if let expLabel = expirationBadgeLabel {
+                    Label(expLabel, systemImage: "calendar")
+                        .font(.caption).fontWeight(.medium)
+                        .foregroundColor(.orange)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Color.orange.opacity(0.10))
+                        .clipShape(Capsule())
+                } else if isPinned {
+                    Label("Vastgepind", systemImage: "star.fill")
+                        .font(.caption).fontWeight(.medium)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(Color(.systemGray5))
+                        .clipShape(Capsule())
+                }
+
+                Spacer()
+
+                Menu {
+                    Button(role: .destructive, action: onDelete) {
+                        Label("Verwijder", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundColor(.secondary)
+                        .frame(width: 32, height: 32)
+                }
+            }
+
+            // Hoofdtekst
+            Text(preference.preferenceText)
+                .font(.headline)
+                .foregroundColor(.primary)
+
+            // Footer
+            HStack {
+                Text("Onthouden op \(createdLabel)")
+                    .font(.caption).foregroundColor(.secondary)
+                Spacer()
+            }
+        }
+        .padding(16)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+    }
+}
+
+private let memoryDateFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.locale = Locale(identifier: "nl_NL")
+    f.dateFormat = "d MMM yyyy"
+    return f
+}()
 
 // MARK: - Bundle helpers
 
