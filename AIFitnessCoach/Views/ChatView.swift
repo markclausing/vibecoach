@@ -52,8 +52,6 @@ struct ChatView: View {
         PlanAdjustment(dayAbbr: "WO", dayNum: 23, original: "Fietsrit · Z2 · 45 min", replacement: "Duurrit · Z2 · 75 min")
     ]
 
-    private let dummyMemory = "Kuitblessure 4/10 — rust tot 0/10"
-
     private let suggestionChips = [
         "Wat moet ik morgen doen?",
         "Hoe is mijn herstel?",
@@ -143,11 +141,14 @@ struct ChatView: View {
                                     accentColor: themeManager.primaryAccentColor
                                 )
 
-                                MemoryContextCard(
-                                    text: dummyMemory,
-                                    accentColor: themeManager.primaryAccentColor,
-                                    onEdit: {}
-                                )
+                                ForEach(activePreferences) { pref in
+                                    MemoryContextCard(
+                                        text: pref.preferenceText,
+                                        expirationDate: pref.expirationDate,
+                                        accentColor: themeManager.primaryAccentColor,
+                                        onEdit: {}
+                                    )
+                                }
 
                                 // ── Actieknoppen
                                 HStack(spacing: 12) {
@@ -707,8 +708,17 @@ struct PlanAdjustmentCard: View {
 
 struct MemoryContextCard: View {
     let text: String
+    var expirationDate: Date? = nil
     let accentColor: Color
     var onEdit: () -> Void
+
+    private var expirationLabel: String? {
+        guard let date = expirationDate else { return nil }
+        let df = DateFormatter()
+        df.dateStyle = .long
+        df.locale = Locale(identifier: "nl_NL")
+        return "verloopt op: \(df.string(from: date))"
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -728,6 +738,11 @@ struct MemoryContextCard: View {
                 Text(text)
                     .font(.subheadline)
                     .foregroundColor(.primary)
+                if let label = expirationLabel {
+                    Text(label)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
             }
 
             Spacer()
