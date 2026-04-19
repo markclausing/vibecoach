@@ -140,7 +140,7 @@ struct VibeScoreCardV2: View {
             Divider().frame(height: 48)
             MetricColumnV2(
                 label: "RUST-HR",
-                value: "--",
+                value: readiness?.restingHeartRate.map { String(format: "%.0f", $0) } ?? "--",
                 unit: "bpm",
                 detail: nil
             )

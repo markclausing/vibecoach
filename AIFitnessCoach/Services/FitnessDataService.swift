@@ -906,6 +906,28 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
+    /// Haalt de meest recente rusthartslag op uit HealthKit. Geeft nil terug als er geen meting is.
+    func fetchRestingHeartRate() async -> Double? {
+        guard HKHealthStore.isHealthDataAvailable() else { return nil }
+        let type = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
+        let now = Date()
+        let pastDate = Calendar.current.date(byAdding: .month, value: -1, to: now)!
+        let predicate = HKQuery.predicateForSamples(withStart: pastDate, end: now, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(sampleType: type, predicate: predicate, limit: 1, sortDescriptors: [sortDescriptor]) { _, samples, _ in
+                guard let sample = samples?.first as? HKQuantitySample else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let bpm = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                continuation.resume(returning: bpm)
+            }
+            healthStore.execute(query)
+        }
+    }
+
     /// Hulpfunctie om de meest recente rusthartslag op te halen.
     private func fetchLatestRestingHeartRate(quantityType: HKQuantityType) async throws -> Double {
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)

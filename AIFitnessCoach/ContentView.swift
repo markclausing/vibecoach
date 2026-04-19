@@ -1861,11 +1861,11 @@ struct DashboardView: View {
             return
         }
 
-        // Stap 2: HRV met het exacte slaapvenster — post-workout drops worden zo definitief uitgesloten.
-        let currentHRV: Double? = try? await hkManager.fetchRecentHRV(
-            sleepStart: stages?.sessionStart,
-            sleepEnd:   stages?.sessionEnd
-        )
+        // Stap 2: HRV en rusthartslag parallel ophalen.
+        async let hrvTask = hkManager.fetchRecentHRV(sleepStart: stages?.sessionStart, sleepEnd: stages?.sessionEnd)
+        async let restingHRTask = hkManager.fetchRestingHeartRate()
+        let currentHRV: Double? = try? await hrvTask
+        let restingHR: Double?  = await restingHRTask
 
         guard let currentHRV else {
             print("⚠️ [VibeScore] Geen HRV-data — kaart wordt op 'niet beschikbaar' gezet")
@@ -1897,6 +1897,7 @@ struct DashboardView: View {
             record.deepSleepMinutes = stages?.deepMinutes  ?? 0
             record.remSleepMinutes  = stages?.remMinutes   ?? 0
             record.coreSleepMinutes = stages?.coreMinutes  ?? 0
+            record.restingHeartRate = restingHR
         } else {
             modelContext.insert(DailyReadiness(
                 date:             Date(),
@@ -1905,7 +1906,8 @@ struct DashboardView: View {
                 readinessScore:   score,
                 deepSleepMinutes: stages?.deepMinutes  ?? 0,
                 remSleepMinutes:  stages?.remMinutes   ?? 0,
-                coreSleepMinutes: stages?.coreMinutes  ?? 0
+                coreSleepMinutes: stages?.coreMinutes  ?? 0,
+                restingHeartRate: restingHR
             ))
         }
         try? modelContext.save()
