@@ -1,37 +1,52 @@
 import SwiftUI
+import SwiftData
 
-/// Epic #31 — Sprint 31.2: V2.0 Onboarding-flow met functionele content.
+/// Epic #31 — Sprint 31.4: V2.0 Onboarding-flow met persistente opslag.
 ///
 /// Gebruikt een `TabView` met `.page(indexDisplayMode: .never)` zodat de gebruiker
 /// soepel kan swipen tussen 5 stappen. Elke stap wordt gerenderd via
 /// `OnboardingTemplateView` — één bron van waarheid voor progress-bar, titel
 /// en knoppen-layout.
 ///
-/// Sprint 31.2 vervangt de placeholder-teksten door echte stap-content:
+/// Stap-content:
 /// - Stap 1: Welkom in 'Mos'-stijl
 /// - Stap 2: Doelkeuze op basis van `UserGoal`
 /// - Stap 3: HealthKit-permissies (stappen, hartslag, slaap) + start Engine A
-/// - Stap 4: Introductie van de AI-coach
-/// - Stap 5: Afronding — zet `hasCompletedOnboarding` op `true`.
+/// - Stap 4: AI-coach setup (provider + BYOK API-sleutel)
+/// - Stap 5: Afronding — persisteert data en zet `hasCompletedOnboarding` op `true`.
 struct OnboardingView: View {
+
+    // MARK: - Persistente state
 
     /// Wordt op true gezet zodra de gebruiker de onboarding afrondt (stap 5).
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
-    /// Sprint 31.2: persisteer het gekozen doel zodat latere features het kunnen
-    /// ophalen zonder extra SwiftData-migratie.
+    /// Sprint 31.2: persisteer het gekozen doel zodat latere features het snel
+    /// kunnen ophalen. De canonieke bron wordt via SwiftData `UserConfiguration`
+    /// opgeslagen op stap 5 (zie `completeOnboarding()`).
     @AppStorage("vibecoach_selectedUserGoal") private var selectedGoalRaw: String = UserGoal.generalFitness.rawValue
 
-    /// Huidige stap in de flow — matcht 1-based `stepIndex` van het template.
+    /// Sprint 31.4: gekozen AI-provider — gedeelde sleutel met `AIProviderSettingsView`
+    /// zodat `ChatViewModel` hem direct oppakt zonder extra stap.
+    @AppStorage("vibecoach_aiProvider") private var providerRaw: String = AIProvider.gemini.rawValue
+
+    /// Sprint 31.4: de API-sleutel wordt ALLEEN in-memory via `@State` gehouden
+    /// tijdens de onboarding en bij afronding naar de Keychain geschreven —
+    /// nooit naar `UserDefaults` (productie-veiligheid).
+    @State private var apiKey: String = ""
+
+    // MARK: - Transient UI-state
+
     @State private var currentStep: Int = 1
-
-    /// HealthKit-status voor stap 3.
     @State private var healthKitState: HealthKitState = .idle
+    @FocusState private var apiKeyFieldFocused: Bool
 
-    /// Totaal aantal stappen in Sprint 31.2.
     private let totalSteps = 5
 
     @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.modelContext) private var modelContext
+
+    // MARK: - Body
 
     var body: some View {
         TabView(selection: $currentStep) {
@@ -88,9 +103,7 @@ struct OnboardingView: View {
             totalSteps: totalSteps,
             title: "Koppel Apple Health",
             subtitle: "Stappen, hartslag en slaap — alles blijft op jouw iPhone",
-            content: {
-                HealthKitPermissionVisual(state: healthKitState)
-            },
+            content: { HealthKitPermissionVisual(state: healthKitState) },
             primaryButtonTitle: primaryTitleForStepThree,
             primaryAction: handleHealthKitAction,
             secondaryButtonTitle: "Overslaan",
@@ -103,10 +116,19 @@ struct OnboardingView: View {
             stepIndex: 4,
             totalSteps: totalSteps,
             title: "Jouw AI-coach",
-            subtitle: "Stel vragen, krijg herstelplannen en uitleg bij je data",
-            content: { CoachIntroVisual() },
+            subtitle: "Kies je provider en plak je API-sleutel",
+            content: {
+                AIProviderSetupForm(
+                    providerRaw: $providerRaw,
+                    apiKey: $apiKey,
+                    isFocused: $apiKeyFieldFocused
+                )
+            },
             primaryButtonTitle: "Volgende",
-            primaryAction: advance,
+            primaryAction: {
+                apiKeyFieldFocused = false
+                advance()
+            },
             secondaryButtonTitle: "Terug",
             secondaryAction: goBack
         )
@@ -119,7 +141,7 @@ struct OnboardingView: View {
             title: "Klaar om te beginnen",
             subtitle: "Je eerste Vibe Score is een tap verderop",
             content: { CompletionVisual() },
-            primaryButtonTitle: "Start met Trainen",
+            primaryButtonTitle: "Start Coaching",
             primaryAction: completeOnboarding,
             secondaryButtonTitle: "Terug",
             secondaryAction: goBack
@@ -200,8 +222,54 @@ struct OnboardingView: View {
         withAnimation { currentStep -= 1 }
     }
 
+    /// Sprint 31.4: Persisteer onboarding-keuzes en schakel de app door.
+    ///
+    /// Volgorde:
+    /// 1. SwiftData: schrijf (of update) een enkele `UserConfiguration` record
+    ///    met het gekozen doel en de huidige datum (via `Calendar.current`).
+    /// 2. Keychain: sla de API-sleutel veilig op — alleen als de gebruiker er
+    ///    daadwerkelijk één heeft ingevuld.
+    /// 3. AppStorage: `hasCompletedOnboarding = true` — dit triggert in
+    ///    `AIFitnessCoachApp` automatisch de overgang naar de hoofd-app.
     private func completeOnboarding() {
+        let goal = UserGoal(rawValue: selectedGoalRaw) ?? .generalFitness
+        persistUserConfiguration(goal: goal)
+        persistAPIKeyIfPresent()
         hasCompletedOnboarding = true
+    }
+
+    private func persistUserConfiguration(goal: UserGoal) {
+        // Vervang een eventuele bestaande configuratie — we onboarden altijd maar één profiel.
+        let descriptor = FetchDescriptor<UserConfiguration>()
+        if let existing = try? modelContext.fetch(descriptor) {
+            for record in existing {
+                modelContext.delete(record)
+            }
+        }
+
+        let config = UserConfiguration(primaryGoal: goal, date: Date())
+        modelContext.insert(config)
+
+        do {
+            try modelContext.save()
+        } catch {
+            // Log alleen — een falende save mag de onboarding niet blokkeren.
+            print("⚠️ UserConfiguration save mislukt: \(error.localizedDescription)")
+        }
+    }
+
+    private func persistAPIKeyIfPresent() {
+        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        do {
+            // WAARSCHUWING: Productie-sleutels horen UITSLUITEND in de Keychain.
+            // Bewust geen UserDefaults-fallback hier — bij een Keychain-fout tonen we
+            // de gebruiker later (Sprint 31.5) een retry-scherm in Instellingen.
+            try KeychainService.shared.saveToken(trimmed, forService: "vibecoach_userAPIKey")
+        } catch {
+            print("⚠️ API-sleutel opslaan in Keychain mislukt: \(error.localizedDescription)")
+        }
     }
 }
 
@@ -218,23 +286,27 @@ private struct WelcomeMossVisual: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
-        VStack(spacing: 24) {
-            ZStack {
-                Circle()
-                    .fill(themeManager.primaryAccentColor.opacity(0.15))
-                    .frame(width: 180, height: 180)
+        ScrollView {
+            VStack(spacing: 24) {
+                ZStack {
+                    Circle()
+                        .fill(themeManager.primaryAccentColor.opacity(0.15))
+                        .frame(width: 180, height: 180)
 
-                Image(systemName: "leaf.fill")
-                    .font(.system(size: 80))
-                    .foregroundStyle(themeManager.primaryAccentColor)
-                    .symbolRenderingMode(.hierarchical)
+                    Image(systemName: "leaf.fill")
+                        .font(.system(size: 80))
+                        .foregroundStyle(themeManager.primaryAccentColor)
+                        .symbolRenderingMode(.hierarchical)
+                }
+
+                Text("Rustig, consistent en op jouw tempo — VibeCoach waarschuwt alleen wanneer het ertoe doet.")
+                    .font(.callout)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
             }
-
-            Text("Rustig, consistent en op jouw tempo — VibeCoach waarschuwt alleen wanneer het ertoe doet.")
-                .font(.callout)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
         }
     }
 }
@@ -298,32 +370,36 @@ private struct HealthKitPermissionVisual: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
-        VStack(spacing: 20) {
-            ZStack {
-                Circle()
-                    .fill(colorForState.opacity(0.15))
-                    .frame(width: 160, height: 160)
+        ScrollView {
+            VStack(spacing: 20) {
+                ZStack {
+                    Circle()
+                        .fill(colorForState.opacity(0.15))
+                        .frame(width: 160, height: 160)
 
-                Image(systemName: iconForState)
-                    .font(.system(size: 70))
-                    .foregroundStyle(colorForState)
-                    .symbolRenderingMode(.hierarchical)
-            }
+                    Image(systemName: iconForState)
+                        .font(.system(size: 70))
+                        .foregroundStyle(colorForState)
+                        .symbolRenderingMode(.hierarchical)
+                }
 
-            VStack(spacing: 10) {
-                DataRow(icon: "figure.walk", label: "Stappen")
-                DataRow(icon: "heart.fill", label: "Hartslag")
-                DataRow(icon: "bed.double.fill", label: "Slaap")
-            }
-            .padding(.horizontal, 36)
+                VStack(spacing: 10) {
+                    DataRow(icon: "figure.walk", label: "Stappen")
+                    DataRow(icon: "heart.fill", label: "Hartslag")
+                    DataRow(icon: "bed.double.fill", label: "Slaap")
+                }
+                .padding(.horizontal, 36)
 
-            if case .failed = state {
-                Text("Permissie mislukt — open Instellingen om toegang te verlenen.")
-                    .font(.caption)
-                    .foregroundColor(.red)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                if case .failed = state {
+                    Text("Permissie mislukt — open Instellingen om toegang te verlenen.")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
             }
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -364,41 +440,97 @@ private struct DataRow: View {
     }
 }
 
-/// Stap 4 — introductie van de AI-coach met een chat-preview.
-private struct CoachIntroVisual: View {
+/// Stap 4 — AI-provider picker + API-sleutel invoerveld (BYOK).
+private struct AIProviderSetupForm: View {
+    @Binding var providerRaw: String
+    @Binding var apiKey: String
+    var isFocused: FocusState<Bool>.Binding
+
     @EnvironmentObject private var themeManager: ThemeManager
 
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "bubble.left.and.bubble.right.fill")
-                .font(.system(size: 70))
-                .foregroundStyle(themeManager.primaryAccentColor)
-                .symbolRenderingMode(.hierarchical)
-
-            VStack(spacing: 10) {
-                chatBubble(text: "Hoe voel je je vandaag?", fromCoach: true)
-                chatBubble(text: "Wat moet ik doen na een slechte nacht?", fromCoach: false)
-                chatBubble(text: "Laten we rustig aan doen — 30 min wandelen.", fromCoach: true)
-            }
-            .padding(.horizontal, 24)
-        }
+    private var selectedProvider: AIProvider {
+        AIProvider(rawValue: providerRaw) ?? .gemini
     }
 
-    @ViewBuilder
-    private func chatBubble(text: String, fromCoach: Bool) -> some View {
-        HStack {
-            if !fromCoach { Spacer(minLength: 24) }
-            Text(text)
-                .font(.footnote)
-                .foregroundColor(fromCoach ? .primary : .white)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(fromCoach ? Color(.systemBackground) : themeManager.primaryAccentColor)
-                )
-            if fromCoach { Spacer(minLength: 24) }
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+
+                // Uitleg — kort en rustig.
+                Text("Je sleutel blijft in de iPhone Keychain. VibeCoach stuurt je data niet naar ons.")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.leading)
+
+                // Provider-picker.
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Provider")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.secondary)
+                        .textCase(.uppercase)
+
+                    Picker("Provider", selection: $providerRaw) {
+                        ForEach(AIProvider.allCases) { provider in
+                            Text(provider.displayName).tag(provider.rawValue)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("OnboardingProviderPicker")
+                }
+
+                // API-sleutel veld.
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("API-sleutel")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.secondary)
+                        .textCase(.uppercase)
+
+                    HStack {
+                        SecureField(selectedProvider.keyPlaceholder, text: $apiKey)
+                            .focused(isFocused)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .font(.system(.body, design: .monospaced))
+                            .accessibilityIdentifier("OnboardingAPIKeyField")
+
+                        if !apiKey.isEmpty {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                        }
+                    }
+                    .padding(12)
+                    .background(Color(.systemBackground))
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(apiKey.isEmpty ? Color(.separator) : themeManager.primaryAccentColor.opacity(0.8), lineWidth: 1)
+                    )
+                }
+
+                // Link naar provider-portal.
+                if let url = selectedProvider.getKeyURL {
+                    Link(destination: url) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "arrow.up.right.square")
+                            Text("Gratis sleutel halen voor \(selectedProvider.displayName)")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(themeManager.primaryAccentColor)
+                    }
+                }
+
+                // Skip-uitleg.
+                Text("Geen sleutel? Geen probleem — je kunt dit later instellen via Instellingen.")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .scrollDismissesKeyboard(.interactively)
     }
 }
 
@@ -407,23 +539,27 @@ private struct CompletionVisual: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
-        VStack(spacing: 20) {
-            ZStack {
-                Circle()
-                    .fill(themeManager.primaryAccentColor.opacity(0.15))
-                    .frame(width: 180, height: 180)
+        ScrollView {
+            VStack(spacing: 20) {
+                ZStack {
+                    Circle()
+                        .fill(themeManager.primaryAccentColor.opacity(0.15))
+                        .frame(width: 180, height: 180)
 
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.system(size: 90))
-                    .foregroundStyle(themeManager.primaryAccentColor)
-                    .symbolRenderingMode(.hierarchical)
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 90))
+                        .foregroundStyle(themeManager.primaryAccentColor)
+                        .symbolRenderingMode(.hierarchical)
+                }
+
+                Text("Alles staat klaar. Open het dashboard om je Vibe Score en trainingsplan te zien.")
+                    .font(.callout)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
             }
-
-            Text("Alles staat klaar. Open het dashboard om je Vibe Score en trainingsplan te zien.")
-                .font(.callout)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
         }
     }
 }

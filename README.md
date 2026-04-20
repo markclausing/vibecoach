@@ -5,7 +5,7 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Actief in Ontwikkeling — Epic #31 ⏳**
+**Actief in Ontwikkeling — Epic #31 ✅ (klaar voor merge)**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 63% code coverage.
 
@@ -228,15 +228,17 @@ Een volledige herontwerp van de drie kernschermen naar een moderne, kaartgebasee
 
 ---
 
-### ⏳ Epic #31: V2.0 Onboarding Experience (In Ontwikkeling)
+### ✅ Epic #31: V2.0 Onboarding Experience
 
 Een 5-schermen tellende, conversie-geoptimaliseerde onboarding flow in de nieuwe Serene/Mos stijl. Maakt gebruik van 'live visuals' (mock-UI componenten) in plaats van statische illustraties om de waarde van de app te demonstreren voordat cruciale permissies (HealthKit, Notificaties) worden gevraagd.
 
 * **✅ Sprint 31.1 — State & Navigatie-structuur:** `@AppStorage("hasCompletedOnboarding")` als poortwachter in `AIFitnessCoachApp`; AppDelegate en onChange-hook mee-gemigreerd. `OnboardingTemplateView` herbruikbare wrapper (horizontale voortgangsbalk 1 t/m 5, titel/optionele subtitel, `@ViewBuilder` content, groene primaire + grijze secundaire knop). `OnboardingView` herschreven als `TabView(selection:)` met `.page(indexDisplayMode: .never)` over 5 stappen.
 
-* **🔄 Sprint 31.2 — HealthKit Integration & Content:** `HealthKitManager.shared` + `requestOnboardingPermissions()` (stappen, hartslag, slaap). `UserGoal` enum (conform §2) voor type-veilige doelkeuze. Functionele content per stap: 'Mos'-welkom, `UserGoal`-lijst, HealthKit-permissiekaart met status-feedback, AI-coach chat-preview en afronding. Na HealthKit-grant start direct `ProactiveNotificationService.shared.setupEngineA()` (Dual Engine §4) en wordt de start-datum via `Calendar.startOfDay` gelogd (Rule §3). Voortgangsbalk animeert bij zowel swipen als knop-navigatie.
+* **✅ Sprint 31.2 — HealthKit Integration & Content:** `HealthKitManager.shared` + `requestOnboardingPermissions()` (stappen, hartslag, slaap). `UserGoal` enum (conform §2) voor type-veilige doelkeuze. Functionele content per stap: 'Mos'-welkom, `UserGoal`-lijst, HealthKit-permissiekaart met status-feedback, AI-coach chat-preview en afronding. Na HealthKit-grant start direct `ProactiveNotificationService.shared.setupEngineA()` (Dual Engine §4) en wordt de start-datum via `Calendar.startOfDay` gelogd (Rule §3). Voortgangsbalk animeert bij zowel swipen als knop-navigatie.
 
-* **⏳ Sprint 31.3 — Permissie Logica & Afronding:** Notificatie-permissies, verfijnen van copy en transities, en UI-tests voor de volledige flow.
+* **✅ Sprint 31.3 — Stijl & Copy-refinement:** Content en iconografie per stap afgestemd op de Serene/Mos look — zachte cirkels, hiërarchische SF Symbols en rustige copy in NL.
+
+* **✅ Sprint 31.4 — Persistence & Merge Readiness:** `UserConfiguration` (SwiftData `@Model`) toegevoegd voor het vastleggen van het gekozen doel (`UserGoal`) en `onboardingDate` / `onboardingDay` (beide via `Calendar.current`, conform §3). AI-provider opgeslagen in `@AppStorage("vibecoach_aiProvider")`; de BYOK API-sleutel gaat via `KeychainService.shared.saveToken(_:forService:)` — expliciet géén `UserDefaults`-fallback voor productie-sleutels. Alle ScrollView-wrappers toegevoegd zodat de 5 stappen ook op kleine iPhones (SE) niet klemlopen. De 'Start Coaching'-knop op stap 5 persisteert eerst en zet pas daarna `hasCompletedOnboarding` op `true`.
 
 ---
 

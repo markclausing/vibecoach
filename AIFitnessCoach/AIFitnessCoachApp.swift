@@ -223,6 +223,6 @@ struct AIFitnessCoachApp: App {
         }
         // Sprint 26.1: gebruik in-memory store tijdens UI-tests zodat elke run
         // met een lege database start en goals van vorige runs niet lekken.
-        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self, DailyReadiness.self, Symptom.self], inMemory: isUITestingEnvironment) // Epic 18: Symptom toegevoegd
+        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self, DailyReadiness.self, Symptom.self, UserConfiguration.self], inMemory: isUITestingEnvironment) // Epic 18: Symptom + Epic #31 Sprint 31.4: UserConfiguration toegevoegd
     }
 }
