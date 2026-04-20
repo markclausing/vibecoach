@@ -39,6 +39,7 @@
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* TrainingPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */; };
 		CC54A4B0A24ABC7666AB3222 /* ChatViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */; };
 		CC77FF11AA3322BB55DD8844 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD88EE22FF4433AA66BB9955 /* OnboardingView.swift */; };
+		CC77FF22AA3322BB55DD8844 /* OnboardingTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD88EE33FF4433AA66BB9955 /* OnboardingTemplateView.swift */; };
 		D8A5CC6C6399BF876493D66B /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA86D03EE20341A8CB8173EE /* ChatView.swift */; };
 		D9D6946898CF838A86E276DC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B16CF484B776C9214345E29 /* Foundation.framework */; };
 		DB076B94561F03C4EB2D8C5E /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDA9519ECAE22F903D67C756 /* TokenStore.swift */; };
@@ -135,6 +136,7 @@
 		D92F0B029D6902862CF50631 /* GoalsListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalsListView.swift; sourceTree = "<group>"; };
 		DA86D03EE20341A8CB8173EE /* ChatView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		DD88EE22FF4433AA66BB9955 /* OnboardingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		DD88EE33FF4433AA66BB9955 /* OnboardingTemplateView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingTemplateView.swift; sourceTree = "<group>"; };
 		E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataError.swift; sourceTree = "<group>"; };
 		54462929885341098579ABB5 /* Theme.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		268DC6609F434E5DA4FF63F7 /* ThemeManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
@@ -239,6 +241,7 @@
 				203C295EF5D568151B5D1BEF /* EditGoalView.swift */,
 				CE4D1D9B3991F419262E294E /* SettingsView.swift */,
 				DD88EE22FF4433AA66BB9955 /* OnboardingView.swift */,
+				DD88EE33FF4433AA66BB9955 /* OnboardingTemplateView.swift */,
 				D92F0B029D6902862CF50631 /* GoalsListView.swift */,
 				B23C4D5E6F7A8B9C0D1E2F3A /* GapAnalysisCardView.swift */,
 				A57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift */,
@@ -532,6 +535,7 @@
 				E632BCD343E9A620341BD347 /* EditGoalView.swift in Sources */,
 				531DF0798000FFC0CACC940E /* SettingsView.swift in Sources */,
 				CC77FF11AA3322BB55DD8844 /* OnboardingView.swift in Sources */,
+				CC77FF22AA3322BB55DD8844 /* OnboardingTemplateView.swift in Sources */,
 				6D21D46EBFDA3ABDB67ECDBF /* GoalsListView.swift in Sources */,
 				A12B3C4D5E6F7A8B9C0D1E2F /* GapAnalysisCardView.swift in Sources */,
 				F57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift in Sources */,

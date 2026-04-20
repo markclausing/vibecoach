@@ -73,7 +73,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
         // SPRINT 13.2 — Engine A & B: Starten alleen als de gebruiker onboarding al heeft afgerond.
         // Dit voorkomt dat de engines actief zijn voordat de gebruiker überhaupt permissie heeft gegeven.
-        let hasOnboarded = UserDefaults.standard.bool(forKey: "hasSeenOnboarding")
+        // Epic #31 Sprint 1: poortwachter-key gemigreerd naar `hasCompletedOnboarding` (V2.0 flow).
+        let hasOnboarded = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
         if hasOnboarded {
             ProactiveNotificationService.shared.setupEngineA()
             ProactiveNotificationService.shared.scheduleEngineB()
@@ -154,8 +155,10 @@ struct AIFitnessCoachApp: App {
     // Epic 29: Globale theme-engine voor de Serene Visual Overhaul
     @StateObject private var themeManager = ThemeManager()
 
-    // Sprint 20.2: Bepaalt of de onboarding al is afgerond.
-    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    // Epic #31 Sprint 1: poortwachter voor de V2.0 onboarding-flow.
+    // Wanneer `false` toont de app OnboardingView(); zodra de laatste stap dit op `true` zet
+    // schakelt de app over naar de reguliere hoofd-app (ContentView).
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     // Epic 30: Kleurmodus instelling (light / dark / auto)
     @AppStorage("vibecoach_colorScheme") private var colorSchemeRaw: String = "auto"
@@ -190,25 +193,27 @@ struct AIFitnessCoachApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if hasSeenOnboarding {
+                if hasCompletedOnboarding {
                     ContentView()
                         .environmentObject(appState)
                         .environmentObject(planManager)
                         .environmentObject(themeManager)
                 } else {
+                    // Epic #31 Sprint 1: V2.0 onboarding-flow met herbruikbaar template.
                     OnboardingView()
+                        .environmentObject(themeManager)
                 }
             }
             .preferredColorScheme(preferredColorScheme)
             .onChange(of: scenePhase) { oldPhase, newPhase in
-                if newPhase == .active && hasSeenOnboarding {
+                if newPhase == .active && hasCompletedOnboarding {
                     // SPRINT 12.3: Trigger de automatische historische datasync wanneer de app open is.
                     // We sturen hiervoor een notificatie, zodat ContentView dit netjes afhandelt met context toegang.
                     NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
                 }
             }
-            .onChange(of: hasSeenOnboarding) { _, isOnboarded in
-                // Sprint 20.2: Zodra de onboarding is afgerond, starten we de achtergrond-engines.
+            .onChange(of: hasCompletedOnboarding) { _, isOnboarded in
+                // Sprint 20.2 / Epic #31: Zodra de onboarding is afgerond, starten we de achtergrond-engines.
                 // Dit is het eerste moment dat de gebruiker permissies heeft gegeven.
                 if isOnboarded {
                     ProactiveNotificationService.shared.setupEngineA()
