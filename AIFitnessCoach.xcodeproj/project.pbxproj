@@ -14,6 +14,7 @@
 		26CFC95E9F1D535817250215 /* FitnessDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */; };
 		34B36AEEDAF09C2EA9BC6241 /* SettingsViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */; };
 		48E3320BE9BDAC79B8060EEE /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136CF190D3B3F2D63ADC3225 /* KeychainService.swift */; };
+		48E3320CE9BDAC79B8060EEE /* APIKeyValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */; };
 		5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */; };
 		531DF0798000FFC0CACC940E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4D1D9B3991F419262E294E /* SettingsView.swift */; };
 		543CBE0027B161C9AFDE3824 /* AIFitnessCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */; };
@@ -95,6 +96,7 @@
 		0D235CA77C73BA3BBA685143 /* Secrets-template.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "Secrets-template.swift"; sourceTree = "<group>"; };
 		0DE3DDF83AB44095AF4FA0CE /* MockNetworkSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockNetworkSession.swift; sourceTree = "<group>"; };
 		136CF190D3B3F2D63ADC3225 /* KeychainService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyValidator.swift; sourceTree = "<group>"; };
 		203C295EF5D568151B5D1BEF /* EditGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditGoalView.swift; sourceTree = "<group>"; };
 		2757E95543939CACDB8D35DE /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5493D0D3C44442CCF82489CA /* Preview Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -260,6 +262,7 @@
 			children = (
 				B81B710B2F8D65A80062BC61 /* UITestMockEnvironment.swift */,
 				136CF190D3B3F2D63ADC3225 /* KeychainService.swift */,
+				136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */,
 				EDA9519ECAE22F903D67C756 /* TokenStore.swift */,
 				60758C181F9C986190D5A369 /* StravaAuthService.swift */,
 				F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */,
@@ -548,6 +551,7 @@
 				CC10DD20EE30FF40AA50BB60 /* WeekTimelineView.swift in Sources */,
 				DD10EE20FF30AA40BB50CC60 /* TrendWidgetView.swift in Sources */,
 				48E3320BE9BDAC79B8060EEE /* KeychainService.swift in Sources */,
+				48E3320CE9BDAC79B8060EEE /* APIKeyValidator.swift in Sources */,
 				DB076B94561F03C4EB2D8C5E /* TokenStore.swift in Sources */,
 				06C5198C4908FF10CCF1E836 /* StravaAuthService.swift in Sources */,
 				26CFC95E9F1D535817250215 /* FitnessDataService.swift in Sources */,

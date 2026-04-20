@@ -1309,8 +1309,20 @@ struct AIProviderSettingsView: View {
     @AppStorage("vibecoach_userAPIKey") private var apiKey: String = ""
     @EnvironmentObject private var themeManager: ThemeManager
 
+    /// Sprint 31.7: state-machine voor de minimale validatie-ping.
+    /// Laatst geteste sleutel wordt bijgehouden zodat we het feedbackblok
+    /// automatisch resetten wanneer de gebruiker zijn sleutel aanpast.
+    @State private var testState: APIKeyTestState = .idle
+    @State private var testedKey: String = ""
+
     private var selectedProvider: AIProvider {
         AIProvider(rawValue: providerRaw) ?? .gemini
+    }
+
+    /// Het feedback-blok is alleen geldig voor de sleutel die op het moment
+    /// van de test werd ingevoerd. Na typen vervalt het oordeel.
+    private var showTestResult: Bool {
+        testState != .idle && testedKey == apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var body: some View {
@@ -1379,9 +1391,124 @@ struct AIProviderSettingsView: View {
                     }
                 }
             }
+
+            // Sprint 31.7: Test-ping — valideert de sleutel met een minimale
+            // auth-call tegen Gemini. De waterfall (primair → fallback op 503/429)
+            // staat in `APIKeyValidator` zodat een geldige sleutel tijdens een
+            // Google-overload niet onterecht als ongeldig wordt gemarkeerd.
+            if !apiKey.isEmpty && selectedProvider.isSupported {
+                Section(footer: testFeedbackFooter) {
+                    Button {
+                        testAPIKey()
+                    } label: {
+                        HStack {
+                            if testState == .testing {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .padding(.trailing, 2)
+                                Text("Sleutel testen…")
+                            } else {
+                                Image(systemName: "bolt.circle")
+                                Text("Test deze sleutel")
+                            }
+                            Spacer()
+                        }
+                    }
+                    .disabled(testState == .testing)
+                    .accessibilityIdentifier("TestAPIKeyButton")
+                }
+            }
         }
         .navigationTitle("AI Coach Configuratie")
     }
+
+    // MARK: - Test feedback (inline in footer)
+
+    @ViewBuilder
+    private var testFeedbackFooter: some View {
+        if showTestResult {
+            switch testState {
+            case .idle, .testing:
+                EmptyView()
+            case .valid:
+                feedbackRow(icon: "checkmark.seal.fill",
+                            color: .green,
+                            title: "Sleutel werkt",
+                            detail: "Gemini heeft de sleutel geaccepteerd.")
+            case .invalidKey:
+                feedbackRow(icon: "xmark.octagon.fill",
+                            color: .red,
+                            title: "Sleutel ongeldig",
+                            detail: "Gemini weigert deze sleutel. Controleer of je hem volledig hebt geplakt.")
+            case .rateLimited:
+                feedbackRow(icon: "hourglass.circle.fill",
+                            color: .orange,
+                            title: "Beide modellen overbelast",
+                            detail: "De Google-servers zijn vol. Je sleutel kán geldig zijn — probeer zo nog eens.")
+            case .network:
+                feedbackRow(icon: "wifi.exclamationmark",
+                            color: .orange,
+                            title: "Geen verbinding",
+                            detail: "Controleer je internetverbinding en probeer opnieuw.")
+            case .unknown(let message):
+                feedbackRow(icon: "exclamationmark.triangle.fill",
+                            color: .orange,
+                            title: "Onverwachte fout",
+                            detail: message)
+            }
+        }
+    }
+
+    private func feedbackRow(icon: String, color: Color, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: icon)
+                .foregroundStyle(color)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    // MARK: - Test-actie
+
+    private func testAPIKey() {
+        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        testState = .testing
+        testedKey = trimmed
+
+        Task {
+            let result = await APIKeyValidator.validateGeminiKey(trimmed)
+            await MainActor.run {
+                switch result {
+                case .valid:            testState = .valid
+                case .invalidKey:       testState = .invalidKey
+                case .rateLimited:      testState = .rateLimited
+                case .network:          testState = .network
+                case .unknown(let msg): testState = .unknown(msg)
+                }
+            }
+        }
+    }
+}
+
+/// Interne UI-state voor het testen van de sleutel. Gescheiden van
+/// `APIKeyValidationResult` zodat we `.idle` en `.testing` ook kunnen tonen.
+private enum APIKeyTestState: Equatable {
+    case idle
+    case testing
+    case valid
+    case invalidKey
+    case rateLimited
+    case network
+    case unknown(String)
 }
 
 // MARK: - V2.0 Geheugen / Memory View
