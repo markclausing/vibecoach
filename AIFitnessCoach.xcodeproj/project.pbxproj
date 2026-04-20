@@ -30,6 +30,7 @@
 		A12B3C4D5E6F7A8B9C0D1E2F /* GapAnalysisCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B23C4D5E6F7A8B9C0D1E2F3A /* GapAnalysisCardView.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */; };
 		A3BB100A32BF93E6C7587F72 /* FitnessGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */; };
+		A3BB100B32BF93E6C7587F72 /* UserGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769A9B614D9B0D66D5D394F9 /* UserGoal.swift */; };
 		A9B8C7D6E5F4A3B2C1D0E9F8 /* ProactiveNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */; };
 		B1C2D3E4F5A6B7C8D9E0F1A2 /* WeatherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */; };
 		B49CB5209082C67DC40F4FA5 /* FitnessDataError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */; };
@@ -105,6 +106,7 @@
 		70418E8B60B3D7CA1BC426AA /* MockTokenStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockTokenStore.swift; sourceTree = "<group>"; };
 		758A7ECDF66FE523D3217100 /* FitnessDataServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataServiceTests.swift; sourceTree = "<group>"; };
 		769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoal.swift; sourceTree = "<group>"; };
+		769A9B614D9B0D66D5D394F9 /* UserGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserGoal.swift; sourceTree = "<group>"; };
 		7FDDDD26172C97669936B5B8 /* FitnessGoalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoalTests.swift; sourceTree = "<group>"; };
 		892FA4CC13985F26BA4BB4DE /* ChatViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		984AC8DD2D26E4CA3247251E /* Secrets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
@@ -314,6 +316,7 @@
 			children = (
 				AF9454A3119F7BF71A5331E4 /* ChatMessage.swift */,
 				769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */,
+				769A9B614D9B0D66D5D394F9 /* UserGoal.swift */,
 				6D6902F6A369E69FC0F8BC5C /* StravaTokenResponse.swift */,
 				AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */,
 				E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */,
@@ -528,6 +531,7 @@
 				5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */,
 				7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */,
 				A3BB100A32BF93E6C7587F72 /* FitnessGoal.swift in Sources */,
+				A3BB100B32BF93E6C7587F72 /* UserGoal.swift in Sources */,
 				7C2EEDEF6E1CCAB9FE856BED /* StravaTokenResponse.swift in Sources */,
 				9E9427B7C484EE11E612C120 /* StravaActivity.swift in Sources */,
 				B49CB5209082C67DC40F4FA5 /* FitnessDataError.swift in Sources */,

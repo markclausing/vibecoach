@@ -444,9 +444,50 @@ import HealthKit
 
 /// Beheert de Apple HealthKit integratie en permissies
 final class HealthKitManager: @unchecked Sendable {
+
+    /// Epic #31 Sprint 31.2: Gedeelde singleton zodat de onboarding-flow en
+    /// achtergrond-services dezelfde instantie delen. Bestaande call-sites die
+    /// `HealthKitManager()` gebruiken blijven werken (de init is nog beschikbaar).
+    static let shared = HealthKitManager()
+
     // Lazy: HKHealthStore wordt pas aangemaakt bij het eerste echte gebruik,
     // niet al bij app-start. Dit verkort de opstarttijd significant.
     lazy var healthStore: HKHealthStore = HKHealthStore()
+
+    /// Epic #31 Sprint 31.2: Minimale permissie-set voor de onboarding-flow.
+    ///
+    /// Vraagt alleen de drie types die de V2.0 onboarding expliciet belooft:
+    /// stappen, hartslag en slaapanalyse. Bredere rechten (HRV, VO2Max, workouts,
+    /// gewicht/lengte) worden later via `requestAuthorization(completion:)`
+    /// gevraagd zodra die features nodig zijn.
+    ///
+    /// - Returns: `true` als de HealthKit-dialog succesvol is gepresenteerd én
+    ///   iOS een antwoord heeft geregistreerd. Let op: dit zegt niets over per-type
+    ///   toestemming — HealthKit onthult lees-rechten niet.
+    /// - Throws: `FitnessDataError.networkError` wanneer HealthKit niet beschikbaar
+    ///   is op het apparaat.
+    @discardableResult
+    func requestOnboardingPermissions() async throws -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            throw FitnessDataError.networkError("HealthKit is niet beschikbaar op dit apparaat.")
+        }
+
+        let typesToRead: Set<HKObjectType> = [
+            HKQuantityType.quantityType(forIdentifier: .stepCount)!,
+            HKQuantityType.quantityType(forIdentifier: .heartRate)!,
+            HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!
+        ]
+
+        return try await withCheckedThrowingContinuation { continuation in
+            healthStore.requestAuthorization(toShare: nil, read: typesToRead) { success, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: success)
+                }
+            }
+        }
+    }
 
     /// Vraagt toestemming aan de gebruiker om benodigde gezondheidsdata (workouts, hartslag, VO2 Max) te lezen.
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {

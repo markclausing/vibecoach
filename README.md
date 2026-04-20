@@ -232,11 +232,11 @@ Een volledige herontwerp van de drie kernschermen naar een moderne, kaartgebasee
 
 Een 5-schermen tellende, conversie-geoptimaliseerde onboarding flow in de nieuwe Serene/Mos stijl. Maakt gebruik van 'live visuals' (mock-UI componenten) in plaats van statische illustraties om de waarde van de app te demonstreren voordat cruciale permissies (HealthKit, Notificaties) worden gevraagd.
 
-* **⏳ Sprint 31.1 — State & Navigatie-structuur:** Setup van `@AppStorage("hasCompletedOnboarding")` in de root van de app. Implementatie van een `TabView` met `PageTabViewStyle` (of een custom step-navigatie) en de herbruikbare layout-wrapper (voortgangsbalk boven, hoofdtitel, dynamische content-area, vaste knoppen-layout onder).
+* **✅ Sprint 31.1 — State & Navigatie-structuur:** `@AppStorage("hasCompletedOnboarding")` als poortwachter in `AIFitnessCoachApp`; AppDelegate en onChange-hook mee-gemigreerd. `OnboardingTemplateView` herbruikbare wrapper (horizontale voortgangsbalk 1 t/m 5, titel/optionele subtitel, `@ViewBuilder` content, groene primaire + grijze secundaire knop). `OnboardingView` herschreven als `TabView(selection:)` met `.page(indexDisplayMode: .never)` over 5 stappen.
 
-* **⏳ Sprint 31.2 — Live Visuals & Mockups:** Bouwen van de specifieke content-views voor de 5 schermen: Welkom (Hero icon), Uitleg (Mock Vibe Score & TRIMP grafiek), AI Setup (Provider toggle & kosten-uitleg), HealthKit (Permissie visual), Notificaties (Mock iOS notificatie bubble).
+* **🔄 Sprint 31.2 — HealthKit Integration & Content:** `HealthKitManager.shared` + `requestOnboardingPermissions()` (stappen, hartslag, slaap). `UserGoal` enum (conform §2) voor type-veilige doelkeuze. Functionele content per stap: 'Mos'-welkom, `UserGoal`-lijst, HealthKit-permissiekaart met status-feedback, AI-coach chat-preview en afronding. Na HealthKit-grant start direct `ProactiveNotificationService.shared.setupEngineA()` (Dual Engine §4) en wordt de start-datum via `Calendar.startOfDay` gelogd (Rule §3). Voortgangsbalk animeert bij zowel swipen als knop-navigatie.
 
-* **⏳ Sprint 31.3 — Permissie Logica & Afronding:** Koppelen van de 'Koppel Apple Health' en 'Sta notificaties toe' knoppen aan de daadwerkelijke systeem-prompts. Verfijnen van de copy en de transities.
+* **⏳ Sprint 31.3 — Permissie Logica & Afronding:** Notificatie-permissies, verfijnen van copy en transities, en UI-tests voor de volledige flow.
 
 ---
 
