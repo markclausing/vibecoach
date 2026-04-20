@@ -20,12 +20,13 @@ enum UITestMockEnvironment {
 
         // Als -ResetState meegegeven is: wis alle state zodat de onboarding opnieuw
         // vanaf nul begint (voor de Full Onboarding Flow test).
+        // Epic #31 Sprint 31.1: poortwachter gemigreerd naar `hasCompletedOnboarding`.
         if ProcessInfo.processInfo.arguments.contains("-ResetState") {
             resetAllState(defaults: defaults)
-            // hasSeenOnboarding blijft na reset op false → OnboardingView wordt getoond.
+            // hasCompletedOnboarding blijft na reset op false → OnboardingView wordt getoond.
         } else {
             // Geen reset: sla de onboarding over zodat de TabView direct zichtbaar is.
-            defaults.set(true, forKey: "hasSeenOnboarding")
+            defaults.set(true, forKey: "hasCompletedOnboarding")
         }
 
         // Zet de Vibe Score vast op 82 (Optimaal Hersteld) — Epic 14.4 cache.
@@ -60,7 +61,7 @@ enum UITestMockEnvironment {
     /// Wist alle app-specifieke UserDefaults-sleutels zodat de app als nieuw start.
     static func resetAllState(defaults: UserDefaults) {
         let keysToReset = [
-            "hasSeenOnboarding",
+            "hasCompletedOnboarding",
             "vibecoach_todayVibeScoreContext",
             "vibecoach_weatherContext",
             "vibecoach_userAPIKey",

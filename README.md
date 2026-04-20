@@ -5,7 +5,7 @@ Een iOS-app (gebouwd met SwiftUI) die fungeert als een persoonlijke, slimme fitn
 ---
 
 ## 🚀 Huidige Status
-**Actief in Ontwikkeling — Epic #31 ⏳**
+**Actief in Ontwikkeling — Epic #31 ✅ (klaar voor merge)**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur (Gemini / OpenAI / Anthropic). Testsuite: 63% code coverage.
 
@@ -228,15 +228,19 @@ Een volledige herontwerp van de drie kernschermen naar een moderne, kaartgebasee
 
 ---
 
-### ⏳ Epic #31: V2.0 Onboarding Experience (In Ontwikkeling)
+### ✅ Epic #31: V2.0 Onboarding Experience
 
-Een 5-schermen tellende, conversie-geoptimaliseerde onboarding flow in de nieuwe Serene/Mos stijl. Maakt gebruik van 'live visuals' (mock-UI componenten) in plaats van statische illustraties om de waarde van de app te demonstreren voordat cruciale permissies (HealthKit, Notificaties) worden gevraagd.
+Een vijf-schermen onboarding-flow in de definitieve Serene/Mos-stijl, uitgelijnd op het UX-prototype. Geen statische illustraties: elk scherm toont een 'live preview' (Vibe Score ring, TRIMP-bars, coach-notificatie) zodat de waarde van de app al zichtbaar is vóórdat de gebruiker kritieke permissies (Apple Health, Notificaties) verleent. System default color scheme wordt gerespecteerd (light/dark).
 
-* **⏳ Sprint 31.1 — State & Navigatie-structuur:** Setup van `@AppStorage("hasCompletedOnboarding")` in de root van de app. Implementatie van een `TabView` met `PageTabViewStyle` (of een custom step-navigatie) en de herbruikbare layout-wrapper (voortgangsbalk boven, hoofdtitel, dynamische content-area, vaste knoppen-layout onder).
+* **✅ Sprint 31.1 — State & Navigatie-structuur:** `@AppStorage("hasCompletedOnboarding")` als poortwachter in `AIFitnessCoachApp`; AppDelegate en onChange-hook mee-gemigreerd. `OnboardingTemplateView` als herbruikbare wrapper; `OnboardingView` als `TabView(selection:)` met `.page(indexDisplayMode: .never)`.
 
-* **⏳ Sprint 31.2 — Live Visuals & Mockups:** Bouwen van de specifieke content-views voor de 5 schermen: Welkom (Hero icon), Uitleg (Mock Vibe Score & TRIMP grafiek), AI Setup (Provider toggle & kosten-uitleg), HealthKit (Permissie visual), Notificaties (Mock iOS notificatie bubble).
+* **✅ Sprint 31.2 — HealthKit Integration & Engine A:** `HealthKitManager.shared` + `requestOnboardingPermissions()` (stappen, hartslag, HRV, slaap). Na grant start direct `ProactiveNotificationService.shared.setupEngineA()` (Dual Engine §4); start-datum gelogd via `Calendar.startOfDay` (Rule §3).
 
-* **⏳ Sprint 31.3 — Permissie Logica & Afronding:** Koppelen van de 'Koppel Apple Health' en 'Sta notificaties toe' knoppen aan de daadwerkelijke systeem-prompts. Verfijnen van de copy en de transities.
+* **✅ Sprint 31.3 — Stijl-fundament:** Kaart-stijl afgestemd op Dashboard (`cornerRadius 16`, zachte `shadow(opacity 0.07, radius 10, y: 3)`); typografie en kerning zoals `DashboardHeaderView`.
+
+* **✅ Sprint 31.4 — Persistence:** `UserConfiguration` (SwiftData `@Model`) legt `onboardingDate` en `onboardingDay` vast via `Calendar.current` (§3). AI-provider in `@AppStorage("vibecoach_aiProvider")`; de API-sleutel zelf wordt later in Instellingen ingevoerd en gaat via `KeychainService.shared.saveToken(_:forService:)` — nooit `UserDefaults`.
+
+* **✅ Sprint 31.6 — Prototype-uitlijning (V2.0 final):** Flow teruggebracht naar 5 stappen conform UX-prototype. Doel-keuzescherm verwijderd en `UserGoal` enum + bijhorend SwiftData-veld geschrapt (BYOK en data-verbinding staan centraal, niet een vooraf gekozen fitnessdoel). Continue voortgangsbalk + "X / N" teller; optionele uppercase eyebrow (moss voor merk, rood voor permissies). Stappen: (1) Welkom — brandmark + belofte; (2) Hoe het werkt — Vibe Score 76 ring + TRIMP 14-daagse bars; (3) Jouw AI — Privacy Eerst + Gemini/OpenAI segmented picker (sleutel later in Instellingen); (4) Apple Health — HRV + Slaap cards + info-bubble; (5) Notificaties — coach-bubble preview + frequentie-note (`UNUserNotificationCenter.requestAuthorization`). System default color scheme expliciet gerespecteerd via `preferredColorScheme(nil)` bij `colorSchemeRaw == "auto"`.
 
 ---
 
