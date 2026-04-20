@@ -27,6 +27,9 @@ struct ChatView: View {
 
     private let profileManager = AthleticProfileManager()
 
+    // Epic 34.1: V2.0 Fit & Finish — scroll-state voor materiaal-overlay in de top safe area.
+    @State private var isChatScrolled: Bool = false
+
     /// Werkt het actuele profiel bij vanuit SwiftData.
     private func refreshProfileContext() {
         do {
@@ -202,6 +205,13 @@ struct ChatView: View {
                             .padding(.vertical, 12)
                         }
                         .scrollDismissesKeyboard(.interactively)
+                        .onScrollGeometryChange(for: Bool.self) { geometry in
+                            geometry.contentOffset.y > 4
+                        } action: { _, newValue in
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isChatScrolled = newValue
+                            }
+                        }
                         .onTapGesture {
                             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                         }
@@ -281,6 +291,7 @@ struct ChatView: View {
             }
             .background(Color(.secondarySystemBackground).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            .scrollEdgeMaterial(isActive: isChatScrolled)
             .onChange(of: appState.targetActivityId) { _, newValue in
                 if let activityId = newValue {
                     refreshProfileContext()

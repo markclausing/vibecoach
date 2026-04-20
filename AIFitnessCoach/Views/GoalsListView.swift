@@ -16,6 +16,9 @@ struct GoalsListView: View {
     @State private var showingAddSheet = false
     @AppStorage("vibecoach_recoveryPlanTimestamp") private var recoveryPlanTimestamp: Double = 0
 
+    // Epic 34.1: scroll-state voor materiaal-overlay onder de statusbalk.
+    @State private var isGoalsScrolled: Bool = false
+
     // MARK: - Computed
 
     private var uncompletedGoals: [FitnessGoal] {
@@ -106,8 +109,16 @@ struct GoalsListView: View {
                 }
             }
             .accessibilityIdentifier("GoalsScrollView")
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y > 4
+            } action: { _, newValue in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isGoalsScrolled = newValue
+                }
+            }
             .background(Color(.secondarySystemBackground).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            .scrollEdgeMaterial(isActive: isGoalsScrolled)
             .sheet(isPresented: $showingAddSheet) {
                 AddGoalView()
                     .environment(\.modelContext, modelContext)

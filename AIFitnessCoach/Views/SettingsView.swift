@@ -253,9 +253,10 @@ struct SettingsView: View {
 
                     // ── Header
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("V\(Bundle.main.appVersion) · BUILD \(Bundle.main.buildNumber)")
+                        Text("Versie \(Bundle.main.appVersion) (Build \(Bundle.main.buildNumber))")
                             .font(.caption).fontWeight(.semibold)
                             .foregroundColor(.secondary).kerning(0.5)
+                            .accessibilityIdentifier("SettingsVersionLabel")
                         Text("Instellingen")
                             .font(.largeTitle).fontWeight(.bold)
                     }
@@ -1822,9 +1823,12 @@ private let memoryDateFormatter: DateFormatter = {
 // MARK: - Bundle helpers
 
 private extension Bundle {
+    /// Marketing-versie uit Info.plist (CFBundleShortVersionString).
+    /// Fallback blijft gelijk aan de huidige V2.0-release.
     var appVersion: String {
-        infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0"
     }
+    /// Build-nummer uit Info.plist (CFBundleVersion).
     var buildNumber: String {
         infoDictionary?["CFBundleVersion"] as? String ?? "1"
     }

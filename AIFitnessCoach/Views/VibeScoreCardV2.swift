@@ -93,10 +93,13 @@ struct VibeScoreCardV2: View {
                 Text(statusTitle)
                     .font(.headline)
                     .foregroundColor(injuryRiskLevel == .safe ? .primary : .orange)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
                 Text(statusDescription)
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .minimumScaleFactor(0.9)
             }
             Spacer()
         }
@@ -167,7 +170,9 @@ struct VibeScoreCardV2: View {
             Text("Ik houd vast aan je **\(workoutName)**")
                 .font(.caption)
                 .foregroundColor(.secondary)
-            Spacer()
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            Spacer(minLength: 8)
             Button {
                 onAskWhy?()
             } label: {
@@ -175,6 +180,7 @@ struct VibeScoreCardV2: View {
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundColor(themeManager.primaryAccentColor)
+                    .fixedSize()
             }
         }
         .padding(.horizontal, 16)
@@ -202,14 +208,20 @@ private struct MetricColumnV2: View {
                 Text(value)
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
                 Text(unit)
                     .font(.caption2)
                     .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
             if let d = detail {
                 Text(d)
                     .font(.caption2)
                     .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             } else {
                 Text(" ")
                     .font(.caption2)
