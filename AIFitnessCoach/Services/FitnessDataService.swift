@@ -454,12 +454,12 @@ final class HealthKitManager: @unchecked Sendable {
     // niet al bij app-start. Dit verkort de opstarttijd significant.
     lazy var healthStore: HKHealthStore = HKHealthStore()
 
-    /// Epic #31 Sprint 31.2: Minimale permissie-set voor de onboarding-flow.
+    /// Epic #31 Sprint 31.2 + fix: Minimale permissie-set voor de onboarding-flow.
     ///
-    /// Vraagt alleen de drie types die de V2.0 onboarding expliciet belooft:
-    /// stappen, hartslag en slaapanalyse. Bredere rechten (HRV, VO2Max, workouts,
-    /// gewicht/lengte) worden later via `requestAuthorization(completion:)`
-    /// gevraagd zodra die features nodig zijn.
+    /// Vraagt de types die de V2.0 onboarding expliciet belooft: stappen, hartslag,
+    /// slaapanalyse en HRV (heartRateVariabilitySDNN — nodig voor de Vibe Score).
+    /// Bredere rechten (VO2Max, workouts, gewicht/lengte) worden later via
+    /// `requestAuthorization(completion:)` gevraagd zodra die features nodig zijn.
     ///
     /// - Returns: `true` als de HealthKit-dialog succesvol is gepresenteerd én
     ///   iOS een antwoord heeft geregistreerd. Let op: dit zegt niets over per-type
@@ -475,6 +475,7 @@ final class HealthKitManager: @unchecked Sendable {
         let typesToRead: Set<HKObjectType> = [
             HKQuantityType.quantityType(forIdentifier: .stepCount)!,
             HKQuantityType.quantityType(forIdentifier: .heartRate)!,
+            HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
             HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!
         ]
 

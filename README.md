@@ -230,7 +230,7 @@ Een volledige herontwerp van de drie kernschermen naar een moderne, kaartgebasee
 
 ### ✅ Epic #31: V2.0 Onboarding Experience
 
-Een 5-schermen tellende, conversie-geoptimaliseerde onboarding flow in de nieuwe Serene/Mos stijl. Maakt gebruik van 'live visuals' (mock-UI componenten) in plaats van statische illustraties om de waarde van de app te demonstreren voordat cruciale permissies (HealthKit, Notificaties) worden gevraagd.
+Een 6-schermen tellende, conversie-geoptimaliseerde onboarding flow in de nieuwe Serene/Mos stijl. Maakt gebruik van 'live visuals' (mock-UI componenten) in plaats van statische illustraties om de waarde van de app te demonstreren voordat cruciale permissies (HealthKit, Notificaties) worden gevraagd.
 
 * **✅ Sprint 31.1 — State & Navigatie-structuur:** `@AppStorage("hasCompletedOnboarding")` als poortwachter in `AIFitnessCoachApp`; AppDelegate en onChange-hook mee-gemigreerd. `OnboardingTemplateView` herbruikbare wrapper (horizontale voortgangsbalk 1 t/m 5, titel/optionele subtitel, `@ViewBuilder` content, groene primaire + grijze secundaire knop). `OnboardingView` herschreven als `TabView(selection:)` met `.page(indexDisplayMode: .never)` over 5 stappen.
 
@@ -238,7 +238,9 @@ Een 5-schermen tellende, conversie-geoptimaliseerde onboarding flow in de nieuwe
 
 * **✅ Sprint 31.3 — Stijl & Copy-refinement:** Content en iconografie per stap afgestemd op de Serene/Mos look — zachte cirkels, hiërarchische SF Symbols en rustige copy in NL.
 
-* **✅ Sprint 31.4 — Persistence & Merge Readiness:** `UserConfiguration` (SwiftData `@Model`) toegevoegd voor het vastleggen van het gekozen doel (`UserGoal`) en `onboardingDate` / `onboardingDay` (beide via `Calendar.current`, conform §3). AI-provider opgeslagen in `@AppStorage("vibecoach_aiProvider")`; de BYOK API-sleutel gaat via `KeychainService.shared.saveToken(_:forService:)` — expliciet géén `UserDefaults`-fallback voor productie-sleutels. Alle ScrollView-wrappers toegevoegd zodat de 5 stappen ook op kleine iPhones (SE) niet klemlopen. De 'Start Coaching'-knop op stap 5 persisteert eerst en zet pas daarna `hasCompletedOnboarding` op `true`.
+* **✅ Sprint 31.4 — Persistence & Merge Readiness:** `UserConfiguration` (SwiftData `@Model`) toegevoegd voor het vastleggen van het gekozen doel (`UserGoal`) en `onboardingDate` / `onboardingDay` (beide via `Calendar.current`, conform §3). AI-provider opgeslagen in `@AppStorage("vibecoach_aiProvider")`; de BYOK API-sleutel gaat via `KeychainService.shared.saveToken(_:forService:)` — expliciet géén `UserDefaults`-fallback voor productie-sleutels. Alle ScrollView-wrappers toegevoegd zodat de stappen ook op kleine iPhones (SE) niet klemlopen. De 'Start Coaching'-knop op stap 6 persisteert eerst en zet pas daarna `hasCompletedOnboarding` op `true`.
+
+* **✅ Sprint 31.5 — Dedicated Bio-data Koppel-scherm:** Nieuwe stap 4 tussen de generieke HealthKit-introductie en de AI-coach setup: "Synchroniseer je bio-data" met twee horizontale `RoundedRectangle`-kaarten (HRV + Slaapanalyse) die matchen met het V2.0 design. `HealthKitManager.requestOnboardingPermissions()` uitgebreid met `heartRateVariabilitySDNN` zodat de UI-belofte (HRV voor Vibe Score) klopt. Knop-label "Koppel Apple Health" en statusgedrag (idle → requesting → granted/failed) gelijk aan stap 3; voortgangsbalk nu 6 segmenten.
 
 ---
 

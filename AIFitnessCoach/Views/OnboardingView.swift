@@ -39,9 +39,13 @@ struct OnboardingView: View {
 
     @State private var currentStep: Int = 1
     @State private var healthKitState: HealthKitState = .idle
+    /// Aparte state voor het dedicated Bio-data koppel-scherm (stap 4) zodat de
+    /// knop onafhankelijk van stap 3 terugvalt op "Koppel Apple Health" of
+    /// doorschakelt nadat iOS de popup heeft afgehandeld.
+    @State private var bioDataState: HealthKitState = .idle
     @FocusState private var apiKeyFieldFocused: Bool
 
-    private let totalSteps = 5
+    private let totalSteps = 6
 
     @EnvironmentObject private var themeManager: ThemeManager
     @Environment(\.modelContext) private var modelContext
@@ -53,8 +57,9 @@ struct OnboardingView: View {
             stepOne.tag(1)
             stepTwo.tag(2)
             stepThree.tag(3)
-            stepFour.tag(4)
-            stepFive.tag(5)
+            stepFourBioData.tag(4)
+            stepFiveAICoach.tag(5)
+            stepSixCompletion.tag(6)
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
         .background(Color(.secondarySystemBackground).ignoresSafeArea())
@@ -111,9 +116,27 @@ struct OnboardingView: View {
         )
     }
 
-    private var stepFour: some View {
+    /// Stap 4 — dedicated Bio-data sync scherm (HRV + Slaap) dat specifiek matcht
+    /// met het V2.0 design: twee horizontale kaarten in plaats van een generieke
+    /// permissie-visual. Roept opnieuw `requestOnboardingPermissions()` aan — iOS
+    /// dedupeert stil wanneer de gebruiker al in stap 3 akkoord gaf.
+    private var stepFourBioData: some View {
         OnboardingTemplateView(
             stepIndex: 4,
+            totalSteps: totalSteps,
+            title: "Synchroniseer je bio-data",
+            subtitle: "VibeCoach leest je HRV en slaapgegevens om je dagelijkse Vibe Score te berekenen.",
+            content: { BioDataSyncCards(state: bioDataState) },
+            primaryButtonTitle: primaryTitleForBioData,
+            primaryAction: handleBioDataAction,
+            secondaryButtonTitle: "Terug",
+            secondaryAction: goBack
+        )
+    }
+
+    private var stepFiveAICoach: some View {
+        OnboardingTemplateView(
+            stepIndex: 5,
             totalSteps: totalSteps,
             title: "Jouw AI-coach",
             subtitle: "Kies je provider en plak je API-sleutel",
@@ -134,9 +157,9 @@ struct OnboardingView: View {
         )
     }
 
-    private var stepFive: some View {
+    private var stepSixCompletion: some View {
         OnboardingTemplateView(
-            stepIndex: 5,
+            stepIndex: 6,
             totalSteps: totalSteps,
             title: "Klaar om te beginnen",
             subtitle: "Je eerste Vibe Score is een tap verderop",
@@ -146,6 +169,55 @@ struct OnboardingView: View {
             secondaryButtonTitle: "Terug",
             secondaryAction: goBack
         )
+    }
+
+    // MARK: - Bio-data logica (stap 4)
+
+    private var primaryTitleForBioData: String {
+        switch bioDataState {
+        case .idle:       return "Koppel Apple Health"
+        case .requesting: return "Even geduld…"
+        case .granted:    return "Volgende"
+        case .failed:     return "Probeer opnieuw"
+        }
+    }
+
+    private func handleBioDataAction() {
+        switch bioDataState {
+        case .granted:
+            advance()
+        case .requesting:
+            return
+        case .idle, .failed:
+            requestBioDataPermissions()
+        }
+    }
+
+    private func requestBioDataPermissions() {
+        bioDataState = .requesting
+
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-UITesting") {
+            bioDataState = .granted
+            startEngineA()
+            return
+        }
+        #endif
+
+        Task {
+            do {
+                _ = try await HealthKitManager.shared.requestOnboardingPermissions()
+                await MainActor.run {
+                    bioDataState = .granted
+                    // Start Engine A ook hier, voor het geval de gebruiker stap 3 heeft overgeslagen.
+                    startEngineA()
+                }
+            } catch {
+                await MainActor.run {
+                    bioDataState = .failed
+                }
+            }
+        }
     }
 
     // MARK: - HealthKit logica (stap 3)
@@ -440,7 +512,99 @@ private struct DataRow: View {
     }
 }
 
-/// Stap 4 — AI-provider picker + API-sleutel invoerveld (BYOK).
+/// Stap 4 — twee dedicated kaarten voor HRV en slaapanalyse, met lichte schaduw.
+/// Matcht het V2.0 design: rustige RoundedRectangles, zachte iconografie en
+/// statusbadge rechts wanneer de gebruiker de popup heeft afgehandeld.
+private struct BioDataSyncCards: View {
+    let state: HealthKitState
+    @EnvironmentObject private var themeManager: ThemeManager
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                BioDataCard(
+                    icon: "waveform.path.ecg.rectangle.fill",
+                    iconTint: themeManager.primaryAccentColor,
+                    title: "Hartslagvariabiliteit (HRV)",
+                    subtitle: "Meet je autonome herstel — de hoeksteen van je Vibe Score.",
+                    isGranted: state == .granted
+                )
+
+                BioDataCard(
+                    icon: "moon.stars.fill",
+                    iconTint: themeManager.primaryAccentColor,
+                    title: "Slaapanalyse & Herstel",
+                    subtitle: "Fase-opdeling (REM/diep/licht) uit Apple Health voor betere trainingsadviezen.",
+                    isGranted: state == .granted
+                )
+
+                if case .failed = state {
+                    Text("Toestemming mislukt — je kunt het nu opnieuw proberen of later via Instellingen koppelen.")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 4)
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+        }
+    }
+}
+
+/// Eén horizontale kaart met icoon links, titel + subtitel rechts, en een
+/// groene checkmark-badge zodra de permissie is verleend.
+private struct BioDataCard: View {
+    let icon: String
+    let iconTint: Color
+    let title: String
+    let subtitle: String
+    let isGranted: Bool
+
+    var body: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(iconTint.opacity(0.15))
+                    .frame(width: 52, height: 52)
+
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(iconTint)
+                    .symbolRenderingMode(.hierarchical)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
+            if isGranted {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.green)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color(.systemBackground))
+        )
+        .shadow(color: Color(.label).opacity(0.06), radius: 6, x: 0, y: 2)
+    }
+}
+
+/// Stap 5 — AI-provider picker + API-sleutel invoerveld (BYOK).
 private struct AIProviderSetupForm: View {
     @Binding var providerRaw: String
     @Binding var apiKey: String
