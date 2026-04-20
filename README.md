@@ -266,6 +266,20 @@ Trainingen zijn geen uniforme 'workouts' meer, maar sessies met een expliciete f
 
 ---
 
+### ⏳ Epic #34: V2.0 Fit & Finish — UI Polish & Tech Debt (Backlog)
+
+Na de grote V2.0-herontwerpronde (Epic #29 + #30) moeten de puntjes op de i. Kleine layout-bugs bij het scrollen, laatste resterende dummy-data, stugge coach-teksten en spacing-inconsistenties tussen iPhone-formaten — stuk voor stuk geen showstoppers, maar samen het verschil tussen "portfolio-app" en "App Store-waardig".
+
+* **⏳ Story 34.1 — Safe Area & Navigation Headers:** Fix layout-bugs tijdens het scrollen. Zorg dat custom headers netjes een achtergrond-blur (`.background(.regularMaterial)`) krijgen of meescrollen, zodat titels niet onleesbaar onder de iOS statusbalk (klok/batterij) verdwijnen.
+
+* **⏳ Story 34.2 — Hardcoded Data Cleanup:** Loop de recent vernieuwde views na (`CoachView`, `GoalsView`, `DashboardView`) en vervang de laatste resterende UI-dummy-variabelen (zoals hardcoded datums, VO₂max-getallen of namen) door de echte datamodellen of veilige fallbacks.
+
+* **⏳ Story 34.3 — Copywriting & Tekstuele Tweaks:** Pas de placeholder-teksten en stugge zinnen in de app aan naar de definitieve, natuurlijke 'Coach' tone-of-voice. Breng waar nodig een centrale structuur aan voor teksten (bijv. `CoachStrings` enum) zodat copy-wijzigingen niet verspreid door de views hoeven te duiken.
+
+* **⏳ Story 34.4 — UI Consistente Spacing:** Loop de padding en spacing van de nieuwe kaarten na op verschillende schermformaten (iPhone SE vs. Pro Max) om te zorgen dat de layout nergens afbreekt of te krap oogt. Waar zinnig semantische spacing-constants toevoegen in plaats van magic numbers.
+
+---
+
 ## Testing Push Notifications in Simulator
 Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de naam `test-push.apns` aanmaken en deze letterlijk naar de draaiende simulator slepen (Drag & Drop).
 
