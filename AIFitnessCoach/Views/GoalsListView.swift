@@ -476,15 +476,12 @@ struct GoalsListView: View {
 
     private var emptyStateCard: some View {
         VStack(spacing: 16) {
-            Image(systemName: "flag.fill")
-                .font(.system(size: 36))
-                .foregroundColor(.secondary)
-            Text("Geen doelen")
-                .font(.headline)
-            Text("Voeg een nieuw fitnessdoel toe om je voortgang bij te houden.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
+            ContentUnavailableView {
+                Label("Geen doelen", systemImage: "figure.outdoor.cycle")
+                    .foregroundStyle(themeManager.primaryAccentColor)
+            } description: {
+                Text("Voeg een nieuw fitnessdoel toe om je voortgang bij te houden.")
+            }
             Button { showingAddSheet = true } label: {
                 Text("Doel toevoegen")
                     .font(.subheadline).fontWeight(.semibold)
@@ -494,11 +491,8 @@ struct GoalsListView: View {
                     .clipShape(Capsule())
             }
         }
-        .padding(32)
+        .padding(.vertical, 24)
         .frame(maxWidth: .infinity)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
     // MARK: - Helpers

@@ -57,16 +57,38 @@ struct ChatView: View {
         return stored.isEmpty ? nil : stored
     }
 
+    /// Actieve blessure-zones afgeleid uit actieve UserPreferences (InjuryMemory).
+    private var activeInjuries: [BodyArea] {
+        BodyArea.allCases.filter { area in
+            activePreferences.contains { pref in
+                let text = pref.preferenceText.lowercased()
+                return area.injuryKeywords.contains(where: { text.contains($0) })
+            }
+        }
+    }
+
     /// Observaties afgeleid uit de meest recente SwiftData-records.
-    /// Leeg → we tonen de WAT IK ZIE kaart bewust niet.
+    /// Leeg → we tonen een motiverende fallback zodat de kaart nooit kaal is.
     private var coachInsightLines: [String] {
         var lines: [String] = []
 
+        // Vibe Score → batterij-tier
         if let readiness = recentReadiness.first {
             let hrv = Int(readiness.hrv.rounded())
-            lines.append("Vibe Score \(readiness.readinessScore)/100 · HRV \(hrv) ms.")
-            let sleep = String(format: "%.1f", readiness.sleepHours).replacingOccurrences(of: ".", with: ",")
-            lines.append("Slaap afgelopen nacht: \(sleep) uur.")
+            if readiness.readinessScore < 50 {
+                lines.append("Lage batterij (Vibe \(readiness.readinessScore)/100) — prioriteit is vandaag herstel.")
+            } else if readiness.readinessScore >= 80 {
+                lines.append("Volle batterij (Vibe \(readiness.readinessScore)/100) — goede dag voor intensiteit.")
+            } else {
+                lines.append("Vibe \(readiness.readinessScore)/100 · HRV \(hrv) ms — houd het gematigd.")
+            }
+        }
+
+        // Actieve blessures uit InjuryMemory
+        let injuries = activeInjuries
+        if !injuries.isEmpty {
+            let names = injuries.map { $0.rawValue.lowercased() }.joined(separator: ", ")
+            lines.append("Blessuregeheugen actief: \(names). Plan ontziet deze zone.")
         }
 
         if let lastActivity = recentActivities.first {
@@ -78,6 +100,11 @@ struct ChatView: View {
         if let profile = currentProfile, profile.isRecoveryNeeded {
             let reason = profile.recoveryReason ?? "Trainingsbelasting boven baseline."
             lines.append("Herstelsignaal: \(reason)")
+        }
+
+        // Motiverende fallback wanneer er nog geen data is
+        if lines.isEmpty {
+            lines.append("Luister naar je lichaam. Elke stap telt — ook de rustdagen.")
         }
 
         return lines
@@ -307,6 +334,7 @@ private let suggestionChips = [
 
                         Button(action: {
                             refreshProfileContext()
+                            Haptics.impact(.medium)
                             viewModel.sendMessage(contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                             selectedItem = nil
                         }) {

@@ -252,17 +252,17 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 0) {
 
                     // ── Header
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text("Versie \(Bundle.main.appVersion) (Build \(Bundle.main.buildNumber))")
                             .font(.caption).fontWeight(.semibold)
-                            .foregroundColor(.secondary).kerning(0.5)
+                            .foregroundColor(.secondary).kerning(0.4)
                             .accessibilityIdentifier("SettingsVersionLabel")
                         Text("Instellingen")
                             .font(.largeTitle).fontWeight(.bold)
                     }
                     .padding(.horizontal)
                     .padding(.top, 56)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 20)
 
                     // ── VERBINDINGEN
                     settingsSectionLabel("VERBINDINGEN")
@@ -1600,15 +1600,14 @@ struct PreferencesListView: View {
 
                         // ── Preference Cards
                         if filteredPreferences.isEmpty {
-                            VStack(spacing: 12) {
-                                Image(systemName: "brain").font(.system(size: 40)).foregroundColor(.secondary)
-                                Text("Nog geen herinneringen")
-                                    .font(.headline).foregroundColor(.secondary)
+                            ContentUnavailableView {
+                                Label("Nog geen herinneringen", systemImage: "brain.head.profile")
+                                    .foregroundStyle(themeManager.primaryAccentColor)
+                            } description: {
                                 Text("Vertel de coach in de chat over je blessures, voorkeuren of doelen.")
-                                    .font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(40)
+                            .padding(.vertical, 24)
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(filteredPreferences) { pref in
