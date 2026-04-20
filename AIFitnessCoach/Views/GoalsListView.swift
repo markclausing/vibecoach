@@ -135,7 +135,7 @@ struct GoalsListView: View {
                 let cmpCount    = completedGoals.count
                 Text(activeCount == 0
                      ? "GEEN DOELEN"
-                     : "\(activeCount) ACTIEF\(activeCount == 1 ? "" : "E") • \(cmpCount) VOLTOOID\(cmpCount == 1 ? "" : "E")")
+                     : "\(activeCount) ACTIE\(activeCount == 1 ? "F" : "VE") • \(cmpCount) VOLTOOID\(cmpCount == 1 ? "" : "E")")
                     .font(.caption).fontWeight(.semibold)
                     .foregroundColor(.secondary).kerning(0.5)
                 Spacer()

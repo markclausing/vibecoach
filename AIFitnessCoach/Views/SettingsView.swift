@@ -18,6 +18,8 @@ struct SettingsView: View {
     // UI State variabelen, gehaald uit en geschreven naar Keychain
     @State private var feedbackMessage: String?
     @State private var notificationsEnabled: Bool = false
+    // Epic 34 Sprint 2: materiaal-overlay onder statusbalk zodra gescrold.
+    @State private var isSettingsScrolled: Bool = false
     @AppStorage("isHealthKitLinked") private var isHealthKitLinked: Bool = false
 
     @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
@@ -30,11 +32,9 @@ struct SettingsView: View {
     @AppStorage("vibecoach_userName")        private var userName: String = ""
     @AppStorage("vibecoach_userAPIKey")      private var apiKey: String = ""
     @AppStorage("vibecoach_aiProvider")      private var providerRaw: String = AIProvider.gemini.rawValue
-    @AppStorage("vibecoach_notifPost")       private var notifPostWorkout: Bool = true
-    @AppStorage("vibecoach_notifInactive")   private var notifInactivity: Bool = true
-    @AppStorage("vibecoach_notifGoals")      private var notifGoalUpdates: Bool = true
-    @AppStorage("vibecoach_notifWeekly")     private var notifWeeklyReport: Bool = false
-    @AppStorage("vibecoach_bgSync")          private var backgroundSyncEnabled: Bool = true
+    // Epic 34 Sprint 2: toggles zonder backend-logica verwijderd.
+    // Notificatie-schakelaars en achtergrond-sync komen terug zodra de
+    // `ProactiveNotificationService` per-kanaal kan worden geconfigureerd.
     @AppStorage("vibecoach_colorScheme")     private var colorSchemeRaw: String = "auto"
     @State private var physicalProfile: UserPhysicalProfile?
 
@@ -521,46 +521,31 @@ struct SettingsView: View {
                                 hasChevron: true
                             )
                         }.buttonStyle(.plain)
-                        settingsDivider
-                        HStack {
-                            Text("Achtergrond-sync")
-                                .font(.subheadline)
-                                .padding(.leading, 14)
-                            Spacer()
-                            Toggle("", isOn: $backgroundSyncEnabled)
-                                .labelsHidden()
-                                .tint(themeManager.primaryAccentColor)
-                                .padding(.trailing, 14)
-                        }
-                        .padding(.vertical, 12)
                     }
                     Text("Sleutels worden lokaal versleuteld in de iOS Keychain opgeslagen.")
                         .font(.caption).foregroundColor(.secondary)
                         .padding(.horizontal).padding(.top, 6)
                     Spacer(minLength: 24)
 
-                    // ── NOTIFICATIES
+                    // Epic 34 Sprint 2: Notificatie-toggles verwijderd tot de per-kanaal
+                    // backend-logica bestaat. Systeempermissies zijn hieronder toegankelijk.
                     settingsSectionLabel("NOTIFICATIES")
                     settingsCard {
-                        notifRow(icon: "bell.fill",     title: "Analyse na activiteit",
-                                 subtitle: "Coach-bericht na upload van een nieuwe workout",
-                                 binding: $notifPostWorkout)
-                        settingsDivider
-                        notifRow(icon: "moon.fill",     title: "Inactiviteitscheck",
-                                 subtitle: "Herinnering na 48 uur zonder beweging",
-                                 binding: $notifInactivity)
-                        settingsDivider
-                        notifRow(icon: "flag.fill",     title: "Doel-updates",
-                                 subtitle: "Voortgang richting weekdoel",
-                                 binding: $notifGoalUpdates)
-                        settingsDivider
-                        notifRow(icon: "chart.bar.fill", title: "Wekelijks rapport",
-                                 subtitle: "Elke zondag 20:00",
-                                 binding: $notifWeeklyReport)
+                        Button {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            SettingsRowV2(
+                                icon: "bell.fill",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Systeempermissies",
+                                subtitle: "Beheer notificaties in iOS Instellingen",
+                                value: "Open",
+                                hasChevron: true
+                            )
+                        }.buttonStyle(.plain)
                     }
-                    Text("Gedetailleerde permissies beheer je in iOS Instellingen › VibeCoach.")
-                        .font(.caption).foregroundColor(.secondary)
-                        .padding(.horizontal).padding(.top, 6)
                     Spacer(minLength: 24)
 
                     // ── VERBINDINGSDETAILS
@@ -643,8 +628,16 @@ struct SettingsView: View {
                     Spacer(minLength: 40)
                 }
             }
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y > 4
+            } action: { _, newValue in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isSettingsScrolled = newValue
+                }
+            }
             .background(Color(.secondarySystemBackground).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            .scrollEdgeMaterial(isActive: isSettingsScrolled)
             .onAppear { loadTokens() }
         }
     }
@@ -673,29 +666,6 @@ struct SettingsView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
         .padding(.horizontal)
-    }
-
-    private func notifRow(icon: String, title: String, subtitle: String, binding: Binding<Bool>) -> some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(themeManager.primaryAccentColor.opacity(0.12))
-                    .frame(width: 34, height: 34)
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                    .foregroundColor(themeManager.primaryAccentColor)
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.subheadline).fontWeight(.medium)
-                Text(subtitle).font(.caption).foregroundColor(.secondary)
-            }
-            Spacer()
-            Toggle("", isOn: binding)
-                .labelsHidden()
-                .tint(themeManager.primaryAccentColor)
-        }
-        .padding(.vertical, 11)
-        .padding(.horizontal, 14)
     }
 
     // MARK: - Helpers
@@ -1523,6 +1493,8 @@ struct PreferencesListView: View {
 
     @State private var selectedSegment: MemorySegment = .pins
     @State private var selectedFilter: MemoryTypeFilter = .all
+    // Epic 34 Sprint 2: materiaal-overlay onder statusbalk zodra gescrold.
+    @State private var isMemoryScrolled: Bool = false
 
     enum MemorySegment { case pins, history }
     enum MemoryTypeFilter: CaseIterable {
@@ -1561,23 +1533,15 @@ struct PreferencesListView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
 
-                    // ── Header
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("WAT IK ONTHOU · \(activePreferences.count) ACTIEVE · \(historicPreferences.count) VERLOPEN")
-                                .font(.caption).fontWeight(.semibold)
-                                .foregroundColor(.secondary).kerning(0.4)
-                            Text("Geheugen")
-                                .font(.largeTitle).fontWeight(.bold)
-                        }
-                        Spacer()
-                        ZStack {
-                            Circle().fill(themeManager.primaryAccentColor.opacity(0.18)).frame(width: 40, height: 40)
-                            Text(userInitials.isEmpty ? "?" : userInitials)
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(themeManager.primaryAccentColor)
-                        }
+                    // ── Header (Epic 34 Sprint 2: avatar-icoon zonder functionaliteit verwijderd)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("WAT IK ONTHOU · \(activePreferences.count) ACTIEVE · \(historicPreferences.count) VERLOPEN")
+                            .font(.caption).fontWeight(.semibold)
+                            .foregroundColor(.secondary).kerning(0.4)
+                        Text("Geheugen")
+                            .font(.largeTitle).fontWeight(.bold)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
                     .padding(.top, 56)
                     .padding(.bottom, 20)
@@ -1694,8 +1658,16 @@ struct PreferencesListView: View {
                     Spacer(minLength: 40)
                 }
             }
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y > 4
+            } action: { _, newValue in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isMemoryScrolled = newValue
+                }
+            }
             .background(Color(.secondarySystemBackground).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            .scrollEdgeMaterial(isActive: isMemoryScrolled)
         }
     }
 

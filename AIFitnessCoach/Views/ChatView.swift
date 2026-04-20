@@ -22,6 +22,10 @@ struct ChatView: View {
     /// Actieve gebruikersvoorkeuren uit SwiftData
     @Query(filter: #Predicate<UserPreference> { $0.isActive == true }, sort: \UserPreference.createdAt, order: .forward) private var activePreferences: [UserPreference]
 
+    /// Epic 34 Sprint 2: recente activiteiten en readiness voor de data-gedreven coach-kaarten.
+    @Query(sort: \ActivityRecord.startDate, order: .reverse) private var recentActivities: [ActivityRecord]
+    @Query(sort: \DailyReadiness.date, order: .reverse) private var recentReadiness: [DailyReadiness]
+
     /// Bijhouden of de gebruiker de overtraining-waarschuwingsbanner heeft weggedrukt.
     @State private var warningDismissed = false
 
@@ -39,23 +43,47 @@ struct ChatView: View {
         }
     }
 
-    // MARK: - Sprint 2 Part 1: Dummy data voor UI-preview
+    // MARK: - Epic 34 Sprint 2: Data-gedreven KORT + WAT IK ZIE
+    //
+    // TODO(Epic 34.3): Vervang deze afleidingen door een echte LLM-call
+    // (CoachAnalysisService) zodra die endpoint live is. Tot die tijd combineren
+    // we de laatst opgeslagen coach-insight met de meest recente SwiftData-records
+    // (ActivityRecord, DailyReadiness, AthleticProfile) zodat de UI nooit meer
+    // verzonnen cijfers toont.
 
-    private let dummySummary = "Goed bezig deze week — je langste rit (74 km) én alle TRIMP-doelen gehaald. Ik zie wel een lichte kuitblessure (4/10); daarom hou ik vandaag en morgen rust aan en verschuif ik je fietstraining van maandag naar woensdag."
+    /// Korte coach-samenvatting — valt terug op de laatst door de LLM opgeslagen insight.
+    private var coachSummaryText: String? {
+        let stored = viewModel.latestStoredInsight.trimmingCharacters(in: .whitespacesAndNewlines)
+        return stored.isEmpty ? nil : stored
+    }
 
-    private let dummyInsights = [
-        "Je hebt deze week consistent boven doel gezeten (TRIMP 520/500) en je kuit meldt 4/10.",
-        "HRV dipte afgelopen 2 nachten met 8 ms.",
-        "Je slaapkwaliteit was gemiddeld 7,2 uur — voldoende voor herstel.",
-        "Trainingsbelasting is deze fase 12% boven gemiddeld voor Build Week 2."
-    ]
+    /// Observaties afgeleid uit de meest recente SwiftData-records.
+    /// Leeg → we tonen de WAT IK ZIE kaart bewust niet.
+    private var coachInsightLines: [String] {
+        var lines: [String] = []
 
-    private let dummyAdjustments: [PlanAdjustment] = [
-        PlanAdjustment(dayAbbr: "MA", dayNum: 21, original: "Fietsrit · Z2 · 45 min", replacement: "Indoor trainer · Z1–Z2 · 30 min"),
-        PlanAdjustment(dayAbbr: "WO", dayNum: 23, original: "Fietsrit · Z2 · 45 min", replacement: "Duurrit · Z2 · 75 min")
-    ]
+        if let readiness = recentReadiness.first {
+            let hrv = Int(readiness.hrv.rounded())
+            lines.append("Vibe Score \(readiness.readinessScore)/100 · HRV \(hrv) ms.")
+            let sleep = String(format: "%.1f", readiness.sleepHours).replacingOccurrences(of: ".", with: ",")
+            lines.append("Slaap afgelopen nacht: \(sleep) uur.")
+        }
 
-    private let suggestionChips = [
+        if let lastActivity = recentActivities.first {
+            let km = String(format: "%.1f", lastActivity.distance / 1000).replacingOccurrences(of: ".", with: ",")
+            let trimpText = lastActivity.trimp.map { " · TRIMP \(Int($0.rounded()))" } ?? ""
+            lines.append("Laatste training: \(lastActivity.displayName) · \(km) km\(trimpText).")
+        }
+
+        if let profile = currentProfile, profile.isRecoveryNeeded {
+            let reason = profile.recoveryReason ?? "Trainingsbelasting boven baseline."
+            lines.append("Herstelsignaal: \(reason)")
+        }
+
+        return lines
+    }
+
+private let suggestionChips = [
         "Wat moet ik morgen doen?",
         "Hoe is mijn herstel?",
         "Pas mijn plan aan",
@@ -137,18 +165,22 @@ struct ChatView: View {
                         ScrollView {
                             VStack(spacing: 12) {
 
-                                // ── V2 coach response kaarten (Sprint 2 Part 1: dummy data — alleen in debug)
-                                #if DEBUG
-                                CoachTextCard(
-                                    text: dummySummary,
-                                    accentColor: themeManager.primaryAccentColor
-                                )
+                                // ── Epic 34 Sprint 2: data-gedreven KORT + WAT IK ZIE
+                                // De kaarten tonen alleen echte SwiftData/coach-output.
+                                // Zijn beide leeg → geen placeholder ruis.
+                                if let summary = coachSummaryText {
+                                    CoachTextCard(
+                                        text: summary,
+                                        accentColor: themeManager.primaryAccentColor
+                                    )
+                                }
 
-                                CoachInsightCard(
-                                    insights: dummyInsights,
-                                    accentColor: themeManager.primaryAccentColor
-                                )
-                                #endif
+                                if !coachInsightLines.isEmpty {
+                                    CoachInsightCard(
+                                        insights: coachInsightLines,
+                                        accentColor: themeManager.primaryAccentColor
+                                    )
+                                }
 
                                 // ── Bestaande chatberichten (onder scheidingslijn)
                                 if !viewModel.messages.isEmpty {
