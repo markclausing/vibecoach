@@ -202,16 +202,15 @@ final class UserProfileService: @unchecked Sendable {
     // MARK: - Private helpers
 
     /// Leest geboortedatum synchronous en berekent de leeftijd in jaren.
-    /// Logt de ruwe HealthKit-waarden zodat sync-problemen direct zichtbaar zijn in de console.
+    /// Ruwe geboortedatum wordt bewust NIET gelogd (PII/PHI — CodeQL: cleartext logging of sensitive information).
+    /// Alleen de afgeleide leeftijd en foutmeldingen zijn zichtbaar voor sync-debug.
     private func fetchAge() -> Int? {
         do {
             let dob = try healthStore.dateOfBirthComponents()
-            print("🎂 [HealthKit] Geboortedatum components: \(dob)")
             guard let birthDate = Calendar.current.date(from: dob) else {
-                print("🎂 [HealthKit] ⚠️ Kon DateComponents niet omzetten naar Date: \(dob)")
+                print("🎂 [HealthKit] ⚠️ Kon DateComponents niet omzetten naar Date.")
                 return nil
             }
-            print("🎂 [HealthKit] Geboortedatum als Date: \(birthDate)")
             let age = Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year
             print("🎂 [HealthKit] Berekende leeftijd: \(age ?? -1) jaar")
             return age
