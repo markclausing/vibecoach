@@ -1652,6 +1652,28 @@ struct DashboardView: View {
                         .padding(.vertical, 4)
                     }
 
+                    // Foutbanner voor mislukte AI-analyse (pull-to-refresh timeout etc).
+                    // De foutmelding wordt anders alleen in de onzichtbare chat-bubble getoond.
+                    if let aiError = viewModel.lastAIErrorMessage, !viewModel.isFetchingWorkout, !viewModel.isTyping {
+                        DashboardBannerView(icon: "exclamationmark.triangle.fill", color: .orange) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(aiError)
+                                    .font(.caption)
+                                HStack(spacing: 12) {
+                                    Button("Opnieuw proberen") {
+                                        refreshProfileContext()
+                                        viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                    }
+                                    .font(.caption.weight(.semibold))
+                                    Button("Sluit") {
+                                        viewModel.lastAIErrorMessage = nil
+                                    }
+                                    .font(.caption)
+                                }
+                            }
+                        }
+                    }
+
                     // Coach Insight kaart — V2.0 stijl
                     if !latestCoachInsight.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {

@@ -21,6 +21,13 @@ class ChatViewModel: ObservableObject {
     /// True als we op dit moment Strava data aan het ophalen zijn via de expliciete knop.
     @Published var isFetchingWorkout: Bool = false
 
+    /// Gebruiksvriendelijke foutmelding van de laatste AI-call. `nil` zodra er een
+    /// nieuwe call start of succesvol afrondt. Screens die geen chat tonen
+    /// (zoals het Dashboard bij pull-to-refresh) gebruiken deze om een banner te
+    /// laten zien — anders zou een timeout stil sneuvelen omdat de chat-bubble
+    /// niet zichtbaar is.
+    @Published var lastAIErrorMessage: String? = nil
+
     /// Het protocol waartegen we de AI-verzoeken uitvoeren.
     /// Lazy: wordt pas aangemaakt bij het eerste AI-verzoek, niet bij app-start.
     /// Tests kunnen een mock injecteren via de init-parameter.
@@ -1434,10 +1441,15 @@ class ChatViewModel: ObservableObject {
         // slaan we de key-check over zodat tests niet falen op een ontbrekende sleutel.
         if model is RealGenerativeModel {
             guard hasAPIKey else {
-                messages.append(ChatMessage(role: .ai, text: "Je AI Coach slaapt. Voer een API-sleutel in via de Instellingen om hem wakker te maken."))
+                let noKeyMessage = "Je AI Coach slaapt. Voer een API-sleutel in via de Instellingen om hem wakker te maken."
+                messages.append(ChatMessage(role: .ai, text: noKeyMessage))
+                lastAIErrorMessage = noKeyMessage
                 return
             }
         }
+
+        // Wis een eventuele vorige foutbanner zodra er een nieuwe call start.
+        lastAIErrorMessage = nil
 
         Task {
             // Maak een dynamische array van ModelContent.Part objects
@@ -1472,22 +1484,27 @@ class ChatViewModel: ObservableObject {
 
             // Verwerk fout als alle pogingen zijn mislukt
             if let error = finalError {
+                let userFacingMessage: String
                 if let geminiError = error as? GenerateContentError {
                     switch geminiError {
                     case .promptBlocked:
                         // Prompt geblokkeerd door veiligheidsfilters
-                        messages.append(ChatMessage(role: .ai, text: "Je bericht kon niet verwerkt worden. Dit komt soms voor door veiligheidsfilters van de AI. Probeer het opnieuw of stel je vraag anders."))
+                        userFacingMessage = "Je bericht kon niet verwerkt worden. Dit komt soms voor door veiligheidsfilters van de AI. Probeer het opnieuw of stel je vraag anders."
                     case .invalidAPIKey:
-                        messages.append(ChatMessage(role: .ai, text: "De API-sleutel is ongeldig. Controleer de sleutel via Instellingen → AI Coach Configuratie."))
+                        userFacingMessage = "De API-sleutel is ongeldig. Controleer de sleutel via Instellingen → AI Coach Configuratie."
                     case .internalError:
                         // Gemini gaf 503/429 — service overbelast.
-                        messages.append(ChatMessage(role: .ai, text: "De AI-service is tijdelijk overbelast. Wacht even en probeer het opnieuw.", isError: true))
+                        userFacingMessage = "De AI-service is tijdelijk overbelast. Wacht even en probeer het opnieuw."
                     default:
-                        messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem met de AI-service. Probeer het opnieuw.", isError: true))
+                        userFacingMessage = "Er is een tijdelijk probleem met de AI-service. Probeer het opnieuw."
                     }
                 } else {
-                    messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem. Probeer het opnieuw.", isError: true))
+                    userFacingMessage = "Er is een tijdelijk probleem. Probeer het opnieuw."
                 }
+                messages.append(ChatMessage(role: .ai, text: userFacingMessage, isError: true))
+                // Spiegel de foutmelding in de banner-state zodat screens zonder
+                // zichtbare chat (zoals Dashboard tijdens pull-to-refresh) óók feedback tonen.
+                lastAIErrorMessage = userFacingMessage
                 isTyping = false
                 return
             }
