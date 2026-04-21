@@ -206,4 +206,110 @@ final class StravaAuthServiceTests: XCTestCase {
         XCTAssertNil(try? store.getToken(forService: "StravaToken"),
                      "Bij een netwerk-fout mogen er geen tokens zijn opgeslagen.")
     }
+
+    // MARK: - 5. H-01: OAuth state (CSRF)
+
+    func testMakeAuthorizationURL_IncludesStateQueryItem() {
+        // Given: een willekeurige state en vaste client-gegevens
+        let state = "abc-123-xyz"
+
+        // When
+        let url = StravaAuthService.makeAuthorizationURL(
+            clientId: "12345",
+            callbackScheme: "aifitnesscoach",
+            state: state
+        )
+
+        // Then: de URL bevat exact deze state én alle andere vereiste OAuth-parameters
+        XCTAssertNotNil(url)
+        let components = URLComponents(url: url!, resolvingAgainstBaseURL: false)
+        let items = components?.queryItems ?? []
+        XCTAssertEqual(items.first(where: { $0.name == "state" })?.value, state)
+        XCTAssertEqual(items.first(where: { $0.name == "client_id" })?.value, "12345")
+        XCTAssertEqual(items.first(where: { $0.name == "response_type" })?.value, "code")
+    }
+
+    func testValidateCallbackState_MatchingState_ReturnsTrue() {
+        // Given: callback-URL met een state die matcht
+        let state = UUID().uuidString
+        let url = URL(string: "aifitnesscoach://localhost?code=abc&state=\(state)")!
+
+        // Then
+        XCTAssertTrue(StravaAuthService.validateCallbackState(callbackURL: url, expectedState: state))
+    }
+
+    func testValidateCallbackState_MismatchingState_ReturnsFalse() {
+        // Given: callback stuurt een andere state dan we hadden verzonden (CSRF-poging)
+        let url = URL(string: "aifitnesscoach://localhost?code=abc&state=aanvaller-state")!
+
+        // Then
+        XCTAssertFalse(StravaAuthService.validateCallbackState(callbackURL: url, expectedState: "onze-verwachte-state"))
+    }
+
+    func testValidateCallbackState_MissingState_ReturnsFalse() {
+        // Given: callback zonder state — mogelijk ouderwetse of kwaadwillende call
+        let url = URL(string: "aifitnesscoach://localhost?code=abc")!
+
+        // Then
+        XCTAssertFalse(StravaAuthService.validateCallbackState(callbackURL: url, expectedState: "verwacht"))
+    }
+
+    func testValidateCallbackState_NilExpectedState_ReturnsFalse() {
+        // Given: we hadden geen state gegenereerd — dan mogen we nooit een callback vertrouwen
+        let url = URL(string: "aifitnesscoach://localhost?code=abc&state=xyz")!
+
+        // Then
+        XCTAssertFalse(StravaAuthService.validateCallbackState(callbackURL: url, expectedState: nil))
+    }
+
+    func testValidateCallbackState_EmptyExpectedState_ReturnsFalse() {
+        // Given: lege string als verwachte state — zelfde semantiek als nil
+        let url = URL(string: "aifitnesscoach://localhost?code=abc&state=")!
+
+        // Then
+        XCTAssertFalse(StravaAuthService.validateCallbackState(callbackURL: url, expectedState: ""))
+    }
+}
+
+/// M-08: tests voor de notification-payload whitelist.
+/// Verifieert dat alleen onze eigen payload-vormen worden toegelaten en
+/// dat onbekende of gemanipuleerde payloads netjes genegeerd worden.
+final class NotificationPayloadWhitelistTests: XCTestCase {
+
+    func testAllowed_ActivityIdAsInt_ReturnsTrue() {
+        let payload: [AnyHashable: Any] = ["activityId": Int64(12345)]
+        XCTAssertTrue(AppDelegate.isAllowedNotificationPayload(payload))
+    }
+
+    func testAllowed_ActivityIdAsString_ReturnsTrue() {
+        let payload: [AnyHashable: Any] = ["activityId": "12345"]
+        XCTAssertTrue(AppDelegate.isAllowedNotificationPayload(payload))
+    }
+
+    func testAllowed_TypeGoalRisk_ReturnsTrue() {
+        let payload: [AnyHashable: Any] = ["type": "goalRisk"]
+        XCTAssertTrue(AppDelegate.isAllowedNotificationPayload(payload))
+    }
+
+    func testAllowed_TypeRecoveryPlan_ReturnsTrue() {
+        let payload: [AnyHashable: Any] = ["type": "recovery_plan"]
+        XCTAssertTrue(AppDelegate.isAllowedNotificationPayload(payload))
+    }
+
+    func testDenied_UnknownType_ReturnsFalse() {
+        // Type die wij niet ondersteunen — moet stil worden genegeerd
+        let payload: [AnyHashable: Any] = ["type": "promotion"]
+        XCTAssertFalse(AppDelegate.isAllowedNotificationPayload(payload))
+    }
+
+    func testDenied_EmptyPayload_ReturnsFalse() {
+        let payload: [AnyHashable: Any] = [:]
+        XCTAssertFalse(AppDelegate.isAllowedNotificationPayload(payload))
+    }
+
+    func testDenied_UnrelatedKeys_ReturnsFalse() {
+        // Payload met random keys — typisch voor een marketing- of phishing-push
+        let payload: [AnyHashable: Any] = ["url": "https://evil.example", "title": "Klik hier"]
+        XCTAssertFalse(AppDelegate.isAllowedNotificationPayload(payload))
+    }
 }

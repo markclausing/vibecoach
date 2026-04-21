@@ -323,8 +323,13 @@ final class ProactiveNotificationService {
     /// Debug trigger: simuleert exact de logica die Engine A én Engine B zouden afvuren.
     /// De 24-uurs cooldown wordt tijdelijk gereset zodat de notificatie écht verstuurd wordt.
     /// Als toestemming nog niet is gevraagd, vraagt deze functie dat alsnog vóór de engines draaien.
-    /// Alleen zichtbaar in DEBUG builds via SettingsView.
+    ///
+    /// M-06: de volledige body staat in een `#if DEBUG`-guard. In release-builds
+    /// is dit een no-op. Dat voorkomt dat een onbedoelde call-site (bijv. een
+    /// resterende debug-knop of een later toegevoegde test-hook) in productie
+    /// engines kan afvuren en de notificatie-cooldown kan resetten.
     func debugTriggerEngines() async {
+        #if DEBUG
         print("🔧 DEBUG: Handmatige trigger van beide proactieve engines")
 
         // Controleer de toestemmingsstatus — vraag alsnog als nog niet bepaald
@@ -354,5 +359,6 @@ final class ProactiveNotificationService {
         // Voer Engine B logica uit (inactiviteitscheck)
         await checkInactionAndNotify()
         print("🔧 DEBUG: Beide engines afgevuurd")
+        #endif
     }
 }

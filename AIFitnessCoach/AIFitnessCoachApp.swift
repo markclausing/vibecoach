@@ -105,8 +105,35 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
     // MARK: - UNUserNotificationCenterDelegate
 
+    /// M-08: whitelist-check voor inkomende remote notificaties. Alleen payloads
+    /// die door onze eigen backend gestuurd kunnen worden worden verwerkt:
+    ///   - een `activityId`-key (Strava webhook → workout-analyse)
+    ///   - een `type`-waarde in `{"goalRisk", "recovery_plan"}` (proactieve coach)
+    /// Onbekende payloads worden stil genegeerd — dit voorkomt dat willekeurige
+    /// of gemanipuleerde pushes een banner tonen of navigatie triggeren.
+    ///
+    /// Static pure functie zodat hij los in unit-tests kan worden geverifieerd.
+    static func isAllowedNotificationPayload(_ userInfo: [AnyHashable: Any]) -> Bool {
+        let allowedTypes: Set<String> = ["goalRisk", "recovery_plan"]
+
+        if userInfo["activityId"] != nil {
+            return true
+        }
+        if let type = userInfo["type"] as? String, allowedTypes.contains(type) {
+            return true
+        }
+        return false
+    }
+
     // Deze methode zorgt ervoor dat notificaties ook getoond worden als de app op de voorgrond (foreground) open is.
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        let userInfo = notification.request.content.userInfo
+        guard Self.isAllowedNotificationPayload(userInfo) else {
+            // M-08: onbekende payload — geen banner, geen geluid.
+            print("🚫 Notificatie met onbekende payload genegeerd (willPresent): \(userInfo)")
+            completionHandler([])
+            return
+        }
         print("🔔 Notificatie ontvangen in de voorgrond: \(notification.request.content.title)")
         // Toon de notificatie als een banner (en speel geluid af)
         completionHandler([.banner, .sound])
@@ -118,6 +145,14 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         let userInfo = response.notification.request.content.userInfo
 
         print("📱 Gebruiker heeft op notificatie getikt!")
+
+        // M-08: controleer eerst de whitelist. Bij onbekende payloads doen we
+        // niets — geen navigatie, geen neveneffecten.
+        guard Self.isAllowedNotificationPayload(userInfo) else {
+            print("🚫 Notificatie met onbekende payload genegeerd (didReceive): \(userInfo)")
+            completionHandler()
+            return
+        }
 
         // Haal het activityId uit de payload (Strava webhook notificaties)
         if let activityId = userInfo["activityId"] as? Int64 {
@@ -133,8 +168,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             Task { @MainActor in
                 AppNavigationState.shared.selectedTab = .goals
             }
-        } else {
-            print("  ⚠️ Geen geldig activityId gevonden in payload: \(userInfo)")
+        } else if let type = userInfo["type"] as? String, type == "recovery_plan" {
+            // Forward compat: recovery_plan-type openen de Doelen tab (waar het herstelplan staat).
+            print("  ➡️ Recovery plan notificatie gedetecteerd — Doelen tab openen")
+            Task { @MainActor in
+                AppNavigationState.shared.selectedTab = .goals
+            }
         }
 
         completionHandler()
