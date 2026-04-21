@@ -317,6 +317,7 @@ Korte log van keuzes die afwijken van het originele plan, zodat context niet ver
 | **Open-Meteo i.p.v. WeatherKit** (Epic 21.1) | WeatherKit vereist een betaald Apple Developer account en een actieve entitlement. Open-Meteo is gratis, geen API-sleutel nodig, en levert dezelfde data (temp, neerslag, wind via WMO-codes). | WeatherKit — uitgesteld tot eventuele App Store release |
 | **`deepSleepRatio` als optional parameter** in `ReadinessCalculator` | Oudere Apple Watch-modellen schrijven alleen de generieke `.asleep` waarde, geen fase-uitsplitsing. Nil = geen strafpunt, zodat de calculator ook correct werkt op oudere hardware. | Aparte calculator-variant per device-generatie |
 | **Sentinel `"GEEN_BIOMETRISCHE_DATA"`** in AppStorage | Onderscheidt 'geen Watch gedragen vannacht' van 'nog niet berekend'. Coach krijgt expliciete instructie om HRV-zinnen te vermijden als de Watch niet gedragen was. | Extra `@State` boolean (vermeden om SwiftData-race-condition te voorkomen) |
+| **Logging-hardening** (2026-04, security audit quick-wins H-03 / L-01 / L-02) | APNs device-token print staat nu achter `#if DEBUG` met alleen de laatste 6 tekens — voorkomt identifier-lek in release-builds. `.gitignore` breed (`**/Secrets.swift`, `**/*.env`). Expliciete `NSAppTransportSecurity = { NSAllowsArbitraryLoads = NO }` in `Info.plist` maakt de iOS-default zichtbaar. | Volledige `print` → `os.Logger`-migratie — uitgesteld naar later (3-4 uur, 121 call-sites) |
 
 ---
 
