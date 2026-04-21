@@ -441,6 +441,36 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertNil(workoutMissing.targetTRIMP)
     }
 
+    /// Sprint 26.x — Regressietest voor de fallback-waterfall in `fetchAIResponse`.
+    /// Een niet-`internalError` Gemini-fout (bijv. ongeldige API-sleutel) mag NIET de
+    /// `gemini-flash-lite-latest` fallback triggeren, en moet direct de juiste
+    /// gebruikersboodschap in `messages` zetten.
+    func testSendMessage_WithInvalidAPIKeyError_SkipsFallbackAndShowsKeyMessage() async {
+        // Arrange: mock gooit een invalidAPIKey-fout. De echte fallback-builder
+        // maakt een `GenerativeModel` met dezelfde API-sleutel, dus die zou ook
+        // falen — maar voor deze code-pad geldt: we mogen nooit een fallback proberen.
+        viewModel.inputText = "Hoe ga ik mijn doel halen?"
+        mockModel.errorToThrow = GenerateContentError.invalidAPIKey(message: "API key not valid.")
+        mockModel.delay = 0.05
+        viewModel.messages.removeAll()
+
+        // Actie
+        viewModel.sendMessage()
+
+        // Wacht op asynchrone verwerking
+        try? await Task.sleep(nanoseconds: 250_000_000)
+
+        // Assert: user-bericht + error-bericht (geen extra fallback-poging zichtbaar)
+        XCTAssertFalse(viewModel.isTyping, "Laadindicator moet weer uit na foutafhandeling.")
+        XCTAssertEqual(viewModel.messages.count, 2, "Exact 2 berichten verwacht: user + error-AI.")
+        XCTAssertEqual(viewModel.messages.first?.role, .user)
+        XCTAssertEqual(viewModel.messages.last?.role, .ai)
+        let errorText = viewModel.messages.last?.text ?? ""
+        XCTAssertTrue(errorText.contains("API-sleutel is ongeldig"),
+                      "Moet de invalidAPIKey-boodschap tonen, niet de generieke fallback-tekst. Kreeg: \(errorText)")
+        XCTAssertEqual(viewModel.retryStatusMessage, "", "retryStatusMessage moet weer leeg zijn na afloop.")
+    }
+
     func testAnalyzeCurrentStatus_FallbackToStrava() async {
         // Test dat analyzeCurrentStatus correct via Strava data ophaalt en een AI-bericht toevoegt.
         // setUp() zet selectedDataSource op .strava zodat de echte HealthKitManager (zonder CI-rechten)

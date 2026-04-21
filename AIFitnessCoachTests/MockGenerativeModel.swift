@@ -7,6 +7,10 @@ class MockGenerativeModel: GenerativeModelProtocol {
     var responseToReturn: String?
     var delay: TimeInterval = 0.5
     var shouldThrowError: Bool = false
+    /// Specifieke error om te gooien — heeft voorrang op `shouldThrowError`.
+    /// Zet bijvoorbeeld op `GenerateContentError.invalidAPIKey` om die code-pad
+    /// in `fetchAIResponse` te testen.
+    var errorToThrow: Error?
 
     enum MockError: Error {
         case genericError
@@ -21,6 +25,9 @@ class MockGenerativeModel: GenerativeModelProtocol {
             try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         }
 
+        if let error = errorToThrow {
+            throw error
+        }
         if shouldThrowError {
             throw MockError.genericError
         }
