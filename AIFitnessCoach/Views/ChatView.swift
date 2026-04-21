@@ -22,10 +22,17 @@ struct ChatView: View {
     /// Actieve gebruikersvoorkeuren uit SwiftData
     @Query(filter: #Predicate<UserPreference> { $0.isActive == true }, sort: \UserPreference.createdAt, order: .forward) private var activePreferences: [UserPreference]
 
+    /// Epic 34 Sprint 2: recente activiteiten en readiness voor de data-gedreven coach-kaarten.
+    @Query(sort: \ActivityRecord.startDate, order: .reverse) private var recentActivities: [ActivityRecord]
+    @Query(sort: \DailyReadiness.date, order: .reverse) private var recentReadiness: [DailyReadiness]
+
     /// Bijhouden of de gebruiker de overtraining-waarschuwingsbanner heeft weggedrukt.
     @State private var warningDismissed = false
 
     private let profileManager = AthleticProfileManager()
+
+    // Epic 34.1: V2.0 Fit & Finish — scroll-state voor materiaal-overlay in de top safe area.
+    @State private var isChatScrolled: Bool = false
 
     /// Werkt het actuele profiel bij vanuit SwiftData.
     private func refreshProfileContext() {
@@ -36,23 +43,74 @@ struct ChatView: View {
         }
     }
 
-    // MARK: - Sprint 2 Part 1: Dummy data voor UI-preview
+    // MARK: - Epic 34 Sprint 2: Data-gedreven KORT + WAT IK ZIE
+    //
+    // TODO(Epic 34.3): Vervang deze afleidingen door een echte LLM-call
+    // (CoachAnalysisService) zodra die endpoint live is. Tot die tijd combineren
+    // we de laatst opgeslagen coach-insight met de meest recente SwiftData-records
+    // (ActivityRecord, DailyReadiness, AthleticProfile) zodat de UI nooit meer
+    // verzonnen cijfers toont.
 
-    private let dummySummary = "Goed bezig deze week — je langste rit (74 km) én alle TRIMP-doelen gehaald. Ik zie wel een lichte kuitblessure (4/10); daarom hou ik vandaag en morgen rust aan en verschuif ik je fietstraining van maandag naar woensdag."
+    /// Korte coach-samenvatting — valt terug op de laatst door de LLM opgeslagen insight.
+    private var coachSummaryText: String? {
+        let stored = viewModel.latestStoredInsight.trimmingCharacters(in: .whitespacesAndNewlines)
+        return stored.isEmpty ? nil : stored
+    }
 
-    private let dummyInsights = [
-        "Je hebt deze week consistent boven doel gezeten (TRIMP 520/500) en je kuit meldt 4/10.",
-        "HRV dipte afgelopen 2 nachten met 8 ms.",
-        "Je slaapkwaliteit was gemiddeld 7,2 uur — voldoende voor herstel.",
-        "Trainingsbelasting is deze fase 12% boven gemiddeld voor Build Week 2."
-    ]
+    /// Actieve blessure-zones afgeleid uit actieve UserPreferences (InjuryMemory).
+    private var activeInjuries: [BodyArea] {
+        BodyArea.allCases.filter { area in
+            activePreferences.contains { pref in
+                let text = pref.preferenceText.lowercased()
+                return area.injuryKeywords.contains(where: { text.contains($0) })
+            }
+        }
+    }
 
-    private let dummyAdjustments: [PlanAdjustment] = [
-        PlanAdjustment(dayAbbr: "MA", dayNum: 21, original: "Fietsrit · Z2 · 45 min", replacement: "Indoor trainer · Z1–Z2 · 30 min"),
-        PlanAdjustment(dayAbbr: "WO", dayNum: 23, original: "Fietsrit · Z2 · 45 min", replacement: "Duurrit · Z2 · 75 min")
-    ]
+    /// Observaties afgeleid uit de meest recente SwiftData-records.
+    /// Leeg → we tonen een motiverende fallback zodat de kaart nooit kaal is.
+    private var coachInsightLines: [String] {
+        var lines: [String] = []
 
-    private let suggestionChips = [
+        // Vibe Score → batterij-tier
+        if let readiness = recentReadiness.first {
+            let hrv = Int(readiness.hrv.rounded())
+            if readiness.readinessScore < 50 {
+                lines.append("Lage batterij (Vibe \(readiness.readinessScore)/100) — prioriteit is vandaag herstel.")
+            } else if readiness.readinessScore >= 80 {
+                lines.append("Volle batterij (Vibe \(readiness.readinessScore)/100) — goede dag voor intensiteit.")
+            } else {
+                lines.append("Vibe \(readiness.readinessScore)/100 · HRV \(hrv) ms — houd het gematigd.")
+            }
+        }
+
+        // Actieve blessures uit InjuryMemory
+        let injuries = activeInjuries
+        if !injuries.isEmpty {
+            let names = injuries.map { $0.rawValue.lowercased() }.joined(separator: ", ")
+            lines.append("Blessuregeheugen actief: \(names). Plan ontziet deze zone.")
+        }
+
+        if let lastActivity = recentActivities.first {
+            let km = String(format: "%.1f", lastActivity.distance / 1000).replacingOccurrences(of: ".", with: ",")
+            let trimpText = lastActivity.trimp.map { " · TRIMP \(Int($0.rounded()))" } ?? ""
+            lines.append("Laatste training: \(lastActivity.displayName) · \(km) km\(trimpText).")
+        }
+
+        if let profile = currentProfile, profile.isRecoveryNeeded {
+            let reason = profile.recoveryReason ?? "Trainingsbelasting boven baseline."
+            lines.append("Herstelsignaal: \(reason)")
+        }
+
+        // Motiverende fallback wanneer er nog geen data is
+        if lines.isEmpty {
+            lines.append("Luister naar je lichaam. Elke stap telt — ook de rustdagen.")
+        }
+
+        return lines
+    }
+
+private let suggestionChips = [
         "Wat moet ik morgen doen?",
         "Hoe is mijn herstel?",
         "Pas mijn plan aan",
@@ -134,18 +192,22 @@ struct ChatView: View {
                         ScrollView {
                             VStack(spacing: 12) {
 
-                                // ── V2 coach response kaarten (Sprint 2 Part 1: dummy data — alleen in debug)
-                                #if DEBUG
-                                CoachTextCard(
-                                    text: dummySummary,
-                                    accentColor: themeManager.primaryAccentColor
-                                )
+                                // ── Epic 34 Sprint 2: data-gedreven KORT + WAT IK ZIE
+                                // De kaarten tonen alleen echte SwiftData/coach-output.
+                                // Zijn beide leeg → geen placeholder ruis.
+                                if let summary = coachSummaryText {
+                                    CoachTextCard(
+                                        text: summary,
+                                        accentColor: themeManager.primaryAccentColor
+                                    )
+                                }
 
-                                CoachInsightCard(
-                                    insights: dummyInsights,
-                                    accentColor: themeManager.primaryAccentColor
-                                )
-                                #endif
+                                if !coachInsightLines.isEmpty {
+                                    CoachInsightCard(
+                                        insights: coachInsightLines,
+                                        accentColor: themeManager.primaryAccentColor
+                                    )
+                                }
 
                                 // ── Bestaande chatberichten (onder scheidingslijn)
                                 if !viewModel.messages.isEmpty {
@@ -202,6 +264,13 @@ struct ChatView: View {
                             .padding(.vertical, 12)
                         }
                         .scrollDismissesKeyboard(.interactively)
+                        .onScrollGeometryChange(for: Bool.self) { geometry in
+                            geometry.contentOffset.y > 4
+                        } action: { _, newValue in
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isChatScrolled = newValue
+                            }
+                        }
                         .onTapGesture {
                             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                         }
@@ -265,6 +334,7 @@ struct ChatView: View {
 
                         Button(action: {
                             refreshProfileContext()
+                            Haptics.impact(.medium)
                             viewModel.sendMessage(contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                             selectedItem = nil
                         }) {
@@ -281,6 +351,7 @@ struct ChatView: View {
             }
             .background(Color(.secondarySystemBackground).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            .scrollEdgeMaterial(isActive: isChatScrolled)
             .onChange(of: appState.targetActivityId) { _, newValue in
                 if let activityId = newValue {
                     refreshProfileContext()

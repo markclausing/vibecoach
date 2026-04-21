@@ -16,6 +16,9 @@ struct GoalsListView: View {
     @State private var showingAddSheet = false
     @AppStorage("vibecoach_recoveryPlanTimestamp") private var recoveryPlanTimestamp: Double = 0
 
+    // Epic 34.1: scroll-state voor materiaal-overlay onder de statusbalk.
+    @State private var isGoalsScrolled: Bool = false
+
     // MARK: - Computed
 
     private var uncompletedGoals: [FitnessGoal] {
@@ -106,8 +109,16 @@ struct GoalsListView: View {
                 }
             }
             .accessibilityIdentifier("GoalsScrollView")
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y > 4
+            } action: { _, newValue in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isGoalsScrolled = newValue
+                }
+            }
             .background(Color(.secondarySystemBackground).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            .scrollEdgeMaterial(isActive: isGoalsScrolled)
             .sheet(isPresented: $showingAddSheet) {
                 AddGoalView()
                     .environment(\.modelContext, modelContext)
@@ -124,7 +135,7 @@ struct GoalsListView: View {
                 let cmpCount    = completedGoals.count
                 Text(activeCount == 0
                      ? "GEEN DOELEN"
-                     : "\(activeCount) ACTIEF\(activeCount == 1 ? "" : "E") • \(cmpCount) VOLTOOID\(cmpCount == 1 ? "" : "E")")
+                     : "\(activeCount) ACTIE\(activeCount == 1 ? "F" : "VE") • \(cmpCount) VOLTOOID\(cmpCount == 1 ? "" : "E")")
                     .font(.caption).fontWeight(.semibold)
                     .foregroundColor(.secondary).kerning(0.5)
                 Spacer()
@@ -465,15 +476,12 @@ struct GoalsListView: View {
 
     private var emptyStateCard: some View {
         VStack(spacing: 16) {
-            Image(systemName: "flag.fill")
-                .font(.system(size: 36))
-                .foregroundColor(.secondary)
-            Text("Geen doelen")
-                .font(.headline)
-            Text("Voeg een nieuw fitnessdoel toe om je voortgang bij te houden.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
+            ContentUnavailableView {
+                Label("Geen doelen", systemImage: "figure.outdoor.cycle")
+                    .foregroundStyle(themeManager.primaryAccentColor)
+            } description: {
+                Text("Voeg een nieuw fitnessdoel toe om je voortgang bij te houden.")
+            }
             Button { showingAddSheet = true } label: {
                 Text("Doel toevoegen")
                     .font(.subheadline).fontWeight(.semibold)
@@ -483,11 +491,8 @@ struct GoalsListView: View {
                     .clipShape(Capsule())
             }
         }
-        .padding(32)
+        .padding(.vertical, 24)
         .frame(maxWidth: .infinity)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
     // MARK: - Helpers

@@ -128,6 +128,7 @@ struct AddGoalView: View {
                 modelContext.insert(newGoal)
                 try? modelContext.save()
                 isSaving = false
+                Haptics.impact(.medium)
                 dismiss()
             }
         }

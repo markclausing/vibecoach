@@ -270,17 +270,19 @@ Trainingen zijn geen uniforme 'workouts' meer, maar sessies met een expliciete f
 
 ---
 
-### ⏳ Epic #34: V2.0 Fit & Finish — UI Polish & Tech Debt (Backlog)
+### ✅ Epic #34: V2.0 Fit & Finish — UI Polish & Tech Debt (Afgerond)
 
 Na de grote V2.0-herontwerpronde (Epic #29 + #30) moeten de puntjes op de i. Kleine layout-bugs bij het scrollen, laatste resterende dummy-data, stugge coach-teksten en spacing-inconsistenties tussen iPhone-formaten — stuk voor stuk geen showstoppers, maar samen het verschil tussen "portfolio-app" en "App Store-waardig".
 
-* **⏳ Story 34.1 — Safe Area & Navigation Headers:** Fix layout-bugs tijdens het scrollen. Zorg dat custom headers netjes een achtergrond-blur (`.background(.regularMaterial)`) krijgen of meescrollen, zodat titels niet onleesbaar onder de iOS statusbalk (klok/batterij) verdwijnen.
+* **✅ Story 34.1 — Safe Area & Navigation Headers:** Dashboard-, Goals-, Coach-, Geheugen- en Settings-views krijgen een scroll-aware `regularMaterial` strip in de top safe area via de nieuwe `scrollEdgeMaterial(isActive:)` modifier, zodat content niet meer onleesbaar onder de statusbalk door glijdt.
 
-* **⏳ Story 34.2 — Hardcoded Data Cleanup:** Loop de recent vernieuwde views na (`CoachView`, `GoalsView`, `DashboardView`) en vervang de laatste resterende UI-dummy-variabelen (zoals hardcoded datums, VO₂max-getallen of namen) door de echte datamodellen of veilige fallbacks.
+* **✅ Story 34.2 — Dynamisch Build- & Versienummer:** De `SettingsView` leest het Build- en Marketing-versienummer dynamisch uit `Bundle.main.infoDictionary` (`CFBundleVersion` + `CFBundleShortVersionString`) en toont ze in de vorm *"Versie X.Y.Z (Build N)"*. Geen hardcoded strings meer bij elke release.
 
-* **⏳ Story 34.3 — Copywriting & Tekstuele Tweaks:** Pas de placeholder-teksten en stugge zinnen in de app aan naar de definitieve, natuurlijke 'Coach' tone-of-voice. Breng waar nodig een centrale structuur aan voor teksten (bijv. `CoachStrings` enum) zodat copy-wijzigingen niet verspreid door de views hoeven te duiken.
+* **✅ Story 34.3 — Smart Insights, Haptics & Empty States:** De `CoachInsightCard` toont dynamische observaties — Vibe-batterij-tiers (*"Lage batterij"* bij <50, *"Volle batterij"* bij ≥80), actieve blessure-zones uit het `InjuryMemory` en een motiverende fallback-quote wanneer er nog geen data is. Tactiele `.impact(.medium)`-feedback via de nieuwe `Haptics`-helper bevestigt onboarding-afronding, bericht-verzending en doel-toevoegen. Lege Doelen- en Geheugen-lijsten gebruiken een `ContentUnavailableView` met rustig SF-symbool (`figure.outdoor.cycle` / `brain.head.profile`) in `primaryAccentColor`.
 
-* **⏳ Story 34.4 — UI Consistente Spacing:** Loop de padding en spacing van de nieuwe kaarten na op verschillende schermformaten (iPhone SE vs. Pro Max) om te zorgen dat de layout nergens afbreekt of te krap oogt. Waar zinnig semantische spacing-constants toevoegen in plaats van magic numbers.
+* **✅ Story 34.4 — UI Consistente Spacing:** Dashboard-kaarten (Vibe Score-metrics, coach-hint, header) krijgen `lineLimit` + `minimumScaleFactor` zodat tekst op iPhone SE niet afgekapt wordt. Versie/Build-spacing in `SettingsView` uitgelijnd met de Geheugen-header (spacing 4, bottom-padding 20).
+
+* **✅ Story 34.5 — Hardcoded Data Cleanup:** De KORT/WAT IK ZIE-kaarten in `ChatView` zijn nu volledig data-gedreven via `@Query` op `ActivityRecord`, `DailyReadiness` en `UserPreference`. Build- en marketing-versie komen uit `Info.plist`. Dummy-toggles zonder backend (notificatie-voorkeuren, achtergrond-sync) zijn verwijderd uit Settings; de vervanging is een `Link` naar de iOS Instellingen-app.
 
 ---
 

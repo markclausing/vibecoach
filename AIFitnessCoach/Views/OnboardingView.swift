@@ -252,6 +252,7 @@ struct OnboardingView: View {
     /// naar SwiftData zodat andere features een ankerdatum hebben.
     private func completeOnboarding() {
         persistUserConfiguration()
+        Haptics.impact(.medium)
         hasCompletedOnboarding = true
     }
 
