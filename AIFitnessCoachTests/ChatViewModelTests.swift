@@ -394,6 +394,48 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isTyping)
     }
 
+    /// Regressietest voor de Dashboard-refresh stille-timeout bug.
+    /// Als het AI-model een fout gooit moet `lastAIErrorMessage` gezet worden,
+    /// zodat het Dashboard een banner kan tonen (chat-bubble is daar niet zichtbaar).
+    func testFetchAIResponse_OnError_SetsLastAIErrorMessage() async {
+        // Arrange
+        mockModel.shouldThrowError = true
+        mockModel.delay = 0.05
+        viewModel.messages.removeAll()
+        viewModel.lastAIErrorMessage = nil
+
+        // Actie
+        viewModel.fetchAIResponse(for: "wat is mijn schema", image: nil)
+
+        // Polling tot de error state geregistreerd is
+        var attempts = 0
+        while viewModel.lastAIErrorMessage == nil && attempts < 50 {
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            attempts += 1
+        }
+
+        // Assert
+        XCTAssertNotNil(viewModel.lastAIErrorMessage, "lastAIErrorMessage moet gezet zijn zodat Dashboard een banner kan tonen.")
+        XCTAssertFalse(viewModel.lastAIErrorMessage?.isEmpty ?? true, "De foutmelding moet een gebruiksvriendelijke tekst bevatten.")
+        XCTAssertFalse(viewModel.isTyping, "isTyping moet uit staan na een fout.")
+    }
+
+    /// Bij een nieuwe call moet de vorige banner-state gewist worden.
+    func testFetchAIResponse_NewCall_ClearsPreviousErrorBanner() async {
+        // Arrange: simuleer een eerdere fout
+        viewModel.lastAIErrorMessage = "Vorige foutmelding"
+        mockModel.shouldThrowError = false
+        mockModel.responseToReturn = "ok"
+        mockModel.delay = 0.05
+        viewModel.messages.removeAll()
+
+        // Actie
+        viewModel.fetchAIResponse(for: "nieuwe vraag", image: nil)
+
+        // Assert: direct na de call moet de banner al gewist zijn (synchrone reset vóór Task).
+        XCTAssertNil(viewModel.lastAIErrorMessage, "lastAIErrorMessage moet direct gewist zijn bij een nieuwe call.")
+    }
+
     func testSuggestedWorkout_DecodingWithMissingOrStringTRIMP_HandlesGracefully() throws {
         // Test Int TRIMP
         let jsonInt = """
