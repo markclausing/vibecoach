@@ -136,17 +136,14 @@ struct AddGoalView: View {
 
     /// Vraag de Gemini AI om een logische TRIMP belasting
     private func fetchAITargetTRIMP(goal: FitnessGoal, profile: AthleticProfile?) async -> Double {
-        // Epic 20: BYOK — gebruik de actieve API-sleutel (gebruiker of Secrets-fallback).
-        let activeKey = {
-            let stored = UserDefaults.standard.string(forKey: "vibecoach_userAPIKey") ?? ""
-            return stored.isEmpty ? Secrets.geminiAPIKey : stored
-        }()
-        guard !activeKey.isEmpty && activeKey != "VUL_HIER_JE_API_KEY_IN" else {
+        // Epic 20 / M-04: BYOK — uitsluitend de door de gebruiker geconfigureerde sleutel.
+        let activeKey = UserDefaults.standard.string(forKey: "vibecoach_userAPIKey") ?? ""
+        guard !activeKey.isEmpty else {
             return fallbackTRIMP(for: goal.targetDate)
         }
 
         let model = GenerativeModel(
-            name: "gemini-2.5-flash",
+            name: "gemini-flash-latest",
             apiKey: activeKey
         )
 
@@ -169,17 +166,6 @@ struct AddGoalView: View {
             if let text = response.text?.trimmingCharacters(in: .whitespacesAndNewlines), let trimp = Double(text) {
                 return trimp
             }
-        } catch let error as GenerateContentError {
-            if case .internalError = error {
-                // Primaire model overbelast (503/429) — stil proberen met fallback model.
-                let fallback = GenerativeModel(name: "gemini-flash-latest", apiKey: activeKey)
-                if let response = try? await fallback.generateContent(prompt),
-                   let text = response.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-                   let trimp = Double(text) {
-                    return trimp
-                }
-            }
-            print("AI TRIMP Fetch failed: \(error)")
         } catch {
             print("AI TRIMP Fetch failed: \(error)")
         }

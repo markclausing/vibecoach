@@ -175,12 +175,11 @@ class ChatViewModel: ObservableObject {
         todayVibeScoreContext = "Vibe Score vandaag: \(r.readinessScore)/100 (\(label)). Slaap: \(sleepH)u \(sleepM)m. HRV: \(String(format: "%.1f", r.hrv)) ms.\(sleepQualityNote)"
     }
 
-    /// Epic 20: Retourneert de actieve API-sleutel.
-    /// Prioriteit: gebruiker-geconfigureerde sleutel → Secrets.geminiAPIKey fallback.
-    /// De fallback zorgt dat bestaande installaties zonder BYOK-sleutel blijven werken.
+    /// Epic 20 / M-04: Retourneert de door de gebruiker geconfigureerde Gemini API-sleutel.
+    /// Er is geen Secrets-fallback meer — BYOK is verplicht, de onboarding zorgt dat
+    /// er altijd een sleutel is ingevuld voordat AI-functionaliteit aangeroepen wordt.
     func effectiveAPIKey() -> String {
-        let stored = UserDefaults.standard.string(forKey: "vibecoach_userAPIKey") ?? ""
-        return stored.isEmpty ? Secrets.geminiAPIKey : stored
+        return UserDefaults.standard.string(forKey: "vibecoach_userAPIKey") ?? ""
     }
 
     /// Bouwt een nieuw Gemini model op basis van de huidige API-sleutel.
@@ -517,8 +516,8 @@ class ChatViewModel: ObservableObject {
     /// Sprint 26.1: Als `-UITesting` actief is, wordt een mock-model teruggegeven
     /// zodat de Gemini API niet aangeroepen wordt tijdens E2E-tests.
     ///
-    /// - Parameter modelName: De Gemini modelnaam. Standaard "gemini-2.5-flash".
-    private func buildGenerativeModel(modelName: String = "gemini-2.5-flash") -> GenerativeModelProtocol {
+    /// - Parameter modelName: De Gemini modelnaam. Standaard "gemini-flash-latest".
+    private func buildGenerativeModel(modelName: String = "gemini-flash-latest") -> GenerativeModelProtocol {
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-UITesting") {
             return UITestMockGenerativeModel()
@@ -635,12 +634,10 @@ class ChatViewModel: ObservableObject {
                 timeout: 120
             )
 
-            // Epic 20: key inline berekenen — effectiveAPIKey() kan hier niet aangeroepen worden
-            // omdat self.model nog niet geïnitialiseerd is (Swift-beperking in init).
-            let initKey: String = {
-                let stored = UserDefaults.standard.string(forKey: "vibecoach_userAPIKey") ?? ""
-                return stored.isEmpty ? Secrets.geminiAPIKey : stored
-            }()
+            // Epic 20 / M-04: key inline berekenen — effectiveAPIKey() kan hier niet
+            // aangeroepen worden omdat self.model nog niet geïnitialiseerd is
+            // (Swift-beperking in init). BYOK-only: geen Secrets-fallback meer.
+            let initKey = UserDefaults.standard.string(forKey: "vibecoach_userAPIKey") ?? ""
 
             let googleModel = GenerativeModel(
                 name: modelName,
@@ -650,12 +647,6 @@ class ChatViewModel: ObservableObject {
                 requestOptions: options
             )
         return RealGenerativeModel(model: googleModel)
-    }
-
-    /// Bouwt een fallback model (gemini-flash-latest) met dezelfde system instruction.
-    /// Wordt onzichtbaar gebruikt wanneer het primaire model een 503 of 429 retourneert.
-    private func buildFallbackGenerativeModel() -> GenerativeModelProtocol {
-        return buildGenerativeModel(modelName: "gemini-flash-latest")
     }
 
     /// Verwijdert de geselecteerde afbeelding uit de invoer.
@@ -1464,27 +1455,14 @@ class ChatViewModel: ObservableObject {
 
             print("DEBUG PROMPT: \(text)")
 
-            // Waterfall fallback: probeer het primaire model (gemini-2.5-flash) en schakel bij
-            // een 503/429-fout onzichtbaar over op gemini-flash-latest. Pas bij falen van beide
-            // modellen wordt een fout naar de UI gestuurd.
+            // We gebruiken uitsluitend `gemini-flash-latest`. Google's `-latest` alias
+            // wijst naar de meest recente stabiele flash-versie en kent in praktijk
+            // geen overload-pieken — een waterfall met een tweede model is overbodig.
             var responseText: String? = nil
             var finalError: Error? = nil
 
             do {
                 responseText = try await model.generateContent(promptParts)
-            } catch let primaryError as GenerateContentError {
-                if case .internalError = primaryError {
-                    // Primaire model overbelast (503/429) — stil overschakelen naar fallback model.
-                    retryStatusMessage = "Model tijdelijk overbelast, overschakelen naar fallback..."
-                    let fallbackModel = buildFallbackGenerativeModel()
-                    do {
-                        responseText = try await fallbackModel.generateContent(promptParts)
-                    } catch {
-                        finalError = error
-                    }
-                } else {
-                    finalError = primaryError
-                }
             } catch {
                 finalError = error
             }
@@ -1502,7 +1480,7 @@ class ChatViewModel: ObservableObject {
                     case .invalidAPIKey:
                         messages.append(ChatMessage(role: .ai, text: "De API-sleutel is ongeldig. Controleer de sleutel via Instellingen → AI Coach Configuratie."))
                     case .internalError:
-                        // Zowel primair als fallback model faalden (503/429)
+                        // Gemini gaf 503/429 — service overbelast.
                         messages.append(ChatMessage(role: .ai, text: "De AI-service is tijdelijk overbelast. Wacht even en probeer het opnieuw.", isError: true))
                     default:
                         messages.append(ChatMessage(role: .ai, text: "Er is een tijdelijk probleem met de AI-service. Probeer het opnieuw.", isError: true))
