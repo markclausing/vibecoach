@@ -16,6 +16,18 @@ DerivedData/
 *.hmap
 *.ipa
 *.xcuserstate
+*.xcresult
+
+# CocoaPods (defensief — momenteel niet gebruikt, maar voorkomt 100 MB aan
+# per-ongeluk-gecommitte Pods als iemand ooit `pod init` draait)
+Pods/
+
+# IDE / editor artifacts
+.vscode/
+.idea/
+
+# Logs
+*.log
 
 # Secrets
 Secrets.swift
