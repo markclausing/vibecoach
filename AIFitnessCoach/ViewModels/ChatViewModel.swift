@@ -637,8 +637,12 @@ class ChatViewModel: ObservableObject {
                 responseMIMEType: "application/json"
             )
 
+            // Timeout 45s: geeft Google Gemini voldoende ruimte voor een complex
+            // JSON-schema antwoord, maar laat ons snel genoeg falen om naar de
+            // lite-fallback over te schakelen bij overbelasting. 120s was te lang
+            // voor een gebruiker die op een pull-to-refresh wacht.
             let options = RequestOptions(
-                timeout: 120
+                timeout: 45
             )
 
             // Epic 20 / M-04: key inline berekenen — effectiveAPIKey() kan hier niet
@@ -654,6 +658,15 @@ class ChatViewModel: ObservableObject {
                 requestOptions: options
             )
         return RealGenerativeModel(model: googleModel)
+    }
+
+    /// Bouwt een lichter fallback-model (`gemini-flash-lite-latest`) met dezelfde
+    /// system instruction en timeout. Wordt onzichtbaar gebruikt zodra het primaire
+    /// `gemini-flash-latest`-model een `internalError` retourneert (503/429 —
+    /// piekbelasting). Het lite-model is goedkoper en heeft in praktijk vaker
+    /// capaciteit tijdens pieken omdat minder apps het als default gebruiken.
+    private func buildFallbackGenerativeModel() -> GenerativeModelProtocol {
+        return buildGenerativeModel(modelName: "gemini-flash-lite-latest")
     }
 
     /// Verwijdert de geselecteerde afbeelding uit de invoer.
@@ -1467,14 +1480,27 @@ class ChatViewModel: ObservableObject {
 
             print("DEBUG PROMPT: \(text)")
 
-            // We gebruiken uitsluitend `gemini-flash-latest`. Google's `-latest` alias
-            // wijst naar de meest recente stabiele flash-versie en kent in praktijk
-            // geen overload-pieken — een waterfall met een tweede model is overbodig.
+            // Waterfall: primair `gemini-flash-latest`. Bij 503/429 (overbelasting)
+            // schakelen we stil over op `gemini-flash-lite-latest` — zelfde generatie,
+            // lichter model dat vaker capaciteit heeft tijdens pieken. Andere fouten
+            // (invalid key, prompt blocked, netwerk) vallen direct naar de UI door.
             var responseText: String? = nil
             var finalError: Error? = nil
 
             do {
                 responseText = try await model.generateContent(promptParts)
+            } catch let primaryError as GenerateContentError {
+                if case .internalError = primaryError {
+                    retryStatusMessage = "Model tijdelijk overbelast — overschakelen naar lichtere variant..."
+                    let fallbackModel = buildFallbackGenerativeModel()
+                    do {
+                        responseText = try await fallbackModel.generateContent(promptParts)
+                    } catch {
+                        finalError = error
+                    }
+                } else {
+                    finalError = primaryError
+                }
             } catch {
                 finalError = error
             }
@@ -1493,7 +1519,7 @@ class ChatViewModel: ObservableObject {
                     case .invalidAPIKey:
                         userFacingMessage = "De API-sleutel is ongeldig. Controleer de sleutel via Instellingen → AI Coach Configuratie."
                     case .internalError:
-                        // Gemini gaf 503/429 — service overbelast.
+                        // Zowel primair als fallback model faalden met 503/429. 
                         userFacingMessage = "De AI-service is tijdelijk overbelast. Wacht even en probeer het opnieuw."
                     default:
                         userFacingMessage = "Er is een tijdelijk probleem met de AI-service. Probeer het opnieuw."
