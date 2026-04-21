@@ -286,6 +286,20 @@ Na de grote V2.0-herontwerpronde (Epic #29 + #30) moeten de puntjes op de i. Kle
 
 ---
 
+### ⏳ Epic #35: Dynamische Gemini Model-Selectie in Settings (Backlog)
+
+De app gebruikt nu hardcoded `gemini-flash-latest` als primair model en `gemini-flash-lite-latest` als fallback (PR #178). Verschillende Gemini-modellen gedragen zich anders (o.a. verschillen in verbositeit en JSON-lengte — zie Technische Beslissingen), dus de gebruiker moet zelf kunnen kiezen welk model welke rol krijgt. Om te voorkomen dat deprecaties of rebrands breken, halen we de modelkeuzes live op via Google's `ListModels`-endpoint in plaats van ze hard te coderen.
+
+* **⏳ Story 35.1 — GeminiModelCatalog Service:** Nieuwe service die bij het openen van Settings → AI Coach Configuratie een `GET /v1beta/models?key=...` doet op Google's endpoint, filtert op `supportedGenerationMethods.contains("generateContent")` en alleen `gemini-*` families toont. Resultaat gecached met 24u TTL in `UserDefaults` om onnodige netwerk-calls te voorkomen.
+
+* **⏳ Story 35.2 — Dual-Picker UI in Settings:** Twee `Picker`-componenten ("Primair model" / "Fallback model") met de opgehaalde lijst als bron. Defaults bij eerste gebruik: `gemini-flash-latest` + `gemini-flash-lite-latest`. Selecties opgeslagen in nieuwe `@AppStorage`-keys (`vibecoach_primaryModel`, `vibecoach_fallbackModel`). Een korte disclaimer legt het verschil uit tussen primair (wordt altijd eerst geprobeerd) en fallback (stille switch bij 503/429).
+
+* **⏳ Story 35.3 — Validatie & Graceful Degradation:** Bij app-start controleert een lichtgewicht guard dat de opgeslagen modelnamen nog in de (gecachete) catalog staan. Zo niet (deprecatie) → stil terugvallen op de default en één niet-blokkerende notificatie in Settings tonen: *"Je gekozen model is niet langer beschikbaar, we gebruiken tijdelijk de standaard."* `ChatViewModel.buildGenerativeModel` en `AddGoalView.fetchAITargetTRIMP` gaan beide de gekozen modelnamen gebruiken in plaats van hardcoded strings.
+
+* **⏳ Story 35.4 — Unit Tests:** `GeminiModelCatalogTests` met `MockNetworkSession` om de filtering (alleen `generateContent`-capable, alleen `gemini-*`) en de 24u-cache-TTL te verifiëren. Regressietest dat de fallback-default kiest als de opgeslagen modelnaam niet in de catalog voorkomt.
+
+---
+
 ## Testing Push Notifications in Simulator
 Om push-notificaties te testen in de iOS Simulator, kun je een bestand met de naam `test-push.apns` aanmaken en deze letterlijk naar de draaiende simulator slepen (Drag & Drop).
 
