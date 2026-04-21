@@ -319,13 +319,14 @@ Korte log van keuzes die afwijken van het originele plan, zodat context niet ver
 | **Sentinel `"GEEN_BIOMETRISCHE_DATA"`** in AppStorage | Onderscheidt 'geen Watch gedragen vannacht' van 'nog niet berekend'. Coach krijgt expliciete instructie om HRV-zinnen te vermijden als de Watch niet gedragen was. | Extra `@State` boolean (vermeden om SwiftData-race-condition te voorkomen) |
 | **Logging-hardening** (2026-04, security audit quick-wins H-03 / L-01 / L-02) | APNs device-token print staat nu achter `#if DEBUG` met alleen de laatste 6 tekens — voorkomt identifier-lek in release-builds. `.gitignore` breed (`**/Secrets.swift`, `**/*.env`). Expliciete `NSAppTransportSecurity = { NSAllowsArbitraryLoads = NO }` in `Info.plist` maakt de iOS-default zichtbaar. | Volledige `print` → `os.Logger`-migratie — uitgesteld naar later (3-4 uur, 121 call-sites) |
 | **Dead-code opruiming** (2026-04, technical review no-regret wins) | Finder-duplicates verwijderd: `OnboardingView 2.swift` (410 LOC), `AppIcon 1.appiconset/`, `Color 1.colorset/`, 2× `Contents 2.json`, 2× `appstore Background Removed 1/2.png`. Lege root `package-lock.json` stub weggehaald. `.gitignore` uitgebreid met `*.xcresult`, `.vscode/`, `.idea/`, `Pods/`, `*.log`. | God-file splits (ContentView 2.247 LOC etc.) en `os.Logger`-migratie uitgesteld — te groot voor een no-regret PR |
+| **Single-model Gemini + BYOK-only** (2026-04, security audit M-04) | Waterfall `gemini-2.5-flash → gemini-flash-latest` vervangen door één enkel `gemini-flash-latest`-call in `ChatViewModel`, `AddGoalView` en `APIKeyValidator`. Tegelijk de `Secrets.geminiAPIKey`-fallback verwijderd: de onboarding garandeert dat de gebruiker een eigen key invoert, dus hardcoded keys zijn niet meer nodig. `Secrets.geminiAPIKey` is uit zowel `Secrets-template.swift` als `Secrets.swift` gehaald. | Backend-proxy voor keys (zie C-01 plan) — uitgesteld tot serverless Worker geïmplementeerd is |
 
 ---
 
 ## Tech Stack
 * **Platform:** iOS (macOS met Xcode vereist voor het bouwen)
 * **UI Framework:** SwiftUI + SwiftData
-* **AI:** BYOK — Gemini 2.5 Flash (standaard), met UI-support voor OpenAI en Anthropic
+* **AI:** BYOK — Gemini Flash Latest (standaard), met UI-support voor OpenAI en Anthropic
 * **Data:** Apple HealthKit (HRV, slaap + slaapfases, workouts) + optioneel Strava OAuth2
 * **Weer:** Open-Meteo API (gratis, geen API-sleutel) via CoreLocation + URLSession
 * **Achtergrond:** HKObserverQuery (Engine A) + BGAppRefreshTask (Engine B)
