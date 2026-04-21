@@ -37,6 +37,11 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>34</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+	</dict>
 	<key>NSHealthShareUsageDescription</key>
 	<string>VibeCoach analyseert je workouts, hartslag en VO2 Max om gepersonaliseerd trainingsadvies te geven.</string>
 	<key>NSHealthUpdateUsageDescription</key>

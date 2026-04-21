@@ -83,16 +83,19 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         return true
     }
 
-    // Wordt aangeroepen wanneer de app succesvol een APNs token heeft ontvangen
+    // Wordt aangeroepen wanneer de app succesvol een APNs token heeft ontvangen.
+    // Security: het volledige token is een identifier waarmee push-berichten naar dit
+    // toestel kunnen worden gestuurd. We loggen daarom alleen in DEBUG en tonen
+    // alleen de laatste 6 tekens — genoeg om runs te herkennen, te weinig om te misbruiken.
+    // Het volledige token is in DEBUG via de debugger op te vragen (breakpoint op deze regel → `po token`).
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        #if DEBUG
         let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
         let token = tokenParts.joined()
-
-        print("✅ APNs Device Token ontvangen!")
-        print("Kopieer dit token naar je backend .env bestand onder TEST_DEVICE_TOKEN:")
-        print("--------------------------------------------------")
-        print(token)
-        print("--------------------------------------------------")
+        let suffix = String(token.suffix(6))
+        print("✅ APNs Device Token ontvangen (laatste 6: …\(suffix))")
+        print("ℹ️ Voor backend-registratie: zet een breakpoint hier en kopieer `token` uit de debugger.")
+        #endif
     }
 
     // Wordt aangeroepen als er iets misgaat bij het registreren voor APNs
