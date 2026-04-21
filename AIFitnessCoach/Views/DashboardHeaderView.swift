@@ -45,14 +45,49 @@ struct DashboardHeaderView: View {
                 .fontWeight(.medium)
                 .foregroundColor(.secondary)
                 .kerning(0.4)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
             Text(greeting)
                 .font(.system(size: 30, weight: .bold))
                 .foregroundColor(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
         .padding(.top, 8)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("DashboardHeaderView")
+    }
+}
+
+// MARK: - Epic 34.1: Scroll-aware material overlay voor de statusbalk
+
+/// ViewModifier die een `regularMaterial` strip in de top safe area plaatst,
+/// zichtbaar zodra de onderliggende ScrollView voorbij de bovenkant is gescrold.
+/// Voorkomt dat content visueel onder de statusbalk door glijdt.
+private struct ScrollEdgeMaterialModifier: ViewModifier {
+    let isActive: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .safeAreaInset(edge: .top, spacing: 0) {
+                Color.clear
+                    .frame(height: 0)
+                    .background {
+                        Rectangle()
+                            .fill(.regularMaterial)
+                            .ignoresSafeArea(edges: .top)
+                            .opacity(isActive ? 1 : 0)
+                            .allowsHitTesting(false)
+                    }
+            }
+    }
+}
+
+extension View {
+    /// Toont een `regularMaterial` achtergrond in de top safe area zodra `isActive` true is.
+    func scrollEdgeMaterial(isActive: Bool) -> some View {
+        modifier(ScrollEdgeMaterialModifier(isActive: isActive))
     }
 }

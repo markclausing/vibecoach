@@ -21,7 +21,7 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>2.0.0</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -36,7 +36,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>34</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>VibeCoach analyseert je workouts, hartslag en VO2 Max om gepersonaliseerd trainingsadvies te geven.</string>
 	<key>NSHealthUpdateUsageDescription</key>

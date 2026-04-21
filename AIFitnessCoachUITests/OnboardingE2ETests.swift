@@ -45,70 +45,84 @@ final class OnboardingE2ETests: XCTestCase {
         return app.descendants(matching: .any).matching(pred).firstMatch.waitForExistence(timeout: timeout)
     }
 
-    // MARK: - Test 1: Full Onboarding Flow
+    // MARK: - Test 1: Full Onboarding Flow (Epic #31 Sprint 31.6 — V2.0 flow met 5 stappen)
 
+    /// Doorloopt de V2.0 onboarding-flow volgens het UX-prototype. Alle vijf
+    /// stappen gebruiken dezelfde `OnboardingPrimaryButton` identifier — de
+    /// verschillen tussen stappen worden via titel-teksten geverifieerd.
+    ///
+    /// Stap 4 (Apple Health) vraagt twee taps in `-UITesting` mode: de eerste
+    /// zet `healthKitState = .granted` (bypass van iOS-permissie-popup), de
+    /// tweede roept `advance()` aan. Stap 5 (Notificaties) voltooit direct
+    /// bij de eerste tap omdat `requestNotifications()` in UITesting mode
+    /// meteen `completeOnboarding()` aanroept.
     @MainActor
     func testFullOnboardingFlow() throws {
         app.launchArguments = ["-UITesting", "-ResetState"]
         app.launch()
         app.tap()
 
-        // ── Pagina 1: Welkom ──────────────────────────────────────────────
+        let primary = app.buttons["OnboardingPrimaryButton"]
+
+        // ── Stap 1: Welkom ─────────────────────────────────────────────────
         XCTAssertTrue(
-            app.staticTexts["Welkom bij VibeCoach"].waitForExistence(timeout: 5),
-            "Pagina 1 (Welkom) verschijnt niet na app-launch met ResetState."
+            app.staticTexts["Je lichaam stuurt, wij luisteren mee."].waitForExistence(timeout: 5),
+            "Stap 1 (Welkom) verschijnt niet na launch met -ResetState."
         )
+        XCTAssertTrue(primary.waitForExistence(timeout: 3), "Primaire knop niet gevonden op stap 1.")
+        primary.tap()
 
-        let volgende = app.buttons["OnboardingVolgendeButton"]
-        XCTAssertTrue(volgende.waitForExistence(timeout: 3), "Volgende-knop niet gevonden op pagina 1.")
-        volgende.tap()
+        // ── Stap 2: Hoe het werkt ──────────────────────────────────────────
+        XCTAssertTrue(
+            app.staticTexts["Herstel meten, belasting plannen."].waitForExistence(timeout: 3),
+            "Stap 2 (Hoe het werkt) verschijnt niet."
+        )
+        primary.tap()
 
-        // ── Pagina 2: Hoe het werkt ───────────────────────────────────────
-        XCTAssertTrue(app.staticTexts["Hoe het werkt"].waitForExistence(timeout: 3), "Pagina 2 verschijnt niet.")
-        volgende.tap()
+        // ── Stap 3: Jouw AI ────────────────────────────────────────────────
+        XCTAssertTrue(
+            app.staticTexts["Jouw data, jouw AI-sleutel."].waitForExistence(timeout: 3),
+            "Stap 3 (Jouw AI) verschijnt niet."
+        )
+        // De provider-picker moet aanwezig zijn; we hoeven hem niet aan te passen —
+        // Gemini is de default en de sleutel-invoer is verplaatst naar Instellingen.
+        XCTAssertTrue(
+            app.otherElements["OnboardingProviderPicker"].waitForExistence(timeout: 2)
+                || app.segmentedControls.firstMatch.waitForExistence(timeout: 2),
+            "Provider-picker ontbreekt op stap 3."
+        )
+        primary.tap()
 
-        // ── Pagina 3: API-sleutel ─────────────────────────────────────────
-        XCTAssertTrue(app.staticTexts["Jouw Data, Jouw AI"].waitForExistence(timeout: 3), "Pagina 3 verschijnt niet.")
-
-        let apiKeyField = app.secureTextFields["OnboardingAPIKeyField"]
-        XCTAssertTrue(apiKeyField.waitForExistence(timeout: 3), "OnboardingAPIKeyField niet gevonden.")
-        apiKeyField.tap()
-        apiKeyField.typeText("TEST123")
-
-        let titleText = app.staticTexts["Jouw Data, Jouw AI"]
-        if titleText.isHittable {
-            titleText.tap()
-        } else if app.keyboards.buttons["Done"].exists {
-            app.keyboards.buttons["Done"].tap()
-        } else if app.keyboards.buttons["Return"].exists {
-            app.keyboards.buttons["Return"].tap()
-        }
-
-        expectation(for: NSPredicate(format: "isHittable == true"), evaluatedWith: volgende)
+        // ── Stap 4: Apple Health ───────────────────────────────────────────
+        XCTAssertTrue(
+            app.staticTexts["Koppel met Apple Health."].waitForExistence(timeout: 3),
+            "Stap 4 (Apple Health) verschijnt niet."
+        )
+        // Eerste tap → requestHealthKit() zet state op .granted (UITesting-bypass).
+        primary.tap()
+        // Tweede tap → handleHealthKitAction() ziet .granted en roept advance() aan.
+        expectation(for: NSPredicate(format: "isHittable == true"), evaluatedWith: primary)
         waitForExpectations(timeout: 3)
-        volgende.tap()
+        primary.tap()
 
-        // ── Pagina 4: Permissies ──────────────────────────────────────────
-        XCTAssertTrue(app.staticTexts["Één keer toestemming"].waitForExistence(timeout: 3), "Pagina 4 verschijnt niet.")
-
-        let healthKitButton = app.buttons["OnboardingHealthKitButton"]
-        XCTAssertTrue(healthKitButton.waitForExistence(timeout: 3), "HealthKit-knop niet gevonden.")
-        healthKitButton.tap()
-        app.tap()
-
-        let notificationsButton = app.buttons["OnboardingNotificationsButton"]
-        XCTAssertTrue(notificationsButton.waitForExistence(timeout: 3), "Notificaties-knop niet gevonden.")
-        notificationsButton.tap()
-        app.tap()
-
-        let _ = app.buttons["OnboardingStartButton"].waitForExistence(timeout: 2)
-        let startButton = app.buttons["OnboardingStartButton"]
-        XCTAssertTrue(startButton.waitForExistence(timeout: 3), "Start met Trainen-knop niet gevonden.")
-        startButton.tap()
+        // ── Stap 5: Notificaties ───────────────────────────────────────────
+        XCTAssertTrue(
+            app.staticTexts["Coach-signalen, niet meer."].waitForExistence(timeout: 3),
+            "Stap 5 (Notificaties) verschijnt niet."
+        )
+        // Eén tap: requestNotifications() zet state op .granted én roept
+        // completeOnboarding() direct aan (UITesting-bypass).
+        primary.tap()
 
         // V2.0: geen NavigationBar meer — check TabBar + begroetingstekst
-        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 8), "TabBar verschijnt niet na Onboarding.")
-        XCTAssertTrue(waitForDashboard(), "Dashboard begroetingstekst verschijnt niet na Onboarding.")
+        XCTAssertTrue(
+            app.tabBars.firstMatch.waitForExistence(timeout: 8),
+            "TabBar verschijnt niet na afgeronde onboarding."
+        )
+        XCTAssertTrue(
+            waitForDashboard(),
+            "Dashboard begroetingstekst verschijnt niet na afgeronde onboarding."
+        )
     }
 
     // MARK: - Test 2: Goal Management

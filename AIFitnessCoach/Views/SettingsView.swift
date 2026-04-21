@@ -18,6 +18,8 @@ struct SettingsView: View {
     // UI State variabelen, gehaald uit en geschreven naar Keychain
     @State private var feedbackMessage: String?
     @State private var notificationsEnabled: Bool = false
+    // Epic 34 Sprint 2: materiaal-overlay onder statusbalk zodra gescrold.
+    @State private var isSettingsScrolled: Bool = false
     @AppStorage("isHealthKitLinked") private var isHealthKitLinked: Bool = false
 
     @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
@@ -30,11 +32,9 @@ struct SettingsView: View {
     @AppStorage("vibecoach_userName")        private var userName: String = ""
     @AppStorage("vibecoach_userAPIKey")      private var apiKey: String = ""
     @AppStorage("vibecoach_aiProvider")      private var providerRaw: String = AIProvider.gemini.rawValue
-    @AppStorage("vibecoach_notifPost")       private var notifPostWorkout: Bool = true
-    @AppStorage("vibecoach_notifInactive")   private var notifInactivity: Bool = true
-    @AppStorage("vibecoach_notifGoals")      private var notifGoalUpdates: Bool = true
-    @AppStorage("vibecoach_notifWeekly")     private var notifWeeklyReport: Bool = false
-    @AppStorage("vibecoach_bgSync")          private var backgroundSyncEnabled: Bool = true
+    // Epic 34 Sprint 2: toggles zonder backend-logica verwijderd.
+    // Notificatie-schakelaars en achtergrond-sync komen terug zodra de
+    // `ProactiveNotificationService` per-kanaal kan worden geconfigureerd.
     @AppStorage("vibecoach_colorScheme")     private var colorSchemeRaw: String = "auto"
     @State private var physicalProfile: UserPhysicalProfile?
 
@@ -252,16 +252,17 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 0) {
 
                     // ── Header
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("V\(Bundle.main.appVersion) · BUILD \(Bundle.main.buildNumber)")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Versie \(Bundle.main.appVersion) (Build \(Bundle.main.buildNumber))")
                             .font(.caption).fontWeight(.semibold)
-                            .foregroundColor(.secondary).kerning(0.5)
+                            .foregroundColor(.secondary).kerning(0.4)
+                            .accessibilityIdentifier("SettingsVersionLabel")
                         Text("Instellingen")
                             .font(.largeTitle).fontWeight(.bold)
                     }
                     .padding(.horizontal)
                     .padding(.top, 56)
-                    .padding(.bottom, 24)
+                    .padding(.bottom, 20)
 
                     // ── VERBINDINGEN
                     settingsSectionLabel("VERBINDINGEN")
@@ -520,46 +521,31 @@ struct SettingsView: View {
                                 hasChevron: true
                             )
                         }.buttonStyle(.plain)
-                        settingsDivider
-                        HStack {
-                            Text("Achtergrond-sync")
-                                .font(.subheadline)
-                                .padding(.leading, 14)
-                            Spacer()
-                            Toggle("", isOn: $backgroundSyncEnabled)
-                                .labelsHidden()
-                                .tint(themeManager.primaryAccentColor)
-                                .padding(.trailing, 14)
-                        }
-                        .padding(.vertical, 12)
                     }
                     Text("Sleutels worden lokaal versleuteld in de iOS Keychain opgeslagen.")
                         .font(.caption).foregroundColor(.secondary)
                         .padding(.horizontal).padding(.top, 6)
                     Spacer(minLength: 24)
 
-                    // ── NOTIFICATIES
+                    // Epic 34 Sprint 2: Notificatie-toggles verwijderd tot de per-kanaal
+                    // backend-logica bestaat. Systeempermissies zijn hieronder toegankelijk.
                     settingsSectionLabel("NOTIFICATIES")
                     settingsCard {
-                        notifRow(icon: "bell.fill",     title: "Analyse na activiteit",
-                                 subtitle: "Coach-bericht na upload van een nieuwe workout",
-                                 binding: $notifPostWorkout)
-                        settingsDivider
-                        notifRow(icon: "moon.fill",     title: "Inactiviteitscheck",
-                                 subtitle: "Herinnering na 48 uur zonder beweging",
-                                 binding: $notifInactivity)
-                        settingsDivider
-                        notifRow(icon: "flag.fill",     title: "Doel-updates",
-                                 subtitle: "Voortgang richting weekdoel",
-                                 binding: $notifGoalUpdates)
-                        settingsDivider
-                        notifRow(icon: "chart.bar.fill", title: "Wekelijks rapport",
-                                 subtitle: "Elke zondag 20:00",
-                                 binding: $notifWeeklyReport)
+                        Button {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            SettingsRowV2(
+                                icon: "bell.fill",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Systeempermissies",
+                                subtitle: "Beheer notificaties in iOS Instellingen",
+                                value: "Open",
+                                hasChevron: true
+                            )
+                        }.buttonStyle(.plain)
                     }
-                    Text("Gedetailleerde permissies beheer je in iOS Instellingen › VibeCoach.")
-                        .font(.caption).foregroundColor(.secondary)
-                        .padding(.horizontal).padding(.top, 6)
                     Spacer(minLength: 24)
 
                     // ── VERBINDINGSDETAILS
@@ -642,8 +628,16 @@ struct SettingsView: View {
                     Spacer(minLength: 40)
                 }
             }
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y > 4
+            } action: { _, newValue in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isSettingsScrolled = newValue
+                }
+            }
             .background(Color(.secondarySystemBackground).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            .scrollEdgeMaterial(isActive: isSettingsScrolled)
             .onAppear { loadTokens() }
         }
     }
@@ -672,29 +666,6 @@ struct SettingsView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
         .padding(.horizontal)
-    }
-
-    private func notifRow(icon: String, title: String, subtitle: String, binding: Binding<Bool>) -> some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(themeManager.primaryAccentColor.opacity(0.12))
-                    .frame(width: 34, height: 34)
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                    .foregroundColor(themeManager.primaryAccentColor)
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.subheadline).fontWeight(.medium)
-                Text(subtitle).font(.caption).foregroundColor(.secondary)
-            }
-            Spacer()
-            Toggle("", isOn: binding)
-                .labelsHidden()
-                .tint(themeManager.primaryAccentColor)
-        }
-        .padding(.vertical, 11)
-        .padding(.horizontal, 14)
     }
 
     // MARK: - Helpers
@@ -1309,8 +1280,20 @@ struct AIProviderSettingsView: View {
     @AppStorage("vibecoach_userAPIKey") private var apiKey: String = ""
     @EnvironmentObject private var themeManager: ThemeManager
 
+    /// Sprint 31.7: state-machine voor de minimale validatie-ping.
+    /// Laatst geteste sleutel wordt bijgehouden zodat we het feedbackblok
+    /// automatisch resetten wanneer de gebruiker zijn sleutel aanpast.
+    @State private var testState: APIKeyTestState = .idle
+    @State private var testedKey: String = ""
+
     private var selectedProvider: AIProvider {
         AIProvider(rawValue: providerRaw) ?? .gemini
+    }
+
+    /// Het feedback-blok is alleen geldig voor de sleutel die op het moment
+    /// van de test werd ingevoerd. Na typen vervalt het oordeel.
+    private var showTestResult: Bool {
+        testState != .idle && testedKey == apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     var body: some View {
@@ -1379,9 +1362,124 @@ struct AIProviderSettingsView: View {
                     }
                 }
             }
+
+            // Sprint 31.7: Test-ping — valideert de sleutel met een minimale
+            // auth-call tegen Gemini. De waterfall (primair → fallback op 503/429)
+            // staat in `APIKeyValidator` zodat een geldige sleutel tijdens een
+            // Google-overload niet onterecht als ongeldig wordt gemarkeerd.
+            if !apiKey.isEmpty && selectedProvider.isSupported {
+                Section(footer: testFeedbackFooter) {
+                    Button {
+                        testAPIKey()
+                    } label: {
+                        HStack {
+                            if testState == .testing {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .padding(.trailing, 2)
+                                Text("Sleutel testen…")
+                            } else {
+                                Image(systemName: "bolt.circle")
+                                Text("Test deze sleutel")
+                            }
+                            Spacer()
+                        }
+                    }
+                    .disabled(testState == .testing)
+                    .accessibilityIdentifier("TestAPIKeyButton")
+                }
+            }
         }
         .navigationTitle("AI Coach Configuratie")
     }
+
+    // MARK: - Test feedback (inline in footer)
+
+    @ViewBuilder
+    private var testFeedbackFooter: some View {
+        if showTestResult {
+            switch testState {
+            case .idle, .testing:
+                EmptyView()
+            case .valid:
+                feedbackRow(icon: "checkmark.seal.fill",
+                            color: .green,
+                            title: "Sleutel werkt",
+                            detail: "Gemini heeft de sleutel geaccepteerd.")
+            case .invalidKey:
+                feedbackRow(icon: "xmark.octagon.fill",
+                            color: .red,
+                            title: "Sleutel ongeldig",
+                            detail: "Gemini weigert deze sleutel. Controleer of je hem volledig hebt geplakt.")
+            case .rateLimited:
+                feedbackRow(icon: "hourglass.circle.fill",
+                            color: .orange,
+                            title: "Beide modellen overbelast",
+                            detail: "De Google-servers zijn vol. Je sleutel kán geldig zijn — probeer zo nog eens.")
+            case .network:
+                feedbackRow(icon: "wifi.exclamationmark",
+                            color: .orange,
+                            title: "Geen verbinding",
+                            detail: "Controleer je internetverbinding en probeer opnieuw.")
+            case .unknown(let message):
+                feedbackRow(icon: "exclamationmark.triangle.fill",
+                            color: .orange,
+                            title: "Onverwachte fout",
+                            detail: message)
+            }
+        }
+    }
+
+    private func feedbackRow(icon: String, color: Color, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: icon)
+                .foregroundStyle(color)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                Text(detail)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    // MARK: - Test-actie
+
+    private func testAPIKey() {
+        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        testState = .testing
+        testedKey = trimmed
+
+        Task {
+            let result = await APIKeyValidator.validateGeminiKey(trimmed)
+            await MainActor.run {
+                switch result {
+                case .valid:            testState = .valid
+                case .invalidKey:       testState = .invalidKey
+                case .rateLimited:      testState = .rateLimited
+                case .network:          testState = .network
+                case .unknown(let msg): testState = .unknown(msg)
+                }
+            }
+        }
+    }
+}
+
+/// Interne UI-state voor het testen van de sleutel. Gescheiden van
+/// `APIKeyValidationResult` zodat we `.idle` en `.testing` ook kunnen tonen.
+private enum APIKeyTestState: Equatable {
+    case idle
+    case testing
+    case valid
+    case invalidKey
+    case rateLimited
+    case network
+    case unknown(String)
 }
 
 // MARK: - V2.0 Geheugen / Memory View
@@ -1395,6 +1493,8 @@ struct PreferencesListView: View {
 
     @State private var selectedSegment: MemorySegment = .pins
     @State private var selectedFilter: MemoryTypeFilter = .all
+    // Epic 34 Sprint 2: materiaal-overlay onder statusbalk zodra gescrold.
+    @State private var isMemoryScrolled: Bool = false
 
     enum MemorySegment { case pins, history }
     enum MemoryTypeFilter: CaseIterable {
@@ -1433,23 +1533,15 @@ struct PreferencesListView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
 
-                    // ── Header
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("WAT IK ONTHOU · \(activePreferences.count) ACTIEVE · \(historicPreferences.count) VERLOPEN")
-                                .font(.caption).fontWeight(.semibold)
-                                .foregroundColor(.secondary).kerning(0.4)
-                            Text("Geheugen")
-                                .font(.largeTitle).fontWeight(.bold)
-                        }
-                        Spacer()
-                        ZStack {
-                            Circle().fill(themeManager.primaryAccentColor.opacity(0.18)).frame(width: 40, height: 40)
-                            Text(userInitials.isEmpty ? "?" : userInitials)
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(themeManager.primaryAccentColor)
-                        }
+                    // ── Header (Epic 34 Sprint 2: avatar-icoon zonder functionaliteit verwijderd)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("WAT IK ONTHOU · \(activePreferences.count) ACTIEVE · \(historicPreferences.count) VERLOPEN")
+                            .font(.caption).fontWeight(.semibold)
+                            .foregroundColor(.secondary).kerning(0.4)
+                        Text("Geheugen")
+                            .font(.largeTitle).fontWeight(.bold)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
                     .padding(.top, 56)
                     .padding(.bottom, 20)
@@ -1508,15 +1600,14 @@ struct PreferencesListView: View {
 
                         // ── Preference Cards
                         if filteredPreferences.isEmpty {
-                            VStack(spacing: 12) {
-                                Image(systemName: "brain").font(.system(size: 40)).foregroundColor(.secondary)
-                                Text("Nog geen herinneringen")
-                                    .font(.headline).foregroundColor(.secondary)
+                            ContentUnavailableView {
+                                Label("Nog geen herinneringen", systemImage: "brain.head.profile")
+                                    .foregroundStyle(themeManager.primaryAccentColor)
+                            } description: {
                                 Text("Vertel de coach in de chat over je blessures, voorkeuren of doelen.")
-                                    .font(.caption).foregroundColor(.secondary).multilineTextAlignment(.center)
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(40)
+                            .padding(.vertical, 24)
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(filteredPreferences) { pref in
@@ -1566,8 +1657,16 @@ struct PreferencesListView: View {
                     Spacer(minLength: 40)
                 }
             }
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y > 4
+            } action: { _, newValue in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isMemoryScrolled = newValue
+                }
+            }
             .background(Color(.secondarySystemBackground).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
+            .scrollEdgeMaterial(isActive: isMemoryScrolled)
         }
     }
 
@@ -1695,9 +1794,12 @@ private let memoryDateFormatter: DateFormatter = {
 // MARK: - Bundle helpers
 
 private extension Bundle {
+    /// Marketing-versie uit Info.plist (CFBundleShortVersionString).
+    /// Fallback blijft gelijk aan de huidige V2.0-release.
     var appVersion: String {
-        infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0"
     }
+    /// Build-nummer uit Info.plist (CFBundleVersion).
     var buildNumber: String {
         infoDictionary?["CFBundleVersion"] as? String ?? "1"
     }

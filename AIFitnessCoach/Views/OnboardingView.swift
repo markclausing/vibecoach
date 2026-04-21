@@ -1,433 +1,646 @@
 import SwiftUI
+import SwiftData
 import UserNotifications
 
-/// Epic 20 — Sprint 20.2: Onboarding Flow voor nieuwe gebruikers.
+/// Epic #31 — Sprint 31.6: V2.0 Onboarding-flow, uitgelijnd op het definitieve
+/// UX-prototype.
 ///
-/// Toont een 4-pagina carousel die het concept uitlegt, de gebruiker voorbereidt
-/// op BYOK, en de Apple Health / Notificatie permissies netjes uitvraagt.
-/// Nadat de gebruiker op "Start met Trainen" drukt, wordt `hasSeenOnboarding`
-/// op true gezet en laadt de app de normale TabView.
+/// Vijf stappen met elk hun eigen sfeer:
+/// 1. Welkom — merk + belofte
+/// 2. Hoe het werkt — Vibe Score (herstel) + TRIMP (belasting) preview
+/// 3. Jouw AI — BYOK provider-keuze (sleutel komt later in Instellingen)
+/// 4. Apple Health — HRV + Slaap permissie (Permissie 1 van 2)
+/// 5. Notificaties — Coach-signalen permissie (Permissie 2 van 2)
+///
+/// Alle schermen delen `OnboardingTemplateView` zodat typografie, voortgangsbalk
+/// en knoppen-layout consistent blijven. De visuele stijl (kaarten met
+/// `cornerRadius 16`, zachte schaduw) matcht de hoofd-Dashboard.
 struct OnboardingView: View {
 
-    /// Wordt op true gezet zodra de gebruiker de onboarding afrondt.
-    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
+    // MARK: - Persistente state
 
-    /// Huidige pagina in de carousel (0-3).
-    @State private var currentPage = 0
+    /// Wordt op true gezet zodra de gebruiker de onboarding afrondt (stap 5).
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
-    /// Status van de permissie-knoppen op pagina 4.
-    @State private var healthKitGranted = false
-    @State private var notificationsGranted = false
+    /// Sprint 31.6: gekozen AI-provider — gedeelde sleutel met `AIProviderSettingsView`
+    /// zodat `ChatViewModel` hem direct oppakt. De daadwerkelijke API-sleutel
+    /// wordt later in Instellingen ingevoerd (prototype toont enkel provider-keuze).
+    @AppStorage("vibecoach_aiProvider") private var providerRaw: String = AIProvider.gemini.rawValue
 
-    private let healthKitManager = HealthKitManager()
+    // MARK: - Transient UI-state
+
+    @State private var currentStep: Int = 1
+    @State private var healthKitState: PermissionState = .idle
+    @State private var notificationsState: PermissionState = .idle
+
+    private let totalSteps = 5
+
+    @EnvironmentObject private var themeManager: ThemeManager
+    @Environment(\.modelContext) private var modelContext
+
+    // MARK: - Body
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            TabView(selection: $currentPage) {
-                // Pagina 1: Welkom
-                OnboardingPage(
-                    icon: "figure.run.circle.fill",
-                    iconColor: .blue,
-                    title: "Welkom bij VibeCoach",
-                    subtitle: "Jouw AI-gestuurde fysiologische coach",
-                    description: "VibeCoach combineert je Apple Health data met kunstmatige intelligentie om je trainingsbelasting te bewaken, je herstel te meten en je schema's slim bij te sturen."
-                )
-                .tag(0)
-
-                // Pagina 2: Hoe het werkt
-                OnboardingPage(
-                    icon: "waveform.path.ecg.rectangle.fill",
-                    iconColor: .green,
-                    title: "Hoe het werkt",
-                    subtitle: "Twee lagen van inzicht",
-                    description: "**TRIMP (Training Impulse)** meet hoe zwaar een training was — hartslag × duur × intensiteit.\n\n**Vibe Score** is jouw lichaamsbatterij (0–100), berekend uit jouw HRV en slaap. Deze twee samen vertellen de coach of je kunt pushen of moet herstellen."
-                )
-                .tag(1)
-
-                // Pagina 3: Jouw Data, Jouw AI — inclusief BYOK API-sleutel invoer
-                APIKeyOnboardingPage()
-                    .tag(2)
-
-                // Pagina 4: Permissies
-                permissionsPage
-                    .tag(3)
-            }
-            .tabViewStyle(.page(indexDisplayMode: .always))
-            .indexViewStyle(.page(backgroundDisplayMode: .always))
-            .ignoresSafeArea(edges: .top)
-
-            // Navigatieknop (verschijnt pas op de laatste pagina als 'Start met Trainen')
-            bottomButton
-                .padding(.horizontal, 24)
-                .padding(.bottom, 48)
+        TabView(selection: $currentStep) {
+            stepOne.tag(1)
+            stepTwo.tag(2)
+            stepThree.tag(3)
+            stepFour.tag(4)
+            stepFive.tag(5)
         }
-        .background(Color(.systemBackground))
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .background(Color(.secondarySystemBackground).ignoresSafeArea())
+        .animation(.easeInOut(duration: 0.25), value: currentStep)
     }
 
-    // MARK: - Pagina 4: Permissies
+    // MARK: - Stap 1: Welkom
 
-    private var permissionsPage: some View {
-        ScrollView {
-            VStack(spacing: 32) {
-                Spacer(minLength: 48)
-
-                // Icoon + titels
-                VStack(spacing: 12) {
-                    Image(systemName: "hand.raised.circle.fill")
-                        .font(.system(size: 80))
-                        .foregroundStyle(.orange)
-                        .symbolRenderingMode(.hierarchical)
-
-                    Text("Één keer toestemming")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .multilineTextAlignment(.center)
-
-                    Text("VibeCoach heeft twee permissies nodig om goed te werken")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, 24)
-
-                // Permissie-kaartjes
-                VStack(spacing: 16) {
-                    PermissionCard(
-                        icon: "heart.fill",
-                        iconColor: .red,
-                        title: "Apple Health",
-                        description: "Om trainingen, HRV en slaapdata te lezen voor TRIMP en je Vibe Score.",
-                        isGranted: healthKitGranted,
-                        buttonLabel: "Koppel Apple Health",
-                        buttonIdentifier: "OnboardingHealthKitButton"
-                    ) {
-                        requestHealthKit()
-                    }
-
-                    PermissionCard(
-                        icon: "bell.badge.fill",
-                        iconColor: .orange,
-                        title: "Notificaties",
-                        description: "Voor proactieve coaching-alerts als je doel op rood staat of je te lang inactief bent.",
-                        isGranted: notificationsGranted,
-                        buttonLabel: "Sta Notificaties toe",
-                        buttonIdentifier: "OnboardingNotificationsButton"
-                    ) {
-                        requestNotifications()
-                    }
-                }
-                .padding(.horizontal, 24)
-
-                // Ruimte voor de floating knop
-                Spacer(minLength: 120)
-            }
-        }
+    private var stepOne: some View {
+        OnboardingTemplateView(
+            stepIndex: 1,
+            totalSteps: totalSteps,
+            eyebrow: nil,
+            title: "Je lichaam stuurt, wij luisteren mee.",
+            subtitle: "Je persoonlijke trainingscoach, gestuurd door je eigen Apple Health data.",
+            content: { WelcomeBrandMark() },
+            primaryButtonTitle: "Aan de slag",
+            primaryAction: advance,
+            secondaryButtonTitle: nil,
+            secondaryAction: nil
+        )
     }
 
-    // MARK: - Onderste knop
+    // MARK: - Stap 2: Hoe het werkt
 
-    private var bottomButton: some View {
-        Group {
-            if currentPage < 3 {
-                Button(action: {
-                    withAnimation { currentPage += 1 }
-                }) {
-                    Text("Volgende")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(14)
-                }
-                .accessibilityIdentifier("OnboardingVolgendeButton")
-            } else {
-                Button(action: {
-                    hasSeenOnboarding = true
-                }) {
-                    Text("Start met Trainen")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(14)
-                }
-                .accessibilityIdentifier("OnboardingStartButton")
-            }
+    private var stepTwo: some View {
+        OnboardingTemplateView(
+            stepIndex: 2,
+            totalSteps: totalSteps,
+            eyebrow: "TWEE LAGEN",
+            eyebrowColor: themeManager.primaryAccentColor,
+            title: "Herstel meten, belasting plannen.",
+            subtitle: "VibeCoach leest twee signalen: hoe je lichaam herstelt en hoe zwaar je traint. Samen bepalen ze wat vandaag verstandig is.",
+            content: { TwoLayersPreview() },
+            primaryButtonTitle: "Volgende",
+            primaryAction: advance,
+            secondaryButtonTitle: nil,
+            secondaryAction: nil
+        )
+    }
+
+    // MARK: - Stap 3: Jouw AI
+
+    private var stepThree: some View {
+        OnboardingTemplateView(
+            stepIndex: 3,
+            totalSteps: totalSteps,
+            eyebrow: "PRIVACY EERST",
+            eyebrowColor: themeManager.primaryAccentColor,
+            title: "Jouw data, jouw AI-sleutel.",
+            subtitle: "VibeCoach gebruikt jouw eigen API-sleutel. Zo blijven je gesprekken en trainingsdata van jou — wij zien ze nooit.",
+            content: { AIProviderPrivacyContent(providerRaw: $providerRaw) },
+            primaryButtonTitle: "Volgende",
+            primaryAction: advance,
+            secondaryButtonTitle: "Sla over, doe later",
+            secondaryAction: advance
+        )
+    }
+
+    // MARK: - Stap 4: Apple Health
+
+    private var stepFour: some View {
+        OnboardingTemplateView(
+            stepIndex: 4,
+            totalSteps: totalSteps,
+            eyebrow: "PERMISSIE 1 VAN 2",
+            eyebrowColor: .red,
+            title: "Koppel met Apple Health.",
+            subtitle: "VibeCoach leest HRV en slaap uit Apple Health — die blijven op jouw iPhone. We sturen niets naar externe servers.",
+            content: { AppleHealthPermissionContent(state: healthKitState) },
+            primaryButtonTitle: primaryTitle(for: healthKitState, grantLabel: "Koppel Apple Health"),
+            primaryAction: handleHealthKitAction,
+            secondaryButtonTitle: "Nu niet, later in Instellingen",
+            secondaryAction: advance
+        )
+    }
+
+    // MARK: - Stap 5: Notificaties
+
+    private var stepFive: some View {
+        OnboardingTemplateView(
+            stepIndex: 5,
+            totalSteps: totalSteps,
+            eyebrow: "PERMISSIE 2 VAN 2",
+            eyebrowColor: .red,
+            title: "Coach-signalen, niet meer.",
+            subtitle: "We sturen alleen een bericht als je lichaam afwijkt van je plan — gemiddeld één keer per week, nooit meer dan één per doel per dag.",
+            content: { NotificationPermissionContent(accentColor: themeManager.primaryAccentColor) },
+            primaryButtonTitle: primaryTitle(for: notificationsState, grantLabel: "Sta notificaties toe"),
+            primaryAction: handleNotificationAction,
+            secondaryButtonTitle: "Overslaan",
+            secondaryAction: completeOnboarding
+        )
+    }
+
+    // MARK: - Button-titel per permissie-state
+
+    private func primaryTitle(for state: PermissionState, grantLabel: String) -> String {
+        switch state {
+        case .idle:       return grantLabel
+        case .requesting: return "Even geduld…"
+        case .granted:    return "Volgende"
+        case .failed:     return "Probeer opnieuw"
         }
     }
 
-    // MARK: - Permissie aanvragen
+    // MARK: - Stap 4 logica (HealthKit)
 
-    // MARK: - Permissie aanvragen
-    // Sprint 20.3: Permissies worden UITSLUITEND via knoppen op pagina 4 aangevraagd.
-    // Er zijn geen automatische requests bij onAppear of bij het laden van de OnboardingView.
+    private func handleHealthKitAction() {
+        switch healthKitState {
+        case .granted:
+            advance()
+        case .requesting:
+            return
+        case .idle, .failed:
+            requestHealthKit()
+        }
+    }
 
     private func requestHealthKit() {
-        // Sprint 26.1: Bypass HealthKit popup in UI-testmodus — simuleer direct succes.
+        healthKitState = .requesting
+
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-UITesting") {
-            Task { @MainActor in healthKitGranted = true }
+            healthKitState = .granted
+            startEngineA()
             return
         }
         #endif
-        healthKitManager.requestAuthorization { success, _ in
-            Task { @MainActor in
-                healthKitGranted = success
+
+        Task {
+            do {
+                _ = try await HealthKitManager.shared.requestOnboardingPermissions()
+                await MainActor.run {
+                    healthKitState = .granted
+                    startEngineA()
+                }
+            } catch {
+                await MainActor.run {
+                    healthKitState = .failed
+                }
             }
+        }
+    }
+
+    /// Sprint 31.2 (§4 Dual Engine): Start Engine A zodra HealthKit-toestemming is verleend.
+    /// Kalender-gebaseerde check op `Calendar.current.startOfDay(for:)` (Rule §3).
+    private func startEngineA() {
+        ProactiveNotificationService.shared.setupEngineA()
+        let startOfToday = Calendar.current.startOfDay(for: Date())
+        UserDefaults.standard.set(startOfToday, forKey: "vibecoach_engineAStartedAt")
+    }
+
+    // MARK: - Stap 5 logica (Notificaties)
+
+    private func handleNotificationAction() {
+        switch notificationsState {
+        case .granted:
+            completeOnboarding()
+        case .requesting:
+            return
+        case .idle, .failed:
+            requestNotifications()
         }
     }
 
     private func requestNotifications() {
-        // Sprint 26.1: Bypass notificatie-popup in UI-testmodus — simuleer direct succes.
+        notificationsState = .requesting
+
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-UITesting") {
-            Task { @MainActor in notificationsGranted = true }
+            notificationsState = .granted
+            completeOnboarding()
             return
         }
         #endif
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
             Task { @MainActor in
-                notificationsGranted = granted
+                notificationsState = granted ? .granted : .failed
+                if granted {
+                    completeOnboarding()
+                }
             }
+        }
+    }
+
+    // MARK: - Navigatie
+
+    private func advance() {
+        guard currentStep < totalSteps else {
+            completeOnboarding()
+            return
+        }
+        withAnimation { currentStep += 1 }
+    }
+
+    /// Sprint 31.6: Persisteer onboarding-keuzes en schakel de app door.
+    ///
+    /// V2.0-flow bewaart géén fitnessdoel — de API-sleutel wordt later in
+    /// Instellingen ingesteld (BYOK). We schrijven enkel de onboarding-datum
+    /// naar SwiftData zodat andere features een ankerdatum hebben.
+    private func completeOnboarding() {
+        persistUserConfiguration()
+        Haptics.impact(.medium)
+        hasCompletedOnboarding = true
+    }
+
+    private func persistUserConfiguration() {
+        // Vervang een eventuele bestaande configuratie — we onboarden altijd maar één profiel.
+        let descriptor = FetchDescriptor<UserConfiguration>()
+        if let existing = try? modelContext.fetch(descriptor) {
+            for record in existing {
+                modelContext.delete(record)
+            }
+        }
+
+        modelContext.insert(UserConfiguration(date: Date()))
+
+        do {
+            try modelContext.save()
+        } catch {
+            print("⚠️ UserConfiguration save mislukt: \(error.localizedDescription)")
         }
     }
 }
 
-// MARK: - Herbruikbare subviews
+// MARK: - Permissie-state
 
-/// Pagina 3: Privacy & AI — met inline BYOK API-sleutelinvoer.
-/// De sleutel wordt opgeslagen in dezelfde AppStorage-sleutels als AIProviderSettingsView,
-/// zodat de ChatViewModel hem direct ophaalt zonder extra stap.
-private struct APIKeyOnboardingPage: View {
-    @AppStorage("vibecoach_aiProvider")  private var providerRaw: String = AIProvider.gemini.rawValue
-    @AppStorage("vibecoach_userAPIKey") private var apiKey: String = ""
+private enum PermissionState {
+    case idle, requesting, granted, failed
+}
 
-    @FocusState private var fieldFocused: Bool
+// MARK: - Stap 1: Welkom visual
 
-    private var selectedProvider: AIProvider {
-        AIProvider(rawValue: providerRaw) ?? .gemini
-    }
+/// Grote afgeronde 'brand mark' met een waveform-icoon in moss-groen, gevolgd
+/// door het uppercase merkwoord "VIBECOACH". Matcht het prototype.
+private struct WelcomeBrandMark: View {
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 28) {
-                Spacer(minLength: 60)
+        VStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 32, style: .continuous)
+                    .fill(themeManager.primaryAccentColor)
+                    .frame(width: 128, height: 128)
+                    .shadow(color: themeManager.primaryAccentColor.opacity(0.35), radius: 20, x: 0, y: 10)
 
-                // Icoon + titels
-                Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 90))
-                    .foregroundStyle(.purple)
-                    .symbolRenderingMode(.hierarchical)
-
-                VStack(spacing: 8) {
-                    Text("Jouw Data, Jouw AI")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .multilineTextAlignment(.center)
-
-                    Text("Privacy first — geen dataverzameling")
-                        .font(.title3)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-
-                Text("Al jouw Apple Health data blijft **100% lokaal** op jouw iPhone. Er wordt niets naar onze servers gestuurd.")
-                    .font(.body)
-                    .foregroundColor(.primary.opacity(0.8))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-
-                // BYOK invoerkaart
-                VStack(alignment: .leading, spacing: 16) {
-
-                    // Provider picker
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("AI Provider")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.secondary)
-                            .textCase(.uppercase)
-
-                        Picker("Provider", selection: $providerRaw) {
-                            ForEach(AIProvider.allCases) { provider in
-                                HStack {
-                                    Text(provider.displayName)
-                                    if !provider.isSupported {
-                                        Text("· Binnenkort")
-                                            .foregroundColor(.secondary)
-                                            .font(.caption)
-                                    }
-                                }
-                                .tag(provider.rawValue)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                    }
-
-                    // API-sleutel invoerveld
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("API Sleutel")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.secondary)
-                            .textCase(.uppercase)
-
-                        HStack {
-                            SecureField(selectedProvider.keyPlaceholder, text: $apiKey)
-                                .focused($fieldFocused)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                                .font(.system(.body, design: .monospaced))
-                                .accessibilityIdentifier("OnboardingAPIKeyField")
-
-                            if !apiKey.isEmpty {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.green)
-                            }
-                        }
-                        .padding(12)
-                        .background(Color(.secondarySystemBackground))
-                        .cornerRadius(10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(apiKey.isEmpty ? Color(.separator) : Color.green.opacity(0.6), lineWidth: 1)
-                        )
-                    }
-
-                    // 'Hoe kom ik aan een sleutel?' link
-                    if let url = selectedProvider.getKeyURL {
-                        Link(destination: url) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "arrow.up.right.square")
-                                Text("Hoe kom ik aan een sleutel voor \(selectedProvider.displayName)?")
-                            }
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                        }
-                    }
-
-                    // Skip-tekst — geen harde verplichting
-                    Text("Geen sleutel? Geen probleem — je kunt dit later instellen via Instellingen.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.leading)
-                }
-                .padding(16)
-                .background(Color(.systemBackground))
-                .cornerRadius(16)
-                .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
-
-                // Ruimte voor de floating knop
-                Spacer(minLength: 100)
+                Image(systemName: "waveform.path.ecg")
+                    .font(.system(size: 56, weight: .semibold))
+                    .foregroundStyle(.white)
             }
-            .padding(.horizontal, 28)
+
+            Text("VIBECOACH")
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .kerning(3.0)
+                .foregroundColor(.secondary)
         }
-        .onTapGesture { fieldFocused = false }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
     }
 }
 
-/// Één informatieve pagina in de carousel (pagina's 1–2).
-private struct OnboardingPage: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let subtitle: String
-    let description: String
+// MARK: - Stap 2: Twee lagen preview
+
+/// Twee preview-kaarten naast elkaar: links de Vibe Score (ring), rechts de
+/// TRIMP-trend (bars). Dezelfde kaart-stijl als het Dashboard.
+private struct TwoLayersPreview: View {
+    @EnvironmentObject private var themeManager: ThemeManager
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 28) {
-                Spacer(minLength: 60)
-
-                Image(systemName: icon)
-                    .font(.system(size: 90))
-                    .foregroundStyle(iconColor)
-                    .symbolRenderingMode(.hierarchical)
-
-                VStack(spacing: 8) {
-                    Text(title)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .multilineTextAlignment(.center)
-
-                    Text(subtitle)
-                        .font(.title3)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-
-                Text(LocalizedStringKey(description))
-                    .font(.body)
-                    .foregroundColor(.primary.opacity(0.8))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-                    .padding(.horizontal, 8)
-
-                Spacer(minLength: 100)
-            }
-            .padding(.horizontal, 32)
+        HStack(spacing: 12) {
+            VibeScorePreviewCard(accent: themeManager.primaryAccentColor)
+            TRIMPPreviewCard(accent: themeManager.primaryAccentColor)
         }
+        .padding(.horizontal, 24)
     }
 }
 
-/// Kaartje voor één permissie-verzoek op pagina 4.
-private struct PermissionCard: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let description: String
-    let isGranted: Bool
-    let buttonLabel: String
-    /// Sprint 26.1: Accessibility identifier voor de actieknop — zodat XCUITest hem feilloos vindt.
-    var buttonIdentifier: String = ""
-    let action: () -> Void
+private struct VibeScorePreviewCard: View {
+    let accent: Color
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.title2)
-                    .foregroundStyle(iconColor)
-                    .frame(width: 36)
+            Text("VIBE SCORE")
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .kerning(1.0)
+                .foregroundColor(.secondary)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                        .font(.headline)
-                    Text(description)
-                        .font(.caption)
+            ZStack {
+                Circle()
+                    .stroke(Color(.tertiarySystemFill), lineWidth: 8)
+                    .frame(width: 86, height: 86)
+
+                Circle()
+                    .trim(from: 0, to: 0.76)
+                    .stroke(accent, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 86, height: 86)
+
+                VStack(spacing: 0) {
+                    Text("76")
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundColor(.primary)
+                    Text("vandaag")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity)
+
+            Text("Herstel")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: Color(.label).opacity(0.07), radius: 10, x: 0, y: 3)
+    }
+}
+
+private struct TRIMPPreviewCard: View {
+    let accent: Color
+
+    /// Veertien placeholder-datapunten voor de preview-bars (genormaliseerd 0…1).
+    private let bars: [CGFloat] = [0.35, 0.48, 0.30, 0.62, 0.55, 0.70, 0.40,
+                                   0.58, 0.72, 0.45, 0.65, 0.80, 0.55, 0.68]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("TRIMP")
+                .font(.caption2)
+                .fontWeight(.semibold)
+                .kerning(1.0)
+                .foregroundColor(.secondary)
+
+            HStack(alignment: .bottom, spacing: 3) {
+                ForEach(bars.indices, id: \.self) { index in
+                    Capsule()
+                        .fill(accent.opacity(0.55 + (bars[index] * 0.45)))
+                        .frame(width: 6, height: 50 * bars[index])
+                }
+            }
+            .frame(height: 50, alignment: .bottom)
+            .frame(maxWidth: .infinity)
+
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("112")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(.primary)
+                Text("/ dag")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Text("Belasting")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: Color(.label).opacity(0.07), radius: 10, x: 0, y: 3)
+    }
+}
+
+// MARK: - Stap 3: AI-provider privacy content
+
+/// Info-blok met "Waarom je eigen sleutel?" (blauw getint) gevolgd door een
+/// segmented picker voor de provider. De daadwerkelijke API-sleutel komt later
+/// in Instellingen — dat matcht het prototype.
+private struct AIProviderPrivacyContent: View {
+    @Binding var providerRaw: String
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                // Info-kaart, blauw getint.
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "lock.shield.fill")
+                            .font(.subheadline)
+                            .foregroundColor(.blue)
+                        Text("Waarom je eigen sleutel?")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                    }
+                    Text("Je gesprekken gaan rechtstreeks naar je gekozen AI-provider — niet via onze servers. Je houdt zelf de controle over kosten, model en privacy.")
+                        .font(.footnote)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.blue.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                // Provider-picker.
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("AI PROVIDER")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .kerning(1.0)
+                        .foregroundColor(.secondary)
+
+                    Picker("Provider", selection: $providerRaw) {
+                        Text("Gemini").tag(AIProvider.gemini.rawValue)
+                        Text("OpenAI").tag(AIProvider.openAI.rawValue)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("OnboardingProviderPicker")
+
+                    Text("Je kunt de sleutel zelf later invoeren in Instellingen.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 4)
+        }
+    }
+}
+
+// MARK: - Stap 4: Apple Health permissie content
+
+private struct AppleHealthPermissionContent: View {
+    let state: PermissionState
+    @EnvironmentObject private var themeManager: ThemeManager
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                HealthDataCard(
+                    icon: "waveform.path.ecg.rectangle.fill",
+                    iconTint: themeManager.primaryAccentColor,
+                    title: "Hartslagvariabiliteit",
+                    subtitle: "Meet je autonome herstel — de hoeksteen van je Vibe Score.",
+                    isGranted: state == .granted
+                )
+
+                HealthDataCard(
+                    icon: "moon.stars.fill",
+                    iconTint: themeManager.primaryAccentColor,
+                    title: "Slaap",
+                    subtitle: "Fase-opdeling (REM / diep / licht) voor betere trainingsadviezen.",
+                    isGranted: state == .granted
+                )
+
+                // Verwachtings-bubbel — matcht prototype.
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "info.circle.fill")
+                        .foregroundColor(.blue)
+                        .font(.footnote)
+                    Text("Je ziet zo een Apple-dialoog waarin je per type data toegang geeft.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .padding(12)
+                .background(Color.blue.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                if case .failed = state {
+                    Text("Toestemming mislukt — je kunt het nu opnieuw proberen of later via Instellingen koppelen.")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 4)
+                }
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 4)
+        }
+    }
+}
+
+private struct HealthDataCard: View {
+    let icon: String
+    let iconTint: Color
+    let title: String
+    let subtitle: String
+    let isGranted: Bool
+
+    var body: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(iconTint.opacity(0.15))
+                    .frame(width: 52, height: 52)
+
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(iconTint)
+                    .symbolRenderingMode(.hierarchical)
             }
 
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 8)
+
             if isGranted {
-                Label("Toegekend", systemImage: "checkmark.circle.fill")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.green)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(Color.green.opacity(0.12))
-                    .cornerRadius(10)
-                    .accessibilityIdentifier("\(buttonIdentifier)_Granted")
-            } else {
-                Button(action: action) {
-                    Text(buttonLabel)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(iconColor.opacity(0.12))
-                        .foregroundColor(iconColor)
-                        .cornerRadius(10)
-                }
-                .accessibilityIdentifier(buttonIdentifier)
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title3)
+                    .foregroundStyle(.green)
             }
         }
-        .padding(16)
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(16)
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: Color(.label).opacity(0.07), radius: 10, x: 0, y: 3)
+    }
+}
+
+// MARK: - Stap 5: Notificatie permissie content
+
+/// Preview-chat bubble + frequentie-note. Bewust géén live permissie-state
+/// visual — de Apple-popup geeft daar zelf feedback op.
+private struct NotificationPermissionContent: View {
+    let accentColor: Color
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                // Preview van een coach-notificatie.
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(accentColor)
+                                .frame(width: 28, height: 28)
+                            Image(systemName: "waveform.path.ecg")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                        }
+                        Text("VibeCoach")
+                            .font(.footnote)
+                            .fontWeight(.semibold)
+                        Spacer()
+                        Text("nu")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Text("Je Vibe Score staat op rood")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+
+                    Text("HRV 32 ms, –14 onder baseline. Ik verplaats je interval naar morgen.")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .shadow(color: Color(.label).opacity(0.07), radius: 10, x: 0, y: 3)
+
+                // Frequentie-note, rustig en uitleggend.
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "bell.badge.fill")
+                        .foregroundColor(.secondary)
+                        .font(.footnote)
+                    Text("Maximaal één bericht per doel per dag — alleen bij afwijkingen van je plan.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .padding(12)
+                .background(Color(.tertiarySystemFill).opacity(0.6))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 4)
+        }
     }
 }

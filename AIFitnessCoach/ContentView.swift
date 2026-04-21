@@ -1332,6 +1332,10 @@ struct DashboardView: View {
     /// Tijdstip van de laatste geslaagde coach-analyse — gespiegeld vanuit ChatViewModel.
     @AppStorage("vibecoach_lastAnalysisTimestamp") private var lastAnalysisTimestamp: Double = 0
 
+    // Epic 34.1: V2.0 Fit & Finish — materiaal-overlay op de statusbalk zodra de
+    // gebruiker scrolt, zodat content niet zichtbaar onder de clock/batterij glijdt.
+    @State private var isDashboardScrolled: Bool = false
+
     /// Epic 18: Wordt true zodra de gebruiker een symptoomscore aanpast na de laatste analyse.
     /// Geeft aan dat de CoachInsight verouderd is en een nieuwe analyse nodig heeft.
     @State private var symptomChangedSinceAnalysis: Bool = false
@@ -1728,8 +1732,18 @@ struct DashboardView: View {
                 )
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
             }
+            // Epic 34.1: detecteer scroll om materiaal onder de statusbalk te laten verschijnen.
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentOffset.y > 4
+            } action: { _, newValue in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isDashboardScrolled = newValue
+                }
+            }
             .toolbar(.hidden, for: .navigationBar)
             .background(Color(.secondarySystemBackground).ignoresSafeArea())
+            // Epic 34.1: materiaalband in de top safe area — alleen zichtbaar bij scroll.
+            .scrollEdgeMaterial(isActive: isDashboardScrolled)
             // Epic 18: Reset de staleness-badge zodra er een nieuwe analyse is afgerond.
             .onChange(of: lastAnalysisTimestamp) { _, _ in
                 symptomChangedSinceAnalysis = false

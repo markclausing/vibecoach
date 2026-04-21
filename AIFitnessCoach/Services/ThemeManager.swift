@@ -133,3 +133,14 @@ private extension UIColor {
         self.init(red: r, green: g, blue: b, alpha: a)
     }
 }
+
+// MARK: - Haptics
+// Lichte wrapper om UIKit-feedback-generators; gebruikt voor bevestigingen (doel opgeslagen,
+// bericht verstuurd, onboarding afgerond) zodat key-interacties tactiel aanvoelen.
+enum Haptics {
+    static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.prepare()
+        generator.impactOccurred()
+    }
+}

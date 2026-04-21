@@ -76,14 +76,26 @@ Lees dit bij elke sessie als basis voor alle beslissingen.
 
 ## 8. Git Workflow
 
-- Elke epic of sprint werkt op een **feature branch** — nooit direct op `main`.
-- Branchnaam conventie: `feature/epic-{nr}-{korte-beschrijving}` (bijv. `feature/epic-13-proactive-coaching-engine`).
-- Workflow per sprint:
-  1. Feature branch aanmaken → code bouwen → pushen
-  2. Gebruiker pull de branch in Xcode en test op device
-  3. Feedback → fixes aanbrengen op **dezelfde** feature branch
-  4. Tevreden → gebruiker maakt PR → CI draait → merge naar main
-  5. Bij **start van de volgende sprint**: verwijder de vorige (gemergte) branch lokaal én remote
+- Elke code-wijziging gaat via een branch + PR — **nooit direct op `main`**, ook niet voor kleine fixes. Uitzondering: pure README/backlog-updates (docs-only).
+- Branchnaam-conventies per type wijziging:
+  - `feature/epic-{nr}-{korte-beschrijving}` — nieuwe epics/sprints (bijv. `feature/epic-13-proactive-coaching-engine`)
+  - `fix/{korte-beschrijving}` — reguliere bugfixes (bijv. `fix/vibe-score-nil-crash`)
+  - `hotfix/{korte-beschrijving}` — productie-kritiek, fast-track merge
+  - `security/{alert-id-of-beschrijving}` — security-fixes (bijv. `security/codeql-dob-logging`)
+  - `ci/{korte-beschrijving}` — workflow/pipeline-wijzigingen
+- Workflow per branch:
+  1. Branch aanmaken → code bouwen → pushen
+  2. Gebruiker pulled en test (bij feature branches op device)
+  3. Feedback → fixes aanbrengen op **dezelfde** branch
+  4. Tevreden → gebruiker maakt PR → CI draait → **squash & merge** naar main
+  5. Bij start van de volgende sprint: verwijder gemergte branches lokaal én remote
+- PR-discipline:
+  - **Eén fix per PR** — geen meeliftende refactors of "en-terwijl-ik-toch-bezig-was" wijzigingen
+  - Link altijd de bron in de PR-beschrijving: CodeQL-alert-ID, issue-nummer, crash-report, of user-melding
+  - Regression-test toevoegen waar haalbaar (conform §6)
+- Security-fixes specifiek:
+  - Publieke CodeQL-alerts → reguliere `security/`-branch + PR flow is voldoende
+  - Echte exploitable kwetsbaarheden in productie → gebruik **private GitHub Security Advisory** + private fork, publiceer pas ná de fix
 
 ---
 

@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+env:
+  # Opt-in naar Node.js 24 voor alle JavaScript-actions (GitHub dwingt dit vanaf 2026-06-02).
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build_and_test:
     name: Build & Test iOS App
