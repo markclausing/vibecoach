@@ -13,22 +13,12 @@ VibeCoach is een production-ready iOS-app met fysiologisch correcte trainingscoa
 
 ## 🛠 Installatie & Setup
 
-Om dit project lokaal te draaien, moet je zowel de iOS-app als de bijbehorende Node.js webhook-backend configureren. Volg de onderstaande stappen:
-
-### 1. iOS App (Xcode)
 1. Open `AIFitnessCoach.xcodeproj` in Xcode.
 2. Kopieer in de projectmap het bestand `Secrets-template.swift` naar `Secrets.swift`.
-3. Open `Secrets.swift` en vul je eigen API-sleutels in (zoals je Gemini API Key en Strava API credentials).
+3. Open `Secrets.swift` en vul je eigen waarden in (`stravaClientID`, `stravaProxyBaseURL`, `stravaProxyToken`). Het Strava `client_secret` zit niet in de app — die staat als Cloudflare Worker Secret in de [vibecoach-proxy](https://github.com/markclausing/vibecoach-proxy)-repo.
 4. Selecteer je simulator of fysieke iPhone en druk op Run (Cmd+R).
-*(Let op: voor Apple HealthKit functionaliteit is testen op een fysiek toestel aanbevolen).*
 
-### 2. Backend (Node.js)
-De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) te sturen naar de app.
-1. Navigeer in je terminal naar de `backend/` map.
-2. Voer `npm install` uit om de afhankelijkheden te installeren.
-3. Kopieer het bestand `.env.example` naar `.env`.
-4. Open de `.env` file en vul daar de benodigde variabelen in (zoals `CLIENT_ID`, `CLIENT_SECRET`, en je zelfbedachte `VERIFY_TOKEN`).
-5. Start de server (bijvoorbeeld via `./start.sh` als je ngrok wilt gebruiken voor lokaal testen).
+*(Let op: voor Apple HealthKit functionaliteit is testen op een fysiek toestel aanbevolen).*
 
 ---
 
@@ -38,7 +28,7 @@ De backend luistert naar inkomende Strava webhooks om push-notificaties (APNs) t
 
 | Fase | Wat er gebouwd is |
 |------|-------------------|
-| **1–5** | iOS App (SwiftUI) & SwiftData, OAuth2 Strava, Node.js backend met APNs webhooks, deep-linking op `activityId` |
+| **1–5** | iOS App (SwiftUI) & SwiftData, OAuth2 Strava, Node.js webhook-backend met APNs (later vervangen door Engine A — zie Epic 13), deep-linking op `activityId` |
 | **6** | Historische sync, context-injectie & proactieve overtraining-waarschuwingen |
 | **7** | Apple HealthKit integratie — Banister TRIMP berekening (HRR, Cardiac Drift, Training Load) lokaal op device |
 | **8** | Interactieve 7-daagse trainingskalender; Readiness Calculator injecteert cumulatieve TRIMP + actieve doelen in de prompt |
@@ -336,6 +326,7 @@ Korte log van keuzes die afwijken van het originele plan, zodat context niet ver
 | **Dead-code opruiming** (2026-04, technical review no-regret wins) | Finder-duplicates verwijderd: `OnboardingView 2.swift` (410 LOC), `AppIcon 1.appiconset/`, `Color 1.colorset/`, 2× `Contents 2.json`, 2× `appstore Background Removed 1/2.png`. Lege root `package-lock.json` stub weggehaald. `.gitignore` uitgebreid met `*.xcresult`, `.vscode/`, `.idea/`, `Pods/`, `*.log`. | God-file splits (ContentView 2.247 LOC etc.) en `os.Logger`-migratie uitgesteld — te groot voor een no-regret PR |
 | **Single-model Gemini + BYOK-only** (2026-04, security audit M-04) | Waterfall `gemini-2.5-flash → gemini-flash-latest` vervangen door één enkel `gemini-flash-latest`-call in `ChatViewModel`, `AddGoalView` en `APIKeyValidator`. Tegelijk de `Secrets.geminiAPIKey`-fallback verwijderd: de onboarding garandeert dat de gebruiker een eigen key invoert, dus hardcoded keys zijn niet meer nodig. `Secrets.geminiAPIKey` is uit zowel `Secrets-template.swift` als `Secrets.swift` gehaald. | Backend-proxy voor keys (zie C-01 plan) — uitgesteld tot serverless Worker geïmplementeerd is |
 | **BYOK-sleutel naar Keychain** (2026-04, security audit C-02) | De door de gebruiker ingevoerde AI-API-sleutel stond in `UserDefaults` (`vibecoach_userAPIKey`) — op device unencrypted-at-rest en backup-leesbaar. Nieuwe `UserAPIKeyStore` wrappt `KeychainService` onder service-naam `VibeCoach_UserAIKey`. Eenmalige migratie in `AIFitnessCoachApp.init()` verplaatst bestaande waarden en wist de legacy-entry. `SettingsView`, `AIProviderSettingsView`, `ChatViewModel` en `AddGoalView` lezen/schrijven nu via de Keychain. M-04-Secrets-fallback bewust NIET teruggebracht — BYOK-only blijft de status. | Een backend-proxy (C-01) die de sleutel serverside houdt — vereist infrastructuur die er nog niet is; Keychain lost C-02 lokaal volledig op. |
+| **Oude Node.js webhook-backend verwijderd** (2026-04) | De `backend/`-folder hostte een lokaal Node.js-service die Strava-webhooks ontving en omzette naar APNs-pushes (Fase 5). Sinds Epic 13 wordt proactieve coaching volledig lokaal afgehandeld: Engine A (`HKObserverQuery`) wekt de app bij elke nieuwe HealthKit-workout, Engine B (`BGAppRefreshTask`) doet de stille 24-uurs check. Beide schedulen lokale `UNUserNotificationCenter`-notificaties — geen APNs, geen backend meer nodig. Folder + bijbehorende setup-sectie uit de README verwijderd. | APNs-registratie in `SettingsView` + `activityId`-branches in `AppDelegate` bewust in een aparte opvolg-PR — raakt de M-08 notificatie-whitelist en verdient eigen review (CLAUDE.md §8). |
 | **Strava OAuth via Cloudflare Worker-proxy** (2026-04, security audit C-01) | Het Strava `client_secret` zat hardcoded in `Secrets.swift` — uit de IPA te extraheren door elke gebruiker die de binary kon openen. Nieuwe `vibecoach-proxy` (Cloudflare Worker, aparte repo) hosted `POST /oauth/strava/exchange` + `POST /oauth/strava/refresh` met het echte secret als Cloudflare Worker Secret (nooit in source). App authenticeert met een shared `X-Client-Token` header (`stravaProxyToken` in `Secrets.swift`) — niet cryptografisch sterk, maar stopt casual scraping. `StravaAuthService.exchangeCodeForToken` en `FitnessDataService.refreshTokenIfNeeded` routeren nu naar de Worker. `Secrets.stravaClientSecret` is uit beide `Secrets`-bestanden verwijderd. | Een volwaardige backend met user-accounts — te groot voor dit solo-project; Worker is serverless en kost ~€0. Follow-up: App Attest / DeviceCheck voor een tweede factor op de Worker-auth (zodat alleen echte app-installaties kunnen bellen). |
 | **Dashboard error-banner voor AI-calls** (2026-04) | AI-fouten (timeout, 503/429) werden tot nu toe alleen als chat-bubble met `isError: true` gelogd. Op het Dashboard is de chat niet zichtbaar, dus een mislukte pull-to-refresh sneuvelde stil. Nieuwe `lastAIErrorMessage` op `ChatViewModel` + `DashboardBannerView` met 'Opnieuw proberen'- en 'Sluit'-knoppen. De banner wist zichzelf bij elke nieuwe call. | Een toast / snackbar via een globale overlay — te groot voor deze scope en zou de chat-bubble-error-UX dupliceren |
 

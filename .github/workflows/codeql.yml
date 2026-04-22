@@ -15,8 +15,8 @@ env:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    # Swift analyse moet op macOS draaien, JS kan op Ubuntu.
-    runs-on: ${{ matrix.language == 'swift' && 'macos-latest' || 'ubuntu-latest' }}
+    # Swift analyse draait op macOS (alleen taal in deze repo sinds de Node.js-backend is verwijderd).
+    runs-on: macos-latest
     timeout-minutes: 60
     permissions:
       security-events: write
@@ -30,8 +30,6 @@ jobs:
         include:
           - language: swift
             build-mode: manual
-          - language: javascript-typescript
-            build-mode: none
 
     steps:
       - name: Checkout Repository
