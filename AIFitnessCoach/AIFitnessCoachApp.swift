@@ -21,10 +21,6 @@ class AppNavigationState: ObservableObject {
     /// Het momenteel geselecteerde tabblad.
     @Published var selectedTab: Tab = .dashboard
 
-    /// Een eventueel specifiek Strava Activity ID dat vanuit een notificatie
-    /// is meegegeven en geanalyseerd moet worden door de coach.
-    @Published var targetActivityId: Int64? = nil
-
     /// Bepaalt of de AI coach bottom sheet zichtbaar is, ongeacht welk tabblad actief is.
     @Published var showingChatSheet: Bool = false
 
@@ -34,14 +30,6 @@ class AppNavigationState: ObservableObject {
 
     // Init is public zodat Previews een eigen instance kunnen maken.
     init() {}
-
-    /// Stelt de app in om een specifieke activiteit in het Dashboard / Coach scherm te openen.
-    nonisolated func openActivityAnalysis(activityId: Int64) {
-        Task { @MainActor in
-            self.selectedTab = .dashboard
-            self.targetActivityId = activityId
-        }
-    }
 }
 
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
@@ -83,42 +71,18 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         return true
     }
 
-    // Wordt aangeroepen wanneer de app succesvol een APNs token heeft ontvangen.
-    // Security: het volledige token is een identifier waarmee push-berichten naar dit
-    // toestel kunnen worden gestuurd. We loggen daarom alleen in DEBUG en tonen
-    // alleen de laatste 6 tekens — genoeg om runs te herkennen, te weinig om te misbruiken.
-    // Het volledige token is in DEBUG via de debugger op te vragen (breakpoint op deze regel → `po token`).
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        #if DEBUG
-        let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
-        let token = tokenParts.joined()
-        let suffix = String(token.suffix(6))
-        print("✅ APNs Device Token ontvangen (laatste 6: …\(suffix))")
-        print("ℹ️ Voor backend-registratie: zet een breakpoint hier en kopieer `token` uit de debugger.")
-        #endif
-    }
-
-    // Wordt aangeroepen als er iets misgaat bij het registreren voor APNs
-    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        print("❌ Fout bij registreren voor Push Notifications: \(error.localizedDescription)")
-    }
-
     // MARK: - UNUserNotificationCenterDelegate
 
-    /// M-08: whitelist-check voor inkomende remote notificaties. Alleen payloads
-    /// die door onze eigen backend gestuurd kunnen worden worden verwerkt:
-    ///   - een `activityId`-key (Strava webhook → workout-analyse)
-    ///   - een `type`-waarde in `{"goalRisk", "recovery_plan"}` (proactieve coach)
+    /// M-08: whitelist-check voor inkomende notificatie-payloads. Alleen payloads
+    /// met een `type`-waarde uit onze eigen proactieve coach-flow worden verwerkt:
+    ///   - `"goalRisk"` — Engine A / B: een doel staat op rood
+    ///   - `"recovery_plan"` — het automatisch gegenereerde herstelplan is klaar
     /// Onbekende payloads worden stil genegeerd — dit voorkomt dat willekeurige
     /// of gemanipuleerde pushes een banner tonen of navigatie triggeren.
     ///
     /// Static pure functie zodat hij los in unit-tests kan worden geverifieerd.
     static func isAllowedNotificationPayload(_ userInfo: [AnyHashable: Any]) -> Bool {
         let allowedTypes: Set<String> = ["goalRisk", "recovery_plan"]
-
-        if userInfo["activityId"] != nil {
-            return true
-        }
         if let type = userInfo["type"] as? String, allowedTypes.contains(type) {
             return true
         }
@@ -154,23 +118,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
             return
         }
 
-        // Haal het activityId uit de payload (Strava webhook notificaties)
-        if let activityId = userInfo["activityId"] as? Int64 {
-            print("  ➡️ Strava Activity ID gedetecteerd in payload: \(activityId)")
-            AppNavigationState.shared.openActivityAnalysis(activityId: activityId)
-        } else if let activityIdString = userInfo["activityId"] as? String, let activityId = Int64(activityIdString) {
-            print("  ➡️ Strava Activity ID (String) gedetecteerd in payload: \(activityId)")
-            AppNavigationState.shared.openActivityAnalysis(activityId: activityId)
-        } else if let type = userInfo["type"] as? String, type == "goalRisk" {
+        if let type = userInfo["type"] as? String, type == "goalRisk" || type == "recovery_plan" {
             // SPRINT 13.2 / Epic 23: Proactieve coach-notificatie — open de Doelen tab
-            // De herstelplan-banner staat nu in de Doelen tab, niet op het Dashboard.
-            print("  ➡️ Doel-risico notificatie gedetecteerd — Doelen tab openen")
-            Task { @MainActor in
-                AppNavigationState.shared.selectedTab = .goals
-            }
-        } else if let type = userInfo["type"] as? String, type == "recovery_plan" {
-            // Forward compat: recovery_plan-type openen de Doelen tab (waar het herstelplan staat).
-            print("  ➡️ Recovery plan notificatie gedetecteerd — Doelen tab openen")
+            // waar de herstelplan-banner staat.
+            print("  ➡️ Proactieve notificatie (\(type)) — Doelen tab openen")
             Task { @MainActor in
                 AppNavigationState.shared.selectedTab = .goals
             }
@@ -182,7 +133,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 
 @main
 struct AIFitnessCoachApp: App {
-    // Inject the custom AppDelegate voor APNs en Push Notifications (Fase 5)
+    // AppDelegate is nodig voor: BGTaskScheduler-registratie (Engine B) en de
+    // UNUserNotificationCenterDelegate-callbacks die lokale proactieve
+    // notificaties afhandelen (Epic 13, Engine A & B).
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     // Luister naar de app status (foreground/background)

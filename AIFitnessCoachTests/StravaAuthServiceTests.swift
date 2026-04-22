@@ -276,16 +276,6 @@ final class StravaAuthServiceTests: XCTestCase {
 /// dat onbekende of gemanipuleerde payloads netjes genegeerd worden.
 final class NotificationPayloadWhitelistTests: XCTestCase {
 
-    func testAllowed_ActivityIdAsInt_ReturnsTrue() {
-        let payload: [AnyHashable: Any] = ["activityId": Int64(12345)]
-        XCTAssertTrue(AppDelegate.isAllowedNotificationPayload(payload))
-    }
-
-    func testAllowed_ActivityIdAsString_ReturnsTrue() {
-        let payload: [AnyHashable: Any] = ["activityId": "12345"]
-        XCTAssertTrue(AppDelegate.isAllowedNotificationPayload(payload))
-    }
-
     func testAllowed_TypeGoalRisk_ReturnsTrue() {
         let payload: [AnyHashable: Any] = ["type": "goalRisk"]
         XCTAssertTrue(AppDelegate.isAllowedNotificationPayload(payload))
@@ -310,6 +300,14 @@ final class NotificationPayloadWhitelistTests: XCTestCase {
     func testDenied_UnrelatedKeys_ReturnsFalse() {
         // Payload met random keys — typisch voor een marketing- of phishing-push
         let payload: [AnyHashable: Any] = ["url": "https://evil.example", "title": "Klik hier"]
+        XCTAssertFalse(AppDelegate.isAllowedNotificationPayload(payload))
+    }
+
+    /// Regression-test: sinds de Node.js-webhook-backend is verwijderd mogen
+    /// `activityId`-payloads niet meer als geldig worden beschouwd. Een push
+    /// met alleen een `activityId` moet dus stil worden genegeerd.
+    func testDenied_ActivityIdOnly_ReturnsFalse() {
+        let payload: [AnyHashable: Any] = ["activityId": Int64(12345)]
         XCTAssertFalse(AppDelegate.isAllowedNotificationPayload(payload))
     }
 }

@@ -1770,16 +1770,6 @@ struct DashboardView: View {
             .onChange(of: lastAnalysisTimestamp) { _, _ in
                 symptomChangedSinceAnalysis = false
             }
-            .onChange(of: appState.targetActivityId) { oldValue, newValue in
-                if let activityId = newValue {
-                    refreshProfileContext()
-                    viewModel.analyzeWorkout(withId: activityId, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                    appState.showingChatSheet = true
-                    Task { @MainActor in
-                        appState.targetActivityId = nil
-                    }
-                }
-            }
             .onAppear {
                 backfillLegacyGoals()
                 refreshProfileContext()

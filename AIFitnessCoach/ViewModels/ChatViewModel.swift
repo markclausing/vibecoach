@@ -1337,69 +1337,6 @@ class ChatViewModel: ObservableObject {
         }
     }
 
-    /// Haalt een specifieke Strava activiteit op (bijv. vanuit een notificatie),
-    /// formatteert deze als een Nederlandse prompt en stuurt deze naar de AI-coach.
-    func analyzeWorkout(withId id: Int64, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
-        guard !isFetchingWorkout else { return }
-        isFetchingWorkout = true
-
-        Task {
-            do {
-                let activity = try await fitnessDataService.fetchActivity(byId: id)
-
-                // Converteer eenheden
-                let distanceKm = String(format: "%.1f", activity.distance / 1000.0)
-                let timeMinutes = activity.moving_time / 60
-                let heartRateStr = activity.average_heartrate != nil ? "\(Int(activity.average_heartrate!))" : "onbekend"
-
-                // Bereken TRIMP
-                let avgHR = activity.average_heartrate ?? 140.0
-                let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: Double(activity.moving_time), averageHeartRate: avgHR, maxHeartRate: 190.0, restingHeartRate: 60.0)
-                let trimpScore = Int(calculatedTSS)
-
-                // Formatteer de verborgen systeem prompt inclusief de referentie naar het actuele schema (Sprint 9.3)
-                let storedPlanContext = getStoredPlanString()
-                let uiPrompt = "\(storedPlanContext)\n\nIk heb zojuist deze training voltooid: '\(activity.name)' (Afstand: \(distanceKm) km, Tijd: \(timeMinutes) minuten, Gem. Hartslag: \(heartRateStr), TRIMP: \(trimpScore)). Vergelijk dit met de geplande belasting in het schema. Is het resterende schema voor deze week nog steeds optimaal? Zo niet, herbereken het schema (retourneer alle 7 dagen) en geef een korte motivatie of feedback op de zojuist voltooide training."
-
-                Task { @MainActor in
-                    // Verberg de technische JSON details uit de UI, toon een simpele zin.
-                    messages.append(ChatMessage(role: .user, text: "Ik heb zojuist de training '\(activity.name)' voltooid. Hoe ziet de rest van mijn week eruit?"))
-                    isTyping = true
-                    isFetchingWorkout = false
-
-                    let contextPrefix = buildContextPrefix(from: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
-                    let payloadText = "\(contextPrefix)\(uiPrompt)"
-
-                    fetchAIResponse(for: payloadText, image: nil)
-                }
-
-            } catch let error as FitnessDataError {
-                var errorMsg = "Fout bij ophalen van Strava data voor activiteit \(id): "
-                switch error {
-                case .missingToken:
-                    errorMsg += "Je bent niet ingelogd op Strava."
-                case .unauthorized:
-                    errorMsg += "Je Strava sessie is verlopen."
-                case .networkError(let desc):
-                    errorMsg += "Netwerkfout (\(desc))."
-                case .decodingError(let desc):
-                    errorMsg += "Data onleesbaar (\(desc))."
-                case .invalidResponse:
-                    errorMsg += "Ongeldig antwoord van de server."
-                }
-                Task { @MainActor in
-                    messages.append(ChatMessage(role: .ai, text: errorMsg))
-                    isFetchingWorkout = false
-                }
-            } catch {
-                Task { @MainActor in
-                    messages.append(ChatMessage(role: .ai, text: "Er is een onbekende fout opgetreden."))
-                    isFetchingWorkout = false
-                }
-            }
-        }
-    }
-
     // MARK: - JSON Parsing Hulpfuncties
 
     /// Haalt een schone JSON-string op uit een AI-response die mogelijk markdown-opmaak bevat.
