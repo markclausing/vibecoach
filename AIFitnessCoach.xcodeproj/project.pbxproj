@@ -15,6 +15,7 @@
 		34B36AEEDAF09C2EA9BC6241 /* SettingsViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */; };
 		48E3320BE9BDAC79B8060EEE /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136CF190D3B3F2D63ADC3225 /* KeychainService.swift */; };
 		48E3320CE9BDAC79B8060EEE /* APIKeyValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */; };
+		48E3320DE9BDAC79B8060EEE /* UserAPIKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136CF192D3B3F2D63ADC3225 /* UserAPIKeyStore.swift */; };
 		5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */; };
 		531DF0798000FFC0CACC940E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4D1D9B3991F419262E294E /* SettingsView.swift */; };
 		543CBE0027B161C9AFDE3824 /* AIFitnessCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */; };
@@ -27,6 +28,7 @@
 		7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */; };
 		89B083BDD5A2948D191971E5 /* FitnessGoalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FDDDD26172C97669936B5B8 /* FitnessGoalTests.swift */; };
 		9673922FF2B9CCC9D666596F /* MockTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70418E8B60B3D7CA1BC426AA /* MockTokenStore.swift */; };
+		96739230F2B9CCC9D666596F /* UserAPIKeyStoreMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70418E8C60B3D7CA1BC426AA /* UserAPIKeyStoreMigrationTests.swift */; };
 		9E9427B7C484EE11E612C120 /* StravaActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */; };
 		A12B3C4D5E6F7A8B9C0D1E2F /* GapAnalysisCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B23C4D5E6F7A8B9C0D1E2F3A /* GapAnalysisCardView.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */; };
@@ -96,6 +98,7 @@
 		0D235CA77C73BA3BBA685143 /* Secrets-template.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "Secrets-template.swift"; sourceTree = "<group>"; };
 		0DE3DDF83AB44095AF4FA0CE /* MockNetworkSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockNetworkSession.swift; sourceTree = "<group>"; };
 		136CF190D3B3F2D63ADC3225 /* KeychainService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		136CF192D3B3F2D63ADC3225 /* UserAPIKeyStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserAPIKeyStore.swift; sourceTree = "<group>"; };
 		136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyValidator.swift; sourceTree = "<group>"; };
 		203C295EF5D568151B5D1BEF /* EditGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditGoalView.swift; sourceTree = "<group>"; };
 		2757E95543939CACDB8D35DE /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -106,6 +109,7 @@
 		6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GenerativeModelProtocol.swift; sourceTree = "<group>"; };
 		6D6902F6A369E69FC0F8BC5C /* StravaTokenResponse.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaTokenResponse.swift; sourceTree = "<group>"; };
 		70418E8B60B3D7CA1BC426AA /* MockTokenStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockTokenStore.swift; sourceTree = "<group>"; };
+		70418E8C60B3D7CA1BC426AA /* UserAPIKeyStoreMigrationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserAPIKeyStoreMigrationTests.swift; sourceTree = "<group>"; };
 		758A7ECDF66FE523D3217100 /* FitnessDataServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataServiceTests.swift; sourceTree = "<group>"; };
 		769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoal.swift; sourceTree = "<group>"; };
 		769A9B624D9B0D66D5D394F9 /* UserConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserConfiguration.swift; sourceTree = "<group>"; };
@@ -219,6 +223,7 @@
 				67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */,
 				C1C2BF572AF13DE2A83E51CF /* StravaAuthServiceTests.swift */,
 				70418E8B60B3D7CA1BC426AA /* MockTokenStore.swift */,
+				70418E8C60B3D7CA1BC426AA /* UserAPIKeyStoreMigrationTests.swift */,
 				758A7ECDF66FE523D3217100 /* FitnessDataServiceTests.swift */,
 				FD41D2D02372B05947DC9CBC /* Mocks */,
 				BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */,
@@ -263,6 +268,7 @@
 				B81B710B2F8D65A80062BC61 /* UITestMockEnvironment.swift */,
 				136CF190D3B3F2D63ADC3225 /* KeychainService.swift */,
 				136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */,
+				136CF192D3B3F2D63ADC3225 /* UserAPIKeyStore.swift */,
 				EDA9519ECAE22F903D67C756 /* TokenStore.swift */,
 				60758C181F9C986190D5A369 /* StravaAuthService.swift */,
 				F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */,
@@ -504,6 +510,7 @@
 				CC54A4B0A24ABC7666AB3222 /* ChatViewModelTests.swift in Sources */,
 				F00D4D082A5D0B980C536185 /* StravaAuthServiceTests.swift in Sources */,
 				9673922FF2B9CCC9D666596F /* MockTokenStore.swift in Sources */,
+				96739230F2B9CCC9D666596F /* UserAPIKeyStoreMigrationTests.swift in Sources */,
 				0ED375BF4E3F9C2FB4E3A5F9 /* FitnessDataServiceTests.swift in Sources */,
 				FA26082FD3260BAC05A7AAEB /* MockNetworkSession.swift in Sources */,
 				34B36AEEDAF09C2EA9BC6241 /* SettingsViewTests.swift in Sources */,
@@ -552,6 +559,7 @@
 				DD10EE20FF30AA40BB50CC60 /* TrendWidgetView.swift in Sources */,
 				48E3320BE9BDAC79B8060EEE /* KeychainService.swift in Sources */,
 				48E3320CE9BDAC79B8060EEE /* APIKeyValidator.swift in Sources */,
+				48E3320DE9BDAC79B8060EEE /* UserAPIKeyStore.swift in Sources */,
 				DB076B94561F03C4EB2D8C5E /* TokenStore.swift in Sources */,
 				06C5198C4908FF10CCF1E836 /* StravaAuthService.swift in Sources */,
 				26CFC95E9F1D535817250215 /* FitnessDataService.swift in Sources */,

@@ -43,8 +43,9 @@ enum UITestMockEnvironment {
 
         // Zet een dummy API-sleutel zodat de Coach tab de chatinterface toont
         // in plaats van de 'NoAPIKeyView'.
-        if defaults.string(forKey: "vibecoach_userAPIKey")?.isEmpty ?? true {
-            defaults.set("test-ui-mock-key-do-not-call-api", forKey: "vibecoach_userAPIKey")
+        // C-02: de sleutel staat in de Keychain, niet meer in UserDefaults.
+        if UserAPIKeyStore.read().isEmpty {
+            UserAPIKeyStore.write("test-ui-mock-key-do-not-call-api")
         }
 
         // Periodisatiecontext (voor Dashboard verificatie in Test 4).
@@ -64,7 +65,9 @@ enum UITestMockEnvironment {
             "hasCompletedOnboarding",
             "vibecoach_todayVibeScoreContext",
             "vibecoach_weatherContext",
-            "vibecoach_userAPIKey",
+            // C-02: legacy sleutel — blijft in de reset-lijst zodat een mogelijke
+            // niet-gemigreerde restwaarde ook tijdens tests weggepoetst wordt.
+            UserAPIKeyStore.legacyUserDefaultsKey,
             "vibecoach_aiProvider",
             "vibecoach_periodizationContext",
             "vibecoach_blueprintContext",
@@ -81,7 +84,9 @@ enum UITestMockEnvironment {
             "selectedDataSource",
         ]
         keysToReset.forEach { defaults.removeObject(forKey: $0) }
-        print("🔄 UITestMockEnvironment: State gereset — \(keysToReset.count) sleutels gewist")
+        // C-02: wis ook de Keychain-entry zodat een -ResetState run écht blanco start.
+        UserAPIKeyStore.delete()
+        print("🔄 UITestMockEnvironment: State gereset — \(keysToReset.count) sleutels gewist (+ Keychain)")
     }
 }
 

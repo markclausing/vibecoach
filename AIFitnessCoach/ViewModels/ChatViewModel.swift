@@ -49,8 +49,9 @@ class ChatViewModel: ObservableObject {
     // Lees de voorkeur van de gebruiker m.b.t. primaire databron (Sprint 7.4)
     @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
 
-    // Epic 20: BYOK — gebruiker-geconfigureerde AI sleutel en provider
-    @AppStorage("vibecoach_userAPIKey") private var storedAPIKey: String = ""
+    // Epic 20: BYOK — gebruiker-geconfigureerde AI provider.
+    // C-02: de API-sleutel zelf staat NIET meer in @AppStorage maar in de
+    // Keychain (zie `UserAPIKeyStore`). Uitlezen gebeurt via `effectiveAPIKey()`.
     @AppStorage("vibecoach_aiProvider") private var storedProviderRaw: String = AIProvider.gemini.rawValue
 
     /// De API-sleutel waarmee het huidige model is opgebouwd.
@@ -185,8 +186,9 @@ class ChatViewModel: ObservableObject {
     /// Epic 20 / M-04: Retourneert de door de gebruiker geconfigureerde Gemini API-sleutel.
     /// Er is geen Secrets-fallback meer — BYOK is verplicht, de onboarding zorgt dat
     /// er altijd een sleutel is ingevuld voordat AI-functionaliteit aangeroepen wordt.
+    /// C-02: sleutel wordt gelezen uit de Keychain via `UserAPIKeyStore`.
     func effectiveAPIKey() -> String {
-        return UserDefaults.standard.string(forKey: "vibecoach_userAPIKey") ?? ""
+        return UserAPIKeyStore.read()
     }
 
     /// Bouwt een nieuw Gemini model op basis van de huidige API-sleutel.
@@ -645,10 +647,9 @@ class ChatViewModel: ObservableObject {
                 timeout: 45
             )
 
-            // Epic 20 / M-04: key inline berekenen — effectiveAPIKey() kan hier niet
-            // aangeroepen worden omdat self.model nog niet geïnitialiseerd is
-            // (Swift-beperking in init). BYOK-only: geen Secrets-fallback meer.
-            let initKey = UserDefaults.standard.string(forKey: "vibecoach_userAPIKey") ?? ""
+            // Epic 20 / M-04: BYOK-only, geen Secrets-fallback meer.
+            // C-02: sleutel komt uit de Keychain i.p.v. UserDefaults.
+            let initKey = UserAPIKeyStore.read()
 
             let googleModel = GenerativeModel(
                 name: modelName,

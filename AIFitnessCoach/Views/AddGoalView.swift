@@ -137,7 +137,8 @@ struct AddGoalView: View {
     /// Vraag de Gemini AI om een logische TRIMP belasting
     private func fetchAITargetTRIMP(goal: FitnessGoal, profile: AthleticProfile?) async -> Double {
         // Epic 20 / M-04: BYOK — uitsluitend de door de gebruiker geconfigureerde sleutel.
-        let activeKey = UserDefaults.standard.string(forKey: "vibecoach_userAPIKey") ?? ""
+        // C-02: sleutel komt uit de Keychain i.p.v. UserDefaults.
+        let activeKey = UserAPIKeyStore.read()
         guard !activeKey.isEmpty else {
             return fallbackTRIMP(for: goal.targetDate)
         }

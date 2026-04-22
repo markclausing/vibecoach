@@ -230,6 +230,10 @@ struct AIFitnessCoachApp: App {
             UITestMockEnvironment.setup()
         }
         #endif
+
+        // C-02: verplaats de user AI API-sleutel eenmalig uit UserDefaults
+        // naar de Keychain. Idempotent — na migratie is dit een no-op.
+        UserAPIKeyStore.migrateFromUserDefaultsIfNeeded()
     }
 
     var body: some Scene {

@@ -30,7 +30,9 @@ struct SettingsView: View {
 
     // V2.0 extra state
     @AppStorage("vibecoach_userName")        private var userName: String = ""
-    @AppStorage("vibecoach_userAPIKey")      private var apiKey: String = ""
+    // C-02: API-sleutel leeft in de Keychain, niet in AppStorage.
+    // `loadTokens()` laadt de waarde bij elke onAppear opnieuw uit de Keychain.
+    @State                                   private var apiKey: String = ""
     @AppStorage("vibecoach_aiProvider")      private var providerRaw: String = AIProvider.gemini.rawValue
     // Epic 34 Sprint 2: toggles zonder backend-logica verwijderd.
     // Notificatie-schakelaars en achtergrond-sync komen terug zodra de
@@ -54,6 +56,10 @@ struct SettingsView: View {
         stravaAuthService.checkAuthStatus()
         checkNotificationStatus()
         refreshProfile()
+        // C-02: lees de user API-sleutel uit de Keychain. Wordt elke .onAppear
+        // opnieuw uitgevoerd zodat een wijziging in de AI-provider-subview direct
+        // zichtbaar is in de hoofd-SettingsView (connectie-indicator + laatste 4 chars).
+        apiKey = UserAPIKeyStore.read()
         Task {
             await settingsProfileService.requestProfileReadAuthorization()
             let p = await settingsProfileService.fetchProfile()
@@ -1277,7 +1283,10 @@ struct PhysicalProfileSection: View {
 /// De sleutel wordt opgeslagen in AppStorage (lokaal op het apparaat, niet gedeeld).
 struct AIProviderSettingsView: View {
     @AppStorage("vibecoach_aiProvider")  private var providerRaw: String = AIProvider.gemini.rawValue
-    @AppStorage("vibecoach_userAPIKey") private var apiKey: String = ""
+    // C-02: de API-sleutel wordt gelezen uit / geschreven naar de Keychain
+    // (zie `UserAPIKeyStore`). `@State` houdt de live-binding met de SecureField;
+    // `.onAppear` laadt, `.onChange` persisteert.
+    @State                               private var apiKey: String = ""
     @EnvironmentObject private var themeManager: ThemeManager
 
     /// Sprint 31.7: state-machine voor de minimale validatie-ping.
@@ -1391,6 +1400,11 @@ struct AIProviderSettingsView: View {
             }
         }
         .navigationTitle("AI Coach Configuratie")
+        // C-02: Keychain-gekoppelde load/save rond de SecureField.
+        .onAppear { apiKey = UserAPIKeyStore.read() }
+        .onChange(of: apiKey) { _, newValue in
+            UserAPIKeyStore.write(newValue)
+        }
     }
 
     // MARK: - Test feedback (inline in footer)
