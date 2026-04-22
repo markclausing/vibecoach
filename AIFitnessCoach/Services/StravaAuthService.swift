@@ -8,6 +8,11 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
     private let session: NetworkSession
     private var authSession: ASWebAuthenticationSession?
 
+    /// CSRF-bescherming: bewaart de `state`-waarde die we meegaven aan Strava.
+    /// Wordt gezet in `authenticate()` en gewist zodra de callback is afgehandeld
+    /// (bij succes, fout óf state-mismatch).
+    private var pendingState: String?
+
     @Published var authError: String?
     @Published var isAuthenticated: Bool = false
 
@@ -38,15 +43,49 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
         return window
     }
 
+    /// Bouwt de Strava OAuth authorize-URL inclusief een cryptografisch random
+    /// `state`-parameter (CSRF). Pure functie — geen side effects — zodat we
+    /// hem in unit-tests kunnen asserten.
+    static func makeAuthorizationURL(clientId: String, callbackScheme: String, state: String) -> URL? {
+        var components = URLComponents(string: "https://www.strava.com/oauth/mobile/authorize")
+        components?.queryItems = [
+            URLQueryItem(name: "client_id", value: clientId),
+            URLQueryItem(name: "redirect_uri", value: "\(callbackScheme)://localhost"),
+            URLQueryItem(name: "response_type", value: "code"),
+            URLQueryItem(name: "approval_prompt", value: "auto"),
+            URLQueryItem(name: "scope", value: "activity:read_all,profile:read_all"),
+            URLQueryItem(name: "state", value: state)
+        ]
+        return components?.url
+    }
+
+    /// Valideert dat de `state`-parameter uit de callback-URL exact overeenkomt
+    /// met de verwachte waarde. Retourneert `false` bij ontbrekende of afwijkende
+    /// state — dat duidt op een CSRF-poging of een gemanipuleerde callback.
+    static func validateCallbackState(callbackURL: URL, expectedState: String?) -> Bool {
+        guard let expectedState = expectedState, !expectedState.isEmpty else { return false }
+        guard let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
+              let receivedState = components.queryItems?.first(where: { $0.name == "state" })?.value else {
+            return false
+        }
+        return receivedState == expectedState
+    }
+
     /// Start the OAuth flow
     func authenticate() {
         let clientId = Secrets.stravaClientID
         let callbackScheme = "aifitnesscoach"
 
-        let authURLString = "https://www.strava.com/oauth/mobile/authorize?client_id=\(clientId)&redirect_uri=\(callbackScheme)://localhost&response_type=code&approval_prompt=auto&scope=activity:read_all,profile:read_all"
+        // H-01: genereer per sessie een random UUID als `state`-parameter.
+        // Strava stuurt deze onaangetast terug in de callback; als de waarde
+        // niet matcht, is de callback niet door onze eigen flow geïnitieerd
+        // en breken we de authenticatie af.
+        let state = UUID().uuidString
+        self.pendingState = state
 
-        guard let authURL = URL(string: authURLString) else {
+        guard let authURL = Self.makeAuthorizationURL(clientId: clientId, callbackScheme: callbackScheme, state: state) else {
             self.authError = "Invalid Authorization URL"
+            self.pendingState = nil
             return
         }
 
@@ -56,6 +95,7 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
             if let error = error {
                 Task { @MainActor in
                     self.authError = "Authenticatie geannuleerd of mislukt: \(error.localizedDescription)"
+                    self.pendingState = nil
                 }
                 return
             }
@@ -65,12 +105,20 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
                   let code = components.queryItems?.first(where: { $0.name == "code" })?.value else {
                 Task { @MainActor in
                     self.authError = "Geen geldige autorisatiecode ontvangen van Strava."
+                    self.pendingState = nil
                 }
                 return
             }
 
-            // Nu we de code hebben, wissel hem om voor tokens
-            Task {
+            // H-01: valideer de state vóórdat we de autorisatie-code vertrouwen.
+            // Bij mismatch stoppen we de flow — geen token-exchange.
+            Task { @MainActor in
+                guard Self.validateCallbackState(callbackURL: callbackURL, expectedState: self.pendingState) else {
+                    self.authError = "Beveiligingsfout: de Strava-callback is niet door onze flow geïnitieerd. Probeer opnieuw."
+                    self.pendingState = nil
+                    return
+                }
+                self.pendingState = nil
                 await self.exchangeCodeForToken(code: code)
             }
         }
