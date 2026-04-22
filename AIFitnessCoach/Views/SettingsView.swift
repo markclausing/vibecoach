@@ -174,15 +174,15 @@ struct SettingsView: View {
         }
     }
 
-    // Vraag expliciet toestemming aan de gebruiker voor Push Notifications
+    // Vraag expliciet toestemming aan de gebruiker voor lokale notificaties.
+    // De proactieve engines (A & B) gebruiken uitsluitend `UNUserNotificationCenter`
+    // scheduling — er is geen APNs-ontvanger meer sinds de Node.js-backend is verdwenen.
     private func requestNotificationPermission() {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
             DispatchQueue.main.async {
                 self.notificationsEnabled = granted
                 if granted {
-                    // Registreer voor remote notifications nu we toestemming hebben
-                    UIApplication.shared.registerForRemoteNotifications()
                     self.feedbackMessage = "Notificaties succesvol ingeschakeld."
                 } else if let error = error {
                     self.feedbackMessage = "Fout bij aanvragen notificaties: \(error.localizedDescription)"

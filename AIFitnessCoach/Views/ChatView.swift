@@ -352,13 +352,6 @@ private let suggestionChips = [
             .background(Color(.secondarySystemBackground).ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .scrollEdgeMaterial(isActive: isChatScrolled)
-            .onChange(of: appState.targetActivityId) { _, newValue in
-                if let activityId = newValue {
-                    refreshProfileContext()
-                    viewModel.analyzeWorkout(withId: activityId, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
-                    Task { @MainActor in appState.targetActivityId = nil }
-                }
-            }
             .onAppear {
                 refreshProfileContext()
                 setupPreferenceCallback()
