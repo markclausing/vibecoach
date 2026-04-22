@@ -32,25 +32,23 @@ actor FitnessDataService {
             // Token is (bijna) verlopen, refresh!
             print("Strava Token is verlopen of verloopt binnenkort. Vernieuwen...")
 
-            guard let url = URL(string: "https://www.strava.com/oauth/token") else {
-                throw FitnessDataError.networkError("Ongeldige refresh URL")
+            // C-01: refresh loopt via de server-side proxy. Het `client_secret`
+            // is niet meer in de app aanwezig.
+            guard let url = URL(string: "\(Secrets.stravaProxyBaseURL)/oauth/strava/refresh") else {
+                throw FitnessDataError.networkError("Ongeldige proxy URL")
             }
 
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.addValue(Secrets.stravaProxyToken, forHTTPHeaderField: "X-Client-Token")
 
-            // Stel de POST body in
-            let bodyParams = [
-                "client_id": Secrets.stravaClientID,
-                "client_secret": Secrets.stravaClientSecret,
-                "grant_type": "refresh_token",
-                "refresh_token": currentRefreshToken
-            ]
-
-            var components = URLComponents()
-            components.queryItems = bodyParams.map { URLQueryItem(name: $0.key, value: $0.value) }
-            request.httpBody = components.query?.data(using: .utf8)
-            request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            do {
+                let body: [String: String] = ["refresh_token": currentRefreshToken]
+                request.httpBody = try JSONEncoder().encode(body)
+            } catch {
+                throw FitnessDataError.networkError("Fout bij opbouwen refresh-request: \(error.localizedDescription)")
+            }
 
             let (data, response): (Data, URLResponse)
             do {

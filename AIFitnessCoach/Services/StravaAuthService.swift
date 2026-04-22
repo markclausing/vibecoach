@@ -129,25 +129,24 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
     }
 
     func exchangeCodeForToken(code: String) async {
-        guard let url = URL(string: "https://www.strava.com/oauth/token") else {
-            self.authError = "Ongeldige token URL"
+        // C-01: token-exchange loopt via de server-side proxy zodat het
+        // `client_secret` niet in de app-binary hoeft te zitten.
+        guard let url = URL(string: "\(Secrets.stravaProxyBaseURL)/oauth/strava/exchange") else {
+            self.authError = "Ongeldige proxy URL"
             return
         }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue(Secrets.stravaProxyToken, forHTTPHeaderField: "X-Client-Token")
 
-        let bodyParams = [
-            "client_id": Secrets.stravaClientID,
-            "client_secret": Secrets.stravaClientSecret,
-            "code": code,
-            "grant_type": "authorization_code"
-        ]
-
-        var components = URLComponents()
-        components.queryItems = bodyParams.map { URLQueryItem(name: $0.key, value: $0.value) }
-        request.httpBody = components.query?.data(using: .utf8)
-        request.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        do {
+            request.httpBody = try JSONEncoder().encode(["code": code])
+        } catch {
+            self.authError = "Fout bij opbouwen van proxy-request: \(error.localizedDescription)"
+            return
+        }
 
         do {
             let (data, response) = try await session.data(for: request)
@@ -162,6 +161,7 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
                 return
             }
 
+            // De proxy geeft het Strava JSON-schema 1-op-1 door.
             let tokenResponse = try JSONDecoder().decode(StravaTokenResponse.self, from: data)
 
             // Sla op in Keychain
