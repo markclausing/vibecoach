@@ -1283,6 +1283,14 @@ struct PhysicalProfileSection: View {
 /// De sleutel wordt opgeslagen in AppStorage (lokaal op het apparaat, niet gedeeld).
 struct AIProviderSettingsView: View {
     @AppStorage("vibecoach_aiProvider")  private var providerRaw: String = AIProvider.gemini.rawValue
+    // Epic #35: gekozen primaire & fallback Gemini-modellen. Worden gelezen door
+    // `ChatViewModel.buildGenerativeModel`. Defaults matchen de waarden die vóór
+    // Epic #35 hardcoded waren zodat een bestaande installatie zonder expliciete
+    // keuze exact dezelfde modellen blijft gebruiken.
+    @AppStorage(AIModelAppStorageKey.primary)
+    private var primaryModelId: String = AIModelAppStorageKey.defaultPrimary
+    @AppStorage(AIModelAppStorageKey.fallback)
+    private var fallbackModelId: String = AIModelAppStorageKey.defaultFallback
     // C-02: de API-sleutel wordt gelezen uit / geschreven naar de Keychain
     // (zie `UserAPIKeyStore`). `@State` houdt de live-binding met de SecureField;
     // `.onAppear` laadt, `.onChange` persisteert.
@@ -1294,6 +1302,12 @@ struct AIProviderSettingsView: View {
     /// automatisch resetten wanneer de gebruiker zijn sleutel aanpast.
     @State private var testState: APIKeyTestState = .idle
     @State private var testedKey: String = ""
+
+    /// Epic #35 — model-catalogus (via Cloudflare Worker) + ophaal-status.
+    @State private var modelCatalog: AIModelCatalog = .builtInFallback
+    @State private var isLoadingCatalog: Bool = false
+    @State private var catalogError: String?
+    private let catalogService = AIModelCatalogService()
 
     private var selectedProvider: AIProvider {
         AIProvider(rawValue: providerRaw) ?? .gemini
@@ -1372,6 +1386,39 @@ struct AIProviderSettingsView: View {
                 }
             }
 
+            // Epic #35 — Model-selectie. Alleen tonen als de provider Gemini is;
+            // voor andere providers (nog niet ondersteund) heeft deze keuze
+            // geen betekenis en zou de UI onnodig complex worden.
+            if selectedProvider == .gemini {
+                Section(
+                    header: Text("Gemini Modellen"),
+                    footer: modelPickerFooter
+                ) {
+                    Picker("Primair model", selection: $primaryModelId) {
+                        ForEach(modelCatalog.models) { model in
+                            Text(model.displayName).tag(model.id)
+                        }
+                    }
+                    .accessibilityIdentifier("PrimaryGeminiModelPicker")
+
+                    Picker("Fallback model", selection: $fallbackModelId) {
+                        ForEach(modelCatalog.models) { model in
+                            Text(model.displayName).tag(model.id)
+                        }
+                    }
+                    .accessibilityIdentifier("FallbackGeminiModelPicker")
+
+                    if isLoadingCatalog {
+                        HStack(spacing: 8) {
+                            ProgressView().controlSize(.small)
+                            Text("Modellen ophalen…")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+            }
+
             // Sprint 31.7: Test-ping — valideert de sleutel met een minimale
             // auth-call tegen Gemini. De waterfall (primair → fallback op 503/429)
             // staat in `APIKeyValidator` zodat een geldige sleutel tijdens een
@@ -1401,9 +1448,63 @@ struct AIProviderSettingsView: View {
         }
         .navigationTitle("AI Coach Configuratie")
         // C-02: Keychain-gekoppelde load/save rond de SecureField.
-        .onAppear { apiKey = UserAPIKeyStore.read() }
+        .onAppear {
+            apiKey = UserAPIKeyStore.read()
+            loadModelCatalog()
+        }
         .onChange(of: apiKey) { _, newValue in
             UserAPIKeyStore.write(newValue)
+        }
+    }
+
+    // MARK: - Epic #35 — Model catalogus
+
+    /// Ophalen van de model-lijst bij de Cloudflare Worker. Faalt stil naar de
+    /// built-in fallback zodat de picker nooit leeg staat; een eventuele fout
+    /// komt wel als subtiele melding onder de pickers te hangen.
+    private func loadModelCatalog() {
+        guard !isLoadingCatalog else { return }
+        isLoadingCatalog = true
+        catalogError = nil
+
+        Task {
+            do {
+                let catalog = try await catalogService.fetchCatalog()
+                await MainActor.run {
+                    self.modelCatalog = catalog
+                    self.isLoadingCatalog = false
+                    // Als de opgeslagen keuze niet (meer) in de catalogus staat
+                    // — model is gedepreciëerd of typfout — val stil terug op de
+                    // door de server aanbevolen default. Voorkomt dat de app
+                    // een onbestaand model naar Gemini stuurt.
+                    let ids = Set(catalog.models.map(\.id))
+                    if !ids.contains(self.primaryModelId) {
+                        self.primaryModelId = catalog.defaultPrimary
+                    }
+                    if !ids.contains(self.fallbackModelId) {
+                        self.fallbackModelId = catalog.defaultFallback
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.isLoadingCatalog = false
+                    self.catalogError = (error as? LocalizedError)?.errorDescription
+                        ?? error.localizedDescription
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var modelPickerFooter: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("De coach begint bij het primaire model. Bij overbelasting (503/429) schakelt hij automatisch over op het fallback-model.")
+                .font(.caption)
+            if let err = catalogError {
+                Text("Kon live-lijst niet ophalen — fallback op ingebouwde modellen gebruikt. (\(err))")
+                    .font(.caption2)
+                    .foregroundColor(.orange)
+            }
         }
     }
 

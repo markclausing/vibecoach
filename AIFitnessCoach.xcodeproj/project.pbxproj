@@ -75,6 +75,8 @@
 		DD10EE20FF30AA40BB50CC60 /* TrendWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD01EE02FF03AA04BB05CC06 /* TrendWidgetView.swift */; };
 		EE10FF20AA30BB40CC50DD60 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE01FF02AA03BB04CC05DD06 /* DashboardView.swift */; };
 		FF10AA20BB30CC40DD50EE60 /* AppTabHostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF01AA02BB03CC04DD05EE06 /* AppTabHostView.swift */; };
+		3500FFEECC00AA01BB02CC03 /* AIModelConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FFEECC00AA02BB02CC03 /* AIModelConfig.swift */; };
+		3500FFEECC00AA03BB02CC03 /* AIModelCatalogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FFEECC00AA04BB02CC03 /* AIModelCatalogService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -167,6 +169,8 @@
 		DD01EE02FF03AA04BB05CC06 /* TrendWidgetView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrendWidgetView.swift; sourceTree = "<group>"; };
 		EE01FF02AA03BB04CC05DD06 /* DashboardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		FF01AA02BB03CC04DD05EE06 /* AppTabHostView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppTabHostView.swift; sourceTree = "<group>"; };
+		3500FFEECC00AA02BB02CC03 /* AIModelConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelConfig.swift; sourceTree = "<group>"; };
+		3500FFEECC00AA04BB02CC03 /* AIModelCatalogService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelCatalogService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -285,6 +289,7 @@
 				F46C4D7E8F9A0B1C2D3E4F5A /* FutureProjectionService.swift */,
 				C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */,
 				AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */,
+				3500FFEECC00AA04BB02CC03 /* AIModelCatalogService.swift */,
 				268DC6609F434E5DA4FF63F7 /* ThemeManager.swift */,
 			);
 			path = Services;
@@ -336,6 +341,7 @@
 				AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */,
 				E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */,
 				54462929885341098579ABB5 /* Theme.swift */,
+				3500FFEECC00AA02BB02CC03 /* AIModelConfig.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -581,6 +587,8 @@
 				13CD8B16330404CA41A93BDE /* NetworkSession.swift in Sources */,
 				AF5BAC3C2362460FA4F3E823 /* Theme.swift in Sources */,
 				F754D7AF116C4FDFBCDA66E3 /* ThemeManager.swift in Sources */,
+				3500FFEECC00AA01BB02CC03 /* AIModelConfig.swift in Sources */,
+				3500FFEECC00AA03BB02CC03 /* AIModelCatalogService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
