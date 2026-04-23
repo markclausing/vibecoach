@@ -77,6 +77,7 @@
 		FF10AA20BB30CC40DD50EE60 /* AppTabHostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF01AA02BB03CC04DD05EE06 /* AppTabHostView.swift */; };
 		3500FFEECC00AA01BB02CC03 /* AIModelConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FFEECC00AA02BB02CC03 /* AIModelConfig.swift */; };
 		3500FFEECC00AA03BB02CC03 /* AIModelCatalogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FFEECC00AA04BB02CC03 /* AIModelCatalogService.swift */; };
+		3500FFEECC00AA05BB02CC03 /* AIModelCatalogServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -171,6 +172,7 @@
 		FF01AA02BB03CC04DD05EE06 /* AppTabHostView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppTabHostView.swift; sourceTree = "<group>"; };
 		3500FFEECC00AA02BB02CC03 /* AIModelConfig.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelConfig.swift; sourceTree = "<group>"; };
 		3500FFEECC00AA04BB02CC03 /* AIModelCatalogService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelCatalogService.swift; sourceTree = "<group>"; };
+		3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelCatalogServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -246,6 +248,7 @@
 				2233445566778899001122BB /* UserProfileServiceTests.swift */,
 				4455667788990011223344DD /* PhysiologicalCalculatorTests.swift */,
 				6677889900112233445566FF /* WeatherManagerTests.swift */,
+				3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -537,6 +540,7 @@
 				1122334455667788990011AA /* UserProfileServiceTests.swift in Sources */,
 				3344556677889900112233CC /* PhysiologicalCalculatorTests.swift in Sources */,
 				5566778899001122334455EE /* WeatherManagerTests.swift in Sources */,
+				3500FFEECC00AA05BB02CC03 /* AIModelCatalogServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

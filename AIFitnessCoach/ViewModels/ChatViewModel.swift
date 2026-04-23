@@ -529,9 +529,7 @@ class ChatViewModel: ObservableObject {
     /// gekozen primaire modelnaam uit `AppStorage`. Zo blijft het mogelijk om
     /// vanuit de fallback-pad expliciet een ander model op te geven.
     private func buildGenerativeModel(modelName: String? = nil) -> GenerativeModelProtocol {
-        let resolvedModelName = modelName ?? UserDefaults.standard.string(
-            forKey: AIModelAppStorageKey.primary
-        ) ?? AIModelAppStorageKey.defaultPrimary
+        let resolvedModelName = modelName ?? AIModelAppStorageKey.resolvedPrimary()
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-UITesting") {
             return UITestMockGenerativeModel()
@@ -674,10 +672,7 @@ class ChatViewModel: ObservableObject {
     /// built-in default blijft `gemini-flash-lite-latest` — dezelfde waarde
     /// als vóór Epic #35, dus geen regressie voor bestaande installaties.
     private func buildFallbackGenerativeModel() -> GenerativeModelProtocol {
-        let fallbackName = UserDefaults.standard.string(
-            forKey: AIModelAppStorageKey.fallback
-        ) ?? AIModelAppStorageKey.defaultFallback
-        return buildGenerativeModel(modelName: fallbackName)
+        return buildGenerativeModel(modelName: AIModelAppStorageKey.resolvedFallback())
     }
 
     /// Verwijdert de geselecteerde afbeelding uit de invoer.
