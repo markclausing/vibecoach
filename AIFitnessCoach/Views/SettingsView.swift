@@ -1304,8 +1304,13 @@ struct AIProviderSettingsView: View {
     @State private var testedKey: String = ""
 
     /// Epic #35 — model-catalogus (via Cloudflare Worker) + ophaal-status.
+    /// `hasAttemptedInitialLoad` onderscheidt "nog nooit geprobeerd" (toon
+    /// alleen ProgressView) van "geprobeerd, nu live of fallback" (toon
+    /// pickers). Zo voorkomen we dat de gebruiker een picker ziet gevuld met
+    /// de tweeëlf-entry `builtInFallback` terwijl de echte lijst nog onderweg is.
     @State private var modelCatalog: AIModelCatalog = .builtInFallback
     @State private var isLoadingCatalog: Bool = false
+    @State private var hasAttemptedInitialLoad: Bool = false
     @State private var catalogError: String?
     private let catalogService = AIModelCatalogService()
 
@@ -1394,27 +1399,31 @@ struct AIProviderSettingsView: View {
                     header: Text("Gemini Modellen"),
                     footer: modelPickerFooter
                 ) {
-                    Picker("Primair model", selection: $primaryModelId) {
-                        ForEach(modelCatalog.models) { model in
-                            Text(model.displayName).tag(model.id)
-                        }
-                    }
-                    .accessibilityIdentifier("PrimaryGeminiModelPicker")
-
-                    Picker("Fallback model", selection: $fallbackModelId) {
-                        ForEach(modelCatalog.models) { model in
-                            Text(model.displayName).tag(model.id)
-                        }
-                    }
-                    .accessibilityIdentifier("FallbackGeminiModelPicker")
-
-                    if isLoadingCatalog {
-                        HStack(spacing: 8) {
+                    if !hasAttemptedInitialLoad {
+                        // Initiële load: toon alleen een ProgressView zodat de
+                        // gebruiker niet voor de builtInFallback hoeft te kiezen
+                        // terwijl de echte lijst nog onderweg is.
+                        HStack(spacing: 10) {
                             ProgressView().controlSize(.small)
                             Text("Modellen ophalen…")
-                                .font(.caption)
+                                .font(.body)
                                 .foregroundColor(.secondary)
                         }
+                        .accessibilityIdentifier("GeminiModelsLoading")
+                    } else {
+                        Picker("Primair model", selection: $primaryModelId) {
+                            ForEach(modelCatalog.models) { model in
+                                Text(model.displayName).tag(model.id)
+                            }
+                        }
+                        .accessibilityIdentifier("PrimaryGeminiModelPicker")
+
+                        Picker("Fallback model", selection: $fallbackModelId) {
+                            ForEach(modelCatalog.models) { model in
+                                Text(model.displayName).tag(model.id)
+                            }
+                        }
+                        .accessibilityIdentifier("FallbackGeminiModelPicker")
                     }
                 }
             }
@@ -1473,6 +1482,7 @@ struct AIProviderSettingsView: View {
                 await MainActor.run {
                     self.modelCatalog = catalog
                     self.isLoadingCatalog = false
+                    self.hasAttemptedInitialLoad = true
                     // Als de opgeslagen keuze niet (meer) in de catalogus staat
                     // — model is gedepreciëerd of typfout — val stil terug op de
                     // door de server aanbevolen default. Voorkomt dat de app
@@ -1488,6 +1498,7 @@ struct AIProviderSettingsView: View {
             } catch {
                 await MainActor.run {
                     self.isLoadingCatalog = false
+                    self.hasAttemptedInitialLoad = true
                     self.catalogError = (error as? LocalizedError)?.errorDescription
                         ?? error.localizedDescription
                 }

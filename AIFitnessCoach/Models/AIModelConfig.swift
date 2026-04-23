@@ -3,16 +3,13 @@ import Foundation
 /// Epic #35 — Dynamische Gemini model-selectie.
 ///
 /// Deze types mappen 1-op-1 op het JSON-schema dat de Cloudflare Worker
-/// `/ai/models` retourneert. De app cachet de lijst lokaal zodat een
-/// tijdelijke netwerkstoring de Settings-UI niet leeg laat.
+/// `/ai/models` retourneert. De Worker haalt de lijst live op bij de Google
+/// Generative Language API, filtert op `generateContent`-support en strippet
+/// de `models/`-prefix zodat de `id` direct als `GenerativeModel(name:)` in de
+/// Swift-SDK gebruikt kan worden.
 struct AIModelDescriptor: Codable, Identifiable, Equatable, Hashable {
-    /// Gemini modelnaam zoals de Google SDK hem verwacht (bijv. `gemini-flash-latest`).
     let id: String
     let displayName: String
-    let description: String
-    /// Nil = "zonder specifieke aanbeveling". `"primary"` / `"fallback"`
-    /// wordt in de UI als hint-label bij het model getoond.
-    let recommendedRole: String?
 }
 
 struct AIModelCatalog: Codable, Equatable {
@@ -21,24 +18,14 @@ struct AIModelCatalog: Codable, Equatable {
     let defaultFallback: String
 }
 
-/// Fallback-catalogus wanneer de Worker (nog) niet is bijgewerkt of de
-/// eerste fetch faalt. Deze modellen reflecteren de live productie-defaults
-/// uit `ChatViewModel.buildGenerativeModel`.
+/// Fallback-catalogus wanneer de Worker (nog) niet bereikbaar is of de
+/// eerste fetch faalt. Reflecteert de modelnamen die vóór Epic #35 hardcoded
+/// in `ChatViewModel` stonden, zodat een offline start niet stuk gaat.
 extension AIModelCatalog {
     static let builtInFallback = AIModelCatalog(
         models: [
-            AIModelDescriptor(
-                id: "gemini-flash-latest",
-                displayName: "Gemini Flash (latest)",
-                description: "Snelste recente Flash-variant. Standaard primair model.",
-                recommendedRole: "primary"
-            ),
-            AIModelDescriptor(
-                id: "gemini-flash-lite-latest",
-                displayName: "Gemini Flash Lite (latest)",
-                description: "Lichter model, vaak beschikbaar tijdens piekbelasting. Standaard fallback.",
-                recommendedRole: "fallback"
-            ),
+            AIModelDescriptor(id: "gemini-flash-latest", displayName: "Gemini Flash (latest)"),
+            AIModelDescriptor(id: "gemini-flash-lite-latest", displayName: "Gemini Flash Lite (latest)"),
         ],
         defaultPrimary: "gemini-flash-latest",
         defaultFallback: "gemini-flash-lite-latest"
