@@ -191,34 +191,21 @@ struct AIFitnessCoachApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if hasCompletedOnboarding {
-                    ContentView()
-                        .environmentObject(appState)
-                        .environmentObject(planManager)
-                        .environmentObject(themeManager)
-                } else {
-                    // Epic #31 Sprint 1: V2.0 onboarding-flow met herbruikbaar template.
-                    OnboardingView()
-                        .environmentObject(themeManager)
+            // ContentView beheert de onboarding-routing (zie Fase 1 cleanup).
+            // Alle env-objects worden hier geïnjecteerd zodat zowel OnboardingView
+            // als AppTabHostView ze ter beschikking hebben.
+            ContentView()
+                .environmentObject(appState)
+                .environmentObject(planManager)
+                .environmentObject(themeManager)
+                .preferredColorScheme(preferredColorScheme)
+                .onChange(of: scenePhase) { _, newPhase in
+                    if newPhase == .active && hasCompletedOnboarding {
+                        // SPRINT 12.3: Trigger de automatische historische datasync wanneer
+                        // de app open is. AppTabHostView luistert op TriggerAutoSync.
+                        NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
+                    }
                 }
-            }
-            .preferredColorScheme(preferredColorScheme)
-            .onChange(of: scenePhase) { oldPhase, newPhase in
-                if newPhase == .active && hasCompletedOnboarding {
-                    // SPRINT 12.3: Trigger de automatische historische datasync wanneer de app open is.
-                    // We sturen hiervoor een notificatie, zodat ContentView dit netjes afhandelt met context toegang.
-                    NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
-                }
-            }
-            .onChange(of: hasCompletedOnboarding) { _, isOnboarded in
-                // Sprint 20.2 / Epic #31: Zodra de onboarding is afgerond, starten we de achtergrond-engines.
-                // Dit is het eerste moment dat de gebruiker permissies heeft gegeven.
-                if isOnboarded {
-                    ProactiveNotificationService.shared.setupEngineA()
-                    ProactiveNotificationService.shared.scheduleEngineB()
-                }
-            }
         }
         // Sprint 26.1: gebruik in-memory store tijdens UI-tests zodat elke run
         // met een lege database start en goals van vorige runs niet lekken.
