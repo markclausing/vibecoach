@@ -525,8 +525,13 @@ class ChatViewModel: ObservableObject {
     /// Sprint 26.1: Als `-UITesting` actief is, wordt een mock-model teruggegeven
     /// zodat de Gemini API niet aangeroepen wordt tijdens E2E-tests.
     ///
-    /// - Parameter modelName: De Gemini modelnaam. Standaard "gemini-flash-latest".
-    private func buildGenerativeModel(modelName: String = "gemini-flash-latest") -> GenerativeModelProtocol {
+    /// Epic #35: als `modelName` nil is, leest deze functie de door de gebruiker
+    /// gekozen primaire modelnaam uit `AppStorage`. Zo blijft het mogelijk om
+    /// vanuit de fallback-pad expliciet een ander model op te geven.
+    private func buildGenerativeModel(modelName: String? = nil) -> GenerativeModelProtocol {
+        let resolvedModelName = modelName ?? UserDefaults.standard.string(
+            forKey: AIModelAppStorageKey.primary
+        ) ?? AIModelAppStorageKey.defaultPrimary
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-UITesting") {
             return UITestMockGenerativeModel()
@@ -652,7 +657,7 @@ class ChatViewModel: ObservableObject {
             let initKey = UserAPIKeyStore.read()
 
             let googleModel = GenerativeModel(
-                name: modelName,
+                name: resolvedModelName,
                 apiKey: initKey,
                 generationConfig: config,
                 systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)]),
@@ -661,13 +666,18 @@ class ChatViewModel: ObservableObject {
         return RealGenerativeModel(model: googleModel)
     }
 
-    /// Bouwt een lichter fallback-model (`gemini-flash-lite-latest`) met dezelfde
-    /// system instruction en timeout. Wordt onzichtbaar gebruikt zodra het primaire
-    /// `gemini-flash-latest`-model een `internalError` retourneert (503/429 —
-    /// piekbelasting). Het lite-model is goedkoper en heeft in praktijk vaker
-    /// capaciteit tijdens pieken omdat minder apps het als default gebruiken.
+    /// Bouwt een lichter fallback-model met dezelfde system instruction en
+    /// timeout. Wordt onzichtbaar gebruikt zodra het primaire model een
+    /// `internalError` retourneert (503/429 — piekbelasting).
+    ///
+    /// Epic #35: de fallback-modelnaam wordt gelezen uit `AppStorage`; de
+    /// built-in default blijft `gemini-flash-lite-latest` — dezelfde waarde
+    /// als vóór Epic #35, dus geen regressie voor bestaande installaties.
     private func buildFallbackGenerativeModel() -> GenerativeModelProtocol {
-        return buildGenerativeModel(modelName: "gemini-flash-lite-latest")
+        let fallbackName = UserDefaults.standard.string(
+            forKey: AIModelAppStorageKey.fallback
+        ) ?? AIModelAppStorageKey.defaultFallback
+        return buildGenerativeModel(modelName: fallbackName)
     }
 
     /// Verwijdert de geselecteerde afbeelding uit de invoer.
@@ -1418,10 +1428,11 @@ class ChatViewModel: ObservableObject {
 
             print("DEBUG PROMPT: \(text)")
 
-            // Waterfall: primair `gemini-flash-latest`. Bij 503/429 (overbelasting)
-            // schakelen we stil over op `gemini-flash-lite-latest` — zelfde generatie,
-            // lichter model dat vaker capaciteit heeft tijdens pieken. Andere fouten
-            // (invalid key, prompt blocked, netwerk) vallen direct naar de UI door.
+            // Waterfall: primair model eerst. Bij 503/429 (overbelasting) schakelen
+            // we stil over op het fallback-model — standaard lichter, vaker beschikbaar
+            // tijdens pieken. Beide modelnamen zijn vanaf Epic #35 configureerbaar in
+            // Settings → AI Coach Configuratie. Andere fouten (invalid key, prompt
+            // blocked, netwerk) vallen direct naar de UI door.
             var responseText: String? = nil
             var finalError: Error? = nil
 

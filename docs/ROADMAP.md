@@ -214,9 +214,12 @@ Trainingen zijn sessies met expliciete fysiologische intentie.
 
 ---
 
-### ⏳ Epic #35: Dynamische Gemini Model-Selectie in Settings
+### 🔄 Epic #35: Dynamische Gemini Model-Selectie in Settings
 
-* **35.1 — GeminiModelCatalog Service:** Bij het openen van Settings → `GET /v1beta/models?key=...`. Filter op `supportedGenerationMethods.contains("generateContent")` en `gemini-*`. 24u TTL-cache in `UserDefaults`.
-* **35.2 — Dual-Picker UI:** Twee `Picker`-componenten ("Primair model" / "Fallback model"). Defaults: `gemini-flash-latest` + `gemini-flash-lite-latest`. `@AppStorage`-keys `vibecoach_primaryModel` / `vibecoach_fallbackModel`.
-* **35.3 — Validatie & Graceful Degradation:** Bij app-start guard tegen deprecatie. Stille fallback + niet-blokkerende notificatie in Settings.
-* **35.4 — Unit Tests:** `GeminiModelCatalogTests` met `MockNetworkSession` voor filtering + 24u-cache-TTL.
+Configureerbare Gemini-modellen in Settings zodat we overbelasting kunnen ontwijken zonder een nieuwe app-release. Catalogus wordt geserveerd door de Cloudflare Worker (gelijk gebruikt patroon met `X-Client-Token`) — de iOS-app haalt geen modelnamen rechtstreeks bij Google op zodat we centraal kunnen valideren welke modellen we ondersteunen.
+
+* **35.1 — Cloudflare Worker `/ai/models`:** Statische catalogus van ondersteunde Gemini-modellen + `defaultPrimary`/`defaultFallback`. Beveiligd met `X-Client-Token`. Tests in `vibecoach-proxy/test/index.spec.js`.
+* **35.2 — iOS Catalogus & AppStorage:** `AIModelCatalogService` fetcht via `Secrets.stravaProxyBaseURL/ai/models`; `AIModelAppStorageKey.primary` / `.fallback` houden de keuze bij. Defaults (match met productie vóór Epic #35): `gemini-flash-latest` + `gemini-flash-lite-latest`.
+* **35.3 — Dual-Picker UI:** Twee `Picker`-componenten ("Primair model" / "Fallback model") in `AIProviderSettingsView`. Laadt bij `.onAppear`; bij netwerkfout valt de UI stil terug op `AIModelCatalog.builtInFallback`. Een opgeslagen keuze die niet (meer) in de catalogus staat wordt automatisch gereset naar de server-default.
+* **35.4 — ChatViewModel wiring:** `buildGenerativeModel` en `buildFallbackGenerativeModel` lezen de gekozen modelnamen uit `UserDefaults` i.p.v. hardcoded strings. Bestaande 503/429-waterfall blijft ongewijzigd.
+* **35.5 — (vervolg)** Unit tests voor `AIModelCatalogService` met `MockNetworkSession` (filtering + fallback-gedrag).
