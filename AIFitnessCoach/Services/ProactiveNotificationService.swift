@@ -2,6 +2,7 @@ import Foundation
 import HealthKit
 import BackgroundTasks
 import UserNotifications
+import os
 
 /// Sprint 13.2: Dual Engine notificatie-architectuur voor proactieve coaching.
 ///
@@ -11,6 +12,12 @@ import UserNotifications
 /// Engine B (Inaction Trigger): Dagelijkse stille achtergrondcheck via BGAppRefreshTask.
 /// Stuurt een waarschuwing als de gebruiker 2+ dagen inactief is én een doel op rood staat.
 final class ProactiveNotificationService {
+
+    /// Unified logger — subsystem matcht de bundle-id, category beschrijft de service.
+    /// Gebruik `.public` voor status-strings en `.private` voor PII (doeltitels,
+    /// TRIMP-waardes per gebruiker) zodat sysdiagnose-logs in release-builds geen
+    /// identificerende data lekken.
+    private static let logger = Logger(subsystem: "com.markclausing.aifitnesscoach", category: "ProactiveNotificationService")
 
     static let shared = ProactiveNotificationService()
 
@@ -40,7 +47,7 @@ final class ProactiveNotificationService {
         // Observer query: vuurt bij elke nieuwe of gewijzigde workout
         let observerQuery = HKObserverQuery(sampleType: workoutType, predicate: nil) { [weak self] _, completionHandler, error in
             guard error == nil else {
-                print("⚠️ Engine A observer fout: \(error!.localizedDescription)")
+                Self.logger.error("Engine A observer fout: \(error!.localizedDescription, privacy: .public)")
                 completionHandler() // Altijd aanroepen — anders stopt background delivery
                 return
             }
@@ -56,9 +63,9 @@ final class ProactiveNotificationService {
         // Schakel achtergrondlevering in: iOS wekt de app bij elke nieuwe workout
         healthStore.enableBackgroundDelivery(for: workoutType, frequency: .immediate) { success, error in
             if success {
-                print("✅ Engine A: HealthKit achtergrondlevering actief")
+                Self.logger.info("Engine A: HealthKit achtergrondlevering actief")
             } else if let error = error {
-                print("⚠️ Engine A: Achtergrondlevering mislukt — \(error.localizedDescription)")
+                Self.logger.error("Engine A: Achtergrondlevering mislukt — \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -75,13 +82,14 @@ final class ProactiveNotificationService {
 
         let atRiskTitles = UserDefaults.standard.stringArray(forKey: atRiskTitlesKey) ?? []
         guard !atRiskTitles.isEmpty else {
-            print("✅ Engine A: Geen doelen op rood — geen notificatie nodig")
+            Self.logger.debug("Engine A: Geen doelen op rood — geen notificatie nodig")
             return
         }
 
         // Haal de TRIMP van de meest recente workout op om de toon te bepalen
         let recentTRIMP = await fetchMostRecentWorkoutTRIMP()
-        print("ℹ️ Engine A: Meest recente workout TRIMP = \(recentTRIMP.map { String(format: "%.0f", $0) } ?? "onbekend")")
+        // TRIMP is user-specifieke fysiologische data → private.
+        Self.logger.debug("Engine A: Meest recente workout TRIMP = \(recentTRIMP.map { String(format: "%.0f", $0) } ?? "onbekend", privacy: .private)")
 
         let title: String
         let body: String
@@ -137,7 +145,7 @@ final class ProactiveNotificationService {
             ) { _, samples, error in
                 guard error == nil, let workout = samples?.first as? HKWorkout else {
                     if let error = error {
-                        print("⚠️ Engine A: HealthKit TRIMP-query fout — \(error.localizedDescription)")
+                        Self.logger.error("Engine A: HealthKit TRIMP-query fout — \(error.localizedDescription, privacy: .public)")
                     }
                     continuation.resume(returning: nil)
                     return
@@ -181,9 +189,9 @@ final class ProactiveNotificationService {
 
         do {
             try BGTaskScheduler.shared.submit(request)
-            print("✅ Engine B: Dagelijkse achtergrondcheck ingepland")
+            Self.logger.info("Engine B: Dagelijkse achtergrondcheck ingepland")
         } catch {
-            print("⚠️ Engine B: Inplannen mislukt — \(error.localizedDescription)")
+            Self.logger.error("Engine B: Inplannen mislukt — \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -209,7 +217,7 @@ final class ProactiveNotificationService {
     private func checkInactionAndNotify() async {
         let atRiskTitles = UserDefaults.standard.stringArray(forKey: atRiskTitlesKey) ?? []
         guard !atRiskTitles.isEmpty else {
-            print("✅ Engine B: Geen doelen op rood — geen actie nodig")
+            Self.logger.debug("Engine B: Geen doelen op rood — geen actie nodig")
             return
         }
 
@@ -222,7 +230,7 @@ final class ProactiveNotificationService {
         }
 
         guard daysSinceWorkout >= 2 else {
-            print("ℹ️ Engine B: Laatste workout \(String(format: "%.1f", daysSinceWorkout)) dagen geleden — geen actie nodig")
+            Self.logger.debug("Engine B: Laatste workout \(String(format: "%.1f", daysSinceWorkout), privacy: .public) dagen geleden — geen actie nodig")
             return
         }
 
@@ -303,9 +311,10 @@ final class ProactiveNotificationService {
         do {
             try await UNUserNotificationCenter.current().add(request)
             UserDefaults.standard.set(Date(), forKey: lastNotificationKey)
-            print("🔔 Proactieve notificatie verstuurd: \(title)")
+            // Notificatie-titel kan doelnaam bevatten (PII) → private.
+            Self.logger.info("Proactieve notificatie verstuurd: \(title, privacy: .private)")
         } catch {
-            print("⚠️ Notificatie versturen mislukt: \(error.localizedDescription)")
+            Self.logger.error("Notificatie versturen mislukt: \(error.localizedDescription, privacy: .public)")
         }
     }
 
