@@ -40,4 +40,17 @@ enum AIModelAppStorageKey {
 
     static let defaultPrimary = "gemini-flash-latest"
     static let defaultFallback = "gemini-flash-lite-latest"
+
+    /// Leest de door de gebruiker gekozen primaire modelnaam, met fallback naar
+    /// `defaultPrimary` wanneer de sleutel (nog) niet gezet is. De `UserDefaults`-
+    /// parameter is er zodat unit-tests een geïsoleerde suite kunnen injecteren.
+    static func resolvedPrimary(in defaults: UserDefaults = .standard) -> String {
+        defaults.string(forKey: primary) ?? defaultPrimary
+    }
+
+    /// Zie `resolvedPrimary` — idem voor het fallback-model dat na een 503/429
+    /// op het primaire model wordt gebruikt.
+    static func resolvedFallback(in defaults: UserDefaults = .standard) -> String {
+        defaults.string(forKey: fallback) ?? defaultFallback
+    }
 }
