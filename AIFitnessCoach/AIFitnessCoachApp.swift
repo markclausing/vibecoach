@@ -175,6 +175,19 @@ struct AIFitnessCoachApp: App {
         #endif
     }
 
+    /// Epic #35: als de XCUITest-suite `-UITestOpenAICoachConfig` meegeeft,
+    /// tonen we `AIProviderSettingsView` direct als rootview i.p.v. de
+    /// tab-host. Zo kan de model-picker E2E-test worden gedreven zonder
+    /// door de custom Settings-ScrollView te hoeven navigeren (wat via
+    /// XCUITest niet betrouwbaar blijkt vanwege hit-testing in `SettingsRowV2`).
+    private var isDirectAICoachConfigEnvironment: Bool {
+        #if DEBUG
+        return ProcessInfo.processInfo.arguments.contains("-UITestOpenAICoachConfig")
+        #else
+        return false
+        #endif
+    }
+
     init() {
         // Sprint 26.1: Activeer de mock-omgeving als de app via XCUITest gestart is.
         // Dit injecteert reproduceerbare testdata en bypassed live API-calls.
@@ -189,12 +202,24 @@ struct AIFitnessCoachApp: App {
         UserAPIKeyStore.migrateFromUserDefaultsIfNeeded()
     }
 
+    @ViewBuilder
+    private var rootView: some View {
+        if isDirectAICoachConfigEnvironment {
+            // Epic #35: test-only shortcut — render AIProviderSettingsView
+            // als rootview zodat de picker-UITest niet afhankelijk is van
+            // de Settings-ScrollView-navigatie.
+            NavigationStack { AIProviderSettingsView() }
+        } else {
+            ContentView()
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             // ContentView beheert de onboarding-routing (zie Fase 1 cleanup).
             // Alle env-objects worden hier geïnjecteerd zodat zowel OnboardingView
             // als AppTabHostView ze ter beschikking hebben.
-            ContentView()
+            rootView
                 .environmentObject(appState)
                 .environmentObject(planManager)
                 .environmentObject(themeManager)
