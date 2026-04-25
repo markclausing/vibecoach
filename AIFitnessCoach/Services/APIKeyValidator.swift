@@ -51,17 +51,29 @@ struct APIKeyValidator {
         do {
             _ = try await model.generateContent([content])
             return .valid
-        } catch let error as GenerateContentError {
-            switch error {
+        } catch {
+            return classify(error)
+        }
+    }
+
+    /// Mapt een willekeurige Swift `Error` naar een `APIKeyValidationResult`.
+    /// Apart blootgesteld zodat unit-tests de foutclassificatie kunnen valideren
+    /// zonder een echte Gemini-call te hoeven doen — `ping(...)` zelf is door
+    /// zijn directe `GenerativeModel`-init niet zonder netwerk te testen.
+    static func classify(_ error: Error) -> APIKeyValidationResult {
+        if let generateError = error as? GenerateContentError {
+            switch generateError {
             case .invalidAPIKey:
                 return .invalidKey
             case .internalError:
                 // 503/429 — rate-limited / overload.
                 return .rateLimited
             default:
-                return .unknown(error.localizedDescription)
+                return .unknown(generateError.localizedDescription)
             }
-        } catch let urlError as URLError {
+        }
+
+        if let urlError = error as? URLError {
             // Netwerk-fouten: offline, timeout, DNS-issue — sleutel-oordeel kan niet.
             switch urlError.code {
             case .notConnectedToInternet, .timedOut, .networkConnectionLost, .dnsLookupFailed:
@@ -69,8 +81,8 @@ struct APIKeyValidator {
             default:
                 return .unknown(urlError.localizedDescription)
             }
-        } catch {
-            return .unknown(error.localizedDescription)
         }
+
+        return .unknown(error.localizedDescription)
     }
 }
