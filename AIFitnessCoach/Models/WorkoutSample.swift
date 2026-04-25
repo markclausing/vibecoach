@@ -8,8 +8,8 @@ import SwiftData
 /// aan de bron-`HKWorkout.uuid` (Route A: foreign key, geen redundant Workout-model).
 @Model
 final class WorkoutSample {
-    /// Verwijzing naar `HKWorkout.uuid`. Geïndexeerd voor snelle lookup per workout.
-    @Attribute(.spotlight) var workoutUUID: UUID
+    /// Verwijzing naar `HKWorkout.uuid`. Snelle lookup per workout via `@Predicate`-filter.
+    var workoutUUID: UUID
     /// Begin van het 5s-bucket waarvoor deze sample geldt.
     var timestamp: Date
 
