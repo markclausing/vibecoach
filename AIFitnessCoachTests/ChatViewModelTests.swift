@@ -459,8 +459,15 @@ final class ChatViewModelTests: XCTestCase {
         // Actie
         viewModel.sendMessage()
 
-        // Wacht op asynchrone verwerking
-        try? await Task.sleep(nanoseconds: 250_000_000)
+        // Wacht op asynchrone verwerking — polling i.p.v. een vaste sleep zodat
+        // de test ook op tragere CI-runners deterministisch eindigt zodra de
+        // error-flow voltooid is (eerder waren 250ms hardcoded niet genoeg).
+        await waitForCondition(
+            timeout: 5.0,
+            description: "viewModel.messages.count == 2 && !viewModel.isTyping"
+        ) {
+            viewModel.messages.count == 2 && !viewModel.isTyping
+        }
 
         // Assert: user-bericht + error-bericht (geen extra fallback-poging zichtbaar)
         XCTAssertFalse(viewModel.isTyping, "Laadindicator moet weer uit na foutafhandeling.")
@@ -471,6 +478,21 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertTrue(errorText.contains("API-sleutel is ongeldig"),
                       "Moet de invalidAPIKey-boodschap tonen, niet de generieke fallback-tekst. Kreeg: \(errorText)")
         XCTAssertEqual(viewModel.retryStatusMessage, "", "retryStatusMessage moet weer leeg zijn na afloop.")
+    }
+
+    /// Polt iedere 10ms tot `predicate()` true is óf tot de timeout verloopt.
+    /// Vervangt fixed `Task.sleep`-waarden in tests die op asynchrone state
+    /// wachten — voorkomt CI-flakes wanneer de runner traag is.
+    private func waitForCondition(
+        timeout: TimeInterval,
+        description: String,
+        predicate: @MainActor () -> Bool
+    ) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if await MainActor.run(body: predicate) { return }
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
     }
 
     func testAnalyzeCurrentStatus_FallbackToStrava() async {
