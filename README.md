@@ -16,6 +16,8 @@ Volledige historie en backlog: zie [`docs/ROADMAP.md`](docs/ROADMAP.md).
 Technische architectuur (Dual Engine, Cloudflare Proxy, Keychain): zie [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Project-regels voor AI-assistenten: zie [`CLAUDE.md`](CLAUDE.md).
 
+> **Talen:** UI, AI-coach-prompt en code-comments zijn momenteel Nederlandstalig (Swift-variabelen blijven Engels conform Swift-conventie). Een eventuele Engelse uitrol staat in [`docs/ROADMAP.md`](docs/ROADMAP.md) als ⏳ Epic #37 — speculatief, ~100–130u werk verspreid over UI-strings, AI-prompt-refactor, blessure-keyword-detectie en optionele comment-migratie. Geen actieve toezegging.
+
 ---
 
 ## 🛠 Installatie & Setup
