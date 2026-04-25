@@ -350,3 +350,17 @@ Toggle in `SettingsView` om expliciete taalkeuze te overrulen (default: device-l
 
 - **37.5 (Locale-switch UI)** kan losstaand als voorbereidende refactor — geeft toekomstige PR's ergens om naar te toggle.
 - **37.4 (Comment-migratie)** is volledig ontkoppeld van runtime — kan in stilstaande periodes geleidelijk worden opgeruimd, één service tegelijk.
+
+---
+
+### ⏳ Epic #38: HealthKit Permission UX & Sync Reliability
+
+Aanleiding: een echte gebruiker (april 2026) deed een app-reinstall waarna iOS de HealthKit-toestemming gedeeltelijk reset had — Workouts/HRV/Cardio Fitness stonden uit. De auto-sync 'slaagde' technisch (HealthKit retourneert geen error bij gedeeltelijke permissies), maar haalde 0 workouts op. Resultaat: doelen op 0 TRIMP/0 km, banner "Bijsturing nodig", coach kende de atleet ineens niet meer. Stille faal — de slechtste UX. Deze epic vangt twee gerelateerde gaten af: proactief alle toestemmingen vragen, en zichtbaar maken wanneer de sync verdacht weinig oplevert.
+
+* **38.1 — Bundle-permission-request bij eerste post-onboarding launch:** Eén `requestAuthorization`-call met de **complete set** HealthKit-types die de coach gebruikt (workouts, heart rate, HRV, resting HR, cardio fitness, active energy, sleep stages). iOS toont dan één toestemmings-sheet met álle categorieën — gebruiker kan niet per ongeluk een sub-set vergeten. Idem na detect van een terug-naar-foreground waarbij `HKHealthStore.authorizationStatus(for:)` voor één van de cruciale types `.notDetermined` is.
+* **38.2 — "Stille sync"-detectie & banner:** `HealthKitSyncService` houdt bij hoeveel workouts in het afgelopen 365-dagen-window terugkwamen. Als dat **0** is en `HKHealthStore.authorizationStatus(for: workoutType) != .sharingAuthorized`, posts de service een waarschuwing naar de Dashboard-banner-stack: *"Geen HealthKit-data gevonden — controleer toestemmingen"* met een knop naar `UIApplication.openSettingsURLString`. Voorkomt dat de gebruiker dagen rondloopt met een lege coach zonder te weten waarom.
+* **38.3 — Reinstall-detectie (optioneel):** UserDefaults-flag `firstLaunchAfterInstall` die bij een fresh install onbekend is en bij een eerdere launch true wordt gezet. Bij detect van fresh install: forceer 38.1's bundle-request en toon een onboarding-tip "We hebben je toestemmingen na de re-install opnieuw nodig". Lost het exacte scenario uit de aanleiding op.
+
+**Effort:** ~6–10u totaal — `requestAuthorization` is bestaande infrastructuur, dus 38.1 is een dependency-uitbreiding. 38.2 vereist een nieuwe banner-component op het Dashboard maar past in de bestaande "Bijsturing nodig"-banner-stack. 38.3 is triviaal.
+
+**Status:** ⏳ — niet kritisch zolang de directe bug-trigger (reinstall) zelden voorkomt, maar de stille-faal natuur maakt dit een strategisch belangrijke hardening voor App Store-launches.
