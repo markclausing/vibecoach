@@ -81,6 +81,7 @@
 		3500FFEECC00AA03BB02CC03 /* AIModelCatalogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FFEECC00AA04BB02CC03 /* AIModelCatalogService.swift */; };
 		3500FFEECC00AA05BB02CC03 /* AIModelCatalogServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */; };
 		3100FFEECC00AA07BB02CC03 /* OnboardingPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3100FFEECC00AA08BB02CC03 /* OnboardingPersistenceTests.swift */; };
+		3600AABBCC00DD01EE02FF03 /* PeriodizationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3600AABBCC00DD02EE02FF03 /* PeriodizationEngineTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -177,6 +178,8 @@
 		3500FFEECC00AA04BB02CC03 /* AIModelCatalogService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelCatalogService.swift; sourceTree = "<group>"; };
 		3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelCatalogServiceTests.swift; sourceTree = "<group>"; };
 		3100FFEECC00AA08BB02CC03 /* OnboardingPersistenceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingPersistenceTests.swift; sourceTree = "<group>"; };
+		3600AABBCC00DD02EE02FF03 /* PeriodizationEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PeriodizationEngineTests.swift; sourceTree = "<group>"; };
+		FF6677AA88990011223344EE /* FutureProjectionServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FutureProjectionServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -245,7 +248,7 @@
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */,
 				F6A7B8C9D0E1F2A3B4C5D6E7 /* BlueprintCheckerTests.swift */,
-				H8I9J0K1L2M3N4O5P6Q7R8S9 /* PeriodizationEngineTests.swift */,
+				3600AABBCC00DD02EE02FF03 /* PeriodizationEngineTests.swift */,
 				BB22CC33DD44EE55FF6677AA /* NutritionServiceTests.swift */,
 				DD44EE55FF6677AA88990011 /* ProgressServiceTests.swift */,
 				FF6677AA88990011223344EE /* FutureProjectionServiceTests.swift */,
@@ -538,7 +541,7 @@
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* TrainingPhaseTests.swift in Sources */,
 				E5F6A7B8C9D0E1F2A3B4C5D6 /* BlueprintCheckerTests.swift in Sources */,
-				G7H8I9J0K1L2M3N4O5P6Q7R8 /* PeriodizationEngineTests.swift in Sources */,
+				3600AABBCC00DD01EE02FF03 /* PeriodizationEngineTests.swift in Sources */,
 				AA11BB22CC33DD44EE55FF66 /* NutritionServiceTests.swift in Sources */,
 				CC33DD44EE55FF6677AA8899 /* ProgressServiceTests.swift in Sources */,
 				EE55FF6677AA889900112233 /* FutureProjectionServiceTests.swift in Sources */,

@@ -498,4 +498,176 @@ final class FutureProjectionServiceTests: XCTestCase {
                        accuracy: 0.001,
                        "Geobserveerde TRIMP-groei < 10% mag NIET worden gecapt.")
     }
+
+    // MARK: - 9. coachContext (Epic #36 sub-task 36.2 coverage uplift)
+
+    /// Verifieer dat coachContext voor `alreadyPeaking` de checkmark-formulering bevat.
+    func testCoachContext_AlreadyPeaking_IncludesCheckmarkAndTaper() {
+        let goal = marathonGoal(weeksAhead: 26)
+        let activities = fourWeekActivities(
+            sport: .running,
+            week0Trimp: 700, week0Km: 80, week1Trimp: 700, week1Km: 80,
+            week2Trimp: 650, week2Km: 75, week3Trimp: 650, week3Km: 75
+        )
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: activities)
+        let context = result?.coachContext ?? ""
+
+        XCTAssertTrue(context.contains("✅ PROGNOSE"), "alreadyPeaking moet ✅-prefix bevatten.")
+        XCTAssertTrue(context.contains("Vasthouden") || context.contains("taperen"),
+                      "alreadyPeaking moet 'Vasthouden en taperen' communiceren.")
+    }
+
+    /// onTrack-branch: verifieer 🟢 prefix en aanduiding van weken vóór plannedPeakDate.
+    func testCoachContext_OnTrack_IncludesGreenIconAndSchedule() {
+        let goal = marathonGoal(weeksAhead: 26)
+        let activities = fourWeekActivities(
+            sport: .running,
+            week0Trimp: 350, week0Km: 80, week1Trimp: 350, week1Km: 80,
+            week2Trimp: 290, week2Km: 70, week3Trimp: 290, week3Km: 70
+        )
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: activities)
+        let context = result?.coachContext ?? ""
+
+        XCTAssertTrue(context.contains("🟢 PROGNOSE"))
+        XCTAssertTrue(context.contains("Op schema"))
+    }
+
+    /// atRisk-branch (km al voldaan, TRIMP loopt achter en race is dichtbij).
+    func testCoachContext_AtRisk_IncludesOrangeIconAndUrgency() {
+        let goal = marathonGoal(weeksAhead: 8)
+        let activities = fourWeekActivities(
+            sport: .running,
+            week0Trimp: 400, week0Km: 80, week1Trimp: 400, week1Km: 80,
+            week2Trimp: 340, week2Km: 70, week3Trimp: 340, week3Km: 70
+        )
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: activities)
+        let context = result?.coachContext ?? ""
+
+        XCTAssertTrue(context.contains("🟠 PROGNOSE"))
+        XCTAssertTrue(context.contains("MOET het volume verhogen"),
+                      "atRisk moet de coach instrueren om het volume te verhogen.")
+    }
+
+    /// catchUpNeeded-branch (geen activiteiten, race > 12 weken weg).
+    func testCoachContext_CatchUpNeeded_IsConstructiveNotAlarming() {
+        let goal = marathonGoal(weeksAhead: 20)
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: [])
+        let context = result?.coachContext ?? ""
+
+        XCTAssertTrue(context.contains("🟠"))
+        XCTAssertTrue(context.contains("constructief") || context.contains("Inhaalslag"),
+                      "catchUpNeeded mag NIET alarmerend zijn.")
+        XCTAssertTrue(context.contains("opbouwplan"))
+    }
+
+    /// unreachable-branch (race binnen 6 weken, geen activiteiten).
+    func testCoachContext_Unreachable_RecommendsDoeldatumOrTrainingsrace() {
+        let goal = marathonGoal(weeksAhead: 6)
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: [])
+        let context = result?.coachContext ?? ""
+
+        XCTAssertTrue(context.contains("🔴 PROGNOSE"))
+        XCTAssertTrue(context.contains("doeldatum uitstellen") || context.contains("trainingsrace"),
+                      "unreachable moet alternatieven aanbieden i.p.v. een ramp uit te roepen.")
+    }
+
+    /// Bottleneck=.km zonder Cross-Training Bonus → het sport-specifieke advies moet erin staan.
+    /// Setup: TRIMP groeit, km groeit langzamer; currentTRIMP < 90% van weekdoel (geen bonus).
+    /// Een marathon weekdoel = 500 → bonus-drempel 450. We mikken op currentTRIMP ≈ 280.
+    func testCoachContext_BottleneckKm_WithoutBonus_FlagsSportSpecificGap() {
+        let goal = marathonGoal(weeksAhead: 26)
+        let activities = fourWeekActivities(
+            sport: .running,
+            week0Trimp: 280, week0Km: 30,
+            week1Trimp: 280, week1Km: 30,
+            week2Trimp: 200, week2Km: 24,
+            week3Trimp: 200, week3Km: 24
+        )
+
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: activities)
+        let context = result?.coachContext ?? ""
+
+        XCTAssertEqual(result?.bottleneck, .km, "Met TRIMP-groei sneller dan km-groei is km de bottleneck.")
+        XCTAssertFalse(result?.hasCrossTrainingBonus ?? true,
+                       "currentTRIMP=280 < bonus-drempel(450) — geen bonus.")
+        XCTAssertTrue(context.contains("BOTTLENECK") && context.contains("hardloop-km"))
+        XCTAssertTrue(context.contains("telt NIET mee"),
+                      "Zonder bonus moet de cross-sport-waarschuwing erin staan.")
+    }
+
+    /// Bottleneck=.km MET Cross-Training Bonus → empathische 17%-cap-formulering.
+    func testCoachContext_BottleneckKm_WithBonus_ShowsCrossTrainingMessage() {
+        let goal = marathonGoal(weeksAhead: 26)
+        let activities = fourWeekActivities(
+            sport: .running,
+            week0Trimp: 460, week0Km: 30, week1Trimp: 460, week1Km: 30,
+            week2Trimp: 400, week2Km: 20, week3Trimp: 400, week3Km: 20
+        )
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: activities)
+        let context = result?.coachContext ?? ""
+
+        XCTAssertEqual(result?.bottleneck, .km)
+        XCTAssertTrue(result?.hasCrossTrainingBonus ?? false)
+        XCTAssertTrue(context.contains("Cross-Training Bonus"))
+        XCTAssertTrue(context.contains("17"), "Bonus-cap percentage (17%) moet zichtbaar zijn.")
+    }
+
+    /// Bottleneck=.both → "BEIDE metrics"-formulering.
+    func testCoachContext_BottleneckBoth_FlagsBothBehind() {
+        let goal = marathonGoal(weeksAhead: 20)
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: [])
+        let context = result?.coachContext ?? ""
+
+        XCTAssertEqual(result?.bottleneck, .both)
+        XCTAssertTrue(context.contains("BEIDE metrics"))
+    }
+
+    /// Cycling-doel: kmLabel moet "fiets-km" zijn (i.p.v. hardloop-km).
+    func testCoachContext_CyclingGoal_UsesFietsKmLabel() {
+        let goal = cyclingGoal(weeksAhead: 26)
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: [])
+        let context = result?.coachContext ?? ""
+
+        XCTAssertTrue(context.contains("fiets-km"))
+        XCTAssertFalse(context.contains("hardloop-km"))
+    }
+
+    // MARK: - 10. buildCoachContext aggregator
+
+    func testBuildCoachContext_EmptyProjections_ReturnsEmptyString() {
+        let result = FutureProjectionService.buildCoachContext(from: [])
+        XCTAssertEqual(result, "")
+    }
+
+    func testBuildCoachContext_SingleProjection_WrapsWithHeaderAndGedragsregel() {
+        let goal = marathonGoal(weeksAhead: 26)
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: [])
+        let combined = FutureProjectionService.buildCoachContext(from: [result!])
+
+        XCTAssertTrue(combined.contains("[PROGNOSE — TOEKOMSTPROJECTIE"),
+                      "Header moet aanwezig zijn.")
+        XCTAssertTrue(combined.contains("Gedragsregel:"))
+        XCTAssertTrue(combined.contains("bottleneck .km"),
+                      "Gedragsregel-blok moet de coach-instructies bevatten.")
+    }
+
+    // MARK: - 11. ProjectionStatus visuele attributen
+
+    func testProjectionStatus_IconsAndColors_AreUnique() {
+        let allStatuses: [ProjectionStatus] = [
+            .alreadyPeaking, .onTrack, .atRisk, .catchUpNeeded, .unreachable,
+        ]
+        let icons = allStatuses.map(\.icon)
+        let labels = allStatuses.map(\.label)
+
+        XCTAssertEqual(Set(icons).count, icons.count, "Elke status moet een unieke icon hebben.")
+        XCTAssertEqual(Set(labels).count, labels.count, "Elke status moet een uniek label hebben.")
+
+        // Color-mapping conform UI-conventie (groen = OK, oranje = waarschuwing, rood = kritiek)
+        XCTAssertEqual(ProjectionStatus.alreadyPeaking.color, "green")
+        XCTAssertEqual(ProjectionStatus.onTrack.color, "green")
+        XCTAssertEqual(ProjectionStatus.atRisk.color, "orange")
+        XCTAssertEqual(ProjectionStatus.catchUpNeeded.color, "orange")
+        XCTAssertEqual(ProjectionStatus.unreachable.color, "red")
+    }
 }
