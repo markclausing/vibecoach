@@ -223,3 +223,19 @@ Configureerbare Gemini-modellen in Settings zodat we overbelasting kunnen ontwij
 * **35.3 — Dual-Picker UI:** Twee `Picker`-componenten ("Primair model" / "Fallback model") in `AIProviderSettingsView`. Laadt bij `.onAppear`; bij netwerkfout valt de UI stil terug op `AIModelCatalog.builtInFallback`. Een opgeslagen keuze die niet (meer) in de catalogus staat wordt automatisch gereset naar de server-default.
 * **35.4 — ChatViewModel wiring:** `buildGenerativeModel` en `buildFallbackGenerativeModel` lezen de gekozen modelnamen uit `UserDefaults` i.p.v. hardcoded strings. Bestaande 503/429-waterfall blijft ongewijzigd.
 * **35.5 — (vervolg)** Unit tests voor `AIModelCatalogService` met `MockNetworkSession` (filtering + fallback-gedrag).
+
+---
+
+### 🔄 Epic #36: Test Coverage Verhoging — Foundation Hardening
+
+Authoritatieve coverage-meting (xcodebuild met `-enableCodeCoverage YES`, alleen unit-test target) toonde dat sleutel-services 0% dekking hebben ondanks dat hun testfiles bestaan. README-claim van 63% is achterhaald — werkelijke coverage van Services/ViewModels/Models is ~30–35%. Deze epic dicht de gaten met de hoogste impact:risk-ratio.
+
+**Strategie:** focus op pure logica met groot LOC-volume en/of klant-kritieke paden. UI-Views blijven buiten scope (XCUITest dekt happy paths via aparte epic).
+
+* **36.1 — `ProgressService` + `BlueprintGap` (P1):** Bestaande `ProgressServiceTests.swift` is een 1-regel smoke-test → 0% coverage op 246 LOC. Doel: ~80% via `TRIMPTranslator.translate/bannerText/coachHint`-tests, `BlueprintGap` computed properties (`trimpGap`, `kmGap`, `*ProgressPct`, `*ReferencePct`, `isBehind*`, `extraTRIMPPerWeek`, `catchUpHint`, status-/coach-context strings), en `ProgressService.analyzeGaps` integratie met fixtures voor elke `TrainingPhase`.
+* **36.2 — `FutureProjectionService` (P1):** Idem patroon — testfile bestaat, 410 LOC op 0%. Doel: dekking op 3-weeks sliding window-extrapolatie en alle `ProjectionStatus` branches (`alreadyPeaking`/`onTrack`/`atRisk`/`unreachable`).
+* **36.3 — `APIKeyValidator` (P1):** BYOK-onboarding kritiek, 36 LOC op 0%. 6 cases — empty/valid/invalid/rateLimited/network/unknown — via `MockNetworkSession`.
+* **36.4 — `ProactiveNotificationService` pure logica (P1):** Grootste untested service (429 LOC). Eerst refactor: cooldown-windows en TRIMP-drempels extraheren uit `HKObserverQuery`/`BGTaskScheduler`-laag naar testbare static helpers. Daarna ~12 cases.
+* **36.5 — `FitnessGoal` enums + computed properties (P2):** Uitbreiden `FitnessGoalTests.swift` met `SportCategory.from(hkType:)` (alle HK-IDs), `BodyArea.severityLabel` thresholds, `AIProvider`/`DataSource`/`EventFormat`/`PrimaryIntent` displayName-mapping, `SuggestedWorkout.resolvedDate` (NL/EN dagnamen + ISO).
+* **36.6 — `KeychainService` (P2):** Echte Keychain-laag op 1.7%. `MockTokenStore` dekt het protocol-contract; deze sub-task test de `KeychainService`-implementatie zelf met sandbox-setup. ~8 cases.
+* **36.7 — README + CI-rapportage:** Na voltooiing van P1/P2: meet de full-suite coverage in Xcode (na unit + UI test run), update het cijfer in `README.md` regel 11. Optioneel: voeg een coverage-baseline toe aan CI om regressies te vangen.
