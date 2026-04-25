@@ -1,17 +1,15 @@
 {
   "images" : [
     {
-      "filename" : "appstore Background Removed.png",
+      "filename" : "LaunchLogo.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "appstore Background Removed 1.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "appstore Background Removed 2.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
