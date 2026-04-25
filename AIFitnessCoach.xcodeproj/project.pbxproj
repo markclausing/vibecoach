@@ -89,6 +89,8 @@
 		B2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */; };
 		B3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */; };
 		B4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift */; };
+		B5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift */; };
+		B6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -194,6 +196,8 @@
 		E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SampleResampler.swift; sourceTree = "<group>"; };
 		E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutSampleService.swift; sourceTree = "<group>"; };
 		E4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SampleResamplerTests.swift; sourceTree = "<group>"; };
+		E5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeepSyncService.swift; sourceTree = "<group>"; };
+		E6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeepSyncServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -275,6 +279,7 @@
 				3604AABBCC00DD06EE04FF04 /* ProactiveNotificationServiceTests.swift */,
 				3606AABBCC00DD08EE05FF05 /* KeychainServiceTests.swift */,
 				E4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift */,
+				E6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -322,6 +327,7 @@
 				268DC6609F434E5DA4FF63F7 /* ThemeManager.swift */,
 				E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */,
 				E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */,
+				E5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -575,6 +581,7 @@
 				3604AABBCC00DD05EE04FF04 /* ProactiveNotificationServiceTests.swift in Sources */,
 				3606AABBCC00DD07EE05FF05 /* KeychainServiceTests.swift in Sources */,
 				B4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift in Sources */,
+				B6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -630,6 +637,7 @@
 				B1A4F7B2D6E8F0A1B2C3D405 /* WorkoutSample.swift in Sources */,
 				B2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift in Sources */,
 				B3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift in Sources */,
+				B5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
