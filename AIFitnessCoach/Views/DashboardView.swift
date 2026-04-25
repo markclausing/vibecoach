@@ -1592,6 +1592,10 @@ struct DashboardView: View {
                         activities: Array(activities)
                     )
 
+                    // Epic 32 Story 32.2: lijst met recente workouts. HealthKit-records zijn
+                    // klikbaar en navigeren naar de WorkoutAnalysisView met de granulaire 5s-charts.
+                    RecentWorkoutsSection()
+
                     // TRIMP & Vibe Score educatiekaarten
                     TRIMPExplainerCard()
                         .padding(.horizontal)
