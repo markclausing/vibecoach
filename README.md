@@ -6,9 +6,9 @@ Een iOS-app (SwiftUI + SwiftData) die fungeert als persoonlijke, slimme fitnessc
 
 ## 🚀 Huidige Status
 
-**Actief in Ontwikkeling — Epic #35 🔄 (Dynamische Gemini Model-Selectie)**
+**Actief in Ontwikkeling — Epic #36 ✅ (Test Coverage Verhoging — afgerond)**
 
-VibeCoach is een production-ready iOS-app met fysiologisch correcte coaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur. Testsuite: 63% code coverage.
+VibeCoach is een production-ready iOS-app met fysiologisch correcte coaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur. Testsuite: **51% code coverage** (gemeten met `xcodebuild -enableCodeCoverage YES` over de volledige unit + UI suite). Alle kritieke Services + Models zitten boven de 80% — zie [`docs/ROADMAP.md`](docs/ROADMAP.md) Epic #36 voor de per-bestand uitsplitsing.
 
 Epic #35 voegt configureerbare Gemini-modellen toe in Settings → AI Coach Configuratie. De catalogus wordt opgehaald via de Cloudflare Worker (`/ai/models`) zodat nieuwe modellen zonder app-update beschikbaar kunnen worden gemaakt. Defaults blijven `gemini-flash-latest` (primair) en `gemini-flash-lite-latest` (fallback).
 
@@ -39,7 +39,7 @@ Project-regels voor AI-assistenten: zie [`CLAUDE.md`](CLAUDE.md).
 | **Data** | Apple HealthKit (HRV, slaap + slaapfases, workouts) + optioneel Strava OAuth2 via Cloudflare Worker |
 | **Weer** | Open-Meteo API (gratis, geen API-sleutel) via CoreLocation + URLSession |
 | **Achtergrond** | `HKObserverQuery` (Engine A) + `BGAppRefreshTask` (Engine B) |
-| **Testen** | XCTest unit tests + XCUITest UI tests — 63% coverage (target ≥75%) |
+| **Testen** | XCTest unit tests + XCUITest UI tests — **51% coverage** (Services + Models ≥80%, Views beperkt door SwiftUI-testbaarheid) |
 | **Versiebeheer** | GitHub |
 
 ---

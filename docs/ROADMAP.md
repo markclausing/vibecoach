@@ -226,16 +226,33 @@ Configureerbare Gemini-modellen in Settings zodat we overbelasting kunnen ontwij
 
 ---
 
-### 🔄 Epic #36: Test Coverage Verhoging — Foundation Hardening
+### ✅ Epic #36: Test Coverage Verhoging — Foundation Hardening
 
-Authoritatieve coverage-meting (xcodebuild met `-enableCodeCoverage YES`, alleen unit-test target) toonde dat sleutel-services 0% dekking hebben ondanks dat hun testfiles bestaan. README-claim van 63% is achterhaald — werkelijke coverage van Services/ViewModels/Models is ~30–35%. Deze epic dicht de gaten met de hoogste impact:risk-ratio.
+Authoritatieve coverage-meting in april 2026 toonde dat sleutel-services 0% dekking hadden ondanks dat hun testfiles bestonden — de eerdere README-claim van 63% bleek niet onderbouwd. Deze epic dichtte de hoogste-impact gaten en bracht de gemeten full-suite coverage naar **51.16%** (was effectief ~7-30%). Strategie: focus op pure logica met groot LOC-volume en/of klant-kritieke paden; UI-Views blijven beperkt door SwiftUI-testbaarheid.
 
-**Strategie:** focus op pure logica met groot LOC-volume en/of klant-kritieke paden. UI-Views blijven buiten scope (XCUITest dekt happy paths via aparte epic).
+**Eindresultaat per sub-task** (full-suite coverage = unit + UI tests, gemeten via `xcodebuild -enableCodeCoverage YES`):
 
-* **36.1 — `ProgressService` + `BlueprintGap` (P1):** Bestaande `ProgressServiceTests.swift` is een 1-regel smoke-test → 0% coverage op 246 LOC. Doel: ~80% via `TRIMPTranslator.translate/bannerText/coachHint`-tests, `BlueprintGap` computed properties (`trimpGap`, `kmGap`, `*ProgressPct`, `*ReferencePct`, `isBehind*`, `extraTRIMPPerWeek`, `catchUpHint`, status-/coach-context strings), en `ProgressService.analyzeGaps` integratie met fixtures voor elke `TrainingPhase`.
-* **36.2 — `FutureProjectionService` (P1):** Idem patroon — testfile bestaat, 410 LOC op 0%. Doel: dekking op 3-weeks sliding window-extrapolatie en alle `ProjectionStatus` branches (`alreadyPeaking`/`onTrack`/`atRisk`/`unreachable`).
-* **36.3 — `APIKeyValidator` (P1):** BYOK-onboarding kritiek, 36 LOC op 0%. 6 cases — empty/valid/invalid/rateLimited/network/unknown — via `MockNetworkSession`.
-* **36.4 — `ProactiveNotificationService` pure logica (P1):** Grootste untested service (429 LOC). Refactor: cooldown-windows, TRIMP-berekening en notificatie-tekst-compositie extraheren uit `HKObserverQuery`/`BGTaskScheduler`-laag naar testbare static helpers. Praktisch ceiling op coverage = ~17% omdat het merendeel iOS-lifecycle integratie is die alleen op runtime testbaar is — accepteerbaar omdat álle door gebruiker zichtbare notificatie-tekst en de cooldown-gate nu defended zijn.
-* **36.5 — `FitnessGoal` enums + computed properties (P2):** Uitbreiden `FitnessGoalTests.swift` met `SportCategory.from(hkType:)` (alle HK-IDs), `BodyArea.severityLabel` thresholds, `AIProvider`/`DataSource`/`EventFormat`/`PrimaryIntent` displayName-mapping, `SuggestedWorkout.resolvedDate` (NL/EN dagnamen + ISO).
-* **36.6 — `KeychainService` (P2):** Echte Keychain-laag op 1.7%. `MockTokenStore` dekt het protocol-contract; deze sub-task test de `KeychainService`-implementatie zelf met sandbox-setup. ~8 cases.
-* **36.7 — README + CI-rapportage:** Na voltooiing van P1/P2: meet de full-suite coverage in Xcode (na unit + UI test run), update het cijfer in `README.md` regel 11. Optioneel: voeg een coverage-baseline toe aan CI om regressies te vangen.
+| # | Doel | Voor | Na |
+|---|---|---|---|
+| 36.1 | `ProgressService` + `BlueprintGap` | 0% | **95.12%** |
+| 36.2 | `FutureProjectionService` (+ Periodization unlock via pbxproj-fix) | 0% | **97.07%** |
+| 36.3 | `APIKeyValidator` | 0% | **67.44%** |
+| 36.4 | `ProactiveNotificationService` (pure logica geëxtraheerd) | 0% | **31.25%** |
+| 36.5 | `FitnessGoal` enums + computed properties | 21% | **82.61%** |
+| 36.6 | `KeychainService` (integratie tegen sim-Keychain) | 1.7% | **93.10%** |
+| 36.7 | README + ROADMAP bijgewerkt met gemeten coverage | — | — |
+
+**Sub-task details:**
+
+* **36.1 — `ProgressService` + `BlueprintGap`:** 1-regel smoke-test vervangen door 41 cases die `TRIMPTranslator`, `BlueprintGap` computed properties en `ProgressService.analyzeGaps` (incl. fase-window TRIMP-accumulatie en sport-specifieke km-filtering) afdekken.
+* **36.2 — `FutureProjectionService` + pbxproj-fix:** ontdekt dat 49 al-geschreven testcases nooit liepen door pbxproj-bugs (ontbrekende `PBXFileReference`-declaraties + niet-hex IDs). Fix + 16 nieuwe cases voor `coachContext` branches.
+* **36.3 — `APIKeyValidator`:** error-classificatie geëxtraheerd naar `classify(_:)` static helper; 12 cases voor alle `GenerateContentError`/`URLError`-paden + input-guards.
+* **36.4 — `ProactiveNotificationService`:** 4 pure helpers geëxtraheerd uit het stateful singleton (`composeEngineAContent`, `composeEngineBContent`, `isCooldownActive`, `banisterTRIMP`). Plafond op 31% omdat ~70% iOS-lifecycle is (`HKObserverQuery`, `BGTaskScheduler`) — alle door gebruiker zichtbare notificatie-tekst en cooldown-gate nu defended.
+* **36.5 — `FitnessGoal` enums:** 38 nieuwe cases voor `SportCategory.from(hkType:/rawString:)`, `BodyArea.severityLabel`, alle enum displayName-mappings, `AIProvider.isSupported`, `SuggestedWorkout.resolvedDate` (NL/EN/ISO).
+* **36.6 — `KeychainService`:** 11 integratietests tegen de echte simulator-Keychain met UUID-namespaced service-namen. CI-flake in een aanpalende test (`testSendMessage_WithInvalidAPIKeyError`) tegelijkertijd opgelost door fixed `Task.sleep` te vervangen door polling-loop.
+
+**Lessons learned:**
+
+- README-coverage-claims zonder authoritatieve meting zijn niet betrouwbaar — vóór deze epic was de werkelijkheid significant lager dan het geclaimde 63%.
+- Pbxproj-fouten kunnen testfiles compleet doen verdwijnen zonder zichtbare error — de "0% coverage ondanks bestaand testfile"-symptoom is een red flag voor pbxproj-corruptie.
+- iOS-lifecycle services (HealthKit observers, BG tasks, notification center) leveren een hard ceiling op coverage; de scheidslijn met pure logica moet bewust ontworpen worden om testbaarheid mogelijk te maken.
