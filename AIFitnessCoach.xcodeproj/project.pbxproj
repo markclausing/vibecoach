@@ -85,6 +85,10 @@
 		3603AABBCC00DD03EE03FF03 /* APIKeyValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */; };
 		3604AABBCC00DD05EE04FF04 /* ProactiveNotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3604AABBCC00DD06EE04FF04 /* ProactiveNotificationServiceTests.swift */; };
 		3606AABBCC00DD07EE05FF05 /* KeychainServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3606AABBCC00DD08EE05FF05 /* KeychainServiceTests.swift */; };
+		B1A4F7B2D6E8F0A1B2C3D405 /* WorkoutSample.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A4F7B2D6E8F0A1B2C3D405 /* WorkoutSample.swift */; };
+		B2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */; };
+		B3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */; };
+		B4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -186,6 +190,10 @@
 		3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyValidatorTests.swift; sourceTree = "<group>"; };
 		3604AABBCC00DD06EE04FF04 /* ProactiveNotificationServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProactiveNotificationServiceTests.swift; sourceTree = "<group>"; };
 		3606AABBCC00DD08EE05FF05 /* KeychainServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainServiceTests.swift; sourceTree = "<group>"; };
+		E1A4F7B2D6E8F0A1B2C3D405 /* WorkoutSample.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutSample.swift; sourceTree = "<group>"; };
+		E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SampleResampler.swift; sourceTree = "<group>"; };
+		E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutSampleService.swift; sourceTree = "<group>"; };
+		E4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SampleResamplerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -266,6 +274,7 @@
 				3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */,
 				3604AABBCC00DD06EE04FF04 /* ProactiveNotificationServiceTests.swift */,
 				3606AABBCC00DD08EE05FF05 /* KeychainServiceTests.swift */,
+				E4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -311,6 +320,8 @@
 				AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */,
 				3500FFEECC00AA04BB02CC03 /* AIModelCatalogService.swift */,
 				268DC6609F434E5DA4FF63F7 /* ThemeManager.swift */,
+				E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */,
+				E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -362,6 +373,7 @@
 				E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */,
 				54462929885341098579ABB5 /* Theme.swift */,
 				3500FFEECC00AA02BB02CC03 /* AIModelConfig.swift */,
+				E1A4F7B2D6E8F0A1B2C3D405 /* WorkoutSample.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -562,6 +574,7 @@
 				3603AABBCC00DD03EE03FF03 /* APIKeyValidatorTests.swift in Sources */,
 				3604AABBCC00DD05EE04FF04 /* ProactiveNotificationServiceTests.swift in Sources */,
 				3606AABBCC00DD07EE05FF05 /* KeychainServiceTests.swift in Sources */,
+				B4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -614,6 +627,9 @@
 				F754D7AF116C4FDFBCDA66E3 /* ThemeManager.swift in Sources */,
 				3500FFEECC00AA01BB02CC03 /* AIModelConfig.swift in Sources */,
 				3500FFEECC00AA03BB02CC03 /* AIModelCatalogService.swift in Sources */,
+				B1A4F7B2D6E8F0A1B2C3D405 /* WorkoutSample.swift in Sources */,
+				B2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift in Sources */,
+				B3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
