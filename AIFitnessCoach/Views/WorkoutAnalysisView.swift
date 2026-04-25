@@ -119,8 +119,9 @@ struct WorkoutAnalysisView: View {
             Spacer()
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
     private var sportIcon: String {
@@ -142,26 +143,47 @@ struct WorkoutAnalysisView: View {
         let timestamp = sample?.timestamp
         let elapsed = timestamp.map { $0.timeIntervalSince(activity.startDate) }
 
-        return HStack(alignment: .center, spacing: 16) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Tijd")
-                    .font(.caption2).foregroundStyle(.secondary).kerning(0.3)
-                Text(formatElapsed(elapsed))
-                    .font(.system(.title3, design: .rounded).weight(.semibold))
-                    .monospacedDigit()
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("DETAILS BIJ TIJDSTIP")
+                .font(.caption2).fontWeight(.semibold)
+                .kerning(0.5)
+                .foregroundStyle(.secondary)
+
+            if scrubbedDate == nil {
+                // Niet-gescrubd: hint maakt duidelijk dat dit een interactief overlay is.
+                // Voorkomt verwarrende lege kaart met streepjes als enige inhoud.
+                HStack(spacing: 10) {
+                    Image(systemName: "hand.draw.fill")
+                        .font(.body)
+                        .foregroundStyle(themeManager.primaryAccentColor.opacity(0.6))
+                    Text("Sleep over de grafiek voor details op een specifiek moment")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else {
+                HStack(alignment: .center, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Tijd")
+                            .font(.caption2).foregroundStyle(.secondary).kerning(0.3)
+                        Text(formatElapsed(elapsed))
+                            .font(.system(.title3, design: .rounded).weight(.semibold))
+                            .monospacedDigit()
+                    }
+                    Spacer(minLength: 8)
+                    metricLabel(title: "BPM",
+                                value: sample?.heartRate.map { String(format: "%.0f", $0) } ?? "—")
+                    secondaryMetricLabel(for: sample)
+                }
             }
-            Spacer(minLength: 8)
-            metricLabel(title: "BPM",
-                        value: sample?.heartRate.map { String(format: "%.0f", $0) } ?? "—")
-            secondaryMetricLabel(for: sample)
         }
         .padding(.vertical, 12)
-        .padding(.horizontal, 16)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(themeManager.primaryAccentColor.opacity(0.18), lineWidth: 1)
-        )
+        .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // Match TrendWidgetView card-styling: licht in light mode, donkerder in dark.
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
     private func metricLabel(title: String, value: String) -> some View {
@@ -321,8 +343,9 @@ struct WorkoutAnalysisView: View {
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 14)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
     // MARK: Empty state
@@ -342,7 +365,9 @@ struct WorkoutAnalysisView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 32)
         .padding(.horizontal, 16)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
     // MARK: Stats grid (uit ActivityRecord — altijd beschikbaar, ook voor Strava)
@@ -372,7 +397,9 @@ struct WorkoutAnalysisView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
     // MARK: Helpers
