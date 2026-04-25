@@ -6,11 +6,11 @@ Een iOS-app (SwiftUI + SwiftData) die fungeert als persoonlijke, slimme fitnessc
 
 ## 🚀 Huidige Status
 
-**Actief in Ontwikkeling — Epic #36 ✅ (Test Coverage Verhoging — afgerond)**
+**Laatst gemerged — Epic #35 ✅ Dynamische Gemini Model-Selectie · Epic #36 ✅ Test Coverage Verhoging**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte coaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur. Testsuite: **51% code coverage** (gemeten met `xcodebuild -enableCodeCoverage YES` over de volledige unit + UI suite). Alle kritieke Services + Models zitten boven de 80% — zie [`docs/ROADMAP.md`](docs/ROADMAP.md) Epic #36 voor de per-bestand uitsplitsing.
 
-Epic #35 voegt configureerbare Gemini-modellen toe in Settings → AI Coach Configuratie. De catalogus wordt opgehaald via de Cloudflare Worker (`/ai/models`) zodat nieuwe modellen zonder app-update beschikbaar kunnen worden gemaakt. Defaults blijven `gemini-flash-latest` (primair) en `gemini-flash-lite-latest` (fallback).
+Configureerbare Gemini-modellen zitten in Settings → AI Coach Configuratie (Epic #35). De catalogus wordt live opgehaald via de Cloudflare Worker (`/ai/models`) die op zijn beurt de Google Generative Language API bevraagt — nieuwe modellen verschijnen automatisch in de picker, geen app-release nodig. Defaults: `gemini-flash-latest` (primair) en `gemini-flash-lite-latest` (fallback).
 
 Volledige historie en backlog: zie [`docs/ROADMAP.md`](docs/ROADMAP.md).
 Technische architectuur (Dual Engine, Cloudflare Proxy, Keychain): zie [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).

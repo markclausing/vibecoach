@@ -214,15 +214,17 @@ Trainingen zijn sessies met expliciete fysiologische intentie.
 
 ---
 
-### 🔄 Epic #35: Dynamische Gemini Model-Selectie in Settings
+### ✅ Epic #35: Dynamische Gemini Model-Selectie in Settings
 
 Configureerbare Gemini-modellen in Settings zodat we overbelasting kunnen ontwijken zonder een nieuwe app-release. Catalogus wordt geserveerd door de Cloudflare Worker (gelijk gebruikt patroon met `X-Client-Token`) — de iOS-app haalt geen modelnamen rechtstreeks bij Google op zodat we centraal kunnen valideren welke modellen we ondersteunen.
 
-* **35.1 — Cloudflare Worker `/ai/models`:** Statische catalogus van ondersteunde Gemini-modellen + `defaultPrimary`/`defaultFallback`. Beveiligd met `X-Client-Token`. Tests in `vibecoach-proxy/test/index.spec.js`.
-* **35.2 — iOS Catalogus & AppStorage:** `AIModelCatalogService` fetcht via `Secrets.stravaProxyBaseURL/ai/models`; `AIModelAppStorageKey.primary` / `.fallback` houden de keuze bij. Defaults (match met productie vóór Epic #35): `gemini-flash-latest` + `gemini-flash-lite-latest`.
-* **35.3 — Dual-Picker UI:** Twee `Picker`-componenten ("Primair model" / "Fallback model") in `AIProviderSettingsView`. Laadt bij `.onAppear`; bij netwerkfout valt de UI stil terug op `AIModelCatalog.builtInFallback`. Een opgeslagen keuze die niet (meer) in de catalogus staat wordt automatisch gereset naar de server-default.
-* **35.4 — ChatViewModel wiring:** `buildGenerativeModel` en `buildFallbackGenerativeModel` lezen de gekozen modelnamen uit `UserDefaults` i.p.v. hardcoded strings. Bestaande 503/429-waterfall blijft ongewijzigd.
-* **35.5 — (vervolg)** Unit tests voor `AIModelCatalogService` met `MockNetworkSession` (filtering + fallback-gedrag).
+* **35.1 — Cloudflare Worker `/ai/models`:** endpoint live op de Worker, beveiligd met `X-Client-Token`. Aanvankelijk een statische catalogus, daarna ge-upgrade naar live `GET https://generativelanguage.googleapis.com/v1beta/models?key=$GEMINI_API_KEY` met server-side filter (`generateContent` support, alleen Gemini-familie), sorteer-heuristiek en 1u-cache via `caches.default`. Tests in `vibecoach-proxy/test/index.spec.js` (vibecoach-proxy PR #1 + #2, gedeployed).
+* **35.2 — iOS Catalogus & AppStorage:** `AIModelCatalogService` fetcht via `Secrets.stravaProxyBaseURL/ai/models`; `AIModelAppStorageKey.primary` / `.fallback` houden de keuze bij. Defaults (match met productie vóór Epic #35): `gemini-flash-latest` + `gemini-flash-lite-latest`. Bij ongeldige opgeslagen keuze (gedepreciëerd model) valt de UI stil terug op de server-default.
+* **35.3 — Dual-Picker UI:** Twee `Picker`-componenten ("Primair model" / "Fallback model") in `AIProviderSettingsView`. Initiële load toont een `ProgressView`-placeholder; pickers verschijnen pas zodra de Worker-fetch klaar is (live óf fallback). Bij netwerkfout valt de UI stil terug op `AIModelCatalog.builtInFallback`.
+* **35.4 — ChatViewModel wiring:** `buildGenerativeModel` en `buildFallbackGenerativeModel` lezen de gekozen modelnamen uit `UserDefaults` via `AIModelAppStorageKey.resolvedPrimary()` / `.resolvedFallback()` i.p.v. hardcoded strings. Bestaande 503/429-waterfall blijft ongewijzigd.
+* **35.5 — Unit + UI tests:** 12 cases voor `AIModelCatalogService` (happy path, HTTP errors, decoding, transport, headers, builtInFallback, AppStorage resolvers) + 3 XCUITests voor de pickers via `-UITestOpenAICoachConfig` launch-arg. PR's #185, #187, #188, #189.
+
+**Resultaat:** dynamic model-catalogus live in productie, configureerbaar per gebruiker, automatisch synchroon met Google's beschikbare modellen via de Worker — zonder app-release nodig om nieuwe modellen toe te voegen of te depreciëren.
 
 ---
 
