@@ -91,38 +91,50 @@ final class ProactiveNotificationService {
         // TRIMP is user-specifieke fysiologische data → private.
         Self.logger.debug("Engine A: Meest recente workout TRIMP = \(recentTRIMP.map { String(format: "%.0f", $0) } ?? "onbekend", privacy: .private)")
 
-        let title: String
-        let body: String
+        let content = Self.composeEngineAContent(recentTRIMP: recentTRIMP, atRiskTitles: atRiskTitles)
+        await sendNotification(
+            title: content.title,
+            body: content.body,
+            identifier: "engine_a_\(Int(Date().timeIntervalSince1970))"
+        )
+    }
 
+    /// Pure helper voor Engine A notificatie-tekst. Geëxtraheerd zodat
+    /// alle string-paden in `ProactiveNotificationServiceTests` getest kunnen
+    /// worden zonder HealthKit / UserDefaults te raken.
+    static func composeEngineAContent(
+        recentTRIMP: Double?,
+        atRiskTitles: [String]
+    ) -> (title: String, body: String) {
         if let trimp = recentTRIMP, trimp >= 50 {
             // Flinke workout (≥ 50 TRIMP) — eerst de inzet prijzen, dan pas de context geven
             let trimpInt = Int(trimp)
-            title = "Lekker getraind! 💪"
+            let title = "Lekker getraind! 💪"
+            let body: String
             if atRiskTitles.count == 1 {
                 body = "\(trimpInt) TRIMP binnengehaald — goede stap richting '\(atRiskTitles[0])'. Je loopt nog iets achter, maar de coach heeft een vervolgstap klaar."
             } else {
                 body = "\(trimpInt) TRIMP binnengehaald. Je loopt nog achter op \(atRiskTitles.count) doelen, maar je bent op de goede weg. Open de coach."
             }
-        } else if let trimp = recentTRIMP, trimp > 0 {
-            // Lichte workout (< 50 TRIMP) — neutraal
-            let trimpInt = Int(trimp)
-            title = "Workout geregistreerd (\(trimpInt) TRIMP)"
-            body = atRiskTitles.count == 1
-                ? "Je loopt nog achter op '\(atRiskTitles[0])'. Overweeg een zwaardere sessie — de coach helpt je plannen."
-                : "Je loopt achter op \(atRiskTitles.count) doelen. Open de coach voor een bijgestuurd plan."
-        } else {
-            // Geen TRIMP-data beschikbaar — neutrale fallback
-            title = "Workout geregistreerd"
-            body = atRiskTitles.count == 1
-                ? "Je loopt nog achter op '\(atRiskTitles[0])'. Open de coach voor de volgende stap."
-                : "Je loopt achter op \(atRiskTitles.count) doelen. Open de coach voor een bijgestuurd plan."
+            return (title, body)
         }
 
-        await sendNotification(
-            title: title,
-            body: body,
-            identifier: "engine_a_\(Int(Date().timeIntervalSince1970))"
-        )
+        if let trimp = recentTRIMP, trimp > 0 {
+            // Lichte workout (< 50 TRIMP) — neutraal
+            let trimpInt = Int(trimp)
+            let title = "Workout geregistreerd (\(trimpInt) TRIMP)"
+            let body = atRiskTitles.count == 1
+                ? "Je loopt nog achter op '\(atRiskTitles[0])'. Overweeg een zwaardere sessie — de coach helpt je plannen."
+                : "Je loopt achter op \(atRiskTitles.count) doelen. Open de coach voor een bijgestuurd plan."
+            return (title, body)
+        }
+
+        // Geen TRIMP-data beschikbaar — neutrale fallback
+        let title = "Workout geregistreerd"
+        let body = atRiskTitles.count == 1
+            ? "Je loopt nog achter op '\(atRiskTitles[0])'. Open de coach voor de volgende stap."
+            : "Je loopt achter op \(atRiskTitles.count) doelen. Open de coach voor een bijgestuurd plan."
+        return (title, body)
     }
 
     /// Haalt de TRIMP van de meest recente workout op uit HealthKit (max 6 uur geleden).
@@ -162,20 +174,31 @@ final class ProactiveNotificationService {
                 let avgHRQuantity = workout.statistics(for: hrType)?.averageQuantity()
                 let avgHR = avgHRQuantity?.doubleValue(for: HKUnit(from: "count/min"))
 
-                let trimp: Double
-                if let hr = avgHR, hr > 60 {
-                    // Banister TRIMP berekening
-                    let deltaHR = max(0.01, (hr - 60.0) / (190.0 - 60.0))
-                    trimp = durationMins * deltaHR * 0.64 * exp(1.92 * deltaHR)
-                } else {
-                    // Geen HR-data: conservatieve schatting op basis van duur (Zone 2 aanname)
-                    trimp = durationMins * 1.5
-                }
-
+                let trimp = Self.banisterTRIMP(
+                    durationMinutes: durationMins,
+                    averageHeartRate: avgHR
+                )
                 continuation.resume(returning: trimp)
             }
             self.healthStore.execute(query)
         }
+    }
+
+    /// Banister TRIMP-berekening op basis van duur en gemiddelde hartslag.
+    /// Zonder HR-data: conservatieve Zone 2-schatting (1.5 TRIMP/min).
+    /// Met HR > 60 bpm: full Banister formule met rusthartslag 60 en max 190.
+    /// Pure functie — geëxtraheerd voor unit-test dekking van de math.
+    static func banisterTRIMP(
+        durationMinutes: Double,
+        averageHeartRate: Double?,
+        restingHR: Double = 60,
+        maxHR: Double = 190
+    ) -> Double {
+        if let hr = averageHeartRate, hr > restingHR {
+            let deltaHR = max(0.01, (hr - restingHR) / (maxHR - restingHR))
+            return durationMinutes * deltaHR * 0.64 * exp(1.92 * deltaHR)
+        }
+        return durationMinutes * 1.5
     }
 
     // MARK: - Engine B: Inaction Trigger (BGAppRefreshTask)
@@ -216,45 +239,72 @@ final class ProactiveNotificationService {
     /// Stuurt een motivatienotificatie om de gebruiker weer in beweging te krijgen.
     private func checkInactionAndNotify() async {
         let atRiskTitles = UserDefaults.standard.stringArray(forKey: atRiskTitlesKey) ?? []
-        guard !atRiskTitles.isEmpty else {
-            Self.logger.debug("Engine B: Geen doelen op rood — geen actie nodig")
+        let lastWorkout = UserDefaults.standard.object(forKey: lastWorkoutDateKey) as? Date
+
+        guard let content = Self.composeEngineBContent(
+            atRiskTitles: atRiskTitles,
+            lastWorkoutDate: lastWorkout,
+            now: Date()
+        ) else {
+            Self.logger.debug("Engine B: Geen actie nodig (geen risico-doelen of voldoende activiteit)")
             return
         }
 
-        // Bereken dagen zonder workout
+        await sendNotification(
+            title: content.title,
+            body: content.body,
+            identifier: "engine_b_\(Int(Date().timeIntervalSince1970))"
+        )
+    }
+
+    /// Inactiviteits-drempel in dagen waarbij Engine B mag triggeren.
+    static let engineBInactivityThresholdDays: Double = 2
+
+    /// Bouwt de Engine B notificatie-content of geeft `nil` terug wanneer de
+    /// engine niet zou moeten vuren. Pure functie — alle iOS-state komt via
+    /// parameters, zodat unit-tests alle branches deterministisch kunnen
+    /// driven.
+    ///
+    /// Beslislogica:
+    ///  - Geen doelen op rood → `nil` (engine doet niets).
+    ///  - `lastWorkoutDate == nil` → behandelen als 3 dagen geleden (worst-case
+    ///    aanname: gebruiker heeft geen activiteit-historie en doelen staan
+    ///    op rood, dus signaal sturen).
+    ///  - daysSinceWorkout < drempel (2 dagen) → `nil`.
+    ///  - daysSinceWorkout ≥ 4 → urgentere toon ("Tijd voor actie!").
+    ///  - 2-3 dagen → vriendelijke toon ("Je doel heeft je nodig").
+    static func composeEngineBContent(
+        atRiskTitles: [String],
+        lastWorkoutDate: Date?,
+        now: Date = Date()
+    ) -> (title: String, body: String)? {
+        guard let primaryTitle = atRiskTitles.first else { return nil }
+
         let daysSinceWorkout: Double
-        if let lastWorkout = UserDefaults.standard.object(forKey: lastWorkoutDateKey) as? Date {
-            daysSinceWorkout = Date().timeIntervalSince(lastWorkout) / 86400
+        if let lastWorkout = lastWorkoutDate {
+            daysSinceWorkout = now.timeIntervalSince(lastWorkout) / 86400
         } else {
-            daysSinceWorkout = 3 // Geen data beschikbaar = aanname van inactiviteit
+            // Geen data beschikbaar = aanname van inactiviteit (3 dagen)
+            daysSinceWorkout = 3
         }
 
-        guard daysSinceWorkout >= 2 else {
-            Self.logger.debug("Engine B: Laatste workout \(String(format: "%.1f", daysSinceWorkout), privacy: .public) dagen geleden — geen actie nodig")
-            return
-        }
+        guard daysSinceWorkout >= engineBInactivityThresholdDays else { return nil }
 
         let daysInt = Int(daysSinceWorkout)
         let daysText = daysInt >= 3 ? "\(daysInt) dagen" : "2 dagen"
 
-        // Engine B gebruikt een directere, dringendere toon — de gebruiker zit stil terwijl een doel op rood staat
-        let title: String
-        let body: String
-
         if daysInt >= 4 {
             // Lang inactief — schop onder de kont
-            title = "Tijd voor actie! ⚠️"
-            body = "Je hebt \(daysText) niet getraind en '\(atRiskTitles[0])' loopt gevaarlijk achter. Elke dag telt nu. Open de coach voor een herstelplan."
-        } else {
-            // 2-3 dagen inactief — vriendelijk maar duidelijk
-            title = "Je doel heeft je nodig 👟"
-            body = "Je hebt \(daysText) niet getraind en '\(atRiskTitles[0])' loopt achter. Zelfs een korte sessie helpt. Open de coach voor de volgende stap."
+            return (
+                title: "Tijd voor actie! ⚠️",
+                body: "Je hebt \(daysText) niet getraind en '\(primaryTitle)' loopt gevaarlijk achter. Elke dag telt nu. Open de coach voor een herstelplan."
+            )
         }
 
-        await sendNotification(
-            title: title,
-            body: body,
-            identifier: "engine_b_\(Int(Date().timeIntervalSince1970))"
+        // 2-3 dagen inactief — vriendelijk maar duidelijk
+        return (
+            title: "Je doel heeft je nodig 👟",
+            body: "Je hebt \(daysText) niet getraind en '\(primaryTitle)' loopt achter. Zelfs een korte sessie helpt. Open de coach voor de volgende stap."
         )
     }
 
@@ -283,6 +333,20 @@ final class ProactiveNotificationService {
 
     // MARK: - Gedeelde notificatielogica
 
+    /// Cooldown-window: maximaal één proactieve notificatie per `cooldownSeconds`.
+    static let proactiveCooldownSeconds: TimeInterval = 86400
+
+    /// Pure cooldown-check. Apart blootgesteld voor unit-tests — `sendNotification`
+    /// roept hem aan op de huidige datum + de waarde uit `UserDefaults`.
+    static func isCooldownActive(
+        lastNotificationDate: Date?,
+        now: Date = Date(),
+        cooldownSeconds: TimeInterval = proactiveCooldownSeconds
+    ) -> Bool {
+        guard let last = lastNotificationDate else { return false }
+        return now.timeIntervalSince(last) < cooldownSeconds
+    }
+
     /// Verstuurt een lokale push notificatie met een 24-uurs cooldown tegen spam.
     private func sendNotification(title: String, body: String, identifier: String) async {
         // Controleer of de gebruiker notificaties heeft toegestaan
@@ -293,8 +357,8 @@ final class ProactiveNotificationService {
         }
 
         // Cooldown: maximaal 1 proactieve notificatie per 24 uur
-        if let lastDate = UserDefaults.standard.object(forKey: lastNotificationKey) as? Date,
-           Date().timeIntervalSince(lastDate) < 86400 {
+        let lastDate = UserDefaults.standard.object(forKey: lastNotificationKey) as? Date
+        if Self.isCooldownActive(lastNotificationDate: lastDate) {
             print("ℹ️ Proactieve notificatie overgeslagen: cooldown actief")
             return
         }

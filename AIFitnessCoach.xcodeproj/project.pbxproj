@@ -83,6 +83,7 @@
 		3100FFEECC00AA07BB02CC03 /* OnboardingPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3100FFEECC00AA08BB02CC03 /* OnboardingPersistenceTests.swift */; };
 		3600AABBCC00DD01EE02FF03 /* PeriodizationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3600AABBCC00DD02EE02FF03 /* PeriodizationEngineTests.swift */; };
 		3603AABBCC00DD03EE03FF03 /* APIKeyValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */; };
+		3604AABBCC00DD05EE04FF04 /* ProactiveNotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3604AABBCC00DD06EE04FF04 /* ProactiveNotificationServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -182,6 +183,7 @@
 		3600AABBCC00DD02EE02FF03 /* PeriodizationEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PeriodizationEngineTests.swift; sourceTree = "<group>"; };
 		FF6677AA88990011223344EE /* FutureProjectionServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FutureProjectionServiceTests.swift; sourceTree = "<group>"; };
 		3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyValidatorTests.swift; sourceTree = "<group>"; };
+		3604AABBCC00DD06EE04FF04 /* ProactiveNotificationServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProactiveNotificationServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -260,6 +262,7 @@
 				3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */,
 				3100FFEECC00AA08BB02CC03 /* OnboardingPersistenceTests.swift */,
 				3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */,
+				3604AABBCC00DD06EE04FF04 /* ProactiveNotificationServiceTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -554,6 +557,7 @@
 				3500FFEECC00AA05BB02CC03 /* AIModelCatalogServiceTests.swift in Sources */,
 				3100FFEECC00AA07BB02CC03 /* OnboardingPersistenceTests.swift in Sources */,
 				3603AABBCC00DD03EE03FF03 /* APIKeyValidatorTests.swift in Sources */,
+				3604AABBCC00DD05EE04FF04 /* ProactiveNotificationServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
