@@ -1698,6 +1698,15 @@ struct DashboardView: View {
                 }
                 WeatherManager.shared.requestWeatherIfNeeded()
             }
+            // Epic 32 Story 32.1: eenmalige 30-daagse historische sync van workout-samples.
+            // De service is intern idempotent (UserDefaults-flag + processed-UUID-set) — we mogen
+            // 'm vrij vaak triggeren; na de eerste succesvolle run doet hij niets meer.
+            .task {
+                let store = WorkoutSampleStore(modelContainer: modelContext.container)
+                let ingest = WorkoutSampleIngestService()
+                let service = DeepSyncService(ingestService: ingest, store: store)
+                await service.runIfNeeded()
+            }
         }
     }
 
