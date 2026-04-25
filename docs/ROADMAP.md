@@ -193,13 +193,15 @@ Vijf-schermen flow in Serene/Mos-stijl. Elk scherm toont een 'live preview' (Vib
 
 ## Backlog
 
-### ⏳ Epic #32: Deep-Dive Fysiologische Analyse
+### 🔄 Epic #32: Deep-Dive Fysiologische Analyse
 
 Van gemiddelden naar granulaire fysiologische patronen. De coach leest het volledige verhaal uit de ruwe tijdreeksdata.
 
-* **Story 32.1 — Time-Series Data Pipeline:** Breid de sync uit om gedetailleerde samples (per 5–10 seconden) van hartslag, vermogen, snelheid en cadans op te halen. Granulaire opslag als aparte `@Model` voor workout-samples.
-* **Story 32.2 — Annotated Charts UI:** Interactieve grafiek met meerdere datastromen over elkaar. De coach kan specifieke tijdstempels 'pinnen' met annotaties.
-* **Story 32.3 — AI Pattern Recognition:** AI zoekt naar fysiologische fenomenen (decoupling, cadans-verloop, herstelvermogen). Patronen als annotaties én contextuele insights.
+* **🔄 Story 32.1 — Time-Series Data Pipeline:** `WorkoutSample` `@Model` (Route A: `workoutUUID` foreign key naar `HKWorkout`, geen redundant Workout-cache), `SampleResampler` met drie strategieën (average voor HR/Power/Cadence, linear interpolation voor Speed, delta-accumulation voor Distance) en een `@ModelActor`-store die idempotent samples vervangt per workout. HK-fetch via `HKQuantitySeriesSampleQuery` over alle parent-samples. Unit tests in `SampleResamplerTests`.
+* **⏳ Story 32.2 — Annotated Charts UI:** Interactieve grafiek met meerdere datastromen over elkaar. De coach kan specifieke tijdstempels 'pinnen' met annotaties.
+* **⏳ Story 32.3 — AI Pattern Recognition:** AI zoekt naar fysiologische fenomenen (decoupling, cadans-verloop, herstelvermogen). Patronen als annotaties én contextuele insights.
+
+**Eerstvolgende:** 30-daagse deep-sync orchestrator (apart sprintje binnen 32.1) — eenmalige UserDefaults-flag, scant historische workouts en roept `WorkoutSampleIngestService.ingestSamples(for:into:)` aan op een background-queue.
 
 ---
 
