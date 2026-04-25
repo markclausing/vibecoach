@@ -506,6 +506,8 @@ final class HealthKitManager: @unchecked Sendable {
         // Epic 14: HRV en SlaapAnalyse toegevoegd voor Readiness Score berekening
         // Epic 24 Sprint 1: Fysiologisch profiel (gewicht, lengte) toegevoegd voor BMR + voedingsadvies
         // Epic 24 Sprint 2: Schrijfrechten voor gewicht en lengte zodat de Two-Way Sync werkt
+        // Epic 32 Story 32.1 hotfix: granulaire 5s-sample types — zonder deze rechten gooit
+        // HealthKit "Authorization not determined" voor elke WorkoutSampleIngestService-query.
         let typesToRead: Set<HKObjectType> = [
             HKObjectType.workoutType(),
             HKQuantityType.quantityType(forIdentifier: .heartRate)!,
@@ -516,7 +518,14 @@ final class HealthKitManager: @unchecked Sendable {
             HKQuantityType.quantityType(forIdentifier: .bodyMass)!,
             HKQuantityType.quantityType(forIdentifier: .height)!,
             HKObjectType.characteristicType(forIdentifier: .dateOfBirth)!,
-            HKObjectType.characteristicType(forIdentifier: .biologicalSex)!
+            HKObjectType.characteristicType(forIdentifier: .biologicalSex)!,
+            // Epic 32 — workout-sample types
+            HKQuantityType.quantityType(forIdentifier: .cyclingPower)!,
+            HKQuantityType.quantityType(forIdentifier: .cyclingCadence)!,
+            HKQuantityType.quantityType(forIdentifier: .runningSpeed)!,
+            HKQuantityType.quantityType(forIdentifier: .distanceCycling)!,
+            HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!,
+            HKQuantityType.quantityType(forIdentifier: .distanceSwimming)!
         ]
         let typesToShare: Set<HKSampleType> = [
             HKQuantityType.quantityType(forIdentifier: .bodyMass)!,
