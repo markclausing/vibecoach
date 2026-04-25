@@ -842,18 +842,11 @@ class ChatViewModel: ObservableObject {
             prefix += "]\n\n"
         }
 
-        // Filter expired preferences out context
-        let validPreferences = activePreferences.filter { pref in
-            if let expirationDate = pref.expirationDate {
-                return expirationDate > now
-            }
-            return true
-        }
-
-        if !validPreferences.isEmpty {
-            let prefStrings = validPreferences.map { "\"- \($0.preferenceText)\"" }.joined(separator: ", ")
-            prefix += "[VASTE REGELS / VOORKEUREN VAN DE GEBRUIKER: \(prefStrings). Houd hier ten alle tijden rekening mee in je planning en advies.]\n\n"
-        }
+        // Splits voorkeuren in vastgepind (zonder einddatum) vs. tijdelijk (met einddatum) en
+        // injecteer ze als twee aparte blokken — een tijdelijke voorkeur moet expliciet boven
+        // een conflicterende vastgepinde regel gaan tijdens haar looptijd. Filteren van
+        // verlopen items + format-logica zit in `PreferencesContextFormatter` (testbaar).
+        prefix += PreferencesContextFormatter.format(activePreferences: activePreferences, now: now)
 
         // Epic 18: Blessure-context wordt volledig afgehandeld via symptomContext (zie bovenaan buildContextPrefix).
         // Het oude statische blok op basis van UserPreference-teksten is vervangen door de dynamische
