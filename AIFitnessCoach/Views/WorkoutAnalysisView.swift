@@ -615,21 +615,20 @@ struct RecentWorkoutRow: View {
     let activity: ActivityRecord
     @EnvironmentObject var themeManager: ThemeManager
 
-    private var isHealthKit: Bool { UUID(uuidString: activity.id) != nil }
-
     var body: some View {
-        Group {
-            if isHealthKit {
-                NavigationLink {
-                    WorkoutAnalysisView(activity: activity)
-                } label: {
-                    rowContent(showChevron: true)
-                }
-                .buttonStyle(.plain)
-            } else {
-                rowContent(showChevron: false)
-            }
+        // Epic 40: zowel HealthKit-records (UUID-uuidString) als Strava-records
+        // (numerieke ID) zijn nu klikbaar. WorkoutAnalysisView maakt zelf onderscheid
+        // via `UUID.forActivityRecordID(_:)` en toont samples wanneer aanwezig — bij
+        // Strava-records zonder ge-ingestte streams verschijnt de bestaande
+        // 'Nog geen samples beschikbaar'-empty-state. Dat is correcter dan een rij
+        // zonder navigatie waar de gebruiker geen feedback krijgt over waarom hij
+        // niets kan tappen.
+        NavigationLink {
+            WorkoutAnalysisView(activity: activity)
+        } label: {
+            rowContent(showChevron: true)
         }
+        .buttonStyle(.plain)
     }
 
     private func rowContent(showChevron: Bool) -> some View {
