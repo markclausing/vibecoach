@@ -94,6 +94,8 @@
 		B7A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisView.swift */; };
 		B8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift */; };
 		B9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift */; };
+		BAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift */; };
+		BBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -204,6 +206,8 @@
 		E7A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutAnalysisView.swift; sourceTree = "<group>"; };
 		E8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutAnalysisHelpers.swift; sourceTree = "<group>"; };
 		E9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutAnalysisHelpersTests.swift; sourceTree = "<group>"; };
+		EAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PreferencesContextFormatter.swift; sourceTree = "<group>"; };
+		EBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PreferencesContextFormatterTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -287,6 +291,7 @@
 				E4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift */,
 				E6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift */,
 				E9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift */,
+				EBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -346,6 +351,7 @@
 			children = (
 				892FA4CC13985F26BA4BB4DE /* ChatViewModel.swift */,
 				6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */,
+				EAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -592,6 +598,7 @@
 				B4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift in Sources */,
 				B6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift in Sources */,
 				B9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift in Sources */,
+				BBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -650,6 +657,7 @@
 				B5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift in Sources */,
 				B7A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisView.swift in Sources */,
 				B8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift in Sources */,
+				BAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
