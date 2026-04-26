@@ -417,3 +417,19 @@ Aanleiding: tijdens on-device-validatie van Epic #40 (april 2026) bleek dat een 
 * **⏳ 41.5 — Conflict-resolutie UI:** Settings-knop "Bekijk dubbele activiteiten" die voordat dedupe wordt uitgevoerd toont welke records gemerged worden. Optioneel — alleen relevant als de auto-dedupe verrassende keuzes maakt.
 
 **Status:** 🔄 — kern (41.1 + 41.2) live. De gebruiker hoeft de dedupe-knop niet meer te gebruiken; auto-dedupe ruimt op tijdens dezelfde scenePhase-flow als de Strava-backfill. 41.3 (OAuth-bug) en 41.4/41.5 (preventie + UI) volgen wanneer de pijn merkbaar wordt.
+
+---
+
+### ⏳ Epic #42: Always-on Dual-Source Sync
+
+Aanleiding: na on-device-validatie van Epic #41 (april 2026) vroeg de gebruiker of HealthKit weer als primaire bron ingesteld kon worden. Antwoord: *technisch ja, maar dan stopt de Strava-fetch en mis je power voor nieuwe rides.* In `AppTabHostView.performAutoSync` (en `SettingsView.syncHistoricalData`) staat een if/else op `selectedDataSource`: als HK primair is, wordt het Strava-pad volledig overgeslagen. Dat is een artefact uit de tijd dat één bron leidend moest zijn — sinds Epic #41 hebben we een dedupe-laag die meerdere bronnen aankan, dus de exclusiviteit van het toggle-gedrag is overbodig geworden.
+
+**Sub-stories:**
+
+* **⏳ 42.1 — Decouple Strava-fetch van primary-source toggle:** `AppTabHostView.performAutoSync` en `SettingsView.syncHistoricalData` draaien beide bronnen onafhankelijk, ongeacht `selectedDataSource`. Bron-conflicten worden afgevangen door de bestaande `ActivityDeduplicator` (Epic #41). Geen UI-wijziging in deze story — alleen de sync-paden.
+* **⏳ 42.2 — Herdefiniëring "primary" semantiek:** De toggle wordt geen "wat sync ik" meer, maar bron-voorkeur — bijvoorbeeld tiebreaker-bias bij gelijke dedupe-score, of welke bron als label getoond wordt in dual-source detail-views. Strava blijft default vanwege rijkere data.
+* **⏳ 42.3 — Backwards-compat voor bestaande gebruikers:** Bij eerste launch na update wordt huidig `selectedDataSource` automatisch geïnterpreteerd als bron-voorkeur. Geen reset, geen herinlog-prompt. Settings-tekst aanpassen ("Bron-voorkeur" i.p.v. "Primaire bron").
+
+**Effort:** ~1–2u. Pure refactor in twee sync-paden + één enum-rename + Settings-copy. Bestaande dedupe-tests dekken het cross-source-pad al; één extra test voor "beide bronnen gesyncd ongeacht toggle".
+
+**Status:** ⏳ — niet urgent. Huidige Strava-primair werkt voor de gebruiker en Epic #41 auto-dedupe houdt de DB schoon. Pakken wanneer iemand expliciet HK als hoofdvenster wil, of wanneer een tweede gebruiker met andere bron-voorkeur instapt.
