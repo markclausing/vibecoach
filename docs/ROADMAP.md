@@ -366,3 +366,21 @@ Aanleiding: een echte gebruiker (april 2026) deed een app-reinstall waarna iOS d
 **Effort:** ~6–10u totaal — `requestAuthorization` is bestaande infrastructuur, dus 38.1 is een dependency-uitbreiding. 38.2 vereist een nieuwe banner-component op het Dashboard maar past in de bestaande "Bijsturing nodig"-banner-stack. 38.3 is triviaal.
 
 **Status:** ⏳ — niet kritisch zolang de directe bug-trigger (reinstall) zelden voorkomt, maar de stille-faal natuur maakt dit een strategisch belangrijke hardening voor App Store-launches.
+
+---
+
+### ⏳ Epic #39: Swift 6 Strict Concurrency Cleanup
+
+Aanleiding: Xcode meldt 24 warnings rond actor-isolation in `ChatView.swift` en `FitnessDataService.swift` (april 2026). De warnings zijn nu niet-blokkerend, maar Swift 6 (strict concurrency = complete) maakt ze tot harde compile-errors. Tech-debt om af te lossen voor we op een nieuwe Xcode/Swift-versie tegen een muur lopen.
+
+**Twee patronen om op te ruimen:**
+
+* **39.1 — `Logger` static-properties cross-actor toegankelijk maken (~22 warnings):** `static let logger = Logger(...)` op `@MainActor`-classes (zoals `AthleticProfileManager`) is impliciet main-isolated en niet leesbaar vanuit een `actor` of `Sendable`-context. Twee fixes:
+  - **Voorkeur:** verplaats loggers naar een `enum AppLoggers` namespace (geen actor-isolation, gewoon constanten).
+  - **Quick fix:** `nonisolated(unsafe) static let logger = ...` (compiler accepteert, geen runtime-impact want `Logger` is intern thread-safe).
+* **39.2 — `themeManager.primaryAccentColor` in Sendable closures (2 warnings in ChatView):** `@Sendable` closures (zoals binnen een `Task { ... }`) mogen geen main-actor-property direct lezen. Fix: closure expliciet `@MainActor` markeren, of de waarde vóór de closure uitlezen en als `let` capturen.
+* **39.3 — Project-instelling "Strict Concurrency Checking" naar `Complete` (optioneel maar slim):** zodra 39.1 en 39.2 zijn opgeruimd kunnen we de build setting promoten van standaard naar `complete`. Dat dwingt af dat toekomstige PR's geen nieuwe regressies introduceren.
+
+**Effort:** ~2–3u. Pure cleanup, geen logica-wijziging. Tests moeten ongewijzigd groen blijven; de fixes zijn type-system-tweaks.
+
+**Status:** ⏳ — niet urgent (huidige warnings zijn waarschuwingen, geen errors), maar de "this is an error in the Swift…"-formulering uit Xcode kondigt aan dat het op termijn breekt. Aanpakken als Epic #33 stabiel is, vóór Xcode/Swift 7 ons dwingt.
