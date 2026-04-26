@@ -1584,7 +1584,21 @@ struct DashboardView: View {
                             refreshProfileContext()
                             viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                             appState.showingChatSheet = true
-                        }
+                        },
+                        onResetSchema: {
+                            // Story 33.2b: vraag de coach om de week opnieuw te plannen
+                            // rondom de verplaatste sessies. Merge gebeurt app-side.
+                            let swapped = planManager.activePlan?.workouts.filter { $0.isSwapped } ?? []
+                            refreshProfileContext()
+                            viewModel.requestPlanReset(
+                                swappedWorkouts: swapped,
+                                contextProfile: currentProfile,
+                                activeGoals: goals,
+                                activePreferences: activePreferences
+                            )
+                            appState.showingChatSheet = true
+                        },
+                        isResettingSchema: viewModel.isTyping
                     )
 
                     // V2.0: 14-daagse trend-widget

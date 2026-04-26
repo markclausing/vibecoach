@@ -106,6 +106,9 @@
 		C6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift */; };
 		C7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift */; };
 		C8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift */; };
+		C9A4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9A4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilder.swift */; };
+		CAA4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilderTests.swift */; };
+		CBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -228,6 +231,9 @@
 		F6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentExecutionAnalyzerTests.swift; sourceTree = "<group>"; };
 		F7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentExecutionContextFormatter.swift; sourceTree = "<group>"; };
 		F8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentExecutionContextFormatterTests.swift; sourceTree = "<group>"; };
+		F9A4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanResetPromptBuilder.swift; sourceTree = "<group>"; };
+		FAA4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanResetPromptBuilderTests.swift; sourceTree = "<group>"; };
+		FBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrainingPlanManagerMergeTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -318,6 +324,8 @@
 				F4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift */,
 				F6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift */,
 				F8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift */,
+				FAA4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilderTests.swift */,
+				FBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -384,6 +392,7 @@
 				F1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift */,
 				F3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift */,
 				F7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift */,
+				F9A4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilder.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -661,6 +670,8 @@
 				C4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift in Sources */,
 				C6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift in Sources */,
 				C8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift in Sources */,
+				CAA4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilderTests.swift in Sources */,
+				CBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -727,6 +738,7 @@
 				C3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift in Sources */,
 				C5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift in Sources */,
 				C7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift in Sources */,
+				C9A4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -232,6 +232,43 @@ class ChatViewModel: ObservableObject {
         intentExecutionContext = formatted
     }
 
+    // MARK: - Story 33.2b: Reset Schema
+
+    /// Bepaalt of `trainingPlanManager?.updatePlan` of `mergeReplannedPlan` wordt
+    /// gebruikt zodra er een nieuw plan uit Gemini terugkomt. Default `.replace`
+    /// behoudt het bestaande gedrag van requestRecoveryPlan / skipWorkout etc.
+    private enum PlanUpdateMode {
+        case replace
+        case mergePreservingSwaps
+    }
+    private var pendingPlanUpdateMode: PlanUpdateMode = .replace
+
+    /// Story 33.2b: vraagt Gemini om de rest van de week opnieuw te plannen rondom
+    /// de handmatig verplaatste sessies. Het response-plan wordt door
+    /// `TrainingPlanManager.mergeReplannedPlan(_:)` ge-merget zodat overrides
+    /// gegarandeerd blijven, zelfs bij AI-hallucinaties op heilige dagen.
+    /// - Parameter swappedWorkouts: De workouts met `isSwapped == true` uit het
+    ///   huidige plan. Caller (`WeekTimelineView`) levert die aan.
+    func requestPlanReset(swappedWorkouts: [SuggestedWorkout],
+                          contextProfile: AthleticProfile? = nil,
+                          activeGoals: [FitnessGoal] = [],
+                          activePreferences: [UserPreference] = []) {
+        // Voorkom parallelle resets — isTyping vangt de meeste cases af, maar de
+        // mode-flag moet ook beschermd zijn.
+        guard !isTyping else { return }
+
+        let (systemText, userText) = PlanResetPromptBuilder.build(swappedWorkouts: swappedWorkouts)
+        pendingPlanUpdateMode = .mergePreservingSwaps
+        sendHiddenSystemMessage(
+            systemText: systemText,
+            userText: userText,
+            fallbackMessage: "Ik heb je week opnieuw ingedeeld rondom je verplaatste sessies. Bekijk je overzicht.",
+            contextProfile: contextProfile,
+            activeGoals: activeGoals,
+            activePreferences: activePreferences
+        )
+    }
+
     func cacheLastWorkoutFeedback(rpe: Int?,
                                   mood: String?,
                                   workoutName: String?,
@@ -1519,8 +1556,18 @@ class ChatViewModel: ObservableObject {
                         onNewPreferencesDetected?(prefs)
                     }
 
-                    // Update het centrale schema (ook opgeslagen in AppStorage)
-                    trainingPlanManager?.updatePlan(plan)
+                    // Update het centrale schema (ook opgeslagen in AppStorage).
+                    // Story 33.2b: bij een reset gaat het via mergeReplannedPlan zodat
+                    // verplaatste sessies (`isSwapped`) leidend blijven over AI-output.
+                    switch pendingPlanUpdateMode {
+                    case .replace:
+                        trainingPlanManager?.updatePlan(plan)
+                    case .mergePreservingSwaps:
+                        trainingPlanManager?.mergeReplannedPlan(plan)
+                    }
+                    // Reset altijd na één gebruik — voorkomt dat een latere chat-message
+                    // per ongeluk nog in merge-mode komt.
+                    pendingPlanUpdateMode = .replace
 
                     // Sla de motivatie op voor het dashboard insight block
                     if !motivationText.isEmpty {

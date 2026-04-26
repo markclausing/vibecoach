@@ -1075,4 +1075,43 @@ class TrainingPlanManager: ObservableObject {
         updatePlan(updatedPlan)
         return true
     }
+
+    // MARK: - Story 33.2b: Merge AI-replan met behoud van swaps
+
+    /// Merge een door de AI voorgesteld plan met het huidige plan, waarbij handmatig
+    /// verplaatste sessies (`isSwapped == true`) **leidend** zijn. AI-suggesties op
+    /// dagen die overlappen met een swap worden genadeloos gefilterd — defense in
+    /// depth tegen LLM-hallucinaties die "vergeten" dat een dag heilig was.
+    ///
+    /// - Parameter aiPlan: Het volledige door Gemini voorgestelde 7-daagse plan.
+    /// - Returns: `true` als er een actief plan was om mee te mergen; `false` als
+    ///   er nog geen plan bestond (dan kun je beter `updatePlan` direct aanroepen).
+    @discardableResult
+    func mergeReplannedPlan(_ aiPlan: SuggestedTrainingPlan) -> Bool {
+        guard let currentPlan = activePlan else {
+            return false
+        }
+
+        let calendar = Calendar.current
+        let currentSwapped = currentPlan.workouts.filter { $0.isSwapped }
+        let reservedDays = Set(currentSwapped.map { calendar.startOfDay(for: $0.displayDate) })
+
+        // Filter AI-output: alleen voorstellen voor dagen die NIET door een swap bezet zijn.
+        let aiNonOverlapping = aiPlan.workouts.filter { workout in
+            let day = calendar.startOfDay(for: workout.displayDate)
+            return !reservedDays.contains(day)
+        }
+
+        // Combineer: swaps + AI's voorstellen voor de overige dagen. `updatePlan`
+        // sorteert vervolgens chronologisch op displayDate.
+        let merged = currentSwapped + aiNonOverlapping
+
+        let mergedPlan = SuggestedTrainingPlan(
+            motivation: aiPlan.motivation,        // AI's motivatie behouden
+            workouts: merged,
+            newPreferences: aiPlan.newPreferences
+        )
+        updatePlan(mergedPlan)
+        return true
+    }
 }
