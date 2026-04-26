@@ -492,7 +492,11 @@ struct RecentWorkoutRow: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        // Match TrendWidgetView-styling — `Color(.systemBackground)` is wit in light mode
+        // en donker in dark mode (auto-aanpassend), met dezelfde subtiele schaduw.
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
     private var sportIcon: String {
