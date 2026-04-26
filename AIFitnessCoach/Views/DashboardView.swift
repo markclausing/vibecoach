@@ -1760,9 +1760,27 @@ struct DashboardView: View {
             // Strava-records zonder samples. 100ms throttle tussen calls om Strava's
             // rate-limit comfortabel te respecteren (100 req/15min). Per-record fout
             // blokkeert de batch niet — gewoon verder met de volgende.
+            // Direct daarna: Epic 41 auto-dedupe — ruimt eventuele duplicaten op
+            // (HK + Strava van dezelfde rit) zodat de gebruiker geen dubbele lijst krijgt.
             .task {
                 await backfillStravaStreams()
+                await runAutoDedupe()
             }
+        }
+    }
+
+    /// Epic 41: auto-dedupe via `ActivityDeduplicator`. Idempotent — schone DB blijft
+    /// schoon. Runt na de Strava-backfill zodat sample-counts kloppen voor de
+    /// rijkdom-heuristiek (Strava-records met net-binnengekomen power winnen).
+    private func runAutoDedupe() async {
+        let store = WorkoutSampleStore(modelContainer: modelContext.container)
+        do {
+            let removed = try await ActivityDeduplicator.runDedupe(in: modelContext, store: store)
+            if removed > 0 {
+                print("🧹 Auto-dedupe: \(removed) duplicate ActivityRecord(s) verwijderd")
+            }
+        } catch {
+            print("⚠️ Auto-dedupe faalde: \(error.localizedDescription)")
         }
     }
 
