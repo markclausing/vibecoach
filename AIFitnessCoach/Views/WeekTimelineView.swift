@@ -532,12 +532,15 @@ struct TrainingDetailSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var planManager: TrainingPlanManager
+    @State private var showingMoveSheet = false
 
     private var dateLabel: String {
         let f = DateFormatter()
         f.locale = Locale(identifier: "nl_NL")
         f.dateFormat = "EEE d MMM"
-        return f.string(from: workout.resolvedDate).uppercased()
+        // Story 33.2a: gebruik displayDate zodat verplaatste sessies de NIEUWE dag tonen.
+        return f.string(from: workout.displayDate).uppercased()
     }
 
     private var activityBadge: String {
@@ -599,6 +602,14 @@ struct TrainingDetailSheet: View {
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(themeManager.primaryAccentColor.opacity(0.12))
                         .clipShape(Capsule())
+                    if workout.isSwapped {
+                        Label("Verplaatst", systemImage: "arrow.triangle.swap")
+                            .font(.caption2).fontWeight(.medium)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(themeManager.primaryAccentColor.opacity(0.15))
+                            .clipShape(Capsule())
+                            .foregroundStyle(themeManager.primaryAccentColor)
+                    }
                 }
 
                 // Titel + subtitel
@@ -609,6 +620,18 @@ struct TrainingDetailSheet: View {
                     Text(subtitle)
                         .font(.subheadline).foregroundColor(.secondary)
                 }
+
+                // Story 33.2a: Verplaats sessie naar andere dag deze week.
+                Button {
+                    showingMoveSheet = true
+                } label: {
+                    Label("Verplaats sessie", systemImage: "calendar.badge.clock")
+                        .font(.subheadline).fontWeight(.medium)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                }
+                .buttonStyle(.bordered)
+                .tint(themeManager.primaryAccentColor)
 
                 // Drie metrics blokken
                 HStack(spacing: 10) {
@@ -662,6 +685,15 @@ struct TrainingDetailSheet: View {
             .padding(20)
         }
         .background(Color(.systemBackground))
+        .sheet(isPresented: $showingMoveSheet) {
+            MoveWorkoutSheet(workout: workout) { newDate in
+                planManager.moveWorkout(workout, to: newDate)
+                showingMoveSheet = false
+                dismiss() // sluit ook detail — UI moet de bijgewerkte volgorde tonen
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
     }
 
     private func weatherIconFor(_ f: DayForecast) -> String {
