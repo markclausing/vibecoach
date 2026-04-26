@@ -9,6 +9,12 @@ struct WeekTimelineView: View {
     var weeklyForecast: [DayForecast] = []
     var onSkipWorkout: ((SuggestedWorkout) -> Void)?
     var onAlternativeWorkout: ((SuggestedWorkout) -> Void)?
+    /// Story 33.2b: callback voor "Herschrijf schema" — Dashboard wired dit naar
+    /// `ChatViewModel.requestPlanReset(...)`. Optioneel zodat preview-views zonder
+    /// reset-flow blijven werken.
+    var onResetSchema: (() -> Void)? = nil
+    /// Story 33.2b: loading-state — disabled de knop en toont ProgressView.
+    var isResettingSchema: Bool = false
 
     @EnvironmentObject var themeManager: ThemeManager
     @State private var isExpanded = false
@@ -23,7 +29,14 @@ struct WeekTimelineView: View {
     }
 
     private func planWorkout(for date: Date) -> SuggestedWorkout? {
-        plan?.workouts.first { Calendar.current.isDate($0.resolvedDate, inSameDayAs: date) }
+        // Story 33.2a: gebruik displayDate zodat verplaatste sessies correct matchen.
+        plan?.workouts.first { Calendar.current.isDate($0.displayDate, inSameDayAs: date) }
+    }
+
+    /// Story 33.2b: aantal handmatig verplaatste workouts — bepaalt of de
+    /// "Herschrijf schema"-knop zichtbaar is.
+    private var swappedCount: Int {
+        plan?.workouts.filter { $0.isSwapped }.count ?? 0
     }
 
     private func hasActivity(on date: Date) -> Bool {
@@ -58,6 +71,9 @@ struct WeekTimelineView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             headerRow
+            if swappedCount > 0 && onResetSchema != nil {
+                resetSchemaButton
+            }
             circleTimeline
 
             if weekRows.isEmpty {
@@ -76,6 +92,38 @@ struct WeekTimelineView: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
+    }
+
+    // MARK: - Story 33.2b: Reset Schema-knop
+
+    private var resetSchemaButton: some View {
+        Button {
+            onResetSchema?()
+        } label: {
+            HStack(spacing: 8) {
+                if isResettingSchema {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(themeManager.primaryAccentColor)
+                    Text("Coach herberekent weekbelasting…")
+                        .font(.subheadline).fontWeight(.medium)
+                } else {
+                    Image(systemName: "wand.and.stars")
+                        .font(.subheadline)
+                    Text("Herschrijf schema rondom verplaatste sessie\(swappedCount == 1 ? "" : "s")")
+                        .font(.subheadline).fontWeight(.medium)
+                }
+                Spacer()
+            }
+            .foregroundStyle(themeManager.primaryAccentColor)
+            .padding(.vertical, 10).padding(.horizontal, 14)
+            .frame(maxWidth: .infinity)
+            .background(themeManager.primaryAccentColor.opacity(0.10))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(isResettingSchema)
+        .padding(.horizontal)
     }
 
     // MARK: - Header
