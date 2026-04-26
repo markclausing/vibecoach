@@ -431,3 +431,21 @@ Aanleiding: na on-device-validatie van Epic #41 (april 2026) vroeg de gebruiker 
 **Effort:** ~1–2u. Pure refactor in twee sync-paden + één enum-rename + Settings-copy. Bestaande dedupe-tests dekken het cross-source-pad al; één extra test voor "beide bronnen gesyncd ongeacht toggle".
 
 **Status:** ⏳ — niet urgent. Huidige Strava-primair werkt voor de gebruiker en Epic #41 auto-dedupe houdt de DB schoon. Pakken wanneer iemand expliciet HK als hoofdvenster wil, of wanneer een tweede gebruiker met andere bron-voorkeur instapt.
+
+---
+
+### ⏳ Epic #43: UI Polish — Settings-status & Layout-consistentie
+
+Aanleiding: tijdens on-device-gebruik (april 2026) viel op dat (a) de drie "Verbindingen"-cards in `SettingsView` (HealthKit, Strava, AI Coach) hardcoded subtitels en green-dot-statussen tonen die niet meegaan met de werkelijke connectie-staat, en (b) de "Goedenavond"-titel op `DashboardView` deels onder de iPhone-statusbar verdwijnt terwijl de andere tabs (Settings, Doelen, Coach, Geheugen) die ruimte wel correct respecteren. Beide zijn pure UI-fixes — geen impact op data-laag of services.
+
+**Sub-stories:**
+
+* **⏳ 43.1 — Dynamische Verbindingen-cards in Instellingen:** Vervang de hardcoded labels door live status. Per card:
+  - **HealthKit:** authorization-status uit `HKHealthStore.authorizationStatus(for:)` over de set kerntypes (workouts, HR, HRV, slaap). Groen bij volledige toegang, oranje bij gedeeltelijke, grijs zonder. Sublabel: "Primair" of "Backup" afhankelijk van `selectedDataSource` (Epic #42 hernoemt dit later naar bron-voorkeur).
+  - **Strava:** koppel-status uit `StravaAuthService` (token aanwezig + niet verlopen) — dit raakt Epic #41 story 41.3 (OAuth-toggle-bug); pak één van de twee als eerste op want de bron is dezelfde.
+  - **AI Coach:** of er een sleutel in de Keychain staat voor de geselecteerde provider (`UserAPIKeyStore`). Sublabel: provider-naam (Gemini / OpenAI / Anthropic) plus model-id (uit Epic #35-selectie).
+* **⏳ 43.2 — Dashboard-titel onder status bar fixen:** De "Goedenavond"-header in `DashboardView` wordt door de statusbar (klok + signaal-icons) overlapt; andere tabs zijn correct. Vermoedelijke oorzaak: ontbrekende `safeAreaInset`/`navigationBarTitleDisplayMode` consistent met de TabHost-children. Audit en fix zonder de visuele hierarchy van de andere views te raken.
+
+**Effort:** ~3–4u. 43.1 is het grootste deel (drie verschillende status-bronnen + binding aan UI); 43.2 is meestal één padding/safeArea-tweak. Geen tests nodig voor 43.2; voor 43.1 een lichte XCUITest die bevestigt dat een card de juiste sublabel toont gegeven een mock-status.
+
+**Status:** ⏳ — kosmetisch maar zichtbaar bij elke launch. 43.2 is een quick win (hoogstwaarschijnlijk één regel), 43.1 verdient een bewuste sessie omdat het drie services raakt.
