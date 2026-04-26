@@ -117,6 +117,7 @@
 		D1A4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift */; };
 		D2A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */; };
 		D3A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift */; };
+		D4A4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -250,6 +251,7 @@
 		E1B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityDeduplicatorTests.swift; sourceTree = "<group>"; };
 		E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionReclassifier.swift; sourceTree = "<group>"; };
 		E3B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionReclassifierTests.swift; sourceTree = "<group>"; };
+		E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppLoggers.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -403,6 +405,7 @@
 				FEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift */,
 				E0B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift */,
 				E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */,
+				E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -771,6 +774,7 @@
 				CEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift in Sources */,
 				D0A4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift in Sources */,
 				D2A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift in Sources */,
+				D4A4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
