@@ -16,6 +16,7 @@ struct WorkoutAnalysisView: View {
     let activity: ActivityRecord
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var themeManager: ThemeManager
 
     @Query private var samples: [WorkoutSample]
@@ -117,11 +118,63 @@ struct WorkoutAnalysisView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            sessionTypeMenu
         }
         .padding()
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
+    }
+
+    // MARK: Sessie-type override (Epic 33 Story 33.1b)
+
+    /// Menu waarmee de gebruiker de auto-classificatie kan overrulen. Wijzigingen
+    /// worden direct in SwiftData bewaard en propageren via observation naar de
+    /// ChatViewModel-cache (zie `cacheLastWorkoutFeedback`).
+    private var sessionTypeMenu: some View {
+        Menu {
+            ForEach(SessionType.allCases) { type in
+                Button {
+                    setSessionType(type)
+                } label: {
+                    Label(type.displayName, systemImage: type.icon)
+                }
+            }
+            Divider()
+            Button(role: .destructive) {
+                setSessionType(nil)
+            } label: {
+                Label("Type wissen", systemImage: "xmark.circle")
+            }
+            .disabled(activity.sessionType == nil)
+        } label: {
+            HStack(spacing: 6) {
+                if let type = activity.sessionType {
+                    Image(systemName: type.icon)
+                        .font(.caption)
+                    Text(type.displayName)
+                        .font(.caption).fontWeight(.medium)
+                } else {
+                    Image(systemName: "questionmark.circle")
+                        .font(.caption)
+                    Text("Type")
+                        .font(.caption).fontWeight(.medium)
+                }
+                Image(systemName: "chevron.down")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .foregroundStyle(themeManager.primaryAccentColor)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .background(themeManager.primaryAccentColor.opacity(0.12))
+            .clipShape(Capsule())
+        }
+    }
+
+    private func setSessionType(_ type: SessionType?) {
+        activity.sessionType = type
+        try? modelContext.save()
     }
 
     private var sportIcon: String {

@@ -1264,6 +1264,20 @@ actor HealthKitSyncService {
         let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)!
         let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
 
+        // Epic 33 Story 33.1b: maxHR afleiden via Tanaka-formule + dateOfBirth.
+        // Eenmalig per sync (niet per workout) — geboortedatum verandert sowieso niet.
+        // Bij ontbrekende toestemming/data valt classifier terug op 190 bpm default.
+        let birthDate: Date? = {
+            do {
+                let dob = try healthKitManager.healthStore.dateOfBirthComponents()
+                return Calendar.current.date(from: dob)
+            } catch {
+                return nil
+            }
+        }()
+        let estimatedMaxHR = HeartRateZones.estimatedMaxHeartRate(birthDate: birthDate)
+        let sessionClassifier = SessionClassifier(maxHeartRate: estimatedMaxHR)
+
         let now = Date()
         // Zoek 365 dagen terug
         guard let oneYearAgo = Calendar.current.date(byAdding: .day, value: -365, to: now) else {
@@ -1363,6 +1377,18 @@ actor HealthKitSyncService {
             // `sport` is al gedeclareerd op basis van workoutActivityType (Laag 1b hierboven)
             let recordName = sport.workoutName.prefix(1).uppercased() + sport.workoutName.dropFirst()
 
+            // Epic 33 Story 33.1b: voorstel een sessionType op basis van avg HR + duur.
+            // HealthKit-records hebben geen rijke titel — keyword-strategie levert hier
+            // doorgaans niets op; de classifier valt automatisch terug op de avg-HR-route.
+            // Bij latere DeepSync (samples) kan dit type opnieuw geclassificeerd worden;
+            // voor 33.1b gebruiken we alleen het at-ingest signaal.
+            let suggestedSessionType = sessionClassifier.classify(
+                samples: nil,
+                averageHeartRate: avgHR,
+                durationSeconds: Int(workout.duration),
+                title: nil
+            )
+
             let record = ActivityRecord(
                 id: workoutId,
                 name: recordName,
@@ -1371,7 +1397,8 @@ actor HealthKitSyncService {
                 averageHeartrate: avgHR,
                 sportCategory: SportCategory.from(hkType: workout.workoutActivityType.rawValue),
                 startDate: workout.startDate,
-                trimp: trimp
+                trimp: trimp,
+                sessionType: suggestedSessionType
             )
 
             context.insert(record)
