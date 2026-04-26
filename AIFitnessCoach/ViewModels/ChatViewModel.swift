@@ -122,6 +122,10 @@ class ChatViewModel: ObservableObject {
     /// verschoven en die niet bij volgende suggesties terug-forceert.
     @AppStorage("vibecoach_userOverrideContext") private var userOverrideContext: String = ""
 
+    /// Story 33.4: cache van de Intent-vs-Execution-analyse voor de meest recente workout.
+    /// Empty string = geen recent vergelijkbare workout (geen plan match, of insufficient data).
+    @AppStorage("vibecoach_intentExecutionContext") private var intentExecutionContext: String = ""
+
     /// Epic 24 Sprint 3: Eenmalige coach-melding bij een gedetecteerde profielwijziging (bijv. leeftijd).
     /// Wordt geschreven door `PhysicalProfileSection` en geïnjecteerd in de eerstvolgende AI-prompt.
     /// Wordt geleegd nadat de prompt is opgebouwd zodat de melding slechts éénmaal verschijnt.
@@ -219,6 +223,13 @@ class ChatViewModel: ObservableObject {
     /// `DashboardView.onAppear` zodat het blok bij elke schema-context-build aanwezig is.
     func cacheUserOverrides(_ workouts: [SuggestedWorkout]) {
         userOverrideContext = UserOverrideContextFormatter.format(workouts: workouts)
+    }
+
+    /// Story 33.4: schrijft de Intent-vs-Execution-analyse naar de cache. Aangeroepen
+    /// vanuit DashboardView wanneer er een recente match is tussen een SuggestedWorkout
+    /// en een ActivityRecord op dezelfde kalenderdag. Pass `""` om de cache te legen.
+    func cacheIntentExecution(_ formatted: String) {
+        intentExecutionContext = formatted
     }
 
     func cacheLastWorkoutFeedback(rpe: Int?,
@@ -725,6 +736,11 @@ class ChatViewModel: ObservableObject {
         // Story 33.2a: handmatig verplaatste workouts — coach moet dit respecteren.
         if !userOverrideContext.isEmpty {
             prefix += userOverrideContext
+        }
+
+        // Story 33.4: intent-vs-execution-analyse voor de meest recente workout.
+        if !intentExecutionContext.isEmpty {
+            prefix += intentExecutionContext
         }
 
         // Epic 18: Injecteer de actuele pijnscores per lichaamsdeel (dagelijks bijgewerkt)

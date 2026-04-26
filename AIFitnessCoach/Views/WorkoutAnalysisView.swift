@@ -18,6 +18,7 @@ struct WorkoutAnalysisView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var planManager: TrainingPlanManager
 
     @Query private var samples: [WorkoutSample]
 
@@ -81,6 +82,9 @@ struct WorkoutAnalysisView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                if let comparison = comparisonContent {
+                    coachComparisonCard(comparison)
+                }
                 summaryCard
                 if hasSamples {
                     scrubberHeader
@@ -100,6 +104,98 @@ struct WorkoutAnalysisView: View {
         .background(themeManager.backgroundGradient.ignoresSafeArea())
         .navigationTitle(activity.displayName)
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    // MARK: Coach Comparison (Story 33.4)
+
+    /// Resultaat van de intent-vs-execution-analyse als er een match-plan is.
+    /// `nil` als geen plan, geen match op kalenderdag of `.insufficientData` —
+    /// in die gevallen tonen we de kaart niet (geen ruis).
+    private var comparisonContent: (verdict: IntentExecutionVerdict, plannedActivity: String)? {
+        guard let plan = planManager.activePlan,
+              let plannedMatch = plan.workouts.first(matching: activity) else {
+            return nil
+        }
+        let verdict = IntentExecutionAnalyzer.analyze(
+            planned: plannedMatch,
+            actual: activity,
+            maxHeartRate: HeartRateZones.defaultMaxHeartRate
+        )
+        if case .insufficientData = verdict { return nil }
+        return (verdict, plannedMatch.activityType)
+    }
+
+    private func coachComparisonCard(_ content: (verdict: IntentExecutionVerdict, plannedActivity: String)) -> some View {
+        let style = comparisonStyle(for: content.verdict)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: style.icon)
+                    .font(.title3)
+                    .foregroundStyle(style.color)
+                Text(style.headline)
+                    .font(.headline)
+                Spacer()
+            }
+            Text(comparisonSubtitle(for: content.verdict, planned: content.plannedActivity))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(style.color.opacity(0.10))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(style.color.opacity(0.35), lineWidth: 1)
+        )
+    }
+
+    private struct ComparisonStyle {
+        let color: Color
+        let icon: String
+        let headline: String
+    }
+
+    private func comparisonStyle(for verdict: IntentExecutionVerdict) -> ComparisonStyle {
+        switch verdict {
+        case .match:
+            return ComparisonStyle(color: .green,
+                                   icon: "checkmark.circle.fill",
+                                   headline: "Plan behaald")
+        case .typeMismatch:
+            return ComparisonStyle(color: .orange,
+                                   icon: "exclamationmark.triangle.fill",
+                                   headline: "Type wijkt af")
+        case .overload(let pct):
+            return ComparisonStyle(color: Color(red: 0.93, green: 0.42, blue: 0.21),
+                                   icon: "flame.fill",
+                                   headline: "Boven plan (\(String(format: "%+.0f", pct))% TRIMP)")
+        case .underload(let pct):
+            return ComparisonStyle(color: .blue,
+                                   icon: "drop.fill",
+                                   headline: "Onder plan (\(String(format: "%+.0f", pct))% TRIMP)")
+        case .insufficientData:
+            // Wordt al uitgefilterd in `comparisonContent`, maar we behouden een
+            // sane fallback zodat de switch totaal is.
+            return ComparisonStyle(color: .secondary,
+                                   icon: "questionmark.circle",
+                                   headline: "Geen vergelijking")
+        }
+    }
+
+    private func comparisonSubtitle(for verdict: IntentExecutionVerdict, planned plannedActivity: String) -> String {
+        switch verdict {
+        case .match:
+            return "Gepland: \(plannedActivity) → Uitgevoerd: \(activity.displayName). Type én belasting binnen marge."
+        case .typeMismatch(let plannedType, let actualType):
+            let actualLabel = actualType?.displayName ?? "onbepaald"
+            return "Gepland: \(plannedActivity) (\(plannedType.displayName)) → Uitgevoerd: \(activity.displayName) (\(actualLabel))."
+        case .overload, .underload:
+            return "Gepland: \(plannedActivity) → Uitgevoerd: \(activity.displayName)."
+        case .insufficientData:
+            return ""
+        }
     }
 
     // MARK: Summary
