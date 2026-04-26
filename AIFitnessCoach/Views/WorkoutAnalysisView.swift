@@ -616,6 +616,10 @@ struct RecentWorkoutRow: View {
     @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
+        // 🔍 TEMP DEBUG (Epic 40 chevron-bug-jacht) — verwijder na diagnose.
+        // Print elke render zodat we zeker weten welke build/code-pad live is.
+        let _ = print("🔍 RecentWorkoutRow render: id=\(activity.id) isUUIDParseable=\(UUID(uuidString: activity.id) != nil) name=\(activity.displayName)")
+
         // Epic 40: zowel HealthKit-records (UUID-uuidString) als Strava-records
         // (numerieke ID) zijn nu klikbaar. WorkoutAnalysisView maakt zelf onderscheid
         // via `UUID.forActivityRecordID(_:)` en toont samples wanneer aanwezig — bij
