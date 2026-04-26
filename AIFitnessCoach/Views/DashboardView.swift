@@ -1697,6 +1697,32 @@ struct DashboardView: View {
                 // Story 33.2a: schrijf de USER_OVERRIDE-cache zodat de coach handmatig
                 // verplaatste sessies respecteert in elke prompt-bouw.
                 viewModel.cacheUserOverrides(planManager.activePlan?.workouts ?? [])
+
+                // Story 33.4: zoek de meest recente ActivityRecord die matcht met een
+                // SuggestedWorkout op dezelfde kalenderdag, run de analyzer en cache het
+                // resultaat zodat de coach de [ANALYSIS — INTENT vs UITVOERING] krijgt.
+                let plannedWorkouts = planManager.activePlan?.workouts ?? []
+                if let mostRecent = activities.max(by: { $0.startDate < $1.startDate }),
+                   let plannedMatch = plannedWorkouts.first(matching: mostRecent) {
+                    // 33.4 gebruikt de classifier alleen voor `classifyByKeywords` —
+                    // die negeert maxHeartRate. Default volstaat dus zonder dateOfBirth-fetch.
+                    let verdict = IntentExecutionAnalyzer.analyze(
+                        planned: plannedMatch,
+                        actual: mostRecent,
+                        maxHeartRate: HeartRateZones.defaultMaxHeartRate
+                    )
+                    let formatted = IntentExecutionContextFormatter.format(
+                        verdict: verdict,
+                        plannedActivity: plannedMatch.activityType,
+                        actualActivityName: mostRecent.displayName,
+                        plannedTRIMP: plannedMatch.targetTRIMP,
+                        actualTRIMP: mostRecent.trimp
+                    )
+                    viewModel.cacheIntentExecution(formatted)
+                } else {
+                    viewModel.cacheIntentExecution("")
+                }
+
                 // Epic 24 Sprint 1: Haal het fysiologisch profiel op en bereken het voedingsplan
                 // voor de workouts van vandaag en morgen. Gecached in AppStorage voor de AI-prompt.
                 Task { await viewModel.refreshNutritionContext() }

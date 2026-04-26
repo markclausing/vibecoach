@@ -102,6 +102,10 @@
 		C2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */; };
 		C3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift */; };
 		C4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift */; };
+		C5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift */; };
+		C6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift */; };
+		C7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift */; };
+		C8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -220,6 +224,10 @@
 		F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LastWorkoutContextFormatterTests.swift; sourceTree = "<group>"; };
 		F3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserOverrideContextFormatter.swift; sourceTree = "<group>"; };
 		F4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserOverrideContextFormatterTests.swift; sourceTree = "<group>"; };
+		F5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentExecutionAnalyzer.swift; sourceTree = "<group>"; };
+		F6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentExecutionAnalyzerTests.swift; sourceTree = "<group>"; };
+		F7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentExecutionContextFormatter.swift; sourceTree = "<group>"; };
+		F8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentExecutionContextFormatterTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -308,6 +316,8 @@
 				F0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift */,
 				F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */,
 				F4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift */,
+				F6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift */,
+				F8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -360,6 +370,7 @@
 				E5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift */,
 				EDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift */,
 				EFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift */,
+				F5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -372,6 +383,7 @@
 				EAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift */,
 				F1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift */,
 				F3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift */,
+				F7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -647,6 +659,8 @@
 				C0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift in Sources */,
 				C2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift in Sources */,
 				C4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift in Sources */,
+				C6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift in Sources */,
+				C8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -711,6 +725,8 @@
 				BFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift in Sources */,
 				C1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift in Sources */,
 				C3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift in Sources */,
+				C5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift in Sources */,
+				C7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
