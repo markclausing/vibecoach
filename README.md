@@ -6,11 +6,13 @@ Een iOS-app (SwiftUI + SwiftData) die fungeert als persoonlijke, slimme fitnessc
 
 ## 🚀 Huidige Status
 
-**Laatst gemerged — Epic #35 ✅ Dynamische Gemini Model-Selectie · Epic #36 ✅ Test Coverage Verhoging**
+**Laatst gemerged — Epic #40 ✅ Strava Power-Stream Ingest · Epic #41 🔄 Dual-Source Single-Record-of-Truth (kern live)**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte coaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur. Testsuite: **51% code coverage** (gemeten met `xcodebuild -enableCodeCoverage YES` over de volledige unit + UI suite). Alle kritieke Services + Models zitten boven de 80% — zie [`docs/ROADMAP.md`](docs/ROADMAP.md) Epic #36 voor de per-bestand uitsplitsing.
 
 Configureerbare Gemini-modellen zitten in Settings → AI Coach Configuratie (Epic #35). De catalogus wordt live opgehaald via de Cloudflare Worker (`/ai/models`) die op zijn beurt de Google Generative Language API bevraagt — nieuwe modellen verschijnen automatisch in de picker, geen app-release nodig. Defaults: `gemini-flash-latest` (primair) en `gemini-flash-lite-latest` (fallback).
+
+Strava-rides met powermeter komen volledig door (Epic #40): een nightly scenePhase-pijplijn haalt 5s-streams van `cyclingPower`, `cadence` en `velocity` op via de bestaande Strava-OAuth, koppelt ze aan de juiste `ActivityRecord` via deterministische UUIDs (geen schema-migratie nodig), en draait daarna `ActivityDeduplicator` (Epic #41) en `SessionReclassifier` zodat dubbele HK+Strava-records worden samengevoegd en de zone-distributie-classificatie ook voor Strava-records werkt. Handmatig gekozen sessieTypes blijven beschermd via `manualSessionTypeOverride`.
 
 Volledige historie en backlog: zie [`docs/ROADMAP.md`](docs/ROADMAP.md).
 Technische architectuur (Dual Engine, Cloudflare Proxy, Keychain): zie [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).

@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import Charts
+import HealthKit
 
 
 // MARK: - SPRINT 12.2: TRIMP Explainer Card
@@ -1765,6 +1766,7 @@ struct DashboardView: View {
             .task {
                 await backfillStravaStreams()
                 await runAutoDedupe()
+                await runSessionReclassification()
             }
         }
     }
@@ -1781,6 +1783,35 @@ struct DashboardView: View {
             }
         } catch {
             print("⚠️ Auto-dedupe faalde: \(error.localizedDescription)")
+        }
+    }
+
+    /// Epic 40 Story 40.4: na de stream-backfill (en de daaropvolgende dedupe) hebben
+    /// records die eerst alleen avg-HR hadden ineens fijngranulaire samples. We laten
+    /// `SessionReclassifier` de zone-distributie-strategie opnieuw uitvoeren — handmatig
+    /// gekozen sessieTypes blijven beschermd via `manualSessionTypeOverride`.
+    private func runSessionReclassification() async {
+        let store = WorkoutSampleStore(modelContainer: modelContext.container)
+        let birthDate: Date? = {
+            do {
+                let dob = try HKHealthStore().dateOfBirthComponents()
+                return Calendar.current.date(from: dob)
+            } catch {
+                return nil
+            }
+        }()
+        let maxHR = HeartRateZones.estimatedMaxHeartRate(birthDate: birthDate)
+        do {
+            let updated = try await SessionReclassifier.rerun(
+                in: modelContext,
+                store: store,
+                maxHeartRate: maxHR
+            )
+            if updated > 0 {
+                print("🏷️ Session-rerun: \(updated) record(s) opnieuw geclassificeerd")
+            }
+        } catch {
+            print("⚠️ Session-rerun faalde: \(error.localizedDescription)")
         }
     }
 

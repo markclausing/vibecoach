@@ -503,6 +503,12 @@ final class ActivityRecord {
     // record met power-meter wint van eenzelfde rit zonder.
     var deviceWatts: Bool?
 
+    // Epic 40 Story 40.4: True zodra de gebruiker via `WorkoutAnalysisView` zelf een
+    // sessionType heeft gekozen. Beschermt deze keuze tegen `SessionReclassifier`, die
+    // anders na een latere stream-backfill (Strava 40.3 / HK DeepSync 32.1) het type
+    // automatisch zou herclassificeren op basis van zone-distributie.
+    var manualSessionTypeOverride: Bool?
+
     /// Menselijke naam voor UI en AI-context.
     /// Legacy HealthKit-records bevatten soms 'HealthKit <rawValue>' (bijv. 'HealthKit 52') —
     /// deze property vervangt dat altijd door de leesbare naam van de SportCategory.
@@ -513,7 +519,7 @@ final class ActivityRecord {
         return name
     }
 
-    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil, rpe: Int? = nil, mood: String? = nil, sessionType: SessionType? = nil, deviceWatts: Bool? = nil) {
+    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil, rpe: Int? = nil, mood: String? = nil, sessionType: SessionType? = nil, deviceWatts: Bool? = nil, manualSessionTypeOverride: Bool? = nil) {
         self.id = id
         self.name = name
         self.distance = distance
@@ -526,6 +532,7 @@ final class ActivityRecord {
         self.mood = mood
         self.sessionType = sessionType
         self.deviceWatts = deviceWatts
+        self.manualSessionTypeOverride = manualSessionTypeOverride
     }
 }
 
