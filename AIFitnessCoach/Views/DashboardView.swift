@@ -1459,7 +1459,8 @@ struct DashboardView: View {
                                 mood: mood,
                                 workoutName: recentActivity.displayName,
                                 trimp: recentActivity.trimp,
-                                startDate: recentActivity.startDate
+                                startDate: recentActivity.startDate,
+                                sessionType: recentActivity.sessionType
                             )
                         }
                         .padding(.horizontal)
@@ -1690,7 +1691,8 @@ struct DashboardView: View {
                     mood: lastRatedActivity?.mood,
                     workoutName: lastRatedActivity?.displayName,
                     trimp: lastRatedActivity?.trimp,
-                    startDate: lastRatedActivity?.startDate
+                    startDate: lastRatedActivity?.startDate,
+                    sessionType: lastRatedActivity?.sessionType
                 )
                 // Epic 24 Sprint 1: Haal het fysiologisch profiel op en bereken het voedingsplan
                 // voor de workouts van vandaag en morgen. Gecached in AppStorage voor de AI-prompt.

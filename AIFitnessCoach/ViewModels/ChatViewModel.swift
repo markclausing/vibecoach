@@ -207,35 +207,23 @@ class ChatViewModel: ObservableObject {
     /// Epic 18.1: Schrijft de subjectieve feedback van de laatste workout naar de AppStorage cache.
     /// Wordt aangeroepen vanuit DashboardView zodra er een ActivityRecord is met rpe en mood.
     /// De AI gebruikt dit om discrepanties te detecteren (bijv. laag TRIMP maar hoge RPE = overtraining signaal).
-    func cacheLastWorkoutFeedback(rpe: Int?, mood: String?, workoutName: String?, trimp: Double?, startDate: Date? = nil) {
-        guard let rpe = rpe, let mood = mood else {
-            // Geen feedback beschikbaar — wis de cache
-            lastWorkoutFeedbackContext = ""
-            return
-        }
-
-        // Formatteer als "[Type] van [Datum]" — bijv. "Hardloopsessie van 8 apr."
-        let baseName = workoutName ?? "Training"
-        let nameStr: String
-        if let date = startDate {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            formatter.timeStyle = .none
-            formatter.locale = Locale(identifier: "nl_NL")
-            nameStr = "\(baseName) van \(formatter.string(from: date))"
-        } else {
-            nameStr = baseName
-        }
-
-        let trimpStr = trimp != nil ? String(format: "%.0f", trimp!) : "onbekend"
-        let rpeLabel: String
-        switch rpe {
-        case 1...3: rpeLabel = "licht (1-3)"
-        case 4...6: rpeLabel = "matig (4-6)"
-        case 7...8: rpeLabel = "zwaar (7-8)"
-        default:    rpeLabel = "maximaal (9-10)"
-        }
-        lastWorkoutFeedbackContext = "Laatste workout: '\(nameStr)', TRIMP: \(trimpStr), RPE: \(rpe)/10 (\(rpeLabel)), Stemming: \(mood)."
+    /// Epic 33 Story 33.1b: optioneel `sessionType` — als aanwezig wordt het type + fysiologische
+    /// intent meegegeven zodat de coach z'n toon kalibreert (geen "te langzaam" bij Recovery).
+    /// Format-logica zit in `LastWorkoutContextFormatter` (testbaar zonder ChatViewModel-state).
+    func cacheLastWorkoutFeedback(rpe: Int?,
+                                  mood: String?,
+                                  workoutName: String?,
+                                  trimp: Double?,
+                                  startDate: Date? = nil,
+                                  sessionType: SessionType? = nil) {
+        lastWorkoutFeedbackContext = LastWorkoutContextFormatter.format(
+            rpe: rpe,
+            mood: mood,
+            workoutName: workoutName,
+            trimp: trimp,
+            startDate: startDate,
+            sessionType: sessionType
+        )
     }
 
     /// Epic 17: Schrijft de blueprint-status van alle actieve doelen naar de AppStorage cache.
