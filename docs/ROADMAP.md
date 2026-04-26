@@ -205,14 +205,16 @@ Van gemiddelden naar granulaire fysiologische patronen. De coach leest het volle
 
 ---
 
-### ⏳ Epic #33: Geavanceerde Sessie-architectuur
+### 🔄 Epic #33: Geavanceerde Sessie-architectuur
 
 Trainingen zijn sessies met expliciete fysiologische intentie.
 
-* **33.1 — Sessie-Type Taxonomie:** `VO2maxSession`, `TempoRun`, `LongRun`, `Intervals`, `SocialRideRun`, `Recovery`. Type-veilige enums conform CLAUDE.md §2.
-* **33.2 — Flexibele Planning (The 'Swap'):** Gebruiker kan een geplande sessie 'swappen'. Coach herberekent de resterende weekbelasting automatisch.
-* **33.3 — Sociale Modus:** Specifieke logica voor sociale ritten — minder streng op zones, meer focus op mentaal herstel en Vibe Score.
-* **33.4 — Intentie vs. Uitvoering:** Coach vergelijkt gepland sessietype met werkelijkheid en geeft specifieke feedback bij structurele afwijkingen.
+* **🔄 Story 33.1 — Sessie-Type Taxonomie:** Splitst in twee PR's vanwege scope.
+  - **🔄 33.1a — Domain & classifier:** `SessionType` enum (7 cases: `vo2Max`, `threshold`, `tempo`, `endurance`, `recovery`, `social`, `race`), `SessionIntent` struct met zonebereik + verwachte RPE + coachingSummary per type, `sessionType` als optionele property op `ActivityRecord` (lightweight migration), en `SessionClassifier` met drie strategieën (keywords, zone-distributie via `WorkoutSample`, average-HR-fallback). 20 unit tests in `SessionClassifierTests`. Geen UI of AI-prompt impact — pure domain.
+  - **⏳ 33.1b — UI override + AI-context-injectie:** Picker in `WorkoutAnalysisView` om type handmatig te corrigeren, classifier-runner bij ingest, en `buildContextPrefix` uitbreiding om `sessionType` + `intent` aan de coach mee te geven (verwacht concrete gedragsverandering: "goed hersteld" bij Social Ride met lage HR i.p.v. "te langzaam").
+* **⏳ Story 33.2 — Flexibele Planning (The 'Swap'):** Gebruiker kan een geplande sessie 'swappen'. Coach herberekent de resterende weekbelasting automatisch.
+* **⏳ Story 33.3 — Sociale Modus:** Specifieke logica voor sociale ritten — minder streng op zones, meer focus op mentaal herstel en Vibe Score.
+* **⏳ Story 33.4 — Intentie vs. Uitvoering:** Coach vergelijkt gepland sessietype met werkelijkheid en geeft specifieke feedback bij structurele afwijkingen.
 
 ---
 

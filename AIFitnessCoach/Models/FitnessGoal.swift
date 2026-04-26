@@ -492,6 +492,11 @@ final class ActivityRecord {
     var rpe: Int?    // 1 = heel makkelijk, 10 = maximale inspanning
     var mood: String? // Bijv. "😌", "🟢", "🚀", "🤕", "🥵"
 
+    // Epic 33 Story 33.1: Sessie-Type Taxonomie. Optioneel zodat bestaande records zonder
+    // type valide blijven (lightweight migration). Wordt door `SessionClassifier` voorgesteld
+    // bij ingest en kan door de gebruiker handmatig worden overruled vanuit `WorkoutAnalysisView`.
+    var sessionType: SessionType?
+
     /// Menselijke naam voor UI en AI-context.
     /// Legacy HealthKit-records bevatten soms 'HealthKit <rawValue>' (bijv. 'HealthKit 52') —
     /// deze property vervangt dat altijd door de leesbare naam van de SportCategory.
@@ -502,7 +507,7 @@ final class ActivityRecord {
         return name
     }
 
-    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil, rpe: Int? = nil, mood: String? = nil) {
+    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil, rpe: Int? = nil, mood: String? = nil, sessionType: SessionType? = nil) {
         self.id = id
         self.name = name
         self.distance = distance
@@ -513,6 +518,7 @@ final class ActivityRecord {
         self.trimp = trimp
         self.rpe = rpe
         self.mood = mood
+        self.sessionType = sessionType
     }
 }
 
