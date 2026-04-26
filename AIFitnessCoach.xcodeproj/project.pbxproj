@@ -109,6 +109,10 @@
 		C9A4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9A4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilder.swift */; };
 		CAA4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilderTests.swift */; };
 		CBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift */; };
+		CCA4F7B2D6E8F0A1B2C3D405 /* UUID+Deterministic.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCA4F7B2D6E8F0A1B2C3D405 /* UUID+Deterministic.swift */; };
+		CDA4F7B2D6E8F0A1B2C3D405 /* UUIDDeterministicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDA4F7B2D6E8F0A1B2C3D405 /* UUIDDeterministicTests.swift */; };
+		CEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift */; };
+		CFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -234,6 +238,10 @@
 		F9A4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanResetPromptBuilder.swift; sourceTree = "<group>"; };
 		FAA4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanResetPromptBuilderTests.swift; sourceTree = "<group>"; };
 		FBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrainingPlanManagerMergeTests.swift; sourceTree = "<group>"; };
+		FCA4F7B2D6E8F0A1B2C3D405 /* UUID+Deterministic.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "UUID+Deterministic.swift"; sourceTree = "<group>"; };
+		FDA4F7B2D6E8F0A1B2C3D405 /* UUIDDeterministicTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UUIDDeterministicTests.swift; sourceTree = "<group>"; };
+		FEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaStreamIngestService.swift; sourceTree = "<group>"; };
+		FFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaStreamIngestServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -326,6 +334,8 @@
 				F8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift */,
 				FAA4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilderTests.swift */,
 				FBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift */,
+				FDA4F7B2D6E8F0A1B2C3D405 /* UUIDDeterministicTests.swift */,
+				FFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -379,6 +389,8 @@
 				EDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift */,
 				EFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift */,
 				F5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift */,
+				FCA4F7B2D6E8F0A1B2C3D405 /* UUID+Deterministic.swift */,
+				FEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -672,6 +684,8 @@
 				C8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift in Sources */,
 				CAA4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilderTests.swift in Sources */,
 				CBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift in Sources */,
+				CDA4F7B2D6E8F0A1B2C3D405 /* UUIDDeterministicTests.swift in Sources */,
+				CFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -739,6 +753,8 @@
 				C5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift in Sources */,
 				C7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift in Sources */,
 				C9A4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilder.swift in Sources */,
+				CCA4F7B2D6E8F0A1B2C3D405 /* UUID+Deterministic.swift in Sources */,
+				CEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
