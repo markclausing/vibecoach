@@ -100,6 +100,8 @@
 		C0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift */; };
 		C1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift */; };
 		C2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */; };
+		C3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift */; };
+		C4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -216,6 +218,8 @@
 		F0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HeartRateZonesTests.swift; sourceTree = "<group>"; };
 		F1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LastWorkoutContextFormatter.swift; sourceTree = "<group>"; };
 		F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LastWorkoutContextFormatterTests.swift; sourceTree = "<group>"; };
+		F3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserOverrideContextFormatter.swift; sourceTree = "<group>"; };
+		F4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserOverrideContextFormatterTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -303,6 +307,7 @@
 				EEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift */,
 				F0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift */,
 				F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */,
+				F4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -366,6 +371,7 @@
 				6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */,
 				EAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift */,
 				F1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift */,
+				F3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -640,6 +646,7 @@
 				BEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift in Sources */,
 				C0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift in Sources */,
 				C2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift in Sources */,
+				C4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -703,6 +710,7 @@
 				BDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift in Sources */,
 				BFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift in Sources */,
 				C1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift in Sources */,
+				C3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

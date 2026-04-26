@@ -965,6 +965,8 @@ struct WorkoutDetailView: View {
     let workout: SuggestedWorkout
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var themeManager: ThemeManager
+    @EnvironmentObject var planManager: TrainingPlanManager
+    @State private var showingMoveSheet = false
 
     var body: some View {
         NavigationStack {
@@ -973,15 +975,40 @@ struct WorkoutDetailView: View {
 
                     // Header sectie
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(workout.displayDayLabel)
-                            .font(.headline)
-                            .foregroundStyle(themeManager.primaryAccentColor.opacity(0.75))
+                        HStack(spacing: 8) {
+                            Text(workout.displayDayLabel)
+                                .font(.headline)
+                                .foregroundStyle(themeManager.primaryAccentColor.opacity(0.75))
+                            if workout.isSwapped {
+                                // Story 33.2a: visuele bevestiging dat de gebruiker deze sessie
+                                // zelf heeft verplaatst — voorkomt verwarring als de dag afwijkt
+                                // van de oorspronkelijke AI-suggestie.
+                                Label("Verplaatst", systemImage: "arrow.triangle.swap")
+                                    .font(.caption2).fontWeight(.medium)
+                                    .padding(.vertical, 3).padding(.horizontal, 8)
+                                    .background(themeManager.primaryAccentColor.opacity(0.15))
+                                    .clipShape(Capsule())
+                                    .foregroundStyle(themeManager.primaryAccentColor)
+                            }
+                        }
 
                         Text(workout.activityType)
                             .font(.largeTitle)
                             .fontWeight(.bold)
                     }
                     .padding(.top)
+
+                    // Story 33.2a: actie-knop om de sessie naar een andere dag te verplaatsen.
+                    Button {
+                        showingMoveSheet = true
+                    } label: {
+                        Label("Verplaats sessie", systemImage: "calendar.badge.clock")
+                            .font(.subheadline).fontWeight(.medium)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(themeManager.primaryAccentColor)
 
                     // Info sectie met icoontjes
                     VStack(spacing: 16) {
@@ -1032,7 +1059,99 @@ struct WorkoutDetailView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showingMoveSheet) {
+                MoveWorkoutSheet(workout: workout) { newDate in
+                    planManager.moveWorkout(workout, to: newDate)
+                    showingMoveSheet = false
+                    dismiss() // sluit ook detail — UI moet de bijgewerkte volgorde tonen
+                }
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+            }
         }
+    }
+}
+
+// MARK: - Story 33.2a: Verplaats-sheet met dag-chips
+
+/// Compacte sheet die zeven dag-chips voor de huidige week toont (ma → zo).
+/// Tap op een chip → callback met de gekozen `Date`. Past bij Serene-stijl: zachte
+/// kleuren, capsule-vorm, één primaire interactie. Geen DatePicker (te druk).
+struct MoveWorkoutSheet: View {
+    let workout: SuggestedWorkout
+    let onSelect: (Date) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var themeManager: ThemeManager
+
+    /// Genereert maandag t/m zondag van de huidige week.
+    private var weekDays: [Date] {
+        let calendar = Calendar(identifier: .iso8601) // ma als eerste dag
+        let today = calendar.startOfDay(for: Date())
+        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: today) else {
+            return [today]
+        }
+        return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: weekInterval.start) }
+    }
+
+    private var selectedDate: Date {
+        Calendar.current.startOfDay(for: workout.displayDate)
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Kies een nieuwe dag deze week. De coach respecteert je keuze in volgende suggesties.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(weekDays, id: \.self) { day in
+                            dayChip(for: day)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+
+                Spacer()
+            }
+            .navigationTitle("Verplaats sessie")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Annuleer") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func dayChip(for day: Date) -> some View {
+        let isSelected = Calendar.current.isDate(day, inSameDayAs: selectedDate)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "nl_NL")
+        formatter.dateFormat = "EEE"
+        let weekday = formatter.string(from: day).prefix(1).uppercased() + formatter.string(from: day).dropFirst()
+        let dayNumber = Calendar.current.component(.day, from: day)
+
+        return Button {
+            onSelect(day)
+        } label: {
+            VStack(spacing: 4) {
+                Text(weekday)
+                    .font(.caption2).fontWeight(.semibold)
+                Text("\(dayNumber)")
+                    .font(.title3).fontWeight(.bold)
+                    .monospacedDigit()
+            }
+            .foregroundStyle(isSelected ? Color.white : themeManager.primaryAccentColor)
+            .frame(width: 56, height: 72)
+            .background(isSelected ? themeManager.primaryAccentColor : themeManager.primaryAccentColor.opacity(0.12))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }
 

@@ -709,6 +709,14 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
     /// Bijv: "60 km = 50% van je fietsdoel. Verplichte mijlpaal in de Build-fase."
     let reasoning: String?
 
+    // Epic 33 Story 33.2a: Flexibele Planning — "Verplaats sessie".
+    // Optionele override op de door de AI gesuggereerde dag. Default `nil` —
+    // dan valt `displayDate` terug op `resolvedDate` (de string-parse-route).
+    // Bestaande AppStorage-plans zonder dit veld decoderen probleemloos via
+    // `decodeIfPresent` in `init(from:)`.
+    var scheduledDate: Date?
+    var isSwapped: Bool
+
     enum CodingKeys: String, CodingKey {
         case dateOrDay
         case activityType
@@ -718,9 +726,21 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         case heartRateZone
         case targetPace
         case reasoning
+        case scheduledDate
+        case isSwapped
     }
 
-    init(id: UUID = UUID(), dateOrDay: String, activityType: String, suggestedDurationMinutes: Int, targetTRIMP: Int?, description: String, heartRateZone: String? = nil, targetPace: String? = nil, reasoning: String? = nil) {
+    init(id: UUID = UUID(),
+         dateOrDay: String,
+         activityType: String,
+         suggestedDurationMinutes: Int,
+         targetTRIMP: Int?,
+         description: String,
+         heartRateZone: String? = nil,
+         targetPace: String? = nil,
+         reasoning: String? = nil,
+         scheduledDate: Date? = nil,
+         isSwapped: Bool = false) {
         self.id = id
         self.dateOrDay = dateOrDay
         self.activityType = activityType
@@ -730,6 +750,8 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         self.heartRateZone = heartRateZone
         self.targetPace = targetPace
         self.reasoning = reasoning
+        self.scheduledDate = scheduledDate
+        self.isSwapped = isSwapped
     }
 
     init(from decoder: Decoder) throws {
@@ -751,6 +773,10 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         } else {
             targetTRIMP = nil
         }
+
+        // Story 33.2a — backwards-compat: oudere persisted plans hebben deze velden niet.
+        scheduledDate = try container.decodeIfPresent(Date.self, forKey: .scheduledDate)
+        isSwapped     = (try? container.decodeIfPresent(Bool.self, forKey: .isSwapped)) ?? false
     }
 
     // MARK: - Kalenderlogica
@@ -793,13 +819,25 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         return calendar.date(byAdding: .day, value: daysAhead, to: today) ?? today
     }
 
+    /// Story 33.2a: de echte datum waarop de sessie staat. Indien de gebruiker hem
+    /// heeft verplaatst (`scheduledDate != nil`) telt die override; anders valt-ie
+    /// terug op `resolvedDate` (string-parse uit de AI-suggestie).
+    /// Wordt gebruikt voor sortering, UI-labels én voor de coach-prompt.
+    var displayDate: Date {
+        if let scheduledDate {
+            return Calendar.current.startOfDay(for: scheduledDate)
+        }
+        return resolvedDate
+    }
+
     /// Geeft de dag als expliciete datum terug, bijv. "Vrijdag 10 apr".
     /// Geen 'Vandaag'/'Morgen' — expliciete datums voorkomen verwarring bij stale data.
+    /// Gebruikt `displayDate` zodat verplaatste sessies meteen het nieuwe label tonen.
     var displayDayLabel: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "nl_NL")
         formatter.dateFormat = "EEEE d MMM"
-        let label = formatter.string(from: resolvedDate)
+        let label = formatter.string(from: displayDate)
         return label.prefix(1).uppercased() + label.dropFirst()
     }
 }
@@ -985,17 +1023,56 @@ class TrainingPlanManager: ObservableObject {
         // Debug: toon de chronologische volgorde na sortering
         print("📅 [TrainingPlan] Gesorteerde volgorde na update:")
         sorted.workouts.forEach { workout in
-            print("   \(workout.dateOrDay) → resolvedDate: \(workout.resolvedDate)")
+            print("   \(workout.dateOrDay) → displayDate: \(workout.displayDate)")
         }
     }
 
-    /// Retourneert een nieuw SuggestedTrainingPlan met workouts gesorteerd op resolvedDate (chronologisch).
+    /// Retourneert een nieuw SuggestedTrainingPlan met workouts gesorteerd op `displayDate`
+    /// (chronologisch). Story 33.2a — door op `displayDate` te sorteren bewegen verplaatste
+    /// sessies automatisch naar hun nieuwe positie in de UI.
     private func sorted(_ plan: SuggestedTrainingPlan) -> SuggestedTrainingPlan {
-        let chronological = plan.workouts.sorted { $0.resolvedDate < $1.resolvedDate }
+        let chronological = plan.workouts.sorted { $0.displayDate < $1.displayDate }
         return SuggestedTrainingPlan(
             motivation: plan.motivation,
             workouts: chronological,
             newPreferences: plan.newPreferences
         )
+    }
+
+    // MARK: - Story 33.2a: Verplaats sessie
+
+    /// Verplaatst een geplande workout naar een nieuwe datum. Schrijft de override naar
+    /// `scheduledDate`, markeert `isSwapped = true` (zodat de coach weet dat dit een
+    /// gebruiker-gedreven keuze is), hersorteert de lijst zodat de UI direct meebeweegt
+    /// en persisteert naar AppStorage.
+    /// - Parameters:
+    ///   - workout: De workout om te verplaatsen — gematched op `id`.
+    ///   - newDate: De nieuwe datum (genormaliseerd naar `startOfDay`).
+    /// - Returns: `true` als de workout gevonden en verplaatst is; `false` als de id niet
+    ///   in het actieve plan voorkomt (dan is er niks te doen).
+    @discardableResult
+    func moveWorkout(_ workout: SuggestedWorkout, to newDate: Date) -> Bool {
+        guard let plan = activePlan else { return false }
+        guard let index = plan.workouts.firstIndex(where: { $0.id == workout.id }) else {
+            return false
+        }
+
+        // `workouts` is `let` op de struct — bouw een nieuwe array met de override toegepast.
+        var updatedWorkouts = plan.workouts
+        var moved = updatedWorkouts[index]
+        moved.scheduledDate = Calendar.current.startOfDay(for: newDate)
+        moved.isSwapped = true
+        updatedWorkouts[index] = moved
+
+        let updatedPlan = SuggestedTrainingPlan(
+            motivation: plan.motivation,
+            workouts: updatedWorkouts,
+            newPreferences: plan.newPreferences
+        )
+
+        // Update via de bestaande pijplijn — sortering op displayDate + persistence
+        // + Published change gebeuren daarbinnen automatisch.
+        updatePlan(updatedPlan)
+        return true
     }
 }
