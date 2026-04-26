@@ -96,6 +96,9 @@
 		B9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift */; };
 		BAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift */; };
 		BBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift */; };
+		BCA4F7B2D6E8F0A1B2C3D405 /* SessionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECA4F7B2D6E8F0A1B2C3D405 /* SessionType.swift */; };
+		BDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift */; };
+		BEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -208,6 +211,9 @@
 		E9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutAnalysisHelpersTests.swift; sourceTree = "<group>"; };
 		EAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PreferencesContextFormatter.swift; sourceTree = "<group>"; };
 		EBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PreferencesContextFormatterTests.swift; sourceTree = "<group>"; };
+		ECA4F7B2D6E8F0A1B2C3D405 /* SessionType.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionType.swift; sourceTree = "<group>"; };
+		EDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionClassifier.swift; sourceTree = "<group>"; };
+		EEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionClassifierTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -292,6 +298,7 @@
 				E6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift */,
 				E9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift */,
 				EBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift */,
+				EEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -342,6 +349,7 @@
 				E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */,
 				E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */,
 				E5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift */,
+				EDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -395,6 +403,7 @@
 				54462929885341098579ABB5 /* Theme.swift */,
 				3500FFEECC00AA02BB02CC03 /* AIModelConfig.swift */,
 				E1A4F7B2D6E8F0A1B2C3D405 /* WorkoutSample.swift */,
+				ECA4F7B2D6E8F0A1B2C3D405 /* SessionType.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -599,6 +608,7 @@
 				B6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift in Sources */,
 				B9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift in Sources */,
 				BBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift in Sources */,
+				BEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -658,6 +668,8 @@
 				B7A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisView.swift in Sources */,
 				B8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift in Sources */,
 				BAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift in Sources */,
+				BCA4F7B2D6E8F0A1B2C3D405 /* SessionType.swift in Sources */,
+				BDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
