@@ -40,6 +40,17 @@ actor WorkoutSampleStore {
         let descriptor = FetchDescriptor<WorkoutSample>(predicate: predicate)
         return try modelContext.fetchCount(descriptor)
     }
+
+    /// Volledige sample-reeks voor een workout, gesorteerd op timestamp. Gebruikt door
+    /// `SessionReclassifier` (Epic 40 Story 40.4) en charts.
+    func samples(forWorkoutUUID workoutUUID: UUID) throws -> [WorkoutSample] {
+        let predicate = #Predicate<WorkoutSample> { $0.workoutUUID == workoutUUID }
+        let descriptor = FetchDescriptor<WorkoutSample>(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.timestamp, order: .forward)]
+        )
+        return try modelContext.fetch(descriptor)
+    }
 }
 
 // MARK: - Ingest

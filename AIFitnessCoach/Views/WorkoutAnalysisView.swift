@@ -264,6 +264,10 @@ struct WorkoutAnalysisView: View {
 
     private func setSessionType(_ type: SessionType?) {
         activity.sessionType = type
+        // Epic 40 Story 40.4: bij een handmatige keuze (incl. wissen) markeren we het
+        // record als override. `SessionReclassifier` slaat zulke records over zodat een
+        // latere stream-backfill de keuze van de gebruiker niet wegdrukt.
+        activity.manualSessionTypeOverride = true
         try? modelContext.save()
     }
 

@@ -389,7 +389,7 @@ Aanleiding: Xcode meldt 24 warnings rond actor-isolation in `ChatView.swift` en 
 
 ---
 
-### 🔄 Epic #40: Strava Power-Stream Ingest
+### ✅ Epic #40: Strava Power-Stream Ingest
 
 Aanleiding: een gebruiker met Garmin powermeter (april 2026) ontdekte dat `cyclingPower` ontbrak in vibecoach hoewel zijn rides wél power tonen in Strava. Strava synct namelijk **geen** stream-data (power, cadence, velocity) naar Apple Health — alleen workout-events en gemiddelde HR. Daardoor mist de `WorkoutSample`-pijplijn (story 32.1) een hele klasse fietsdata.
 
@@ -398,9 +398,9 @@ Aanleiding: een gebruiker met Garmin powermeter (april 2026) ontdekte dat `cycli
 * **✅ 40.1 — Strava `/streams` API-call:** `FitnessDataService.fetchActivityStreams(for:)` haalt `time`, `watts`, `cadence`, `heartrate`, `velocity_smooth` op via `?keys=...&key_by_type=true`. Token-flow hergebruikt bestaande Strava-OAuth.
 * **✅ 40.2 — Deterministische UUID i.p.v. schema-wijziging:** `UUID.deterministic(fromStravaID:)` (SHA256, UUIDv5-achtig) leidt voor Strava-records een vaste UUID af. `WorkoutSample.workoutUUID` blijft `UUID` — geen migratie. `UUID.forActivityRecordID(_:)` is de centrale router (HK-uuidString of Strava-fallback).
 * **✅ 40.3 — `StravaStreamIngestService`:** spiegel van `WorkoutSampleIngestService` (gescheiden om HK-logica niet te vervuilen). Hergebruikt `SampleResampler` met identieke strategieën (average voor HR/power/cadence, linear interpolation voor speed). Idempotent via `WorkoutSampleStore.replaceSamples`. Backfill in `DashboardView` scenePhase-flow voor de laatste 10 Strava-records zonder samples, met 100ms throttle. `WorkoutAnalysisView` gebruikt nu `UUID.forActivityRecordID` zodat de Strava-detail-view automatisch de power-chart toont zodra samples binnen zijn. Plus `StravaActivity.device_watts: Bool?` (decodeIfPresent — backwards-compat met bestaande caches). 14 unit tests.
-* **⏳ 40.4 — Classifier herclassificeert na stream-ingest:** Follow-up — `SessionClassifier` opnieuw draaien op records die nu samples hebben gekregen, zodat de zone-distributie-strategie (story 33.1a) ook voor Strava-rides werkt. Manual override blijft beschermd.
+* **✅ 40.4 — Classifier herclassificeert na stream-ingest:** `SessionReclassifier` (pure-Swift, mirror van `ActivityDeduplicator`-patroon) draait in dezelfde scenePhase-flow direct na de auto-dedupe. Records die net samples kregen (Strava-backfill 40.3 of HK DeepSync 32.1) krijgen het zone-distributie-voorstel; records zonder samples worden overgeslagen omdat de avg-HR-fallback al bij ingest draaide. Plus `ActivityRecord.manualSessionTypeOverride: Bool?` (lightweight migration) — gezet door `WorkoutAnalysisView.setSessionType` zodat een handmatige keuze nooit door de rerun overschreven wordt. `WorkoutSampleStore` kreeg een `samples(forWorkoutUUID:)`-getter (gesorteerd op timestamp). 6 unit tests.
 
-**Status:** 🔄 — kern (40.1+40.2+40.3) live en on-device gevalideerd (april 2026: Strava-power-data komt door, klikbaar in Recente Workouts, charts renderen). 40.4 (classifier-rerun) wacht totdat we de stream-flow stabiel hebben gezien in dagelijks gebruik.
+**Status:** ✅ — alle vier sub-stories live. De pipeline van Strava-API → SwiftData-record → stream-backfill → dedupe → reclassify is end-to-end zelfregulerend; nieuwe rides krijgen automatisch een correct sessieType zodra hun samples binnen zijn.
 
 ---
 
