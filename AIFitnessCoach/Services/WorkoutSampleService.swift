@@ -165,27 +165,22 @@ final class WorkoutSampleIngestService {
     }
 
     private func fetchSeriesTicks(for sample: HKQuantitySample, unit: HKUnit) async throws -> [TimedValue] {
-        try await withCheckedThrowingContinuation { continuation in
-            var buffer: [TimedValue] = []
-            var didResume = false
-            // iOS 26 SDK biedt alleen nog `init(sample:quantityHandler:)` — vijf-arg handler met `Date?`.
-            let query = HKQuantitySeriesSampleQuery(sample: sample) { _, quantity, date, done, error in
-                if didResume { return }
-                if let error {
-                    didResume = true
-                    continuation.resume(throwing: error)
-                    return
-                }
-                if let quantity, let date {
-                    buffer.append(TimedValue(timestamp: date, value: quantity.doubleValue(for: unit)))
-                }
-                if done {
-                    didResume = true
-                    continuation.resume(returning: buffer)
-                }
-            }
-            healthStore.execute(query)
+        // iOS 18+: `HKQuantitySeriesSampleQueryDescriptor` vervangt de `init(sample:)`-
+        // closure-API (deprecated sinds iOS 13). Native async iteration — geen
+        // `withCheckedThrowingContinuation`-dans nodig en geen deprecation-warning.
+        let predicate = HKSamplePredicate.quantitySample(
+            type: sample.quantityType,
+            predicate: HKQuery.predicateForObject(with: sample.uuid)
+        )
+        let descriptor = HKQuantitySeriesSampleQueryDescriptor(predicate: predicate)
+        var buffer: [TimedValue] = []
+        for try await result in descriptor.results(for: healthStore) {
+            buffer.append(TimedValue(
+                timestamp: result.dateInterval.start,
+                value: result.quantity.doubleValue(for: unit)
+            ))
         }
+        return buffer
     }
 
     // MARK: Sport-specifieke quantity-type-keuzes
