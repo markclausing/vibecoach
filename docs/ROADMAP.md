@@ -389,20 +389,18 @@ Aanleiding: Xcode meldt 24 warnings rond actor-isolation in `ChatView.swift` en 
 
 ---
 
-### ⏳ Epic #40: Strava Power-Stream Ingest
+### 🔄 Epic #40: Strava Power-Stream Ingest
 
-Aanleiding: een gebruiker met Garmin powermeter (april 2026) ontdekte dat `cyclingPower` ontbrak in vibecoach hoewel zijn rides wél power tonen in Strava. Strava synct namelijk **geen** stream-data (power, cadence, velocity) naar Apple Health — alleen workout-events en gemiddelde HR. Daardoor mist de `WorkoutSample`-pijplijn (story 32.1) een hele klasse fietsdata, en classificeert `SessionClassifier` cycling-sessies puur op HR + duur i.p.v. de fysiologisch superieure power-metric.
+Aanleiding: een gebruiker met Garmin powermeter (april 2026) ontdekte dat `cyclingPower` ontbrak in vibecoach hoewel zijn rides wél power tonen in Strava. Strava synct namelijk **geen** stream-data (power, cadence, velocity) naar Apple Health — alleen workout-events en gemiddelde HR. Daardoor mist de `WorkoutSample`-pijplijn (story 32.1) een hele klasse fietsdata.
 
 **Sub-stories:**
 
-* **40.1 — Strava `/streams` API-call:** Voor activiteiten met `device_watts == true` een tweede call op `/activities/{id}/streams?keys=watts,cadence,velocity_smooth,heartrate&key_by_type=true`. Throttle op Strava-rate-limit (100 req/15min, 1000/dag) — voor 365 dagen historie = max ~150 calls, past binnen limits maar moet wel batch-gewijs gepauzeerd worden bij grote backfills.
-* **40.2 — `WorkoutSample`-mapping voor Strava:** Huidige model heeft `workoutUUID: UUID` (HK-only). Voor Strava-records moet ofwel het type naar `String` (HK UUID-uuidString + Strava-id-string), ofwel een aparte `externalActivityID` op `ActivityRecord` als foreign key. Lichtgewicht migration-overweging conform CLAUDE.md §2.
-* **40.3 — Resampler-hergebruik:** `SampleResampler` (uit story 32.1) krijgt al `[TimedValue]` als input — Strava-streams zijn één-op-één hier op te mappen. Geen nieuwe resample-logica nodig: average voor power/cadence, linear-interpolation voor velocity, delta-accumulation voor afstand.
-* **40.4 — Classifier herclassificeert na stream-ingest:** Nu classifier draait alleen at-`ActivityRecord`-creatie (story 33.1b) op avg HR. Zodra power-streams binnen zijn voor een record met `sessionType == nil` of een placeholder-type, kan classifier opnieuw met zone-distributie + power-context. Manual override blijft beschermd.
+* **✅ 40.1 — Strava `/streams` API-call:** `FitnessDataService.fetchActivityStreams(for:)` haalt `time`, `watts`, `cadence`, `heartrate`, `velocity_smooth` op via `?keys=...&key_by_type=true`. Token-flow hergebruikt bestaande Strava-OAuth.
+* **✅ 40.2 — Deterministische UUID i.p.v. schema-wijziging:** `UUID.deterministic(fromStravaID:)` (SHA256, UUIDv5-achtig) leidt voor Strava-records een vaste UUID af. `WorkoutSample.workoutUUID` blijft `UUID` — geen migratie. `UUID.forActivityRecordID(_:)` is de centrale router (HK-uuidString of Strava-fallback).
+* **✅ 40.3 — `StravaStreamIngestService`:** spiegel van `WorkoutSampleIngestService` (gescheiden om HK-logica niet te vervuilen). Hergebruikt `SampleResampler` met identieke strategieën (average voor HR/power/cadence, linear interpolation voor speed). Idempotent via `WorkoutSampleStore.replaceSamples`. Backfill in `DashboardView` scenePhase-flow voor de laatste 10 Strava-records zonder samples, met 100ms throttle. `WorkoutAnalysisView` gebruikt nu `UUID.forActivityRecordID` zodat de Strava-detail-view automatisch de power-chart toont zodra samples binnen zijn. Plus `StravaActivity.device_watts: Bool?` (decodeIfPresent — backwards-compat met bestaande caches). 14 unit tests.
+* **⏳ 40.4 — Classifier herclassificeert na stream-ingest:** Follow-up — `SessionClassifier` opnieuw draaien op records die nu samples hebben gekregen, zodat de zone-distributie-strategie (story 33.1a) ook voor Strava-rides werkt. Manual override blijft beschermd.
 
-**Effort:** ~4–8u afhankelijk van schema-keuze in 40.2 (UUID→String is breaking voor huidige data; aparte `externalActivityID` is additief).
-
-**Status:** ⏳ — niet urgent, maar fundament voor Story 33.4 (Intentie vs. Uitvoering). Daar wordt power onmisbaar omdat HR alleen onvoldoende differentieert tussen "te warm/dehydratie" en "echt te hard". Tot dan is HealthFit (third-party app, FIT → HealthKit) een werkbare workaround voor individuele atleten.
+**Status:** 🔄 — kern (40.1+40.2+40.3) live en on-device gevalideerd (april 2026: Strava-power-data komt door, klikbaar in Recente Workouts, charts renderen). 40.4 (classifier-rerun) wacht totdat we de stream-flow stabiel hebben gezien in dagelijks gebruik.
 
 ---
 

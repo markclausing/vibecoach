@@ -26,22 +26,16 @@ struct WorkoutAnalysisView: View {
 
     init(activity: ActivityRecord) {
         self.activity = activity
-        // SwiftData filter — alleen HealthKit-records hebben een UUID-parseerbare id.
-        // Strava-records leveren een lege query op zodat de view automatisch de
-        // 'geen samples'-staat toont.
-        if let uuid = UUID(uuidString: activity.id) {
-            _samples = Query(
-                filter: #Predicate<WorkoutSample> { $0.workoutUUID == uuid },
-                sort: \WorkoutSample.timestamp,
-                order: .forward
-            )
-        } else {
-            _samples = Query(
-                filter: #Predicate<WorkoutSample> { _ in false },
-                sort: \WorkoutSample.timestamp,
-                order: .forward
-            )
-        }
+        // Story 32.1 (HK) + Epic 40 (Strava): unified UUID-mapping.
+        // - HealthKit-records: id is een UUID-string → wordt geparsed.
+        // - Strava-records: id is numerieke string → deterministische UUID via SHA-256.
+        // Dit houdt @Query type-veilig en vermijdt schema-wijziging op WorkoutSample.
+        let uuid = UUID.forActivityRecordID(activity.id)
+        _samples = Query(
+            filter: #Predicate<WorkoutSample> { $0.workoutUUID == uuid },
+            sort: \WorkoutSample.timestamp,
+            order: .forward
+        )
     }
 
     // MARK: Computed
@@ -621,21 +615,20 @@ struct RecentWorkoutRow: View {
     let activity: ActivityRecord
     @EnvironmentObject var themeManager: ThemeManager
 
-    private var isHealthKit: Bool { UUID(uuidString: activity.id) != nil }
-
     var body: some View {
-        Group {
-            if isHealthKit {
-                NavigationLink {
-                    WorkoutAnalysisView(activity: activity)
-                } label: {
-                    rowContent(showChevron: true)
-                }
-                .buttonStyle(.plain)
-            } else {
-                rowContent(showChevron: false)
-            }
+        // Epic 40: zowel HealthKit-records (UUID-uuidString) als Strava-records
+        // (numerieke ID) zijn nu klikbaar. WorkoutAnalysisView maakt zelf onderscheid
+        // via `UUID.forActivityRecordID(_:)` en toont samples wanneer aanwezig — bij
+        // Strava-records zonder ge-ingestte streams verschijnt de bestaande
+        // 'Nog geen samples beschikbaar'-empty-state. Dat is correcter dan een rij
+        // zonder navigatie waar de gebruiker geen feedback krijgt over waarom hij
+        // niets kan tappen.
+        NavigationLink {
+            WorkoutAnalysisView(activity: activity)
+        } label: {
+            rowContent(showChevron: true)
         }
+        .buttonStyle(.plain)
     }
 
     private func rowContent(showChevron: Bool) -> some View {

@@ -179,6 +179,57 @@ actor FitnessDataService {
         }
     }
 
+    /// Epic 40: Haalt de fijngranulaire stream-data op voor één Strava-activity.
+    /// Vraagt de stromen `time`, `watts`, `cadence`, `heartrate` en `velocity_smooth`
+    /// op als `key_by_type=true`-dictionary. Niet alle streams zijn altijd aanwezig
+    /// (bv. `watts` ontbreekt zonder powermeter) — caller moet optionals correct
+    /// behandelen via `StravaStreamSet`.
+    /// - Parameter activityId: De Strava-activity-ID.
+    /// - Returns: Volledige `StravaStreamSet` met de beschikbare streams.
+    /// - Throws: `FitnessDataError` bij netwerkfout, ongeldige token of decode-failure.
+    func fetchActivityStreams(for activityId: Int64) async throws -> StravaStreamSet {
+        try await refreshTokenIfNeeded()
+
+        guard let stravaToken = try tokenStore.getToken(forService: "StravaToken"), !stravaToken.isEmpty else {
+            throw FitnessDataError.missingToken
+        }
+
+        let keys = "time,watts,cadence,heartrate,velocity_smooth"
+        let urlString = "https://www.strava.com/api/v3/activities/\(activityId)/streams?keys=\(keys)&key_by_type=true"
+        guard let url = URL(string: urlString) else {
+            throw FitnessDataError.networkError("Ongeldige URL voor streams van activiteit \(activityId)")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(stravaToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw FitnessDataError.networkError(error.localizedDescription)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw FitnessDataError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw FitnessDataError.unauthorized
+        } else if httpResponse.statusCode == 404 {
+            throw FitnessDataError.networkError("Streams voor activiteit \(activityId) niet gevonden")
+        } else if !(200...299).contains(httpResponse.statusCode) {
+            throw FitnessDataError.networkError("Onverwachte HTTP status code: \(httpResponse.statusCode)")
+        }
+
+        do {
+            return try JSONDecoder().decode(StravaStreamSet.self, from: data)
+        } catch {
+            throw FitnessDataError.decodingError(error.localizedDescription)
+        }
+    }
+
     /// Haalt historische activiteiten op via de Strava API, met ondersteuning voor paginatie.
     /// Dit wordt gebruikt voor het berekenen van het langetermijn atletisch profiel.
     /// - Parameter monthsBack: Hoeveel maanden we terug willen kijken (bijv. 6).

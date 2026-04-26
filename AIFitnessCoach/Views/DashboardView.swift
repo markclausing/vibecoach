@@ -1756,6 +1756,50 @@ struct DashboardView: View {
                 let service = DeepSyncService(ingestService: ingest, store: store)
                 await service.runIfNeeded()
             }
+            // Epic 40 Story 40.3: backfill van Strava-streams voor de laatste 10
+            // Strava-records zonder samples. 100ms throttle tussen calls om Strava's
+            // rate-limit comfortabel te respecteren (100 req/15min). Per-record fout
+            // blokkeert de batch niet — gewoon verder met de volgende.
+            .task {
+                await backfillStravaStreams()
+            }
+        }
+    }
+
+    /// Epic 40: filter de laatste 10 Strava-records (id niet UUID-parseerbaar) zonder
+    /// 5s-samples in DB en haal hun streams op. Async, scenePhase-getriggerd.
+    private func backfillStravaStreams() async {
+        let store = WorkoutSampleStore(modelContainer: modelContext.container)
+        let ingest = StravaStreamIngestService()
+        let api = FitnessDataService()
+
+        let candidates = activities
+            .filter { UUID(uuidString: $0.id) == nil }       // alleen Strava
+            .sorted { $0.startDate > $1.startDate }
+            .prefix(10)
+
+        for activity in candidates {
+            let workoutUUID = UUID.deterministic(fromStravaID: activity.id)
+            let existingCount = (try? await store.sampleCount(forWorkoutUUID: workoutUUID)) ?? 0
+            guard existingCount == 0 else { continue }
+
+            guard let stravaID = Int64(activity.id) else { continue }
+            do {
+                let streams = try await api.fetchActivityStreams(for: stravaID)
+                try await ingest.ingestStreams(
+                    streams,
+                    activityID: activity.id,
+                    startDate: activity.startDate,
+                    durationSeconds: activity.movingTime,
+                    into: store
+                )
+            } catch {
+                // Eén fout (404, 429 rate-limit, decode-failure) blokkeert de batch niet.
+                print("⚠️ Strava-stream backfill faalde voor \(activity.id): \(error.localizedDescription)")
+            }
+            // 100ms throttle — Strava's rate-limit is 100 req/15min; voor 10 calls
+            // hebben we ruim tijd, throttle is bewust voorzichtig + cooperatieve cancel.
+            try? await Task.sleep(nanoseconds: 100_000_000)
         }
     }
 
