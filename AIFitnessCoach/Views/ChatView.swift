@@ -308,12 +308,16 @@ private let suggestionChips = [
 
                     // ── Invoerbalk
                     HStack(alignment: .bottom, spacing: 12) {
+                        // Epic 39 Story 39.2: PhotosPicker's label-closure is @Sendable;
+                        // main-actor-properties direct refereren triggert een warning.
+                        // Lees de kleur in een lokale `let` zodat de closure 'm captured.
+                        let accentColor = themeManager.primaryAccentColor
                         PhotosPicker(selection: $selectedItem, matching: .images, photoLibrary: .shared()) {
                             Image(systemName: "plus")
                                 .font(.system(size: 20))
-                                .foregroundStyle(themeManager.primaryAccentColor)
+                                .foregroundStyle(accentColor)
                                 .padding(8)
-                                .background(themeManager.primaryAccentColor.opacity(0.1))
+                                .background(accentColor.opacity(0.1))
                                 .clipShape(Circle())
                         }
                         .onChange(of: selectedItem) { _, newItem in

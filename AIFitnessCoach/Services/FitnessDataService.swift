@@ -385,8 +385,9 @@ struct AthleticProfile {
 @MainActor
 class AthleticProfileManager {
 
-    /// Unified logger voor HRV- en slaap-queries. `.private` voor sample-waardes.
-    static let logger = Logger(subsystem: "com.markclausing.aifitnesscoach", category: "AthleticProfileManager")
+    // Epic 39 Story 39.1: logger leeft nu in `AppLoggers` — main-actor-isolation
+    // op een `static let` veroorzaakte 70 Swift 6-warnings vanuit @Sendable
+    // HealthKit-callbacks.
 
     /// Berekent het profiel op basis van de aanwezige `ActivityRecord` elementen.
     /// Inclusief de Overtraining logica (Sprint 6.3).
@@ -771,7 +772,7 @@ final class HealthKitManager: @unchecked Sendable {
     /// - Returns: Gemiddelde HRV in ms, of nil als er geen meting beschikbaar is.
     func fetchRecentHRV(sleepStart: Date? = nil, sleepEnd: Date? = nil) async throws -> Double? {
         guard let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else {
-            AthleticProfileManager.logger.error("[HRV] HKQuantityType voor heartRateVariabilitySDNN niet beschikbaar")
+            AppLoggers.athleticProfileManager.error("[HRV] HKQuantityType voor heartRateVariabilitySDNN niet beschikbaar")
             return nil
         }
 
@@ -797,13 +798,13 @@ final class HealthKitManager: @unchecked Sendable {
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: hrvType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
                 if let error = error {
-                    AthleticProfileManager.logger.error("[HRV] HealthKit fout: \(error.localizedDescription, privacy: .public)")
+                    AppLoggers.athleticProfileManager.error("[HRV] HealthKit fout: \(error.localizedDescription, privacy: .public)")
                     continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen HRV: \(error.localizedDescription)"))
                     return
                 }
 
                 guard let hrvSamples = samples as? [HKQuantitySample], !hrvSamples.isEmpty else {
-                    AthleticProfileManager.logger.debug("[HRV] Geen samples gevonden in afgelopen 48 uur — Watch mogelijk niet gedragen")
+                    AppLoggers.athleticProfileManager.debug("[HRV] Geen samples gevonden in afgelopen 48 uur — Watch mogelijk niet gedragen")
                     continuation.resume(returning: nil)
                     return
                 }
@@ -814,7 +815,7 @@ final class HealthKitManager: @unchecked Sendable {
                 let averageHRV = totalHRV / Double(hrvSamples.count)
 
                 // HRV-waarde is user-specifieke fysiologische data → private.
-                AthleticProfileManager.logger.info("[HRV] Data ontvangen: \(String(format: "%.1f", averageHRV), privacy: .private) ms (\(hrvSamples.count, privacy: .public) meting(en))")
+                AppLoggers.athleticProfileManager.info("[HRV] Data ontvangen: \(String(format: "%.1f", averageHRV), privacy: .private) ms (\(hrvSamples.count, privacy: .public) meting(en))")
                 continuation.resume(returning: averageHRV)
             }
             healthStore.execute(query)
@@ -871,7 +872,7 @@ final class HealthKitManager: @unchecked Sendable {
     /// - Returns: Totale slaaptijd in uren (bijv. 7.5), of nil als geen data beschikbaar.
     func fetchLastNightSleep() async throws -> Double? {
         guard let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) else {
-            AthleticProfileManager.logger.error("[Slaap] HKCategoryType voor sleepAnalysis niet beschikbaar")
+            AppLoggers.athleticProfileManager.error("[Slaap] HKCategoryType voor sleepAnalysis niet beschikbaar")
             return nil
         }
 
@@ -890,13 +891,13 @@ final class HealthKitManager: @unchecked Sendable {
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
                 if let error = error {
-                    AthleticProfileManager.logger.error("[Slaap] HealthKit fout: \(error.localizedDescription, privacy: .public)")
+                    AppLoggers.athleticProfileManager.error("[Slaap] HealthKit fout: \(error.localizedDescription, privacy: .public)")
                     continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen slaapdata: \(error.localizedDescription)"))
                     return
                 }
 
                 guard let sleepSamples = samples as? [HKCategorySample], !sleepSamples.isEmpty else {
-                    AthleticProfileManager.logger.debug("[Slaap] Geen samples gevonden in nachtvenster")
+                    AppLoggers.athleticProfileManager.debug("[Slaap] Geen samples gevonden in nachtvenster")
                     continuation.resume(returning: nil)
                     return
                 }
@@ -939,7 +940,7 @@ final class HealthKitManager: @unchecked Sendable {
                 let minutes = Int((totalSleepHours - Double(hours)) * 60)
 
                 // Slaapuren zijn user-specifieke data → private.
-                AthleticProfileManager.logger.info("[Slaap] Afgelopen nacht: \(hours, privacy: .private)u \(minutes, privacy: .private)m (Core+Deep+REM = \(String(format: "%.2f", totalSleepHours), privacy: .private) uur)")
+                AppLoggers.athleticProfileManager.info("[Slaap] Afgelopen nacht: \(hours, privacy: .private)u \(minutes, privacy: .private)m (Core+Deep+REM = \(String(format: "%.2f", totalSleepHours), privacy: .private) uur)")
                 continuation.resume(returning: totalSleepHours)
             }
             healthStore.execute(query)
@@ -953,7 +954,7 @@ final class HealthKitManager: @unchecked Sendable {
     /// van de slaapsessie — zodat de HRV-query daar naadloos op kan aansluiten.
     func fetchSleepStages() async throws -> SleepStages? {
         guard let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) else {
-            AthleticProfileManager.logger.error("[Slaapfases] HKCategoryType niet beschikbaar")
+            AppLoggers.athleticProfileManager.error("[Slaapfases] HKCategoryType niet beschikbaar")
             return nil
         }
 
@@ -972,7 +973,7 @@ final class HealthKitManager: @unchecked Sendable {
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
                 if let error = error {
-                    AthleticProfileManager.logger.error("[Slaapfases] HealthKit fout: \(error.localizedDescription, privacy: .public)")
+                    AppLoggers.athleticProfileManager.error("[Slaapfases] HealthKit fout: \(error.localizedDescription, privacy: .public)")
                     continuation.resume(returning: nil)
                     return
                 }
