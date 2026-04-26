@@ -497,6 +497,12 @@ final class ActivityRecord {
     // bij ingest en kan door de gebruiker handmatig worden overruled vanuit `WorkoutAnalysisView`.
     var sessionType: SessionType?
 
+    // Epic 41: True wanneer de bron-activity met een powermeter is gemeten. Voor Strava-records
+    // gevuld via `StravaActivity.device_watts`; voor HealthKit-records meestal nil (HK heeft
+    // geen device-meta-info). Gebruikt door `ActivityDeduplicator` als sterk signal — een
+    // record met power-meter wint van eenzelfde rit zonder.
+    var deviceWatts: Bool?
+
     /// Menselijke naam voor UI en AI-context.
     /// Legacy HealthKit-records bevatten soms 'HealthKit <rawValue>' (bijv. 'HealthKit 52') —
     /// deze property vervangt dat altijd door de leesbare naam van de SportCategory.
@@ -507,7 +513,7 @@ final class ActivityRecord {
         return name
     }
 
-    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil, rpe: Int? = nil, mood: String? = nil, sessionType: SessionType? = nil) {
+    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil, rpe: Int? = nil, mood: String? = nil, sessionType: SessionType? = nil, deviceWatts: Bool? = nil) {
         self.id = id
         self.name = name
         self.distance = distance
@@ -519,6 +525,7 @@ final class ActivityRecord {
         self.rpe = rpe
         self.mood = mood
         self.sessionType = sessionType
+        self.deviceWatts = deviceWatts
     }
 }
 

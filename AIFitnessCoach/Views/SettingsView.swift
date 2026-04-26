@@ -143,7 +143,8 @@ struct SettingsView: View {
                                     averageHeartrate: activity.average_heartrate,
                                     sportCategory: SportCategory.from(rawString: activity.type),
                                     startDate: date,
-                                    trimp: basicTRIMPFallback
+                                    trimp: basicTRIMPFallback,
+                                    deviceWatts: activity.device_watts
                                 )
                                 modelContext.insert(record)
                                 newRecordsCount += 1
@@ -214,30 +215,21 @@ struct SettingsView: View {
     /// 2. Zelfde `startDate` + `sportCategory` — HealthKit-level duplicaten (zelfde workout, twee UUIDs)
     /// Behoudt altijd de eerste record (gesorteerd op startDate), verwijdert de rest.
     private func removeDuplicateRecords() {
-        let descriptor = FetchDescriptor<ActivityRecord>(sortBy: [SortDescriptor(\.startDate, order: .forward)])
-        guard let allRecords = try? modelContext.fetch(descriptor) else { return }
-
-        var seenIds = Set<String>()
-        // Composite key: "startDate_sportCategory" voor HealthKit-level duplicaten
-        var seenCompositeKeys = Set<String>()
-        var duplicatesRemoved = 0
-
-        for record in allRecords {
-            let compositeKey = "\(record.startDate.timeIntervalSince1970)_\(record.sportCategory.rawValue)"
-
-            if seenIds.contains(record.id) || seenCompositeKeys.contains(compositeKey) {
-                modelContext.delete(record)
-                duplicatesRemoved += 1
-            } else {
-                seenIds.insert(record.id)
-                seenCompositeKeys.insert(compositeKey)
+        // Epic 41: bron-aware dedupe via `ActivityDeduplicator`. De helper kiest
+        // bij conflict de "rijkste" record (samples > deviceWatts > trimp > avgHR),
+        // zodat een Strava-record met power nooit wordt weggegooid voor een HK-
+        // record zonder.
+        Task { @MainActor in
+            let store = WorkoutSampleStore(modelContainer: modelContext.container)
+            do {
+                let removed = try await ActivityDeduplicator.runDedupe(in: modelContext, store: store)
+                feedbackMessage = removed > 0
+                    ? "\(removed) dubbele activiteit(en) verwijderd."
+                    : "Geen duplicaten gevonden — database is schoon."
+            } catch {
+                feedbackMessage = "Dedupe mislukt: \(error.localizedDescription)"
             }
         }
-
-        try? modelContext.save()
-        feedbackMessage = duplicatesRemoved > 0
-            ? "\(duplicatesRemoved) dubbele activiteit(en) verwijderd."
-            : "Geen duplicaten gevonden — database is schoon."
     }
 
     // Opslaan van ingevoerde waarden naar native Keychain

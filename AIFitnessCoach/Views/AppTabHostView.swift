@@ -69,7 +69,8 @@ struct AppTabHostView: View {
                                     averageHeartrate: activity.average_heartrate,
                                     sportCategory: SportCategory.from(rawString: activity.type),
                                     startDate: date,
-                                    trimp: basicTRIMPFallback // In a real app we could recalculate the local TRIMP hier via PhysiologicalCalculator if missing
+                                    trimp: basicTRIMPFallback, // In a real app we could recalculate the local TRIMP hier via PhysiologicalCalculator if missing
+                                    deviceWatts: activity.device_watts
                                 )
                                 modelContext.insert(record)
                             }

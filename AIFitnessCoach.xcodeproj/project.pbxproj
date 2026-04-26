@@ -113,6 +113,8 @@
 		CDA4F7B2D6E8F0A1B2C3D405 /* UUIDDeterministicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDA4F7B2D6E8F0A1B2C3D405 /* UUIDDeterministicTests.swift */; };
 		CEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift */; };
 		CFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift */; };
+		D0A4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift */; };
+		D1A4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -242,6 +244,8 @@
 		FDA4F7B2D6E8F0A1B2C3D405 /* UUIDDeterministicTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UUIDDeterministicTests.swift; sourceTree = "<group>"; };
 		FEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaStreamIngestService.swift; sourceTree = "<group>"; };
 		FFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaStreamIngestServiceTests.swift; sourceTree = "<group>"; };
+		E0B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityDeduplicator.swift; sourceTree = "<group>"; };
+		E1B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityDeduplicatorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -336,6 +340,7 @@
 				FBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift */,
 				FDA4F7B2D6E8F0A1B2C3D405 /* UUIDDeterministicTests.swift */,
 				FFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift */,
+				E1B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -391,6 +396,7 @@
 				F5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift */,
 				FCA4F7B2D6E8F0A1B2C3D405 /* UUID+Deterministic.swift */,
 				FEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift */,
+				E0B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -686,6 +692,7 @@
 				CBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift in Sources */,
 				CDA4F7B2D6E8F0A1B2C3D405 /* UUIDDeterministicTests.swift in Sources */,
 				CFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift in Sources */,
+				D1A4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -755,6 +762,7 @@
 				C9A4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilder.swift in Sources */,
 				CCA4F7B2D6E8F0A1B2C3D405 /* UUID+Deterministic.swift in Sources */,
 				CEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift in Sources */,
+				D0A4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
