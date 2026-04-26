@@ -6,7 +6,7 @@ Een iOS-app (SwiftUI + SwiftData) die fungeert als persoonlijke, slimme fitnessc
 
 ## 🚀 Huidige Status
 
-**Laatst gemerged — Epic #40 ✅ Strava Power-Stream Ingest · Epic #39 🔄 Swift 6 Concurrency Cleanup (72 warnings → 0)**
+**Laatst gemerged — Epic #43 ✅ UI Polish (Settings-status + Dashboard-header) · Epic #40 ✅ Strava Power-Stream Ingest**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte coaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur. Testsuite: **51% code coverage** (gemeten met `xcodebuild -enableCodeCoverage YES` over de volledige unit + UI suite). Alle kritieke Services + Models zitten boven de 80% — zie [`docs/ROADMAP.md`](docs/ROADMAP.md) Epic #36 voor de per-bestand uitsplitsing.
 

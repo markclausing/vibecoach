@@ -434,18 +434,15 @@ Aanleiding: na on-device-validatie van Epic #41 (april 2026) vroeg de gebruiker 
 
 ---
 
-### ⏳ Epic #43: UI Polish — Settings-status & Layout-consistentie
+### ✅ Epic #43: UI Polish — Settings-status & Layout-consistentie
 
-Aanleiding: tijdens on-device-gebruik (april 2026) viel op dat (a) de drie "Verbindingen"-cards in `SettingsView` (HealthKit, Strava, AI Coach) hardcoded subtitels en green-dot-statussen tonen die niet meegaan met de werkelijke connectie-staat, en (b) de "Goedenavond"-titel op `DashboardView` deels onder de iPhone-statusbar verdwijnt terwijl de andere tabs (Settings, Doelen, Coach, Geheugen) die ruimte wel correct respecteren. Beide zijn pure UI-fixes — geen impact op data-laag of services.
+Aanleiding: tijdens on-device-gebruik (april 2026) viel op dat (a) de drie "Verbindingen"-cards in `SettingsView` (HealthKit, Strava, AI Coach) hardcoded sublabels (`"Primair · Live"`, `"Backup"`, `"Gemini"`) toonden die niet meegingen met de werkelijke connectie-staat of de bron-toggle, en (b) de "Goedenavond"-titel op `DashboardView` deels onder de iPhone-statusbar verdween terwijl de andere tabs (Settings, Doelen, Coach, Geheugen) die ruimte wel correct respecteerden.
 
 **Sub-stories:**
 
-* **⏳ 43.1 — Dynamische Verbindingen-cards in Instellingen:** Vervang de hardcoded labels door live status. Per card:
-  - **HealthKit:** authorization-status uit `HKHealthStore.authorizationStatus(for:)` over de set kerntypes (workouts, HR, HRV, slaap). Groen bij volledige toegang, oranje bij gedeeltelijke, grijs zonder. Sublabel: "Primair" of "Backup" afhankelijk van `selectedDataSource` (Epic #42 hernoemt dit later naar bron-voorkeur).
-  - **Strava:** koppel-status uit `StravaAuthService` (token aanwezig + niet verlopen) — dit raakt Epic #41 story 41.3 (OAuth-toggle-bug); pak één van de twee als eerste op want de bron is dezelfde.
-  - **AI Coach:** of er een sleutel in de Keychain staat voor de geselecteerde provider (`UserAPIKeyStore`). Sublabel: provider-naam (Gemini / OpenAI / Anthropic) plus model-id (uit Epic #35-selectie).
-* **⏳ 43.2 — Dashboard-titel onder status bar fixen:** De "Goedenavond"-header in `DashboardView` wordt door de statusbar (klok + signaal-icons) overlapt; andere tabs zijn correct. Vermoedelijke oorzaak: ontbrekende `safeAreaInset`/`navigationBarTitleDisplayMode` consistent met de TabHost-children. Audit en fix zonder de visuele hierarchy van de andere views te raken.
+* **✅ 43.1 — Dynamische Verbindingen-cards in Instellingen:** Drie computed properties in `SettingsView` (`healthKitConnectionSubtitle`, `stravaConnectionSubtitle`, `aiCoachConnectionSubtitle`) reflecteren nu de werkelijke state. HealthKit en Strava tonen "Primair"/"Backup" afhankelijk van `selectedDataSource`, of "Niet gekoppeld" wanneer de bron niet geauthoriseerd is. AI Coach toont de korte provider-naam (Gemini / OpenAI / Anthropic) en — alleen bij Gemini — ook het gekozen model uit Epic #35 (bv. "Gemini · flash-latest"). Geen wijziging aan `SettingsConnectionCard` zelf; binaire green/grey-dot blijft zoals 'ie was. Volwaardige tri-state (oranje voor partial-auth) komt mee met Epic #38 (HealthKit Permission UX).
+* **✅ 43.2 — Dashboard-titel onder status bar fixen:** `DashboardHeaderView` ontbrak `.padding(.top, 56)` die alle andere tab-views (`SettingsView`, `GoalsListView`, `ChatView`, `PreferencesListView`) wel hadden. Eén regel toegevoegd; visuele hierarchy van de andere views ongewijzigd.
 
-**Effort:** ~3–4u. 43.1 is het grootste deel (drie verschillende status-bronnen + binding aan UI); 43.2 is meestal één padding/safeArea-tweak. Geen tests nodig voor 43.2; voor 43.1 een lichte XCUITest die bevestigt dat een card de juiste sublabel toont gegeven een mock-status.
+**Effort gerealiseerd:** ~30 min. 43.2 was een one-liner; 43.1 was drie computed properties + één extra `@AppStorage`-binding voor de Gemini-modelnaam. Geen nieuwe tests — bestaande 542-tests-suite blijft groen, en de logica in de computed properties is voldoende eenvoudig om visueel te verifiëren.
 
-**Status:** ⏳ — kosmetisch maar zichtbaar bij elke launch. 43.2 is een quick win (hoogstwaarschijnlijk één regel), 43.1 verdient een bewuste sessie omdat het drie services raakt.
+**Status:** ✅ — beide stories live. Eventuele tri-state-uitbreiding (oranje dot bij partial HealthKit-auth) volgt mee met Epic #38.
