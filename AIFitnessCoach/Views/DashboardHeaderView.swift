@@ -55,7 +55,10 @@ struct DashboardHeaderView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
-        .padding(.top, 8)
+        // Epic 43 Story 43.2: top-padding consistent met SettingsView, GoalsListView,
+        // ChatView en PreferencesListView — anders glijdt de "Goedenavond"-titel onder
+        // de iPhone-statusbar door (klok overlapt met de tekst).
+        .padding(.top, 56)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("DashboardHeaderView")
     }

@@ -34,6 +34,11 @@ struct SettingsView: View {
     // `loadTokens()` laadt de waarde bij elke onAppear opnieuw uit de Keychain.
     @State                                   private var apiKey: String = ""
     @AppStorage("vibecoach_aiProvider")      private var providerRaw: String = AIProvider.gemini.rawValue
+    // Epic 43 Story 43.1: lees het door de gebruiker gekozen Gemini-model voor de
+    // dynamische AI-Coach-card-subtitle. Dezelfde key als `AIProviderSettingsView`
+    // gebruikt — SwiftUI synct automatisch over alle @AppStorage-bindings.
+    @AppStorage(AIModelAppStorageKey.primary)
+    private var primaryModelId: String = AIModelAppStorageKey.defaultPrimary
     // Epic 34 Sprint 2: toggles zonder backend-logica verwijderd.
     // Notificatie-schakelaars en achtergrond-sync komen terug zodra de
     // `ProactiveNotificationService` per-kanaal kan worden geconfigureerd.
@@ -50,6 +55,41 @@ struct SettingsView: View {
 
     // Dependency injection (voor tests of preview)
     var tokenStore: TokenStore = KeychainService.shared
+
+    // MARK: - Verbindingen-card subtitels (Epic 43 Story 43.1)
+    //
+    // Reflecteren de werkelijke connection-state: gekoppeld? primair of backup
+    // volgens `selectedDataSource`? welk AI-model? In plaats van hardcoded
+    // literals die loskoppelden van de toggle-keuze van de gebruiker.
+
+    private var healthKitConnectionSubtitle: String {
+        guard isHealthKitLinked else { return "Niet gekoppeld" }
+        return selectedDataSource == .healthKit ? "Primair · Live" : "Backup · Live"
+    }
+
+    private var stravaConnectionSubtitle: String {
+        guard stravaAuthService.isAuthenticated else { return "Niet gekoppeld" }
+        return selectedDataSource == .strava ? "Primair" : "Backup"
+    }
+
+    private var aiCoachConnectionSubtitle: String {
+        guard !apiKey.isEmpty, let provider = AIProvider(rawValue: providerRaw) else {
+            return "Geen sleutel"
+        }
+        let shortName: String
+        switch provider {
+        case .gemini:    shortName = "Gemini"
+        case .openAI:    shortName = "OpenAI"
+        case .anthropic: shortName = "Anthropic"
+        }
+        // Voor Gemini tonen we ook het gekozen model (Epic #35) — bv. "Gemini · flash-latest".
+        // De "gemini-"-prefix strippen we om de card-subtitle compact te houden.
+        guard provider == .gemini else { return shortName }
+        let modelShort = primaryModelId.hasPrefix("gemini-")
+            ? String(primaryModelId.dropFirst("gemini-".count))
+            : primaryModelId
+        return "\(shortName) · \(modelShort)"
+    }
 
     // Laden van opgeslagen waarden en rechten
     private func loadTokens() {
@@ -268,21 +308,21 @@ struct SettingsView: View {
                         SettingsConnectionCard(
                             icon: "applewatch",
                             title: "HealthKit",
-                            subtitle: isHealthKitLinked ? "Primair · Live" : "Niet gekoppeld",
+                            subtitle: healthKitConnectionSubtitle,
                             isConnected: isHealthKitLinked,
                             accentColor: themeManager.primaryAccentColor
                         )
                         SettingsConnectionCard(
                             icon: "figure.run",
                             title: "Strava",
-                            subtitle: stravaAuthService.isAuthenticated ? "Backup" : "Niet gekoppeld",
+                            subtitle: stravaConnectionSubtitle,
                             isConnected: stravaAuthService.isAuthenticated,
                             accentColor: themeManager.primaryAccentColor
                         )
                         SettingsConnectionCard(
                             icon: "sparkles",
                             title: "AI Coach",
-                            subtitle: AIProvider(rawValue: providerRaw)?.displayName.components(separatedBy: " ").first ?? "Gemini",
+                            subtitle: aiCoachConnectionSubtitle,
                             isConnected: !apiKey.isEmpty,
                             accentColor: themeManager.primaryAccentColor
                         )
