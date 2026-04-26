@@ -403,3 +403,20 @@ Aanleiding: een gebruiker met Garmin powermeter (april 2026) ontdekte dat `cycli
 **Effort:** ~4–8u afhankelijk van schema-keuze in 40.2 (UUID→String is breaking voor huidige data; aparte `externalActivityID` is additief).
 
 **Status:** ⏳ — niet urgent, maar fundament voor Story 33.4 (Intentie vs. Uitvoering). Daar wordt power onmisbaar omdat HR alleen onvoldoende differentieert tussen "te warm/dehydratie" en "echt te hard". Tot dan is HealthFit (third-party app, FIT → HealthKit) een werkbare workaround voor individuele atleten.
+
+---
+
+### ⏳ Epic #41: Dual-Source Single-Record-of-Truth
+
+Aanleiding: tijdens on-device-validatie van Epic #40 (april 2026) bleek dat een Garmin-rit zowel via Apple Health (workout + HR, geen power) als via Strava (volledig met power) als losse `ActivityRecord` in SwiftData belandt. De bestaande `removeDuplicateRecords` debug-knop in Settings (`startDate + sportCategory` composite key) is bron-blind: HK-record overleeft, Strava-record (mét power!) wordt verwijderd. Met Epic #40 levend wordt dat data-loss — gebruiker moet kiezen tussen "geen duplicaten + geen power" of "wel power + dubbele lijst".
+
+**Sub-stories:**
+
+* **41.1 — Bron-aware dedupe-prioriteit:** `removeDuplicateRecords` moet bij conflict de "rijkste" record bewaren, niet de "eerst gevonden". Heuristiek: heeft samples > heeft TRIMP > heeft avg HR. Strava-records met `device_watts` winnen automatisch van HK-records die hetzelfde event maar minder data bevatten.
+* **41.2 — Single-record-policy bij ingest:** Voorkom dat duplicaten überhaupt ontstaan. Bij `HealthKitSyncService` en de Strava-fetch: check of er al een record met overlappend startDate (±5 sec window) + sportCategory bestaat. Bij conflict: kies bron met rijkere data, schrijf `id` van die bron, leg `linkedExternalID` als secondary key zodat de andere bron ook kan koppelen voor stream-data.
+* **41.3 — Strava-OAuth-toggle-bug:** Status-check returnt soms `false` voor een geldige token (gebruiker meldt "gekoppeld" → tap → "niet gekoppeld" → opnieuw OAuth zonder login → "gekoppeld"). Token-refresh of state-staleness-bug. Hoort thuis in deze epic want een betrouwbare Strava-flow is voorwaarde voor betrouwbare dual-source.
+* **41.4 — Conflict-resolutie UI:** Settings-knop "Bekijk dubbele activiteiten" die voordat dedupe wordt uitgevoerd toont welke records gemerged worden. Voorkomt verrassingen ("waarom is mijn power weg?"). Optioneel — kan in 41.5 als blijkt dat 41.1+41.2 robuust genoeg zijn.
+
+**Effort:** ~6–10u afhankelijk van of we kiezen voor "smart dedupe" (41.1, snel) of "geen duplicaten überhaupt" (41.2, fundamenteler maar grotere refactor van beide sync-services).
+
+**Status:** ⏳ — uitsteltbaar zolang Epic #40's stream-flow niet on-device gevalideerd is. Pas oppakken als #40 stabiel werkt en de pijn van duplicaten merkbaar wordt in dagelijks gebruik. Voor nu: gebruiker kan met Strava primair + sync historie + **niet** dedupe-knop tikken werken — duplicaten in lijst, maar power komt door.
