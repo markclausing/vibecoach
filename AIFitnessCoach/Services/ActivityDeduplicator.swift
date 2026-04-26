@@ -119,6 +119,25 @@ enum ActivityDeduplicator {
             counts[record.id] = (try? await store.sampleCount(forWorkoutUUID: uuid)) ?? 0
         }
 
+        // 🔍 TEMP DEBUG (Epic 41 — dedupe diagnose). Verwijder na bug-jacht.
+        // Print alle records van de afgelopen 7 dagen zodat we kunnen zien WAAROM
+        // bepaalde paren niet gegroepeerd worden (timestamp-verschil > 5s? andere sport?).
+        let weekAgo = Date().addingTimeInterval(-7 * 86_400)
+        let recent = allRecords.filter { $0.startDate >= weekAgo }
+        print("🔍 [Dedupe] \(allRecords.count) total records, \(recent.count) in last 7 days:")
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        for r in recent {
+            let isStrava = UUID(uuidString: r.id) == nil
+            let bron = isStrava ? "STRAVA" : "HK    "
+            let watts = r.deviceWatts == true ? "⚡" : " "
+            let samples = counts[r.id] ?? 0
+            print("   \(bron) \(watts) \(dateFormatter.string(from: r.startDate)) sport=\(r.sportCategory.rawValue.padding(toLength: 9, withPad: " ", startingAt: 0)) samples=\(samples) name='\(r.name)'")
+        }
+        let groups = findDuplicateGroups(allRecords)
+        let multiGroups = groups.filter { $0.count > 1 }
+        print("🔍 [Dedupe] \(groups.count) groups total, \(multiGroups.count) with >1 record")
+
         let decision = decide(records: allRecords) { counts[$0.id] ?? 0 }
 
         for loser in decision.losers {
