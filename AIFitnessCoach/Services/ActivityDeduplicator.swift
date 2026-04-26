@@ -20,9 +20,16 @@ import SwiftData
 
 enum ActivityDeduplicator {
 
-    /// Tijd-tolerantie voor "dezelfde" rit: ±5 seconden op `startDate`. Garmin en
+    /// Tijd-tolerantie voor "dezelfde" rit met matching sport-categorie. Garmin en
     /// Apple Watch loggen niet altijd op precies dezelfde tick.
     static let matchToleranceSeconds: TimeInterval = 5
+
+    /// Strikte tolerantie voor cross-sport-match. Bij identieke timestamp is een
+    /// sport-categorie-verschil in de praktijk een mapping-issue (HK-records die
+    /// in `.other` belanden omdat `SportCategory.from(hkType:)` de specifieke
+    /// HK-type-id niet kent), niet twee parallel uitgevoerde workouts. Bij grotere
+    /// drift willen we wel een sport-check om false positives te vermijden.
+    static let strictMatchToleranceSeconds: TimeInterval = 1
 
     // MARK: Score
 
@@ -39,9 +46,12 @@ enum ActivityDeduplicator {
 
     // MARK: Group
 
-    /// Groepeert records die "dezelfde rit" representeren: zelfde sport-categorie +
-    /// `startDate` binnen `matchToleranceSeconds`. Records die alleen in hun eigen
-    /// groep zitten worden ook teruggegeven (size-1 groep).
+    /// Groepeert records die "dezelfde rit" representeren. Twee match-regels:
+    ///   • Strict (±1s): match ongeacht sport-categorie — vangt mapping-issues op
+    ///     (HK krachttraining die als `.other` belandt vs Strava's `.strength`)
+    ///   • Loose (1-5s): vereist gelijke sport-categorie als veiligheidsnet tegen
+    ///     false positives bij grotere timestamp-drift
+    /// Records die alleen in hun eigen groep zitten worden ook teruggegeven.
     static func findDuplicateGroups(_ records: [ActivityRecord]) -> [[ActivityRecord]] {
         // Sort op startDate voor deterministische groepering.
         let sorted = records.sorted { $0.startDate < $1.startDate }
@@ -50,14 +60,27 @@ enum ActivityDeduplicator {
         for record in sorted {
             if let lastGroup = groups.last,
                let representative = lastGroup.first,
-               representative.sportCategory == record.sportCategory,
-               abs(representative.startDate.timeIntervalSince(record.startDate)) <= matchToleranceSeconds {
+               isMatch(representative, record) {
                 groups[groups.count - 1].append(record)
             } else {
                 groups.append([record])
             }
         }
         return groups
+    }
+
+    /// Bepaalt of twee records dezelfde workout zijn op basis van time + sport.
+    private static func isMatch(_ a: ActivityRecord, _ b: ActivityRecord) -> Bool {
+        let diff = abs(a.startDate.timeIntervalSince(b.startDate))
+        if diff <= strictMatchToleranceSeconds {
+            // Identieke seconde — bron-mapping is dan onbetrouwbaar, dedupe altijd.
+            return true
+        }
+        if diff <= matchToleranceSeconds {
+            // Drift binnen 5s — sport-categorie als veiligheidsnet.
+            return a.sportCategory == b.sportCategory
+        }
+        return false
     }
 
     // MARK: Decide
@@ -118,25 +141,6 @@ enum ActivityDeduplicator {
             let uuid = UUID.forActivityRecordID(record.id)
             counts[record.id] = (try? await store.sampleCount(forWorkoutUUID: uuid)) ?? 0
         }
-
-        // 🔍 TEMP DEBUG (Epic 41 — dedupe diagnose). Verwijder na bug-jacht.
-        // Print alle records van de afgelopen 7 dagen zodat we kunnen zien WAAROM
-        // bepaalde paren niet gegroepeerd worden (timestamp-verschil > 5s? andere sport?).
-        let weekAgo = Date().addingTimeInterval(-7 * 86_400)
-        let recent = allRecords.filter { $0.startDate >= weekAgo }
-        print("🔍 [Dedupe] \(allRecords.count) total records, \(recent.count) in last 7 days:")
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        for r in recent {
-            let isStrava = UUID(uuidString: r.id) == nil
-            let bron = isStrava ? "STRAVA" : "HK    "
-            let watts = r.deviceWatts == true ? "⚡" : " "
-            let samples = counts[r.id] ?? 0
-            print("   \(bron) \(watts) \(dateFormatter.string(from: r.startDate)) sport=\(r.sportCategory.rawValue.padding(toLength: 9, withPad: " ", startingAt: 0)) samples=\(samples) name='\(r.name)'")
-        }
-        let groups = findDuplicateGroups(allRecords)
-        let multiGroups = groups.filter { $0.count > 1 }
-        print("🔍 [Dedupe] \(groups.count) groups total, \(multiGroups.count) with >1 record")
 
         let decision = decide(records: allRecords) { counts[$0.id] ?? 0 }
 

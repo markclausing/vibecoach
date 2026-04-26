@@ -63,12 +63,26 @@ final class ActivityDeduplicatorTests: XCTestCase {
         XCTAssertEqual(groups[1].map(\.id), ["C"])
     }
 
-    func testDoesNotGroupAcrossSports() {
+    func testDoesNotGroupAcrossSportsWhenTimeOffsetExists() {
+        // 3s drift + verschillende sport: loose check vereist sport-match → geen groepering.
         let cycling = makeRecord(id: "cycle", startOffset: 0, sportCategory: .cycling)
-        let running = makeRecord(id: "run", startOffset: 0, sportCategory: .running)
+        let running = makeRecord(id: "run", startOffset: 3, sportCategory: .running)
 
         let groups = ActivityDeduplicator.findDuplicateGroups([cycling, running])
-        XCTAssertEqual(groups.count, 2, "Verschillende sport = aparte rit, ook bij gelijke startDate")
+        XCTAssertEqual(groups.count, 2, "Bij timestamp-drift moet sport-categorie wel matchen — anders false positive")
+    }
+
+    func testGroupsAcrossSportsAtIdenticalTimestamp() {
+        // Strict-time bypass: bij identieke tijd wint de aanname dat het mapping-
+        // verschil is, niet twee parallel uitgevoerde workouts. Dit is exact het
+        // scenario uit de bug-melding: HK 'Training' (.other) + Strava 'Evening
+        // Weight Training' (.strength) op exact dezelfde seconde.
+        let hk     = makeRecord(id: UUID().uuidString, startOffset: 0, sportCategory: .other)
+        let strava = makeRecord(id: "12345678901",     startOffset: 0, sportCategory: .strength)
+
+        let groups = ActivityDeduplicator.findDuplicateGroups([hk, strava])
+        XCTAssertEqual(groups.count, 1,
+                       "Identieke timestamp + verschillende sport = mapping-issue, dedupe-kandidaten")
     }
 
     func testFiveSecondBoundaryIsInclusive() {
