@@ -117,6 +117,11 @@ class ChatViewModel: ObservableObject {
     /// Wordt gevuld via `refreshNutritionContext()` en geïnjecteerd in elke AI-prompt.
     @AppStorage("vibecoach_nutritionContext") private var nutritionContext: String = ""
 
+    /// Story 33.2a: cache van handmatig verplaatste workouts (`isSwapped == true`)
+    /// zodat de coach in elke prompt weet welke sessies de gebruiker bewust heeft
+    /// verschoven en die niet bij volgende suggesties terug-forceert.
+    @AppStorage("vibecoach_userOverrideContext") private var userOverrideContext: String = ""
+
     /// Epic 24 Sprint 3: Eenmalige coach-melding bij een gedetecteerde profielwijziging (bijv. leeftijd).
     /// Wordt geschreven door `PhysicalProfileSection` en geïnjecteerd in de eerstvolgende AI-prompt.
     /// Wordt geleegd nadat de prompt is opgebouwd zodat de melding slechts éénmaal verschijnt.
@@ -210,6 +215,12 @@ class ChatViewModel: ObservableObject {
     /// Epic 33 Story 33.1b: optioneel `sessionType` — als aanwezig wordt het type + fysiologische
     /// intent meegegeven zodat de coach z'n toon kalibreert (geen "te langzaam" bij Recovery).
     /// Format-logica zit in `LastWorkoutContextFormatter` (testbaar zonder ChatViewModel-state).
+    /// Story 33.2a: schrijft het USER_OVERRIDE-blok naar de cache. Aangeroepen vanuit
+    /// `DashboardView.onAppear` zodat het blok bij elke schema-context-build aanwezig is.
+    func cacheUserOverrides(_ workouts: [SuggestedWorkout]) {
+        userOverrideContext = UserOverrideContextFormatter.format(workouts: workouts)
+    }
+
     func cacheLastWorkoutFeedback(rpe: Int?,
                                   mood: String?,
                                   workoutName: String?,
@@ -709,6 +720,11 @@ class ChatViewModel: ObservableObject {
         // Epic 18.1: Injecteer de subjectieve feedback (RPE + stemming) van de laatste workout
         if !lastWorkoutFeedbackContext.isEmpty {
             prefix += "[SUBJECTIEVE FEEDBACK LAATSTE WORKOUT: \(lastWorkoutFeedbackContext) Let op discrepanties: als TRIMP laag is maar RPE ≥8, is dit een vroeg signaal van overtraining of naderende ziekte.]\n\n"
+        }
+
+        // Story 33.2a: handmatig verplaatste workouts — coach moet dit respecteren.
+        if !userOverrideContext.isEmpty {
+            prefix += userOverrideContext
         }
 
         // Epic 18: Injecteer de actuele pijnscores per lichaamsdeel (dagelijks bijgewerkt)

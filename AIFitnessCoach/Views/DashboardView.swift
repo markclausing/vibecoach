@@ -1694,6 +1694,9 @@ struct DashboardView: View {
                     startDate: lastRatedActivity?.startDate,
                     sessionType: lastRatedActivity?.sessionType
                 )
+                // Story 33.2a: schrijf de USER_OVERRIDE-cache zodat de coach handmatig
+                // verplaatste sessies respecteert in elke prompt-bouw.
+                viewModel.cacheUserOverrides(planManager.activePlan?.workouts ?? [])
                 // Epic 24 Sprint 1: Haal het fysiologisch profiel op en bereken het voedingsplan
                 // voor de workouts van vandaag en morgen. Gecached in AppStorage voor de AI-prompt.
                 Task { await viewModel.refreshNutritionContext() }
