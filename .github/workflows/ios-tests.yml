@@ -32,8 +32,9 @@ jobs:
         # Het mockmodel zorgt er daarna voor dat testen draaien zonder echte API key.
         run: cp AIFitnessCoach/Secrets-template.swift AIFitnessCoach/Secrets.swift
 
-      - name: Set Build Number
-        run: xcrun agvtool new-version -all ${{ github.run_number }}
+      # Set Build Number is verplaatst naar een Run Script Build Phase die
+      # CFBundleVersion at-build-time op `git rev-list --count HEAD` zet — werkt
+      # zowel lokaal als in CI, geen handmatige bumps of CI-only mutaties meer.
 
       - name: Build & Run XCTests
         run: |
