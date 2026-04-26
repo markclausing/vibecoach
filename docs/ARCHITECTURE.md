@@ -128,3 +128,31 @@ Alle andere payloads worden stil genegeerd — zowel in `willPresent` als `didRe
 - PII en identifiers (user-tokens, device-tokens, sample-waarden) worden getagd met `privacy: .private`.
 - APNs device-token printing staat achter `#if DEBUG` met alleen de laatste 6 tekens.
 - Doel: volledige `print`-migratie naar `os.Logger`. Fase 1 dekt de twee grootste services; de rest volgt in opvolg-PR's.
+
+---
+
+## 9. Workout Samples & Dual-Source Pijplijn (Epic 32 / 40 / 41)
+
+Sinds Epic 32 leeft de fijngranulaire workout-data (5s-buckets met HR, power, cadence, speed, distance) los van de workout zelf — de bron-`HKWorkout` of Strava-activity wordt **niet** in SwiftData gepersisteerd. Dat scheelt een redundant model en een schema-migratie iedere keer dat een bron iets verandert; de prijs is dat we een stabiele foreign key nodig hebben om samples aan een record te koppelen.
+
+### `WorkoutSample` — foreign-key model
+- `@Model final class WorkoutSample` in `Models/WorkoutSample.swift`.
+- Sleutel: `workoutUUID: UUID`. Eén `ActivityRecord` ↔ N samples (geen SwiftData-relatie, gewoon een gefilterde fetch).
+- Geschreven door `WorkoutSampleStore.replaceSamples(forWorkoutUUID:)` (idempotent — eerst delete, dan insert), gelezen door `samples(forWorkoutUUID:)` en `sampleCount(forWorkoutUUID:)`.
+
+### Deterministische UUID-brug HK ↔ Strava
+HK-workouts brengen hun eigen `HKWorkout.uuid` mee; Strava-records hebben alleen een numerieke `Int64`-id. Om dezelfde `WorkoutSample`-tabel voor beide bronnen te kunnen gebruiken (Epic 40), leiden we voor Strava een UUIDv5-achtige UUID af:
+
+- `UUID.deterministic(fromStravaID:)` — SHA256 over de Strava-id, eerste 16 bytes als UUID. Stabiel: dezelfde Strava-id geeft altijd dezelfde UUID.
+- `UUID.forActivityRecordID(_:)` — centrale router: `UUID(uuidString:)` voor HK-records (de id is al een UUID-string), anders de deterministische Strava-fallback. Alle code die samples opvraagt voor een `ActivityRecord` gebruikt deze router — nergens hardcoded onderscheid op bron.
+
+Resultaat: één tabel, twee bronnen, geen schema-migratie.
+
+### scenePhase-pijplijn in `DashboardView`
+Drie helpers draaien sequentieel in dezelfde `.task` (volgorde is bewust):
+
+1. **`backfillStravaStreams()`** — haalt Strava `/streams` op voor de laatste 10 records zonder samples (100ms throttle), schrijft via `WorkoutSampleStore`. Na deze stap heeft elk Strava-record met powermeter zijn fijngranulaire data.
+2. **`runAutoDedupe()`** — `ActivityDeduplicator.runDedupe` (Epic 41). Groepeert records op startDate (±1s strict cross-sport bypass voor mapping-issues; ±5s loose mits sport matcht), behoudt de "rijkste" via heuristiek (samples > deviceWatts > trimp > avgHR > stable id-tiebreaker). Strava-record met power wint van HK-equivalent zonder.
+3. **`runSessionReclassification()`** — `SessionReclassifier.rerun` (Epic 40 story 40.4). Records die net samples kregen, krijgen nu de zone-distributie-classificatie i.p.v. de avg-HR-fallback van bij ingest. Beschermd via `ActivityRecord.manualSessionTypeOverride` — een handmatige keuze in `WorkoutAnalysisView` overleeft elke rerun.
+
+De pijplijn is volledig idempotent: een tweede run op een schone DB doet niets. Reden voor deze volgorde: dedupe vóór reclassify scheelt classify-cycles op records die toch verwijderd worden; backfill vóór dedupe zorgt dat sample-counts kloppen voor de rijkdom-heuristiek.
