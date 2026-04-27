@@ -1767,9 +1767,38 @@ struct DashboardView: View {
                 await backfillStravaStreams()
                 await runAutoDedupe()
                 await runSessionReclassification()
+                #if DEBUG
+                await runPatternDebugReport()
+                #endif
             }
         }
     }
+
+    #if DEBUG
+    /// Story 32.3a empirische validatie: runt `WorkoutPatternDetector.detectAll`
+    /// over alle workouts met opgeslagen samples en print de gevonden patronen.
+    /// Bedoeld om vóór 32.3b (UI-pins) te controleren of de drempels überhaupt
+    /// triggeren op echte data — geen UI-effect, alleen console-output.
+    private func runPatternDebugReport() async {
+        let store = WorkoutSampleStore(modelContainer: modelContext.container)
+        var triggered = 0
+        var scanned = 0
+        for activity in activities {
+            let uuid = UUID.forActivityRecordID(activity.id)
+            let samples = (try? await store.samples(forWorkoutUUID: uuid)) ?? []
+            guard !samples.isEmpty else { continue }
+            scanned += 1
+            let patterns = WorkoutPatternDetector.detectAll(in: samples)
+            guard !patterns.isEmpty else { continue }
+            triggered += 1
+            print("📊 [Pattern-debug] '\(activity.displayName)' op \(activity.startDate.formatted(date: .abbreviated, time: .shortened)) — \(samples.count) samples")
+            for pattern in patterns {
+                print("   • \(pattern.kind) [\(pattern.severity)]: \(pattern.detail)")
+            }
+        }
+        print("📊 [Pattern-debug] Scan klaar — \(triggered)/\(scanned) workouts met samples hadden patronen (\(activities.count) totaal in DB).")
+    }
+    #endif
 
     /// Epic 41: auto-dedupe via `ActivityDeduplicator`. Idempotent — schone DB blijft
     /// schoon. Runt na de Strava-backfill zodat sample-counts kloppen voor de

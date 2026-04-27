@@ -18,7 +18,9 @@ Dual-source ingest is met Epic #41 zelfreinigend gemaakt: `FitnessDataService.en
 
 Met Epic #42 zijn HK + Strava daarnaast volledig **always-on**: beide sync-paden draaien concurrent via `async let` in zowel de auto-sync (`AppTabHostView`) als de manuele Settings-sync, ongeacht de bron-voorkeur. De `selectedDataSource`-toggle is hernoemd van "Primaire databron" naar "Bron-voorkeur" en bepaalt alleen nog welke bron de coach als eerste aanspreekt voor de huidige status; de sync-laag is volledig ontkoppeld. Backwards-compat: AppStorage-key + enum-rawValues ongewijzigd, dus bestaande gebruikers behouden hun toggle-stand.
 
-**Volgende pickup:** lopende Epic #32 — *Deep-Dive Fysiologische Analyse* — story 32.3 (AI Pattern Recognition: decoupling, cadans-verloop, herstelvermogen als fysiologische annotaties + insights). Bron-voorkeur-tiebreaker in `ActivityDeduplicator` is bewust open gelaten als losse follow-up.
+Story 32.3a (Epic #32) heeft de pure-Swift pattern-detectoren neergezet: `WorkoutPatternDetector` herkent **aerobic decoupling**, **cardiac drift**, **cadence fade** en **HR-recovery** in een 5s-resampled sample-reeks, met fysiologisch onderbouwde drempels (Joe Friel / TrainingPeaks-norm) en severity-klassificering per patroon. Volledig getest (22 unit tests) zonder UI- of AI-afhankelijkheid — klaar voor consumptie door story 32.3b.
+
+**Volgende pickup:** ⏳ Story 32.3b — annotation-pins op de `WorkoutAnalysisView`-chart + AI-context-injectie in de coach-prompt zodat patronen zichtbaar én bespreekbaar worden. Bron-voorkeur-tiebreaker in `ActivityDeduplicator` blijft open als losse follow-up.
 
 Volledige historie en backlog: zie [`docs/ROADMAP.md`](docs/ROADMAP.md).
 Technische architectuur (Dual Engine, Cloudflare Proxy, Keychain): zie [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
