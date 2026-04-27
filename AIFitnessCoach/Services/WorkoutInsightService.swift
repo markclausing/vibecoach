@@ -45,23 +45,39 @@ final class WorkoutInsightService {
         }
     }
 
-    /// Beknopte system-instruction. Bewust ander register dan de chat-coach: hier
-    /// is de coach een fysiologisch analist die patronen samenbrengt tot een
-    /// kort verhaal — geen oefenschema, geen vragen.
+    /// System-instruction. Bewust ander register dan de chat-coach: hier is de
+    /// coach een fysiologisch analist die patronen samenbrengt tot een kort
+    /// verhaal — geen oefenschema, geen vragen.
+    /// Epic #44 update: leest sessie-type en persoonlijke zones uit de context
+    /// zodat een opzettelijke threshold-/VO2max-sessie niet als "te hard" wordt
+    /// geframed; alleen onverwacht hoge HR triggert een waarschuwende toon.
     private static let systemInstruction: String = """
     Je bent een sportfysiologisch analist die patronen in een workout interpreteert.
-    Je ontvangt een lijst gedetecteerde patronen met severity (MILD/MODERATE/SIGNIFICANT)
-    en numerieke waardes (drift-percentage, BPM-drop). Geef een coaching-analyse van
-    maximaal 3 zinnen die:
 
-    1. De patronen samenbrengt tot één fysiologisch verhaal (bv. "decoupling + cardiac
-       drift = aerobic ceiling overschreden").
-    2. Een mogelijke oorzaak benoemt (intensiteit te hoog, hitte, slechte slaap,
-       conditie-gat) — kies de waarschijnlijkste op basis van de waardes.
-    3. Een concrete vervolgvraag of korte aanbeveling sluit, gericht op de gebruiker.
+    Je ontvangt:
+    - Patronen met severity (MILD/MODERATE/SIGNIFICANT) en numerieke waardes
+      (drift-percentage, BPM-drop, cadence-daling).
+    - Workout-context: sport, duur, sessie-type (recovery/endurance/tempo/threshold/
+      vo2max), eventueel de titel.
+    - Persoonlijke trainingsdrempels van de gebruiker (max-HR, LTHR, FTP) en HR-zones
+      — gebruik deze om "hoog" of "rustig" correct te interpreteren. Een HR die
+      voor een gemiddelde gebruiker hoog is, kan voor déze gebruiker normaal Z2/Z3 zijn.
 
-    Stijl: Nederlandstalig, tweede persoon ("je"), geen jargon zonder uitleg, geen lijsten,
-    geen markdown. Eindig zonder "Als je vragen hebt..."-clichés.
+    Schrijf max. 3 zinnen die:
+    1. De patronen verbinden met het sessie-type. Een **threshold- of vo2max-sessie**
+       waarbij HR in Z4-Z5 belandt is precies wat de bedoeling was — frame dat als
+       uitvoerings-check ("je hebt X minuten in Z4 doorgebracht — netjes binnen het
+       drempel-bereik"), nooit als waarschuwing. Hetzelfde geldt voor een titel die
+       intervaltraining/tempo/race aankondigt.
+    2. Bij een **mismatch** tussen sessie-type en patronen (bv. "recovery"-sessie die
+       in Z4 belandt, of een "endurance"-rit met zware drift): wijs op mogelijke
+       externe factoren (hitte, slaap, beginnende ziekte, te ambitieus tempo gekozen).
+       Eindig met een open vraag.
+    3. Bij intentionele hoge intensiteit zonder mismatch: stel een kalibratie-vraag
+       ("voelde dit als drempelwerk of zat er nog ruimte?"), geen oorzaak-zoektocht.
+
+    Stijl: Nederlandstalig, tweede persoon, geen jargon zonder uitleg, geen lijsten of
+    markdown. Eindig zonder "Als je vragen hebt..."-clichés.
     """
 
     private let primaryFactory: () -> GenerativeModelProtocol?
@@ -100,17 +116,30 @@ final class WorkoutInsightService {
         return RealGenerativeModel(model: googleModel)
     }
 
+    /// Workout-context voor de AI-prompt. Velden zijn optioneel; wat onbekend
+    /// is wordt simpelweg weggelaten zodat de prompt niet wordt vervuild met
+    /// "onbekend" of nil-waarden.
+    struct InsightContext {
+        let sportLabel: String
+        let durationMinutes: Int
+        let sessionTypeLabel: String?
+        let title: String?
+        let zones: [HeartRateZone]?
+        let maxHeartRate: Double?
+        let lactateThresholdHR: Double?
+        let ftp: Double?
+    }
+
     /// Genereert een coaching-narrative voor de meegeleverde patronen + workout-context.
     /// Probeert eerst het primaire model; faalt dat op een retryable fout, dan
     /// volgt automatisch een poging op het fallback-model. Zo blijft de Coach-analyse
     /// werken bij een tijdelijke 503/429 op het primaire model.
     func generateInsight(patterns: [WorkoutPattern],
-                         sportLabel: String,
-                         durationMinutes: Int) async throws -> String {
+                         context: InsightContext) async throws -> String {
         guard !patterns.isEmpty else { throw InsightError.noPatterns }
         guard let primary = primaryFactory() else { throw InsightError.missingAPIKey }
 
-        let prompt = buildPrompt(patterns: patterns, sportLabel: sportLabel, durationMinutes: durationMinutes)
+        let prompt = buildPrompt(patterns: patterns, context: context)
 
         do {
             return try await callModel(primary, prompt: prompt)
@@ -153,18 +182,42 @@ final class WorkoutInsightService {
         return desc.contains("Code=-999") || desc.contains("\"cancelled\"")
     }
 
-    private func buildPrompt(patterns: [WorkoutPattern], sportLabel: String, durationMinutes: Int) -> String {
+    private func buildPrompt(patterns: [WorkoutPattern], context: InsightContext) -> String {
         let snippet = WorkoutPatternFormatter.promptSnippet(for: patterns) ?? ""
-        return """
-        Workout-context:
-        - Sport: \(sportLabel)
-        - Duur: \(durationMinutes) minuten
 
-        Gedetecteerde patronen:
-        \(snippet)
+        var lines: [String] = ["Workout-context:"]
+        lines.append("- Sport: \(context.sportLabel)")
+        lines.append("- Duur: \(context.durationMinutes) minuten")
+        if let session = context.sessionTypeLabel {
+            lines.append("- Sessie-type (classifier): \(session)")
+        }
+        if let title = context.title, !title.isEmpty {
+            lines.append("- Titel: \"\(title)\"")
+        }
 
-        Geef je analyse.
-        """
+        // Drempels-blok pas toevoegen als minstens één bekende waarde gezet is —
+        // bij geen profielwaarden valt de coach terug op generieke aannames.
+        var thresholdLines: [String] = []
+        if let max = context.maxHeartRate { thresholdLines.append("- Max HR: \(Int(max)) BPM") }
+        if let lthr = context.lactateThresholdHR { thresholdLines.append("- LTHR: \(Int(lthr)) BPM") }
+        if let ftp = context.ftp { thresholdLines.append("- FTP: \(Int(ftp)) W") }
+        if let zones = context.zones, !zones.isEmpty {
+            for zone in zones {
+                thresholdLines.append("- Z\(zone.index) \(zone.name): \(zone.lowerBPM)-\(zone.upperBPM) BPM")
+            }
+        }
+        if !thresholdLines.isEmpty {
+            lines.append("")
+            lines.append("Persoonlijke trainingsdrempels:")
+            lines.append(contentsOf: thresholdLines)
+        }
+
+        lines.append("")
+        lines.append("Gedetecteerde patronen:")
+        lines.append(snippet)
+        lines.append("")
+        lines.append("Geef je analyse.")
+        return lines.joined(separator: "\n")
     }
 
     private func callModel(_ model: GenerativeModelProtocol, prompt: String) async throws -> String {

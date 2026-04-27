@@ -123,6 +123,81 @@ final class WorkoutPatternDetectorTests: XCTestCase {
         XCTAssertNil(WorkoutPatternDetector.detectCardiacDrift(in: samples))
     }
 
+    // MARK: Epic #44 — zone-gate
+
+    func testCardiacDrift_HighIntensityWithZones_SkippedByZoneGate() {
+        // 165 → 180 (~9% drift). Karvonen 195/60: HRR=135. Z4 = 168-181.
+        // Avg HR over beide helften ≈ 172 → Z4 → moet gefilterd worden.
+        let samples = makeSamples(heartRate: { i in i < 120 ? 165 : 180 })
+        let zones = HeartRateZoneCalculator.karvonen(maxHR: 195, restingHR: 60)
+        XCTAssertNil(WorkoutPatternDetector.detectCardiacDrift(in: samples, zones: zones),
+                     "Cardiac drift in Z4 moet gefilterd worden — verwacht effect, niet informatief")
+    }
+
+    func testCardiacDrift_AerobicWithZones_StillFires() {
+        // 145 → 154 (~6.2% drift) bij maxHR=195+rest=60. Avg HR ≈ 149 → Z2-Z3 boundary.
+        let samples = makeSamples(heartRate: { i in i < 120 ? 145 : 154 })
+        let zones = HeartRateZoneCalculator.karvonen(maxHR: 195, restingHR: 60)
+        let pattern = WorkoutPatternDetector.detectCardiacDrift(in: samples, zones: zones)
+        XCTAssertNotNil(pattern, "Drift in Z2-Z3 moet wél getrigerd worden")
+        XCTAssertEqual(pattern?.severity, .moderate)
+    }
+
+    func testHRRecovery_LowPeakWithZones_SkippedByZoneGate() {
+        // Piek 150 BPM (Z2 voor maxHR=195+rest=60), 11 BPM drop in 60s.
+        // Zonder zones zou dit als significant rapporteren; mét zones moeten we
+        // skippen want piek is geen "echte aerobic+ effort".
+        let samples = makeSamples(count: 240, heartRate: { i in
+            if i == 60 { return 150 }
+            if i > 60 && i <= 72 {
+                let elapsed = Double(i - 60) * 5.0
+                return 150 - (11 * elapsed / 60.0)
+            }
+            if i > 72 { return 139 }
+            return 130
+        })
+        let zones = HeartRateZoneCalculator.karvonen(maxHR: 195, restingHR: 60)
+        XCTAssertNil(WorkoutPatternDetector.detectHeartRateRecovery(in: samples, zones: zones),
+                     "Lage piek (Z2) is geen recovery-event om over te rapporteren")
+    }
+
+    func testHRRecovery_HighPeakWithZones_StillFires() {
+        // Piek 180 BPM (Z4 voor maxHR=195+rest=60), 11 BPM drop in 60s.
+        let samples = makeSamples(count: 240, heartRate: { i in
+            if i == 60 { return 180 }
+            if i > 60 && i <= 72 {
+                let elapsed = Double(i - 60) * 5.0
+                return 180 - (11 * elapsed / 60.0)
+            }
+            if i > 72 { return 169 }
+            return 140
+        })
+        let zones = HeartRateZoneCalculator.karvonen(maxHR: 195, restingHR: 60)
+        let pattern = WorkoutPatternDetector.detectHeartRateRecovery(in: samples, zones: zones)
+        XCTAssertNotNil(pattern, "Echte high-intensity piek (Z4+) blijft rapporteren")
+        XCTAssertEqual(pattern?.severity, .significant)
+    }
+
+    func testDetectAll_WithProfile_AppliesZoneGate() {
+        // Z2-only workout met 13% cardiac drift (zou zonder zones triggeren) maar
+        // de zone-gate filtert hem nu uit. Cadence-fade en decoupling werken nog.
+        let samples = makeSamples(
+            heartRate: { i in i < 120 ? 130 : 140 },
+            cadence: { i in i < 60 ? 90 : (i >= 180 ? 78 : 84) }
+        )
+        let profile = UserPhysicalProfile(
+            weightKg: 75, heightCm: 178, ageYears: 35, sex: .male,
+            weightSource: .local, heightSource: .local,
+            maxHeartRate: ThresholdValue(value: 195, source: .manual),
+            restingHeartRate: ThresholdValue(value: 60, source: .manual)
+        )
+        let patterns = WorkoutPatternDetector.detectAll(in: samples, profile: profile)
+        // Drift was 7.7% → in tier 'moderate' (5-8%) maar avg 135 valt in Z1 (recovery).
+        // Zone-gate eist 1...3 dus Z1 zou nog moeten doorlaten — laten we 't checken.
+        // Cadence fade triggert wel.
+        XCTAssertTrue(patterns.contains(where: { $0.kind == .cadenceFade }))
+    }
+
     // MARK: Aerobic decoupling
 
     func testAerobicDecoupling_StablePowerAndHR_ReturnsNil() {

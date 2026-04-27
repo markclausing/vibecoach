@@ -73,6 +73,19 @@ struct SettingsView: View {
         return selectedDataSource == .strava ? "Voorkeur" : "Aanvullend"
     }
 
+    /// Epic 44 Story 44.4: korte samenvatting van de gestelde drempels voor de
+    /// "TRAININGSDREMPELS"-rij. Toont alleen de drempels die daadwerkelijk een
+    /// waarde hebben — leegmaken als nog niets is ingesteld.
+    private var trainingThresholdsSubtitle: String {
+        let cached = UserProfileService.cachedProfile()
+        var parts: [String] = []
+        if let max  = cached.maxHeartRate?.value, max > 0       { parts.append("Max \(Int(max))") }
+        if let rest = cached.restingHeartRate?.value, rest > 0  { parts.append("Rust \(Int(rest))") }
+        if let lthr = cached.lactateThresholdHR?.value, lthr > 0 { parts.append("LTHR \(Int(lthr))") }
+        if let ftp  = cached.ftp?.value, ftp > 0                 { parts.append("FTP \(Int(ftp))") }
+        return parts.isEmpty ? "Niet ingesteld" : parts.joined(separator: " · ")
+    }
+
     private var aiCoachConnectionSubtitle: String {
         guard !apiKey.isEmpty, let provider = AIProvider(rawValue: providerRaw) else {
             return "Geen sleutel"
@@ -378,6 +391,24 @@ struct SettingsView: View {
                         }.buttonStyle(.plain)
                     }
                     Text("Leeftijd en geslacht worden gelezen uit Apple Gezondheid en zijn hier niet te bewerken. Gewicht en lengte schrijven we terug naar HealthKit.")
+                        .font(.caption).foregroundColor(.secondary)
+                        .padding(.horizontal).padding(.top, 6)
+                    Spacer(minLength: 24)
+
+                    // ── TRAININGSDREMPELS (Epic 44 Story 44.4)
+                    settingsSectionLabel("TRAININGSDREMPELS")
+                    settingsCard {
+                        NavigationLink(destination: TrainingThresholdsSettingsView()) {
+                            SettingsRowV2(
+                                icon: "speedometer",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Persoonlijke zones",
+                                subtitle: trainingThresholdsSubtitle,
+                                hasChevron: true
+                            )
+                        }.buttonStyle(.plain)
+                    }
+                    Text("Max HR, rust HR, LTHR en FTP. De coach gebruikt deze waarden om jouw zones te berekenen — anders gebruikt hij populatie-gemiddelden.")
                         .font(.caption).foregroundColor(.secondary)
                         .padding(.horizontal).padding(.top, 6)
                     Spacer(minLength: 24)

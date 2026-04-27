@@ -40,7 +40,11 @@ enum SessionReclassifier {
     static func decide(records: [ActivityRecord],
                        maxHeartRate: Double,
                        samplesProvider: (ActivityRecord) -> [WorkoutSample]) -> [Change] {
-        let classifier = SessionClassifier(maxHeartRate: maxHeartRate)
+        // Epic #44 story 44.5: gebruik LTHR uit het profiel als die er is
+        // — Friel-zones zijn preciezer voor atletische gebruikers met afwijkende
+        // LTHR/max-ratio.
+        let cachedLTHR = UserProfileService.cachedThreshold(forKey: UserProfileService.lactateThresholdHRKey)?.value
+        let classifier = SessionClassifier(maxHeartRate: maxHeartRate, lactateThresholdHR: cachedLTHR)
         var changes: [Change] = []
 
         for record in records {

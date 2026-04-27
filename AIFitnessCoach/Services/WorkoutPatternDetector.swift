@@ -160,12 +160,25 @@ enum WorkoutPatternDetector {
 
     /// HR-stijging tussen helft 1 en 2 — vereist alleen hartslag-data, bedoeld voor
     /// steady-state aerobic workouts zonder power-meter.
-    static func detectCardiacDrift(in samples: [WorkoutSample]) -> WorkoutPattern? {
+    /// - Parameter zones: Persoonlijke HR-zones (Friel of Karvonen). Bij aanwezigheid
+    ///   triggeren we alleen op Z1-Z3-workouts; in Z4/Z5 is HR-stijging tussen helften
+    ///   verwacht gedrag (drempel-/VO2max-werk) en geen "drift". Backwards-compat
+    ///   default nil = oude populatie-globale gedrag (Epic #44 story 44.5 toevoeging).
+    static func detectCardiacDrift(in samples: [WorkoutSample],
+                                    zones: [HeartRateZone]? = nil) -> WorkoutPattern? {
         guard let halves = splitInHalves(samples) else { return nil }
         guard let firstHR = average(halves.first, value: { $0.heartRate }, minimum: 1),
               let secondHR = average(halves.second, value: { $0.heartRate }, minimum: 1),
               firstHR > 0 else {
             return nil
+        }
+        // Zone-gate: cardiac drift heeft alleen betekenis in Z1-Z3 (steady-state
+        // aerobic). In Z4/Z5 is een HR-stijging tussen helften niet "drift" maar
+        // simpelweg het effect van zwaarder werk in de tweede helft.
+        if let zones {
+            let avgHR = (firstHR + secondHR) / 2.0
+            let zone = HeartRateZoneCalculator.zoneIndex(for: avgHR, in: zones)
+            guard (1...3).contains(zone) else { return nil }
         }
         let driftPct = ((secondHR / firstHR) - 1.0) * 100.0
         guard driftPct >= cardiacDriftMild else { return nil }
@@ -211,9 +224,19 @@ enum WorkoutPatternDetector {
     /// Vindt de globale max-HR en meet de drop in de 60s erna. Lage drop = matige
     /// recovery → signal van vermoeidheid. Skipt als het peak-moment in de laatste
     /// 60s ligt (geen volledig recovery-window beschikbaar).
-    static func detectHeartRateRecovery(in samples: [WorkoutSample]) -> WorkoutPattern? {
+    /// - Parameter zones: Persoonlijke HR-zones. Bij aanwezigheid eisen we dat de
+    ///   piek in Z3+ ligt (echte aerobic-of-zwaarder-effort). Een Z2-rit met piek
+    ///   van 155 BPM verwacht je niet zomaar 25 BPM te zien droppen, en het rapporteren
+    ///   van "trage recovery" voor zo'n workout is misleidend (Epic #44 story 44.5).
+    static func detectHeartRateRecovery(in samples: [WorkoutSample],
+                                         zones: [HeartRateZone]? = nil) -> WorkoutPattern? {
         let sorted = samples.sorted { $0.timestamp < $1.timestamp }
         guard let peak = peakHeartRateSample(sorted), let peakHR = peak.heartRate else { return nil }
+        // Zone-gate op de piek: alleen rapporteren als de piek écht aerobic+ was.
+        if let zones {
+            let peakZone = HeartRateZoneCalculator.zoneIndex(for: peakHR, in: zones)
+            guard peakZone >= 3 else { return nil }
+        }
         let recoveryEnd = peak.timestamp.addingTimeInterval(hrRecoveryWindowSeconds)
         guard let workoutEnd = sorted.last?.timestamp, recoveryEnd <= workoutEnd else { return nil }
         guard let endSample = nearestSample(at: recoveryEnd, in: sorted),
@@ -251,12 +274,41 @@ enum WorkoutPatternDetector {
 
     /// Runt alle detectoren en geeft de patronen terug die getriggerd zijn.
     static func detectAll(in samples: [WorkoutSample]) -> [WorkoutPattern] {
+        detectAll(in: samples, zones: nil)
+    }
+
+    /// Epic #44 story 44.5: profiel-bewuste variant. Leidt persoonlijke HR-zones
+    /// af uit `profile` (Friel als LTHR aanwezig is, anders Karvonen op effective
+    /// max + rest) en threadt ze door naar de zone-gating in cardiac drift en
+    /// HR-recovery. Decoupling en cadence fade zijn al intensiteit-onafhankelijk
+    /// en hebben geen zone-input nodig.
+    static func detectAll(in samples: [WorkoutSample],
+                          profile: UserPhysicalProfile) -> [WorkoutPattern] {
+        detectAll(in: samples, zones: heartRateZones(from: profile))
+    }
+
+    static func detectAll(in samples: [WorkoutSample],
+                          zones: [HeartRateZone]?) -> [WorkoutPattern] {
         var patterns: [WorkoutPattern] = []
         if let p = detectAerobicDecoupling(in: samples) { patterns.append(p) }
-        if let p = detectCardiacDrift(in: samples) { patterns.append(p) }
+        if let p = detectCardiacDrift(in: samples, zones: zones) { patterns.append(p) }
         if let p = detectCadenceFade(in: samples) { patterns.append(p) }
-        if let p = detectHeartRateRecovery(in: samples) { patterns.append(p) }
+        if let p = detectHeartRateRecovery(in: samples, zones: zones) { patterns.append(p) }
         return patterns
+    }
+
+    /// Friel heeft voorkeur als LTHR bekend is (preciezer voor atletische zones);
+    /// Karvonen werkt als max + rest beide ingevuld zijn; anders nil zodat de
+    /// gates niet ten onrechte triggeren op populatie-defaults.
+    static func heartRateZones(from profile: UserPhysicalProfile) -> [HeartRateZone]? {
+        if let lthr = profile.lactateThresholdHR?.value, lthr > 0 {
+            return HeartRateZoneCalculator.friel(lactateThresholdHR: lthr)
+        }
+        guard let maxHR = profile.maxHeartRate?.value, maxHR > 0,
+              let restHR = profile.restingHeartRate?.value, restHR > 0 else {
+            return nil
+        }
+        return HeartRateZoneCalculator.karvonen(maxHR: maxHR, restingHR: restHR)
     }
 
     // MARK: Sample-helpers

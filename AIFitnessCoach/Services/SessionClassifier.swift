@@ -18,12 +18,18 @@ struct SessionClassifier {
 
     /// Maximale hartslag van de atleet — basis voor zone-berekeningen.
     /// Wordt door de caller doorgegeven (in productie via `AthleticProfileManager` of
-    /// 220-leeftijd-formule; in tests met synthetische waardes).
+    /// Tanaka-formule; in tests met synthetische waardes).
     let maxHeartRate: Double
 
-    init(maxHeartRate: Double) {
+    /// Epic #44 story 44.5: optionele LTHR-input. Bij aanwezigheid gebruiken we
+    /// Friel-zones (LTHR-percentage) i.p.v. % van max-HR voor de zone-distributie-
+    /// classificatie — dat past beter bij atleten met afwijkende max/LTHR-ratio.
+    let lactateThresholdHR: Double?
+
+    init(maxHeartRate: Double, lactateThresholdHR: Double? = nil) {
         precondition(maxHeartRate > 0, "maxHeartRate moet positief zijn")
         self.maxHeartRate = maxHeartRate
+        self.lactateThresholdHR = lactateThresholdHR
     }
 
     /// Hoofd-entry: combineert alle beschikbare signalen in één SessionType-voorstel.
@@ -89,15 +95,39 @@ struct SessionClassifier {
         let hrSamples = samples.compactMap(\.heartRate)
         guard !hrSamples.isEmpty else { return nil }
 
+        // Epic #44 story 44.5: kies tussen Friel- en Karvonen-percentages.
+        // Friel-LTHR (<81/81-89/90-93/94-99/100+) is preciezer voor atleten met
+        // afwijkende LTHR/max-ratio; Karvonen op % van max-HR is de fallback.
+        let zoneMatch: (Double) -> Int = { hr in
+            if let lthr = self.lactateThresholdHR, lthr > 0 {
+                let pct = hr / lthr
+                switch pct {
+                case ..<0.81:       return 1
+                case 0.81..<0.90:   return 2
+                case 0.90..<0.94:   return 3
+                case 0.94..<1.00:   return 4
+                default:             return 5
+                }
+            } else {
+                let pct = hr / self.maxHeartRate
+                switch pct {
+                case ..<0.60:       return 1
+                case 0.60..<0.70:   return 2
+                case 0.70..<0.80:   return 3
+                case 0.80..<0.90:   return 4
+                default:             return 5
+                }
+            }
+        }
+
         var z1 = 0, z2 = 0, z3 = 0, z4 = 0, z5 = 0
         for hr in hrSamples {
-            let pct = hr / maxHeartRate
-            switch pct {
-            case ..<0.60:           z1 += 1
-            case 0.60..<0.70:       z2 += 1
-            case 0.70..<0.80:       z3 += 1
-            case 0.80..<0.90:       z4 += 1
-            default:                z5 += 1
+            switch zoneMatch(hr) {
+            case 1: z1 += 1
+            case 2: z2 += 1
+            case 3: z3 += 1
+            case 4: z4 += 1
+            default: z5 += 1
             }
         }
         let total = Double(hrSamples.count)
