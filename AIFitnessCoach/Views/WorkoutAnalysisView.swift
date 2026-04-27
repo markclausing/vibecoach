@@ -84,6 +84,47 @@ struct WorkoutAnalysisView: View {
         return first...last
     }
 
+    /// Epic #44 story 44.5: HR-zones afgeleid uit het profiel. Friel als LTHR
+    /// gezet is (preciezer voor atleet), anders Karvonen op max+rest. Lege array
+    /// als de gebruiker geen drempels heeft ingesteld — chart blijft schoon.
+    private var heartRateChartZones: [HeartRateZone] {
+        WorkoutPatternDetector.heartRateZones(from: UserProfileService.cachedProfile()) ?? []
+    }
+
+    private var powerChartZones: [PowerZone] {
+        guard let ftp = UserProfileService.cachedProfile().ftp?.value, ftp > 0 else { return [] }
+        return PowerZoneCalculator.coggan(ftp: ftp)
+    }
+
+    /// Pastel-gradient van Z1 → Z5/Z7. Bewust laag-saturatie zodat zone-bands de
+    /// chart niet overheersen. Zone 1 = blauw (recovery), Z5/6/7 = warm (max).
+    private func zoneColor(forIndex index: Int) -> Color {
+        switch index {
+        case 1: return .blue
+        case 2: return .green
+        case 3: return .yellow
+        case 4: return .orange
+        case 5: return .red
+        case 6: return .pink
+        default: return .purple // Z7 neuromuscular voor power
+        }
+    }
+
+    /// Combineert de gestelde drempels tot een korte sleutel. Lege drempels worden
+    /// genegeerd; resultaat is leeg-string-achtig ("p_empty") als de gebruiker geen
+    /// drempels heeft ingesteld. Niet cryptografisch — alleen botsings-vrij genoeg
+    /// voor cache-invalidatie van de Coach-analyse.
+    private func profileFingerprint(_ profile: UserPhysicalProfile) -> String {
+        let parts: [String?] = [
+            profile.maxHeartRate.map { "m\(Int($0.value))" },
+            profile.restingHeartRate.map { "r\(Int($0.value))" },
+            profile.lactateThresholdHR.map { "l\(Int($0.value))" },
+            profile.ftp.map { "f\(Int($0.value))" }
+        ]
+        let nonNil = parts.compactMap { $0 }
+        return nonNil.isEmpty ? "p_empty" : nonNil.joined(separator: "_")
+    }
+
     // MARK: Body
 
     var body: some View {
@@ -163,7 +204,12 @@ struct WorkoutAnalysisView: View {
         }
 
         let cache = WorkoutInsightCache()
+        // Epic #44 update: cache-key combineert pattern-fingerprint met profiel-
+        // fingerprint. Een wijziging in LTHR / max / FTP invalideert de cache
+        // automatisch, ook als de patronen identiek blijven — anders zou een
+        // gebruiker die zijn drempels aanpast oude analyses blijven zien.
         let fingerprint = WorkoutPatternFormatter.fingerprint(for: detected)
+            + "|" + profileFingerprint(UserProfileService.cachedProfile())
         if let cached = cache.cached(for: activity.id, fingerprint: fingerprint) {
             insightState = .loaded(cached)
             return
@@ -171,11 +217,24 @@ struct WorkoutAnalysisView: View {
 
         insightState = .loading
         let service = WorkoutInsightService()
+        // Epic #44 update: rijke context meegeven zodat de coach het sessie-type
+        // (drempelwerk vs. recovery) en de persoonlijke zones kan meewegen — geen
+        // populatie-aannames meer over wat "hoog" of "rustig" voor jou betekent.
+        let profile = UserProfileService.cachedProfile()
+        let context = WorkoutInsightService.InsightContext(
+            sportLabel: activity.sportCategory.displayName,
+            durationMinutes: max(1, activity.movingTime / 60),
+            sessionTypeLabel: activity.sessionType?.displayName,
+            title: activity.displayName,
+            zones: WorkoutPatternDetector.heartRateZones(from: profile),
+            maxHeartRate: profile.maxHeartRate?.value,
+            lactateThresholdHR: profile.lactateThresholdHR?.value,
+            ftp: profile.ftp?.value
+        )
         do {
             let text = try await service.generateInsight(
                 patterns: detected,
-                sportLabel: activity.sportCategory.displayName,
-                durationMinutes: max(1, activity.movingTime / 60)
+                context: context
             )
             cache.store(text, for: activity.id, fingerprint: fingerprint)
             insightState = .loaded(text)
@@ -581,6 +640,18 @@ struct WorkoutAnalysisView: View {
     private var heartRateChart: some View {
         chartCard(title: "Hartslag", unit: "BPM") {
             Chart {
+                // Epic #44 story 44.5+: zone-bands als zachte achtergrond. Tonen
+                // alleen als de gebruiker drempels heeft ingesteld (Friel- of
+                // Karvonen-zones). Subtiele kleuren — line blijft prominent.
+                ForEach(heartRateChartZones, id: \.index) { zone in
+                    RectangleMark(
+                        xStart: .value("Begin", chartDomain.lowerBound),
+                        xEnd: .value("Eind", chartDomain.upperBound),
+                        yStart: .value("Onder", zone.lowerBPM),
+                        yEnd: .value("Boven", zone.upperBPM)
+                    )
+                    .foregroundStyle(zoneColor(forIndex: zone.index).opacity(0.10))
+                }
                 ForEach(samples) { sample in
                     if let hr = sample.heartRate {
                         LineMark(
@@ -647,6 +718,20 @@ struct WorkoutAnalysisView: View {
 
         chartCard(title: title, unit: unit) {
             Chart {
+                // Epic #44: Coggan power-zones als zachte achtergrond — alleen als
+                // we power tonen én de gebruiker een FTP heeft. Voor speed-charts
+                // hebben we (nog) geen pace-zones, dus die blijven schoon.
+                if secondarySeries == .power {
+                    ForEach(powerChartZones, id: \.index) { zone in
+                        RectangleMark(
+                            xStart: .value("Begin", chartDomain.lowerBound),
+                            xEnd: .value("Eind", chartDomain.upperBound),
+                            yStart: .value("Onder", zone.lowerWatts),
+                            yEnd: .value("Boven", zone.upperWatts ?? (zone.lowerWatts + 200))
+                        )
+                        .foregroundStyle(zoneColor(forIndex: zone.index).opacity(0.10))
+                    }
+                }
                 ForEach(samples) { sample in
                     if let value = secondaryValue(of: sample) {
                         AreaMark(
