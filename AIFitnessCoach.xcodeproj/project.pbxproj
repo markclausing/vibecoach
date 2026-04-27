@@ -107,6 +107,10 @@
 		E1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift */; };
 		E2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift */; };
 		E3C4F7B2D6E8F0A1B2C3D405 /* UserProfileThresholdPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3C4F7B2D6E8F0A1B2C3D405 /* UserProfileThresholdPersistenceTests.swift */; };
+		E4C4F7B2D6E8F0A1B2C3D405 /* StravaAthlete.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4C4F7B2D6E8F0A1B2C3D405 /* StravaAthlete.swift */; };
+		E5C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdService.swift */; };
+		E6C4F7B2D6E8F0A1B2C3D405 /* TrainingThresholdsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6C4F7B2D6E8F0A1B2C3D405 /* TrainingThresholdsSettingsView.swift */; };
+		E7C4F7B2D6E8F0A1B2C3D405 /* StravaAthleteFTPTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7C4F7B2D6E8F0A1B2C3D405 /* StravaAthleteFTPTests.swift */; };
 		D2A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */; };
 		D3A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift */; };
 		D4A4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */; };
@@ -235,6 +239,10 @@
 		F1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PowerZoneCalculatorTests.swift; sourceTree = "<group>"; };
 		F2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalThresholdEstimatorTests.swift; sourceTree = "<group>"; };
 		F3C4F7B2D6E8F0A1B2C3D405 /* UserProfileThresholdPersistenceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserProfileThresholdPersistenceTests.swift; sourceTree = "<group>"; };
+		F4C4F7B2D6E8F0A1B2C3D405 /* StravaAthlete.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaAthlete.swift; sourceTree = "<group>"; };
+		F5C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalThresholdService.swift; sourceTree = "<group>"; };
+		F6C4F7B2D6E8F0A1B2C3D405 /* TrainingThresholdsSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrainingThresholdsSettingsView.swift; sourceTree = "<group>"; };
+		F7C4F7B2D6E8F0A1B2C3D405 /* StravaAthleteFTPTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaAthleteFTPTests.swift; sourceTree = "<group>"; };
 		E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SampleResampler.swift; sourceTree = "<group>"; };
 		E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionReclassifier.swift; sourceTree = "<group>"; };
 		E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutSampleService.swift; sourceTree = "<group>"; };
@@ -386,6 +394,7 @@
 				F1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift */,
 				F2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift */,
 				F3C4F7B2D6E8F0A1B2C3D405 /* UserProfileThresholdPersistenceTests.swift */,
+				F7C4F7B2D6E8F0A1B2C3D405 /* StravaAthleteFTPTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -410,6 +419,7 @@
 				FF01AA02BB03CC04DD05EE06 /* AppTabHostView.swift */,
 				E7A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisView.swift */,
 				E8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift */,
+				F6C4F7B2D6E8F0A1B2C3D405 /* TrainingThresholdsSettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -451,6 +461,7 @@
 				EDB4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift */,
 				EEB4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift */,
 				EFB4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimator.swift */,
+				F5C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -509,6 +520,7 @@
 				3500FFEECC00AA02BB02CC03 /* AIModelConfig.swift */,
 				E1A4F7B2D6E8F0A1B2C3D405 /* WorkoutSample.swift */,
 				ECA4F7B2D6E8F0A1B2C3D405 /* SessionType.swift */,
+				F4C4F7B2D6E8F0A1B2C3D405 /* StravaAthlete.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -757,6 +769,7 @@
 				E1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift in Sources */,
 				E2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift in Sources */,
 				E3C4F7B2D6E8F0A1B2C3D405 /* UserProfileThresholdPersistenceTests.swift in Sources */,
+				E7C4F7B2D6E8F0A1B2C3D405 /* StravaAthleteFTPTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -836,6 +849,9 @@
 				DDA4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift in Sources */,
 				DEA4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift in Sources */,
 				DFA4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimator.swift in Sources */,
+				E4C4F7B2D6E8F0A1B2C3D405 /* StravaAthlete.swift in Sources */,
+				E5C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdService.swift in Sources */,
+				E6C4F7B2D6E8F0A1B2C3D405 /* TrainingThresholdsSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
