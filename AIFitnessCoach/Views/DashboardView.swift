@@ -1809,20 +1809,29 @@ struct DashboardView: View {
         let profile = UserProfileService.cachedProfile()
         var triggered = 0
         var scanned = 0
+        var skippedNoSamples = 0
         for activity in activities {
             let uuid = UUID.forActivityRecordID(activity.id)
             let samples = (try? await store.samples(forWorkoutUUID: uuid)) ?? []
-            guard !samples.isEmpty else { continue }
+            let dateLabel = activity.startDate.formatted(date: .abbreviated, time: .shortened)
+            guard !samples.isEmpty else {
+                skippedNoSamples += 1
+                print("📊 [Pattern-debug] '\(activity.displayName)' op \(dateLabel) — geen samples opgeslagen, overgeslagen")
+                continue
+            }
             scanned += 1
             let patterns = WorkoutPatternDetector.detectAll(in: samples, profile: profile)
-            guard !patterns.isEmpty else { continue }
+            if patterns.isEmpty {
+                print("📊 [Pattern-debug] '\(activity.displayName)' op \(dateLabel) — \(samples.count) samples · geen patronen (alle filters/zones-gates negatief)")
+                continue
+            }
             triggered += 1
-            print("📊 [Pattern-debug] '\(activity.displayName)' op \(activity.startDate.formatted(date: .abbreviated, time: .shortened)) — \(samples.count) samples")
+            print("📊 [Pattern-debug] '\(activity.displayName)' op \(dateLabel) — \(samples.count) samples")
             for pattern in patterns {
                 print("   • \(pattern.kind) [\(pattern.severity)]: \(pattern.detail)")
             }
         }
-        print("📊 [Pattern-debug] Scan klaar — \(triggered)/\(scanned) workouts met samples hadden patronen (\(activities.count) totaal in DB).")
+        print("📊 [Pattern-debug] Scan klaar — \(triggered)/\(scanned) workouts met samples hadden patronen, \(skippedNoSamples) overgeslagen wegens geen samples (\(activities.count) totaal in DB).")
     }
     #endif
 
