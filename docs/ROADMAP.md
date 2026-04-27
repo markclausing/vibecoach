@@ -402,19 +402,18 @@ Aanleiding: een gebruiker met Garmin powermeter (april 2026) ontdekte dat `cycli
 
 ---
 
-### 🔄 Epic #41: Dual-Source Single-Record-of-Truth
+### ✅ Epic #41: Dual-Source Single-Record-of-Truth
 
 Aanleiding: tijdens on-device-validatie van Epic #40 (april 2026) bleek dat een Garmin-rit zowel via Apple Health (workout + HR, geen power) als via Strava (volledig met power) als losse `ActivityRecord` in SwiftData belandt. De bestaande `removeDuplicateRecords` debug-knop in Settings (`startDate + sportCategory` composite key) was bron-blind: HK-record overleefde, Strava-record (mét power!) werd verwijderd.
 
 **Sub-stories:**
 
-* **✅ 41.1 — Bron-aware dedupe-prioriteit:** `ActivityDeduplicator` (pure-Swift) groepeert records op composite key (startDate ±5s + sportCategory) en kiest binnen elke groep de "rijkste" via heuristiek: samples > deviceWatts > trimp > avgHR > stable tiebreaker. `removeDuplicateRecords`-knop in Settings delegateert nu naar deze helper. Plus auto-dedupe in `DashboardView.scenePhase`-flow direct na de Strava-stream-backfill — gebruiker hoeft niets te doen, de DB blijft zelfreinigend. 10 unit tests dekken alle paden + edge cases.
+* **✅ 41.1 — Bron-aware dedupe-prioriteit:** `ActivityDeduplicator` (pure-Swift) groepeert records op composite key (startDate ±5s + sportCategory) en kiest binnen elke groep de "rijkste" via heuristiek: samples > deviceWatts > trimp > avgHR > stable tiebreaker. Auto-dedupe in `DashboardView.scenePhase`-flow direct na de Strava-stream-backfill — gebruiker hoeft niets te doen, de DB blijft zelfreinigend. 10 unit tests dekken alle paden + edge cases.
 * **✅ 41.2 — `deviceWatts` op `ActivityRecord`:** Optionele `Bool?` toegevoegd (lightweight migration). Gevuld vanuit `StravaActivity.device_watts` in beide sync-paden (`AppTabHostView.performAutoSync` + `SettingsView.syncHistoricalData`). Voor HK-records `nil` (geen device-meta-info beschikbaar). Werkt als sterk signal voor de dedupe-heuristiek — zelfs vóór de stream-backfill weet de helper al welke record rijker zal zijn.
-* **⏳ 41.3 — Strava-OAuth-toggle-bug:** Status-check returnt soms `false` voor een geldige token (gebruiker meldt "gekoppeld" → tap → "niet gekoppeld" → opnieuw OAuth zonder login → "gekoppeld"). Apart traject — token-refresh / state-staleness-bug, los van dedupe-data-laag.
-* **⏳ 41.4 — Ingest-side preventie:** `HealthKitSyncService` en Strava-fetch checken al op startDate-window om Skip-or-Insert te doen, maar de huidige logica is "skip als al iets staat" — niet bron-aware. Auto-dedupe bij scenePhase ruimt het post-hoc op, maar elegantere fix is dedupe vóór insert. Geen acute pijn nu auto-dedupe het opvangt — daarom als follow-up.
-* **⏳ 41.5 — Conflict-resolutie UI:** Settings-knop "Bekijk dubbele activiteiten" die voordat dedupe wordt uitgevoerd toont welke records gemerged worden. Optioneel — alleen relevant als de auto-dedupe verrassende keuzes maakt.
+* **✅ 41.3 — OAuth-hardening (`ensureValidToken()`):** Centrale guard op `FitnessDataService` die vóór elke API-call het token checkt en bij (bijna-)expiry refresht via de proxy. Vijf interne callers (latest/byId/streams/recent/historical) routen nu via deze ene functie — een lege of ontbrekende access-token gooit `.missingToken` in plaats van een silent 401 verderop in de pijplijn. 4 nieuwe tests dekken fresh-token, refresh-bij-expiry, ontbrekend en lege token.
+* **✅ 41.4 — Ingest-side preventie (`smartInsert`):** `ActivityDeduplicator.smartInsert(_:into:)` doet bij ingest een drie-laagse check: (1) source-id idempotent, (2) ±5s window cross-source vergelijking via `shouldReplace`, (3) reguliere insert. Een armer HK-record overschrijft nooit meer een rijker Strava-record met deviceWatts — ongeacht volgorde. Toegepast in `HealthKitSyncService`, `AppTabHostView` (Strava auto-sync) en `SettingsView` (Strava historical sync). Handmatige "Verwijder Dubbele Activiteiten"-knop in Settings (DEBUG) verwijderd — auto-dedupe + smart-ingest dekken beide kanten af. 8 race-tests in `SmartIngestRaceTests` borgen volgorde-onafhankelijkheid.
 
-**Status:** 🔄 — kern (41.1 + 41.2) live. De gebruiker hoeft de dedupe-knop niet meer te gebruiken; auto-dedupe ruimt op tijdens dezelfde scenePhase-flow als de Strava-backfill. 41.3 (OAuth-bug) en 41.4/41.5 (preventie + UI) volgen wanneer de pijn merkbaar wordt.
+**Status:** ✅ — afgesloten. De gebruiker hoeft de dedupe-knop niet meer te gebruiken; smart-ingest voorkomt verarming aan de voordeur en auto-dedupe ruimt eventuele resten op tijdens de scenePhase-flow.
 
 ---
 

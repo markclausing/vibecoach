@@ -92,6 +92,7 @@
 		CFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift */; };
 		D0A4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift */; };
 		D1A4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift */; };
+		D5A4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5B4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift */; };
 		D2A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */; };
 		D3A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift */; };
 		D4A4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */; };
@@ -205,6 +206,7 @@
 		E0B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityDeduplicator.swift; sourceTree = "<group>"; };
 		E1A4F7B2D6E8F0A1B2C3D405 /* WorkoutSample.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutSample.swift; sourceTree = "<group>"; };
 		E1B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityDeduplicatorTests.swift; sourceTree = "<group>"; };
+		E5B4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartIngestRaceTests.swift; sourceTree = "<group>"; };
 		E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SampleResampler.swift; sourceTree = "<group>"; };
 		E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionReclassifier.swift; sourceTree = "<group>"; };
 		E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutSampleService.swift; sourceTree = "<group>"; };
@@ -348,6 +350,7 @@
 				FFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift */,
 				E1B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift */,
 				E3B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift */,
+				E5B4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -704,6 +707,7 @@
 				CFA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestServiceTests.swift in Sources */,
 				D1A4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift in Sources */,
 				D3A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift in Sources */,
+				D5A4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

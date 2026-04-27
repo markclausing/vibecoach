@@ -18,6 +18,20 @@ actor FitnessDataService {
         self.session = session
     }
 
+    /// Epic 41.3: zorgt dat de caller een geldig Strava access-token in handen krijgt.
+    /// Roept eerst `refreshTokenIfNeeded()` aan zodat een (bijna) verlopen token nog
+    /// vóór de API-call ververst wordt, en throwt `.missingToken` als er geen geldig
+    /// token uit de store komt — dat geeft elke API-call één centrale guard tegen
+    /// silent 401's.
+    @discardableResult
+    func ensureValidToken() async throws -> String {
+        try await refreshTokenIfNeeded()
+        guard let token = try tokenStore.getToken(forService: "StravaToken"), !token.isEmpty else {
+            throw FitnessDataError.missingToken
+        }
+        return token
+    }
+
     /// Controleert of het Strava token is verlopen (of binnen 5 minuten verloopt) en ververst deze via de OAuth2 API.
     func refreshTokenIfNeeded() async throws {
         // Haal huidige gegevens op
@@ -90,12 +104,7 @@ actor FitnessDataService {
     /// - Returns: Het laatst voltooide `StravaActivity` object.
     /// - Throws: `FitnessDataError` als er iets misgaat (bijv. geen token, 401, of network issue).
     func fetchLatestActivity() async throws -> StravaActivity? {
-        // Zorg dat het token geldig is voordat we de aanroep doen
-        try await refreshTokenIfNeeded()
-
-        guard let stravaToken = try tokenStore.getToken(forService: "StravaToken"), !stravaToken.isEmpty else {
-            throw FitnessDataError.missingToken
-        }
+        let stravaToken = try await ensureValidToken()
 
         guard let url = URL(string: "https://www.strava.com/api/v3/athlete/activities?per_page=1") else {
             throw FitnessDataError.networkError("Ongeldige URL")
@@ -137,11 +146,7 @@ actor FitnessDataService {
     /// - Returns: Het bijbehorende `StravaActivity` object.
     /// - Throws: `FitnessDataError` als er iets misgaat.
     func fetchActivity(byId id: Int64) async throws -> StravaActivity {
-        try await refreshTokenIfNeeded()
-
-        guard let stravaToken = try tokenStore.getToken(forService: "StravaToken"), !stravaToken.isEmpty else {
-            throw FitnessDataError.missingToken
-        }
+        let stravaToken = try await ensureValidToken()
 
         guard let url = URL(string: "https://www.strava.com/api/v3/activities/\(id)") else {
             throw FitnessDataError.networkError("Ongeldige URL voor activiteit \(id)")
@@ -188,11 +193,7 @@ actor FitnessDataService {
     /// - Returns: Volledige `StravaStreamSet` met de beschikbare streams.
     /// - Throws: `FitnessDataError` bij netwerkfout, ongeldige token of decode-failure.
     func fetchActivityStreams(for activityId: Int64) async throws -> StravaStreamSet {
-        try await refreshTokenIfNeeded()
-
-        guard let stravaToken = try tokenStore.getToken(forService: "StravaToken"), !stravaToken.isEmpty else {
-            throw FitnessDataError.missingToken
-        }
+        let stravaToken = try await ensureValidToken()
 
         let keys = "time,watts,cadence,heartrate,velocity_smooth"
         let urlString = "https://www.strava.com/api/v3/activities/\(activityId)/streams?keys=\(keys)&key_by_type=true"
@@ -236,11 +237,7 @@ actor FitnessDataService {
     /// - Returns: Een lijst van `StravaActivity` objecten voor de afgelopen dagen.
     /// - Throws: `FitnessDataError` als de auth of het netwerk faalt.
     func fetchRecentActivities(days: Int) async throws -> [StravaActivity] {
-        try await refreshTokenIfNeeded()
-
-        guard let stravaToken = try tokenStore.getToken(forService: "StravaToken"), !stravaToken.isEmpty else {
-            throw FitnessDataError.missingToken
-        }
+        let stravaToken = try await ensureValidToken()
 
         let now = Date()
         let beforeTime = Int(now.timeIntervalSince1970)
@@ -302,11 +299,7 @@ actor FitnessDataService {
     /// - Returns: Een lijst van `StravaActivity` objecten.
     /// - Throws: `FitnessDataError` als de auth of het netwerk faalt.
     func fetchHistoricalActivities(monthsBack: Int) async throws -> [StravaActivity] {
-        try await refreshTokenIfNeeded()
-
-        guard let stravaToken = try tokenStore.getToken(forService: "StravaToken"), !stravaToken.isEmpty else {
-            throw FitnessDataError.missingToken
-        }
+        let stravaToken = try await ensureValidToken()
 
         // Bereken de UNIX timestamps
         let now = Date()
@@ -1356,48 +1349,22 @@ actor HealthKitSyncService {
 
         // Loop asynchroon door alle gevonden workouts om de hartslag (gemiddeld, max) en rusthartslag op te halen
         // Lokale Set als extra veiligheidsnet: vangt duplicaten op die HealthKit zelf teruggeeft
-        // én voorkomt dubbele inserts als context.fetch nog niet-gesavede records niet ziet.
+        // (zelfde batch, zelfde UUID) — `smartInsert` doet de DB-zijde dedupe voor ons.
         var seenWorkoutIds = Set<String>()
-        // Composite key set: vangt HealthKit-level duplicaten op waarbij dezelfde workout
-        // met twee verschillende UUIDs wordt aangeleverd (bijv. Watch + iPhone dubbele opname).
-        var seenCompositeKeys = Set<String>()
 
         for workout in workouts {
             // Uniek ID gebaseerd op de HealthKit UUID
             let workoutId = workout.uuid.uuidString
 
-            // Laag 1a: al verwerkt in deze sync-run op basis van UUID?
+            // In-batch UUID-dedupe: HealthKit kan dezelfde workout twee keer teruggeven
+            // binnen één query (Watch + iPhone). `smartInsert` ziet niet-gesavede records
+            // niet, dus deze laag blijft nodig om binnen één run dubbele inserts te voorkomen.
             guard seenWorkoutIds.insert(workoutId).inserted else {
                 print("⚠️ Sync: HealthKit UUID \(workoutId) al verwerkt in deze batch — overgeslagen")
                 continue
             }
 
-            // Laag 1b: al verwerkt in deze sync-run op basis van startDatum + sporttype?
             let sport = SportCategory.from(hkType: workout.workoutActivityType.rawValue)
-            let compositeKey = "\(workout.startDate.timeIntervalSince1970)_\(sport.rawValue)"
-            guard seenCompositeKeys.insert(compositeKey).inserted else {
-                print("⚠️ Sync: Workout op \(workout.startDate) [\(sport.rawValue)] al verwerkt (HealthKit-level duplicaat) — overgeslagen")
-                continue
-            }
-
-            // Laag 2: al opgeslagen in SwiftData (UUID check)?
-            let descriptor = FetchDescriptor<ActivityRecord>(predicate: #Predicate { $0.id == workoutId })
-            if let existing = try? context.fetch(descriptor), !existing.isEmpty {
-                // Sla over als hij al gesynchroniseerd is
-                continue
-            }
-
-            // Laag 3: al opgeslagen in SwiftData op basis van startDatum (±5 sec venster)?
-            // Vangt HealthKit-level duplicaten op waarbij dezelfde workout twee UUIDs heeft.
-            let windowStart = workout.startDate.addingTimeInterval(-5)
-            let windowEnd = workout.startDate.addingTimeInterval(5)
-            let compositeDescriptor = FetchDescriptor<ActivityRecord>(
-                predicate: #Predicate { $0.startDate >= windowStart && $0.startDate <= windowEnd }
-            )
-            if let existing = try? context.fetch(compositeDescriptor), !existing.isEmpty {
-                print("⚠️ Sync: Workout op \(workout.startDate) [\(sport.rawValue)] bestaat al in DB (HealthKit-level duplicaat) — overgeslagen")
-                continue
-            }
 
             var avgHR: Double? = nil
             var maxHR: Double = 0
@@ -1453,7 +1420,18 @@ actor HealthKitSyncService {
                 sessionType: suggestedSessionType
             )
 
-            context.insert(record)
+            // Epic 41.4: smart-insert beschermt tegen cross-source verarming.
+            // Een Strava-record met deviceWatts dat al binnen ±5s in DB staat blijft
+            // staan; een armer HK-record overschrijft dat niet meer.
+            let result = try ActivityDeduplicator.smartInsert(record, into: context)
+            switch result {
+            case .skippedExistingRicher:
+                print("⚠️ Sync: HK-workout \(workoutId) [\(sport.rawValue)] overgeslagen — bestaand record is rijker (Epic 41.4)")
+            case .replaced:
+                print("ℹ️ Sync: bestaand armer record vervangen door HK-workout \(workoutId)")
+            case .inserted, .skippedSameSource:
+                break
+            }
         }
 
         try context.save()

@@ -43,37 +43,33 @@ struct AppTabHostView: View {
                         let fallbackFormatter = ISO8601DateFormatter()
 
                         for activity in activities {
-                            let currentId = String(activity.id)
-                            let fetchDescriptor = FetchDescriptor<ActivityRecord>(predicate: #Predicate { $0.id == currentId })
-                            let existing = try? modelContext.fetch(fetchDescriptor)
+                            let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
 
-                            if existing?.isEmpty ?? true {
-                                let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
+                            // SPRINT 12.4: Voeg basic TRIMP fallback toe bij sync
+                            let basicTRIMPFallback: Double? = {
+                                if let hr = activity.average_heartrate, hr > 100 {
+                                    let durationMins = Double(activity.moving_time) / 60.0
+                                    let simulatedDeltaHR = (hr - 60.0) / (190.0 - 60.0)
+                                    return durationMins * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
+                                } else {
+                                    return (Double(activity.moving_time) / 60.0) * 1.5
+                                }
+                            }()
 
-                                // SPRINT 12.4: Voeg basic TRIMP fallback toe bij sync
-                                let basicTRIMPFallback: Double? = {
-                                    if let hr = activity.average_heartrate, hr > 100 {
-                                        let durationMins = Double(activity.moving_time) / 60.0
-                                        let simulatedDeltaHR = (hr - 60.0) / (190.0 - 60.0)
-                                        return durationMins * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
-                                    } else {
-                                        return (Double(activity.moving_time) / 60.0) * 1.5
-                                    }
-                                }()
-
-                                let record = ActivityRecord(
-                                    id: currentId,
-                                    name: activity.name,
-                                    distance: activity.distance,
-                                    movingTime: activity.moving_time,
-                                    averageHeartrate: activity.average_heartrate,
-                                    sportCategory: SportCategory.from(rawString: activity.type),
-                                    startDate: date,
-                                    trimp: basicTRIMPFallback, // In a real app we could recalculate the local TRIMP hier via PhysiologicalCalculator if missing
-                                    deviceWatts: activity.device_watts
-                                )
-                                modelContext.insert(record)
-                            }
+                            let record = ActivityRecord(
+                                id: String(activity.id),
+                                name: activity.name,
+                                distance: activity.distance,
+                                movingTime: activity.moving_time,
+                                averageHeartrate: activity.average_heartrate,
+                                sportCategory: SportCategory.from(rawString: activity.type),
+                                startDate: date,
+                                trimp: basicTRIMPFallback, // In a real app we could recalculate the local TRIMP hier via PhysiologicalCalculator if missing
+                                deviceWatts: activity.device_watts
+                            )
+                            // Epic 41.4: smart-insert vangt cross-source duplicaten op
+                            // (HK-record op dezelfde tijd) en kiest het rijkste record.
+                            _ = try? ActivityDeduplicator.smartInsert(record, into: modelContext)
                         }
                         try? modelContext.save()
                     }

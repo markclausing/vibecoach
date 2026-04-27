@@ -121,6 +121,77 @@ enum ActivityDeduplicator {
         return Decision(winners: winners, losers: losers)
     }
 
+    // MARK: Smart Ingest (Epic 41.4)
+
+    /// Resultaat van een `smartInsert`-flow. Tests en logging-callers kunnen op
+    /// basis van deze waarde verifiëren of een record daadwerkelijk de DB inging,
+    /// een bestaande overschreef of bewust werd weggegooid.
+    enum SmartInsertResult: Equatable {
+        case inserted
+        case replaced            // new record verving een armer existing-record
+        case skippedSameSource   // exact dezelfde id stond er al — idempotente import
+        case skippedExistingRicher // duplicaat-detectie + existing wint van new
+    }
+
+    /// Vergelijkt rijkdom van twee records bij ingest. Bewust zonder samples-lookup:
+    /// op het ingest-moment zijn er voor de incoming record nog geen samples binnen,
+    /// dus die zouden de score altijd op 0 zetten — onnauwkeurig én duur. Power-meter
+    /// + TRIMP + avg-HR zijn aan-de-deur signalen die we wél kennen.
+    static func shouldReplace(existing: ActivityRecord, new: ActivityRecord) -> Bool {
+        score(record: new, samplesCount: 0) > score(record: existing, samplesCount: 0)
+    }
+
+    /// Smart-insert pipeline voor één incoming record. Volgt drie lagen:
+    ///   1. **Source-id match** → idempotente skip (re-sync van dezelfde bron).
+    ///   2. **Cross-source match** binnen ±5s + sport-categorie:
+    ///        • new is rijker → existing wordt verwijderd, new geïnsert.
+    ///        • existing is rijker (of gelijk) → new wordt overgeslagen.
+    ///   3. **Geen match** → reguliere insert.
+    /// Caller moet zélf `try context.save()` aanroepen op een geschikt moment
+    /// (typisch na een batch) — `smartInsert` saved niet om N writes te bundelen.
+    @MainActor
+    @discardableResult
+    static func smartInsert(_ candidate: ActivityRecord,
+                            into context: ModelContext) throws -> SmartInsertResult {
+        // Laag 1 — source-id idempotency. Werkt voor zowel HK-UUID's als deterministische
+        // Strava-id's omdat `ActivityRecord.id` altijd gelijk is aan de stored source-id.
+        let candidateID = candidate.id
+        let sameIDFetch = FetchDescriptor<ActivityRecord>(
+            predicate: #Predicate { $0.id == candidateID }
+        )
+        if let existingSameID = try? context.fetch(sameIDFetch), !existingSameID.isEmpty {
+            return .skippedSameSource
+        }
+
+        // Laag 2 — cross-source duplicaat-detectie. ±5s window vangt zowel de strict
+        // (1s, cross-sport) als de loose (1-5s, same-sport) match-regel uit `findDuplicateGroups`.
+        let windowStart = candidate.startDate.addingTimeInterval(-matchToleranceSeconds)
+        let windowEnd   = candidate.startDate.addingTimeInterval(matchToleranceSeconds)
+        let windowFetch = FetchDescriptor<ActivityRecord>(
+            predicate: #Predicate { $0.startDate >= windowStart && $0.startDate <= windowEnd }
+        )
+        let nearby = (try? context.fetch(windowFetch)) ?? []
+
+        for existing in nearby {
+            // Hergebruikt `findDuplicateGroups` voor één-op-één match-semantics —
+            // zo blijft strict <1s + loose <5s+sport in één plek gedefinieerd.
+            let groups = findDuplicateGroups([existing, candidate])
+            guard groups.count == 1 else { continue }
+
+            if shouldReplace(existing: existing, new: candidate) {
+                context.delete(existing)
+                context.insert(candidate)
+                return .replaced
+            } else {
+                return .skippedExistingRicher
+            }
+        }
+
+        // Laag 3 — geen duplicaat: reguliere insert.
+        context.insert(candidate)
+        return .inserted
+    }
+
     // MARK: Apply (SwiftData)
 
     /// Voert de dedupe-actie uit op een ModelContext: verwijdert alle losers en
