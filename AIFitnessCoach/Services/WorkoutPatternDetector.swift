@@ -76,18 +76,50 @@ enum WorkoutPatternDetector {
     /// Window voor HR-recovery-meting na de piek.
     static let hrRecoveryWindowSeconds: TimeInterval = 60
 
+    /// Decoupling-meting vereist steady-state effort. Bij hoge variantie in vermogen
+    /// of pace (denk: stop-and-go-ritjes met verkeerslichten, sociale ritten met
+    /// koffiestops) is de Pa:HR-ratio in elke helft een gemiddelde over verschillende
+    /// inspannings-niveaus en zegt het verschil daartussen niets over fitness-drift.
+    /// Coefficient of variation (stddev / mean) > 0.30 = niet meten. Echte Z2-rondjes
+    /// op vlak parcours zitten typisch op CV < 0.20; deze drempel laat lichte
+    /// terreinvariatie door, maar fileert chaos uit.
+    static let maxIntensityCV: Double = 0.30
+
     // MARK: Aerobic decoupling
 
     /// Vergelijkt de HR/intensity-ratio in helft 1 vs helft 2. Probeert eerst power
     /// (rijker signal als powermeter aanwezig is), valt anders terug op speed.
+    /// Beide paden vereisen `isSteadyEffort` om te voorkomen dat we op stop-and-go-
+    /// ritjes (city, social rides) onzin-drift rapporteren.
     static func detectAerobicDecoupling(in samples: [WorkoutSample]) -> WorkoutPattern? {
         guard let halves = splitInHalves(samples) else { return nil }
-        if let pattern = decoupling(firstHalf: halves.first, secondHalf: halves.second,
+        if isSteadyEffort(samples, value: { $0.power }),
+           let pattern = decoupling(firstHalf: halves.first, secondHalf: halves.second,
                                     intensity: { $0.power }, label: "vermogen") {
             return pattern
         }
-        return decoupling(firstHalf: halves.first, secondHalf: halves.second,
-                          intensity: { $0.speed }, label: "tempo")
+        if isSteadyEffort(samples, value: { $0.speed }),
+           let pattern = decoupling(firstHalf: halves.first, secondHalf: halves.second,
+                                    intensity: { $0.speed }, label: "tempo") {
+            return pattern
+        }
+        return nil
+    }
+
+    /// Coefficient of variation (stddev / mean) over de positieve waardes. Hoge CV
+    /// duidt op variabele inspanning waar decoupling onbetrouwbaar wordt.
+    private static func isSteadyEffort(_ samples: [WorkoutSample],
+                                        value: (WorkoutSample) -> Double?) -> Bool {
+        var values: [Double] = []
+        for sample in samples {
+            if let v = value(sample), v > 0 { values.append(v) }
+        }
+        guard values.count >= 10 else { return false }
+        let mean = values.reduce(0, +) / Double(values.count)
+        guard mean > 0 else { return false }
+        let variance = values.reduce(0) { acc, v in acc + pow(v - mean, 2) } / Double(values.count)
+        let stdDev = variance.squareRoot()
+        return (stdDev / mean) < maxIntensityCV
     }
 
     private static func decoupling(firstHalf: [WorkoutSample],

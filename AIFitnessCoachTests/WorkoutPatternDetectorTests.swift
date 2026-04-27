@@ -162,6 +162,23 @@ final class WorkoutPatternDetectorTests: XCTestCase {
         XCTAssertNil(WorkoutPatternDetector.detectAerobicDecoupling(in: samples))
     }
 
+    func testAerobicDecoupling_HighPowerVariance_ReturnsNil() {
+        // Stop-and-go-rit: power oscilleert tussen 100W en 300W (CV ≈ 0.50).
+        // HR drift 150 → 165 ziet eruit als decoupling, maar door de variabele
+        // inspanning is de Pa:HR-ratio onbetrouwbaar — detector moet zwijgen.
+        let samples = makeSamples(heartRate: { i in i < 120 ? 150 : 165 },
+                                  power: { i in i.isMultiple(of: 2) ? 100 : 300 })
+        XCTAssertNil(WorkoutPatternDetector.detectAerobicDecoupling(in: samples),
+                     "Bij chaotische power moet decoupling-meting overgeslagen worden")
+    }
+
+    func testAerobicDecoupling_HighSpeedVariance_ReturnsNil() {
+        // Idem voor pace-fallback: variabele snelheid is geen steady-state.
+        let samples = makeSamples(heartRate: { i in i < 120 ? 150 : 165 },
+                                  speed: { i in i.isMultiple(of: 2) ? 1.5 : 4.5 })
+        XCTAssertNil(WorkoutPatternDetector.detectAerobicDecoupling(in: samples))
+    }
+
     // MARK: Cadence fade
 
     func testCadenceFade_StableCadence_ReturnsNil() {
