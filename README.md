@@ -16,6 +16,8 @@ Strava-rides met powermeter komen volledig door (Epic #40): een nightly scenePha
 
 Dual-source ingest is met Epic #41 zelfreinigend gemaakt: `FitnessDataService.ensureValidToken()` valideert + refresht het Strava-token vóór elke API-call (geen silent 401's meer), en `ActivityDeduplicator.smartInsert(_:into:)` voorkomt aan de voordeur dat een armer record (HK zonder power) een rijker record (Strava met power) overschrijft — ongeacht de volgorde waarin beide bronnen binnenkomen. De handmatige "Verwijder Dubbele Activiteiten"-knop is daarmee overbodig geworden en uit Settings verwijderd.
 
+**Volgende pickup:** ⏳ Epic #42 — *Always-on Dual-Source Sync*. Met de dedupe-laag uit Epic #41 op zijn plek wordt de `selectedDataSource`-toggle van een exclusieve "wat sync ik"-keuze omgevormd tot een bron-voorkeur, zodat HK + Strava altijd parallel binnenkomen en de gebruiker de hoofdbron alleen nog gebruikt voor labeling/tiebreakers. Daarnaast loopt Epic #32 (Deep-Dive Fysiologische Analyse) door op story 32.3 (AI Pattern Recognition).
+
 Volledige historie en backlog: zie [`docs/ROADMAP.md`](docs/ROADMAP.md).
 Technische architectuur (Dual Engine, Cloudflare Proxy, Keychain): zie [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 Project-regels voor AI-assistenten: zie [`CLAUDE.md`](CLAUDE.md).

@@ -413,7 +413,7 @@ Aanleiding: tijdens on-device-validatie van Epic #40 (april 2026) bleek dat een 
 * **✅ 41.3 — OAuth-hardening (`ensureValidToken()`):** Centrale guard op `FitnessDataService` die vóór elke API-call het token checkt en bij (bijna-)expiry refresht via de proxy. Vijf interne callers (latest/byId/streams/recent/historical) routen nu via deze ene functie — een lege of ontbrekende access-token gooit `.missingToken` in plaats van een silent 401 verderop in de pijplijn. 4 nieuwe tests dekken fresh-token, refresh-bij-expiry, ontbrekend en lege token.
 * **✅ 41.4 — Ingest-side preventie (`smartInsert`):** `ActivityDeduplicator.smartInsert(_:into:)` doet bij ingest een drie-laagse check: (1) source-id idempotent, (2) ±5s window cross-source vergelijking via `shouldReplace`, (3) reguliere insert. Een armer HK-record overschrijft nooit meer een rijker Strava-record met deviceWatts — ongeacht volgorde. Toegepast in `HealthKitSyncService`, `AppTabHostView` (Strava auto-sync) en `SettingsView` (Strava historical sync). Handmatige "Verwijder Dubbele Activiteiten"-knop in Settings (DEBUG) verwijderd — auto-dedupe + smart-ingest dekken beide kanten af. 8 race-tests in `SmartIngestRaceTests` borgen volgorde-onafhankelijkheid.
 
-**Status:** ✅ — afgesloten. De gebruiker hoeft de dedupe-knop niet meer te gebruiken; smart-ingest voorkomt verarming aan de voordeur en auto-dedupe ruimt eventuele resten op tijdens de scenePhase-flow.
+**Status:** ✅ — afgesloten (april 2026, PR #222). De gebruiker hoeft de dedupe-knop niet meer te gebruiken; smart-ingest voorkomt verarming aan de voordeur en auto-dedupe ruimt eventuele resten op tijdens de scenePhase-flow. Hiermee is Epic #42 (Always-on Dual-Source Sync) ontkoppeld — de dedupe-laag is robuust genoeg om beide bronnen continu naast elkaar te draaien.
 
 ---
 
@@ -429,7 +429,7 @@ Aanleiding: na on-device-validatie van Epic #41 (april 2026) vroeg de gebruiker 
 
 **Effort:** ~1–2u. Pure refactor in twee sync-paden + één enum-rename + Settings-copy. Bestaande dedupe-tests dekken het cross-source-pad al; één extra test voor "beide bronnen gesyncd ongeacht toggle".
 
-**Status:** ⏳ — niet urgent. Huidige Strava-primair werkt voor de gebruiker en Epic #41 auto-dedupe houdt de DB schoon. Pakken wanneer iemand expliciet HK als hoofdvenster wil, of wanneer een tweede gebruiker met andere bron-voorkeur instapt.
+**Status:** ⏳ — ontkoppeld sinds Epic #41 mergee. Eerstvolgende logische pickup zodra de gebruiker (of een tweede gebruiker met andere bron-voorkeur) HK als hoofdvenster wil zonder Strava-power te verliezen. De dedupe + smart-ingest-laag is daarvoor klaar — alleen de toggle-semantiek + Settings-copy moeten nog om.
 
 ---
 
