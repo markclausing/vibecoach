@@ -95,6 +95,11 @@
 		D5A4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5B4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift */; };
 		D6A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift */; };
 		D7A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetectorTests.swift */; };
+		D8A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift */; };
+		D9A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift */; };
+		DAA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift */; };
+		DBA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift */; };
+		DCA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */; };
 		D2A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */; };
 		D3A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift */; };
 		D4A4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */; };
@@ -211,6 +216,11 @@
 		E5B4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartIngestRaceTests.swift; sourceTree = "<group>"; };
 		E6B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutPatternDetector.swift; sourceTree = "<group>"; };
 		E7B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutPatternDetectorTests.swift; sourceTree = "<group>"; };
+		E8B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutPatternFormatter.swift; sourceTree = "<group>"; };
+		E9B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutPatternFormatterTests.swift; sourceTree = "<group>"; };
+		EAB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightCache.swift; sourceTree = "<group>"; };
+		EBB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightCacheTests.swift; sourceTree = "<group>"; };
+		ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightService.swift; sourceTree = "<group>"; };
 		E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SampleResampler.swift; sourceTree = "<group>"; };
 		E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionReclassifier.swift; sourceTree = "<group>"; };
 		E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutSampleService.swift; sourceTree = "<group>"; };
@@ -356,6 +366,8 @@
 				E3B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift */,
 				E5B4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift */,
 				E7B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetectorTests.swift */,
+				E9B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift */,
+				EBB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift */,
 			);
 			path = AIFitnessCoachTests;
 			sourceTree = "<group>";
@@ -415,6 +427,9 @@
 				E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */,
 				E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */,
 				E6B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift */,
+				E8B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift */,
+				EAB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift */,
+				ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -715,6 +730,8 @@
 				D3A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifierTests.swift in Sources */,
 				D5A4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift in Sources */,
 				D7A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetectorTests.swift in Sources */,
+				D9A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift in Sources */,
+				DBA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -788,6 +805,9 @@
 				D2A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift in Sources */,
 				D4A4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift in Sources */,
 				D6A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift in Sources */,
+				D8A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift in Sources */,
+				DAA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift in Sources */,
+				DCA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

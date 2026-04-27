@@ -6,7 +6,7 @@ Een iOS-app (SwiftUI + SwiftData) die fungeert als persoonlijke, slimme fitnessc
 
 ## 🚀 Huidige Status
 
-**Laatst gemerged — Epic #42 ✅ Always-on Dual-Source Sync (decouple van toggle) · Epic #41 ✅ Dual-Source Single-Record-of-Truth (OAuth-hardening + smart ingest) · Epic #43 ✅ UI Polish (Settings-status + Dashboard-header)**
+**Laatst gemerged — Epic #32 ✅ Deep-Dive Fysiologische Analyse (32.3a/b/c — pattern-detectoren + Coach-analyse + chat-context) · Epic #42 ✅ Always-on Dual-Source Sync · Epic #41 ✅ Dual-Source Single-Record-of-Truth**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte coaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur. Testsuite: **51% code coverage** (gemeten met `xcodebuild -enableCodeCoverage YES` over de volledige unit + UI suite). Alle kritieke Services + Models zitten boven de 80% — zie [`docs/ROADMAP.md`](docs/ROADMAP.md) Epic #36 voor de per-bestand uitsplitsing.
 
@@ -18,9 +18,9 @@ Dual-source ingest is met Epic #41 zelfreinigend gemaakt: `FitnessDataService.en
 
 Met Epic #42 zijn HK + Strava daarnaast volledig **always-on**: beide sync-paden draaien concurrent via `async let` in zowel de auto-sync (`AppTabHostView`) als de manuele Settings-sync, ongeacht de bron-voorkeur. De `selectedDataSource`-toggle is hernoemd van "Primaire databron" naar "Bron-voorkeur" en bepaalt alleen nog welke bron de coach als eerste aanspreekt voor de huidige status; de sync-laag is volledig ontkoppeld. Backwards-compat: AppStorage-key + enum-rawValues ongewijzigd, dus bestaande gebruikers behouden hun toggle-stand.
 
-Story 32.3a (Epic #32) heeft de pure-Swift pattern-detectoren neergezet: `WorkoutPatternDetector` herkent **aerobic decoupling**, **cardiac drift**, **cadence fade** en **HR-recovery** in een 5s-resampled sample-reeks, met fysiologisch onderbouwde drempels (Joe Friel / TrainingPeaks-norm) en severity-klassificering per patroon. Volledig getest (22 unit tests) zonder UI- of AI-afhankelijkheid — klaar voor consumptie door story 32.3b.
+Met Epic #32 ✅ afgesloten heeft de coach een nieuwe laag van fysiologische intelligentie: `WorkoutPatternDetector` herkent **aerobic decoupling**, **cardiac drift**, **cadence fade** en **trage HR-recovery** in een 5s-resampled sample-reeks (Joe Friel / TrainingPeaks-drempels), `WorkoutAnalysisView` toont de patronen als `PointMark`-pins op de HR-chart + chip-row + "Coach-analyse"-card met een 3-zin Gemini-synthese ("decoupling + cardiac drift = aerobic ceiling overschreden — was dat bewust drempel-werk?"), gecached per workout zodat herhaald openen geen API-call kost. Significante patronen uit recente workouts injecteren tegelijk in de chat-coach-prompt zodat de coach er proactief naar refereert wanneer je reflecteert op uitvoering of trainingsplan-aanpassingen vraagt.
 
-**Volgende pickup:** ⏳ Story 32.3b — annotation-pins op de `WorkoutAnalysisView`-chart + AI-context-injectie in de coach-prompt zodat patronen zichtbaar én bespreekbaar worden. Bron-voorkeur-tiebreaker in `ActivityDeduplicator` blijft open als losse follow-up.
+**Volgende pickup:** open follow-ups uit eerdere Epics — bron-voorkeur-tiebreaker in `ActivityDeduplicator` (Epic #42), HealthKit Permission UX (⏳ Epic #38), of Strict Concurrency `Complete` (⏳ Epic #39 story 39.3). Geen actieve sprint vastgepind; nieuwe Epics komen pas op tafel als de gebruiker een concrete pijn meldt.
 
 Volledige historie en backlog: zie [`docs/ROADMAP.md`](docs/ROADMAP.md).
 Technische architectuur (Dual Engine, Cloudflare Proxy, Keychain): zie [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
