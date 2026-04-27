@@ -144,6 +144,11 @@ final class WorkoutInsightService {
         do {
             return try await callModel(primary, prompt: prompt)
         } catch {
+            // Task-cancellation = de view of een nieuwe call heeft ons gepasseerd.
+            // Geen fallback proberen (zou ook gecancelled worden), CancellationError
+            // doorgeven zodat de view 'm stilletjes kan negeren.
+            if Self.isCancellation(error) { throw CancellationError() }
+
             // Authenticatie of content-blocking is per-key/per-prompt; de fallback gaat
             // dat niet oplossen. Direct doorgeven.
             if let mapped = mapError(error, retried: false), case .authenticationFailed = mapped {
@@ -160,9 +165,21 @@ final class WorkoutInsightService {
             do {
                 return try await callModel(fallback, prompt: prompt)
             } catch {
+                if Self.isCancellation(error) { throw CancellationError() }
                 throw mapError(error, retried: true) ?? .unavailable(retried: true, detail: error.localizedDescription)
             }
         }
+    }
+
+    /// Detecteert SwiftUI/URLSession task-cancellation in alle vormen die we tegenkomen:
+    /// rauwe `CancellationError`, `URLError.cancelled`, of een `URLError.cancelled` die
+    /// in `GenerateContentError.internalError(underlying:)` ingewikkeld zit. We checken
+    /// op `String(describing:)` als laatste vangnet voor het ingewikkelde geval.
+    private static func isCancellation(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        if let urlError = error as? URLError, urlError.code == .cancelled { return true }
+        let desc = String(describing: error)
+        return desc.contains("Code=-999") || desc.contains("\"cancelled\"")
     }
 
     private func buildPrompt(patterns: [WorkoutPattern], context: InsightContext) -> String {
@@ -211,24 +228,39 @@ final class WorkoutInsightService {
         return text
     }
 
-    /// Mapt SDK-fouten op gebruiker-vriendelijke `InsightError`-cases. Werkt op basis
-    /// van string-matching omdat `GoogleGenerativeAI.GenerateContentError` geen stabiele
-    /// publieke discriminators heeft — keyword-matching dekt 503/429/auth/blocked
-    /// en de timeout-paden uit `URLError`.
+    /// Mapt SDK-fouten op gebruiker-vriendelijke `InsightError`-cases. Match op de
+    /// case-naam via `String(describing:)` (bv. `promptBlockedError(...)`) plus op
+    /// `localizedDescription` voor URLError + non-Google fouten. Logt de rauwe fout
+    /// naar de console — als de UI "Onbekende AI-fout (...)" toont, kunnen we daar
+    /// de case-naam aflezen en 'm in een volgende ronde mappen.
     private func mapError(_ error: Error, retried: Bool) -> InsightError? {
-        let message = error.localizedDescription.lowercased()
-        if message.contains("api key") || message.contains("api_key") || message.contains("unauthenticated") || message.contains("unauthorized") {
+        let caseDescription = String(describing: error)
+        let message = error.localizedDescription
+        let combined = "\(caseDescription) \(message)".lowercased()
+
+        print("[WorkoutInsightService] AI-call failed (retried=\(retried)): \(caseDescription) | localized=\(message)")
+
+        // Specifieke Google-SDK cases — case-naam is stabieler dan localized text.
+        if combined.contains("invalidapikey") || combined.contains("api key") || combined.contains("unauthenticated") || combined.contains("unauthorized") {
             return .authenticationFailed
         }
-        if message.contains("quota") || message.contains("rate limit") || message.contains("429") {
-            return .rateLimited(retried: retried)
-        }
-        if message.contains("blocked") || message.contains("safety") || message.contains("harm") {
+        if combined.contains("promptblocked") || combined.contains("blocked") || combined.contains("safety") || combined.contains("harm") {
             return .contentBlocked
         }
-        if message.contains("timed out") || message.contains("timeout") || (error as? URLError)?.code == .timedOut {
+        if combined.contains("quota") || combined.contains("rate") || combined.contains("429") || combined.contains("resource_exhausted") {
+            return .rateLimited(retried: retried)
+        }
+        if combined.contains("timed out") || combined.contains("timeout") || (error as? URLError)?.code == .timedOut {
             return .timedOut(retried: retried)
         }
-        return nil
+        if combined.contains("internalerror") || combined.contains("503") || combined.contains("server error") {
+            return .unavailable(retried: retried, detail: "Google AI-server gaf een interne fout terug — meestal tijdelijk, probeer over een paar minuten opnieuw.")
+        }
+        if combined.contains("responsestoppedearly") {
+            return .unavailable(retried: retried, detail: "AI stopte de respons voortijdig — pull-to-refresh om opnieuw te proberen.")
+        }
+        // Onbekende case: geef de rauwe case-naam terug zodat we hem in de UI kunnen
+        // aflezen en in een volgende iteratie expliciet mappen.
+        return .unavailable(retried: retried, detail: "Onbekende AI-fout — \(caseDescription)")
     }
 }

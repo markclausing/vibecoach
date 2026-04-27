@@ -266,6 +266,12 @@ struct WorkoutAnalysisView: View {
             )
             cache.store(text, for: activity.id, fingerprint: fingerprint)
             insightState = .loaded(text)
+        } catch is CancellationError {
+            // Task-cancellation = nieuwe call onderweg of view weggenavigeerd. Niet
+            // klagen in de UI; de volgende `.task`/refresh handelt het af. Zet de
+            // state terug op .idle zodat we niet voor altijd op de spinner blijven
+            // hangen als er géén nieuwe call meer komt.
+            insightState = .idle
         } catch {
             insightState = .unavailable(error.localizedDescription)
         }
