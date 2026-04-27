@@ -167,13 +167,13 @@ struct WorkoutAnalysisView: View {
         VStack(alignment: .leading, spacing: 8) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(patterns, id: \.kind) { pattern in
+                    ForEach(Array(patterns.enumerated()), id: \.element.kind) { index, pattern in
                         Button {
                             withAnimation(.easeOut(duration: 0.18)) {
                                 selectedPatternKind = (selectedPatternKind == pattern.kind) ? nil : pattern.kind
                             }
                         } label: {
-                            patternChip(pattern, selected: selectedPatternKind == pattern.kind)
+                            patternChip(pattern, index: index, selected: selectedPatternKind == pattern.kind)
                         }
                         .buttonStyle(.plain)
                     }
@@ -187,10 +187,14 @@ struct WorkoutAnalysisView: View {
         }
     }
 
-    private func patternChip(_ pattern: WorkoutPattern, selected: Bool) -> some View {
+    private func patternChip(_ pattern: WorkoutPattern, index: Int, selected: Bool) -> some View {
         let color = severityColor(pattern.severity)
         return HStack(spacing: 6) {
-            Circle().fill(color).frame(width: 8, height: 8)
+            // Genummerd badge (1-9 via SF Symbol). Komt 1-op-1 terug op de HR-chart als
+            // PointMark-annotatie zodat gebruiker direct ziet welke pin bij welk patroon hoort.
+            Image(systemName: "\(index + 1).circle.fill")
+                .font(.subheadline)
+                .foregroundStyle(color)
             Text(patternShortLabel(pattern.kind))
                 .font(.caption.weight(.semibold))
             Text(patternValueLabel(pattern))
@@ -566,17 +570,23 @@ struct WorkoutAnalysisView: View {
                     }
                 }
                 // Story 32.3b: pattern-pins op de HR-chart op `range.lowerBound`,
-                // gekleurd op severity. Pure visuele markers — alle uitleg zit in
-                // de chip-row + insight-card boven de chart.
-                ForEach(patterns, id: \.kind) { pattern in
+                // gekleurd op severity. De index-overlay (1, 2, 3, …) komt 1-op-1
+                // terug op de chip boven de chart zodat gebruiker direct ziet welke
+                // pin bij welk patroon hoort.
+                ForEach(Array(patterns.enumerated()), id: \.element.kind) { index, pattern in
                     if let hr = nearestHeartRate(at: pattern.range.lowerBound) {
                         PointMark(
                             x: .value("Tijd", pattern.range.lowerBound),
                             y: .value("BPM", hr)
                         )
                         .foregroundStyle(severityColor(pattern.severity))
-                        .symbolSize(80)
+                        .symbolSize(160)
                         .symbol(.circle)
+                        .annotation(position: .overlay) {
+                            Text("\(index + 1)")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(.white)
+                        }
                     }
                 }
                 if let scrubbedDate {
