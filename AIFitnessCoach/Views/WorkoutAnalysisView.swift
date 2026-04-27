@@ -118,6 +118,23 @@ struct WorkoutAnalysisView: View {
         .task(id: samples.count) {
             await computePatternsAndLoadInsight()
         }
+        .refreshable {
+            // Epic #44 story 44.5 + 44.6 testflow: pull-to-refresh leegt de
+            // `WorkoutInsightCache`-entry voor deze workout en herhaalt de detect-/
+            // generate-flow met de actuele profielwaarden. Handig om kalibratie-
+            // wijzigingen (nieuwe LTHR/max in Settings) terug te zien op een
+            // bestaande workout zonder dat je hoeft te wachten op een natuurlijke
+            // pattern-fingerprint-shift.
+            await refreshAnalysis()
+        }
+    }
+
+    /// Hard-invalidate-pad: gooit de cache-entry voor dit ene record weg en herhaalt
+    /// `computePatternsAndLoadInsight()`. Roept onder de motorkap dezelfde detect-
+    /// + AI-flow aan als de initiële `.task`, dus de loading-state knippert correct.
+    private func refreshAnalysis() async {
+        WorkoutInsightCache().invalidate(activityID: activity.id)
+        await computePatternsAndLoadInsight()
     }
 
     // MARK: - Story 32.3b: patroon-detectie + cache + AI-narrative
