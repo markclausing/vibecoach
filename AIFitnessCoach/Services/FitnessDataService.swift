@@ -184,6 +184,49 @@ actor FitnessDataService {
         }
     }
 
+    /// Epic 44 Story 44.3: haalt de FTP van de geauthenticeerde Strava-atleet op
+    /// via `/api/v3/athlete`. Strava onderhoudt FTP als onderdeel van het athlete-
+    /// profiel; gebruikers die hun FTP daar al kalibreren krijgen 'm via deze
+    /// endpoint terug zonder dat we 'm zelf hoeven te schatten.
+    /// - Returns: FTP in watt, of `nil` als de gebruiker geen FTP in z'n profiel
+    ///   heeft ingevuld (Strava returnt dan ofwel `null` ofwel het ontbrekende veld).
+    /// - Throws: `FitnessDataError` bij netwerk-, auth- of decode-fout.
+    func fetchAthleteFTP() async throws -> Int? {
+        let stravaToken = try await ensureValidToken()
+
+        guard let url = URL(string: "https://www.strava.com/api/v3/athlete") else {
+            throw FitnessDataError.networkError("Ongeldige athlete-URL")
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.addValue("Bearer \(stravaToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw FitnessDataError.networkError(error.localizedDescription)
+        }
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw FitnessDataError.invalidResponse
+        }
+
+        if httpResponse.statusCode == 401 {
+            throw FitnessDataError.unauthorized
+        } else if !(200...299).contains(httpResponse.statusCode) {
+            throw FitnessDataError.networkError("Onverwachte HTTP status code: \(httpResponse.statusCode)")
+        }
+
+        do {
+            let athlete = try JSONDecoder().decode(StravaAthlete.self, from: data)
+            return athlete.ftp
+        } catch {
+            throw FitnessDataError.decodingError(error.localizedDescription)
+        }
+    }
+
     /// Epic 40: Haalt de fijngranulaire stream-data op voor één Strava-activity.
     /// Vraagt de stromen `time`, `watts`, `cadence`, `heartrate` en `velocity_smooth`
     /// op als `key_by_type=true`-dictionary. Niet alle streams zijn altijd aanwezig
