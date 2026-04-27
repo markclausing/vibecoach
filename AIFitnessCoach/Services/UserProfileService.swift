@@ -8,8 +8,29 @@ enum BiologicalSex: String, Codable {
     case male, female, other, unknown
 }
 
+// MARK: - Epic 44 Story 44.1: ThresholdValue
+
+/// Eén fysiologische drempel met source-tracking. Source bepaalt UI-badging
+/// ("auto · 14 dagen" / "Strava" / "handmatig") en speelt in 44.2 ook de rol
+/// van prioriteit: handmatige overrides winnen altijd van automatische detectie.
+struct ThresholdValue: Equatable, Codable {
+    let value: Double
+    let source: ThresholdSource
+}
+
+enum ThresholdSource: String, Codable, Equatable {
+    /// Gedetecteerd uit HealthKit-historie via `PhysiologicalThresholdEstimator`.
+    case automatic
+    /// Door gebruiker handmatig ingevoerd in Settings — wint altijd van automatic.
+    case manual
+    /// Geïmporteerd vanuit Strava `Athlete`-endpoint (alleen FTP).
+    case strava
+}
+
 /// Fysiologisch profiel van de gebruiker — opgehaald via HealthKit met fallbacks.
-/// Dit profiel is de basis voor alle voedingsberekeningen in `NutritionService`.
+/// Dit profiel is de basis voor alle voedingsberekeningen in `NutritionService`
+/// en — sinds Epic #44 — ook voor de zone-kalibratie van `WorkoutPatternDetector`
+/// en `SessionClassifier`.
 struct UserPhysicalProfile {
     let weightKg: Double        // lichaamsgewicht in kilogram
     let heightCm: Double        // lichaamslengte in centimeter
@@ -20,7 +41,41 @@ struct UserPhysicalProfile {
     let weightSource: DataSource
     let heightSource: DataSource
 
+    // Epic #44 Story 44.1: persoonlijke trainingsdrempels. Optioneel — een nieuwe
+    // installatie zonder HK-historie en zonder handmatige invoer heeft hier nil.
+    // Gebruikers van vóór Epic #44 zien nil totdat ze hun eerste HK-detectie
+    // draaien of waardes invoeren in Settings.
+    let maxHeartRate: ThresholdValue?
+    let restingHeartRate: ThresholdValue?
+    let lactateThresholdHR: ThresholdValue?
+    let ftp: ThresholdValue?
+
     enum DataSource { case healthKit, local, defaultValue }
+
+    /// Expliciete init met defaults voor de 44.1-velden. Bestaande callers
+    /// (vóór deze Epic) compileren ongewijzigd door — de nieuwe optionele
+    /// drempels krijgen automatisch nil.
+    init(weightKg: Double,
+         heightCm: Double,
+         ageYears: Int,
+         sex: BiologicalSex,
+         weightSource: DataSource,
+         heightSource: DataSource,
+         maxHeartRate: ThresholdValue? = nil,
+         restingHeartRate: ThresholdValue? = nil,
+         lactateThresholdHR: ThresholdValue? = nil,
+         ftp: ThresholdValue? = nil) {
+        self.weightKg = weightKg
+        self.heightCm = heightCm
+        self.ageYears = ageYears
+        self.sex = sex
+        self.weightSource = weightSource
+        self.heightSource = heightSource
+        self.maxHeartRate = maxHeartRate
+        self.restingHeartRate = restingHeartRate
+        self.lactateThresholdHR = lactateThresholdHR
+        self.ftp = ftp
+    }
 
     /// True als het profiel volledig is (geen defaults gebruikt).
     var isComplete: Bool {
@@ -37,6 +92,22 @@ struct UserPhysicalProfile {
         case .unknown: sexLabel = "onbekend"
         }
         return "\(Int(weightKg)) kg, \(Int(heightCm)) cm, \(ageYears) jaar, \(sexLabel)"
+    }
+
+    // MARK: - Epic 44: effectieve drempels met fallbacks
+
+    /// Effectieve max-HR voor zone-berekeningen. Valt terug op Tanaka(`ageYears`)
+    /// wanneer geen handmatige of auto-gedetecteerde waarde beschikbaar is.
+    var effectiveMaxHeartRate: Double {
+        if let stored = maxHeartRate?.value, stored > 0 { return stored }
+        guard ageYears > 0, ageYears < 120 else { return HeartRateZones.defaultMaxHeartRate }
+        return 208.0 - 0.7 * Double(ageYears)
+    }
+
+    /// Effectieve rust-HR. Default 60 BPM (gemiddelde gezonde volwassene) als fallback.
+    var effectiveRestingHeartRate: Double {
+        if let stored = restingHeartRate?.value, stored > 0 { return stored }
+        return 60.0
     }
 }
 
@@ -58,6 +129,16 @@ final class UserProfileService: @unchecked Sendable {
     static let heightKey    = "vibecoach_userHeightCm"
     /// Gecachte leeftijd — om te detecteren of HealthKit een gewijzigde waarde teruggeeft.
     static let cachedAgeKey = "vibecoach_cachedAgeYears"
+
+    // MARK: - Epic 44 Story 44.1: drempels in UserDefaults
+    //
+    // Per drempel slaan we een JSON-blob op met `value` + `source`. Eén key per
+    // drempel houdt de migratie eenvoudig: nieuwe veldjes voegen we toe aan de
+    // `ThresholdValue`-Codable zonder alle keys te moeten herschrijven.
+    static let maxHeartRateKey       = "vibecoach_maxHeartRate.v1"
+    static let restingHeartRateKey   = "vibecoach_restingHeartRate.v1"
+    static let lactateThresholdHRKey = "vibecoach_lactateThresholdHR.v1"
+    static let ftpKey                = "vibecoach_ftp.v1"
 
     /// Standaard-fallbacks als zowel HealthKit als UserDefaults leeg zijn.
     /// Gebaseerd op gemiddelde Nederlandse recreatieve atleet (man, 35j, 75 kg, 178 cm).
@@ -87,8 +168,61 @@ final class UserProfileService: @unchecked Sendable {
             ageYears:     ageYears,
             sex:          defaultSex,       // geslacht is niet gecacht; effect op BMR ≈ 5%
             weightSource: .local,
-            heightSource: .local
+            heightSource: .local,
+            maxHeartRate:       cachedThreshold(forKey: maxHeartRateKey),
+            restingHeartRate:   cachedThreshold(forKey: restingHeartRateKey),
+            lactateThresholdHR: cachedThreshold(forKey: lactateThresholdHRKey),
+            ftp:                cachedThreshold(forKey: ftpKey)
         )
+    }
+
+    // MARK: - Epic 44: Threshold persistence
+
+    /// Leest één `ThresholdValue` uit UserDefaults via JSON-decode. Returnt nil als
+    /// de key leeg is of de blob corrupt — caller valt dan terug op formule-default
+    /// (Tanaka-maxHR, 60 BPM rust, etc.).
+    static func cachedThreshold(forKey key: String,
+                                defaults: UserDefaults = .standard) -> ThresholdValue? {
+        guard let data = defaults.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(ThresholdValue.self, from: data)
+    }
+
+    /// Slaat één `ThresholdValue` op in UserDefaults. Synchroon — caller kan dit
+    /// direct na een UI-actie aanroepen zonder await.
+    static func saveThreshold(_ value: ThresholdValue?,
+                              forKey key: String,
+                              defaults: UserDefaults = .standard) {
+        guard let value else {
+            defaults.removeObject(forKey: key)
+            return
+        }
+        if let data = try? JSONEncoder().encode(value) {
+            defaults.set(data, forKey: key)
+        }
+    }
+
+    /// Convenience: bewaar elke drempel die in `Result` aanwezig is met source
+    /// `.automatic`. Bestaande `.manual`-waarden worden behouden — handmatige
+    /// invoer wint altijd van automatische detectie. Caller (bv. settings-flow)
+    /// moet dus zelf checken op `.manual` voordat hij overschrijft, of expliciet
+    /// `force: true` doorgeven om die guard te omzeilen.
+    static func storeAutoDetectedThresholds(_ result: PhysiologicalThresholdEstimator.Result,
+                                            force: Bool = false,
+                                            defaults: UserDefaults = .standard) {
+        store(result.maxHeartRate, forKey: maxHeartRateKey, force: force, defaults: defaults)
+        store(result.restingHeartRate, forKey: restingHeartRateKey, force: force, defaults: defaults)
+        store(result.lactateThresholdHR, forKey: lactateThresholdHRKey, force: force, defaults: defaults)
+    }
+
+    private static func store(_ newValue: Double?,
+                              forKey key: String,
+                              force: Bool,
+                              defaults: UserDefaults) {
+        guard let newValue else { return }
+        if !force, let existing = cachedThreshold(forKey: key, defaults: defaults), existing.source == .manual {
+            return // Niet overschrijven; handmatige invoer is leidend.
+        }
+        saveThreshold(ThresholdValue(value: newValue, source: .automatic), forKey: key, defaults: defaults)
     }
 
     // MARK: - Autorisatie
@@ -162,7 +296,11 @@ final class UserProfileService: @unchecked Sendable {
             ageYears:      ageYears,
             sex:           sex,
             weightSource:  weightSource,
-            heightSource:  heightSource
+            heightSource:  heightSource,
+            maxHeartRate:       Self.cachedThreshold(forKey: Self.maxHeartRateKey),
+            restingHeartRate:   Self.cachedThreshold(forKey: Self.restingHeartRateKey),
+            lactateThresholdHR: Self.cachedThreshold(forKey: Self.lactateThresholdHRKey),
+            ftp:                Self.cachedThreshold(forKey: Self.ftpKey)
         )
     }
 
