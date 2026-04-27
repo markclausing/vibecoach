@@ -132,7 +132,13 @@ struct WorkoutAnalysisView: View {
             insightState = .idle
             return
         }
-        let detected = WorkoutPatternDetector.detectAll(in: samples)
+        // Epic #44 story 44.5: zone-gates aanzetten zodra de gebruiker LTHR of
+        // max+rest heeft ingesteld. Zonder profielwaarden valt de detector terug
+        // op het populatie-globale gedrag van vóór 44.5.
+        let detected = WorkoutPatternDetector.detectAll(
+            in: samples,
+            profile: UserProfileService.cachedProfile()
+        )
         patterns = detected
         guard !detected.isEmpty else {
             insightState = .idle

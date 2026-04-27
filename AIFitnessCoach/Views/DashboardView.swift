@@ -1784,13 +1784,16 @@ struct DashboardView: View {
     private func refreshWorkoutPatternsContext() async {
         let store = WorkoutSampleStore(modelContainer: modelContext.container)
         let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        // Epic #44 story 44.5: profiel hier één keer ophalen en doorgeven aan
+        // detectAll zodat de zone-gates per workout consistent dezelfde drempels gebruiken.
+        let profile = UserProfileService.cachedProfile()
         var allPatterns: [WorkoutPattern] = []
 
         for activity in activities where activity.startDate >= cutoff {
             let uuid = UUID.forActivityRecordID(activity.id)
             let samples = (try? await store.samples(forWorkoutUUID: uuid)) ?? []
             guard !samples.isEmpty else { continue }
-            allPatterns.append(contentsOf: WorkoutPatternDetector.detectAll(in: samples))
+            allPatterns.append(contentsOf: WorkoutPatternDetector.detectAll(in: samples, profile: profile))
         }
 
         viewModel.workoutPatternsContext = WorkoutPatternFormatter.chatContextLine(for: allPatterns) ?? ""
@@ -1803,6 +1806,7 @@ struct DashboardView: View {
     /// triggeren op echte data — geen UI-effect, alleen console-output.
     private func runPatternDebugReport() async {
         let store = WorkoutSampleStore(modelContainer: modelContext.container)
+        let profile = UserProfileService.cachedProfile()
         var triggered = 0
         var scanned = 0
         for activity in activities {
@@ -1810,7 +1814,7 @@ struct DashboardView: View {
             let samples = (try? await store.samples(forWorkoutUUID: uuid)) ?? []
             guard !samples.isEmpty else { continue }
             scanned += 1
-            let patterns = WorkoutPatternDetector.detectAll(in: samples)
+            let patterns = WorkoutPatternDetector.detectAll(in: samples, profile: profile)
             guard !patterns.isEmpty else { continue }
             triggered += 1
             print("📊 [Pattern-debug] '\(activity.displayName)' op \(activity.startDate.formatted(date: .abbreviated, time: .shortened)) — \(samples.count) samples")

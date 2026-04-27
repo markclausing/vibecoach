@@ -756,6 +756,62 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Genereert een context-prefix string op basis van het meegegeven atletisch profiel.
+    /// Epic #44 story 44.6: bouwt het `[TRAININGSDREMPELS]`-blok op basis van het
+    /// gecachte fysiologische profiel. Returnt lege string als geen drempels gezet
+    /// zijn — dan blijft de coach z'n eigen populatie-aannames hanteren. Bij
+    /// gestelde LTHR rapporteren we Friel-zones (preciezer voor atletisch profiel),
+    /// anders Karvonen op max+rest.
+    private func buildTrainingThresholdsBlock() -> String {
+        let profile = UserProfileService.cachedProfile()
+        var lines: [String] = []
+        if let max = profile.maxHeartRate {
+            lines.append("- Max HR: \(Int(max.value)) BPM (\(thresholdSourceLabel(max.source)))")
+        }
+        if let rest = profile.restingHeartRate {
+            lines.append("- Rust HR: \(Int(rest.value)) BPM (\(thresholdSourceLabel(rest.source)))")
+        }
+        if let lthr = profile.lactateThresholdHR {
+            lines.append("- LTHR: \(Int(lthr.value)) BPM (\(thresholdSourceLabel(lthr.source)))")
+        }
+        if let ftp = profile.ftp {
+            lines.append("- FTP: \(Int(ftp.value)) W (\(thresholdSourceLabel(ftp.source)))")
+        }
+        guard !lines.isEmpty else { return "" }
+
+        // Voeg expliciete Z2/Z3-grenzen toe zodat de coach een 'rustige' rit niet
+        // verkeerd interpreteert. Z2 endurance + Z3 tempo zijn de twee zones waar
+        // gebruikers het vaakst over reflecteren.
+        var zonesLine: String?
+        if let zones = WorkoutPatternDetector.heartRateZones(from: profile),
+           zones.count >= 3 {
+            let z2 = zones[1]
+            let z3 = zones[2]
+            zonesLine = "- Zone 2 (endurance): \(z2.lowerBPM)-\(z2.upperBPM) BPM · Zone 3 (tempo): \(z3.lowerBPM)-\(z3.upperBPM) BPM"
+        }
+
+        var block = "[TRAININGSDREMPELS (persoonlijk profiel):\n"
+        block += lines.joined(separator: "\n")
+        if let zonesLine {
+            block += "\n\(zonesLine)"
+        }
+        block += """
+
+        Gedragsregels:
+        1. Interpreteer "rustig"/"easy"/"recovery" altijd in de context van DEZE drempels — niet populatie-gemiddelden. Een gebruiker met max 200 BPM die op 146 BPM traint, zit in Z2, niet Z3.
+        2. Bij subjectieve feedback over inspanning: koppel aan de zone, niet alleen aan het BPM-getal ("145 BPM is voor jou Z2 — dat klopt met 'rustig'").
+        3. Bij plan-aanpassingen waar zones expliciet genoemd worden, gebruik de bovenstaande BPM-grenzen voor de instructie aan de gebruiker.]
+        """
+        return block
+    }
+
+    private func thresholdSourceLabel(_ source: ThresholdSource) -> String {
+        switch source {
+        case .automatic: return "auto"
+        case .manual:    return "handmatig"
+        case .strava:    return "Strava"
+        }
+    }
+
     private func buildContextPrefix(from profile: AthleticProfile?, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) -> String {
         var prefix = ""
 
@@ -799,6 +855,16 @@ class ChatViewModel: ObservableObject {
             4. Score gedaald t.o.v. gisteren → benoem dit als positief teken van herstel.]
             """
             prefix += symptomBlock + "\n\n"
+        }
+
+        // Epic #44 story 44.6: persoonlijke trainingsdrempels naar de coach. De
+        // coach moet weten dat 146 BPM voor déze gebruiker zone 2 is, niet zone 3.
+        // We voegen alleen het blok toe als er minstens één drempel is gezet —
+        // anders is er niks meer te zeggen dan populatie-defaults en houdt de
+        // coach gewoon zijn eigen aannames.
+        let thresholdsBlock = buildTrainingThresholdsBlock()
+        if !thresholdsBlock.isEmpty {
+            prefix += thresholdsBlock + "\n\n"
         }
 
         // Epic 32 Story 32.3c: injecteer significante fysiologische patronen uit
