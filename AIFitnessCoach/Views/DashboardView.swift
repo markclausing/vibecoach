@@ -1784,13 +1784,16 @@ struct DashboardView: View {
     private func refreshWorkoutPatternsContext() async {
         let store = WorkoutSampleStore(modelContainer: modelContext.container)
         let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        // Epic #44 story 44.5: profiel hier één keer ophalen en doorgeven aan
+        // detectAll zodat de zone-gates per workout consistent dezelfde drempels gebruiken.
+        let profile = UserProfileService.cachedProfile()
         var allPatterns: [WorkoutPattern] = []
 
         for activity in activities where activity.startDate >= cutoff {
             let uuid = UUID.forActivityRecordID(activity.id)
             let samples = (try? await store.samples(forWorkoutUUID: uuid)) ?? []
             guard !samples.isEmpty else { continue }
-            allPatterns.append(contentsOf: WorkoutPatternDetector.detectAll(in: samples))
+            allPatterns.append(contentsOf: WorkoutPatternDetector.detectAll(in: samples, profile: profile))
         }
 
         viewModel.workoutPatternsContext = WorkoutPatternFormatter.chatContextLine(for: allPatterns) ?? ""
@@ -1803,22 +1806,32 @@ struct DashboardView: View {
     /// triggeren op echte data — geen UI-effect, alleen console-output.
     private func runPatternDebugReport() async {
         let store = WorkoutSampleStore(modelContainer: modelContext.container)
+        let profile = UserProfileService.cachedProfile()
         var triggered = 0
         var scanned = 0
+        var skippedNoSamples = 0
         for activity in activities {
             let uuid = UUID.forActivityRecordID(activity.id)
             let samples = (try? await store.samples(forWorkoutUUID: uuid)) ?? []
-            guard !samples.isEmpty else { continue }
+            let dateLabel = activity.startDate.formatted(date: .abbreviated, time: .shortened)
+            guard !samples.isEmpty else {
+                skippedNoSamples += 1
+                print("📊 [Pattern-debug] '\(activity.displayName)' op \(dateLabel) — geen samples opgeslagen, overgeslagen")
+                continue
+            }
             scanned += 1
-            let patterns = WorkoutPatternDetector.detectAll(in: samples)
-            guard !patterns.isEmpty else { continue }
+            let patterns = WorkoutPatternDetector.detectAll(in: samples, profile: profile)
+            if patterns.isEmpty {
+                print("📊 [Pattern-debug] '\(activity.displayName)' op \(dateLabel) — \(samples.count) samples · geen patronen (alle filters/zones-gates negatief)")
+                continue
+            }
             triggered += 1
-            print("📊 [Pattern-debug] '\(activity.displayName)' op \(activity.startDate.formatted(date: .abbreviated, time: .shortened)) — \(samples.count) samples")
+            print("📊 [Pattern-debug] '\(activity.displayName)' op \(dateLabel) — \(samples.count) samples")
             for pattern in patterns {
                 print("   • \(pattern.kind) [\(pattern.severity)]: \(pattern.detail)")
             }
         }
-        print("📊 [Pattern-debug] Scan klaar — \(triggered)/\(scanned) workouts met samples hadden patronen (\(activities.count) totaal in DB).")
+        print("📊 [Pattern-debug] Scan klaar — \(triggered)/\(scanned) workouts met samples hadden patronen, \(skippedNoSamples) overgeslagen wegens geen samples (\(activities.count) totaal in DB).")
     }
     #endif
 

@@ -84,6 +84,75 @@ struct WorkoutAnalysisView: View {
         return first...last
     }
 
+    /// Epic #44 story 44.5: HR-zones afgeleid uit het profiel. Friel als LTHR
+    /// gezet is (preciezer voor atleet), anders Karvonen op max+rest. Lege array
+    /// als de gebruiker geen drempels heeft ingesteld — chart blijft schoon.
+    private var heartRateChartZones: [HeartRateZone] {
+        WorkoutPatternDetector.heartRateZones(from: UserProfileService.cachedProfile()) ?? []
+    }
+
+    private var powerChartZones: [PowerZone] {
+        guard let ftp = UserProfileService.cachedProfile().ftp?.value, ftp > 0 else { return [] }
+        return PowerZoneCalculator.coggan(ftp: ftp)
+    }
+
+    /// Pastel-gradient van Z1 → Z5/Z7. Bewust laag-saturatie zodat zone-bands de
+    /// chart niet overheersen. Zone 1 = blauw (recovery), Z5/6/7 = warm (max).
+    private func zoneColor(forIndex index: Int) -> Color {
+        switch index {
+        case 1: return .blue
+        case 2: return .green
+        case 3: return .yellow
+        case 4: return .orange
+        case 5: return .red
+        case 6: return .pink
+        default: return .purple // Z7 neuromuscular voor power
+        }
+    }
+
+    /// Y-domain voor de HR-chart. Tight rond actuele data (±10 BPM marge) zodat
+    /// we geen lege "0-80 BPM" en "200-300 BPM" zones tonen waar geen data zit.
+    /// Zone-bands die buiten deze range vallen worden door Charts geclipped — dat
+    /// is precies wat we willen, alleen zones tonen die de gebruiker écht heeft
+    /// aangeraakt.
+    private var hrYDomain: ClosedRange<Double> {
+        let hrValues = samples.compactMap(\.heartRate)
+        guard let minHR = hrValues.min(), let maxHR = hrValues.max() else {
+            return 60...190
+        }
+        let lower = max(40, minHR - 10).rounded(.down)
+        let upper = min(220, maxHR + 10).rounded(.up)
+        return lower...upper
+    }
+
+    /// Y-domain voor de secondary chart. Power/speed start op 0 (recovery / coasten
+    /// is betekenisvol). Bovengrens met kleine marge boven de piekwaarde — zone
+    /// Z6/Z7 (Coggan) wordt buiten deze range automatisch geclipped.
+    private var secondaryYDomain: ClosedRange<Double> {
+        let values: [Double] = samples.compactMap { secondaryValue(of: $0) }
+        guard let maxValue = values.max(), maxValue > 0 else { return 0...100 }
+        switch secondarySeries {
+        case .power: return 0...(maxValue + 30).rounded(.up)
+        case .speed: return 0...(maxValue + 0.5).rounded(.up)
+        case .none:  return 0...maxValue
+        }
+    }
+
+    /// Combineert de gestelde drempels tot een korte sleutel. Lege drempels worden
+    /// genegeerd; resultaat is leeg-string-achtig ("p_empty") als de gebruiker geen
+    /// drempels heeft ingesteld. Niet cryptografisch — alleen botsings-vrij genoeg
+    /// voor cache-invalidatie van de Coach-analyse.
+    private func profileFingerprint(_ profile: UserPhysicalProfile) -> String {
+        let parts: [String?] = [
+            profile.maxHeartRate.map { "m\(Int($0.value))" },
+            profile.restingHeartRate.map { "r\(Int($0.value))" },
+            profile.lactateThresholdHR.map { "l\(Int($0.value))" },
+            profile.ftp.map { "f\(Int($0.value))" }
+        ]
+        let nonNil = parts.compactMap { $0 }
+        return nonNil.isEmpty ? "p_empty" : nonNil.joined(separator: "_")
+    }
+
     // MARK: Body
 
     var body: some View {
@@ -118,6 +187,23 @@ struct WorkoutAnalysisView: View {
         .task(id: samples.count) {
             await computePatternsAndLoadInsight()
         }
+        .refreshable {
+            // Epic #44 story 44.5 + 44.6 testflow: pull-to-refresh leegt de
+            // `WorkoutInsightCache`-entry voor deze workout en herhaalt de detect-/
+            // generate-flow met de actuele profielwaarden. Handig om kalibratie-
+            // wijzigingen (nieuwe LTHR/max in Settings) terug te zien op een
+            // bestaande workout zonder dat je hoeft te wachten op een natuurlijke
+            // pattern-fingerprint-shift.
+            await refreshAnalysis()
+        }
+    }
+
+    /// Hard-invalidate-pad: gooit de cache-entry voor dit ene record weg en herhaalt
+    /// `computePatternsAndLoadInsight()`. Roept onder de motorkap dezelfde detect-
+    /// + AI-flow aan als de initiële `.task`, dus de loading-state knippert correct.
+    private func refreshAnalysis() async {
+        WorkoutInsightCache().invalidate(activityID: activity.id)
+        await computePatternsAndLoadInsight()
     }
 
     // MARK: - Story 32.3b: patroon-detectie + cache + AI-narrative
@@ -132,7 +218,13 @@ struct WorkoutAnalysisView: View {
             insightState = .idle
             return
         }
-        let detected = WorkoutPatternDetector.detectAll(in: samples)
+        // Epic #44 story 44.5: zone-gates aanzetten zodra de gebruiker LTHR of
+        // max+rest heeft ingesteld. Zonder profielwaarden valt de detector terug
+        // op het populatie-globale gedrag van vóór 44.5.
+        let detected = WorkoutPatternDetector.detectAll(
+            in: samples,
+            profile: UserProfileService.cachedProfile()
+        )
         patterns = detected
         guard !detected.isEmpty else {
             insightState = .idle
@@ -140,7 +232,12 @@ struct WorkoutAnalysisView: View {
         }
 
         let cache = WorkoutInsightCache()
+        // Epic #44 update: cache-key combineert pattern-fingerprint met profiel-
+        // fingerprint. Een wijziging in LTHR / max / FTP invalideert de cache
+        // automatisch, ook als de patronen identiek blijven — anders zou een
+        // gebruiker die zijn drempels aanpast oude analyses blijven zien.
         let fingerprint = WorkoutPatternFormatter.fingerprint(for: detected)
+            + "|" + profileFingerprint(UserProfileService.cachedProfile())
         if let cached = cache.cached(for: activity.id, fingerprint: fingerprint) {
             insightState = .loaded(cached)
             return
@@ -148,11 +245,24 @@ struct WorkoutAnalysisView: View {
 
         insightState = .loading
         let service = WorkoutInsightService()
+        // Epic #44 update: rijke context meegeven zodat de coach het sessie-type
+        // (drempelwerk vs. recovery) en de persoonlijke zones kan meewegen — geen
+        // populatie-aannames meer over wat "hoog" of "rustig" voor jou betekent.
+        let profile = UserProfileService.cachedProfile()
+        let context = WorkoutInsightService.InsightContext(
+            sportLabel: activity.sportCategory.displayName,
+            durationMinutes: max(1, activity.movingTime / 60),
+            sessionTypeLabel: activity.sessionType?.displayName,
+            title: activity.displayName,
+            zones: WorkoutPatternDetector.heartRateZones(from: profile),
+            maxHeartRate: profile.maxHeartRate?.value,
+            lactateThresholdHR: profile.lactateThresholdHR?.value,
+            ftp: profile.ftp?.value
+        )
         do {
             let text = try await service.generateInsight(
                 patterns: detected,
-                sportLabel: activity.sportCategory.displayName,
-                durationMinutes: max(1, activity.movingTime / 60)
+                context: context
             )
             cache.store(text, for: activity.id, fingerprint: fingerprint)
             insightState = .loaded(text)
@@ -558,6 +668,18 @@ struct WorkoutAnalysisView: View {
     private var heartRateChart: some View {
         chartCard(title: "Hartslag", unit: "BPM") {
             Chart {
+                // Epic #44 story 44.5+: zone-bands als zachte achtergrond. Tonen
+                // alleen als de gebruiker drempels heeft ingesteld (Friel- of
+                // Karvonen-zones). Subtiele kleuren — line blijft prominent.
+                ForEach(heartRateChartZones, id: \.index) { zone in
+                    RectangleMark(
+                        xStart: .value("Begin", chartDomain.lowerBound),
+                        xEnd: .value("Eind", chartDomain.upperBound),
+                        yStart: .value("Onder", zone.lowerBPM),
+                        yEnd: .value("Boven", zone.upperBPM)
+                    )
+                    .foregroundStyle(zoneColor(forIndex: zone.index).opacity(0.10))
+                }
                 ForEach(samples) { sample in
                     if let hr = sample.heartRate {
                         LineMark(
@@ -596,6 +718,7 @@ struct WorkoutAnalysisView: View {
                 }
             }
             .chartXScale(domain: chartDomain)
+            .chartYScale(domain: hrYDomain)
             .chartXAxis(.hidden) // Tijdsverloop staat al in de scrubber-header.
             .chartYAxis {
                 AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
@@ -624,6 +747,20 @@ struct WorkoutAnalysisView: View {
 
         chartCard(title: title, unit: unit) {
             Chart {
+                // Epic #44: Coggan power-zones als zachte achtergrond — alleen als
+                // we power tonen én de gebruiker een FTP heeft. Voor speed-charts
+                // hebben we (nog) geen pace-zones, dus die blijven schoon.
+                if secondarySeries == .power {
+                    ForEach(powerChartZones, id: \.index) { zone in
+                        RectangleMark(
+                            xStart: .value("Begin", chartDomain.lowerBound),
+                            xEnd: .value("Eind", chartDomain.upperBound),
+                            yStart: .value("Onder", zone.lowerWatts),
+                            yEnd: .value("Boven", zone.upperWatts ?? (zone.lowerWatts + 200))
+                        )
+                        .foregroundStyle(zoneColor(forIndex: zone.index).opacity(0.10))
+                    }
+                }
                 ForEach(samples) { sample in
                     if let value = secondaryValue(of: sample) {
                         AreaMark(
@@ -644,6 +781,7 @@ struct WorkoutAnalysisView: View {
                 }
             }
             .chartXScale(domain: chartDomain)
+            .chartYScale(domain: secondaryYDomain)
             .chartXAxis(.hidden)
             .chartYAxis {
                 AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { _ in
