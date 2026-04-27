@@ -466,3 +466,21 @@ Naast de detector heeft FTP impact op `SessionClassifier` (zone-distributie-clas
 **Effort schatting:** ~6-8u verspreid. 44.1 + 44.2 zijn pure-Swift + getest (~2u), 44.3 is ~30 min onderzoek + import-call, 44.4 is de grootste qua UX (~2u), 44.5 + 44.6 zijn refactors die tests bijwerken (~2-3u).
 
 **Status:** ⏳ — niet urgent, maar echt nodig zodra de gebruiker de Coach-analyse-card op meerdere workouts gebruikt en signaleert dat de toon te streng is voor zijn fysiologische profiel.
+
+---
+
+### ⏳ Epic #45: Per-workout context in schema- en doelanalyse-prompt
+
+Aanleiding: na Epic #44 worden persoonlijke trainingsdrempels (max/rest/LTHR/FTP + zones) al door `ChatViewModel.buildContextPrefix` in elke AI-call geïnjecteerd, en is er een 1-regel `workoutPatternsContext` voor de afgelopen 7 dagen ("Recente workout(s) tonen: aerobic decoupling, cardiac drift."). Voor schema-bouw en doelanalyse is die ene regel echter te dun — de coach kan er geen specifieke verwijzingen op baseren ("zoals in je drempelloop van afgelopen dinsdag…"). Met rijkere per-workout-context kan de AI beter onderbouwde plan-aanpassingen voorstellen.
+
+**Sub-stories:**
+
+* **⏳ 45.1 — `WorkoutHistoryContextBuilder` (pure-Swift):** Bouwt een gestructureerd JSON-achtig blok van de afgelopen 14 dagen `ActivityRecord`-data. Per workout: datum, sport, sessieType (uit `SessionClassifier`), duur, TRIMP, gemiddelde HR, en — indien aanwezig — de detector-output (kind + severity per patroon, géén AI-narratives, dat wordt rommelig). Pure-Swift, AppStorage-vrij, geïnjecteerde `samplesProvider` voor testbaarheid. Hergebruikt `WorkoutPatternDetector.detectAll(in:profile:)` voor consistentie met de chart-pins.
+* **⏳ 45.2 — Injectie in `buildContextPrefix`:** Nieuw `[RECENTE TRAINING — 14 DAGEN]`-blok in de chat-context-prefix met de output uit 45.1 en gedragsregels: gebruik specifieke verwijzingen ("op 18 april reed je een tempo-rit met cardiac drift van 8%"), koppel patronen aan plan-aanpassingen ("3 long runs op rij met decoupling → suggereer meer sub-LTHR werk"), niet ongevraagd opnieuw vermelden in elke chat-turn. Helemaal weglaten als geen workouts in het venster.
+* **⏳ 45.3 — Optionele cache + refresh-trigger:** Net als `workoutPatternsContext` cachen in `@AppStorage` zodat we niet bij elke prompt-build opnieuw 14 dagen aan workouts uit SwiftData hoeven te halen. Refresh getriggerd vanuit `DashboardView.scenePhase`-flow direct na de bestaande `refreshWorkoutPatternsContext()`.
+
+**Effort schatting:** ~1-2u. 45.1 is pure-Swift met testdekking (~45 min), 45.2 is een prompt-engineering wijziging in `buildContextPrefix` (~30 min), 45.3 is plumbing analoog aan 32.3c (~15 min).
+
+**Tradeoff:** meer tokens per AI-call → iets hogere API-kosten en marginaal hoger safety-filter-risico (lange prompts kunnen zeldzaam content-blocked worden). Voor power-users die het schema serieus tunen weegt de winst (specifieke, onderbouwde adviezen i.p.v. generieke aannames) ruim op tegen de kosten.
+
+**Status:** ⏳ — backlog. Pakken we op zodra Epic #44 (PR #230 + #231) gemerged is en de gebruiker concreet meldt dat 'ie meer specifieke schema-feedback wil zien.
