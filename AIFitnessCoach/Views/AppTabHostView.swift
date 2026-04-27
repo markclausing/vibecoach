@@ -13,7 +13,6 @@ struct AppTabHostView: View {
 
 
     // Auto-Sync Dependencies (Sprint 12.3)
-    @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
     @Environment(\.modelContext) private var modelContext
     private let fitnessDataService = FitnessDataService()
 
@@ -21,6 +20,9 @@ struct AppTabHostView: View {
     @State private var isAutoSyncing = false
 
     /// Voert asynchroon de data-synchronisatie voor de afgelopen 14 dagen uit op de achtergrond.
+    /// Epic #42 Story 42.1: HK + Strava lopen onafhankelijk, ongeacht `selectedDataSource`.
+    /// De toggle is daarmee een "voorkeur" geworden (label/tiebreaker), geen exclusieve
+    /// keuze meer. Cross-source duplicaten worden afgevangen door `ActivityDeduplicator.smartInsert`.
     private func performAutoSync() {
         guard !isAutoSyncing else {
             print("⚠️ Auto-sync overgeslagen: vorige sync is nog actief")
@@ -29,54 +31,64 @@ struct AppTabHostView: View {
         isAutoSyncing = true
         Task {
             defer { Task { @MainActor in isAutoSyncing = false } }
-            do {
-                if selectedDataSource == .healthKit {
-                    let syncService = HealthKitSyncService()
-                    try await syncService.syncHistoricalWorkouts(to: modelContext) // Note: HealthKitSyncService by default is fast if already authorized
-                } else {
-                    // Strava API (Alleen laatste 14 dagen ophalen om API limieten en laadtijden kort te houden voor de Burn Rate graph)
-                    let activities = try await fitnessDataService.fetchRecentActivities(days: 14)
+            async let hk: Void = runHealthKitAutoSync()
+            async let strava: Void = runStravaAutoSync()
+            _ = await (hk, strava)
+        }
+    }
 
-                    await MainActor.run {
-                        let formatter = ISO8601DateFormatter()
-                        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                        let fallbackFormatter = ISO8601DateFormatter()
+    @MainActor
+    private func runHealthKitAutoSync() async {
+        do {
+            try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
+        } catch {
+            // Stille fout: HK kan niet-geautoriseerd zijn, geen reden om te blokkeren.
+            print("Auto-sync HealthKit gefaald: \(error.localizedDescription)")
+        }
+    }
 
-                        for activity in activities {
-                            let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
+    @MainActor
+    private func runStravaAutoSync() async {
+        do {
+            // Alleen laatste 14 dagen ophalen — kort genoeg voor de Burn Rate-graph + ruim
+            // binnen Strava's rate-limit.
+            let activities = try await fitnessDataService.fetchRecentActivities(days: 14)
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            let fallbackFormatter = ISO8601DateFormatter()
 
-                            // SPRINT 12.4: Voeg basic TRIMP fallback toe bij sync
-                            let basicTRIMPFallback: Double? = {
-                                if let hr = activity.average_heartrate, hr > 100 {
-                                    let durationMins = Double(activity.moving_time) / 60.0
-                                    let simulatedDeltaHR = (hr - 60.0) / (190.0 - 60.0)
-                                    return durationMins * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
-                                } else {
-                                    return (Double(activity.moving_time) / 60.0) * 1.5
-                                }
-                            }()
+            for activity in activities {
+                let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
 
-                            let record = ActivityRecord(
-                                id: String(activity.id),
-                                name: activity.name,
-                                distance: activity.distance,
-                                movingTime: activity.moving_time,
-                                averageHeartrate: activity.average_heartrate,
-                                sportCategory: SportCategory.from(rawString: activity.type),
-                                startDate: date,
-                                trimp: basicTRIMPFallback, // In a real app we could recalculate the local TRIMP hier via PhysiologicalCalculator if missing
-                                deviceWatts: activity.device_watts
-                            )
-                            // Epic 41.4: smart-insert vangt cross-source duplicaten op
-                            // (HK-record op dezelfde tijd) en kiest het rijkste record.
-                            _ = try? ActivityDeduplicator.smartInsert(record, into: modelContext)
-                        }
-                        try? modelContext.save()
+                // SPRINT 12.4: basic TRIMP fallback bij sync.
+                let basicTRIMPFallback: Double? = {
+                    if let hr = activity.average_heartrate, hr > 100 {
+                        let durationMins = Double(activity.moving_time) / 60.0
+                        let simulatedDeltaHR = (hr - 60.0) / (190.0 - 60.0)
+                        return durationMins * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
+                    } else {
+                        return (Double(activity.moving_time) / 60.0) * 1.5
                     }
-                }
-            } catch {
-                print("Auto-sync gefaald op de achtergrond: \(error)")
+                }()
+
+                let record = ActivityRecord(
+                    id: String(activity.id),
+                    name: activity.name,
+                    distance: activity.distance,
+                    movingTime: activity.moving_time,
+                    averageHeartrate: activity.average_heartrate,
+                    sportCategory: SportCategory.from(rawString: activity.type),
+                    startDate: date,
+                    trimp: basicTRIMPFallback,
+                    deviceWatts: activity.device_watts
+                )
+                _ = try? ActivityDeduplicator.smartInsert(record, into: modelContext)
             }
+            try? modelContext.save()
+        } catch FitnessDataError.missingToken {
+            // Gebruiker heeft Strava niet gekoppeld — geen reden om te loggen elke launch.
+        } catch {
+            print("Auto-sync Strava gefaald: \(error.localizedDescription)")
         }
     }
 
