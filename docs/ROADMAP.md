@@ -444,3 +444,28 @@ Aanleiding: tijdens on-device-gebruik (april 2026) viel op dat (a) de drie "Verb
 **Effort gerealiseerd:** ~30 min. 43.2 was een one-liner; 43.1 was drie computed properties + één extra `@AppStorage`-binding voor de Gemini-modelnaam. Geen nieuwe tests — bestaande 542-tests-suite blijft groen, en de logica in de computed properties is voldoende eenvoudig om visueel te verifiëren.
 
 **Status:** ✅ — beide stories live. Eventuele tri-state-uitbreiding (oranje dot bij partial HealthKit-auth) volgt mee met Epic #38.
+
+---
+
+### ⏳ Epic #44: Persoonlijke HR Zones & FTP
+
+Aanleiding: tijdens on-device-validatie van Epic #32 story 32.3b (april 2026) bleek de `WorkoutPatternDetector` op een rustige sociale rit drie significante "rode" patronen te rapporteren (decoupling 102%, cardiac drift 13%, trage HR-recovery 11 BPM). De decoupling-bug is met een steady-state-CV-gate gerepareerd, maar het onderliggende probleem blijft: **alle drempels zijn populatie-gemiddelden** (Joe Friel / TrainingPeaks-norm + Tanaka maxHR), terwijl deze gebruiker hogere zones heeft dan een gemiddelde 35-jarige (zone 2 = 139–157 BPM). Een Z2-rit ziet er voor de detector uit als een Z3-effort en de Coach-analyse oordeelt te hard.
+
+Naast de detector heeft FTP impact op `SessionClassifier` (zone-distributie-classificatie van power-data), `ChatViewModel.buildContextPrefix` (de coach moet "rustig" anders interpreteren voor deze gebruiker) en de coaching-toon in het algemeen.
+
+**Sub-stories:**
+
+* **⏳ 44.1 — `UserPhysicalProfile` uitbreiden:** Nieuwe optionele velden `maxHeartRate`, `restingHeartRate`, `lactateThreshold`, `ftp` met source-tracking (`auto` / `manual`). Lightweight migratie. Karvonen- en Friel-zones afleiden via een pure-Swift `HeartRateZoneCalculator` (5 zones uit Karvonen formula gebaseerd op max + rest, óf 5 zones uit LTHR via Friel als die bekend is). Idem voor power-zones via Coggan-percentages van FTP. Volledig getest, geen UI-afhankelijkheid.
+* **⏳ 44.2 — Automatische detectie uit HK-historie:** Achtergrondservice (`PhysiologicalThresholdEstimator`) die uit HK-samples van de afgelopen 6 maanden afleidt:
+    - **Max HR**: hoogste sample uit workouts met duur > 20 min (uitschieters door losse beats negeren).
+    - **Resting HR**: laagste stabiele HK `restingHeartRate` (HK levert dit als dagelijks signaal).
+    - **LTHR (geschat)**: hoogste 30-min-rolling-avg HR uit een hoge-intensiteit-workout.
+    Resultaat als suggestie tonen in Settings — gebruiker bevestigt of overruled. Source-veld blijft `auto` totdat manueel overruled, dan `manual`.
+* **⏳ 44.3 — FTP-research + Strava-import:** Strava `Athlete`-endpoint heeft een `ftp`-veld (Int?) dat we al kunnen ophalen via de bestaande OAuth. Onderzoeksvraag: kunnen we FTP automatisch detecteren uit power-streams (bv. hoogste 20-min-avg power × 0.95 = klassieke schatting), of is Strava's eigen waarde de waarheidsbron? Beslissing: **Strava-waarde als eerste signaal** (de gebruiker onderhoudt 'm daar al), eigen detectie als fallback wanneer geen Strava-koppeling. Manuele override in Settings altijd mogelijk.
+* **⏳ 44.4 — Settings-UI:** Nieuwe sectie "TRAININGSDREMPELS" onder "FYSIOLOGISCH PROFIEL" met velden voor `Max HR`, `Rust HR`, `LTHR`, `FTP` — elk met een waarde + bron-badge ("auto · 14 dagen", "Strava", "handmatig"). Tap op een waarde opent een edit-sheet; tap op een suggestie ("Wij detecteerden 187 BPM — overnemen?") accepteert. Onder de velden: een live-preview van de afgeleide zones (5 HR-zones + 6 power-zones) zodat de gebruiker direct ziet wat het effect is.
+* **⏳ 44.5 — Detector- en classifier-kalibratie:** `WorkoutPatternDetector` leest de zones in plaats van hardcoded BPM-drempels — cardiac drift triggert alleen op workouts waar de gemiddelde HR in zone 2/3 valt (echte aerobic effort), HR-recovery wordt gerelativeerd aan %-van-max-HR (gebruiker met max 200 mag minder absolute drop hebben dan iemand met max 170). `SessionClassifier` gebruikt persoonlijke zones voor de zone-distributie-classificatie, zowel voor HR als voor power.
+* **⏳ 44.6 — Coach-prompt-context:** `ChatViewModel.buildContextPrefix` injecteert een nieuw `[TRAININGSDREMPELS]`-blok zodat de AI weet dat 146 BPM voor deze gebruiker zone 2 is, niet zone 3. Voorkomt "te harde" interpretatie van rustige inspanningen.
+
+**Effort schatting:** ~6-8u verspreid. 44.1 + 44.2 zijn pure-Swift + getest (~2u), 44.3 is ~30 min onderzoek + import-call, 44.4 is de grootste qua UX (~2u), 44.5 + 44.6 zijn refactors die tests bijwerken (~2-3u).
+
+**Status:** ⏳ — niet urgent, maar echt nodig zodra de gebruiker de Coach-analyse-card op meerdere workouts gebruikt en signaleert dat de toon te streng is voor zijn fysiologische profiel.
