@@ -100,6 +100,13 @@ class ChatViewModel: ObservableObject {
     /// Wordt geïnjecteerd in de AI-prompt zodat de coach rekening houdt met buitenactiviteiten.
     @AppStorage("vibecoach_weatherContext") var weatherContext: String = ""
 
+    /// Epic 32 Story 32.3c: cache van significante fysiologische patronen in recente
+    /// workouts (decoupling, drift, cadence-fade, trage HR-recovery). Wordt gevuld
+    /// vanuit `DashboardView.refreshWorkoutPatternsContext()` op basis van de
+    /// `WorkoutSample`-data van de afgelopen 7 dagen, zodat de coach er proactief
+    /// over kan praten in een chat-turn.
+    @AppStorage("vibecoach_workoutPatternsContext") var workoutPatternsContext: String = ""
+
     /// Epic 23 Sprint 1: Cache van de gap-analyse per actief doel.
     /// Bevat het verschil tussen verwacht en werkelijk TRIMP/km op dit moment in de voorbereiding.
     @AppStorage("vibecoach_gapAnalysisContext") private var gapAnalysisContext: String = ""
@@ -792,6 +799,23 @@ class ChatViewModel: ObservableObject {
             4. Score gedaald t.o.v. gisteren → benoem dit als positief teken van herstel.]
             """
             prefix += symptomBlock + "\n\n"
+        }
+
+        // Epic 32 Story 32.3c: injecteer significante fysiologische patronen uit
+        // recente workouts. Alleen mediumweg/significant patronen landen in deze
+        // cache (zie `WorkoutPatternFormatter.chatContextLine`); milde patronen
+        // zouden de prompt te druk maken.
+        if !workoutPatternsContext.isEmpty {
+            let patternsBlock = """
+            [FYSIOLOGISCHE PATRONEN IN RECENTE WORKOUTS:
+            \(workoutPatternsContext)
+            Gedragsregels:
+            1. Als de gebruiker een vraag stelt over recente trainingen, refereer dan aan deze patronen waar relevant — wees concreet, geen lijst van technische termen.
+            2. Bij significant cardiac drift + decoupling: vraag of het bewust drempel-werk was, of dat er externe oorzaken speelden (hitte, slaap, stress).
+            3. Trage HR-recovery is een vermoeidheid-signaal — combineer met TRIMP en VibeScore voordat je herstel adviseert.
+            4. Noem deze patronen NIET ongevraagd in elke turn; alleen wanneer de gebruiker reflecteert op recente uitvoering of trainingsplan-aanpassingen vraagt.]
+            """
+            prefix += patternsBlock + "\n\n"
         }
 
         // Epic 21: Injecteer de 7-daagse weersverwachting voor buitenactiviteiten-coaching

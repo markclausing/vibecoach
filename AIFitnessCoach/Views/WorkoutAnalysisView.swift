@@ -24,6 +24,19 @@ struct WorkoutAnalysisView: View {
 
     @State private var scrubbedDate: Date? = nil
 
+    // MARK: - Story 32.3b: pattern-detectie + AI-narrative
+
+    @State private var patterns: [WorkoutPattern] = []
+    @State private var insightState: InsightState = .idle
+    @State private var selectedPatternKind: WorkoutPatternKind? = nil
+
+    private enum InsightState: Equatable {
+        case idle                 // Nog geen patronen of geen API-key
+        case loading              // AI-call in flight
+        case loaded(String)       // Coach-narrative klaar
+        case unavailable(String)  // Patronen aanwezig, maar geen AI-call mogelijk (key/fout)
+    }
+
     init(activity: ActivityRecord) {
         self.activity = activity
         // Story 32.1 (HK) + Epic 40 (Strava): unified UUID-mapping.
@@ -80,6 +93,10 @@ struct WorkoutAnalysisView: View {
                     coachComparisonCard(comparison)
                 }
                 summaryCard
+                if !patterns.isEmpty {
+                    patternChipsRow
+                    insightCard
+                }
                 if hasSamples {
                     scrubberHeader
                         .animation(.easeOut(duration: 0.15), value: scrubbedSample?.timestamp)
@@ -98,6 +115,185 @@ struct WorkoutAnalysisView: View {
         .background(themeManager.backgroundGradient.ignoresSafeArea())
         .navigationTitle(activity.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .task(id: samples.count) {
+            await computePatternsAndLoadInsight()
+        }
+    }
+
+    // MARK: - Story 32.3b: patroon-detectie + cache + AI-narrative
+
+    /// Loopt zodra de samples voor deze workout binnen zijn. Detecteert patronen,
+    /// kijkt in de cache, en kickt anders een Gemini-call af. Gebruikt
+    /// `WorkoutPatternFormatter.fingerprint` voor de cache-key zodat re-classificatie
+    /// (story 40.4 / 32.1 follow-ups) automatisch een nieuwe analyse triggert.
+    private func computePatternsAndLoadInsight() async {
+        guard !samples.isEmpty else {
+            patterns = []
+            insightState = .idle
+            return
+        }
+        let detected = WorkoutPatternDetector.detectAll(in: samples)
+        patterns = detected
+        guard !detected.isEmpty else {
+            insightState = .idle
+            return
+        }
+
+        let cache = WorkoutInsightCache()
+        let fingerprint = WorkoutPatternFormatter.fingerprint(for: detected)
+        if let cached = cache.cached(for: activity.id, fingerprint: fingerprint) {
+            insightState = .loaded(cached)
+            return
+        }
+
+        insightState = .loading
+        let service = WorkoutInsightService()
+        do {
+            let text = try await service.generateInsight(
+                patterns: detected,
+                sportLabel: activity.sportCategory.displayName,
+                durationMinutes: max(1, activity.movingTime / 60)
+            )
+            cache.store(text, for: activity.id, fingerprint: fingerprint)
+            insightState = .loaded(text)
+        } catch {
+            insightState = .unavailable(error.localizedDescription)
+        }
+    }
+
+    // MARK: Pattern chips
+
+    private var patternChipsRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(patterns.enumerated()), id: \.element.kind) { index, pattern in
+                        Button {
+                            withAnimation(.easeOut(duration: 0.18)) {
+                                selectedPatternKind = (selectedPatternKind == pattern.kind) ? nil : pattern.kind
+                            }
+                        } label: {
+                            patternChip(pattern, index: index, selected: selectedPatternKind == pattern.kind)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            if let kind = selectedPatternKind,
+               let pattern = patterns.first(where: { $0.kind == kind }) {
+                patternDetailCard(pattern)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+    }
+
+    private func patternChip(_ pattern: WorkoutPattern, index: Int, selected: Bool) -> some View {
+        let color = severityColor(pattern.severity)
+        return HStack(spacing: 6) {
+            // Genummerd badge (1-9 via SF Symbol). Komt 1-op-1 terug op de HR-chart als
+            // PointMark-annotatie zodat gebruiker direct ziet welke pin bij welk patroon hoort.
+            Image(systemName: "\(index + 1).circle.fill")
+                .font(.subheadline)
+                .foregroundStyle(color)
+            Text(patternShortLabel(pattern.kind))
+                .font(.caption.weight(.semibold))
+            Text(patternValueLabel(pattern))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(color.opacity(selected ? 0.22 : 0.10)))
+        .overlay(Capsule().strokeBorder(color.opacity(selected ? 0.60 : 0.30), lineWidth: selected ? 1.5 : 1))
+    }
+
+    /// Inline detail-card die `pattern.detail` toont onder de chip-row zodra een chip
+    /// wordt aangetapt. Bewust geen popover/sheet — dit is geen secundaire flow maar
+    /// extra context bij wat de gebruiker al ziet.
+    private func patternDetailCard(_ pattern: WorkoutPattern) -> some View {
+        let color = severityColor(pattern.severity)
+        return Text(pattern.detail)
+            .font(.subheadline)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(color.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(color.opacity(0.25), lineWidth: 1)
+            )
+    }
+
+    private func patternShortLabel(_ kind: WorkoutPatternKind) -> String {
+        switch kind {
+        case .aerobicDecoupling: return "Decoupling"
+        case .cardiacDrift:      return "Cardiac drift"
+        case .cadenceFade:       return "Cadence fade"
+        case .heartRateRecovery: return "HR-recovery"
+        }
+    }
+
+    private func patternValueLabel(_ pattern: WorkoutPattern) -> String {
+        switch pattern.kind {
+        case .aerobicDecoupling, .cardiacDrift:
+            return String(format: "%.1f%%", pattern.value)
+        case .cadenceFade:
+            return String(format: "−%.0f", pattern.value)
+        case .heartRateRecovery:
+            return String(format: "%.0f BPM", pattern.value)
+        }
+    }
+
+    private func severityColor(_ severity: WorkoutPattern.Severity) -> Color {
+        switch severity {
+        case .mild:        return .green
+        case .moderate:    return .orange
+        case .significant: return .red
+        }
+    }
+
+    // MARK: Insight card
+
+    @ViewBuilder
+    private var insightCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(themeManager.primaryAccentColor)
+                Text("Coach-analyse")
+                    .font(.headline)
+                Spacer()
+            }
+            switch insightState {
+            case .idle:
+                EmptyView()
+            case .loading:
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Coach analyseert de patronen…")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            case .loaded(let text):
+                Text(text)
+                    .font(.subheadline)
+                    .fixedSize(horizontal: false, vertical: true)
+            case .unavailable(let message):
+                Text(message)
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(themeManager.primaryAccentColor.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(themeManager.primaryAccentColor.opacity(0.20), lineWidth: 1)
+        )
     }
 
     // MARK: Coach Comparison (Story 33.4)
@@ -373,6 +569,26 @@ struct WorkoutAnalysisView: View {
                         .lineStyle(StrokeStyle(lineWidth: 2.0, lineCap: .round))
                     }
                 }
+                // Story 32.3b: pattern-pins op de HR-chart op `range.lowerBound`,
+                // gekleurd op severity. De index-overlay (1, 2, 3, …) komt 1-op-1
+                // terug op de chip boven de chart zodat gebruiker direct ziet welke
+                // pin bij welk patroon hoort.
+                ForEach(Array(patterns.enumerated()), id: \.element.kind) { index, pattern in
+                    if let hr = nearestHeartRate(at: pattern.range.lowerBound) {
+                        PointMark(
+                            x: .value("Tijd", pattern.range.lowerBound),
+                            y: .value("BPM", hr)
+                        )
+                        .foregroundStyle(severityColor(pattern.severity))
+                        .symbolSize(160)
+                        .symbol(.circle)
+                        .annotation(position: .overlay) {
+                            Text("\(index + 1)")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                }
                 if let scrubbedDate {
                     RuleMark(x: .value("Scrubber", scrubbedDate))
                         .foregroundStyle(themeManager.primaryAccentColor.opacity(0.45))
@@ -446,6 +662,11 @@ struct WorkoutAnalysisView: View {
         case .power: return sample.power
         case .none:  return nil
         }
+    }
+
+    /// Story 32.3b: lookup-helper voor de pin-y-positie op de HR-chart.
+    private func nearestHeartRate(at date: Date) -> Double? {
+        WorkoutAnalysisHelpers.nearestSample(at: date, in: samples, timestamp: { $0.timestamp })?.heartRate
     }
 
     // MARK: Scrubber gesture layer (gedeeld door beide charts)

@@ -1767,11 +1767,33 @@ struct DashboardView: View {
                 await backfillStravaStreams()
                 await runAutoDedupe()
                 await runSessionReclassification()
+                await refreshWorkoutPatternsContext()
                 #if DEBUG
                 await runPatternDebugReport()
                 #endif
             }
         }
+    }
+
+    /// Story 32.3c: aggregeer significante patronen uit workouts van de afgelopen
+    /// 7 dagen en push het naar `viewModel.workoutPatternsContext`. De chat-coach
+    /// leest dit bij de volgende prompt-build (`buildContextPrefix`) en kan er
+    /// proactief naar refereren wanneer de gebruiker reflecteert op recente
+    /// uitvoering. Stille no-op als er geen patronen zijn — leegmaken zodat een
+    /// stabiele week ook de cache opschoont.
+    private func refreshWorkoutPatternsContext() async {
+        let store = WorkoutSampleStore(modelContainer: modelContext.container)
+        let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        var allPatterns: [WorkoutPattern] = []
+
+        for activity in activities where activity.startDate >= cutoff {
+            let uuid = UUID.forActivityRecordID(activity.id)
+            let samples = (try? await store.samples(forWorkoutUUID: uuid)) ?? []
+            guard !samples.isEmpty else { continue }
+            allPatterns.append(contentsOf: WorkoutPatternDetector.detectAll(in: samples))
+        }
+
+        viewModel.workoutPatternsContext = WorkoutPatternFormatter.chatContextLine(for: allPatterns) ?? ""
     }
 
     #if DEBUG
