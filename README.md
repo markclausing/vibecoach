@@ -6,7 +6,7 @@ Een iOS-app (SwiftUI + SwiftData) die fungeert als persoonlijke, slimme fitnessc
 
 ## 🚀 Huidige Status
 
-**Laatst gemerged — Epic #41 ✅ Dual-Source Single-Record-of-Truth (OAuth-hardening + smart ingest) · Epic #43 ✅ UI Polish (Settings-status + Dashboard-header) · Epic #40 ✅ Strava Power-Stream Ingest**
+**Laatst gemerged — Epic #42 ✅ Always-on Dual-Source Sync (decouple van toggle) · Epic #41 ✅ Dual-Source Single-Record-of-Truth (OAuth-hardening + smart ingest) · Epic #43 ✅ UI Polish (Settings-status + Dashboard-header)**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte coaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur. Testsuite: **51% code coverage** (gemeten met `xcodebuild -enableCodeCoverage YES` over de volledige unit + UI suite). Alle kritieke Services + Models zitten boven de 80% — zie [`docs/ROADMAP.md`](docs/ROADMAP.md) Epic #36 voor de per-bestand uitsplitsing.
 
@@ -16,7 +16,9 @@ Strava-rides met powermeter komen volledig door (Epic #40): een nightly scenePha
 
 Dual-source ingest is met Epic #41 zelfreinigend gemaakt: `FitnessDataService.ensureValidToken()` valideert + refresht het Strava-token vóór elke API-call (geen silent 401's meer), en `ActivityDeduplicator.smartInsert(_:into:)` voorkomt aan de voordeur dat een armer record (HK zonder power) een rijker record (Strava met power) overschrijft — ongeacht de volgorde waarin beide bronnen binnenkomen. De handmatige "Verwijder Dubbele Activiteiten"-knop is daarmee overbodig geworden en uit Settings verwijderd.
 
-**Volgende pickup:** ⏳ Epic #42 — *Always-on Dual-Source Sync*. Met de dedupe-laag uit Epic #41 op zijn plek wordt de `selectedDataSource`-toggle van een exclusieve "wat sync ik"-keuze omgevormd tot een bron-voorkeur, zodat HK + Strava altijd parallel binnenkomen en de gebruiker de hoofdbron alleen nog gebruikt voor labeling/tiebreakers. Daarnaast loopt Epic #32 (Deep-Dive Fysiologische Analyse) door op story 32.3 (AI Pattern Recognition).
+Met Epic #42 zijn HK + Strava daarnaast volledig **always-on**: beide sync-paden draaien concurrent via `async let` in zowel de auto-sync (`AppTabHostView`) als de manuele Settings-sync, ongeacht de bron-voorkeur. De `selectedDataSource`-toggle is hernoemd van "Primaire databron" naar "Bron-voorkeur" en bepaalt alleen nog welke bron de coach als eerste aanspreekt voor de huidige status; de sync-laag is volledig ontkoppeld. Backwards-compat: AppStorage-key + enum-rawValues ongewijzigd, dus bestaande gebruikers behouden hun toggle-stand.
+
+**Volgende pickup:** lopende Epic #32 — *Deep-Dive Fysiologische Analyse* — story 32.3 (AI Pattern Recognition: decoupling, cadans-verloop, herstelvermogen als fysiologische annotaties + insights). Bron-voorkeur-tiebreaker in `ActivityDeduplicator` is bewust open gelaten als losse follow-up.
 
 Volledige historie en backlog: zie [`docs/ROADMAP.md`](docs/ROADMAP.md).
 Technische architectuur (Dual Engine, Cloudflare Proxy, Keychain): zie [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).

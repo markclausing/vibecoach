@@ -58,18 +58,19 @@ struct SettingsView: View {
 
     // MARK: - Verbindingen-card subtitels (Epic 43 Story 43.1)
     //
-    // Reflecteren de werkelijke connection-state: gekoppeld? primair of backup
-    // volgens `selectedDataSource`? welk AI-model? In plaats van hardcoded
-    // literals die loskoppelden van de toggle-keuze van de gebruiker.
+    // Reflecteren de werkelijke connection-state: gekoppeld? bron-voorkeur of
+    // aanvullend volgens `selectedDataSource`? welk AI-model? Sinds Epic #42
+    // syncen beide bronnen altijd, dus de toggle is een voorkeur — geen
+    // exclusieve "wat sync ik"-keuze meer.
 
     private var healthKitConnectionSubtitle: String {
         guard isHealthKitLinked else { return "Niet gekoppeld" }
-        return selectedDataSource == .healthKit ? "Primair · Live" : "Backup · Live"
+        return selectedDataSource == .healthKit ? "Voorkeur · Live" : "Aanvullend · Live"
     }
 
     private var stravaConnectionSubtitle: String {
         guard stravaAuthService.isAuthenticated else { return "Niet gekoppeld" }
-        return selectedDataSource == .strava ? "Primair" : "Backup"
+        return selectedDataSource == .strava ? "Voorkeur" : "Aanvullend"
     }
 
     private var aiCoachConnectionSubtitle: String {
@@ -123,84 +124,85 @@ struct SettingsView: View {
         }
     }
 
-    // Activeert het ophalen van historische workouts via gekozen databron.
+    // Activeert het ophalen van historische workouts.
+    // Epic #42 Story 42.1: HK + Strava lopen onafhankelijk; de dedupe-laag uit
+    // Epic #41 dekt cross-source af. `selectedDataSource` bepaalt niet meer
+    // welke bron we ophalen — alleen welke als "primair" gelabeld wordt.
     private func syncHistoricalData() {
         guard !isSyncingHistory else { return }
         isSyncingHistory = true
         feedbackMessage = "Synchroniseren gestart..."
 
         Task {
-            do {
-                if selectedDataSource == .healthKit {
-                    // SPRINT 7.4: Gebruik de lokale HealthKit bron (1 jaar aan data)
-                    let syncService = HealthKitSyncService()
-                    // Start asynchroon de HealthKit queries en verwerk in SwiftData
-                    try await syncService.syncHistoricalWorkouts(to: modelContext)
+            async let hk = runHealthKitHistoricalSync()
+            async let strava = runStravaHistoricalSync()
+            let (hkMessage, stravaMessage) = await (hk, strava)
 
-                    await MainActor.run {
-                        isSyncingHistory = false
-                        feedbackMessage = "HealthKit historie (1 jaar) succesvol gesynchroniseerd."
-                        refreshProfile() // Bereken het profiel direct opnieuw na de sync
+            await MainActor.run {
+                isSyncingHistory = false
+                feedbackMessage = "\(hkMessage) · \(stravaMessage)"
+                refreshProfile()
+            }
+        }
+    }
+
+    @MainActor
+    private func runHealthKitHistoricalSync() async -> String {
+        do {
+            try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
+            return "HealthKit (1 jaar) gesynchroniseerd"
+        } catch {
+            return "HealthKit-fout: \(error.localizedDescription)"
+        }
+    }
+
+    @MainActor
+    private func runStravaHistoricalSync() async -> String {
+        do {
+            // SPRINT 6.1 & 7.4: max 12 maanden Strava-historie ophalen.
+            let activities = try await fitnessDataService.fetchHistoricalActivities(monthsBack: 12)
+
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            let fallbackFormatter = ISO8601DateFormatter()
+            var newRecordsCount = 0
+
+            for activity in activities {
+                let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
+
+                // SPRINT 12.4: basic TRIMP fallback bij sync.
+                let basicTRIMPFallback: Double? = {
+                    if let hr = activity.average_heartrate, hr > 100 {
+                        let durationMins = Double(activity.moving_time) / 60.0
+                        let simulatedDeltaHR = (hr - 60.0) / (190.0 - 60.0)
+                        return durationMins * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
+                    } else {
+                        return (Double(activity.moving_time) / 60.0) * 1.5
                     }
-                } else {
-                    // SPRINT 6.1 & 7.4: Vraag maximaal 12 maanden (1 jaar) aan Strava activiteiten op
-                    let activities = try await fitnessDataService.fetchHistoricalActivities(monthsBack: 12)
+                }()
 
-                    await MainActor.run {
-                        // Zet de StravaActivity DTO's om naar ActivityRecord SwiftData models
-                        let formatter = ISO8601DateFormatter()
-                        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-                        let fallbackFormatter = ISO8601DateFormatter()
-
-                        var newRecordsCount = 0
-
-                        for activity in activities {
-                            let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
-
-                            // SPRINT 12.4: Voeg basic TRIMP fallback toe bij sync
-                            let basicTRIMPFallback: Double? = {
-                                if let hr = activity.average_heartrate, hr > 100 {
-                                    // Super simpele Banister fallback als HR bekend is
-                                    let durationMins = Double(activity.moving_time) / 60.0
-                                    let simulatedDeltaHR = (hr - 60.0) / (190.0 - 60.0)
-                                    return durationMins * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
-                                } else {
-                                    // Als niks bekend is, gebruik 1 minuut = 1.5 TRIMP als grove gok
-                                    return (Double(activity.moving_time) / 60.0) * 1.5
-                                }
-                            }()
-
-                            let record = ActivityRecord(
-                                id: String(activity.id),
-                                name: activity.name,
-                                distance: activity.distance,
-                                movingTime: activity.moving_time,
-                                averageHeartrate: activity.average_heartrate,
-                                sportCategory: SportCategory.from(rawString: activity.type),
-                                startDate: date,
-                                trimp: basicTRIMPFallback,
-                                deviceWatts: activity.device_watts
-                            )
-                            // Epic 41.4: smart-insert vangt cross-source duplicaten op
-                            // (HK-record op dezelfde tijd) en kiest het rijkste record.
-                            if let result = try? ActivityDeduplicator.smartInsert(record, into: modelContext),
-                               result == .inserted || result == .replaced {
-                                newRecordsCount += 1
-                            }
-                        }
-
-                        try? modelContext.save()
-                        isSyncingHistory = false
-                        feedbackMessage = "Strava synchronisatie voltooid (\(newRecordsCount) nieuwe trainingen over afgelopen jaar)."
-                        refreshProfile() // Bereken het profiel direct opnieuw na de sync
-                    }
-                }
-            } catch {
-                await MainActor.run {
-                    isSyncingHistory = false
-                    feedbackMessage = "Synchronisatie mislukt: \(error.localizedDescription)"
+                let record = ActivityRecord(
+                    id: String(activity.id),
+                    name: activity.name,
+                    distance: activity.distance,
+                    movingTime: activity.moving_time,
+                    averageHeartrate: activity.average_heartrate,
+                    sportCategory: SportCategory.from(rawString: activity.type),
+                    startDate: date,
+                    trimp: basicTRIMPFallback,
+                    deviceWatts: activity.device_watts
+                )
+                if let result = try? ActivityDeduplicator.smartInsert(record, into: modelContext),
+                   result == .inserted || result == .replaced {
+                    newRecordsCount += 1
                 }
             }
+            try? modelContext.save()
+            return "Strava: \(newRecordsCount) nieuwe activiteiten"
+        } catch FitnessDataError.missingToken {
+            return "Strava niet gekoppeld"
+        } catch {
+            return "Strava-fout: \(error.localizedDescription)"
         }
     }
 
@@ -496,8 +498,8 @@ struct SettingsView: View {
                     }
                     .padding(.bottom, 24)
 
-                    // ── PRIMAIRE DATABRON
-                    settingsSectionLabel("PRIMAIRE DATABRON")
+                    // ── BRON-VOORKEUR
+                    settingsSectionLabel("BRON-VOORKEUR")
                     settingsCard {
                         Picker("", selection: $selectedDataSource) {
                             ForEach(DataSource.allCases) { source in
@@ -507,7 +509,7 @@ struct SettingsView: View {
                         .pickerStyle(.segmented)
                         .padding(14)
                     }
-                    Text("Welke bron wordt als eerste aangesproken voor analyses en historie.")
+                    Text("Beide bronnen syncen altijd. Je voorkeur bepaalt welke bron de coach als eerste aanspreekt voor de huidige status.")
                         .font(.caption).foregroundColor(.secondary)
                         .padding(.horizontal).padding(.top, 6)
                     Spacer(minLength: 24)

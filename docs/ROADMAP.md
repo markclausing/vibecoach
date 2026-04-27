@@ -417,19 +417,19 @@ Aanleiding: tijdens on-device-validatie van Epic #40 (april 2026) bleek dat een 
 
 ---
 
-### ⏳ Epic #42: Always-on Dual-Source Sync
+### ✅ Epic #42: Always-on Dual-Source Sync
 
-Aanleiding: na on-device-validatie van Epic #41 (april 2026) vroeg de gebruiker of HealthKit weer als primaire bron ingesteld kon worden. Antwoord: *technisch ja, maar dan stopt de Strava-fetch en mis je power voor nieuwe rides.* In `AppTabHostView.performAutoSync` (en `SettingsView.syncHistoricalData`) staat een if/else op `selectedDataSource`: als HK primair is, wordt het Strava-pad volledig overgeslagen. Dat is een artefact uit de tijd dat één bron leidend moest zijn — sinds Epic #41 hebben we een dedupe-laag die meerdere bronnen aankan, dus de exclusiviteit van het toggle-gedrag is overbodig geworden.
+Aanleiding: na on-device-validatie van Epic #41 (april 2026) vroeg de gebruiker of HealthKit weer als primaire bron ingesteld kon worden. Antwoord: *technisch ja, maar dan stopt de Strava-fetch en mis je power voor nieuwe rides.* In `AppTabHostView.performAutoSync` (en `SettingsView.syncHistoricalData`) stond een if/else op `selectedDataSource`: als HK primair was, werd het Strava-pad volledig overgeslagen. Dat was een artefact uit de tijd dat één bron leidend moest zijn — sinds Epic #41 hebben we een dedupe-laag die meerdere bronnen aankan, dus de exclusiviteit van het toggle-gedrag was overbodig geworden.
 
 **Sub-stories:**
 
-* **⏳ 42.1 — Decouple Strava-fetch van primary-source toggle:** `AppTabHostView.performAutoSync` en `SettingsView.syncHistoricalData` draaien beide bronnen onafhankelijk, ongeacht `selectedDataSource`. Bron-conflicten worden afgevangen door de bestaande `ActivityDeduplicator` (Epic #41). Geen UI-wijziging in deze story — alleen de sync-paden.
-* **⏳ 42.2 — Herdefiniëring "primary" semantiek:** De toggle wordt geen "wat sync ik" meer, maar bron-voorkeur — bijvoorbeeld tiebreaker-bias bij gelijke dedupe-score, of welke bron als label getoond wordt in dual-source detail-views. Strava blijft default vanwege rijkere data.
-* **⏳ 42.3 — Backwards-compat voor bestaande gebruikers:** Bij eerste launch na update wordt huidig `selectedDataSource` automatisch geïnterpreteerd als bron-voorkeur. Geen reset, geen herinlog-prompt. Settings-tekst aanpassen ("Bron-voorkeur" i.p.v. "Primaire bron").
+* **✅ 42.1 — Decouple sync-paden van toggle:** `AppTabHostView.performAutoSync` en `SettingsView.syncHistoricalData` zijn opgesplitst in `runHealthKit*Sync()` + `runStrava*Sync()` helpers die concurrent draaien via `async let`. `selectedDataSource` wordt niet meer gelezen in de sync-laag. Cross-source duplicaten worden afgevangen door `ActivityDeduplicator.smartInsert` (Epic #41). Bij ontbrekende Strava-token wordt de auto-sync stil overgeslagen — geen elke-launch-noise in de console.
+* **✅ 42.2 — Herdefiniëring semantiek naar bron-voorkeur:** Settings-sectie "PRIMAIRE DATABRON" hernoemd naar "BRON-VOORKEUR"; helper-tekst legt uit dat beide bronnen altijd syncen en de toggle alleen bepaalt welke bron de coach als eerste aanspreekt. Verbindingen-cards in Settings tonen "Voorkeur" / "Aanvullend" i.p.v. "Primair" / "Backup".
+* **✅ 42.3 — Backwards-compat:** `@AppStorage("selectedDataSource")`-key + `DataSource`-enum cases + raw values ongewijzigd, dus bestaande gebruikers behouden hun toggle-stand zonder reset of herinlog-prompt.
 
-**Effort:** ~1–2u. Pure refactor in twee sync-paden + één enum-rename + Settings-copy. Bestaande dedupe-tests dekken het cross-source-pad al; één extra test voor "beide bronnen gesyncd ongeacht toggle".
+**Effort gerealiseerd:** ~1u. 4 bestanden (AppTabHostView, SettingsView, README, ROADMAP). Alle 30 regression-tests groen.
 
-**Status:** ⏳ — ontkoppeld sinds Epic #41 mergee. Eerstvolgende logische pickup zodra de gebruiker (of een tweede gebruiker met andere bron-voorkeur) HK als hoofdvenster wil zonder Strava-power te verliezen. De dedupe + smart-ingest-laag is daarvoor klaar — alleen de toggle-semantiek + Settings-copy moeten nog om.
+**Status:** ✅ — afgesloten (april 2026). De gebruiker kan HK als bron-voorkeur kiezen zonder Strava-power te verliezen. Tiebreaker-bias in `ActivityDeduplicator` op basis van bron-voorkeur is bewust uit scope gehouden; pure-Swift helper blijft AppStorage-onafhankelijk en de huidige id-tiebreaker is deterministisch genoeg.
 
 ---
 
