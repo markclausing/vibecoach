@@ -110,6 +110,34 @@ struct WorkoutAnalysisView: View {
         }
     }
 
+    /// Y-domain voor de HR-chart. Tight rond actuele data (±10 BPM marge) zodat
+    /// we geen lege "0-80 BPM" en "200-300 BPM" zones tonen waar geen data zit.
+    /// Zone-bands die buiten deze range vallen worden door Charts geclipped — dat
+    /// is precies wat we willen, alleen zones tonen die de gebruiker écht heeft
+    /// aangeraakt.
+    private var hrYDomain: ClosedRange<Double> {
+        let hrValues = samples.compactMap(\.heartRate)
+        guard let minHR = hrValues.min(), let maxHR = hrValues.max() else {
+            return 60...190
+        }
+        let lower = max(40, minHR - 10).rounded(.down)
+        let upper = min(220, maxHR + 10).rounded(.up)
+        return lower...upper
+    }
+
+    /// Y-domain voor de secondary chart. Power/speed start op 0 (recovery / coasten
+    /// is betekenisvol). Bovengrens met kleine marge boven de piekwaarde — zone
+    /// Z6/Z7 (Coggan) wordt buiten deze range automatisch geclipped.
+    private var secondaryYDomain: ClosedRange<Double> {
+        let values: [Double] = samples.compactMap { secondaryValue(of: $0) }
+        guard let maxValue = values.max(), maxValue > 0 else { return 0...100 }
+        switch secondarySeries {
+        case .power: return 0...(maxValue + 30).rounded(.up)
+        case .speed: return 0...(maxValue + 0.5).rounded(.up)
+        case .none:  return 0...maxValue
+        }
+    }
+
     /// Combineert de gestelde drempels tot een korte sleutel. Lege drempels worden
     /// genegeerd; resultaat is leeg-string-achtig ("p_empty") als de gebruiker geen
     /// drempels heeft ingesteld. Niet cryptografisch — alleen botsings-vrij genoeg
@@ -690,6 +718,7 @@ struct WorkoutAnalysisView: View {
                 }
             }
             .chartXScale(domain: chartDomain)
+            .chartYScale(domain: hrYDomain)
             .chartXAxis(.hidden) // Tijdsverloop staat al in de scrubber-header.
             .chartYAxis {
                 AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
@@ -752,6 +781,7 @@ struct WorkoutAnalysisView: View {
                 }
             }
             .chartXScale(domain: chartDomain)
+            .chartYScale(domain: secondaryYDomain)
             .chartXAxis(.hidden)
             .chartYAxis {
                 AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { _ in
