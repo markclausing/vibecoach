@@ -28,6 +28,7 @@ struct WorkoutAnalysisView: View {
 
     @State private var patterns: [WorkoutPattern] = []
     @State private var insightState: InsightState = .idle
+    @State private var selectedPatternKind: WorkoutPatternKind? = nil
 
     private enum InsightState: Equatable {
         case idle                 // Nog geen patronen of geen API-key
@@ -163,16 +164,30 @@ struct WorkoutAnalysisView: View {
     // MARK: Pattern chips
 
     private var patternChipsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(patterns, id: \.kind) { pattern in
-                    patternChip(pattern)
+        VStack(alignment: .leading, spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(patterns, id: \.kind) { pattern in
+                        Button {
+                            withAnimation(.easeOut(duration: 0.18)) {
+                                selectedPatternKind = (selectedPatternKind == pattern.kind) ? nil : pattern.kind
+                            }
+                        } label: {
+                            patternChip(pattern, selected: selectedPatternKind == pattern.kind)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
+            }
+            if let kind = selectedPatternKind,
+               let pattern = patterns.first(where: { $0.kind == kind }) {
+                patternDetailCard(pattern)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
     }
 
-    private func patternChip(_ pattern: WorkoutPattern) -> some View {
+    private func patternChip(_ pattern: WorkoutPattern, selected: Bool) -> some View {
         let color = severityColor(pattern.severity)
         return HStack(spacing: 6) {
             Circle().fill(color).frame(width: 8, height: 8)
@@ -184,8 +199,26 @@ struct WorkoutAnalysisView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(Capsule().fill(color.opacity(0.10)))
-        .overlay(Capsule().strokeBorder(color.opacity(0.30), lineWidth: 1))
+        .background(Capsule().fill(color.opacity(selected ? 0.22 : 0.10)))
+        .overlay(Capsule().strokeBorder(color.opacity(selected ? 0.60 : 0.30), lineWidth: selected ? 1.5 : 1))
+    }
+
+    /// Inline detail-card die `pattern.detail` toont onder de chip-row zodra een chip
+    /// wordt aangetapt. Bewust geen popover/sheet — dit is geen secundaire flow maar
+    /// extra context bij wat de gebruiker al ziet.
+    private func patternDetailCard(_ pattern: WorkoutPattern) -> some View {
+        let color = severityColor(pattern.severity)
+        return Text(pattern.detail)
+            .font(.subheadline)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(color.opacity(0.06))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(color.opacity(0.25), lineWidth: 1)
+            )
     }
 
     private func patternShortLabel(_ kind: WorkoutPatternKind) -> String {

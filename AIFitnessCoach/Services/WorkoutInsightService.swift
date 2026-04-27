@@ -16,7 +16,11 @@ final class WorkoutInsightService {
     enum InsightError: Error, LocalizedError, Equatable {
         case missingAPIKey
         case noPatterns
-        case generationFailed(String)
+        case rateLimited(retried: Bool)
+        case authenticationFailed
+        case contentBlocked
+        case timedOut(retried: Bool)
+        case unavailable(retried: Bool, detail: String)
 
         var errorDescription: String? {
             switch self {
@@ -24,8 +28,19 @@ final class WorkoutInsightService {
                 return "Geen API-sleutel ingesteld. Open Instellingen → AI Coach om er één toe te voegen."
             case .noPatterns:
                 return "Deze workout heeft geen significante fysiologische patronen — geen analyse nodig."
-            case .generationFailed(let detail):
-                return "AI-analyse mislukt: \(detail)"
+            case .rateLimited(let retried):
+                let suffix = retried ? " (primair én fallback-model)" : ""
+                return "AI-quotum bereikt\(suffix). Probeer het over een paar minuten opnieuw."
+            case .authenticationFailed:
+                return "Je API-sleutel werkt niet. Controleer 'm in Instellingen → AI Coach."
+            case .contentBlocked:
+                return "AI heeft de analyse geblokkeerd om veiligheidsredenen."
+            case .timedOut(let retried):
+                let suffix = retried ? " (primair én fallback-model)" : ""
+                return "AI reageert niet op tijd\(suffix). Probeer het zo opnieuw."
+            case .unavailable(let retried, let detail):
+                let prefix = retried ? "AI-analyse niet beschikbaar (primair én fallback-model gefaald)" : "AI-analyse niet beschikbaar"
+                return "\(prefix). \(detail)"
             }
         }
     }
@@ -49,21 +64,34 @@ final class WorkoutInsightService {
     geen markdown. Eindig zonder "Als je vragen hebt..."-clichés.
     """
 
-    private let modelFactory: () -> GenerativeModelProtocol?
+    private let primaryFactory: () -> GenerativeModelProtocol?
+    private let fallbackFactory: () -> GenerativeModelProtocol?
 
-    /// Default factory bouwt een echte Gemini-call met het primaire model.
-    /// Tests injecteren een mock-factory.
-    init(modelFactory: @escaping () -> GenerativeModelProtocol? = WorkoutInsightService.defaultModelFactory) {
-        self.modelFactory = modelFactory
+    /// Default factories bouwen echte Gemini-modellen met dezelfde system-instruction;
+    /// tests injecteren mocks. Fallback gebruikt het lichtere model — exact dezelfde
+    /// strategie als `ChatViewModel.buildFallbackGenerativeModel()` zodat 503/429 op
+    /// het primaire model niet meteen tot een gebruikersfout leidt.
+    init(primaryFactory: @escaping () -> GenerativeModelProtocol? = WorkoutInsightService.makePrimaryModel,
+         fallbackFactory: @escaping () -> GenerativeModelProtocol? = WorkoutInsightService.makeFallbackModel) {
+        self.primaryFactory = primaryFactory
+        self.fallbackFactory = fallbackFactory
     }
 
-    static let defaultModelFactory: () -> GenerativeModelProtocol? = {
+    static func makePrimaryModel() -> GenerativeModelProtocol? {
+        makeModel(modelName: AIModelAppStorageKey.resolvedPrimary())
+    }
+
+    static func makeFallbackModel() -> GenerativeModelProtocol? {
+        makeModel(modelName: AIModelAppStorageKey.resolvedFallback())
+    }
+
+    private static func makeModel(modelName: String) -> GenerativeModelProtocol? {
         let key = UserAPIKeyStore.read()
         guard !key.isEmpty else { return nil }
         let config = GenerationConfig()
         let options = RequestOptions(timeout: 30)
         let googleModel = GenerativeModel(
-            name: AIModelAppStorageKey.resolvedPrimary(),
+            name: modelName,
             apiKey: key,
             generationConfig: config,
             systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)]),
@@ -73,20 +101,44 @@ final class WorkoutInsightService {
     }
 
     /// Genereert een coaching-narrative voor de meegeleverde patronen + workout-context.
-    /// - Parameters:
-    ///   - patterns: Significante en mildere patronen uit `WorkoutPatternDetector.detectAll`.
-    ///   - sportLabel: Bv. "hardlopen", "fietsen" — gaat als context mee in de prompt.
-    ///   - durationMinutes: Workout-duur, ondersteunt de coach in het verhaal.
-    /// - Returns: Korte Nederlandstalige tekst.
-    /// - Throws: `InsightError` bij ontbrekende key, lege patronen of API-fout.
+    /// Probeert eerst het primaire model; faalt dat op een retryable fout, dan
+    /// volgt automatisch een poging op het fallback-model. Zo blijft de Coach-analyse
+    /// werken bij een tijdelijke 503/429 op het primaire model.
     func generateInsight(patterns: [WorkoutPattern],
                          sportLabel: String,
                          durationMinutes: Int) async throws -> String {
         guard !patterns.isEmpty else { throw InsightError.noPatterns }
-        guard let model = modelFactory() else { throw InsightError.missingAPIKey }
+        guard let primary = primaryFactory() else { throw InsightError.missingAPIKey }
 
+        let prompt = buildPrompt(patterns: patterns, sportLabel: sportLabel, durationMinutes: durationMinutes)
+
+        do {
+            return try await callModel(primary, prompt: prompt)
+        } catch {
+            // Authenticatie of content-blocking is per-key/per-prompt; de fallback gaat
+            // dat niet oplossen. Direct doorgeven.
+            if let mapped = mapError(error, retried: false), case .authenticationFailed = mapped {
+                throw mapped
+            }
+            if let mapped = mapError(error, retried: false), case .contentBlocked = mapped {
+                throw mapped
+            }
+
+            // Probeer fallback. Als die ook ontbreekt of valt, propageer de zwaarste fout.
+            guard let fallback = fallbackFactory() else {
+                throw mapError(error, retried: false) ?? .unavailable(retried: false, detail: error.localizedDescription)
+            }
+            do {
+                return try await callModel(fallback, prompt: prompt)
+            } catch {
+                throw mapError(error, retried: true) ?? .unavailable(retried: true, detail: error.localizedDescription)
+            }
+        }
+    }
+
+    private func buildPrompt(patterns: [WorkoutPattern], sportLabel: String, durationMinutes: Int) -> String {
         let snippet = WorkoutPatternFormatter.promptSnippet(for: patterns) ?? ""
-        let prompt = """
+        return """
         Workout-context:
         - Sport: \(sportLabel)
         - Duur: \(durationMinutes) minuten
@@ -96,17 +148,34 @@ final class WorkoutInsightService {
 
         Geef je analyse.
         """
+    }
 
-        do {
-            let response = try await model.generateContent([.text(prompt)])
-            guard let text = response?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
-                throw InsightError.generationFailed("Lege respons van AI-model")
-            }
-            return text
-        } catch let insightError as InsightError {
-            throw insightError
-        } catch {
-            throw InsightError.generationFailed(error.localizedDescription)
+    private func callModel(_ model: GenerativeModelProtocol, prompt: String) async throws -> String {
+        let response = try await model.generateContent([.text(prompt)])
+        guard let text = response?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else {
+            throw InsightError.unavailable(retried: false, detail: "Lege respons van AI-model.")
         }
+        return text
+    }
+
+    /// Mapt SDK-fouten op gebruiker-vriendelijke `InsightError`-cases. Werkt op basis
+    /// van string-matching omdat `GoogleGenerativeAI.GenerateContentError` geen stabiele
+    /// publieke discriminators heeft — keyword-matching dekt 503/429/auth/blocked
+    /// en de timeout-paden uit `URLError`.
+    private func mapError(_ error: Error, retried: Bool) -> InsightError? {
+        let message = error.localizedDescription.lowercased()
+        if message.contains("api key") || message.contains("api_key") || message.contains("unauthenticated") || message.contains("unauthorized") {
+            return .authenticationFailed
+        }
+        if message.contains("quota") || message.contains("rate limit") || message.contains("429") {
+            return .rateLimited(retried: retried)
+        }
+        if message.contains("blocked") || message.contains("safety") || message.contains("harm") {
+            return .contentBlocked
+        }
+        if message.contains("timed out") || message.contains("timeout") || (error as? URLError)?.code == .timedOut {
+            return .timedOut(retried: retried)
+        }
+        return nil
     }
 }
