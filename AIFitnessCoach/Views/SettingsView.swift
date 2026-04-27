@@ -155,38 +155,36 @@ struct SettingsView: View {
                         var newRecordsCount = 0
 
                         for activity in activities {
-                            let currentId = String(activity.id)
-                            let fetchDescriptor = FetchDescriptor<ActivityRecord>(predicate: #Predicate { $0.id == currentId })
-                            let existing = try? modelContext.fetch(fetchDescriptor)
+                            let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
 
-                            if existing?.isEmpty ?? true {
-                                let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
+                            // SPRINT 12.4: Voeg basic TRIMP fallback toe bij sync
+                            let basicTRIMPFallback: Double? = {
+                                if let hr = activity.average_heartrate, hr > 100 {
+                                    // Super simpele Banister fallback als HR bekend is
+                                    let durationMins = Double(activity.moving_time) / 60.0
+                                    let simulatedDeltaHR = (hr - 60.0) / (190.0 - 60.0)
+                                    return durationMins * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
+                                } else {
+                                    // Als niks bekend is, gebruik 1 minuut = 1.5 TRIMP als grove gok
+                                    return (Double(activity.moving_time) / 60.0) * 1.5
+                                }
+                            }()
 
-                                // SPRINT 12.4: Voeg basic TRIMP fallback toe bij sync
-                                let basicTRIMPFallback: Double? = {
-                                    if let hr = activity.average_heartrate, hr > 100 {
-                                        // Super simpele Banister fallback als HR bekend is
-                                        let durationMins = Double(activity.moving_time) / 60.0
-                                        let simulatedDeltaHR = (hr - 60.0) / (190.0 - 60.0)
-                                        return durationMins * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
-                                    } else {
-                                        // Als niks bekend is, gebruik 1 minuut = 1.5 TRIMP als grove gok
-                                        return (Double(activity.moving_time) / 60.0) * 1.5
-                                    }
-                                }()
-
-                                let record = ActivityRecord(
-                                    id: currentId,
-                                    name: activity.name,
-                                    distance: activity.distance,
-                                    movingTime: activity.moving_time,
-                                    averageHeartrate: activity.average_heartrate,
-                                    sportCategory: SportCategory.from(rawString: activity.type),
-                                    startDate: date,
-                                    trimp: basicTRIMPFallback,
-                                    deviceWatts: activity.device_watts
-                                )
-                                modelContext.insert(record)
+                            let record = ActivityRecord(
+                                id: String(activity.id),
+                                name: activity.name,
+                                distance: activity.distance,
+                                movingTime: activity.moving_time,
+                                averageHeartrate: activity.average_heartrate,
+                                sportCategory: SportCategory.from(rawString: activity.type),
+                                startDate: date,
+                                trimp: basicTRIMPFallback,
+                                deviceWatts: activity.device_watts
+                            )
+                            // Epic 41.4: smart-insert vangt cross-source duplicaten op
+                            // (HK-record op dezelfde tijd) en kiest het rijkste record.
+                            if let result = try? ActivityDeduplicator.smartInsert(record, into: modelContext),
+                               result == .inserted || result == .replaced {
                                 newRecordsCount += 1
                             }
                         }
@@ -245,29 +243,6 @@ struct SettingsView: View {
                 } else {
                     self.feedbackMessage = "Fout bij koppelen Apple Health: \(error?.localizedDescription ?? "Onbekende fout")"
                 }
-            }
-        }
-    }
-
-    /// Verwijdert dubbele ActivityRecords uit SwiftData.
-    /// Detecteert duplicaten op twee manieren:
-    /// 1. Zelfde `id` (UUID) — normale race-condition duplicaten
-    /// 2. Zelfde `startDate` + `sportCategory` — HealthKit-level duplicaten (zelfde workout, twee UUIDs)
-    /// Behoudt altijd de eerste record (gesorteerd op startDate), verwijdert de rest.
-    private func removeDuplicateRecords() {
-        // Epic 41: bron-aware dedupe via `ActivityDeduplicator`. De helper kiest
-        // bij conflict de "rijkste" record (samples > deviceWatts > trimp > avgHR),
-        // zodat een Strava-record met power nooit wordt weggegooid voor een HK-
-        // record zonder.
-        Task { @MainActor in
-            let store = WorkoutSampleStore(modelContainer: modelContext.container)
-            do {
-                let removed = try await ActivityDeduplicator.runDedupe(in: modelContext, store: store)
-                feedbackMessage = removed > 0
-                    ? "\(removed) dubbele activiteit(en) verwijderd."
-                    : "Geen duplicaten gevonden — database is schoon."
-            } catch {
-                feedbackMessage = "Dedupe mislukt: \(error.localizedDescription)"
             }
         }
     }
@@ -646,11 +621,6 @@ struct SettingsView: View {
                         } label: {
                             SettingsRowV2(icon: "bolt.fill", iconColor: .orange,
                                           title: "Forceer Achtergrond Sync")
-                        }.buttonStyle(.plain)
-                        settingsDivider
-                        Button { removeDuplicateRecords() } label: {
-                            SettingsRowV2(icon: "trash.slash.fill", iconColor: .red,
-                                          title: "Verwijder Dubbele Activiteiten")
                         }.buttonStyle(.plain)
                     }.padding(.bottom, 24)
                     #endif
