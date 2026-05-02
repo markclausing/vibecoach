@@ -25,6 +25,14 @@ enum WorkoutPatternFormatter {
         return lines.joined(separator: "\n")
     }
 
+    /// Story 45.1: één-regel-variant van `promptSnippet` voor inline-suffix in
+    /// `WorkoutHistoryContextBuilder`-output. Patronen worden met ` / ` gescheiden
+    /// i.p.v. `\n` zodat een hele workout op één prompt-regel past.
+    static func inlineSnippet(for patterns: [WorkoutPattern]) -> String? {
+        guard !patterns.isEmpty else { return nil }
+        return patterns.map { line(for: $0) }.joined(separator: " / ")
+    }
+
     /// One-liner per patroon. Format: `[severity] kind: numerieke waarde + uitleg`.
     private static func line(for pattern: WorkoutPattern) -> String {
         let severityToken: String

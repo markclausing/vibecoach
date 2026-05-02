@@ -469,18 +469,16 @@ Naast de detector heeft FTP impact op `SessionClassifier` (zone-distributie-clas
 
 ---
 
-### ⏳ Epic #45: Per-workout context in schema- en doelanalyse-prompt
+### ✅ Epic #45: Per-workout context in schema- en doelanalyse-prompt
 
 Aanleiding: na Epic #44 worden persoonlijke trainingsdrempels (max/rest/LTHR/FTP + zones) al door `ChatViewModel.buildContextPrefix` in elke AI-call geïnjecteerd, en is er een 1-regel `workoutPatternsContext` voor de afgelopen 7 dagen ("Recente workout(s) tonen: aerobic decoupling, cardiac drift."). Voor schema-bouw en doelanalyse is die ene regel echter te dun — de coach kan er geen specifieke verwijzingen op baseren ("zoals in je drempelloop van afgelopen dinsdag…"). Met rijkere per-workout-context kan de AI beter onderbouwde plan-aanpassingen voorstellen.
 
 **Sub-stories:**
 
-* **⏳ 45.1 — `WorkoutHistoryContextBuilder` (pure-Swift):** Bouwt een gestructureerd JSON-achtig blok van de afgelopen 14 dagen `ActivityRecord`-data. Per workout: datum, sport, sessieType (uit `SessionClassifier`), duur, TRIMP, gemiddelde HR, en — indien aanwezig — de detector-output (kind + severity per patroon, géén AI-narratives, dat wordt rommelig). Pure-Swift, AppStorage-vrij, geïnjecteerde `samplesProvider` voor testbaarheid. Hergebruikt `WorkoutPatternDetector.detectAll(in:profile:)` voor consistentie met de chart-pins.
-* **⏳ 45.2 — Injectie in `buildContextPrefix`:** Nieuw `[RECENTE TRAINING — 14 DAGEN]`-blok in de chat-context-prefix met de output uit 45.1 en gedragsregels: gebruik specifieke verwijzingen ("op 18 april reed je een tempo-rit met cardiac drift van 8%"), koppel patronen aan plan-aanpassingen ("3 long runs op rij met decoupling → suggereer meer sub-LTHR werk"), niet ongevraagd opnieuw vermelden in elke chat-turn. Helemaal weglaten als geen workouts in het venster.
-* **⏳ 45.3 — Optionele cache + refresh-trigger:** Net als `workoutPatternsContext` cachen in `@AppStorage` zodat we niet bij elke prompt-build opnieuw 14 dagen aan workouts uit SwiftData hoeven te halen. Refresh getriggerd vanuit `DashboardView.scenePhase`-flow direct na de bestaande `refreshWorkoutPatternsContext()`.
-
-**Effort schatting:** ~1-2u. 45.1 is pure-Swift met testdekking (~45 min), 45.2 is een prompt-engineering wijziging in `buildContextPrefix` (~30 min), 45.3 is plumbing analoog aan 32.3c (~15 min).
+* **✅ 45.1 — `WorkoutHistoryContextBuilder` (pure-Swift):** Bouwt een 1-regel-per-workout blok van de afgelopen 14 dagen — datum (NL-locale), sport, sessieType, duur, TRIMP, gem-HR, optioneel gem-W, en de detector-output als inline-suffix (severity + kind, hergebruik van `WorkoutPatternDetector.detectAll(in:profile:)`). Pure-Swift `enum` met geïnjecteerde `WorkoutEntry`-DTO's — caller (DashboardView) doet de async sample-fetch. Sortering nieuwste→oudste. Lege array → `""` zodat het hele blok wegvalt. 5 unit-tests in `WorkoutHistoryContextBuilderTests`.
+* **✅ 45.2 — Injectie in `buildContextPrefix`:** Nieuw `[RECENTE TRAINING — 14 DAGEN]`-blok in de chat-context-prefix direct ná de 7d-pulse, met 5 gedragsregels: specifieke datum-verwijzingen, ≥3-opeenvolgende-patronen-trigger voor sub-LTHR-suggesties, alleen-bij-reflectie/schema/doelanalyse, zone-terminologie consistent met `[TRAININGSDREMPELS]`, en blessure-weging via `[ACTUELE KLACHTEN]`.
+* **✅ 45.3 — Cache + refresh-consolidatie:** `@AppStorage("vibecoach_workoutHistoryContext")` cache in `ChatViewModel`. `refreshWorkoutPatternsContext()` is gerefactord naar gedeelde `refreshChatContextCaches()` die de loop over `activities` één keer draait en zowel de 7d-pulse als de 14d-rijke cache vult uit dezelfde `[WorkoutEntry]`-array — halveert SwiftData-fetch-I/O en voorkomt dubbele detector-calls.
 
 **Tradeoff:** meer tokens per AI-call → iets hogere API-kosten en marginaal hoger safety-filter-risico (lange prompts kunnen zeldzaam content-blocked worden). Voor power-users die het schema serieus tunen weegt de winst (specifieke, onderbouwde adviezen i.p.v. generieke aannames) ruim op tegen de kosten.
 
-**Status:** ⏳ — backlog. Pakken we op zodra Epic #44 (PR #230 + #231) gemerged is en de gebruiker concreet meldt dat 'ie meer specifieke schema-feedback wil zien.
+**Status:** ✅ — geïmplementeerd op branch `feature/epic-45-workout-history-context` (3 stories in één PR conform `feedback_epic_pr_workflow`).

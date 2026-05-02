@@ -71,6 +71,8 @@
 		C0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift */; };
 		C1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift */; };
 		C2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */; };
+		D45A4500D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45A4500D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilder.swift */; };
+		D45A4501D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45A4501D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilderTests.swift */; };
 		C3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift */; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* TrainingPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */; };
 		C4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift */; };
@@ -267,6 +269,8 @@
 		F1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LastWorkoutContextFormatter.swift; sourceTree = "<group>"; };
 		F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserProfileService.swift; sourceTree = "<group>"; };
 		F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LastWorkoutContextFormatterTests.swift; sourceTree = "<group>"; };
+		E45A4500D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutHistoryContextBuilder.swift; sourceTree = "<group>"; };
+		E45A4501D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutHistoryContextBuilderTests.swift; sourceTree = "<group>"; };
 		F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgressService.swift; sourceTree = "<group>"; };
 		F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NutritionService.swift; sourceTree = "<group>"; };
 		F3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserOverrideContextFormatter.swift; sourceTree = "<group>"; };
@@ -377,6 +381,7 @@
 				EEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift */,
 				F0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift */,
 				F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */,
+				E45A4501D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilderTests.swift */,
 				F4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift */,
 				F6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift */,
 				F8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift */,
@@ -473,6 +478,7 @@
 				6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */,
 				EAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift */,
 				F1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift */,
+				E45A4500D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilder.swift */,
 				F3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift */,
 				F7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift */,
 				F9A4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilder.swift */,
@@ -752,6 +758,7 @@
 				BEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift in Sources */,
 				C0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift in Sources */,
 				C2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift in Sources */,
+				D45A4501D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilderTests.swift in Sources */,
 				C4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift in Sources */,
 				C6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift in Sources */,
 				C8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift in Sources */,
@@ -833,6 +840,7 @@
 				BDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift in Sources */,
 				BFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift in Sources */,
 				C1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift in Sources */,
+				D45A4500D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilder.swift in Sources */,
 				C3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift in Sources */,
 				C5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift in Sources */,
 				C7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift in Sources */,
