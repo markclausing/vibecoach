@@ -1767,7 +1767,7 @@ struct DashboardView: View {
                 await backfillStravaStreams()
                 await runAutoDedupe()
                 await runSessionReclassification()
-                await refreshWorkoutPatternsContext()
+                await refreshChatContextCaches()
                 #if DEBUG
                 await runPatternDebugReport()
                 #endif
@@ -1775,28 +1775,51 @@ struct DashboardView: View {
         }
     }
 
-    /// Story 32.3c: aggregeer significante patronen uit workouts van de afgelopen
-    /// 7 dagen en push het naar `viewModel.workoutPatternsContext`. De chat-coach
-    /// leest dit bij de volgende prompt-build (`buildContextPrefix`) en kan er
-    /// proactief naar refereren wanneer de gebruiker reflecteert op recente
-    /// uitvoering. Stille no-op als er geen patronen zijn — leegmaken zodat een
-    /// stabiele week ook de cache opschoont.
-    private func refreshWorkoutPatternsContext() async {
+    /// Epic 45 Story 45.3: vult zowel de 7-daagse pulse-cache (Story 32.3c) als
+    /// het 14-daagse rijke per-workout-blok in één gedeelde loop. Per workout wordt
+    /// `WorkoutPatternDetector.detectAll` exact één keer aangeroepen — beide caches
+    /// eten uit dezelfde `[WorkoutEntry]`-array. Dat halveert de SwiftData-fetch-I/O
+    /// en voorkomt dubbele detector-calls t.o.v. twee aparte refresh-functies.
+    /// Stille no-op als er geen workouts in het venster zijn — caches worden dan
+    /// leeggemaakt zodat een stabiele week ook de cache opschoont.
+    private func refreshChatContextCaches() async {
         let store = WorkoutSampleStore(modelContainer: modelContext.container)
-        let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        let now = Date()
+        let cutoff14 = Calendar.current.date(byAdding: .day, value: -14, to: now) ?? now
+        let cutoff7  = Calendar.current.date(byAdding: .day, value: -7,  to: now) ?? now
         // Epic #44 story 44.5: profiel hier één keer ophalen en doorgeven aan
         // detectAll zodat de zone-gates per workout consistent dezelfde drempels gebruiken.
         let profile = UserProfileService.cachedProfile()
-        var allPatterns: [WorkoutPattern] = []
 
-        for activity in activities where activity.startDate >= cutoff {
+        var entries: [WorkoutHistoryContextBuilder.WorkoutEntry] = []
+        var patterns7d: [WorkoutPattern] = []
+
+        for activity in activities where activity.startDate >= cutoff14 {
             let uuid = UUID.forActivityRecordID(activity.id)
             let samples = (try? await store.samples(forWorkoutUUID: uuid)) ?? []
-            guard !samples.isEmpty else { continue }
-            allPatterns.append(contentsOf: WorkoutPatternDetector.detectAll(in: samples, profile: profile))
+            let detected: [WorkoutPattern] = samples.isEmpty
+                ? []
+                : WorkoutPatternDetector.detectAll(in: samples, profile: profile)
+
+            entries.append(WorkoutHistoryContextBuilder.WorkoutEntry(
+                startDate: activity.startDate,
+                displayName: activity.name,
+                sportCategory: activity.sportCategory,
+                sessionType: activity.sessionType,
+                movingTime: activity.movingTime,
+                trimp: activity.trimp,
+                averageHeartrate: activity.averageHeartrate,
+                averagePower: nil,                  // Epic #40-aansluiting later
+                patterns: detected
+            ))
+
+            if activity.startDate >= cutoff7 {
+                patterns7d.append(contentsOf: detected)
+            }
         }
 
-        viewModel.workoutPatternsContext = WorkoutPatternFormatter.chatContextLine(for: allPatterns) ?? ""
+        viewModel.workoutPatternsContext = WorkoutPatternFormatter.chatContextLine(for: patterns7d) ?? ""
+        viewModel.workoutHistoryContext = WorkoutHistoryContextBuilder.build(entries: entries)
     }
 
     #if DEBUG

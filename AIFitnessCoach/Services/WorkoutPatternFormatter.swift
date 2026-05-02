@@ -25,22 +25,56 @@ enum WorkoutPatternFormatter {
         return lines.joined(separator: "\n")
     }
 
+    /// Story 45.1: één-regel-variant van `promptSnippet` voor inline-suffix in
+    /// `WorkoutHistoryContextBuilder`-output. Patronen worden met ` / ` gescheiden
+    /// i.p.v. `\n`, en het detail-veld wordt vervangen door een korte `value`-met-
+    /// eenheid-rendering. Dat voorkomt de redundantie van `[SEVERITY] kind: Kind: …`
+    /// die in de prozaïsche detail-strings van de detector zit en bespaart ~60% tokens
+    /// per patroon op de prompt. De volledige `detail`-tekst blijft beschikbaar voor
+    /// de UI-pins in `WorkoutAnalysisView` via `promptSnippet`.
+    static func inlineSnippet(for patterns: [WorkoutPattern]) -> String? {
+        guard !patterns.isEmpty else { return nil }
+        return patterns.map { inlineLine(for: $0) }.joined(separator: " / ")
+    }
+
+    /// Inline-format: `[SEVERITY] kind value+eenheid`. Eenheid hangt af van `kind`
+    /// (zie comment op `WorkoutPattern.value`): drift-types in %, recovery in bpm,
+    /// cadence-fade unitless (sport-afhankelijk: rpm voor cycling, spm voor running).
+    private static func inlineLine(for pattern: WorkoutPattern) -> String {
+        let severityToken = severityToken(for: pattern.severity)
+        let kindToken = kindToken(for: pattern.kind)
+        let valueLabel: String
+        switch pattern.kind {
+        case .aerobicDecoupling, .cardiacDrift:
+            valueLabel = String(format: "%.1f%%", pattern.value)
+        case .heartRateRecovery:
+            valueLabel = "\(Int(pattern.value.rounded())) bpm"
+        case .cadenceFade:
+            valueLabel = "\(Int(pattern.value.rounded()))"
+        }
+        return "[\(severityToken)] \(kindToken) \(valueLabel)"
+    }
+
+    private static func severityToken(for severity: WorkoutPattern.Severity) -> String {
+        switch severity {
+        case .mild:        return "MILD"
+        case .moderate:    return "MODERATE"
+        case .significant: return "SIGNIFICANT"
+        }
+    }
+
+    private static func kindToken(for kind: WorkoutPatternKind) -> String {
+        switch kind {
+        case .aerobicDecoupling: return "aerobic_decoupling"
+        case .cardiacDrift:      return "cardiac_drift"
+        case .cadenceFade:       return "cadence_fade"
+        case .heartRateRecovery: return "hr_recovery"
+        }
+    }
+
     /// One-liner per patroon. Format: `[severity] kind: numerieke waarde + uitleg`.
     private static func line(for pattern: WorkoutPattern) -> String {
-        let severityToken: String
-        switch pattern.severity {
-        case .mild:        severityToken = "MILD"
-        case .moderate:    severityToken = "MODERATE"
-        case .significant: severityToken = "SIGNIFICANT"
-        }
-        let kindToken: String
-        switch pattern.kind {
-        case .aerobicDecoupling: kindToken = "aerobic_decoupling"
-        case .cardiacDrift:      kindToken = "cardiac_drift"
-        case .cadenceFade:       kindToken = "cadence_fade"
-        case .heartRateRecovery: kindToken = "hr_recovery"
-        }
-        return "[\(severityToken)] \(kindToken): \(pattern.detail)"
+        "[\(severityToken(for: pattern.severity))] \(kindToken(for: pattern.kind)): \(pattern.detail)"
     }
 
     /// Stabiele fingerprint voor cache-invalidatie. Verandert zodra patronen,

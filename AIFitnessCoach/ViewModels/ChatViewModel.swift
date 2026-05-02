@@ -107,6 +107,15 @@ class ChatViewModel: ObservableObject {
     /// over kan praten in een chat-turn.
     @AppStorage("vibecoach_workoutPatternsContext") var workoutPatternsContext: String = ""
 
+    /// Epic 45 Story 45.3: rijkere per-workout-context over de afgelopen 14 dagen
+    /// (datum, sport, sessieType, duur, TRIMP, gem-HR, eventueel power, en
+    /// detector-output per workout). Aanvulling op `workoutPatternsContext` (1-regel
+    /// pulse over 7 dagen): de pulse signaleert dát er iets is, dit blok geeft de
+    /// coach de specifieke onderbouwing per workout zodat plan-aanpassingen verwijzen
+    /// naar concrete sessies ("op 28 april reed je een tempo-rit met decoupling…").
+    /// Wordt gevuld vanuit `DashboardView.refreshChatContextCaches()`.
+    @AppStorage("vibecoach_workoutHistoryContext") var workoutHistoryContext: String = ""
+
     /// Epic 23 Sprint 1: Cache van de gap-analyse per actief doel.
     /// Bevat het verschil tussen verwacht en werkelijk TRIMP/km op dit moment in de voorbereiding.
     @AppStorage("vibecoach_gapAnalysisContext") private var gapAnalysisContext: String = ""
@@ -882,6 +891,25 @@ class ChatViewModel: ObservableObject {
             4. Noem deze patronen NIET ongevraagd in elke turn; alleen wanneer de gebruiker reflecteert op recente uitvoering of trainingsplan-aanpassingen vraagt.]
             """
             prefix += patternsBlock + "\n\n"
+        }
+
+        // Epic 45 Story 45.2: rijkere per-workout-context over de afgelopen 14 dagen.
+        // Aanvulling op de 1-regel-pulse hierboven — die geeft een aggregaat-signaal,
+        // dit blok geeft de specifieke onderbouwing per workout zodat plan-aanpassingen
+        // kunnen verwijzen naar concrete sessies. Bewust direct ná het patronen-blok
+        // geplaatst zodat de coach eerst het signaal leest en daarna de details.
+        if !workoutHistoryContext.isEmpty {
+            let historyBlock = """
+            [RECENTE TRAINING — 14 DAGEN (nieuwste eerst):
+            \(workoutHistoryContext)
+            Gedragsregels:
+            1. Refereer specifiek aan datum + sessietype bij elke workout-aanhaal ("op 18 april in je tempo-rit met cardiac drift 8% …"). Geen vage termen als "recent".
+            2. Bij ≥3 opeenvolgende workouts met aerobic_decoupling of cardiac_drift: stel sub-LTHR werk voor en motiveer met de specifieke data uit deze lijst.
+            3. Gebruik deze data alléén bij reflectie/schema-vragen/doelanalyse — niet ongevraagd in elke turn opnoemen.
+            4. Combineer met [TRAININGSDREMPELS] voor zone-correcte interpretatie van de gem-HR. Gebruik dezelfde zone-terminologie ("Zone 2"/"Z2", "Zone 3"/"Z3", "LTHR") — verzin geen nieuwe labels.
+            5. Weeg deze data tegen [ACTUELE KLACHTEN]. Bij actieve blessure: interpreteer patronen zoals cardiac_drift voorzichtiger (kan herstel-vermoeidheid zijn, niet trainingsbehoefte). Suggereer geen volume-verhogingen als de gebruiker herstellende is.]
+            """
+            prefix += historyBlock + "\n\n"
         }
 
         // Epic 21: Injecteer de 7-daagse weersverwachting voor buitenactiviteiten-coaching
