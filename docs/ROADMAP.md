@@ -448,7 +448,7 @@ Aanleiding: tijdens on-device-gebruik (april 2026) viel op dat (a) de drie "Verb
 
 ---
 
-### 🔄 Epic #44: Persoonlijke HR Zones & FTP
+### ✅ Epic #44: Persoonlijke HR Zones & FTP
 
 Aanleiding: tijdens on-device-validatie van Epic #32 story 32.3b (april 2026) bleek de `WorkoutPatternDetector` op een rustige sociale rit drie significante "rode" patronen te rapporteren (decoupling 102%, cardiac drift 13%, trage HR-recovery 11 BPM). De decoupling-bug is met een steady-state-CV-gate gerepareerd, maar het onderliggende probleem blijft: **alle drempels zijn populatie-gemiddelden** (Joe Friel / TrainingPeaks-norm + Tanaka maxHR), terwijl deze gebruiker hogere zones heeft dan een gemiddelde 35-jarige (zone 2 = 139–157 BPM). Een Z2-rit ziet er voor de detector uit als een Z3-effort en de Coach-analyse oordeelt te hard.
 
@@ -463,9 +463,9 @@ Naast de detector heeft FTP impact op `SessionClassifier` (zone-distributie-clas
 * **✅ 44.5 — Detector- en classifier-kalibratie (PR C):** `WorkoutPatternDetector.detectCardiacDrift` en `detectHeartRateRecovery` accepteren een optionele `zones: [HeartRateZone]?`-parameter. Cardiac drift triggert alleen wanneer de avg-HR in Z1-Z3 valt (echte aerobic effort) — Z4/Z5-drift is verwacht gedrag. HR-recovery vereist een piek in Z3+ — recovery van een Z2-piek is geen informatief signaal. Nieuwe `detectAll(in:profile:)`-overload leidt zones uit `UserPhysicalProfile` af (Friel als LTHR aanwezig is, anders Karvonen) en threadt ze door. Backwards-compat default nil houdt populatie-globaal gedrag intact voor callers zonder profiel. `WorkoutAnalysisView` en `DashboardView.refreshWorkoutPatternsContext` gebruiken nu de profile-aware variant. `SessionClassifier` krijgt optionele `lactateThresholdHR`-init-parameter; `classifyByZoneDistribution` schakelt over naar Friel-percentages (<81/81-89/90-93/94-99/100+) wanneer LTHR aanwezig is.
 * **✅ 44.6 — Coach-prompt-context (PR C):** Nieuw `[TRAININGSDREMPELS]`-blok in `ChatViewModel.buildContextPrefix` met max/rest/LTHR/FTP + bron-badges + expliciete Z2/Z3-grenzen ("Z2 = 142-158 BPM, Z3 = 158-165 BPM"). Gedragsregels in het blok: interpreteer "rustig" altijd in de context van deze drempels, koppel BPM-getal aan zone in subjectieve feedback, gebruik concrete grenzen bij plan-aanpassingen. Helemaal weglaten als geen drempels gezet zijn — dan blijft de coach z'n populatie-aannames hanteren.
 
-**Effort schatting:** ~6-8u verspreid. 44.1 + 44.2 zijn pure-Swift + getest (~2u), 44.3 is ~30 min onderzoek + import-call, 44.4 is de grootste qua UX (~2u), 44.5 + 44.6 zijn refactors die tests bijwerken (~2-3u).
+**Effort gerealiseerd:** ~6-8u verdeeld over drie PR's (#226 / #229 / #230). 44.1 + 44.2 zijn pure-Swift + getest (~2u), 44.3 was ~30 min onderzoek + import-call, 44.4 was de grootste qua UX (~2u), 44.5 + 44.6 zijn refactors die tests bijwerken (~2-3u).
 
-**Status:** ⏳ — niet urgent, maar echt nodig zodra de gebruiker de Coach-analyse-card op meerdere workouts gebruikt en signaleert dat de toon te streng is voor zijn fysiologische profiel.
+**Status:** ✅ — afgesloten (april 2026, PR #226 + #229 + #230). Gerealiseerd in drie PR's: foundation (`ThresholdValue` + zone-calculators + `PhysiologicalThresholdEstimator`), Strava FTP + Settings-UI + HK-adapter, en detector/classifier-kalibratie + coach-prompt-context. Op-device geverifieerd via de Epic #45-prompt-dump: het `[TRAININGSDREMPELS]`-blok wordt correct geïnjecteerd en de detector-gates respecteren het persoonlijke profiel — Z2-rides triggeren niet meer als false-positive significant patroon.
 
 ---
 
