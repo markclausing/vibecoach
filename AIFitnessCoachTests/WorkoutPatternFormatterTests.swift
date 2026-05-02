@@ -134,4 +134,36 @@ final class WorkoutPatternFormatterTests: XCTestCase {
         XCTAssertFalse(line?.contains("cadence") ?? true,
                        "Mild cadence-patroon moet uit de chat-context blijven")
     }
+
+    // MARK: inlineSnippet
+
+    func testInlineSnippet_EmptyPatterns_ReturnsNil() {
+        XCTAssertNil(WorkoutPatternFormatter.inlineSnippet(for: []))
+    }
+
+    func testInlineSnippet_AllKinds_RendersValueWithKindSpecificUnit() {
+        let patterns: [WorkoutPattern] = [
+            makePattern(kind: .aerobicDecoupling, severity: .significant, value: 9.1),
+            makePattern(kind: .cardiacDrift, severity: .moderate, value: 6.4),
+            makePattern(kind: .heartRateRecovery, severity: .mild, value: 24),
+            makePattern(kind: .cadenceFade, severity: .moderate, value: 7),
+        ]
+        let snippet = WorkoutPatternFormatter.inlineSnippet(for: patterns)
+        XCTAssertEqual(snippet,
+                       "[SIGNIFICANT] aerobic_decoupling 9.1% / [MODERATE] cardiac_drift 6.4% / [MILD] hr_recovery 24 bpm / [MODERATE] cadence_fade 7")
+    }
+
+    func testInlineSnippet_OmitsProseDetail() {
+        // Borgt dat de inline-variant géén verbose detail-tekst meer bevat — anders
+        // krijgen we de oude redundantie "[KIND] kind: Kind: HR steeg ..." terug.
+        let pattern = makePattern(kind: .cardiacDrift, severity: .significant, value: 8.2,
+                                  detail: "Cardiac drift: HR-gemiddelde steeg 8.2% van helft 1 naar helft 2")
+        let snippet = WorkoutPatternFormatter.inlineSnippet(for: [pattern])
+        XCTAssertNotNil(snippet)
+        XCTAssertFalse(snippet?.contains("HR-gemiddelde") ?? true,
+                       "Inline-snippet mag geen prozaïsche detail-tekst bevatten")
+        XCTAssertFalse(snippet?.contains(": Cardiac") ?? true,
+                       "Inline-snippet mag de kind-naam niet dubbel renderen")
+        XCTAssertEqual(snippet, "[SIGNIFICANT] cardiac_drift 8.2%")
+    }
 }
