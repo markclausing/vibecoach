@@ -73,6 +73,9 @@
 		C2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */; };
 		D45A4500D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45A4500D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilder.swift */; };
 		D45A4501D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45A4501D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilderTests.swift */; };
+		D45A4502D6E8F0A1B2C3D405 /* HealthKitPermissionTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45A4502D6E8F0A1B2C3D405 /* HealthKitPermissionTypes.swift */; };
+		D45A4503D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45A4503D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluator.swift */; };
+		D45A4504D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E45A4504D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluatorTests.swift */; };
 		C3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift */; };
 		C3D4E5F6A7B8C9D0E1F2A3B4 /* TrainingPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */; };
 		C4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift */; };
@@ -271,6 +274,9 @@
 		F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LastWorkoutContextFormatterTests.swift; sourceTree = "<group>"; };
 		E45A4500D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutHistoryContextBuilder.swift; sourceTree = "<group>"; };
 		E45A4501D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutHistoryContextBuilderTests.swift; sourceTree = "<group>"; };
+		E45A4502D6E8F0A1B2C3D405 /* HealthKitPermissionTypes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthKitPermissionTypes.swift; sourceTree = "<group>"; };
+		E45A4503D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthKitSyncStatusEvaluator.swift; sourceTree = "<group>"; };
+		E45A4504D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthKitSyncStatusEvaluatorTests.swift; sourceTree = "<group>"; };
 		F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgressService.swift; sourceTree = "<group>"; };
 		F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NutritionService.swift; sourceTree = "<group>"; };
 		F3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserOverrideContextFormatter.swift; sourceTree = "<group>"; };
@@ -382,6 +388,7 @@
 				F0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift */,
 				F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */,
 				E45A4501D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilderTests.swift */,
+				E45A4504D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluatorTests.swift */,
 				F4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift */,
 				F6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift */,
 				F8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift */,
@@ -461,6 +468,8 @@
 				E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */,
 				E6B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift */,
 				E8B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift */,
+				E45A4502D6E8F0A1B2C3D405 /* HealthKitPermissionTypes.swift */,
+				E45A4503D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluator.swift */,
 				EAB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift */,
 				ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */,
 				EDB4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift */,
@@ -759,6 +768,7 @@
 				C0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift in Sources */,
 				C2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift in Sources */,
 				D45A4501D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilderTests.swift in Sources */,
+				D45A4504D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluatorTests.swift in Sources */,
 				C4A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatterTests.swift in Sources */,
 				C6A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzerTests.swift in Sources */,
 				C8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift in Sources */,
@@ -841,6 +851,8 @@
 				BFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift in Sources */,
 				C1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift in Sources */,
 				D45A4500D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilder.swift in Sources */,
+				D45A4502D6E8F0A1B2C3D405 /* HealthKitPermissionTypes.swift in Sources */,
+				D45A4503D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluator.swift in Sources */,
 				C3A4F7B2D6E8F0A1B2C3D405 /* UserOverrideContextFormatter.swift in Sources */,
 				C5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift in Sources */,
 				C7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift in Sources */,

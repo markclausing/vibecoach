@@ -1467,6 +1467,12 @@ struct DashboardView: View {
                         .padding(.horizontal)
                     }
 
+                    // Epic #38 Story 38.2: stille-sync-detectie. Toont alleen
+                    // wanneer de laatste HK-sync 0 workouts opleverde én
+                    // workout-auth-status níet `sharingAuthorized` is. Stille
+                    // no-op anders — geen extra spacing/divider.
+                    HealthKitPermissionWarningBanner()
+
                     // ACWR-banners — gebaseerd op Acute:Chronic Workload Ratio
                     switch bannerState {
                     case .overreached(let name, _, let chronic, let pct, let injury):
@@ -2097,6 +2103,60 @@ struct PhaseBadgeView: View {
         case .buildPhase:   return .orange
         case .peakPhase:    return .red
         case .tapering:     return .purple
+        }
+    }
+}
+
+// MARK: - Epic 38 Story 38.2: HealthKitPermissionWarningBanner
+
+/// "Stille sync"-banner: verschijnt wanneer de laatste HK-sync 0 workouts
+/// opleverde én de workout-toestemming niet expliciet `.sharingAuthorized` is.
+/// Voorkomt dat de gebruiker dagen rondloopt met een leeg dashboard zonder
+/// te weten dat het aan HealthKit-toestemmingen ligt. Pure-Swift logic-call
+/// naar `HealthKitSyncStatusEvaluator` houdt de beslissing testbaar zonder
+/// `HKHealthStore`-mock.
+struct HealthKitPermissionWarningBanner: View {
+    /// Cache uit `AppTabHostView.runHealthKitAutoSync` / `SettingsView`-historical-sync.
+    /// `-1` = sentinel "nog nooit gesynced" → geen banner (false-positive vermijden bij
+    /// allereerste app-launch vóór de eerste auto-sync-cyclus).
+    @AppStorage("vibecoach_lastHKWorkoutsCount") private var lastHKWorkoutsCount: Int = -1
+    @State private var workoutAuthStatus: HKAuthorizationStatus = .notDetermined
+
+    private var shouldShow: Bool {
+        lastHKWorkoutsCount >= 0 &&
+            HealthKitSyncStatusEvaluator.shouldWarn(
+                workoutCount: lastHKWorkoutsCount,
+                workoutAuthStatus: workoutAuthStatus)
+    }
+
+    var body: some View {
+        Group {
+            if shouldShow {
+                DashboardBannerView(icon: "exclamationmark.icloud", color: .red) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Geen HealthKit-data gevonden")
+                            .font(.subheadline.bold())
+                        Text("Controleer of de app toestemming heeft voor Workouts en Hartslag — anders blijft het Dashboard leeg.")
+                            .font(.caption)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Button {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            Text("Open Instellingen")
+                                .font(.caption.bold())
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.red.opacity(0.15))
+                                .clipShape(Capsule())
+                        }
+                    }
+                }
+            }
+        }
+        .onAppear {
+            workoutAuthStatus = HealthKitManager.shared.healthStore.authorizationStatus(for: .workoutType())
         }
     }
 }

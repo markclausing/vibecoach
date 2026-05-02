@@ -162,9 +162,12 @@ struct SettingsView: View {
     @MainActor
     private func runHealthKitHistoricalSync() async -> String {
         do {
-            try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
-            return "HealthKit (1 jaar) gesynchroniseerd"
+            // Epic #38 Story 38.2: cache count voor de Dashboard-banner-evaluator.
+            let count = try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
+            UserDefaults.standard.set(count, forKey: "vibecoach_lastHKWorkoutsCount")
+            return "HealthKit (1 jaar) gesynchroniseerd — \(count) workouts"
         } catch {
+            UserDefaults.standard.set(0, forKey: "vibecoach_lastHKWorkoutsCount")
             return "HealthKit-fout: \(error.localizedDescription)"
         }
     }

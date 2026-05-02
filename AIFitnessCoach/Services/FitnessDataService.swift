@@ -548,12 +548,14 @@ final class HealthKitManager: @unchecked Sendable {
     // niet al bij app-start. Dit verkort de opstarttijd significant.
     lazy var healthStore: HKHealthStore = HKHealthStore()
 
-    /// Epic #31 Sprint 31.2 + fix: Minimale permissie-set voor de onboarding-flow.
-    ///
-    /// Vraagt de types die de V2.0 onboarding expliciet belooft: stappen, hartslag,
-    /// slaapanalyse en HRV (heartRateVariabilitySDNN — nodig voor de Vibe Score).
-    /// Bredere rechten (VO2Max, workouts, gewicht/lengte) worden later via
-    /// `requestAuthorization(completion:)` gevraagd zodra die features nodig zijn.
+    /// Epic #31 Sprint 31.2 + Epic #38 Story 38.1: Permissie-aanvraag voor de
+    /// onboarding-flow. Vraagt nu de **complete** set HK-types die de coach
+    /// gebruikt (zie `HealthKitPermissionTypes.readTypes`) zodat een gebruiker
+    /// niet per ongeluk een sub-set vergeet — iOS toont één toestemmings-sheet
+    /// met álle categorieën. Voor 38.1 vóór deze wijziging vroeg onboarding
+    /// alleen 4 types; de rest werd pas later via `requestAuthorization`
+    /// achterhaald, wat tot stille fails leidde wanneer iOS na een reinstall
+    /// de toestemmingen gedeeltelijk had gereset.
     ///
     /// - Returns: `true` als de HealthKit-dialog succesvol is gepresenteerd én
     ///   iOS een antwoord heeft geregistreerd. Let op: dit zegt niets over per-type
@@ -566,15 +568,11 @@ final class HealthKitManager: @unchecked Sendable {
             throw FitnessDataError.networkError("HealthKit is niet beschikbaar op dit apparaat.")
         }
 
-        let typesToRead: Set<HKObjectType> = [
-            HKQuantityType.quantityType(forIdentifier: .stepCount)!,
-            HKQuantityType.quantityType(forIdentifier: .heartRate)!,
-            HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
-            HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!
-        ]
-
+        // Epic #38 Story 38.1: complete set in één toestemmings-sheet (single
+        // source of truth in `HealthKitPermissionTypes.readTypes`).
         return try await withCheckedThrowingContinuation { continuation in
-            healthStore.requestAuthorization(toShare: nil, read: typesToRead) { success, error in
+            healthStore.requestAuthorization(toShare: HealthKitPermissionTypes.writeTypes,
+                                             read: HealthKitPermissionTypes.readTypes) { success, error in
                 if let error {
                     continuation.resume(throwing: error)
                 } else {
@@ -584,43 +582,40 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Vraagt toestemming aan de gebruiker om benodigde gezondheidsdata (workouts, hartslag, VO2 Max) te lezen.
+    /// Epic #38 Story 38.1: foreground-return-retrigger. Vraagt toestemming
+    /// alleen voor de **critical** types waarvan de status `.notDetermined` is.
+    /// Bestaande gebruikers met `.sharingAuthorized`/`.sharingDenied` zien geen
+    /// onverwachte prompt — iOS toont alleen een dialog wanneer er écht iets
+    /// te beslissen valt. Lege set → no-op (geen prompt, geen exception).
+    @discardableResult
+    func requestPermissionsForCriticalNotDetermined() async throws -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else { return false }
+        let notDetermined = HealthKitPermissionTypes.criticalNotDetermined(in: healthStore)
+        guard !notDetermined.isEmpty else { return true }
+
+        return try await withCheckedThrowingContinuation { continuation in
+            healthStore.requestAuthorization(toShare: nil, read: notDetermined) { success, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: success)
+                }
+            }
+        }
+    }
+
+    /// Vraagt toestemming aan de gebruiker om benodigde gezondheidsdata te lezen.
+    /// Epic #38 Story 38.1: types komen nu uit `HealthKitPermissionTypes` zodat
+    /// onboarding en deze "expand later"-call dezelfde set vragen — geen drift
+    /// meer tussen "wat we vragen" en "wat we checken op `.notDetermined`".
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
         guard HKHealthStore.isHealthDataAvailable() else {
             completion(false, FitnessDataError.networkError("HealthKit is niet beschikbaar op dit apparaat."))
             return
         }
 
-        // Epic 14: HRV en SlaapAnalyse toegevoegd voor Readiness Score berekening
-        // Epic 24 Sprint 1: Fysiologisch profiel (gewicht, lengte) toegevoegd voor BMR + voedingsadvies
-        // Epic 24 Sprint 2: Schrijfrechten voor gewicht en lengte zodat de Two-Way Sync werkt
-        // Epic 32 Story 32.1 hotfix: granulaire 5s-sample types — zonder deze rechten gooit
-        // HealthKit "Authorization not determined" voor elke WorkoutSampleIngestService-query.
-        let typesToRead: Set<HKObjectType> = [
-            HKObjectType.workoutType(),
-            HKQuantityType.quantityType(forIdentifier: .heartRate)!,
-            HKQuantityType.quantityType(forIdentifier: .restingHeartRate)!,
-            HKQuantityType.quantityType(forIdentifier: .vo2Max)!,
-            HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
-            HKCategoryType.categoryType(forIdentifier: .sleepAnalysis)!,
-            HKQuantityType.quantityType(forIdentifier: .bodyMass)!,
-            HKQuantityType.quantityType(forIdentifier: .height)!,
-            HKObjectType.characteristicType(forIdentifier: .dateOfBirth)!,
-            HKObjectType.characteristicType(forIdentifier: .biologicalSex)!,
-            // Epic 32 — workout-sample types
-            HKQuantityType.quantityType(forIdentifier: .cyclingPower)!,
-            HKQuantityType.quantityType(forIdentifier: .cyclingCadence)!,
-            HKQuantityType.quantityType(forIdentifier: .runningSpeed)!,
-            HKQuantityType.quantityType(forIdentifier: .distanceCycling)!,
-            HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!,
-            HKQuantityType.quantityType(forIdentifier: .distanceSwimming)!
-        ]
-        let typesToShare: Set<HKSampleType> = [
-            HKQuantityType.quantityType(forIdentifier: .bodyMass)!,
-            HKQuantityType.quantityType(forIdentifier: .height)!
-        ]
-
-        healthStore.requestAuthorization(toShare: typesToShare, read: typesToRead) { success, error in
+        healthStore.requestAuthorization(toShare: HealthKitPermissionTypes.writeTypes,
+                                         read: HealthKitPermissionTypes.readTypes) { success, error in
             completion(success, error)
         }
     }
@@ -1346,8 +1341,12 @@ actor HealthKitSyncService {
     /// Haalt 1 jaar (365 dagen) aan historische workouts op uit HealthKit, berekent lokaal de TRIMP,
     /// en bewaart deze als `ActivityRecord` in de SwiftData context.
     /// - Parameter context: De context waarin de gesynchroniseerde data opgeslagen moet worden.
+    /// - Returns: Aantal HK-workouts dat de query teruggaf in het 365d-window. Epic #38 Story 38.2
+    ///   gebruikt deze count om de "stille sync"-banner op het Dashboard te triggeren wanneer
+    ///   `count == 0 && workoutAuthStatus != .sharingAuthorized` — voorkomt dat de gebruiker
+    ///   dagen rondloopt met een leeg dashboard zonder te weten dat het aan toestemmingen ligt.
     @MainActor
-    func syncHistoricalWorkouts(to context: ModelContext) async throws {
+    func syncHistoricalWorkouts(to context: ModelContext) async throws -> Int {
         let workoutType = HKObjectType.workoutType()
         let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)!
         let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
@@ -1478,6 +1477,7 @@ actor HealthKitSyncService {
         }
 
         try context.save()
+        return workouts.count
     }
 
     // Hulpfunctie voor ruwe samples binnen dit actor domein

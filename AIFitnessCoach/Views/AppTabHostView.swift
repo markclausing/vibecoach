@@ -14,6 +14,7 @@ struct AppTabHostView: View {
 
     // Auto-Sync Dependencies (Sprint 12.3)
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     private let fitnessDataService = FitnessDataService()
 
     /// Guard tegen gelijktijdige auto-sync runs (race condition fix voor duplicate records).
@@ -40,10 +41,33 @@ struct AppTabHostView: View {
     @MainActor
     private func runHealthKitAutoSync() async {
         do {
-            try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
+            // Epic #38 Story 38.2: cache het aantal workouts dat HK in 365d-window
+            // teruggaf, zodat `DashboardView` via `HealthKitSyncStatusEvaluator` kan
+            // bepalen of de "stille sync"-banner getoond moet worden. 0 workouts +
+            // workout-auth != .sharingAuthorized = banner.
+            let count = try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
+            UserDefaults.standard.set(count, forKey: "vibecoach_lastHKWorkoutsCount")
         } catch {
             // Stille fout: HK kan niet-geautoriseerd zijn, geen reden om te blokkeren.
+            // Schrijf count=0 zodat de banner-evaluator alsnog kan triggeren als
+            // de auth-status dat ondersteunt.
+            UserDefaults.standard.set(0, forKey: "vibecoach_lastHKWorkoutsCount")
             print("Auto-sync HealthKit gefaald: \(error.localizedDescription)")
+        }
+    }
+
+    /// Epic #38 Story 38.1: foreground-return-retrigger. Bij elke `.active`-
+    /// transitie checken we of een van de critical types `.notDetermined` is —
+    /// kan ontstaan na een iOS-permission-reset (bv. gedeeltelijk na reinstall
+    /// of via Privacy & Security-instellingen). De helper toont alléén een
+    /// prompt voor types waar nog geen beslissing is genomen; gebruikers met
+    /// expliciet `.sharingAuthorized` of `.sharingDenied` zien geen UX-verandering.
+    @MainActor
+    private func retriggerHealthKitPermissionsIfNeeded() async {
+        do {
+            try await HealthKitManager.shared.requestPermissionsForCriticalNotDetermined()
+        } catch {
+            print("HealthKit-retrigger gefaald: \(error.localizedDescription)")
         }
     }
 
@@ -150,6 +174,13 @@ struct AppTabHostView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("TriggerAutoSync"))) { _ in
             performAutoSync()
+        }
+        // Epic #38 Story 38.1: bij foreground-return prompten voor types die
+        // tussendoor `.notDetermined` zijn geworden (bv. iOS-reinstall met
+        // gedeeltelijke permission-reset). iOS 17+ two-arg onChange-syntax.
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            Task { await retriggerHealthKitPermissionsIfNeeded() }
         }
     }
 }
