@@ -6,7 +6,7 @@ Een iOS-app (SwiftUI + SwiftData) die fungeert als persoonlijke, slimme fitnessc
 
 ## 🚀 Huidige Status
 
-**Laatst gemerged — Epic #45 ✅ Per-workout context (14d) in coach-prompt · Epic #44 ✅ Persoonlijke HR Zones & FTP · Epic #32 ✅ Deep-Dive Fysiologische Analyse · Epic #42 ✅ Always-on Dual-Source Sync · Epic #41 ✅ Dual-Source Single-Record-of-Truth**
+**Laatst gemerged — DST-safe date math (tech-debt) · Epic #45 ✅ Per-workout context (14d) in coach-prompt · Epic #44 ✅ Persoonlijke HR Zones & FTP · Epic #32 ✅ Deep-Dive Fysiologische Analyse · Epic #42 ✅ Always-on Dual-Source Sync · Epic #41 ✅ Dual-Source Single-Record-of-Truth**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte coaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur. Testsuite: **51% code coverage** (gemeten met `xcodebuild -enableCodeCoverage YES` over de volledige unit + UI suite). Alle kritieke Services + Models zitten boven de 80% — zie [`docs/ROADMAP.md`](docs/ROADMAP.md) Epic #36 voor de per-bestand uitsplitsing.
 
@@ -19,6 +19,8 @@ Dual-source ingest is met Epic #41 zelfreinigend gemaakt: `FitnessDataService.en
 Met Epic #42 zijn HK + Strava daarnaast volledig **always-on**: beide sync-paden draaien concurrent via `async let` in zowel de auto-sync (`AppTabHostView`) als de manuele Settings-sync, ongeacht de bron-voorkeur. De `selectedDataSource`-toggle is hernoemd van "Primaire databron" naar "Bron-voorkeur" en bepaalt alleen nog welke bron de coach als eerste aanspreekt voor de huidige status; de sync-laag is volledig ontkoppeld. Backwards-compat: AppStorage-key + enum-rawValues ongewijzigd, dus bestaande gebruikers behouden hun toggle-stand.
 
 Met Epic #32 ✅ afgesloten heeft de coach een nieuwe laag van fysiologische intelligentie: `WorkoutPatternDetector` herkent **aerobic decoupling**, **cardiac drift**, **cadence fade** en **trage HR-recovery** in een 5s-resampled sample-reeks (Joe Friel / TrainingPeaks-drempels), `WorkoutAnalysisView` toont de patronen als `PointMark`-pins op de HR-chart + chip-row + "Coach-analyse"-card met een 3-zin Gemini-synthese ("decoupling + cardiac drift = aerobic ceiling overschreden — was dat bewust drempel-werk?"), gecached per workout zodat herhaald openen geen API-call kost. Significante patronen uit recente workouts injecteren tegelijk in de chat-coach-prompt zodat de coach er proactief naar refereert wanneer je reflecteert op uitvoering of trainingsplan-aanpassingen vraagt.
+
+Naast feature-werk loopt nu een tech-debt-traject n.a.v. de codebase-audit (mei 2026). Eerste afgeronde stap: alle DST-onveilige `TimeInterval`-wiskunde (delen door 86 400 of `7 × 86 400`) is vervangen door kalender-gebaseerde berekeningen via een nieuwe `Calendar+DSTSafe`-extension en gecentraliseerde `FitnessGoal.weeksRemaining` / `daysRemaining` / `totalDays` computed properties — geborgd met `CalendarDSTSafeTests` (8 tests, beide DST-grenzen). Volgende geplande tech-debt-stappen uit de audit: `print(...)` → `AppLoggers.*` migratie in `Services/`, opsplitsen `Models/FitnessGoal.swift` (1131 regels) en `Services/FitnessDataService.swift` (1880 regels).
 
 **Volgende pickup:** open follow-ups uit eerdere Epics — bron-voorkeur-tiebreaker in `ActivityDeduplicator` (Epic #42), HealthKit Permission UX (⏳ Epic #38), of Strict Concurrency `Complete` (⏳ Epic #39 story 39.3). Geen actieve sprint vastgepind; nieuwe Epics komen pas op tafel als de gebruiker een concrete pijn meldt.
 

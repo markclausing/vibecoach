@@ -367,7 +367,7 @@ struct FutureProjectionService {
         let kmUnreachable    = !kmAlreadyMet    && projectedPeakDateKm    == nil
 
         if trimpUnreachable && kmUnreachable {
-            let weeksUntilRace = goal.targetDate.timeIntervalSince(now) / (7 * 86400)
+            let weeksUntilRace = goal.weeksRemaining(from: now)
             let earlyStatus: ProjectionStatus = weeksUntilRace > Double(gracePeriodWeeks)
                 ? .catchUpNeeded : .unreachable
             return GoalProjection(
@@ -390,8 +390,9 @@ struct FutureProjectionService {
         // ── Stap 8: Bottleneck bepalen en finale datum berekenen ──
         // Gebruik een ver-toekomst sentinel voor metrices die al voldaan zijn
         let sentinel = Date.distantPast  // voor "al voldaan" gevallen
-        let trimpDate = trimpAlreadyMet ? sentinel : (projectedPeakDateTRIMP ?? goal.targetDate.addingTimeInterval(86400))
-        let kmDate    = kmAlreadyMet    ? sentinel : (projectedPeakDateKm    ?? goal.targetDate.addingTimeInterval(86400))
+        let dayAfterTarget = Calendar.current.date(byAdding: .day, value: 1, to: goal.targetDate) ?? goal.targetDate
+        let trimpDate = trimpAlreadyMet ? sentinel : (projectedPeakDateTRIMP ?? dayAfterTarget)
+        let kmDate    = kmAlreadyMet    ? sentinel : (projectedPeakDateKm    ?? dayAfterTarget)
 
         let bottleneck: BottleneckMetric
         var rawProjectedDate: Date
@@ -417,8 +418,8 @@ struct FutureProjectionService {
         }
 
         // ── Stap 10: Status bepalen ──
-        let weeksDelta = rawProjectedDate.timeIntervalSince(plannedPeakDate) / (7 * 86400)
-        let weeksUntilRace = goal.targetDate.timeIntervalSince(now) / (7 * 86400)
+        let weeksDelta = Calendar.current.fractionalWeeks(from: plannedPeakDate, to: rawProjectedDate)
+        let weeksUntilRace = goal.weeksRemaining(from: now)
 
         var status: ProjectionStatus
         if rawProjectedDate <= plannedPeakDate {

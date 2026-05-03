@@ -131,10 +131,8 @@ struct BlueprintGap {
     /// Verschil km: positief = achterstand, negatief = voorsprong.
     var kmGap: Double { requiredKmToDate - actualKmToDate }
 
-    /// Weken resterend tot de doeldatum.
-    var weeksRemaining: Double {
-        goal.targetDate.timeIntervalSince(Date()) / (7 * 86400)
-    }
+    /// Weken resterend tot de doeldatum (DST-veilig).
+    var weeksRemaining: Double { goal.weeksRemaining }
 
     // MARK: - Voortgangspercentages (t.o.v. VOLLEDIGE fase, niet dagdoel)
     // Zo staat de balk op 0% aan het begin van de fase en op 100% aan het einde,
@@ -263,7 +261,7 @@ struct ProgressService {
         let blueprint = BlueprintChecker.blueprint(for: blueprintType)
 
         let now = Date()
-        let weeksRemaining = goal.targetDate.timeIntervalSince(now) / (7 * 86400)
+        let weeksRemaining = goal.weeksRemaining(from: now)
         let phase = TrainingPhase.calculate(weeksRemaining: weeksRemaining)
 
         // Sport-type voor afstandsberekening
@@ -287,8 +285,8 @@ struct ProgressService {
             calendar: calendar
         )
 
-        let phaseDurationDays = max(1.0, phaseEndDate.timeIntervalSince(phaseStartDate) / 86400)
-        let elapsedDaysInPhase = max(0.0, min(phaseDurationDays, now.timeIntervalSince(phaseStartDate) / 86400))
+        let phaseDurationDays = max(1.0, calendar.fractionalDays(from: phaseStartDate, to: phaseEndDate))
+        let elapsedDaysInPhase = max(0.0, min(phaseDurationDays, calendar.fractionalDays(from: phaseStartDate, to: now)))
 
         let phaseTotalWeeks   = phaseDurationDays / 7.0
         let elapsedWeeksInPhase = elapsedDaysInPhase / 7.0

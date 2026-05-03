@@ -650,7 +650,7 @@ struct SingleGoalBurndownView: View {
         let type: LineType
     }
 
-    @State private var scrollPosition: Date = Date().addingTimeInterval(-86400 * 21)
+    @State private var scrollPosition: Date = Calendar.current.date(byAdding: .day, value: -21, to: Date()) ?? Date()
 
     // Zuivere berekening voor de UI state status (zonder state mutation in body)
     struct BurnMetrics {
@@ -792,7 +792,7 @@ struct SingleGoalBurndownView: View {
         metrics.currentRemainingTRIMP = currentRemaining
         metrics.currentWeeklyBurnRate = activeBurnRate
 
-        let weeksToTarget = max(0.1, goal.targetDate.timeIntervalSince(now) / (86400 * 7))
+        let weeksToTarget = max(0.1, goal.weeksRemaining(from: now))
         // Sprint 16.2: Fase-multiplier toepassen op de benodigde wekelijkse burn rate
         let linearRequired = currentRemaining / weeksToTarget
         let phaseMultiplier = goal.currentPhase?.multiplier ?? 1.0
@@ -942,7 +942,7 @@ struct SingleGoalBurndownView: View {
             .padding(.bottom, 24) // Extra ruimte voor de page indicator
         }
         .onAppear {
-            scrollPosition = Date().addingTimeInterval(-86400 * 21)
+            scrollPosition = Calendar.current.date(byAdding: .day, value: -21, to: Date()) ?? Date()
         }
     }
 }
@@ -1243,7 +1243,7 @@ struct DashboardView: View {
         let activeGoals = goals.filter { !$0.isCompleted && now < $0.targetDate }
         guard !activeGoals.isEmpty else { return 0 }
         return activeGoals.compactMap { goal -> Double? in
-            let weeksRemaining = max(0.1, goal.targetDate.timeIntervalSince(now) / (7 * 86400))
+            let weeksRemaining = max(0.1, goal.weeksRemaining(from: now))
             let phase = goal.currentPhase ?? .baseBuilding
             let linearRate = goal.computedTargetTRIMP / weeksRemaining
             return linearRate * phase.multiplier
@@ -1348,7 +1348,7 @@ struct DashboardView: View {
             guard !goal.isCompleted, now < goal.targetDate else { return nil }
 
             let targetTRIMP = goal.computedTargetTRIMP
-            let weeksRemaining = max(0.1, goal.targetDate.timeIntervalSince(now) / (7 * 86400))
+            let weeksRemaining = max(0.1, goal.weeksRemaining(from: now))
             let phase = goal.currentPhase ?? .baseBuilding
 
             // Filter relevante activiteiten (zelfde logica als SingleGoalBurndownView)
@@ -1394,7 +1394,7 @@ struct DashboardView: View {
         var hasChanges = false
         for goal in goals {
             if goal.targetTRIMP == nil || goal.targetTRIMP == 0 {
-                let days = max(1.0, goal.targetDate.timeIntervalSince(goal.createdAt) / 86400)
+                let days = max(1.0, goal.totalDays)
                 goal.targetTRIMP = (days / 7.0) * 350.0
                 hasChanges = true
             }

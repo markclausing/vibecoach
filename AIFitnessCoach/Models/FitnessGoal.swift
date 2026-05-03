@@ -327,7 +327,7 @@ struct PeriodizationResult {
     /// Volledige coaching-context inclusief fase, criteria, status en gedragsinstructies — klaar voor AI-injectie.
     /// Sprint 17.2: Bevat nu expliciete compliment-triggers, urgente mijlpaal-alerts en schema-verantwoordingsplicht.
     var coachingContext: String {
-        let weeksLeft    = goal.targetDate.timeIntervalSince(Date()) / (7 * 86400)
+        let weeksLeft    = goal.weeksRemaining
         let weeksLeftStr = String(format: "%.1f", weeksLeft)
         let longestKm    = String(format: "%.1f", longestRecentSessionMeters / 1000)
         let requiredKm   = String(format: "%.1f", requiredSessionMeters / 1000)
@@ -455,7 +455,6 @@ final class FitnessGoal {
     /// Retourneert nil als het doel is afgerond of al verlopen.
     var currentPhase: TrainingPhase? {
         guard !isCompleted, Date() < targetDate else { return nil }
-        let weeksRemaining = targetDate.timeIntervalSince(Date()) / (7 * 86400)
         return TrainingPhase.calculate(weeksRemaining: weeksRemaining)
     }
 
@@ -464,8 +463,34 @@ final class FitnessGoal {
         if let trimp = targetTRIMP, trimp > 0 {
             return trimp
         }
-        let days = max(1.0, targetDate.timeIntervalSince(createdAt) / 86400)
+        let days = max(1.0, totalDays)
         return (days / 7.0) * 350.0
+    }
+
+    // MARK: - DST-veilige tijdberekeningen (CLAUDE.md §3)
+
+    /// Aantal weken tot `targetDate` op het opgegeven moment — DST-veilig.
+    /// Negatief als het doel al verlopen is. Standaard t.o.v. `Date()`.
+    func weeksRemaining(from now: Date = Date()) -> Double {
+        Calendar.current.fractionalWeeks(from: now, to: targetDate)
+    }
+
+    /// Aantal weken tot `targetDate` t.o.v. nu (computed-property accessor voor `weeksRemaining(from:)`).
+    var weeksRemaining: Double { weeksRemaining() }
+
+    /// Aantal dagen tot `targetDate` op het opgegeven moment — DST-veilig.
+    /// Negatief als het doel al verlopen is.
+    func daysRemaining(from now: Date = Date()) -> Double {
+        Calendar.current.fractionalDays(from: now, to: targetDate)
+    }
+
+    /// Aantal dagen tot `targetDate` t.o.v. nu (fractioneel, DST-veilig).
+    var daysRemaining: Double { daysRemaining() }
+
+    /// Totaal aantal dagen tussen `createdAt` en `targetDate` — DST-veilig.
+    /// Gebruikt voor totaal-trainingsperiode-berekeningen (zoals fallback Target TRIMP).
+    var totalDays: Double {
+        Calendar.current.fractionalDays(from: createdAt, to: targetDate)
     }
 }
 

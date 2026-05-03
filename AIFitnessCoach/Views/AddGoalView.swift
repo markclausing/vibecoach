@@ -8,7 +8,7 @@ struct AddGoalView: View {
 
     @State private var title = ""
     @State private var details = ""
-    @State private var targetDate = Date().addingTimeInterval(86400 * 30) // +30 dagen
+    @State private var targetDate = Calendar.current.date(byAdding: .day, value: 30, to: Date()) ?? Date()
     @State private var sportCategory: SportCategory = .running
 
     // Epic Doel-Intenties
@@ -119,7 +119,7 @@ struct AddGoalView: View {
                     newGoal.targetTRIMP = trimp
                 } catch {
                     // Fallback: ruwe schatting als we geen profiel kunnen inladen
-                    let days = max(1.0, targetDate.timeIntervalSince(Date()) / 86400)
+                    let days = max(1.0, Calendar.current.fractionalDays(from: Date(), to: targetDate))
                     newGoal.targetTRIMP = (days / 7.0) * 350.0
                 }
             }
@@ -194,7 +194,7 @@ struct AddGoalView: View {
     }
 
     private func fallbackTRIMP(for date: Date) -> Double {
-        let days = max(1.0, date.timeIntervalSince(Date()) / 86400)
+        let days = max(1.0, Calendar.current.fractionalDays(from: Date(), to: date))
         return (days / 7.0) * 350.0
     }
 }

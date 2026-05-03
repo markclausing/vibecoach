@@ -40,7 +40,8 @@ struct GoalsListView: View {
     private var hasActiveRecoveryPlan: Bool {
         guard recoveryPlanTimestamp > 0 else { return false }
         let planDate = Date(timeIntervalSince1970: recoveryPlanTimestamp)
-        return Date().timeIntervalSince(planDate) < 3 * 24 * 3600
+        // CLAUDE.md §3: kalender-gebaseerd ipv `3 * 24 * 3600` zodat DST geen 1u-drift veroorzaakt.
+        return Calendar.current.fractionalDays(from: planDate, to: Date()) < 3.0
     }
 
     private var atRiskGoals: [DashboardView.GoalRiskStatus] {
@@ -53,7 +54,7 @@ struct GoalsListView: View {
             guard !goal.isCompleted, now < goal.targetDate else { return nil }
 
             let targetTRIMP    = goal.computedTargetTRIMP
-            let weeksRemaining = max(0.1, goal.targetDate.timeIntervalSince(now) / (7 * 86400))
+            let weeksRemaining = max(0.1, goal.weeksRemaining(from: now))
             let phase          = goal.currentPhase ?? .baseBuilding
 
             let relevantActivities = activities.filter { record in
@@ -519,7 +520,7 @@ struct GoalsListView: View {
     }
 
     private func phaseSegments(for goal: FitnessGoal) -> [(phase: TrainingPhase, weeks: Int)] {
-        let totalWeeks = max(6, Int(goal.targetDate.timeIntervalSince(goal.createdAt) / (7 * 86400)))
+        let totalWeeks = max(6, Int(goal.totalDays / 7.0))
         let taperW = 2
         let peakW  = 2
         let buildW = min(8, max(0, totalWeeks - 4))
@@ -578,7 +579,7 @@ struct GoalsListView: View {
 
     private func requestRecoveryPlan() {
         let riskInfos = atRiskGoals.map { status in
-            let w = max(0.1, status.goal.targetDate.timeIntervalSince(Date()) / (7 * 86400))
+            let w = max(0.1, status.goal.weeksRemaining)
             return ChatViewModel.GoalRiskInfo(
                 title: status.goal.title,
                 currentWeeklyRate: status.currentWeeklyRate,
