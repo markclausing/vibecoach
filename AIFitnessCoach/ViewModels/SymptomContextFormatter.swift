@@ -35,7 +35,7 @@ enum SymptomContextFormatter {
         }
 
         // Alle gebieden die VANDAAG gemeten zijn (score 0 én > 0) tellen als 'tracked'
-        let allTrackedAreas = Set(todayAll.map { $0.bodyAreaRaw.lowercased() })
+        let allTrackedAreas = Set(todayAll.map { $0.bodyArea.rawValue.lowercased() })
 
         // Niets te rapporteren: geen meting van vandaag en geen actieve klacht-voorkeur
         guard !todayAll.isEmpty || !activeInjuryPrefs.isEmpty else {
@@ -49,7 +49,7 @@ enum SymptomContextFormatter {
         // 1. Actieve klachten (score > 0) — met hard constraints op basis van ernst
         for s in todayActive {
             let label = BodyArea.severityLabel(s.severity)
-            scoreLines.append("• \(s.bodyAreaRaw): \(s.severity)/10 (\(label))")
+            scoreLines.append("• \(s.bodyArea.rawValue): \(s.severity)/10 (\(label))")
 
             if s.severity > 5 {
                 switch s.bodyArea {
@@ -80,7 +80,7 @@ enum SymptomContextFormatter {
                 s.bodyArea.injuryKeywords.contains(where: { pref.preferenceText.lowercased().contains($0) })
             }
             guard matchesPref else { continue }
-            let areaName = s.bodyAreaRaw
+            let areaName = s.bodyArea.rawValue
             recoveryLines.append(
                 "✅ HERSTELD (\(areaName): 0/10): De gebruiker is vandaag klachtenvrij voor \(areaName). " +
                 "INSTRUCTIE: Vier dit expliciet in je Insight ('Wat goed dat je \(areaName.lowercased())pijn op 0 staat!'). " +

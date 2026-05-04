@@ -3,10 +3,14 @@ import SwiftData
 
 /// Slaat de dagelijkse Readiness Score op, berekend op basis van slaap en HRV (Epic 14).
 /// Er wordt maximaal één record per dag bewaard — upsert via de ReadinessService.
+///
+/// **Schema V2 wijziging:** `@Attribute(.unique)` op `date` toegevoegd zodat de "max 1 per dag"-
+/// invariant ook DB-zijdig wordt afgedwongen (voorheen alleen via service-laag upsert, race-
+/// gevoelig). Bestaande duplicates worden gededupeerd in `AppMigrationPlan.willMigrateV1toV2`.
 @Model
 final class DailyReadiness {
     /// Genormaliseerd naar het begin van de dag (00:00:00) voor consistente opslag en queries.
-    var date: Date
+    @Attribute(.unique) var date: Date
     var sleepHours: Double
     /// Gemiddelde HRV van de afgelopen nacht in milliseconden.
     var hrv: Double

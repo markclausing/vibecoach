@@ -138,6 +138,75 @@ struct AIFitnessCoachApp: App {
     // notificaties afhandelen (Epic 13, Engine A & B).
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    /// SwiftData-container met `AppMigrationPlan` (V1 → V2). Eenmalig opgebouwd in
+    /// de app-init zodat we expliciet controle hebben over schema, migratie-plan en
+    /// in-memory mode (UI-tests). De `.modelContainer(_:)`-modifier injecteert hem
+    /// in de view-hierarchie. Bij migratie-falen valt de init defensief terug op
+    /// een fresh-DB-pad — zie `Self.makeModelContainer()`.
+    private let modelContainer: ModelContainer = AIFitnessCoachApp.makeModelContainer()
+
+    /// UserDefaults-key die geschreven wordt zodra de migratie faalde en we naar
+    /// een fresh DB moesten terugvallen. Bevat een `Date()`. Views (bijv. Dashboard)
+    /// kunnen hier op pollen om de gebruiker te informeren.
+    static let migrationFallbackKey = "vibecoach_migrationFallbackAt"
+
+    private static func makeModelContainer() -> ModelContainer {
+        let isUITesting: Bool = {
+            #if DEBUG
+            return ProcessInfo.processInfo.arguments.contains("-UITesting")
+            #else
+            return false
+            #endif
+        }()
+
+        let schema = Schema(SchemaV2.models)
+        let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isUITesting)
+
+        // Eerste poging: laad bestaande store en draai V1 → V2 migratie als nodig.
+        do {
+            return try ModelContainer(
+                for: schema,
+                migrationPlan: AppMigrationPlan.self,
+                configurations: config
+            )
+        } catch {
+            AppLoggers.fitnessDataService.error("""
+                ModelContainer-init met migratieplan faalde: \
+                \(error.localizedDescription, privacy: .public). \
+                Val terug op fresh DB — Symptom + UserPreference records zijn verloren, \
+                HK + Strava re-syncen vanzelf zodra de app opent.
+                """)
+        }
+
+        // Fallback: verwijder de corrupte store en bouw een lege V2-container.
+        // Tijdens UI-tests draaien we in-memory (`isStoredInMemoryOnly`), dus geen
+        // file-cleanup nodig — sla die stap dan over.
+        if !isUITesting {
+            deleteCorruptStore(at: config.url)
+            UserDefaults.standard.set(Date(), forKey: migrationFallbackKey)
+        }
+
+        do {
+            return try ModelContainer(for: schema, configurations: config)
+        } catch {
+            // Onherstelbaar: zelfs een fresh DB faalt. Crashen is dan correct gedrag —
+            // er is iets fundamenteel mis met de Application Support-directory of het schema.
+            fatalError("ModelContainer-init faalde ook ná fresh-DB-fallback: \(error)")
+        }
+    }
+
+    /// Verwijdert de SQLite-store en bijbehorende WAL/SHM-sidecar-bestanden zodat
+    /// SwiftData bij een tweede init een schone V2-store kan aanmaken op dezelfde plek.
+    private static func deleteCorruptStore(at url: URL) {
+        let basePath = url.path
+        for suffix in ["", "-wal", "-shm"] {
+            let candidate = URL(fileURLWithPath: basePath + suffix)
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                try? FileManager.default.removeItem(at: candidate)
+            }
+        }
+    }
+
     // Luister naar de app status (foreground/background)
     @Environment(\.scenePhase) private var scenePhase
 
@@ -234,6 +303,9 @@ struct AIFitnessCoachApp: App {
         }
         // Sprint 26.1: gebruik in-memory store tijdens UI-tests zodat elke run
         // met een lege database start en goals van vorige runs niet lekken.
-        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self, DailyReadiness.self, Symptom.self, UserConfiguration.self, WorkoutSample.self], inMemory: isUITestingEnvironment) // Epic 32 Story 32.1: WorkoutSample toegevoegd
+        // Tech-debt audit (mei 2026): container wordt nu manueel opgebouwd met
+        // `AppMigrationPlan` (zie `modelContainer`-property hierboven) zodat we
+        // V1 → V2 schema-migraties expliciet kunnen sturen.
+        .modelContainer(modelContainer)
     }
 }

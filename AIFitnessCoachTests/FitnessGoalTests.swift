@@ -235,7 +235,9 @@ final class FitnessGoalTests: XCTestCase {
     func testSymptom_BodyArea_RoundtripsThroughRawValue() {
         let symptom = Symptom(bodyArea: .knee, severity: 4)
         XCTAssertEqual(symptom.bodyArea, .knee)
-        XCTAssertEqual(symptom.bodyAreaRaw, BodyArea.knee.rawValue)
+        // Schema V2: `bodyArea` is een type-veilige enum; rawValue blijft de DB-kolom
+        // waarde (gekoppeld via `@Attribute(originalName: "bodyAreaRaw")`).
+        XCTAssertEqual(symptom.bodyArea.rawValue, BodyArea.knee.rawValue)
     }
 
     // MARK: EventFormat / PrimaryIntent

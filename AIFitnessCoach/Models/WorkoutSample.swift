@@ -6,8 +6,17 @@ import SwiftData
 /// Eén tijdpunt van fysiologische data tijdens een workout, op een vaste 5s-resolutie.
 /// Workouts zelf worden niet in SwiftData gepersisteerd — `workoutUUID` koppelt deze sample
 /// aan de bron-`HKWorkout.uuid` (Route A: foreign key, geen redundant Workout-model).
+///
+/// **Schema V2 wijzigingen:**
+/// - `#Unique<>([\.workoutUUID, \.timestamp])` toegevoegd — voorheen vertrouwde de
+///   `WorkoutSampleService` op idempotente upsert via die combo zonder DB-zijdige garantie.
+/// - `@Attribute(.indexed)` op `workoutUUID` voor snellere `@Predicate`-filters per workout.
+/// Bestaande duplicates worden gededupeerd in `AppMigrationPlan.willMigrateV1toV2`.
 @Model
 final class WorkoutSample {
+    #Unique<WorkoutSample>([\.workoutUUID, \.timestamp])
+    #Index<WorkoutSample>([\.workoutUUID])
+
     /// Verwijzing naar `HKWorkout.uuid`. Snelle lookup per workout via `@Predicate`-filter.
     var workoutUUID: UUID
     /// Begin van het 5s-bucket waarvoor deze sample geldt.

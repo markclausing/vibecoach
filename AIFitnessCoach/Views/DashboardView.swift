@@ -1949,7 +1949,7 @@ struct DashboardView: View {
     private func saveOrUpdateSymptom(area: BodyArea, severity: Int) {
         let todayStart = Calendar.current.startOfDay(for: Date())
         // Zoek bestaand record voor vandaag en dit lichaamsdeel
-        if let existing = symptoms.first(where: { $0.bodyAreaRaw == area.rawValue && $0.date >= todayStart }) {
+        if let existing = symptoms.first(where: { $0.bodyArea == area && $0.date >= todayStart }) {
             existing.severity = severity
         } else {
             modelContext.insert(Symptom(bodyArea: area, severity: severity))
@@ -2315,7 +2315,7 @@ struct SymptomCheckinCard: View {
             ForEach(areas, id: \.rawValue) { area in
                 SymptomAreaRow(
                     area: area,
-                    currentSeverity: todaySymptoms.first(where: { $0.bodyAreaRaw == area.rawValue })?.severity ?? 0,
+                    currentSeverity: todaySymptoms.first(where: { $0.bodyArea == area })?.severity ?? 0,
                     onSave: { severity in onSave(area, severity) }
                 )
             }

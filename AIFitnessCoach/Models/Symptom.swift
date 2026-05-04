@@ -48,21 +48,22 @@ enum BodyArea: String, CaseIterable, Codable {
 }
 
 /// Dagelijkse pijnscore voor één lichaamsdeel. Eén record per gebied per dag (upsert-patroon).
+///
+/// **Schema V2 wijziging:** `bodyAreaRaw: String` → `bodyArea: BodyArea` (type-veilige enum).
+/// `@Attribute(originalName:)` koppelt het aan de oude V1-kolom zodat SwiftData de bestaande
+/// rawValue-strings ("Kuit", "Knie", …) onveranderd kan inlezen — `BodyArea` is `String`-backed
+/// dus de onderliggende opslag blijft identiek.
 @Model
 final class Symptom {
     @Attribute(.unique) var id: UUID
-    var bodyAreaRaw: String      // BodyArea.rawValue — SwiftData ondersteunt geen enum direct
+    @Attribute(originalName: "bodyAreaRaw") var bodyArea: BodyArea
     var severity: Int            // 0 (geen pijn) t/m 10 (ernstig)
     var date: Date               // Genormaliseerd naar startOfDay
 
     init(bodyArea: BodyArea, severity: Int, date: Date = Date()) {
         self.id = UUID()
-        self.bodyAreaRaw = bodyArea.rawValue
+        self.bodyArea = bodyArea
         self.severity = min(10, max(0, severity))
         self.date = Calendar.current.startOfDay(for: date)
-    }
-
-    var bodyArea: BodyArea {
-        BodyArea(rawValue: bodyAreaRaw) ?? .calf
     }
 }

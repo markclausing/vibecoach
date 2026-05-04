@@ -38,6 +38,10 @@
 		5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */; };
 		531DF0798000FFC0CACC940E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4D1D9B3991F419262E294E /* SettingsView.swift */; };
 		543CBE0027B161C9AFDE3824 /* AIFitnessCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */; };
+		D5D0010101D001010100D001 /* SchemaV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0010102D001010100D002 /* SchemaV1.swift */; };
+		D5D0020101D002010100D001 /* SchemaV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0020102D002010100D002 /* SchemaV2.swift */; };
+		D5D0030101D003010100D001 /* AppMigrationPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0030102D003010100D002 /* AppMigrationPlan.swift */; };
+		D5D0050101D005010100D001 /* SchemaMigrationV1ToV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0050102D005010100D002 /* SchemaMigrationV1ToV2Tests.swift */; };
 		5566778899001122334455EE /* WeatherManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6677889900112233445566FF /* WeatherManagerTests.swift */; };
 		5DBFDEDC67859D1105BB9DE5 /* MockGenerativeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */; };
 		626955C541119438634E5B32 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = 1DFC6E046AA02E4CF8689D9C /* GoogleGenerativeAI */; };
@@ -265,6 +269,10 @@
 		C1C2BF572AF13DE2A83E51CF /* StravaAuthServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaAuthServiceTests.swift; sourceTree = "<group>"; };
 		C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeatherManager.swift; sourceTree = "<group>"; };
 		C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIFitnessCoachApp.swift; sourceTree = "<group>"; };
+		D5D0010102D001010100D002 /* SchemaV1.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaV1.swift; sourceTree = "<group>"; };
+		D5D0020102D002010100D002 /* SchemaV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaV2.swift; sourceTree = "<group>"; };
+		D5D0030102D003010100D002 /* AppMigrationPlan.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppMigrationPlan.swift; sourceTree = "<group>"; };
+		D5D0050102D005010100D002 /* SchemaMigrationV1ToV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaMigrationV1ToV2Tests.swift; sourceTree = "<group>"; };
 		CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockGenerativeModel.swift; sourceTree = "<group>"; };
 		CC01DD02EE03FF04AA05BB06 /* WeekTimelineView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeekTimelineView.swift; sourceTree = "<group>"; };
 		CE4D1D9B3991F419262E294E /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -427,6 +435,7 @@
 				D5C0060102C006010100C002 /* BlueprintContextFormatterTests.swift */,
 				D5C0070102C007010100C002 /* IntentContextFormatterTests.swift */,
 				D5C0080102C008010100C002 /* SymptomContextFormatterTests.swift */,
+				D5D0050102D005010100D002 /* SchemaMigrationV1ToV2Tests.swift */,
 				D571DD54D0004D0004D0004D /* CalendarDSTSafeTests.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */,
@@ -604,6 +613,9 @@
 			children = (
 				AF9454A3119F7BF71A5331E4 /* ChatMessage.swift */,
 				769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */,
+				D5D0010102D001010100D002 /* SchemaV1.swift */,
+				D5D0020102D002010100D002 /* SchemaV2.swift */,
+				D5D0030102D003010100D002 /* AppMigrationPlan.swift */,
 				D5A0010102A001010100A002 /* Symptom.swift */,
 				D5A0020102A002010100A002 /* UserPreference.swift */,
 				D5A0030102A003010100A002 /* DailyReadiness.swift */,
@@ -836,6 +848,7 @@
 				D5C0060101C006010100C001 /* BlueprintContextFormatterTests.swift in Sources */,
 				D5C0070101C007010100C001 /* IntentContextFormatterTests.swift in Sources */,
 				D5C0080101C008010100C001 /* SymptomContextFormatterTests.swift in Sources */,
+				D5D0050101D005010100D001 /* SchemaMigrationV1ToV2Tests.swift in Sources */,
 				D571DD53C0003C0003C0003C /* CalendarDSTSafeTests.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* TrainingPhaseTests.swift in Sources */,
@@ -887,6 +900,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				543CBE0027B161C9AFDE3824 /* AIFitnessCoachApp.swift in Sources */,
+				D5D0010101D001010100D001 /* SchemaV1.swift in Sources */,
+				D5D0020101D002010100D001 /* SchemaV2.swift in Sources */,
+				D5D0030101D003010100D001 /* AppMigrationPlan.swift in Sources */,
 				E767E8F495D10156A93BCC15 /* ContentView.swift in Sources */,
 				E541659C316B9F8EBCCD6AA3 /* ChatMessage.swift in Sources */,
 				D8A5CC6C6399BF876493D66B /* ChatView.swift in Sources */,
