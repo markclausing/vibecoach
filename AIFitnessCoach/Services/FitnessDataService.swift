@@ -1715,7 +1715,7 @@ struct PeriodizationEngine {
         guard let blueprintType = BlueprintChecker.detectBlueprintType(for: goal) else { return nil }
 
         let bp = BlueprintChecker.blueprint(for: blueprintType)
-        let weeksRemaining = goal.targetDate.timeIntervalSince(Date()) / (7 * 86400)
+        let weeksRemaining = goal.weeksRemaining
         let phase = TrainingPhase.calculate(weeksRemaining: weeksRemaining)
         let criteria = phase.successCriteria
 

@@ -282,7 +282,8 @@ final class ProactiveNotificationService {
 
         let daysSinceWorkout: Double
         if let lastWorkout = lastWorkoutDate {
-            daysSinceWorkout = now.timeIntervalSince(lastWorkout) / 86400
+            // CLAUDE.md §3: kalender-gebaseerd; vermijdt 1u-drift rond DST.
+            daysSinceWorkout = Calendar.current.fractionalDays(from: lastWorkout, to: now)
         } else {
             // Geen data beschikbaar = aanname van inactiviteit (3 dagen)
             daysSinceWorkout = 3

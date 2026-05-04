@@ -95,7 +95,7 @@ struct BlueprintTimelineView: View {
         // MARK: 1. Ideale Lijn — fase-gecorrigeerde blauwdruk per week
         for weekStart in weekStarts {
             let weekMid       = calendar.date(byAdding: .day, value: 3, to: weekStart) ?? weekStart
-            let weeksLeft     = endDate.timeIntervalSince(weekMid) / (7 * 86400)
+            let weeksLeft     = calendar.fractionalWeeks(from: weekMid, to: endDate)
             let phase         = TrainingPhase.calculate(weeksRemaining: weeksLeft)
             let idealVolume: Double
             switch metric {
@@ -428,7 +428,7 @@ struct BlueprintTimelineView: View {
     }
 
     private var raceCountdown: some View {
-        let daysLeft = max(0, Int(goal.targetDate.timeIntervalSince(Date()) / 86400))
+        let daysLeft = max(0, Calendar.current.wholeDays(from: Date(), to: goal.targetDate))
         return Text("🏁 \(daysLeft)d")
             .font(.system(size: 10, weight: .semibold))
             .foregroundStyle(.secondary)

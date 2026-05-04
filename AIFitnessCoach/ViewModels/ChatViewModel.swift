@@ -312,7 +312,7 @@ class ChatViewModel: ObservableObject {
 
         var lines: [String] = []
         for result in results {
-            let weeksLeft = result.goal.targetDate.timeIntervalSince(Date()) / (7 * 86400)
+            let weeksLeft = result.goal.weeksRemaining
             let weeksLeftStr = String(format: "%.1f", weeksLeft)
             let statusLabel = result.isOnTrack ? "Op schema" : "Achter op schema"
             lines.append("• Doel '\(result.goal.title)' (\(weeksLeftStr) weken resterend) — Blueprint: \(result.blueprint.goalType.displayName), \(statusLabel) (\(result.satisfiedCount)/\(result.totalCount) kritieke eisen behaald).")
@@ -1006,7 +1006,7 @@ class ChatViewModel: ObservableObject {
         if !activeGoalsWithPhase.isEmpty {
             prefix += "[PERIODISERING — ACTIEVE TRAININGSFASES:\n"
             for (goal, phase) in activeGoalsWithPhase {
-                let weeksLeft = goal.targetDate.timeIntervalSince(now) / (7 * 86400)
+                let weeksLeft = goal.weeksRemaining(from: now)
                 let weeksLeftStr = String(format: "%.1f", weeksLeft)
                 // Bereken de fase-gecorrigeerde wekelijkse target (lineaire baseline × multiplier)
                 let linearRate = goal.computedTargetTRIMP / max(0.1, weeksLeft)
