@@ -46,6 +46,16 @@
 		A12B3C4D5E6F7A8B9C0D1E2F /* GapAnalysisCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B23C4D5E6F7A8B9C0D1E2F3A /* GapAnalysisCardView.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */; };
 		A3BB100A32BF93E6C7587F72 /* FitnessGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */; };
+		D5A0010101A001010100A001 /* Symptom.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0010102A001010100A002 /* Symptom.swift */; };
+		D5A0020101A002010100A001 /* UserPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0020102A002010100A002 /* UserPreference.swift */; };
+		D5A0030101A003010100A001 /* DailyReadiness.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0030102A003010100A002 /* DailyReadiness.swift */; };
+		D5A0040101A004010100A001 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0040102A004010100A002 /* AppSettings.swift */; };
+		D5A0050101A005010100A001 /* SportCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0050102A005010100A002 /* SportCategory.swift */; };
+		D5A0060101A006010100A001 /* ActivityRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0060102A006010100A002 /* ActivityRecord.swift */; };
+		D5A0070101A007010100A001 /* GoalBlueprint.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0070102A007010100A002 /* GoalBlueprint.swift */; };
+		D5A0080101A008010100A001 /* TrainingPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0080102A008010100A002 /* TrainingPhase.swift */; };
+		D5A0090101A009010100A001 /* SuggestedWorkout.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0090102A009010100A002 /* SuggestedWorkout.swift */; };
+		D5A0100101A010010100A001 /* TrainingPlanManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0100102A010010100A002 /* TrainingPlanManager.swift */; };
 		A3BB100C32BF93E6C7587F72 /* UserConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769A9B624D9B0D66D5D394F9 /* UserConfiguration.swift */; };
 		A9B8C7D6E5F4A3B2C1D0E9F8 /* ProactiveNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */; };
 		AA10BB20CC30DD40EE50FF60 /* DashboardHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA01BB02CC03DD04EE05FF06 /* DashboardHeaderView.swift */; };
@@ -196,6 +206,16 @@
 		70418E8C60B3D7CA1BC426AA /* UserAPIKeyStoreMigrationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserAPIKeyStoreMigrationTests.swift; sourceTree = "<group>"; };
 		758A7ECDF66FE523D3217100 /* FitnessDataServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataServiceTests.swift; sourceTree = "<group>"; };
 		769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoal.swift; sourceTree = "<group>"; };
+		D5A0010102A001010100A002 /* Symptom.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Symptom.swift; sourceTree = "<group>"; };
+		D5A0020102A002010100A002 /* UserPreference.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserPreference.swift; sourceTree = "<group>"; };
+		D5A0030102A003010100A002 /* DailyReadiness.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DailyReadiness.swift; sourceTree = "<group>"; };
+		D5A0040102A004010100A002 /* AppSettings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		D5A0050102A005010100A002 /* SportCategory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SportCategory.swift; sourceTree = "<group>"; };
+		D5A0060102A006010100A002 /* ActivityRecord.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityRecord.swift; sourceTree = "<group>"; };
+		D5A0070102A007010100A002 /* GoalBlueprint.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalBlueprint.swift; sourceTree = "<group>"; };
+		D5A0080102A008010100A002 /* TrainingPhase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrainingPhase.swift; sourceTree = "<group>"; };
+		D5A0090102A009010100A002 /* SuggestedWorkout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SuggestedWorkout.swift; sourceTree = "<group>"; };
+		D5A0100102A010010100A002 /* TrainingPlanManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrainingPlanManager.swift; sourceTree = "<group>"; };
 		769A9B624D9B0D66D5D394F9 /* UserConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserConfiguration.swift; sourceTree = "<group>"; };
 		7FDDDD26172C97669936B5B8 /* FitnessGoalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoalTests.swift; sourceTree = "<group>"; };
 		D571DD54D0004D0004D0004D /* CalendarDSTSafeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarDSTSafeTests.swift; sourceTree = "<group>"; };
@@ -533,6 +553,16 @@
 			children = (
 				AF9454A3119F7BF71A5331E4 /* ChatMessage.swift */,
 				769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */,
+				D5A0010102A001010100A002 /* Symptom.swift */,
+				D5A0020102A002010100A002 /* UserPreference.swift */,
+				D5A0030102A003010100A002 /* DailyReadiness.swift */,
+				D5A0040102A004010100A002 /* AppSettings.swift */,
+				D5A0050102A005010100A002 /* SportCategory.swift */,
+				D5A0060102A006010100A002 /* ActivityRecord.swift */,
+				D5A0070102A007010100A002 /* GoalBlueprint.swift */,
+				D5A0080102A008010100A002 /* TrainingPhase.swift */,
+				D5A0090102A009010100A002 /* SuggestedWorkout.swift */,
+				D5A0100102A010010100A002 /* TrainingPlanManager.swift */,
 				769A9B624D9B0D66D5D394F9 /* UserConfiguration.swift */,
 				6D6902F6A369E69FC0F8BC5C /* StravaTokenResponse.swift */,
 				AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */,
@@ -811,6 +841,16 @@
 				7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */,
 				D571DD51A0001A0001A0001A /* Calendar+DSTSafe.swift in Sources */,
 				A3BB100A32BF93E6C7587F72 /* FitnessGoal.swift in Sources */,
+				D5A0010101A001010100A001 /* Symptom.swift in Sources */,
+				D5A0020101A002010100A001 /* UserPreference.swift in Sources */,
+				D5A0030101A003010100A001 /* DailyReadiness.swift in Sources */,
+				D5A0040101A004010100A001 /* AppSettings.swift in Sources */,
+				D5A0050101A005010100A001 /* SportCategory.swift in Sources */,
+				D5A0060101A006010100A001 /* ActivityRecord.swift in Sources */,
+				D5A0070101A007010100A001 /* GoalBlueprint.swift in Sources */,
+				D5A0080101A008010100A001 /* TrainingPhase.swift in Sources */,
+				D5A0090101A009010100A001 /* SuggestedWorkout.swift in Sources */,
+				D5A0100101A010010100A001 /* TrainingPlanManager.swift in Sources */,
 				A3BB100C32BF93E6C7587F72 /* UserConfiguration.swift in Sources */,
 				7C2EEDEF6E1CCAB9FE856BED /* StravaTokenResponse.swift in Sources */,
 				9E9427B7C484EE11E612C120 /* StravaActivity.swift in Sources */,
