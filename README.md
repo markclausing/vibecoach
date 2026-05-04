@@ -6,7 +6,7 @@ Een iOS-app (SwiftUI + SwiftData) die fungeert als persoonlijke, slimme fitnessc
 
 ## 🚀 Huidige Status
 
-**Laatst gemerged — `Models/FitnessGoal.swift` opgesplitst (tech-debt, PR A — pure file-split) · `print` → `AppLoggers` migratie in `Services/` (tech-debt, PII-fix) · UI-tests resilient gemaakt (tech-debt) · DST-safe date math (tech-debt) · Epic #45 ✅ Per-workout context (14d) in coach-prompt · Epic #44 ✅ Persoonlijke HR Zones & FTP · Epic #32 ✅ Deep-Dive Fysiologische Analyse · Epic #42 ✅ Always-on Dual-Source Sync · Epic #41 ✅ Dual-Source Single-Record-of-Truth**
+**Laatst gemerged — `Services/FitnessDataService.swift` opgesplitst (tech-debt, pure file-split) · `Models/FitnessGoal.swift` opgesplitst (tech-debt, PR A — pure file-split) · `print` → `AppLoggers` migratie in `Services/` (tech-debt, PII-fix) · UI-tests resilient gemaakt (tech-debt) · DST-safe date math (tech-debt) · Epic #45 ✅ Per-workout context (14d) in coach-prompt · Epic #44 ✅ Persoonlijke HR Zones & FTP · Epic #32 ✅ Deep-Dive Fysiologische Analyse · Epic #42 ✅ Always-on Dual-Source Sync · Epic #41 ✅ Dual-Source Single-Record-of-Truth**
 
 VibeCoach is een production-ready iOS-app met fysiologisch correcte coaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur. Testsuite: **51% code coverage** (gemeten met `xcodebuild -enableCodeCoverage YES` over de volledige unit + UI suite). Alle kritieke Services + Models zitten boven de 80% — zie [`docs/ROADMAP.md`](docs/ROADMAP.md) Epic #36 voor de per-bestand uitsplitsing.
 
