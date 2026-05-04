@@ -238,7 +238,7 @@ final class WorkoutInsightService {
         let message = error.localizedDescription
         let combined = "\(caseDescription) \(message)".lowercased()
 
-        print("[WorkoutInsightService] AI-call failed (retried=\(retried)): \(caseDescription) | localized=\(message)")
+        AppLoggers.workoutInsight.error("AI-call failed (retried=\(retried, privacy: .public)): \(caseDescription, privacy: .public) | localized=\(message, privacy: .public)")
 
         // Specifieke Google-SDK cases — case-naam is stabieler dan localized text.
         if combined.contains("invalidapikey") || combined.contains("api key") || combined.contains("unauthenticated") || combined.contains("unauthorized") {

@@ -54,7 +54,7 @@ enum UITestMockEnvironment {
             forKey: "vibecoach_periodizationContext"
         )
 
-        print("✅ UITestMockEnvironment: Mock-omgeving actief (ResetState: \(ProcessInfo.processInfo.arguments.contains("-ResetState")))")
+        AppLoggers.uiTestMock.info("Mock-omgeving actief (ResetState: \(ProcessInfo.processInfo.arguments.contains("-ResetState"), privacy: .public))")
     }
 
     // MARK: - Reset
@@ -86,7 +86,7 @@ enum UITestMockEnvironment {
         keysToReset.forEach { defaults.removeObject(forKey: $0) }
         // C-02: wis ook de Keychain-entry zodat een -ResetState run écht blanco start.
         UserAPIKeyStore.delete()
-        print("🔄 UITestMockEnvironment: State gereset — \(keysToReset.count) sleutels gewist (+ Keychain)")
+        AppLoggers.uiTestMock.info("State gereset — \(keysToReset.count, privacy: .public) sleutels gewist (+ Keychain)")
     }
 }
 

@@ -13,11 +13,9 @@ import os
 /// Stuurt een waarschuwing als de gebruiker 2+ dagen inactief is én een doel op rood staat.
 final class ProactiveNotificationService {
 
-    /// Unified logger — subsystem matcht de bundle-id, category beschrijft de service.
-    /// Gebruik `.public` voor status-strings en `.private` voor PII (doeltitels,
-    /// TRIMP-waardes per gebruiker) zodat sysdiagnose-logs in release-builds geen
-    /// identificerende data lekken.
-    private static let logger = Logger(subsystem: "com.markclausing.aifitnesscoach", category: "ProactiveNotificationService")
+    /// Logger leeft centraal in `AppLoggers.proactiveNotification`. Gebruik `.public`
+    /// voor status-strings en `.private` voor PII (doeltitels, TRIMP-waardes per
+    /// gebruiker) zodat sysdiagnose-logs in release-builds niets identificerends lekken.
 
     static let shared = ProactiveNotificationService()
 
@@ -47,7 +45,7 @@ final class ProactiveNotificationService {
         // Observer query: vuurt bij elke nieuwe of gewijzigde workout
         let observerQuery = HKObserverQuery(sampleType: workoutType, predicate: nil) { [weak self] _, completionHandler, error in
             guard error == nil else {
-                Self.logger.error("Engine A observer fout: \(error!.localizedDescription, privacy: .public)")
+                AppLoggers.proactiveNotification.error("Engine A observer fout: \(error!.localizedDescription, privacy: .public)")
                 completionHandler() // Altijd aanroepen — anders stopt background delivery
                 return
             }
@@ -63,9 +61,9 @@ final class ProactiveNotificationService {
         // Schakel achtergrondlevering in: iOS wekt de app bij elke nieuwe workout
         healthStore.enableBackgroundDelivery(for: workoutType, frequency: .immediate) { success, error in
             if success {
-                Self.logger.info("Engine A: HealthKit achtergrondlevering actief")
+                AppLoggers.proactiveNotification.info("Engine A: HealthKit achtergrondlevering actief")
             } else if let error = error {
-                Self.logger.error("Engine A: Achtergrondlevering mislukt — \(error.localizedDescription, privacy: .public)")
+                AppLoggers.proactiveNotification.error("Engine A: Achtergrondlevering mislukt — \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -82,14 +80,14 @@ final class ProactiveNotificationService {
 
         let atRiskTitles = UserDefaults.standard.stringArray(forKey: atRiskTitlesKey) ?? []
         guard !atRiskTitles.isEmpty else {
-            Self.logger.debug("Engine A: Geen doelen op rood — geen notificatie nodig")
+            AppLoggers.proactiveNotification.debug("Engine A: Geen doelen op rood — geen notificatie nodig")
             return
         }
 
         // Haal de TRIMP van de meest recente workout op om de toon te bepalen
         let recentTRIMP = await fetchMostRecentWorkoutTRIMP()
         // TRIMP is user-specifieke fysiologische data → private.
-        Self.logger.debug("Engine A: Meest recente workout TRIMP = \(recentTRIMP.map { String(format: "%.0f", $0) } ?? "onbekend", privacy: .private)")
+        AppLoggers.proactiveNotification.debug("Engine A: Meest recente workout TRIMP = \(recentTRIMP.map { String(format: "%.0f", $0) } ?? "onbekend", privacy: .private)")
 
         let content = Self.composeEngineAContent(recentTRIMP: recentTRIMP, atRiskTitles: atRiskTitles)
         await sendNotification(
@@ -157,7 +155,7 @@ final class ProactiveNotificationService {
             ) { _, samples, error in
                 guard error == nil, let workout = samples?.first as? HKWorkout else {
                     if let error = error {
-                        Self.logger.error("Engine A: HealthKit TRIMP-query fout — \(error.localizedDescription, privacy: .public)")
+                        AppLoggers.proactiveNotification.error("Engine A: HealthKit TRIMP-query fout — \(error.localizedDescription, privacy: .public)")
                     }
                     continuation.resume(returning: nil)
                     return
@@ -212,9 +210,9 @@ final class ProactiveNotificationService {
 
         do {
             try BGTaskScheduler.shared.submit(request)
-            Self.logger.info("Engine B: Dagelijkse achtergrondcheck ingepland")
+            AppLoggers.proactiveNotification.info("Engine B: Dagelijkse achtergrondcheck ingepland")
         } catch {
-            Self.logger.error("Engine B: Inplannen mislukt — \(error.localizedDescription, privacy: .public)")
+            AppLoggers.proactiveNotification.error("Engine B: Inplannen mislukt — \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -246,7 +244,7 @@ final class ProactiveNotificationService {
             lastWorkoutDate: lastWorkout,
             now: Date()
         ) else {
-            Self.logger.debug("Engine B: Geen actie nodig (geen risico-doelen of voldoende activiteit)")
+            AppLoggers.proactiveNotification.debug("Engine B: Geen actie nodig (geen risico-doelen of voldoende activiteit)")
             return
         }
 
@@ -317,16 +315,16 @@ final class ProactiveNotificationService {
     func requestNotificationPermissions() {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             guard settings.authorizationStatus == .notDetermined else {
-                print("ℹ️ Notificatiestatus al bepaald: \(settings.authorizationStatus.rawValue)")
+                AppLoggers.proactiveNotification.info("Notificatiestatus al bepaald: \(settings.authorizationStatus.rawValue, privacy: .public)")
                 return
             }
             UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
                 if granted {
-                    print("✅ Notificatietoestemming verleend door gebruiker")
+                    AppLoggers.proactiveNotification.info("Notificatietoestemming verleend door gebruiker")
                 } else if let error = error {
-                    print("⚠️ Notificatietoestemming mislukt: \(error.localizedDescription)")
+                    AppLoggers.proactiveNotification.error("Notificatietoestemming mislukt: \(error.localizedDescription, privacy: .public)")
                 } else {
-                    print("ℹ️ Notificatietoestemming geweigerd door gebruiker")
+                    AppLoggers.proactiveNotification.info("Notificatietoestemming geweigerd door gebruiker")
                 }
             }
         }
@@ -353,14 +351,14 @@ final class ProactiveNotificationService {
         // Controleer of de gebruiker notificaties heeft toegestaan
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         guard settings.authorizationStatus == .authorized else {
-            print("ℹ️ Notificaties niet toegestaan (status: \(settings.authorizationStatus.rawValue)) — overgeslagen")
+            AppLoggers.proactiveNotification.info("Notificaties niet toegestaan (status: \(settings.authorizationStatus.rawValue, privacy: .public)) — overgeslagen")
             return
         }
 
         // Cooldown: maximaal 1 proactieve notificatie per 24 uur
         let lastDate = UserDefaults.standard.object(forKey: lastNotificationKey) as? Date
         if Self.isCooldownActive(lastNotificationDate: lastDate) {
-            print("ℹ️ Proactieve notificatie overgeslagen: cooldown actief")
+            AppLoggers.proactiveNotification.debug("Proactieve notificatie overgeslagen: cooldown actief")
             return
         }
 
@@ -377,9 +375,9 @@ final class ProactiveNotificationService {
             try await UNUserNotificationCenter.current().add(request)
             UserDefaults.standard.set(Date(), forKey: lastNotificationKey)
             // Notificatie-titel kan doelnaam bevatten (PII) → private.
-            Self.logger.info("Proactieve notificatie verstuurd: \(title, privacy: .private)")
+            AppLoggers.proactiveNotification.info("Proactieve notificatie verstuurd: \(title, privacy: .private)")
         } catch {
-            Self.logger.error("Notificatie versturen mislukt: \(error.localizedDescription, privacy: .public)")
+            AppLoggers.proactiveNotification.error("Notificatie versturen mislukt: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -389,7 +387,8 @@ final class ProactiveNotificationService {
     /// risicodata bij te werken zodat de achtergrond-engines actuele informatie hebben.
     func updateRiskCache(atRiskGoalTitles: [String]) {
         UserDefaults.standard.set(atRiskGoalTitles, forKey: atRiskTitlesKey)
-        print("📦 Risicocache bijgewerkt: \(atRiskGoalTitles.isEmpty ? "geen doelen op rood" : atRiskGoalTitles.joined(separator: ", "))")
+        // Doeltitels zijn user-content (PII).
+        AppLoggers.proactiveNotification.debug("Risicocache bijgewerkt: \(atRiskGoalTitles.isEmpty ? "geen doelen op rood" : atRiskGoalTitles.joined(separator: ", "), privacy: .private)")
     }
 
     // MARK: - Debug Tools
@@ -404,12 +403,12 @@ final class ProactiveNotificationService {
     /// engines kan afvuren en de notificatie-cooldown kan resetten.
     func debugTriggerEngines() async {
         #if DEBUG
-        print("🔧 DEBUG: Handmatige trigger van beide proactieve engines")
+        AppLoggers.proactiveNotification.debug("DEBUG: Handmatige trigger van beide proactieve engines")
 
         // Controleer de toestemmingsstatus — vraag alsnog als nog niet bepaald
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         if settings.authorizationStatus == .notDetermined {
-            print("🔧 DEBUG: Toestemming nog niet bepaald — aanvraag starten")
+            AppLoggers.proactiveNotification.debug("DEBUG: Toestemming nog niet bepaald — aanvraag starten")
             // requestAuthorization is een throwing async functie
             _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
             // Geef iOS even de tijd om de keuze te verwerken
@@ -417,7 +416,7 @@ final class ProactiveNotificationService {
         }
 
         guard settings.authorizationStatus != .denied else {
-            print("⚠️ DEBUG: Notificaties zijn geweigerd in Systeeminstellingen — stop hier")
+            AppLoggers.proactiveNotification.debug("DEBUG: Notificaties zijn geweigerd in Systeeminstellingen — stop hier")
             return
         }
 
@@ -432,7 +431,7 @@ final class ProactiveNotificationService {
         UserDefaults.standard.removeObject(forKey: lastNotificationKey)
         // Voer Engine B logica uit (inactiviteitscheck)
         await checkInactionAndNotify()
-        print("🔧 DEBUG: Beide engines afgevuurd")
+        AppLoggers.proactiveNotification.debug("DEBUG: Beide engines afgevuurd")
         #endif
     }
 }

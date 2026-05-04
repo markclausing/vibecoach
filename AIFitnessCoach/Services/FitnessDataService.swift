@@ -5,9 +5,9 @@ import os
 /// Verantwoordelijk voor het ophalen van sport- en activiteitsdata van externe API's (bijv. Strava of Intervals.icu).
 actor FitnessDataService {
 
-    /// Unified logger — gebruik `.private` voor user-tokens en sample-waardes (HRV, TRIMP)
-    /// zodat sysdiagnose-logs in release-builds geen identificerende data lekken.
-    static let logger = Logger(subsystem: "com.markclausing.aifitnesscoach", category: "FitnessDataService")
+    // Logger leeft centraal in `AppLoggers.fitnessDataService` — gebruik `.private`
+    // voor user-tokens en sample-waardes (HRV, TRIMP) zodat sysdiagnose-logs in
+    // release-builds geen identificerende data lekken.
 
     private let tokenStore: TokenStore
     private let session: NetworkSession
@@ -49,7 +49,7 @@ actor FitnessDataService {
 
         if expirationDate < fiveMinutesFromNow {
             // Token is (bijna) verlopen, refresh!
-            Self.logger.info("Strava-token is verlopen of verloopt binnenkort — vernieuwen via proxy")
+            AppLoggers.fitnessDataService.info("Strava-token is verlopen of verloopt binnenkort — vernieuwen via proxy")
 
             // C-01: refresh loopt via de server-side proxy. Het `client_secret`
             // is niet meer in de app aanwezig.
@@ -93,7 +93,7 @@ actor FitnessDataService {
                 try tokenStore.saveToken(tokenResponse.refresh_token, forService: "StravaRefreshToken")
                 try tokenStore.saveToken(String(tokenResponse.expires_at), forService: "StravaTokenExpiresAt")
 
-                Self.logger.info("Strava-token succesvol vernieuwd")
+                AppLoggers.fitnessDataService.info("Strava-token succesvol vernieuwd")
             } catch {
                 throw FitnessDataError.decodingError("Fout bij parsen refresh token response: \(error.localizedDescription)")
             }
@@ -821,9 +821,9 @@ final class HealthKitManager: @unchecked Sendable {
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 
         if sleepStart != nil {
-            print("🔍 [HRV] Query gestart — gekoppeld aan slaapvenster: \(windowStart) → \(windowEnd)")
+            AppLoggers.athleticProfileManager.debug("[HRV] Query gestart — gekoppeld aan slaapvenster")
         } else {
-            print("🔍 [HRV] Query gestart — standaard nachtvenster: gisteren 18:00 → vandaag 14:00")
+            AppLoggers.athleticProfileManager.debug("[HRV] Query gestart — standaard nachtvenster: gisteren 18:00 → vandaag 14:00")
         }
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -858,7 +858,7 @@ final class HealthKitManager: @unchecked Sendable {
     /// - Returns: Gemiddelde HRV in ms over het opgegeven venster, of nil als er geen data is.
     func fetchHRVBaseline(days: Int = 7) async throws -> Double? {
         guard let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else {
-            print("❌ [HRV-Baseline] HKQuantityType niet beschikbaar")
+            AppLoggers.athleticProfileManager.error("[HRV-Baseline] HKQuantityType niet beschikbaar")
             return nil
         }
 
@@ -867,18 +867,18 @@ final class HealthKitManager: @unchecked Sendable {
         let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 
-        print("🔍 [HRV-Baseline] Query gestart — venster: \(days) dagen")
+        AppLoggers.athleticProfileManager.debug("[HRV-Baseline] Query gestart — venster: \(days, privacy: .public) dagen")
 
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: hrvType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
                 if let error = error {
-                    print("❌ [HRV-Baseline] HealthKit fout: \(error.localizedDescription)")
+                    AppLoggers.athleticProfileManager.error("[HRV-Baseline] HealthKit fout: \(error.localizedDescription, privacy: .public)")
                     continuation.resume(throwing: FitnessDataError.networkError("Fout bij ophalen HRV baseline: \(error.localizedDescription)"))
                     return
                 }
 
                 guard let hrvSamples = samples as? [HKQuantitySample], !hrvSamples.isEmpty else {
-                    print("⚠️ [HRV-Baseline] Geen samples gevonden in afgelopen \(days) dagen")
+                    AppLoggers.athleticProfileManager.debug("[HRV-Baseline] Geen samples gevonden in afgelopen \(days, privacy: .public) dagen")
                     continuation.resume(returning: nil)
                     return
                 }
@@ -887,7 +887,8 @@ final class HealthKitManager: @unchecked Sendable {
                 let total = hrvSamples.reduce(0.0) { $0 + $1.quantity.doubleValue(for: unit) }
                 let average = total / Double(hrvSamples.count)
 
-                print("✅ [HRV-Baseline] Data ontvangen: \(String(format: "%.1f", average)) ms (\(days) dagen, \(hrvSamples.count) meting(en))")
+                // HRV-baseline is user-specifieke fysiologische data → private.
+                AppLoggers.athleticProfileManager.info("[HRV-Baseline] Data ontvangen: \(String(format: "%.1f", average), privacy: .private) ms (\(days, privacy: .public) dagen, \(hrvSamples.count, privacy: .public) meting(en))")
                 continuation.resume(returning: average)
             }
             healthStore.execute(query)
@@ -917,7 +918,7 @@ final class HealthKitManager: @unchecked Sendable {
         let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: windowEnd, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
 
-        print("🔍 [Slaap] Query gestart — venster: gisteren 18:00 → vandaag 14:00")
+        AppLoggers.athleticProfileManager.debug("[Slaap] Query gestart — venster: gisteren 18:00 → vandaag 14:00")
 
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
@@ -954,7 +955,7 @@ final class HealthKitManager: @unchecked Sendable {
                     totalSleepSeconds = sleepSamples
                         .filter { $0.value == asleepValue }
                         .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
-                    print("🔄 [Slaap] Geen stage-data — fallback naar generieke slaapwaarde")
+                    AppLoggers.athleticProfileManager.debug("[Slaap] Geen stage-data — fallback naar generieke slaapwaarde")
                 } else {
                     // Moderne Apple Watch: som Core + Deep + REM
                     totalSleepSeconds = stageSamples
@@ -999,7 +1000,7 @@ final class HealthKitManager: @unchecked Sendable {
         let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: windowEnd, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
 
-        print("🔍 [Slaapfases] Query gestart — venster: gisteren 18:00 → vandaag 14:00")
+        AppLoggers.athleticProfileManager.debug("[Slaapfases] Query gestart — venster: gisteren 18:00 → vandaag 14:00")
 
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
@@ -1010,7 +1011,7 @@ final class HealthKitManager: @unchecked Sendable {
                 }
 
                 guard let sleepSamples = samples as? [HKCategorySample], !sleepSamples.isEmpty else {
-                    print("⚠️ [Slaapfases] Geen samples gevonden")
+                    AppLoggers.athleticProfileManager.debug("[Slaapfases] Geen samples gevonden")
                     continuation.resume(returning: nil)
                     return
                 }
@@ -1026,7 +1027,7 @@ final class HealthKitManager: @unchecked Sendable {
 
                 // Als alle stage-specifieke waarden nul zijn is dit een ouder apparaat.
                 guard deepSec + remSec + coreSec > 0 else {
-                    print("⚠️ [Slaapfases] Geen stage-specifieke data — ouder device")
+                    AppLoggers.athleticProfileManager.debug("[Slaapfases] Geen stage-specifieke data — ouder device")
                     continuation.resume(returning: nil)
                     return
                 }
@@ -1047,7 +1048,8 @@ final class HealthKitManager: @unchecked Sendable {
                     sessionEnd:   sessionEnd
                 )
 
-                print("🌙 [Slaapfases] Diep: \(stages.deepMinutes)m · REM: \(stages.remMinutes)m · Kern: \(stages.coreMinutes)m · Ratio diep: \(String(format: "%.0f%%", stages.deepRatio * 100))")
+                // Slaapminuten zijn user-specifieke fysiologische data → private.
+                AppLoggers.athleticProfileManager.info("[Slaapfases] Diep: \(stages.deepMinutes, privacy: .private)m · REM: \(stages.remMinutes, privacy: .private)m · Kern: \(stages.coreMinutes, privacy: .private)m · Ratio diep: \(String(format: "%.0f%%", stages.deepRatio * 100), privacy: .private)")
                 continuation.resume(returning: stages)
             }
             healthStore.execute(query)
@@ -1402,7 +1404,7 @@ actor HealthKitSyncService {
             // binnen één query (Watch + iPhone). `smartInsert` ziet niet-gesavede records
             // niet, dus deze laag blijft nodig om binnen één run dubbele inserts te voorkomen.
             guard seenWorkoutIds.insert(workoutId).inserted else {
-                print("⚠️ Sync: HealthKit UUID \(workoutId) al verwerkt in deze batch — overgeslagen")
+                AppLoggers.fitnessDataService.debug("Sync: HealthKit UUID \(workoutId, privacy: .private) al verwerkt in deze batch — overgeslagen")
                 continue
             }
 
@@ -1426,7 +1428,7 @@ actor HealthKitSyncService {
                 // Rusthartslag ophalen op de dag van de workout (vereenvoudigde benadering)
                 restHR = try await fetchRestingHeartRate(near: workout.startDate, quantityType: restingHeartRateType)
             } catch {
-                print("Kon geen HR data ophalen voor workout op \(workout.startDate). Fout: \(error)")
+                AppLoggers.fitnessDataService.error("Kon geen HR data ophalen voor workout. Fout: \(error.localizedDescription, privacy: .public)")
             }
 
             // Bereken TRIMP (of gebruik nil als er geen hartslag is gemeten)
@@ -1468,9 +1470,9 @@ actor HealthKitSyncService {
             let result = try ActivityDeduplicator.smartInsert(record, into: context)
             switch result {
             case .skippedExistingRicher:
-                print("⚠️ Sync: HK-workout \(workoutId) [\(sport.rawValue)] overgeslagen — bestaand record is rijker (Epic 41.4)")
+                AppLoggers.fitnessDataService.debug("Sync: HK-workout \(workoutId, privacy: .private) [\(sport.rawValue, privacy: .public)] overgeslagen — bestaand record is rijker (Epic 41.4)")
             case .replaced:
-                print("ℹ️ Sync: bestaand armer record vervangen door HK-workout \(workoutId)")
+                AppLoggers.fitnessDataService.debug("Sync: bestaand armer record vervangen door HK-workout \(workoutId, privacy: .private)")
             case .inserted, .skippedSameSource:
                 break
             }

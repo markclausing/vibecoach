@@ -17,8 +17,7 @@ import os
 @MainActor
 final class PhysiologicalThresholdService {
 
-    private static let logger = Logger(subsystem: "com.markclausing.aifitnesscoach",
-                                        category: "ThresholdEstimator")
+    // Logger leeft centraal in `AppLoggers.physiologicalThreshold`.
 
     /// Periode waarover we HK-data ophalen voor de detectie.
     private static let lookbackDays: Int = 180
@@ -70,7 +69,7 @@ final class PhysiologicalThresholdService {
             UserProfileService.storeAutoDetectedThresholds(result)
         }
 
-        Self.logger.info("Auto-detect klaar — \(workoutSamples.count, privacy: .public) workouts, \(restingSamples.count, privacy: .public) rust-dagen")
+        AppLoggers.physiologicalThreshold.info("Auto-detect klaar — \(workoutSamples.count, privacy: .public) workouts, \(restingSamples.count, privacy: .public) rust-dagen")
 
         return DetectionRun(
             result: result,

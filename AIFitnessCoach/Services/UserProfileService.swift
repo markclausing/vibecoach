@@ -256,7 +256,7 @@ final class UserProfileService: @unchecked Sendable {
                 continuation.resume()
             }
         }
-        print("🔑 [ProfileService] requestProfileReadAuthorization voltooid")
+        AppLoggers.userProfile.info("requestProfileReadAuthorization voltooid")
     }
 
     // MARK: - Profiel ophalen
@@ -346,14 +346,14 @@ final class UserProfileService: @unchecked Sendable {
         do {
             let dob = try healthStore.dateOfBirthComponents()
             guard let birthDate = Calendar.current.date(from: dob) else {
-                print("🎂 [HealthKit] ⚠️ Kon DateComponents niet omzetten naar Date.")
+                AppLoggers.userProfile.error("Kon DateComponents niet omzetten naar Date")
                 return nil
             }
             let age = Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year
-            print("🎂 [HealthKit] Berekende leeftijd: \(age ?? -1) jaar")
+            AppLoggers.userProfile.info("Berekende leeftijd: \(age ?? -1, privacy: .private) jaar")
             return age
         } catch {
-            print("🎂 [HealthKit] ⚠️ dateOfBirthComponents mislukt — geen leestoegang of niet ingevuld: \(error.localizedDescription)")
+            AppLoggers.userProfile.error("dateOfBirthComponents mislukt: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }
@@ -367,7 +367,7 @@ final class UserProfileService: @unchecked Sendable {
         guard let prev = previous else { return false }   // eerste keer — geen wijziging te melden
         let changed = prev != newAge
         if changed {
-            print("🎂 [ProfileService] Leeftijd gewijzigd: \(prev) → \(newAge) jaar")
+            AppLoggers.userProfile.info("Leeftijd gewijzigd: \(prev, privacy: .private) → \(newAge, privacy: .private) jaar")
         }
         return changed
     }
