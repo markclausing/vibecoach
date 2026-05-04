@@ -13,6 +13,15 @@
 		13CD8B16330404CA41A93BDE /* NetworkSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */; };
 		200EA372CBBCA4A6A0021BAF /* AddGoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDF699C6B7148ACD66E857D7 /* AddGoalView.swift */; };
 		26CFC95E9F1D535817250215 /* FitnessDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */; };
+		D5B0010101B001010100B001 /* AthleticProfileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B0010102B001010100B002 /* AthleticProfileManager.swift */; };
+		D5B0020101B002010100B001 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B0020102B002010100B002 /* HealthKitManager.swift */; };
+		D5B0030101B003010100B001 /* SleepStages.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B0030102B003010100B002 /* SleepStages.swift */; };
+		D5B0040101B004010100B001 /* ReadinessCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B0040102B004010100B002 /* ReadinessCalculator.swift */; };
+		D5B0050101B005010100B001 /* InjuryImpactMatrix.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B0050102B005010100B002 /* InjuryImpactMatrix.swift */; };
+		D5B0060101B006010100B001 /* PhysiologicalCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B0060102B006010100B002 /* PhysiologicalCalculator.swift */; };
+		D5B0070101B007010100B001 /* HealthKitSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B0070102B007010100B002 /* HealthKitSyncService.swift */; };
+		D5B0080101B008010100B001 /* BlueprintChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B0080102B008010100B002 /* BlueprintChecker.swift */; };
+		D5B0090101B009010100B001 /* PeriodizationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B0090102B009010100B002 /* PeriodizationEngine.swift */; };
 		3100FFEECC00AA07BB02CC03 /* OnboardingPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3100FFEECC00AA08BB02CC03 /* OnboardingPersistenceTests.swift */; };
 		3344556677889900112233CC /* PhysiologicalCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4455667788990011223344DD /* PhysiologicalCalculatorTests.swift */; };
 		34B36AEEDAF09C2EA9BC6241 /* SettingsViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */; };
@@ -311,6 +320,15 @@
 		F6A7B8C9D0E1F2A3B4C5D6E7 /* BlueprintCheckerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlueprintCheckerTests.swift; sourceTree = "<group>"; };
 		F6DDC1DD36DFE9FDBEB93ED1 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataService.swift; sourceTree = "<group>"; };
+		D5B0010102B001010100B002 /* AthleticProfileManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AthleticProfileManager.swift; sourceTree = "<group>"; };
+		D5B0020102B002010100B002 /* HealthKitManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
+		D5B0030102B003010100B002 /* SleepStages.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SleepStages.swift; sourceTree = "<group>"; };
+		D5B0040102B004010100B002 /* ReadinessCalculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReadinessCalculator.swift; sourceTree = "<group>"; };
+		D5B0050102B005010100B002 /* InjuryImpactMatrix.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InjuryImpactMatrix.swift; sourceTree = "<group>"; };
+		D5B0060102B006010100B002 /* PhysiologicalCalculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalCalculator.swift; sourceTree = "<group>"; };
+		D5B0070102B007010100B002 /* HealthKitSyncService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthKitSyncService.swift; sourceTree = "<group>"; };
+		D5B0080102B008010100B002 /* BlueprintChecker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlueprintChecker.swift; sourceTree = "<group>"; };
+		D5B0090102B009010100B002 /* PeriodizationEngine.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PeriodizationEngine.swift; sourceTree = "<group>"; };
 		F7A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentExecutionContextFormatter.swift; sourceTree = "<group>"; };
 		F8A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentExecutionContextFormatterTests.swift; sourceTree = "<group>"; };
 		F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProactiveNotificationService.swift; sourceTree = "<group>"; };
@@ -471,6 +489,15 @@
 				EDA9519ECAE22F903D67C756 /* TokenStore.swift */,
 				60758C181F9C986190D5A369 /* StravaAuthService.swift */,
 				F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */,
+				D5B0010102B001010100B002 /* AthleticProfileManager.swift */,
+				D5B0020102B002010100B002 /* HealthKitManager.swift */,
+				D5B0030102B003010100B002 /* SleepStages.swift */,
+				D5B0040102B004010100B002 /* ReadinessCalculator.swift */,
+				D5B0050102B005010100B002 /* InjuryImpactMatrix.swift */,
+				D5B0060102B006010100B002 /* PhysiologicalCalculator.swift */,
+				D5B0070102B007010100B002 /* HealthKitSyncService.swift */,
+				D5B0080102B008010100B002 /* BlueprintChecker.swift */,
+				D5B0090102B009010100B002 /* PeriodizationEngine.swift */,
 				F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */,
 				F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */,
 				F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */,
@@ -875,6 +902,15 @@
 				DB076B94561F03C4EB2D8C5E /* TokenStore.swift in Sources */,
 				06C5198C4908FF10CCF1E836 /* StravaAuthService.swift in Sources */,
 				26CFC95E9F1D535817250215 /* FitnessDataService.swift in Sources */,
+				D5B0010101B001010100B001 /* AthleticProfileManager.swift in Sources */,
+				D5B0020101B002010100B001 /* HealthKitManager.swift in Sources */,
+				D5B0030101B003010100B001 /* SleepStages.swift in Sources */,
+				D5B0040101B004010100B001 /* ReadinessCalculator.swift in Sources */,
+				D5B0050101B005010100B001 /* InjuryImpactMatrix.swift in Sources */,
+				D5B0060101B006010100B001 /* PhysiologicalCalculator.swift in Sources */,
+				D5B0070101B007010100B001 /* HealthKitSyncService.swift in Sources */,
+				D5B0080101B008010100B001 /* BlueprintChecker.swift in Sources */,
+				D5B0090101B009010100B001 /* PeriodizationEngine.swift in Sources */,
 				A9B8C7D6E5F4A3B2C1D0E9F8 /* ProactiveNotificationService.swift in Sources */,
 				E23A1B4C5D6E7F8A9B0C1D2E /* ProgressService.swift in Sources */,
 				E24A1B4C5D6E7F8A9B0C1D2F /* UserProfileService.swift in Sources */,
