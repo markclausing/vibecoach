@@ -138,6 +138,32 @@ struct AIFitnessCoachApp: App {
     // notificaties afhandelen (Epic 13, Engine A & B).
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    /// SwiftData-container met `AppMigrationPlan` (V1 → V2). Eenmalig opgebouwd in
+    /// de app-init zodat we expliciet controle hebben over schema, migratie-plan en
+    /// in-memory mode (UI-tests). De `.modelContainer(_:)`-modifier injecteert hem
+    /// in de view-hierarchie.
+    private let modelContainer: ModelContainer = {
+        let isUITesting: Bool = {
+            #if DEBUG
+            return ProcessInfo.processInfo.arguments.contains("-UITesting")
+            #else
+            return false
+            #endif
+        }()
+
+        do {
+            let schema = Schema(SchemaV2.models)
+            let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isUITesting)
+            return try ModelContainer(
+                for: schema,
+                migrationPlan: AppMigrationPlan.self,
+                configurations: config
+            )
+        } catch {
+            fatalError("Kon ModelContainer niet initialiseren: \(error)")
+        }
+    }()
+
     // Luister naar de app status (foreground/background)
     @Environment(\.scenePhase) private var scenePhase
 
@@ -234,6 +260,9 @@ struct AIFitnessCoachApp: App {
         }
         // Sprint 26.1: gebruik in-memory store tijdens UI-tests zodat elke run
         // met een lege database start en goals van vorige runs niet lekken.
-        .modelContainer(for: [FitnessGoal.self, ActivityRecord.self, UserPreference.self, DailyReadiness.self, Symptom.self, UserConfiguration.self, WorkoutSample.self], inMemory: isUITestingEnvironment) // Epic 32 Story 32.1: WorkoutSample toegevoegd
+        // Tech-debt audit (mei 2026): container wordt nu manueel opgebouwd met
+        // `AppMigrationPlan` (zie `modelContainer`-property hierboven) zodat we
+        // V1 → V2 schema-migraties expliciet kunnen sturen.
+        .modelContainer(modelContainer)
     }
 }
