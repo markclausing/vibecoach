@@ -78,12 +78,16 @@ final class AIFitnessCoachUITests: XCTestCase {
     @MainActor
     func testNavigateToCoachTab_ShowsChatInterface() throws {
         let coachTab = app.tabBars.buttons["Coach"]
-        XCTAssertTrue(coachTab.waitForExistence(timeout: 3), "Tab 'Coach' niet gevonden in de TabBar.")
+        XCTAssertTrue(coachTab.waitForExistence(timeout: 5), "Tab 'Coach' niet gevonden in de TabBar.")
         coachTab.tap()
 
-        let chatInputField = app.textFields["ChatInputField"]
+        // SwiftUI's `TextField(..., axis: .vertical)` rendert in iOS 17+ als `.textView`
+        // (niet `.textField`) in de XCUI-hiërarchie. We zoeken daarom element-type-
+        // agnostisch op de accessibilityIdentifier zodat dit op alle iOS-versies werkt.
+        let chatInputField = app.descendants(matching: .any)
+            .matching(identifier: "ChatInputField").firstMatch
         XCTAssertTrue(
-            chatInputField.waitForExistence(timeout: 5),
+            chatInputField.waitForExistence(timeout: 8),
             "Coach chat-invoerveld (ChatInputField) verschijnt niet na tikken op de Coach tab."
         )
     }

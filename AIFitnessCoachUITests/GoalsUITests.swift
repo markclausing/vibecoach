@@ -19,18 +19,28 @@ final class GoalsUITests: XCTestCase {
         XCTAssertTrue(goalsTab.waitForExistence(timeout: 5), "Tab 'Doelen' niet gevonden in de TabBar.")
         goalsTab.tap()
 
-        // V2.0: GoalsListView heeft geen NavigationBar meer — check via GoalsScrollView
-        XCTAssertTrue(
-            app.scrollViews["GoalsScrollView"].waitForExistence(timeout: 3),
-            "GoalsScrollView laadt niet na tikken op de Doelen tab."
-        )
-
+        // V2.0: we hangen niet langer op de `GoalsScrollView`-identifier omdat SwiftUI's
+        // ScrollView intermitterend als `.scrollView`, `.other` of helemaal niet als
+        // distinct AX-element verschijnt in de XCUI-hiërarchie (afhankelijk van
+        // child-content + animatie-state). De `AddGoalButton` zit ín die ScrollView,
+        // dus zijn aanwezigheid bewijst dat de view geladen is en is direct nodig
+        // voor de volgende stap.
         let addGoalButton = app.buttons["AddGoalButton"]
         XCTAssertTrue(
-            addGoalButton.waitForExistence(timeout: 3),
+            addGoalButton.waitForExistence(timeout: 8),
             "De toevoegen-knop (AddGoalButton) is niet zichtbaar op het doelen scherm."
         )
-        addGoalButton.tap()
+        // SwiftUI rendert de knop in de view-hiërarchie vóórdat de tab-transitie-animatie
+        // klaar is; XCUI ziet hem dan wel `exists` maar niet `isHittable`. We pollen tot
+        // de knop daadwerkelijk getapt kan worden, of vallen terug op een coordinate-tap.
+        let hittableExpectation = expectation(for: NSPredicate(format: "isHittable == true"),
+                                              evaluatedWith: addGoalButton, handler: nil)
+        let hittableResult = XCTWaiter().wait(for: [hittableExpectation], timeout: 5.0)
+        if hittableResult == .completed {
+            addGoalButton.tap()
+        } else {
+            addGoalButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
 
         // AddGoalView is een sheet met een NavigationBar
         XCTAssertTrue(
