@@ -160,52 +160,17 @@ class ChatViewModel: ObservableObject {
     /// altijd de actuele herstelstatus bevatten.
     /// Sentinel-waarde die aangeeft dat er vandaag geen Watch-data beschikbaar was.
     /// Wordt herkend in buildContextPrefix om de AI de juiste instructie te geven.
-    private static let noVibeDataSentinel = "GEEN_BIOMETRISCHE_DATA"
-
     /// Markeert in de AI-cache dat de Vibe Score ontbreekt omdat de Watch niet gedragen werd.
     /// De coach krijgt dan expliciet de instructie om op symptoomscores en eigen gevoel te vertrouwen.
     func cacheVibeScoreUnavailable() {
-        todayVibeScoreContext = Self.noVibeDataSentinel
+        todayVibeScoreContext = VibeScoreContextFormatter.noVibeDataSentinel
     }
 
     func cacheVibeScore(_ readiness: DailyReadiness?) {
-        guard let r = readiness else {
-            // Niet overschrijven als er al een 'unavailable' sentinel staat —
-            // die is waardevoller dan gewoon leeeg.
-            if todayVibeScoreContext != Self.noVibeDataSentinel {
-                todayVibeScoreContext = ""
-            }
-            return
-        }
-
-        let label: String
-        if r.readinessScore >= 80 { label = "Optimaal Hersteld" }
-        else if r.readinessScore >= 50 { label = "Matig Hersteld" }
-        else { label = "Slecht Hersteld — Rust prioriteit" }
-
-        let sleepH = Int(r.sleepHours)
-        let sleepM = Int((r.sleepHours - Double(sleepH)) * 60)
-
-        // Epic 21 Sprint 2: voeg slaapfase-kwaliteit toe als stage-data beschikbaar is
-        var sleepQualityNote = ""
-        let totalStageMins = r.deepSleepMinutes + r.remSleepMinutes + r.coreSleepMinutes
-        if totalStageMins > 0 {
-            let deepRatio = Double(r.deepSleepMinutes) / Double(totalStageMins)
-            let qualLabel: String = {
-                if deepRatio >= 0.20 { return "Uitstekend" }
-                if deepRatio >= 0.15 { return "Goed" }
-                if deepRatio >= 0.10 { return "Matig" }
-                return "Onvoldoende"
-            }()
-            sleepQualityNote = " Slaapfases: diep \(r.deepSleepMinutes)m · REM \(r.remSleepMinutes)m · kern \(r.coreSleepMinutes)m (kwaliteit: \(qualLabel), \(String(format: "%.0f%%", deepRatio * 100)) diepe slaap)."
-
-            // Geef de coach een expliciete instructie bij slechte diepe slaap
-            if deepRatio < 0.15 {
-                sleepQualityNote += " INSTRUCTIE: Benoem de slaapkwaliteit expliciet in je Insight ('Je hebt \(sleepH)u \(sleepM)m geslapen maar de diepe slaap was maar \(String(format: "%.0f%%", deepRatio * 100)) — herstel is daardoor minder effectief'). Houd de intensiteit dienovereenkomstig lager."
-            }
-        }
-
-        todayVibeScoreContext = "Vibe Score vandaag: \(r.readinessScore)/100 (\(label)). Slaap: \(sleepH)u \(sleepM)m. HRV: \(String(format: "%.1f", r.hrv)) ms.\(sleepQualityNote)"
+        todayVibeScoreContext = VibeScoreContextFormatter.format(
+            readiness: readiness,
+            previousValue: todayVibeScoreContext
+        )
     }
 
     /// Epic 20 / M-04: Retourneert de door de gebruiker geconfigureerde Gemini API-sleutel.
@@ -305,29 +270,7 @@ class ChatViewModel: ObservableObject {
     /// Wordt aangeroepen vanuit DashboardView zodat de AI weet welke kritieke trainingen
     /// al behaald zijn en welke nog open staan — voor gerichtere coaching.
     func cacheActiveBlueprints(_ results: [BlueprintCheckResult]) {
-        guard !results.isEmpty else {
-            blueprintContext = ""
-            return
-        }
-
-        var lines: [String] = []
-        for result in results {
-            let weeksLeft = result.goal.weeksRemaining
-            let weeksLeftStr = String(format: "%.1f", weeksLeft)
-            let statusLabel = result.isOnTrack ? "Op schema" : "Achter op schema"
-            lines.append("• Doel '\(result.goal.title)' (\(weeksLeftStr) weken resterend) — Blueprint: \(result.blueprint.goalType.displayName), \(statusLabel) (\(result.satisfiedCount)/\(result.totalCount) kritieke eisen behaald).")
-
-            for milestone in result.milestones {
-                let check = milestone.isSatisfied ? "✅" : "❌"
-                let deadlineStr = DateFormatter.localizedString(from: milestone.deadline, dateStyle: .short, timeStyle: .none)
-                if milestone.isSatisfied {
-                    lines.append("  \(check) \(milestone.description) (behaald)")
-                } else {
-                    lines.append("  \(check) \(milestone.description) — deadline: \(deadlineStr) (\(milestone.weeksBefore) weken voor race)")
-                }
-            }
-        }
-        blueprintContext = lines.joined(separator: "\n")
+        blueprintContext = BlueprintContextFormatter.format(results: results)
     }
 
     /// Epic 17.1: Schrijft de PeriodizationEngine-status naar de AppStorage cache.
@@ -347,29 +290,7 @@ class ChatViewModel: ObservableObject {
     /// Wordt aangeroepen vanuit ContentView (na cachePeriodizationStatus) zodat de AI een aparte
     /// [DOEL INTENTIES EN BENADERING] sectie ontvangt met format-, intentie- en VibeScore-instructies.
     func cacheIntentContext(_ results: [PeriodizationResult]) {
-        let instructions = results
-            .filter { !$0.intentModifier.coachingInstruction.isEmpty }
-            .map { result -> String in
-                var text = "• \(result.goal.title):\n\(result.intentModifier.coachingInstruction)"
-
-                // Expliciete toertocht-context: de coach mag NIET redeneren als bij een wedstrijd
-                let format = result.goal.resolvedFormat
-                if format == .multiDayStage || format == .singleDayTour {
-                    text += "\n⚠️ LET OP: Dit is een TOERTOCHT, geen race. Beoordeel de voortgang op basis van rustig touren, comfort en meerdaags duurvermogen, NIET op race-snelheid."
-                }
-
-                // Expliciete stretch goal doeltijd in leesbaar formaat
-                if let stretchTime = result.goal.stretchGoalTime {
-                    let totalSec = Int(stretchTime)
-                    let hours    = totalSec / 3600
-                    let minutes  = (totalSec % 3600) / 60
-                    let timeStr  = hours > 0 ? "\(hours) uur en \(minutes) minuten" : "\(minutes) minuten"
-                    text += "\n✅ Stretch Goal Doeltijd: \(timeStr). Bouw af en toe tempo-oefeningen in het schema in om deze snelheid op te bouwen, mits de actuele VibeScore / herstel dit toelaat."
-                }
-
-                return text
-            }
-        intentContext = instructions.isEmpty ? "" : instructions.joined(separator: "\n\n")
+        intentContext = IntentContextFormatter.format(results: results)
     }
 
     /// Epic 23 Sprint 1: Schrijft de gap-analyse (verschil gepland vs. gerealiseerd) naar de AppStorage cache.
@@ -446,105 +367,7 @@ class ChatViewModel: ObservableObject {
     /// - Score == 0 → hersteld, vervangt elke nog actieve UserPreference-tekst
     /// - Geen score ingevuld + actieve UserPreference → toon als 'onbekend, score nog niet ingevuld'
     func cacheSymptomContext(_ symptoms: [Symptom], preferences: [UserPreference] = []) {
-        let todayStart = Calendar.current.startOfDay(for: Date())
-        // Haal ALLE records van vandaag op — inclusief score 0 (= hersteld)
-        let todayAll    = symptoms.filter { $0.date >= todayStart }
-        let todayActive = todayAll.filter { $0.severity > 0 }
-
-        // Bepaal actieve blessure-voorkeuren (niet verlopen)
-        let now = Date()
-        let injuryKeywords = ["kuit", "scheen", "shin", "rug", "rugpijn", "knie", "enkel",
-                              "blessure", "pijn", "klacht", "hand", "pols", "schouder"]
-        let activeInjuryPrefs = preferences.filter { pref in
-            guard pref.expirationDate == nil || pref.expirationDate! > now else { return false }
-            let text = pref.preferenceText.lowercased()
-            return injuryKeywords.contains(where: { text.contains($0) })
-        }
-
-        // Alle gebieden die VANDAAG gemeten zijn (score 0 én > 0) tellen als 'tracked'
-        let allTrackedAreas = Set(todayAll.map { $0.bodyAreaRaw.lowercased() })
-
-        // Niets te rapporteren: geen meting van vandaag en geen actieve klacht-voorkeur
-        guard !todayAll.isEmpty || !activeInjuryPrefs.isEmpty else {
-            symptomContext = ""
-            return
-        }
-
-        var scoreLines:    [String] = []
-        var constraintLines:[String] = []
-        var recoveryLines: [String] = []
-
-        // 1. Actieve klachten (score > 0) — met hard constraints op basis van ernst
-        for s in todayActive {
-            let label = BodyArea.severityLabel(s.severity)
-            scoreLines.append("• \(s.bodyAreaRaw): \(s.severity)/10 (\(label))")
-
-            if s.severity > 5 {
-                switch s.bodyArea {
-                case .calf:
-                    constraintLines.append("🚫 HARD CONSTRAINT Kuit (\(s.severity)/10 > 5): HARDLOPEN IS STRIKT VERBODEN. Fietsen en zwemmen zijn toegestaan.")
-                case .ankle:
-                    constraintLines.append("🚫 HARD CONSTRAINT Enkel (\(s.severity)/10 > 5): HARDLOPEN IS STRIKT VERBODEN. Fietsen is veilig.")
-                case .back:
-                    constraintLines.append("🚫 HARD CONSTRAINT Rug (\(s.severity)/10 > 5): geen hardlopen of krachttraining. Fietsen (rechtop) en zwemmen zijn veilig.")
-                case .knee:
-                    constraintLines.append("🚫 HARD CONSTRAINT Knie (\(s.severity)/10 > 5): geen hardlopen of springen. Fietsen en zwemmen zijn veilig.")
-                case .hand:
-                    constraintLines.append("🚫 HARD CONSTRAINT Hand (\(s.severity)/10 > 5): geen krachttraining of gewichtdragende oefeningen.")
-                case .shoulder:
-                    constraintLines.append("🚫 HARD CONSTRAINT Schouder (\(s.severity)/10 > 5): geen zwemmen of push-oefeningen.")
-                }
-            } else if s.severity > 0 && s.severity < 3 {
-                if s.bodyArea == .calf || s.bodyArea == .ankle {
-                    scoreLines.append("  ↳ Score < 3: voorzichtige hardloop-alternatieven bespreekbaar (kort, Zone 1, max 30 min).")
-                }
-            }
-        }
-
-        // 2. Herstelde gebieden (score == 0 vandaag) — alleen als er een matchende blessure-voorkeur
-        //    bestaat. Zo voorkomt we valse herstelberichten voor lichaamsdelen die nooit geblesseerd waren.
-        for s in todayAll where s.severity == 0 {
-            let matchesPref = activeInjuryPrefs.contains { pref in
-                s.bodyArea.injuryKeywords.contains(where: { pref.preferenceText.lowercased().contains($0) })
-            }
-            guard matchesPref else { continue }
-            let areaName = s.bodyAreaRaw
-            recoveryLines.append(
-                "✅ HERSTELD (\(areaName): 0/10): De gebruiker is vandaag klachtenvrij voor \(areaName). " +
-                "INSTRUCTIE: Vier dit expliciet in je Insight ('Wat goed dat je \(areaName.lowercased())pijn op 0 staat!'). " +
-                "Normale belasting mag weer worden voorgesteld, maar adviseer een voorzichtige, stapsgewijze opbouw."
-            )
-        }
-
-        // 3. Blessure-voorkeuren zonder score van vandaag — alleen tonen als het gebied NIET al
-        //    gemeten is (voorkomt duplicaten met scoreLines of recoveryLines)
-        for pref in activeInjuryPrefs {
-            let alreadyTracked = BodyArea.allCases.contains { area in
-                allTrackedAreas.contains(area.rawValue.lowercased()) &&
-                area.injuryKeywords.contains(where: { pref.preferenceText.lowercased().contains($0) })
-            }
-            if !alreadyTracked {
-                scoreLines.append("• \(pref.preferenceText) (score nog niet ingevuld vandaag — gebruik voorzichtigheid)")
-            }
-        }
-
-        // Combineer in vaste volgorde: scores → hard constraints → herstelberichten
-        var combined = scoreLines
-        if !constraintLines.isEmpty {
-            combined += ["", "ACTIEVE BEPERKINGEN:"] + constraintLines
-        }
-        if !recoveryLines.isEmpty {
-            combined += ["", "HERSTEL MELDINGEN:"] + recoveryLines
-        }
-
-        // Lege context als er uitsluitend score-0 records zijn zonder matchende preference
-        // (bijv. een willekeurig lichaamsdeel op 0 ingevuld zonder eerdere klacht)
-        if combined.isEmpty {
-            symptomContext = ""
-            return
-        }
-
-        symptomContext = combined.joined(separator: "\n")
+        symptomContext = SymptomContextFormatter.format(symptoms: symptoms, preferences: preferences)
 
         // Debug: print volledige injury-sectie die naar Gemini gaat
         print("━━━ 🩺 [Injury Section → Gemini] ━━━")
@@ -830,7 +653,7 @@ class ChatViewModel: ObservableObject {
         prefix += "[HUIDIGE DATUM: Vandaag is het \(dateFormatter.string(from: now)). Gebruik dit voor je berekeningen rondom 'expirationDate'.]\n\n"
 
         // Epic 14.4: Injecteer de Vibe Score als harde context — de AI MOET dit volgen (zie systeeminstructie)
-        if todayVibeScoreContext == Self.noVibeDataSentinel {
+        if todayVibeScoreContext == VibeScoreContextFormatter.noVibeDataSentinel {
             // Geen Watch-data beschikbaar — geef de coach expliciete instructie om dit correct te communiceren
             prefix += "[HERSTELSTATUS VANDAAG: Er is geen objectieve biometrische data beschikbaar (gebruiker droeg de Apple Watch waarschijnlijk niet 's nachts). Vertrouw volledig op de Symptom Tracker scores en de geplande doelen. Gebruik NOOIT zinnen als 'Ik zie aan je HRV dat...' of 'Je biometrie geeft aan...'. Zeg in plaats daarvan: 'Omdat we vandaag geen Watch-data hebben, gaan we uit van je eigen gevoel en de ingevoerde scores.']\n\n"
         } else if !todayVibeScoreContext.isEmpty {
@@ -1079,7 +902,7 @@ class ChatViewModel: ObservableObject {
         ]
 
         // Epic 14.4: Injecteer de Vibe Score zodat het herstelplan de actuele herstelstatus respecteert
-        if todayVibeScoreContext == Self.noVibeDataSentinel {
+        if todayVibeScoreContext == VibeScoreContextFormatter.noVibeDataSentinel {
             systemLines.append("HERSTELSTATUS VANDAAG: Geen Watch-data beschikbaar. Baseer het herstelplan op de Symptom Tracker scores en eigen gevoel van de gebruiker.")
             systemLines.append("")
         } else if !todayVibeScoreContext.isEmpty {

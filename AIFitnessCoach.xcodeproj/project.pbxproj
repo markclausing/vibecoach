@@ -145,6 +145,14 @@
 		DB076B94561F03C4EB2D8C5E /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDA9519ECAE22F903D67C756 /* TokenStore.swift */; };
 		DD10EE20FF30AA40BB50CC60 /* TrendWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD01EE02FF03AA04BB05CC06 /* TrendWidgetView.swift */; };
 		DEBB8672AFBDB80CA6D79AA6 /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 892FA4CC13985F26BA4BB4DE /* ChatViewModel.swift */; };
+		D5C0010101C001010100C001 /* VibeScoreContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0010102C001010100C002 /* VibeScoreContextFormatter.swift */; };
+		D5C0020101C002010100C001 /* BlueprintContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0020102C002010100C002 /* BlueprintContextFormatter.swift */; };
+		D5C0030101C003010100C001 /* IntentContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0030102C003010100C002 /* IntentContextFormatter.swift */; };
+		D5C0040101C004010100C001 /* SymptomContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0040102C004010100C002 /* SymptomContextFormatter.swift */; };
+		D5C0050101C005010100C001 /* VibeScoreContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0050102C005010100C002 /* VibeScoreContextFormatterTests.swift */; };
+		D5C0060101C006010100C001 /* BlueprintContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0060102C006010100C002 /* BlueprintContextFormatterTests.swift */; };
+		D5C0070101C007010100C001 /* IntentContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0070102C007010100C002 /* IntentContextFormatterTests.swift */; };
+		D5C0080101C008010100C001 /* SymptomContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0080102C008010100C002 /* SymptomContextFormatterTests.swift */; };
 		E23A1B4C5D6E7F8A9B0C1D2E /* ProgressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */; };
 		E24A1B4C5D6E7F8A9B0C1D2F /* UserProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */; };
 		E35A2B5C6D7E8F9A0B1C2D3E /* NutritionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */; };
@@ -229,6 +237,14 @@
 		7FDDDD26172C97669936B5B8 /* FitnessGoalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoalTests.swift; sourceTree = "<group>"; };
 		D571DD54D0004D0004D0004D /* CalendarDSTSafeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarDSTSafeTests.swift; sourceTree = "<group>"; };
 		892FA4CC13985F26BA4BB4DE /* ChatViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
+		D5C0010102C001010100C002 /* VibeScoreContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VibeScoreContextFormatter.swift; sourceTree = "<group>"; };
+		D5C0020102C002010100C002 /* BlueprintContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlueprintContextFormatter.swift; sourceTree = "<group>"; };
+		D5C0030102C003010100C002 /* IntentContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentContextFormatter.swift; sourceTree = "<group>"; };
+		D5C0040102C004010100C002 /* SymptomContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SymptomContextFormatter.swift; sourceTree = "<group>"; };
+		D5C0050102C005010100C002 /* VibeScoreContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VibeScoreContextFormatterTests.swift; sourceTree = "<group>"; };
+		D5C0060102C006010100C002 /* BlueprintContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlueprintContextFormatterTests.swift; sourceTree = "<group>"; };
+		D5C0070102C007010100C002 /* IntentContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentContextFormatterTests.swift; sourceTree = "<group>"; };
+		D5C0080102C008010100C002 /* SymptomContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SymptomContextFormatterTests.swift; sourceTree = "<group>"; };
 		984AC8DD2D26E4CA3247251E /* Secrets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		A57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlueprintTimelineView.swift; sourceTree = "<group>"; };
 		AA01BB02CC03DD04EE05FF06 /* DashboardHeaderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardHeaderView.swift; sourceTree = "<group>"; };
@@ -407,6 +423,10 @@
 				FD41D2D02372B05947DC9CBC /* Mocks */,
 				BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */,
 				7FDDDD26172C97669936B5B8 /* FitnessGoalTests.swift */,
+				D5C0050102C005010100C002 /* VibeScoreContextFormatterTests.swift */,
+				D5C0060102C006010100C002 /* BlueprintContextFormatterTests.swift */,
+				D5C0070102C007010100C002 /* IntentContextFormatterTests.swift */,
+				D5C0080102C008010100C002 /* SymptomContextFormatterTests.swift */,
 				D571DD54D0004D0004D0004D /* CalendarDSTSafeTests.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */,
@@ -536,6 +556,10 @@
 			isa = PBXGroup;
 			children = (
 				892FA4CC13985F26BA4BB4DE /* ChatViewModel.swift */,
+				D5C0010102C001010100C002 /* VibeScoreContextFormatter.swift */,
+				D5C0020102C002010100C002 /* BlueprintContextFormatter.swift */,
+				D5C0030102C003010100C002 /* IntentContextFormatter.swift */,
+				D5C0040102C004010100C002 /* SymptomContextFormatter.swift */,
 				6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */,
 				EAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift */,
 				F1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift */,
@@ -808,6 +832,10 @@
 				FA26082FD3260BAC05A7AAEB /* MockNetworkSession.swift in Sources */,
 				34B36AEEDAF09C2EA9BC6241 /* SettingsViewTests.swift in Sources */,
 				89B083BDD5A2948D191971E5 /* FitnessGoalTests.swift in Sources */,
+				D5C0050101C005010100C001 /* VibeScoreContextFormatterTests.swift in Sources */,
+				D5C0060101C006010100C001 /* BlueprintContextFormatterTests.swift in Sources */,
+				D5C0070101C007010100C001 /* IntentContextFormatterTests.swift in Sources */,
+				D5C0080101C008010100C001 /* SymptomContextFormatterTests.swift in Sources */,
 				D571DD53C0003C0003C0003C /* CalendarDSTSafeTests.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* TrainingPhaseTests.swift in Sources */,
@@ -863,6 +891,10 @@
 				E541659C316B9F8EBCCD6AA3 /* ChatMessage.swift in Sources */,
 				D8A5CC6C6399BF876493D66B /* ChatView.swift in Sources */,
 				DEBB8672AFBDB80CA6D79AA6 /* ChatViewModel.swift in Sources */,
+				D5C0010101C001010100C001 /* VibeScoreContextFormatter.swift in Sources */,
+				D5C0020101C002010100C001 /* BlueprintContextFormatter.swift in Sources */,
+				D5C0030101C003010100C001 /* IntentContextFormatter.swift in Sources */,
+				D5C0040101C004010100C001 /* SymptomContextFormatter.swift in Sources */,
 				75D1A92071CFBE1BA9750D59 /* Secrets.swift in Sources */,
 				5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */,
 				7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */,
