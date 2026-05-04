@@ -52,7 +52,7 @@ enum UserAPIKeyStore {
                 try store.saveToken(trimmed, forService: serviceName)
             }
         } catch {
-            print("⚠️ UserAPIKeyStore.write faalde: \(error)")
+            AppLoggers.userAPIKey.error("write faalde: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -60,7 +60,7 @@ enum UserAPIKeyStore {
         do {
             try store.deleteToken(forService: serviceName)
         } catch {
-            print("⚠️ UserAPIKeyStore.delete faalde: \(error)")
+            AppLoggers.userAPIKey.error("delete faalde: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -87,9 +87,9 @@ enum UserAPIKeyStore {
             // Pas wissen nádat de Keychain-write slaagde — anders raakt de
             // sleutel bij een fout volledig kwijt.
             defaults.removeObject(forKey: legacyUserDefaultsKey)
-            print("🔐 UserAPIKeyStore: user API key gemigreerd van UserDefaults naar Keychain.")
+            AppLoggers.userAPIKey.info("user API key gemigreerd van UserDefaults naar Keychain")
         } catch {
-            print("⚠️ UserAPIKeyStore: migratie faalde, UserDefaults-entry blijft staan: \(error)")
+            AppLoggers.userAPIKey.error("migratie faalde, UserDefaults-entry blijft staan: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

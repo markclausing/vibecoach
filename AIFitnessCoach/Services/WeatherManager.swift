@@ -149,10 +149,9 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        Task { @MainActor in
-            // Locatiefout — stil negeren, coach werkt gewoon zonder weerdata
-            print("⚠️ WeatherManager: Locatiefout — \(error.localizedDescription)")
-        }
+        // Locatiefout — stil negeren, coach werkt gewoon zonder weerdata.
+        // `Logger` is intern thread-safe, dus géén MainActor-hop nodig voor de log.
+        AppLoggers.weather.error("Locatiefout: \(error.localizedDescription, privacy: .public)")
     }
 
     // MARK: - Open-Meteo fetch
@@ -176,7 +175,7 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         ]
 
         guard let url = components.url else {
-            print("❌ WeatherManager: Ongeldige URL")
+            AppLoggers.weather.error("Ongeldige URL")
             return
         }
 
@@ -187,11 +186,11 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
             let context = buildAIContext()
             onWeatherUpdated?(context)
-            print("☀️ WeatherManager: \(weeklyForecast.count) dag(en) weerdata geladen via Open-Meteo")
+            AppLoggers.weather.info("\(self.weeklyForecast.count, privacy: .public) dag(en) weerdata geladen via Open-Meteo")
 
         } catch {
             errorMessage = error.localizedDescription
-            print("❌ WeatherManager: \(error.localizedDescription)")
+            AppLoggers.weather.error("Fetch faalde: \(error.localizedDescription, privacy: .public)")
         }
     }
 
