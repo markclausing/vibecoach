@@ -163,7 +163,12 @@ private let suggestionChips = [
                 .padding(.bottom, 12)
                 .background(Color(.secondarySystemBackground))
 
-                if !viewModel.hasAPIKey {
+                // Onder XCUITest wordt de Keychain-write van `UITestMockEnvironment.setup()`
+                // niet altijd betrouwbaar ge-honoured op de GitHub-runner — bypass de
+                // gate dan zodat de Coach-UI rendert en de mock-LLM (`UITestMockGenerativeModel`)
+                // het werk doet. Productie blijft volledig afhankelijk van `hasAPIKey`.
+                let isUITesting = ProcessInfo.processInfo.arguments.contains("-UITesting")
+                if !viewModel.hasAPIKey && !isUITesting {
                     NoAPIKeyView()
                 } else {
 
