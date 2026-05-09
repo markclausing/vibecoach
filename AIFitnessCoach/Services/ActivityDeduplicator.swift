@@ -37,9 +37,9 @@ enum ActivityDeduplicator {
     /// het testbaar zonder WorkoutSampleStore.
     static func score(record: ActivityRecord, samplesCount: Int) -> Int {
         var s = 0
-        if samplesCount > 0       { s += 1000 }   // Sterkste signal
+        if samplesCount > 0 { s += 1000 }   // Sterkste signal
         if record.deviceWatts == true { s += 500 } // Power-meter is reeds een belofte van rijke data
-        if record.trimp != nil    { s += 100 }
+        if record.trimp != nil { s += 100 }
         if record.averageHeartrate != nil { s += 10 }
         return s
     }

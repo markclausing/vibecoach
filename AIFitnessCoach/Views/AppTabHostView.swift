@@ -11,7 +11,6 @@ struct AppTabHostView: View {
     // voor pull-to-refresh en de ChatView als overlay.
     @StateObject private var sharedChatViewModel = ChatViewModel()
 
-
     // Auto-Sync Dependencies (Sprint 12.3)
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase

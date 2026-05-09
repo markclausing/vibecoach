@@ -8,7 +8,7 @@ struct ChatView: View {
     @ObservedObject var viewModel: ChatViewModel
 
     /// Huidige item geselecteerd vanuit de iOS Photos library.
-    @State private var selectedItem: PhotosPickerItem? = nil
+    @State private var selectedItem: PhotosPickerItem?
 
     /// De globale app status om notificatie-tap acties af te vangen.
     @EnvironmentObject var appState: AppNavigationState
@@ -17,7 +17,7 @@ struct ChatView: View {
     /// SwiftData Context voor het berekenen van het atletisch profiel.
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
-    @State private var currentProfile: AthleticProfile? = nil
+    @State private var currentProfile: AthleticProfile?
 
     /// Actieve gebruikersvoorkeuren uit SwiftData
     @Query(filter: #Predicate<UserPreference> { $0.isActive == true }, sort: \UserPreference.createdAt, order: .forward) private var activePreferences: [UserPreference]
@@ -398,7 +398,7 @@ private let suggestionChips = [
                     if !existingTexts.contains(where: { existing in
                         existing.contains(lowerText) || lowerText.contains(existing)
                     }) {
-                        var parsedDate: Date? = nil
+                        var parsedDate: Date?
                         if let dateString = pref.expirationDate, !dateString.isEmpty {
                             parsedDate = dateFormatter.date(from: dateString)
                         }
@@ -605,7 +605,7 @@ struct CoachInsightCard: View {
     @State private var isExpanded = false
 
     private var visibleCount: Int { isExpanded ? insights.count : min(1, insights.count) }
-    private var hiddenCount: Int  { max(0, insights.count - 1) }
+    private var hiddenCount: Int { max(0, insights.count - 1) }
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -805,7 +805,6 @@ private func coachAvatar(_ accentColor: Color) -> some View {
         .environmentObject(AppNavigationState())
 }
 
-
 /// Een visuele component om een trainingsschema voor 7 dagen te tonen op basis van Gemini JSON output.
 struct TrainingCalendarView: View {
     let plan: SuggestedTrainingPlan
@@ -882,7 +881,7 @@ struct TrainingCalendarView: View {
 struct WorkoutCardView: View {
     let workout: SuggestedWorkout
     /// Epic 21: Optionele weersverwachting voor de dag van deze training.
-    var weatherForecast: DayForecast? = nil
+    var weatherForecast: DayForecast?
     var onSkip: (() -> Void)?
     var onAlternative: (() -> Void)?
     var onSelect: (() -> Void)?
@@ -1206,8 +1205,8 @@ struct WorkoutStatsRow: View {
             statChip(icon: "bolt.heart", value: "TRIMP: \(trimpText)", color: .primary)
 
             if let plan = fueling {
-                statChip(icon: "drop.fill",  value: "\(Int(plan.fluidMl.rounded())) ml",   color: .blue)
-                statChip(icon: "leaf.fill",  value: "\(Int(plan.carbsGram.rounded())) g",  color: .green)
+                statChip(icon: "drop.fill", value: "\(Int(plan.fluidMl.rounded())) ml", color: .blue)
+                statChip(icon: "leaf.fill", value: "\(Int(plan.carbsGram.rounded())) g", color: .green)
             }
         }
     }
@@ -1272,9 +1271,9 @@ struct WorkoutFuelingSectionView: View {
 
                 // Timing tips
                 VStack(alignment: .leading, spacing: 4) {
-                    timingRow(phase: "Voor",    tip: "Drink 400–600 ml water 2 uur voor de start")
+                    timingRow(phase: "Voor", tip: "Drink 400–600 ml water 2 uur voor de start")
                     timingRow(phase: "Tijdens", tip: "Drink elk kwartier \(Int(interval.fluidMl.rounded())) ml\(plan.carbsGram > 20 ? "; neem elke 30 min een gelletje of \(Int(interval.carbsGram.rounded() * 2)) g koolhydraten" : "")")
-                    timingRow(phase: "Na",      tip: "Herstel met \(Int((plan.totalCaloriesBurned * 0.25).rounded())) kcal (eiwitten + koolhydraten) binnen 30 min")
+                    timingRow(phase: "Na", tip: "Herstel met \(Int((plan.totalCaloriesBurned * 0.25).rounded())) kcal (eiwitten + koolhydraten) binnen 30 min")
                 }
                 .padding(.top, 4)
             }
@@ -1325,12 +1324,12 @@ struct WeatherBadgeView: View {
         let rain = forecast.precipitationProbability
         let wind = forecast.windSpeedKmh
         if rain > 0.7 || forecast.conditionDescription.contains("regen") { return "cloud.rain.fill" }
-        if rain > 0.4                                                      { return "cloud.drizzle.fill" }
-        if wind > 40                                                        { return "wind" }
-        if forecast.conditionDescription.contains("bewolkt")               { return "cloud.fill" }
-        if forecast.conditionDescription.contains("Mistig")                { return "cloud.fog.fill" }
-        if forecast.conditionDescription.contains("sneeuw")                { return "snowflake" }
-        if forecast.conditionDescription.contains("Onweer")                { return "cloud.bolt.rain.fill" }
+        if rain > 0.4 { return "cloud.drizzle.fill" }
+        if wind > 40 { return "wind" }
+        if forecast.conditionDescription.contains("bewolkt") { return "cloud.fill" }
+        if forecast.conditionDescription.contains("Mistig") { return "cloud.fog.fill" }
+        if forecast.conditionDescription.contains("sneeuw") { return "snowflake" }
+        if forecast.conditionDescription.contains("Onweer") { return "cloud.bolt.rain.fill" }
         return "sun.max.fill"
     }
 

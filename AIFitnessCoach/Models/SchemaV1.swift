@@ -65,7 +65,7 @@ enum SchemaV1: VersionedSchema {
         var deepSleepMinutes: Int = 0
         var remSleepMinutes: Int  = 0
         var coreSleepMinutes: Int = 0
-        var restingHeartRate: Double? = nil
+        var restingHeartRate: Double?
 
         init(date: Date, sleepHours: Double, hrv: Double, readinessScore: Int,
              deepSleepMinutes: Int = 0, remSleepMinutes: Int = 0, coreSleepMinutes: Int = 0,

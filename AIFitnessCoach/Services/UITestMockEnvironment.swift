@@ -81,7 +81,7 @@ enum UITestMockEnvironment {
             "vibecoach_recoveryPlanTimestamp",
             "latestCoachInsight",
             "latestSuggestedPlanData",
-            "selectedDataSource",
+            "selectedDataSource"
         ]
         keysToReset.forEach { defaults.removeObject(forKey: $0) }
         // C-02: wis ook de Keychain-entry zodat een -ResetState run écht blanco start.

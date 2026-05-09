@@ -10,7 +10,7 @@ import SwiftData
 struct GapAnalysisCardView: View {
     let gap: BlueprintGap
     /// Optionele prognose — alleen getoond als `isEmbedded == false` (standalone gebruik).
-    var projection: GoalProjection? = nil
+    var projection: GoalProjection?
     /// True = geen eigen header/achtergrond; de container levert de context.
     var isEmbedded: Bool = false
 

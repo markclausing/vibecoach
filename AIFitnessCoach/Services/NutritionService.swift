@@ -148,7 +148,7 @@ struct NutritionService {
         let intervals = max(1.0, Double(plan.durationMinutes) / Double(intervalMinutes))
         return FuelingInterval(
             intervalMinutes: intervalMinutes,
-            fluidMl:   plan.fluidMl   / intervals,
+            fluidMl: plan.fluidMl   / intervals,
             carbsGram: plan.carbsGram / intervals
         )
     }

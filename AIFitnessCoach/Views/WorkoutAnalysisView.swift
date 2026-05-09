@@ -22,13 +22,13 @@ struct WorkoutAnalysisView: View {
 
     @Query private var samples: [WorkoutSample]
 
-    @State private var scrubbedDate: Date? = nil
+    @State private var scrubbedDate: Date?
 
     // MARK: - Story 32.3b: pattern-detectie + AI-narrative
 
     @State private var patterns: [WorkoutPattern] = []
     @State private var insightState: InsightState = .idle
-    @State private var selectedPatternKind: WorkoutPatternKind? = nil
+    @State private var selectedPatternKind: WorkoutPatternKind?
 
     private enum InsightState: Equatable {
         case idle                 // Nog geen patronen of geen API-key
@@ -729,7 +729,7 @@ struct WorkoutAnalysisView: View {
             .chartYAxis {
                 AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
                     AxisGridLine().foregroundStyle(.secondary.opacity(0.15))
-                    AxisValueLabel() {
+                    AxisValueLabel {
                         if let bpm = value.as(Double.self) {
                             Text("\(Int(bpm))")
                                 .font(.caption2)

@@ -10,12 +10,12 @@ struct VibeScoreCardV2: View {
     var isLoading: Bool = false
     var isUnavailable: Bool = false
     var injuryRiskLevel: DashboardView.InjuryRiskLevel = .safe
-    var todayWorkoutName: String? = nil
-    var onAskWhy: (() -> Void)? = nil
+    var todayWorkoutName: String?
+    var onAskWhy: (() -> Void)?
     /// Live rusthartslag direct vanuit HealthKit — overschrijft de opgeslagen waarde in readiness.
-    var liveRestingHeartRate: Double? = nil
+    var liveRestingHeartRate: Double?
     /// Live VO₂max direct vanuit HealthKit.
-    var liveVO2Max: Double? = nil
+    var liveVO2Max: Double?
 
     @EnvironmentObject var themeManager: ThemeManager
 

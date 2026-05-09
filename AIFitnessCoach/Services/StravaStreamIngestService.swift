@@ -51,15 +51,15 @@ final class StravaStreamIngestService {
             startDate.addingTimeInterval(offset)
         }
 
-        let hrSamples       = Self.zip(stream: streams.heartrate,        with: timestamps)
-        let powerSamples    = Self.zip(stream: streams.watts,            with: timestamps)
-        let cadenceSamples  = Self.zip(stream: streams.cadence,          with: timestamps)
-        let speedSamples    = Self.zip(stream: streams.velocity_smooth,  with: timestamps)
+        let hrSamples       = Self.zip(stream: streams.heartrate, with: timestamps)
+        let powerSamples    = Self.zip(stream: streams.watts, with: timestamps)
+        let cadenceSamples  = Self.zip(stream: streams.cadence, with: timestamps)
+        let speedSamples    = Self.zip(stream: streams.velocity_smooth, with: timestamps)
 
-        let hrBuckets      = resampler.resample(samples: hrSamples,      from: startDate, to: endDate, strategy: .average)
-        let powerBuckets   = resampler.resample(samples: powerSamples,   from: startDate, to: endDate, strategy: .average)
+        let hrBuckets      = resampler.resample(samples: hrSamples, from: startDate, to: endDate, strategy: .average)
+        let powerBuckets   = resampler.resample(samples: powerSamples, from: startDate, to: endDate, strategy: .average)
         let cadenceBuckets = resampler.resample(samples: cadenceSamples, from: startDate, to: endDate, strategy: .average)
-        let speedBuckets   = resampler.resample(samples: speedSamples,   from: startDate, to: endDate, strategy: .linearInterpolation)
+        let speedBuckets   = resampler.resample(samples: speedSamples, from: startDate, to: endDate, strategy: .linearInterpolation)
 
         // De HR-grid dient als kanonieke tijdas — alle resamplers produceren dezelfde
         // bucket-tijdstempels (zelfde start/end/bucketSize) dus indices matchen 1-op-1.

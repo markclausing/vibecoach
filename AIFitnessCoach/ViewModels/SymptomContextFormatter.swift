@@ -42,8 +42,8 @@ enum SymptomContextFormatter {
             return ""
         }
 
-        var scoreLines:    [String] = []
-        var constraintLines:[String] = []
+        var scoreLines: [String] = []
+        var constraintLines: [String] = []
         var recoveryLines: [String] = []
 
         // 1. Actieve klachten (score > 0) — met hard constraints op basis van ernst

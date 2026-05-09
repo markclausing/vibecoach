@@ -79,10 +79,10 @@ struct SettingsView: View {
     private var trainingThresholdsSubtitle: String {
         let cached = UserProfileService.cachedProfile()
         var parts: [String] = []
-        if let max  = cached.maxHeartRate?.value, max > 0       { parts.append("Max \(Int(max))") }
-        if let rest = cached.restingHeartRate?.value, rest > 0  { parts.append("Rust \(Int(rest))") }
+        if let max  = cached.maxHeartRate?.value, max > 0 { parts.append("Max \(Int(max))") }
+        if let rest = cached.restingHeartRate?.value, rest > 0 { parts.append("Rust \(Int(rest))") }
         if let lthr = cached.lactateThresholdHR?.value, lthr > 0 { parts.append("LTHR \(Int(lthr))") }
-        if let ftp  = cached.ftp?.value, ftp > 0                 { parts.append("FTP \(Int(ftp))") }
+        if let ftp  = cached.ftp?.value, ftp > 0 { parts.append("FTP \(Int(ftp))") }
         return parts.isEmpty ? "Niet ingesteld" : parts.joined(separator: " · ")
     }
 
@@ -834,8 +834,8 @@ struct SettingsRowV2: View {
     let icon: String
     let iconColor: Color
     let title: String
-    var subtitle: String? = nil
-    var value: String? = nil
+    var subtitle: String?
+    var value: String?
     var hasChevron: Bool = false
     var isLocked: Bool = false
     var isWarning: Bool = false
@@ -1612,7 +1612,7 @@ struct AIProviderSettingsView: View {
 
     // MARK: - Test-actie
 
-    private func testAPIKey() {
+    func testAPIKey() {
         let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
@@ -1858,8 +1858,8 @@ private func memoryTypeStyle(for text: String) -> (label: String, color: Color, 
     switch memoryType(for: text) {
     case .injury:     return ("Blessure", .orange, "exclamationmark.triangle")
     case .preference: return ("Voorkeur", Color(red: 0.3, green: 0.55, blue: 0.3), "star")
-    case .context:    return ("Context",  Color(red: 0.35, green: 0.55, blue: 0.85), "info.circle")
-    case .all:        return ("Context",  Color(red: 0.35, green: 0.55, blue: 0.85), "info.circle")
+    case .context:    return ("Context", Color(red: 0.35, green: 0.55, blue: 0.85), "info.circle")
+    case .all:        return ("Context", Color(red: 0.35, green: 0.55, blue: 0.85), "info.circle")
     }
 }
 

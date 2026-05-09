@@ -165,7 +165,7 @@ struct BlueprintGap {
     // MARK: - Drempelwaarden
 
     var isBehindOnTRIMP: Bool { trimpGap > requiredTRIMPToDate * 0.10 }
-    var isBehindOnKm: Bool    { kmGap > requiredKmToDate * 0.10 }
+    var isBehindOnKm: Bool { kmGap > requiredKmToDate * 0.10 }
 
     // MARK: - TRIMPTranslator: bijsturingshints
 
@@ -357,14 +357,14 @@ struct ProgressService {
             end          = calendar.date(byAdding: .weekOfYear, value: -12, to: targetDate) ?? targetDate
             nominalStart = goalCreatedAt  // Base begint bij aanmaken doel
         case .buildPhase:
-            end          = calendar.date(byAdding: .weekOfYear, value: -4,  to: targetDate) ?? targetDate
+            end          = calendar.date(byAdding: .weekOfYear, value: -4, to: targetDate) ?? targetDate
             nominalStart = calendar.date(byAdding: .weekOfYear, value: -12, to: targetDate) ?? targetDate
         case .peakPhase:
-            end          = calendar.date(byAdding: .weekOfYear, value: -2,  to: targetDate) ?? targetDate
-            nominalStart = calendar.date(byAdding: .weekOfYear, value: -4,  to: targetDate) ?? targetDate
+            end          = calendar.date(byAdding: .weekOfYear, value: -2, to: targetDate) ?? targetDate
+            nominalStart = calendar.date(byAdding: .weekOfYear, value: -4, to: targetDate) ?? targetDate
         case .tapering:
             end          = targetDate
-            nominalStart = calendar.date(byAdding: .weekOfYear, value: -2,  to: targetDate) ?? targetDate
+            nominalStart = calendar.date(byAdding: .weekOfYear, value: -2, to: targetDate) ?? targetDate
         }
 
         // Als het doel aangemaakt werd ná de nominale fasestart, gebruik createdAt als start.

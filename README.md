@@ -22,7 +22,7 @@ Met Epic #32 ✅ afgesloten heeft de coach een nieuwe laag van fysiologische int
 
 Naast feature-werk loopt nu een tech-debt-traject n.a.v. de codebase-audit (mei 2026). Eerste afgeronde stap: alle DST-onveilige `TimeInterval`-wiskunde (delen door 86 400 of `7 × 86 400`) is vervangen door kalender-gebaseerde berekeningen via een nieuwe `Calendar+DSTSafe`-extension en gecentraliseerde `FitnessGoal.weeksRemaining` / `daysRemaining` / `totalDays` computed properties — geborgd met `CalendarDSTSafeTests` (8 tests, beide DST-grenzen). Volgende geplande tech-debt-stappen uit de audit: `print(...)` → `AppLoggers.*` migratie in `Services/`, opsplitsen `Models/FitnessGoal.swift` (1131 regels) en `Services/FitnessDataService.swift` (1880 regels).
 
-**Volgende pickup:** SwiftLint-cleanup-PR (voorwaarde voor Epic #46 story 46.2) of een van de Epic #46-backlog-items zodra er trigger ontstaat (TestFlight-deploy 46.B1, semver-versioning 46.B6). Andere open follow-ups: bron-voorkeur-tiebreaker in `ActivityDeduplicator` (Epic #42) of Strict Concurrency `Complete` (⏳ Epic #39 story 39.3). Geen actieve sprint vastgepind.
+**Volgende pickup:** SwiftLint lint-job-PR (Epic #46 story 46.2 stap 2, na prep-PR) of een van de Epic #46-backlog-items zodra er trigger ontstaat (TestFlight-deploy 46.B1, semver-versioning 46.B6). Andere open follow-ups: bron-voorkeur-tiebreaker in `ActivityDeduplicator` (Epic #42) of Strict Concurrency `Complete` (⏳ Epic #39 story 39.3). Geen actieve sprint vastgepind.
 
 Volledige historie en backlog: zie [`docs/ROADMAP.md`](docs/ROADMAP.md).
 Technische architectuur (Dual Engine, Cloudflare Proxy, Keychain): zie [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).

@@ -179,8 +179,8 @@ struct SuggestedTrainingPlan: Codable, Equatable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         motivation     = try c.decode(String.self, forKey: .motivation)
-        workouts       = (try? c.decodeIfPresent([SuggestedWorkout].self,     forKey: .workouts))       ?? []
-        newPreferences = (try? c.decodeIfPresent([ExtractedPreference].self,  forKey: .newPreferences)) ?? nil
+        workouts       = (try? c.decodeIfPresent([SuggestedWorkout].self, forKey: .workouts))       ?? []
+        newPreferences = (try? c.decodeIfPresent([ExtractedPreference].self, forKey: .newPreferences)) ?? nil
     }
 
     init(motivation: String, workouts: [SuggestedWorkout], newPreferences: [ExtractedPreference]? = nil) {

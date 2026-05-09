@@ -83,7 +83,7 @@ actor HealthKitSyncService {
 
             let sport = SportCategory.from(hkType: workout.workoutActivityType.rawValue)
 
-            var avgHR: Double? = nil
+            var avgHR: Double?
             var maxHR: Double = 0
             var restHR: Double = 60 // Standaardwaarde als fallback
 
@@ -181,7 +181,7 @@ actor HealthKitSyncService {
 
         return try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: quantityType, predicate: predicate, limit: 1, sortDescriptors: [sortDescriptor]) { _, samples, error in
-                if let _ = error {
+                if error != nil {
                     continuation.resume(returning: 60.0) // Fallback on error
                     return
                 }

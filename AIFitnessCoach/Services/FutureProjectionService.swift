@@ -139,7 +139,7 @@ struct GoalProjection {
             "Huidig wekelijks TRIMP: ~\(trimpInt) (piek-eis: ~\(reqTRIMPInt)) | "
                 + "Huidig wekelijks \(kmLabel): ~\(kmStr) km (piek-eis: ~\(reqKmStr) km)",
             "TRIMP-groei: \(growthPct)%/week | \(kmLabel)-groei: \(kmGrowthPct)%/week (max \(kmCapPct)%"
-                + (hasCrossTrainingBonus ? " — Cross-Training Bonus actief" : "") + ")",
+                + (hasCrossTrainingBonus ? " — Cross-Training Bonus actief" : "") + ")"
         ]
 
         switch bottleneck {
@@ -261,7 +261,7 @@ struct FutureProjectionService {
         // week[0] = meest recent (0–7 dagen geleden)
         // week[3] = oudst (21–28 dagen geleden)
         let weeklyTRIMP: [Double] = (0..<4).map { i in
-            let end   = calendar.date(byAdding: .day, value: -(i * 7),       to: now) ?? now
+            let end   = calendar.date(byAdding: .day, value: -(i * 7), to: now) ?? now
             let start = calendar.date(byAdding: .day, value: -((i + 1) * 7), to: now) ?? now
             return activities
                 .filter { $0.startDate >= start && $0.startDate < end }
@@ -271,7 +271,7 @@ struct FutureProjectionService {
 
         // Km: ALLEEN de doelsport — fiets-km tellen niet mee voor een hardloopdoel
         let weeklyKm: [Double] = (0..<4).map { i in
-            let end   = calendar.date(byAdding: .day, value: -(i * 7),       to: now) ?? now
+            let end   = calendar.date(byAdding: .day, value: -(i * 7), to: now) ?? now
             let start = calendar.date(byAdding: .day, value: -((i + 1) * 7), to: now) ?? now
             let sportActivities = activities.filter {
                 $0.startDate >= start && $0.startDate < end && $0.sportCategory == targetSport
@@ -303,7 +303,7 @@ struct FutureProjectionService {
             : 0.0
 
         let effectiveGrowthRate   = min(observedTRIMPGrowth, maxWeeklyGrowthRate)
-        let effectiveKmGrowthRate = min(observedKmGrowth,    kmGrowthCap)
+        let effectiveKmGrowthRate = min(observedKmGrowth, kmGrowthCap)
 
         // ── Stap 5: Piek-eisen (blueprint × Peak Phase multiplier 1.30) ──
         // Voor toertochten (.singleDayTour / .multiDayStage) ligt de piek-eis lager dan voor een wedstrijd:
@@ -326,19 +326,19 @@ struct FutureProjectionService {
 
         // ── Stap 6: Projectiedatum per metric ──
         let projectedPeakDateTRIMP = projectDate(
-            current:       currentWeeklyTRIMP,
-            required:      requiredPeakTRIMP,
+            current: currentWeeklyTRIMP,
+            required: requiredPeakTRIMP,
             effectiveRate: effectiveGrowthRate,
-            from:          now,
-            calendar:      calendar
+            from: now,
+            calendar: calendar
         )
 
         let projectedPeakDateKm = projectDate(
-            current:       currentWeeklyKm,
-            required:      requiredPeakKm,
+            current: currentWeeklyKm,
+            required: requiredPeakKm,
             effectiveRate: effectiveKmGrowthRate,
-            from:          now,
-            calendar:      calendar
+            from: now,
+            calendar: calendar
         )
 
         // ── Stap 7: Bottleneck — de final datum is de LATEST van de twee ──
