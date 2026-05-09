@@ -84,10 +84,12 @@ final class AIFitnessCoachUITests: XCTestCase {
         // SwiftUI's `TextField(..., axis: .vertical)` rendert in iOS 17+ als `.textView`
         // (niet `.textField`) in de XCUI-hiërarchie. We zoeken daarom element-type-
         // agnostisch op de accessibilityIdentifier zodat dit op alle iOS-versies werkt.
+        // Timeout 20s — ChatView's onAppear refresht profile-context + welkomst-insight
+        // uit SwiftData/AppStorage; op tragere CI-runners is 8s niet voldoende.
         let chatInputField = app.descendants(matching: .any)
             .matching(identifier: "ChatInputField").firstMatch
         XCTAssertTrue(
-            chatInputField.waitForExistence(timeout: 8),
+            chatInputField.waitForExistence(timeout: 20),
             "Coach chat-invoerveld (ChatInputField) verschijnt niet na tikken op de Coach tab."
         )
     }
@@ -118,9 +120,13 @@ final class AIFitnessCoachUITests: XCTestCase {
         XCTAssertTrue(settingsTab.waitForExistence(timeout: 3), "Tab 'Instellingen' niet gevonden.")
         settingsTab.tap()
 
+        // V2.0 SettingsView heeft `.toolbar(.hidden, for: .navigationBar)` — dus check
+        // de SettingsVersionLabel-identifier in de header (bewust gemarkeerd voor automation).
+        let versionLabel = app.descendants(matching: .any)
+            .matching(identifier: "SettingsVersionLabel").firstMatch
         XCTAssertTrue(
-            app.navigationBars.firstMatch.waitForExistence(timeout: 3),
-            "NavigationBar in het Instellingen-scherm verschijnt niet."
+            versionLabel.waitForExistence(timeout: 3),
+            "SettingsVersionLabel verschijnt niet in het Instellingen-scherm."
         )
     }
 
