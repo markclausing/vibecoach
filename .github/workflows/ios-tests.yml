@@ -1,4 +1,4 @@
-name: iOS CI Tests
+name: iOS CI
 
 on:
   push:
@@ -13,41 +13,144 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  build_and_test:
-    name: Build & Test iOS App
+  unit-tests:
+    name: Unit Tests
     runs-on: macos-latest
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Create Dummy Secrets file for Build
-        run: cp AIFitnessCoach/Secrets-Template.swift AIFitnessCoach/Secrets.swift
+      - name: Setup Dummy Secrets for Build
+        # Kopieer het dummy template naar Secrets.swift zodat het project succesvol compileert.
+        # Het mockmodel zorgt er daarna voor dat tests draaien zonder echte API key.
+        run: cp AIFitnessCoach/Secrets-template.swift AIFitnessCoach/Secrets.swift
 
       - name: Select Xcode Version
         run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-
-      - name: Setup Secrets
-        # Kopieer het dummy template naar Secrets.swift zodat het project succesvol compileert.
-        # Het mockmodel zorgt er daarna voor dat testen draaien zonder echte API key.
-        run: cp AIFitnessCoach/Secrets-template.swift AIFitnessCoach/Secrets.swift
 
       # Set Build Number is verplaatst naar een Run Script Build Phase die
       # CFBundleVersion at-build-time op `git rev-list --count HEAD` zet — werkt
       # zowel lokaal als in CI, geen handmatige bumps of CI-only mutaties meer.
 
-      - name: Build & Run XCTests
+      - name: Run Unit Tests
         run: |
-          # Haal dynamisch de UUID op van de eerste beschikbare iPhone simulator op de GitHub runner
+          # Haal dynamisch de UUID op van de eerste beschikbare iPhone-simulator op de GitHub-runner.
           SIMULATOR_ID=$(xcrun simctl list devices available | grep iPhone | grep -v unavailable | awk '{print $(NF-1)}' | tr -d '()' | head -n 1)
-
           echo "Using Simulator ID: $SIMULATOR_ID"
 
           set -o pipefail && xcodebuild test \
             -project AIFitnessCoach.xcodeproj \
             -scheme AIFitnessCoach \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -only-testing:AIFitnessCoachTests \
             -enableCodeCoverage YES \
+            -resultBundlePath UnitTests.xcresult \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             | xcpretty
+
+      - name: Upload xcresult Bundle
+        # `if: always()` zodat de bundle ook bij test-falen geüpload wordt voor debugging.
+        # `coverage-report`-job downloadt dezelfde bundle om de coverage-markdown te genereren.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-tests-xcresult
+          path: UnitTests.xcresult
+          retention-days: 7
+
+  ui-tests:
+    name: UI Tests
+    runs-on: macos-latest
+    needs: unit-tests
+    # XCUITest op GitHub macos-latest runners is structureel flaky: de xctrunner-app
+    # geeft regelmatig 'ipc/mig server died' (Mach-308) op launch — onafhankelijk van
+    # de testcode zelf. Poging A (expliciete simulator-boot + CODE_SIGNING_ALLOWED=NO)
+    # bracht failures van 7→3 terug maar niet naar 0. De UI tests draaien daarom
+    # non-blocking op CI als signaal-only; harde validatie gebeurt on-device conform
+    # `feedback_epic_pr_workflow`. Wanneer Apple's runner-image stabieler wordt
+    # (Xcode 17+), dit weer hard maken door deze flag te verwijderen.
+    continue-on-error: true
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Dummy Secrets for Build
+        run: cp AIFitnessCoach/Secrets-template.swift AIFitnessCoach/Secrets.swift
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Boot Simulator
+        # Expliciete simulator-boot vóór xcodebuild test. Op de macos-latest runner heeft
+        # de XCUITest-runner-app (xctrunner) anders regelmatig launch-failures
+        # ("ipc/mig server died" / Mach-308) — een ge-boote simulator + warmup geeft 'm
+        # tijd om SpringBoard volledig op te starten voor xcodebuild de runner injecteert.
+        id: simulator
+        run: |
+          SIMULATOR_ID=$(xcrun simctl list devices available | grep iPhone | grep -v unavailable | awk '{print $(NF-1)}' | tr -d '()' | head -n 1)
+          echo "Using Simulator ID: $SIMULATOR_ID"
+          echo "id=$SIMULATOR_ID" >> "$GITHUB_OUTPUT"
+
+          xcrun simctl boot "$SIMULATOR_ID" 2>&1 || echo "Simulator already booted"
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+
+      - name: Run UI Tests
+        run: |
+          SIMULATOR_ID="${{ steps.simulator.outputs.id }}"
+
+          set -o pipefail && xcodebuild test \
+            -project AIFitnessCoach.xcodeproj \
+            -scheme AIFitnessCoach \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -only-testing:AIFitnessCoachUITests \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty
+
+  coverage-report:
+    name: Coverage Report
+    runs-on: macos-latest
+    needs: unit-tests
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Download xcresult Bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-tests-xcresult
+          path: UnitTests.xcresult
+
+      - name: Generate Coverage Markdown
+        # Genereert een per-target markdown-tabel uit de .xcresult-bundle.
+        # Filtert test-targets weg (alleen production-code is interessant).
+        run: |
+          xcrun xccov view --report --json UnitTests.xcresult > coverage.json
+
+          {
+            echo "# Code Coverage Report"
+            echo ""
+            echo "| Target | Coverage | Covered / Total Lines |"
+            echo "|---|---|---|"
+            jq -r '
+              .targets[]
+              | select(.name | endswith("Tests.xctest") | not)
+              | "| \(.name) | \(.lineCoverage * 100 | floor)% | \(.coveredLines) / \(.executableLines) |"
+            ' coverage.json
+            echo ""
+            echo "_Gegenereerd uit \`UnitTests.xcresult\` van de \`unit-tests\`-job._"
+          } > coverage.md
+
+          cat coverage.md
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.md
+          retention-days: 30
