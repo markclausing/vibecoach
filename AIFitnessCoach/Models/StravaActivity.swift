@@ -51,13 +51,13 @@ struct StravaActivity: Codable, Equatable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        id                = try c.decode(Int64.self,    forKey: .id)
-        name              = try c.decode(String.self,   forKey: .name)
-        distance          = try c.decode(Double.self,   forKey: .distance)
-        moving_time       = try c.decode(Int.self,      forKey: .moving_time)
+        id                = try c.decode(Int64.self, forKey: .id)
+        name              = try c.decode(String.self, forKey: .name)
+        distance          = try c.decode(Double.self, forKey: .distance)
+        moving_time       = try c.decode(Int.self, forKey: .moving_time)
         average_heartrate = try c.decodeIfPresent(Double.self, forKey: .average_heartrate)
-        type              = try c.decode(String.self,   forKey: .type)
-        start_date        = try c.decode(String.self,   forKey: .start_date)
+        type              = try c.decode(String.self, forKey: .type)
+        start_date        = try c.decode(String.self, forKey: .start_date)
         device_watts      = try c.decodeIfPresent(Bool.self, forKey: .device_watts)
     }
 }
@@ -91,7 +91,7 @@ struct StravaStream: Codable, Equatable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         data          = try c.decode([Double].self, forKey: .data)
         series_type   = try c.decodeIfPresent(String.self, forKey: .series_type)
-        original_size = try c.decodeIfPresent(Int.self,    forKey: .original_size)
+        original_size = try c.decodeIfPresent(Int.self, forKey: .original_size)
         resolution    = try c.decodeIfPresent(String.self, forKey: .resolution)
     }
 }

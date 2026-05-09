@@ -90,10 +90,9 @@ struct BlueprintChecker {
         let title = goal.title.lowercased()
 
         // Halve marathon vóór marathon checken — "marathon" zit ook in "halve marathon"
-        for type in [GoalBlueprintType.halfMarathon, .marathon, .cyclingTour] {
-            if type.detectionKeywords.contains(where: { title.contains($0) }) {
-                return type
-            }
+        for type in [GoalBlueprintType.halfMarathon, .marathon, .cyclingTour]
+            where type.detectionKeywords.contains(where: { title.contains($0) }) {
+            return type
         }
 
         // Fallback op SportCategory

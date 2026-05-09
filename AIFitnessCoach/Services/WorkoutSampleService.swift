@@ -87,10 +87,10 @@ final class WorkoutSampleIngestService {
         let distance = try await distanceSeries
 
         // Resample elk signaal volgens zijn fysiologisch correcte strategie.
-        let hrBuckets       = resampler.resample(samples: hr,       from: start, to: end, strategy: .average)
-        let powerBuckets    = resampler.resample(samples: power,    from: start, to: end, strategy: .average)
-        let cadenceBuckets  = resampler.resample(samples: cadence,  from: start, to: end, strategy: .average)
-        let speedBuckets    = resampler.resample(samples: speed,    from: start, to: end, strategy: .linearInterpolation)
+        let hrBuckets       = resampler.resample(samples: hr, from: start, to: end, strategy: .average)
+        let powerBuckets    = resampler.resample(samples: power, from: start, to: end, strategy: .average)
+        let cadenceBuckets  = resampler.resample(samples: cadence, from: start, to: end, strategy: .average)
+        let speedBuckets    = resampler.resample(samples: speed, from: start, to: end, strategy: .linearInterpolation)
         let distanceBuckets = resampler.resample(samples: distance, from: start, to: end, strategy: .deltaAccumulation)
 
         // Combineer per bucket-timestamp tot één WorkoutSample. We gebruiken de hartslag-buckets

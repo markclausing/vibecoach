@@ -23,7 +23,7 @@ final class DailyReadiness {
     var remSleepMinutes: Int  = 0
     var coreSleepMinutes: Int = 0
     /// Rusthartslag in slagen per minuut, direct vanuit HealthKit. Nil als geen data beschikbaar.
-    var restingHeartRate: Double? = nil
+    var restingHeartRate: Double?
 
     init(date: Date, sleepHours: Double, hrv: Double, readinessScore: Int,
          deepSleepMinutes: Int = 0, remSleepMinutes: Int = 0, coreSleepMinutes: Int = 0,

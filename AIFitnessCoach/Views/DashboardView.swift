@@ -3,7 +3,6 @@ import SwiftData
 import Charts
 import HealthKit
 
-
 // MARK: - SPRINT 12.2: TRIMP Explainer Card
 struct TRIMPExplainerCard: View {
     /// Standaard dichtgeklapt — gebruiker opent hem als hij de details wil lezen.
@@ -260,9 +259,9 @@ struct VibeScoreCardView: View {
                     let totalStageMins = r.deepSleepMinutes + r.remSleepMinutes + r.coreSleepMinutes
                     if totalStageMins > 0 {
                         SleepStagesBarView(
-                            deepMinutes:  r.deepSleepMinutes,
-                            remMinutes:   r.remSleepMinutes,
-                            coreMinutes:  r.coreSleepMinutes
+                            deepMinutes: r.deepSleepMinutes,
+                            remMinutes: r.remSleepMinutes,
+                            coreMinutes: r.coreSleepMinutes
                         )
                         .padding(.top, 2)
                     }
@@ -287,9 +286,9 @@ struct VibeScoreCardView: View {
 /// Horizontale gestapelde balk + labels voor diepe slaap, REM en kernslaap.
 /// Wordt getoond in de VibeScoreCard als stage-data beschikbaar is.
 private struct SleepStagesBarView: View {
-    let deepMinutes:  Int
-    let remMinutes:   Int
-    let coreMinutes:  Int
+    let deepMinutes: Int
+    let remMinutes: Int
+    let coreMinutes: Int
 
     private var total: Int { deepMinutes + remMinutes + coreMinutes }
 
@@ -444,17 +443,17 @@ struct PostWorkoutCheckinCard: View {
 
     /// Callback zodat DashboardView de AI-cache direct kan bijwerken na opslaan.
     /// rpe == 0 betekent genegeerd — de caller slaat dit niet op als echte feedback.
-    var onSaved: ((Int, String) -> Void)? = nil
+    var onSaved: ((Int, String) -> Void)?
 
     @State private var rpe: Double = 5
-    @State private var selectedMood: String? = nil
+    @State private var selectedMood: String?
 
     private let moods: [(icon: String, label: String)] = [
-        ("moon.fill",            "Rustig"),
-        ("checkmark.circle.fill","Goed"),
-        ("bolt.fill",            "Sterk"),
-        ("bandage.fill",         "Pijn"),
-        ("zzz",                  "Uitgeput")
+        ("moon.fill", "Rustig"),
+        ("checkmark.circle.fill", "Goed"),
+        ("bolt.fill", "Sterk"),
+        ("bandage.fill", "Pijn"),
+        ("zzz", "Uitgeput")
     ]
 
     // Kleur van de RPE-waarde op basis van het getal
@@ -1101,7 +1100,7 @@ struct DashboardView: View {
     @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
     @Query(filter: #Predicate<UserPreference> { $0.isActive == true }, sort: \UserPreference.createdAt, order: .forward) private var activePreferences: [UserPreference]
 
-    @State private var currentProfile: AthleticProfile? = nil
+    @State private var currentProfile: AthleticProfile?
     private let profileManager = AthleticProfileManager()
 
     @Query(sort: \ActivityRecord.startDate, order: .forward) private var activities: [ActivityRecord]
@@ -1117,8 +1116,8 @@ struct DashboardView: View {
     // Epic 14.3: Loading state voor de Vibe Score kaart
     @State private var isVibeScoreLoading: Bool = false
     @State private var isVibeScoreUnavailable: Bool = false
-    @State private var dashboardRestingHR: Double? = nil
-    @State private var dashboardVO2Max: Double? = nil
+    @State private var dashboardRestingHR: Double?
+    @State private var dashboardVO2Max: Double?
 
     // Epic 17: BlueprintChecker resultaten voor alle actieve doelen
     /// Wordt op de achtergrond gebruikt voor coaching-context; volledige UI volgt in Sprint 17.3.
@@ -1792,7 +1791,7 @@ struct DashboardView: View {
         let store = WorkoutSampleStore(modelContainer: modelContext.container)
         let now = Date()
         let cutoff14 = Calendar.current.date(byAdding: .day, value: -14, to: now) ?? now
-        let cutoff7  = Calendar.current.date(byAdding: .day, value: -7,  to: now) ?? now
+        let cutoff7  = Calendar.current.date(byAdding: .day, value: -7, to: now) ?? now
         // Epic #44 story 44.5: profiel hier één keer ophalen en doorgeven aan
         // detectAll zodat de zone-gates per workout consistent dezelfde drempels gebruiken.
         let profile = UserProfileService.cachedProfile()
@@ -2014,9 +2013,9 @@ struct DashboardView: View {
         }
 
         let score = ReadinessCalculator.calculate(
-            sleepHours:    sleepHours,
-            hrv:           currentHRV,
-            hrvBaseline:   hrvBaseline,
+            sleepHours: sleepHours,
+            hrv: currentHRV,
+            hrvBaseline: hrvBaseline,
             deepSleepRatio: stages?.deepRatio
         )
 
@@ -2039,12 +2038,12 @@ struct DashboardView: View {
             record.restingHeartRate = restingHR
         } else {
             modelContext.insert(DailyReadiness(
-                date:             Date(),
-                sleepHours:       sleepHours,
-                hrv:              currentHRV,
-                readinessScore:   score,
+                date: Date(),
+                sleepHours: sleepHours,
+                hrv: currentHRV,
+                readinessScore: score,
                 deepSleepMinutes: stages?.deepMinutes  ?? 0,
-                remSleepMinutes:  stages?.remMinutes   ?? 0,
+                remSleepMinutes: stages?.remMinutes   ?? 0,
                 coreSleepMinutes: stages?.coreMinutes  ?? 0,
                 restingHeartRate: restingHR
             ))

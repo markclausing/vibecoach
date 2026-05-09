@@ -11,7 +11,7 @@ class ChatViewModel: ObservableObject {
     /// De huidige tekstinput van de gebruiker.
     @Published var inputText: String = ""
     /// Een eventuele geselecteerde afbeelding uit de galerij.
-    @Published var selectedImage: UIImage? = nil
+    @Published var selectedImage: UIImage?
     /// True als de applicatie wacht op een reactie van de AI.
     @Published var isTyping: Bool = false
 
@@ -26,7 +26,7 @@ class ChatViewModel: ObservableObject {
     /// (zoals het Dashboard bij pull-to-refresh) gebruiken deze om een banner te
     /// laten zien — anders zou een timeout stil sneuvelen omdat de chat-bubble
     /// niet zichtbaar is.
-    @Published var lastAIErrorMessage: String? = nil
+    @Published var lastAIErrorMessage: String?
 
     /// Het protocol waartegen we de AI-verzoeken uitvoeren.
     /// Lazy: wordt pas aangemaakt bij het eerste AI-verzoek, niet bij app-start.
@@ -816,8 +816,8 @@ class ChatViewModel: ObservableObject {
         // Debug: print de volledige blueprint- en periodization-context die naar Gemini gaat
         if hasBlueprintData || hasPeriodization {
             print("━━━ 🧠 [Blueprint Context → Gemini] ━━━")
-            if hasBlueprintData  { print("[BLUEPRINT]\n\(blueprintContext)") }
-            if hasPeriodization  { print("[PERIODISERING]\n\(periodizationContext)") }
+            if hasBlueprintData { print("[BLUEPRINT]\n\(blueprintContext)") }
+            if hasPeriodization { print("[PERIODISERING]\n\(periodizationContext)") }
             print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         }
 
@@ -1419,8 +1419,8 @@ class ChatViewModel: ObservableObject {
             // tijdens pieken. Beide modelnamen zijn vanaf Epic #35 configureerbaar in
             // Settings → AI Coach Configuratie. Andere fouten (invalid key, prompt
             // blocked, netwerk) vallen direct naar de UI door.
-            var responseText: String? = nil
-            var finalError: Error? = nil
+            var responseText: String?
+            var finalError: Error?
 
             do {
                 responseText = try await model.generateContent(promptParts)
@@ -1476,7 +1476,7 @@ class ChatViewModel: ObservableObject {
             // Gebruik de robuuste JSON-extractor: strip markdown en haal het JSON-object eruit
             let cleanedJSON = extractCleanJSON(from: responseText ?? "{}")
 
-            var parsedPlan: SuggestedTrainingPlan? = nil
+            var parsedPlan: SuggestedTrainingPlan?
             var motivationText: String
 
             if let data = cleanedJSON.data(using: .utf8) {

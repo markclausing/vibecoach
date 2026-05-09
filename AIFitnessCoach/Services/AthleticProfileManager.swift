@@ -64,7 +64,7 @@ class AthleticProfileManager {
 
         // 4. SPRINT 6.3: Overtrainingslogica
         var needsRecovery = false
-        var recoveryReason: String? = nil
+        var recoveryReason: String?
 
         // Bereken volume van *alleen* de afgelopen week
         guard let oneWeekAgo = Calendar.current.date(byAdding: .day, value: -7, to: now) else {
@@ -101,7 +101,7 @@ class AthleticProfileManager {
         }
 
         // 5. SPRINT 9.3: Gemiddeld tempo berekenen (baseline pace)
-        var averagePace: Int? = nil
+        var averagePace: Int?
         if let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: now) {
             let runningActivities = allActivities.filter {
                 $0.startDate >= thirtyDaysAgo && $0.sportCategory == .running

@@ -281,7 +281,8 @@ struct GoalsListView: View {
             HStack(spacing: 0) {
                 ForEach(segments, id: \.phase.rawValue) { seg in
                     let isActive = seg.phase == currentPhase
-                    let _ = Double(totalW)
+                    // swiftlint:disable:next redundant_discardable_let
+                    let _ = Double(totalW)  // ForEach-disambiguation; verwijderen breekt closure-type-inferentie.
                     Text(phaseShortLabel(seg.phase) + " \(seg.weeks)w")
                         .font(.system(size: 9, weight: isActive ? .bold : .regular))
                         .foregroundColor(isActive ? themeManager.primaryAccentColor : .secondary)
@@ -528,9 +529,9 @@ struct GoalsListView: View {
 
         var segments: [(TrainingPhase, Int)] = []
         if baseW  > 0 { segments.append((.baseBuilding, baseW))  }
-        if buildW > 0 { segments.append((.buildPhase,   buildW)) }
+        if buildW > 0 { segments.append((.buildPhase, buildW)) }
         segments.append((.peakPhase, peakW))
-        segments.append((.tapering,  taperW))
+        segments.append((.tapering, taperW))
         return segments
     }
 
@@ -565,15 +566,15 @@ struct GoalsListView: View {
         var items: [GoalMilestoneItem] = []
 
         let baseEnd  = cal.date(byAdding: .weekOfYear, value: -12, to: goal.targetDate)!
-        let peakStart = cal.date(byAdding: .weekOfYear, value: -4,  to: goal.targetDate)!
-        let taperStart = cal.date(byAdding: .weekOfYear, value: -2,  to: goal.targetDate)!
+        let peakStart = cal.date(byAdding: .weekOfYear, value: -4, to: goal.targetDate)!
+        let taperStart = cal.date(byAdding: .weekOfYear, value: -2, to: goal.targetDate)!
 
         if baseEnd > goal.createdAt {
             items.append(GoalMilestoneItem(date: df.string(from: baseEnd), label: "Base Phase afgerond", isCompleted: now >= baseEnd))
         }
-        items.append(GoalMilestoneItem(date: df.string(from: peakStart),  label: "Build Phase doelen",  isCompleted: now >= peakStart))
-        items.append(GoalMilestoneItem(date: df.string(from: taperStart), label: "Peak Phase bereikt",  isCompleted: now >= taperStart))
-        items.append(GoalMilestoneItem(date: df.string(from: goal.targetDate), label: "Race dag 🏁",    isCompleted: now >= goal.targetDate))
+        items.append(GoalMilestoneItem(date: df.string(from: peakStart), label: "Build Phase doelen", isCompleted: now >= peakStart))
+        items.append(GoalMilestoneItem(date: df.string(from: taperStart), label: "Peak Phase bereikt", isCompleted: now >= taperStart))
+        items.append(GoalMilestoneItem(date: df.string(from: goal.targetDate), label: "Race dag 🏁", isCompleted: now >= goal.targetDate))
         return items
     }
 

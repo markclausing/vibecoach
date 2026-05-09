@@ -41,11 +41,11 @@ enum HeartRateZoneCalculator {
         let hrr = maxHR - restingHR
         guard maxHR > 0, restingHR >= 0, hrr > 0 else { return [] }
         let percentages: [(name: String, low: Double, high: Double)] = [
-            ("Recovery",   0.50, 0.60),
-            ("Endurance",  0.60, 0.70),
-            ("Tempo",      0.70, 0.80),
-            ("Threshold",  0.80, 0.90),
-            ("VO2max",     0.90, 1.00),
+            ("Recovery", 0.50, 0.60),
+            ("Endurance", 0.60, 0.70),
+            ("Tempo", 0.70, 0.80),
+            ("Threshold", 0.80, 0.90),
+            ("VO2max", 0.90, 1.00)
         ]
         return percentages.enumerated().map { (i, zone) in
             let lower = restingHR + hrr * zone.low
@@ -75,11 +75,11 @@ enum HeartRateZoneCalculator {
         // van LTHR als pragmatische ondergrens. UI kan dit altijd overschrijven met de
         // werkelijke rust-HR uit het profiel als die bekend is.
         let percentages: [(name: String, low: Double, high: Double)] = [
-            ("Recovery",   0.50, 0.81),
-            ("Endurance",  0.81, 0.90),
-            ("Tempo",      0.90, 0.94),
-            ("Threshold",  0.94, 1.00),
-            ("VO2max",     1.00, 1.10),
+            ("Recovery", 0.50, 0.81),
+            ("Endurance", 0.81, 0.90),
+            ("Tempo", 0.90, 0.94),
+            ("Threshold", 0.94, 1.00),
+            ("VO2max", 1.00, 1.10)
         ]
         return percentages.enumerated().map { (i, zone) in
             let lower = lactateThresholdHR * zone.low
@@ -99,8 +99,8 @@ enum HeartRateZoneCalculator {
     static func zoneIndex(for bpm: Double, in zones: [HeartRateZone]) -> Int {
         guard !zones.isEmpty else { return 0 }
         if bpm < Double(zones[0].lowerBPM) { return 0 }
-        for zone in zones {
-            if bpm <= Double(zone.upperBPM) { return zone.index }
+        for zone in zones where bpm <= Double(zone.upperBPM) {
+            return zone.index
         }
         return zones.count + 1
     }

@@ -27,9 +27,7 @@ enum VibeScoreContextFormatter {
         }
 
         let label: String
-        if r.readinessScore >= 80 { label = "Optimaal Hersteld" }
-        else if r.readinessScore >= 50 { label = "Matig Hersteld" }
-        else { label = "Slecht Hersteld — Rust prioriteit" }
+        if r.readinessScore >= 80 { label = "Optimaal Hersteld" } else if r.readinessScore >= 50 { label = "Matig Hersteld" } else { label = "Slecht Hersteld — Rust prioriteit" }
 
         let sleepH = Int(r.sleepHours)
         let sleepM = Int((r.sleepHours - Double(sleepH)) * 60)

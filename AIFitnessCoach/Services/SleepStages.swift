@@ -5,9 +5,9 @@ import Foundation
 /// Epic 21 Sprint 2: Gedetailleerde uitsplitsing van slaapfases van de afgelopen nacht.
 /// Bevat alleen stage-specifieke data (iOS 16+ Apple Watch). Nil = ouder device of Watch niet gedragen.
 struct SleepStages {
-    let deepMinutes:  Int
-    let remMinutes:   Int
-    let coreMinutes:  Int
+    let deepMinutes: Int
+    let remMinutes: Int
+    let coreMinutes: Int
     let totalMinutes: Int
     /// Exacte start van de slaapsessie (vroegste Core/Deep/REM sample).
     /// Wordt doorgegeven aan fetchRecentHRV() om het HRV-venster te begrenzen.

@@ -196,10 +196,8 @@ final class PhysiologicalThresholdService {
 
         var output: [Double] = []
         output.reserveCapacity(bucketCount)
-        for i in 0..<bucketCount {
-            if counts[i] > 0 {
-                output.append(sums[i] / Double(counts[i]))
-            }
+        for i in 0..<bucketCount where counts[i] > 0 {
+            output.append(sums[i] / Double(counts[i]))
         }
         return output
     }

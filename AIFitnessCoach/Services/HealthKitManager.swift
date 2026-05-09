@@ -487,7 +487,7 @@ final class HealthKitManager: @unchecked Sendable {
                 let coreSamples = sleepSamples.filter { $0.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue }
 
                 let deepSec = deepSamples.reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
-                let remSec  = remSamples.reduce(0.0)  { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                let remSec  = remSamples.reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
                 let coreSec = coreSamples.reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
 
                 // Als alle stage-specifieke waarden nul zijn is dit een ouder apparaat.
@@ -505,12 +505,12 @@ final class HealthKitManager: @unchecked Sendable {
 
                 let totalSec = deepSec + remSec + coreSec
                 let stages = SleepStages(
-                    deepMinutes:  Int(deepSec  / 60),
-                    remMinutes:   Int(remSec   / 60),
-                    coreMinutes:  Int(coreSec  / 60),
+                    deepMinutes: Int(deepSec  / 60),
+                    remMinutes: Int(remSec   / 60),
+                    coreMinutes: Int(coreSec  / 60),
                     totalMinutes: Int(totalSec / 60),
                     sessionStart: sessionStart,
-                    sessionEnd:   sessionEnd
+                    sessionEnd: sessionEnd
                 )
 
                 // Slaapminuten zijn user-specifieke fysiologische data → private.

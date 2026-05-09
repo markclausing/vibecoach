@@ -37,13 +37,13 @@ enum PowerZoneCalculator {
         // Coggan's percentages — onder- en bovengrens per zone. Onder Z1 mag 0 W vallen
         // (coasting/freewheel telt als active recovery / pure rust).
         let definitions: [(name: String, low: Double, high: Double?)] = [
-            ("Active Recovery",     0.00, 0.55),
-            ("Endurance",           0.56, 0.75),
-            ("Tempo",               0.76, 0.90),
-            ("Lactate Threshold",   0.91, 1.05),
-            ("VO2max",              1.06, 1.20),
-            ("Anaerobic Capacity",  1.21, 1.50),
-            ("Neuromuscular Power", 1.51, nil),
+            ("Active Recovery", 0.00, 0.55),
+            ("Endurance", 0.56, 0.75),
+            ("Tempo", 0.76, 0.90),
+            ("Lactate Threshold", 0.91, 1.05),
+            ("VO2max", 1.06, 1.20),
+            ("Anaerobic Capacity", 1.21, 1.50),
+            ("Neuromuscular Power", 1.51, nil)
         ]
         return definitions.enumerated().map { (i, zone) in
             let lower = ftp * zone.low

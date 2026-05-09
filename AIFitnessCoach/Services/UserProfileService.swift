@@ -163,16 +163,16 @@ final class UserProfileService: @unchecked Sendable {
         let heightCm = UserDefaults.standard.object(forKey: heightKey)    as? Double ?? defaultHeightCm
         let ageYears = UserDefaults.standard.object(forKey: cachedAgeKey) as? Int    ?? defaultAgeYears
         return UserPhysicalProfile(
-            weightKg:     weightKg,
-            heightCm:     heightCm,
-            ageYears:     ageYears,
-            sex:          defaultSex,       // geslacht is niet gecacht; effect op BMR ≈ 5%
+            weightKg: weightKg,
+            heightCm: heightCm,
+            ageYears: ageYears,
+            sex: defaultSex,       // geslacht is niet gecacht; effect op BMR ≈ 5%
             weightSource: .local,
             heightSource: .local,
-            maxHeartRate:       cachedThreshold(forKey: maxHeartRateKey),
-            restingHeartRate:   cachedThreshold(forKey: restingHeartRateKey),
+            maxHeartRate: cachedThreshold(forKey: maxHeartRateKey),
+            restingHeartRate: cachedThreshold(forKey: restingHeartRateKey),
             lactateThresholdHR: cachedThreshold(forKey: lactateThresholdHRKey),
-            ftp:                cachedThreshold(forKey: ftpKey)
+            ftp: cachedThreshold(forKey: ftpKey)
         )
     }
 
@@ -241,10 +241,10 @@ final class UserProfileService: @unchecked Sendable {
         guard HKHealthStore.isHealthDataAvailable() else { return }
 
         var read = Set<HKObjectType>()
-        if let bodyMass   = HKQuantityType.quantityType(forIdentifier: .bodyMass)   { read.insert(bodyMass) }
-        if let height     = HKQuantityType.quantityType(forIdentifier: .height)     { read.insert(height) }
-        if let dob        = HKObjectType.characteristicType(forIdentifier: .dateOfBirth)    { read.insert(dob) }
-        if let sex        = HKObjectType.characteristicType(forIdentifier: .biologicalSex)  { read.insert(sex) }
+        if let bodyMass   = HKQuantityType.quantityType(forIdentifier: .bodyMass) { read.insert(bodyMass) }
+        if let height     = HKQuantityType.quantityType(forIdentifier: .height) { read.insert(height) }
+        if let dob        = HKObjectType.characteristicType(forIdentifier: .dateOfBirth) { read.insert(dob) }
+        if let sex        = HKObjectType.characteristicType(forIdentifier: .biologicalSex) { read.insert(sex) }
 
         let share: Set<HKSampleType> = [
             HKQuantityType.quantityType(forIdentifier: .bodyMass)!,
@@ -264,7 +264,7 @@ final class UserProfileService: @unchecked Sendable {
     /// Haalt het volledige profiel op via de 3-tier resolutie-hiërarchie.
     func fetchProfile() async -> UserPhysicalProfile {
         async let hkWeight = fetchLatestQuantity(identifier: .bodyMass, unit: .gramUnit(with: .kilo))
-        async let hkHeight = fetchLatestQuantity(identifier: .height,   unit: .meterUnit(with: .centi))
+        async let hkHeight = fetchLatestQuantity(identifier: .height, unit: .meterUnit(with: .centi))
         let (hkWeightResult, hkHeightResult) = await (hkWeight, hkHeight)
 
         let ageYears = fetchAge() ?? Self.defaultAgeYears
@@ -291,16 +291,16 @@ final class UserProfileService: @unchecked Sendable {
         }
 
         return UserPhysicalProfile(
-            weightKg:      weightKg,
-            heightCm:      heightCm,
-            ageYears:      ageYears,
-            sex:           sex,
-            weightSource:  weightSource,
-            heightSource:  heightSource,
-            maxHeartRate:       Self.cachedThreshold(forKey: Self.maxHeartRateKey),
-            restingHeartRate:   Self.cachedThreshold(forKey: Self.restingHeartRateKey),
+            weightKg: weightKg,
+            heightCm: heightCm,
+            ageYears: ageYears,
+            sex: sex,
+            weightSource: weightSource,
+            heightSource: heightSource,
+            maxHeartRate: Self.cachedThreshold(forKey: Self.maxHeartRateKey),
+            restingHeartRate: Self.cachedThreshold(forKey: Self.restingHeartRateKey),
             lactateThresholdHR: Self.cachedThreshold(forKey: Self.lactateThresholdHRKey),
-            ftp:                Self.cachedThreshold(forKey: Self.ftpKey)
+            ftp: Self.cachedThreshold(forKey: Self.ftpKey)
         )
     }
 

@@ -25,7 +25,7 @@ extension AIModelCatalog {
     static let builtInFallback = AIModelCatalog(
         models: [
             AIModelDescriptor(id: "gemini-flash-latest", displayName: "Gemini Flash (latest)"),
-            AIModelDescriptor(id: "gemini-flash-lite-latest", displayName: "Gemini Flash Lite (latest)"),
+            AIModelDescriptor(id: "gemini-flash-lite-latest", displayName: "Gemini Flash Lite (latest)")
         ],
         defaultPrimary: "gemini-flash-latest",
         defaultFallback: "gemini-flash-lite-latest"

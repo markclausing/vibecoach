@@ -18,14 +18,14 @@ struct OnboardingTemplateView<Content: View>: View {
 
     /// Optionele uppercase-label direct boven de titel (bijv. "PRIVACY EERST").
     /// Kleur wordt via `eyebrowColor` bepaald — standaard moss (themakleur).
-    var eyebrow: String? = nil
-    var eyebrowColor: Color? = nil
+    var eyebrow: String?
+    var eyebrowColor: Color?
 
     /// Grote koptitel bovenaan het scherm.
     let title: String
 
     /// Optionele copy-tekst direct onder de titel.
-    var subtitle: String? = nil
+    var subtitle: String?
 
     /// De wisselende visual in het midden van het scherm.
     @ViewBuilder let content: () -> Content
@@ -35,8 +35,8 @@ struct OnboardingTemplateView<Content: View>: View {
     let primaryAction: () -> Void
 
     /// Label voor de secundaire (plain) knop. Optioneel — laat leeg om te verbergen.
-    var secondaryButtonTitle: String? = nil
-    var secondaryAction: (() -> Void)? = nil
+    var secondaryButtonTitle: String?
+    var secondaryAction: (() -> Void)?
 
     // MARK: - Environment
 

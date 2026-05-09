@@ -259,7 +259,7 @@ struct PeriodizationResult {
             "",
             "SUCCESCRITERIA DEZE FASE:",
             "\(sessionCheck) Langste sessie (afgelopen \(criteria.sessionWindowWeeks) weken): \(longestKm) km (eis: \(sessionLabel))",
-            "\(trimpCheck) Wekelijkse TRIMP: \(trimpActual) TRIMP/week (eis: \(phase == .tapering ? "≤" : "≥")\(trimpTarget))",
+            "\(trimpCheck) Wekelijkse TRIMP: \(trimpActual) TRIMP/week (eis: \(phase == .tapering ? "≤" : "≥")\(trimpTarget))"
         ]
 
         // Compliment-triggers — coach MOET dit gebruiken als opening

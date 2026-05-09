@@ -99,7 +99,7 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var isLoading: Bool = false
 
     /// Foutmelding als er iets misging, anders nil.
-    @Published var errorMessage: String? = nil
+    @Published var errorMessage: String?
 
     private let locationManager = CLLocationManager()
 
@@ -167,11 +167,11 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         // daily-parameters: temperatuur (min/max), neerslagkans, windsnelheid, weercode.
         var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
         components.queryItems = [
-            URLQueryItem(name: "latitude",                        value: String(format: "%.4f", lat)),
-            URLQueryItem(name: "longitude",                       value: String(format: "%.4f", lon)),
-            URLQueryItem(name: "daily",                           value: "temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,weather_code"),
-            URLQueryItem(name: "timezone",                        value: "auto"),
-            URLQueryItem(name: "forecast_days",                   value: "7"),
+            URLQueryItem(name: "latitude", value: String(format: "%.4f", lat)),
+            URLQueryItem(name: "longitude", value: String(format: "%.4f", lon)),
+            URLQueryItem(name: "daily", value: "temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,weather_code"),
+            URLQueryItem(name: "timezone", value: "auto"),
+            URLQueryItem(name: "forecast_days", value: "7")
         ]
 
         guard let url = components.url else {
@@ -212,12 +212,12 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             else { return nil }
 
             return DayForecast(
-                date:                    date,
-                highCelsius:             high,
-                lowCelsius:              low,
+                date: date,
+                highCelsius: high,
+                lowCelsius: low,
                 precipitationProbability: rain / 100.0,   // Open-Meteo geeft % terug, wij willen 0–1
-                windSpeedKmh:            wind,
-                conditionDescription:    wmoDescription(code)
+                windSpeedKmh: wind,
+                conditionDescription: wmoDescription(code)
             )
         }
     }

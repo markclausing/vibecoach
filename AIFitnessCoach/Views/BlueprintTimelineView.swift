@@ -173,12 +173,12 @@ struct BlueprintTimelineView: View {
                 color: .orange
             ),
             PhaseMarker(
-                date: calendar.date(byAdding: .weekOfYear, value: -4,  to: target) ?? target,
+                date: calendar.date(byAdding: .weekOfYear, value: -4, to: target) ?? target,
                 label: "Peak",
                 color: .red
             ),
             PhaseMarker(
-                date: calendar.date(byAdding: .weekOfYear, value: -2,  to: target) ?? target,
+                date: calendar.date(byAdding: .weekOfYear, value: -2, to: target) ?? target,
                 label: "Taper",
                 color: .purple
             )
@@ -324,7 +324,7 @@ struct BlueprintTimelineView: View {
                 AreaMark(
                     x: .value("Week", point.weekStart),
                     yStart: .value("Min", 0),
-                    yEnd:   .value(metric.label, point.volume)
+                    yEnd: .value(metric.label, point.volume)
                 )
                 .foregroundStyle(areaGradient)
                 .interpolationMethod(.monotone)
@@ -343,14 +343,14 @@ struct BlueprintTimelineView: View {
             }
         }
         .chartXAxis {
-            AxisMarks(values: .stride(by: .month)) { value in
+            AxisMarks(values: .stride(by: .month)) { _ in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3))
                 AxisValueLabel(format: .dateTime.month(.abbreviated), centered: true)
                     .font(.system(size: 9))
             }
         }
         .chartYAxis {
-            AxisMarks(position: .leading) { value in
+            AxisMarks(position: .leading) { _ in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3))
                 AxisValueLabel()
                     .font(.system(size: 9))
@@ -368,8 +368,8 @@ struct BlueprintTimelineView: View {
 
     private var legendRow: some View {
         HStack(spacing: 16) {
-            legendItem(color: .gray,   dash: [5, 4], label: "Ideaal schema")
-            legendItem(color: .blue,   dash: [],     label: "Jouw voortgang")
+            legendItem(color: .gray, dash: [5, 4], label: "Ideaal schema")
+            legendItem(color: .blue, dash: [], label: "Jouw voortgang")
             legendItem(color: .orange, dash: [6, 4], label: "Prognose")
         }
         .font(.caption2)

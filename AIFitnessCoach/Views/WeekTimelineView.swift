@@ -12,13 +12,13 @@ struct WeekTimelineView: View {
     /// Story 33.2b: callback voor "Herschrijf schema" — Dashboard wired dit naar
     /// `ChatViewModel.requestPlanReset(...)`. Optioneel zodat preview-views zonder
     /// reset-flow blijven werken.
-    var onResetSchema: (() -> Void)? = nil
+    var onResetSchema: (() -> Void)?
     /// Story 33.2b: loading-state — disabled de knop en toont ProgressView.
     var isResettingSchema: Bool = false
 
     @EnvironmentObject var themeManager: ThemeManager
     @State private var isExpanded = false
-    @State private var selectedWorkout: SuggestedWorkout? = nil
+    @State private var selectedWorkout: SuggestedWorkout?
 
     // MARK: - Week helpers
 
@@ -472,10 +472,10 @@ struct WorkoutDayRowView: View {
     let workout: SuggestedWorkout
     let isToday: Bool
     let isCompleted: Bool
-    var forecast: DayForecast? = nil
-    var onTap: (() -> Void)? = nil
-    var onSkip: (() -> Void)? = nil
-    var onAlternative: (() -> Void)? = nil
+    var forecast: DayForecast?
+    var onTap: (() -> Void)?
+    var onSkip: (() -> Void)?
+    var onAlternative: (() -> Void)?
 
     @EnvironmentObject var themeManager: ThemeManager
 
