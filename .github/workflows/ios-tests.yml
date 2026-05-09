@@ -24,9 +24,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Install SwiftLint
+        # `macos-latest` runner image bevat SwiftLint niet meer pre-installed
+        # (was vroeger wel zo). Brew is wel pre-installed; install duurt ~10s.
+        run: brew install swiftlint
+
       - name: Run SwiftLint
-        # SwiftLint is voorgeïnstalleerd op `macos-latest` (actions/runner-images).
         # `--strict` upgrade warnings naar errors zodat 1 nieuwe violation CI breekt.
+        # `github-actions-logging` reporter geeft inline annotations op het PR-diff.
         run: swiftlint --strict --reporter github-actions-logging
 
   unit-tests:
