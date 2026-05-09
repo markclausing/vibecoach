@@ -98,6 +98,10 @@ jobs:
           xcrun simctl bootstatus "$SIMULATOR_ID" -b
 
       - name: Run UI Tests
+        # Investigatie story 46.4: `-parallel-testing-enabled NO` test de hypothese
+        # dat de "Clone 2 of iPhone 16 Pro"-xctrunner-clones de bron zijn van de
+        # ipc/mig-server-died crashes. `-resultBundlePath` capture de bundle voor
+        # post-mortem analyse (per-test crash-reports + activity logs + screenshots).
         run: |
           SIMULATOR_ID="${{ steps.simulator.outputs.id }}"
 
@@ -106,10 +110,40 @@ jobs:
             -scheme AIFitnessCoach \
             -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
             -only-testing:AIFitnessCoachUITests \
+            -parallel-testing-enabled NO \
+            -resultBundlePath UITests.xcresult \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             | xcpretty
+
+      - name: Upload UI Tests xcresult Bundle
+        # `if: always()` — bundle is juist bij falen het meest waardevol.
+        # 14 dagen retentie geeft ruimte voor analyse over meerdere runs.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-tests-xcresult
+          path: UITests.xcresult
+          retention-days: 14
+
+      - name: Capture CoreSimulator Diagnostics
+        # CoreSimulator-logs bevatten de SpringBoard / xctrunner crash-trails. Worden
+        # bij ipc/mig-failures vaak geschreven naar ~/Library/Logs/CoreSimulator/.
+        if: always()
+        run: |
+          mkdir -p coresimulator-logs
+          cp -R ~/Library/Logs/CoreSimulator coresimulator-logs/ 2>/dev/null || echo "No CoreSimulator logs"
+          ls -la coresimulator-logs/ || true
+
+      - name: Upload CoreSimulator Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coresimulator-logs
+          path: coresimulator-logs
+          retention-days: 14
+          if-no-files-found: ignore
 
   coverage-report:
     name: Coverage Report
