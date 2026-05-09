@@ -190,8 +190,12 @@ final class OnboardingE2ETests: XCTestCase {
         XCTAssertTrue(coachTab.waitForExistence(timeout: 5), "Tab 'Coach' niet gevonden.")
         coachTab.tap()
 
-        let chatInput = app.textFields["ChatInputField"]
-        XCTAssertTrue(chatInput.waitForExistence(timeout: 5), "ChatInputField verschijnt niet.")
+        // SwiftUI's TextField(axis: .vertical) rendert in iOS 17+ als .textView (niet
+        // .textField) in de XCUI-hiërarchie — zoek element-type-agnostisch op identifier.
+        // Timeout 15s voor CI launch-tijd (ChatView onAppear refresht profile-context).
+        let chatInput = app.descendants(matching: .any)
+            .matching(identifier: "ChatInputField").firstMatch
+        XCTAssertTrue(chatInput.waitForExistence(timeout: 15), "ChatInputField verschijnt niet.")
 
         chatInput.tap()
         chatInput.typeText("Ik kan niet op maandag trainen.")
