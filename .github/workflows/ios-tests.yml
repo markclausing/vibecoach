@@ -13,6 +13,22 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  lint:
+    name: SwiftLint
+    runs-on: macos-latest
+    # Geen `needs:` — draait parallel aan unit-tests voor snelle feedback.
+    # `swiftlint --strict` faalt op zowel violations als warnings, zodat het
+    # 0-baseline (Epic #46.2 prep-PR) niet stilzwijgend kan eroderen.
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run SwiftLint
+        # SwiftLint is voorgeïnstalleerd op `macos-latest` (actions/runner-images).
+        # `--strict` upgrade warnings naar errors zodat 1 nieuwe violation CI breekt.
+        run: swiftlint --strict --reporter github-actions-logging
+
   unit-tests:
     name: Unit Tests
     runs-on: macos-latest
