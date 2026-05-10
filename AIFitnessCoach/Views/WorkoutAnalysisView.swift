@@ -400,22 +400,78 @@ struct WorkoutAnalysisView: View {
         .overlay(Capsule().strokeBorder(color.opacity(selected ? 0.60 : 0.30), lineWidth: selected ? 1.5 : 1))
     }
 
-    /// Inline detail-card die `pattern.detail` toont onder de chip-row zodra een chip
-    /// wordt aangetapt. Bewust geen popover/sheet — dit is geen secundaire flow maar
-    /// extra context bij wat de gebruiker al ziet.
+    /// Inline detail-card die opent zodra een pattern-chip wordt aangetapt. Drie
+    /// secties: **Wat het meet** (algemene fysiologische uitleg per kind), **Drempels**
+    /// (de severity-grenzen die de detector hanteert) en **Op deze rit** (de feitelijke
+    /// `pattern.detail` met meting). Bewust geen popover/sheet — extra context bij
+    /// wat de gebruiker al ziet, niet een secundaire flow.
     private func patternDetailCard(_ pattern: WorkoutPattern) -> some View {
         let color = severityColor(pattern.severity)
-        return Text(pattern.detail)
-            .font(.subheadline)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(color.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(color.opacity(0.25), lineWidth: 1)
+        let info = patternExplanation(pattern.kind)
+        return VStack(alignment: .leading, spacing: 10) {
+            detailSection(title: "Wat het meet", body: info.description)
+            detailSection(title: "Drempels", body: info.thresholds)
+            detailSection(title: "Op deze rit", body: pattern.detail)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(color.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(color.opacity(0.25), lineWidth: 1)
+        )
+    }
+
+    @ViewBuilder
+    private func detailSection(title: String, body: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title.uppercased())
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .tracking(0.4)
+            Text(body)
+                .font(.subheadline)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// Mens-leesbare uitleg per pattern-kind voor de detail-card. Korte zin over
+    /// fysiologische betekenis + drempel-context, los van de feitelijke meting van
+    /// deze rit. Bron-drempels matchen de constanten in `WorkoutPatternDetector`.
+    private func patternExplanation(_ kind: WorkoutPatternKind) -> (description: String, thresholds: String) {
+        switch kind {
+        case .aerobicDecoupling:
+            return (
+                description: "Vergelijkt de hartslag/intensiteit-ratio in helft 1 versus helft 2 van je rit. Als de ratio stijgt, deed je hart in de tweede helft meer werk per watt of m/s — een teken dat je aerobic ceiling onder druk stond.",
+                thresholds: "<3% stabiel · 3–5% mild · 5–8% moderate · >8% significant. Wordt niet gemeten bij stop-and-go-ritten (te variabele intensiteit)."
             )
+        case .cardiacDrift:
+            return (
+                description: "HR-stijging tussen helft 1 en helft 2, los van intensiteit. Bij gelijkmatige inspanning duidt drift op vermoeidheid, hitte of dehydratie. Wordt alleen gemeten in Z1–Z3; drift in Z4–Z5 is verwacht gedrag bij drempel-/VO2max-werk.",
+                thresholds: "<3% stabiel · 3–5% mild · 5–8% moderate · >8% significant."
+            )
+        case .cadenceFade:
+            return (
+                description: "Daling van je gemiddelde cadans tussen het eerste en laatste kwart. Zero-cadence-momenten (verkeerslicht, koffiestop) worden uit de meting gefilterd. Een fors verschil duidt op spiervermoeidheid of bewust temperen aan het einde.",
+                thresholds: "3 mild · 5 moderate · 10 significant — eenheden zijn RPM bij cycling, SPM bij lopen."
+            )
+        case .heartRateRecovery:
+            return (
+                description: "Hoeveel zakte je hartslag tijdens een rust-pauze (≥45s, power+cadence beide ≈ 0) ten opzichte van de piek-binnen-pauze. Snelle daling = sterk parasympatisch herstel; trage daling kan vermoeidheid, hitte of cumulatieve belasting indiceren. Alleen pauzes ≥90s zijn pin-waardig.",
+                thresholds: "Drop als percentage van LTHR: ≥15% uitstekend (geen pin) · 12–15% mild · 9–12% moderate · <9% significant."
+            )
+        }
+    }
+
+    /// Midden van de pattern-range — pin-positie op de HR-chart. Decoupling/drift
+    /// gebruiken de hele workout-duur, dus midpoint = midden van de rit. Cadence
+    /// fade en HR-recovery hebben smallere ranges (laatste kwart, pauze-duur),
+    /// dus midpoint valt daar gericht in het meet-bereik.
+    private func patternMidpoint(of pattern: WorkoutPattern) -> Date {
+        let mid = (pattern.range.lowerBound.timeIntervalSince1970
+                   + pattern.range.upperBound.timeIntervalSince1970) / 2
+        return Date(timeIntervalSince1970: mid)
     }
 
     private func patternShortLabel(_ kind: WorkoutPatternKind) -> String {
@@ -786,14 +842,16 @@ struct WorkoutAnalysisView: View {
                         .lineStyle(StrokeStyle(lineWidth: 2.0, lineCap: .round))
                     }
                 }
-                // Story 32.3b: pattern-pins op de HR-chart op `range.lowerBound`,
-                // gekleurd op severity. De index-overlay (1, 2, 3, …) komt 1-op-1
-                // terug op de chip boven de chart zodat gebruiker direct ziet welke
-                // pin bij welk patroon hoort.
+                // Story 32.3b + UX-fix: pattern-pins op het **midden** van de pattern-
+                // range (voorheen `lowerBound` — daardoor stond decoupling/drift-pin
+                // aan het rit-begin terwijl het effect over de hele rit gemeten werd).
+                // Nu: decoupling/drift = midden van workout, cadence fade = midden van
+                // laatste kwart, HR-recovery = midden van de pauze.
                 ForEach(Array(patterns.enumerated()), id: \.element.kind) { index, pattern in
-                    if let hr = nearestHeartRate(at: pattern.range.lowerBound) {
+                    let pinDate = patternMidpoint(of: pattern)
+                    if let hr = nearestHeartRate(at: pinDate) {
                         PointMark(
-                            x: .value("Tijd", pattern.range.lowerBound),
+                            x: .value("Tijd", pinDate),
                             y: .value("BPM", hr)
                         )
                         .foregroundStyle(severityColor(pattern.severity))
