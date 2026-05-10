@@ -156,3 +156,39 @@ Drie helpers draaien sequentieel in dezelfde `.task` (volgorde is bewust):
 3. **`runSessionReclassification()`** — `SessionReclassifier.rerun` (Epic 40 story 40.4). Records die net samples kregen, krijgen nu de zone-distributie-classificatie i.p.v. de avg-HR-fallback van bij ingest. Beschermd via `ActivityRecord.manualSessionTypeOverride` — een handmatige keuze in `WorkoutAnalysisView` overleeft elke rerun.
 
 De pijplijn is volledig idempotent: een tweede run op een schone DB doet niets. Reden voor deze volgorde: dedupe vóór reclassify scheelt classify-cycles op records die toch verwijderd worden; backfill vóór dedupe zorgt dat sample-counts kloppen voor de rijkdom-heuristiek.
+
+---
+
+## 10. HR-recovery via pauze-detectie (Epic #47)
+
+HR-recovery is fysiologisch alleen interpreteerbaar wanneer de externe load wegvalt — een vagaal-tonus-meting tegen een continu inspanning is geen recovery, maar een willekeurige spike-naar-spike-vergelijking. De vorige aanpak (globale piek + meet HR exact 60s later, in `WorkoutPatternDetector.detectHeartRateRecovery` van Epic 32) maakte die fout: bij continue rides zat de gebruiker 60s na de piek alweer te trappen, dus een visuele dip van 40 BPM tijdens een korte stop kwam als "4 BPM drop" uit de detector.
+
+### `Services/PauseDetector.swift`
+
+Pure-Swift, AppStorage-vrij, geen framework-deps. Detecteert aaneengesloten samples waar zowel `power < 5` als `cadence < 5` (nil-waarden tellen als "geen signaal", niet als "actief") voor minimaal `minimumPauseSeconds = 45`. Pre-check: workout moet minimaal 10 samples met daadwerkelijke activiteit hebben — voorkomt dat een sport zonder beide sensoren (zwemmen) als één lange pauze wordt gezien.
+
+Per gedetecteerde pauze levert hij een `PauseRecoveryEvent` met:
+- `pauseRange`: volledige tijdspanne van de pauze
+- `measurementWindow`: `min(60s, pauze-duur)` vanaf pauze-start (Optie A — eerlijk voor 45-60s-pauzes, simpeler dan pro-rata drempels)
+- `hrAtPauseStart`: eerste HR-data binnen het pauze-window
+- `minHRInWindow`: laagste HR die in `measurementWindow` is gezien
+
+### `WorkoutPatternDetector.detectHeartRateRecovery` — pauze-iteratie
+
+Itereert `PauseDetector.detect(in:)`-output, berekent per event `ratio = drop / referenceHR`, en pint de pauze met de laagste ratio (slechtste recovery — Management by Exception §1: alleen exceptions tonen, en dan over het zwakste signaal).
+
+Drempels relatief aan `referenceHR`:
+- `≥ 0.15` ratio → uitstekend, geen pin
+- `0.12 – 0.15` → mild
+- `0.09 – 0.12` → moderate
+- `< 0.09` → significant
+
+`referenceHR` cascade: `lactateThresholdHR` (voorkeur, fysiologisch correctste anker) → `0.88 × maxHeartRate` (gangbare LTHR/HRmax-relatie) → `referenceHRFallback = 165` (populatie-default die de oude absolute drempels reproduceert: 165 × 0.15 ≈ 25 BPM goed-grens).
+
+### Coach-prompt — `WorkoutInsightService.RecoveryEventSummary`
+
+Naast de pin krijgt de coach via `WorkoutInsightService.InsightContext.recoveryEvents` **alle** gedetecteerde pauze-events mee — ook de uitstekende. De system-instruction van de service vertelt de AI hoe hij ermee omgaat: een uitstekende recovery mag positief gefraamd worden ("je autonome zenuwstelsel reageerde sterk") wanneer relevant voor de patronen, een matig/slecht-event versterkt vermoeidheids-vermoedens uit andere patronen. Workouts zonder pauze (interval-tests, tempo-loops) leveren geen events op en de coach noemt het niet — geen meet-window = geen onderwerp.
+
+### Tradeoff vs. cardiac drift
+
+Workouts zonder pauze krijgen geen HR-recovery-signaal meer. Dat is correct gedrag, maar betekent dat de `cardiacDrift`-detector (HR-stijging tussen helft 1 en 2 bij gelijke intensiteit) nu de enige HR-only-vermoeidheids-laag is voor continue rides. Dat is bewust: drift werkt op de feitelijke fysiologische signal van Z1-Z3-aerobic-werk en is wel zinvol op continue effort, terwijl recovery alleen tijdens rust-windows fysiologisch correct gemeten kan worden.

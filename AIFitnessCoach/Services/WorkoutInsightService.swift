@@ -76,6 +76,13 @@ final class WorkoutInsightService {
     3. Bij intentionele hoge intensiteit zonder mismatch: stel een kalibratie-vraag
        ("voelde dit als drempelwerk of zat er nog ruimte?"), geen oorzaak-zoektocht.
 
+    **Recovery-events** (pauzes binnen de rit) zijn een aparte signaal-laag. Een
+    "uitstekend"-label = sterk parasympatisch herstel; benoem dat positief als het
+    relevant is voor de patronen. Een "matig"/"slecht"-label versterkt vermoeidheids-
+    of hitte-vermoedens uit de patronen — gebruik het als ondersteunend bewijs, niet
+    als losstaande pin. Geen recovery-events = de rit had geen rust-window; benoem
+    het niet.
+
     Stijl: Nederlandstalig, tweede persoon, geen jargon zonder uitleg, geen lijsten of
     markdown. Eindig zonder "Als je vragen hebt..."-clichés.
     """
@@ -128,6 +135,40 @@ final class WorkoutInsightService {
         let maxHeartRate: Double?
         let lactateThresholdHR: Double?
         let ftp: Double?
+        /// Epic #47: alle gedetecteerde pauze-recovery-events — ook positieve.
+        /// Stelt de coach in staat om bij goede recovery positief te framen,
+        /// los van het pin-systeem (dat alleen exceptions toont conform §1).
+        let recoveryEvents: [RecoveryEventSummary]
+
+        init(sportLabel: String,
+             durationMinutes: Int,
+             sessionTypeLabel: String? = nil,
+             title: String? = nil,
+             zones: [HeartRateZone]? = nil,
+             maxHeartRate: Double? = nil,
+             lactateThresholdHR: Double? = nil,
+             ftp: Double? = nil,
+             recoveryEvents: [RecoveryEventSummary] = []) {
+            self.sportLabel = sportLabel
+            self.durationMinutes = durationMinutes
+            self.sessionTypeLabel = sessionTypeLabel
+            self.title = title
+            self.zones = zones
+            self.maxHeartRate = maxHeartRate
+            self.lactateThresholdHR = lactateThresholdHR
+            self.ftp = ftp
+            self.recoveryEvents = recoveryEvents
+        }
+    }
+
+    /// Lichte struct voor de coach-prompt. Bevat alleen wat de AI nodig heeft:
+    /// duur (in seconden) en drop (BPM). De `qualityLabel` wordt door de caller
+    /// afgeleid uit de drop-ratio relatief aan referenceHR — zo houdt de service
+    /// zelf geen drempel-kennis bij zich.
+    struct RecoveryEventSummary: Equatable {
+        let durationSeconds: TimeInterval
+        let drop: Double
+        let qualityLabel: String
     }
 
     /// Genereert een coaching-narrative voor de meegeleverde patronen + workout-context.
@@ -215,6 +256,22 @@ final class WorkoutInsightService {
         lines.append("")
         lines.append("Gedetecteerde patronen:")
         lines.append(snippet)
+
+        // Epic #47: pauze-gebaseerde recovery-events meegeven — ook positieve.
+        // Coach kan dan bij vraag "hoe ging mijn rit?" het uitstekende herstel
+        // benoemen ook als er geen pin is. Voor matig herstel verstevigt dit
+        // de pattern-pin met de feitelijke pauze-context.
+        if !context.recoveryEvents.isEmpty {
+            lines.append("")
+            lines.append("Recovery-events (per pauze):")
+            for event in context.recoveryEvents {
+                let mins = Int(event.durationSeconds.rounded()) / 60
+                let secs = Int(event.durationSeconds.rounded()) % 60
+                let dur = String(format: "%d:%02d", mins, secs)
+                lines.append("- pauze van \(dur), HR daalde \(Int(event.drop.rounded())) BPM (\(event.qualityLabel))")
+            }
+        }
+
         lines.append("")
         lines.append("Geef je analyse.")
         return lines.joined(separator: "\n")

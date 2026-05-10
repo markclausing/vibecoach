@@ -64,17 +64,21 @@ enum WorkoutPatternDetector {
     static let cadenceFadeModerate: Double = 5.0
     static let cadenceFadeSignificant: Double = 10.0
 
-    /// HR-recovery drempels: lage drop = ergere recovery. Boven `hrRecoveryGood`
-    /// vinden we niet de moeite waard om te rapporteren.
-    static let hrRecoveryGood: Double = 25.0
-    static let hrRecoveryMild: Double = 20.0
-    static let hrRecoveryModerate: Double = 15.0
+    /// HR-recovery drempels (Epic #47): drop in een gedetecteerde pauze als ratio
+    /// van de persoonlijke `referenceHR` (LTHR voorkeur, anders 0.88×maxHR, anders
+    /// `referenceHRFallback`). Boven `hrRecoveryGoodRatio` is de recovery uitstekend
+    /// en niet de moeite waard om te pinnen.
+    static let hrRecoveryGoodRatio: Double = 0.15
+    static let hrRecoveryMildRatio: Double = 0.12
+    static let hrRecoveryModerateRatio: Double = 0.09
+
+    /// Populatie-default voor `referenceHR` als geen LTHR/maxHR bekend is. 165 BPM
+    /// is een redelijke LTHR-schatting voor een moderne 35+-volwassene en matcht
+    /// de oude absolute drempels (165 × 0.15 = 24.75 ≈ 25 BPM goed-grens).
+    static let referenceHRFallback: Double = 165.0
 
     /// Workouts korter dan 10 minuten zijn te kort voor halve-vs-halve-vergelijkingen.
     static let minimumDurationSeconds: TimeInterval = 600
-
-    /// Window voor HR-recovery-meting na de piek.
-    static let hrRecoveryWindowSeconds: TimeInterval = 60
 
     /// Decoupling-meting vereist steady-state effort. Bij hoge variantie in vermogen
     /// of pace (denk: stop-and-go-ritjes met verkeerslichten, sociale ritten met
@@ -219,55 +223,59 @@ enum WorkoutPatternDetector {
         return WorkoutPattern(kind: .cadenceFade, severity: severity, range: range, value: drop, detail: detail)
     }
 
-    // MARK: HR recovery (post-peak)
+    // MARK: HR recovery (via pauze-detectie — Epic #47)
 
-    /// Vindt de globale max-HR en meet de drop in de 60s erna. Lage drop = matige
-    /// recovery → signal van vermoeidheid. Skipt als het peak-moment in de laatste
-    /// 60s ligt (geen volledig recovery-window beschikbaar).
-    /// - Parameter zones: Persoonlijke HR-zones. Bij aanwezigheid eisen we dat de
-    ///   piek in Z3+ ligt (echte aerobic-of-zwaarder-effort). Een Z2-rit met piek
-    ///   van 155 BPM verwacht je niet zomaar 25 BPM te zien droppen, en het rapporteren
-    ///   van "trage recovery" voor zo'n workout is misleidend (Epic #44 story 44.5).
+    /// Itereert pauzes uit `PauseDetector.detect(in:)`, berekent per pauze de
+    /// HR-drop-ratio relatief aan `referenceHR`, en pint de pauze met de slechtste
+    /// recovery (laagste ratio) — conform Management by Exception §1: alleen als
+    /// er iets te zeggen is, en dan over het zwakste signaal.
+    /// - Parameter referenceHR: LTHR voorkeur, anders 0.88 × maxHR, anders nil.
+    ///   Bij nil valt het terug op `referenceHRFallback` (165 BPM populatie-default).
+    /// - Returns: nil als er geen pauze is, geen pauze met meetbare drop, of als
+    ///   alle pauzes uitstekend herstel laten zien.
     static func detectHeartRateRecovery(in samples: [WorkoutSample],
-                                         zones: [HeartRateZone]? = nil) -> WorkoutPattern? {
-        let sorted = samples.sorted { $0.timestamp < $1.timestamp }
-        guard let peak = peakHeartRateSample(sorted), let peakHR = peak.heartRate else { return nil }
-        // Zone-gate op de piek: alleen rapporteren als de piek écht aerobic+ was.
-        if let zones {
-            let peakZone = HeartRateZoneCalculator.zoneIndex(for: peakHR, in: zones)
-            guard peakZone >= 3 else { return nil }
+                                         referenceHR: Double? = nil) -> WorkoutPattern? {
+        let events = PauseDetector.detect(in: samples)
+        guard !events.isEmpty else { return nil }
+        let refHR = (referenceHR ?? referenceHRFallback)
+        guard refHR > 0 else { return nil }
+
+        // Voor elk event: bereken ratio + severity. Filter "uitstekende" events
+        // eruit — die mogen wel naar de coach-prompt-context (positief framen),
+        // maar krijgen geen pin.
+        var pinnable: [(event: PauseRecoveryEvent, ratio: Double, severity: WorkoutPattern.Severity)] = []
+        for event in events {
+            guard event.drop > 0 else { continue }
+            let ratio = event.drop / refHR
+            guard ratio < hrRecoveryGoodRatio else { continue }
+            let severity: WorkoutPattern.Severity = {
+                if ratio < hrRecoveryModerateRatio { return .significant }
+                if ratio < hrRecoveryMildRatio { return .moderate }
+                return .mild
+            }()
+            pinnable.append((event, ratio, severity))
         }
-        let recoveryEnd = peak.timestamp.addingTimeInterval(hrRecoveryWindowSeconds)
-        guard let workoutEnd = sorted.last?.timestamp, recoveryEnd <= workoutEnd else { return nil }
-        guard let endSample = nearestSample(at: recoveryEnd, in: sorted),
-              let endHR = endSample.heartRate else {
-            return nil
-        }
-        let drop = peakHR - endHR
-        // Strict > 0: drop = 0 betekent HR-plateau (geen recovery-event), geen patroon.
-        // Negatief = HR steeg verder na de "piek" — ook geen recovery-window.
-        guard drop > 0 else { return nil }
-        guard drop < hrRecoveryGood else { return nil } // Goede recovery; geen reden voor pin.
-        let severity: WorkoutPattern.Severity = {
-            if drop < hrRecoveryModerate { return .significant }
-            if drop < hrRecoveryMild { return .moderate }
-            return .mild
-        }()
-        let range = peak.timestamp ... endSample.timestamp
-        let detail = String(format: "HR-recovery: %.0f BPM drop in 60s na piek (richtwaarde >%.0f BPM)", drop, hrRecoveryGood)
-        return WorkoutPattern(kind: .heartRateRecovery, severity: severity, range: range, value: drop, detail: detail)
+        guard let worst = pinnable.min(by: { $0.ratio < $1.ratio }) else { return nil }
+
+        let dropInt = Int(worst.event.drop.rounded())
+        let durationStr = formatDuration(worst.event.durationSeconds)
+        let goodThreshold = Int((refHR * hrRecoveryGoodRatio).rounded())
+        let detail = "HR-recovery: \(dropInt) BPM drop in pauze van \(durationStr) (richtwaarde >\(goodThreshold) BPM)"
+        return WorkoutPattern(
+            kind: .heartRateRecovery,
+            severity: worst.severity,
+            range: worst.event.pauseRange,
+            value: worst.event.drop,
+            detail: detail
+        )
     }
 
-    private static func peakHeartRateSample(_ samples: [WorkoutSample]) -> WorkoutSample? {
-        var best: WorkoutSample?
-        var bestHR: Double = 0
-        for sample in samples {
-            if let hr = sample.heartRate, hr > bestHR {
-                bestHR = hr
-                best = sample
-            }
-        }
-        return best
+    /// Format `m:ss` voor pauze-duur in de detail-tekst.
+    private static func formatDuration(_ seconds: TimeInterval) -> String {
+        let total = Int(seconds.rounded())
+        let m = total / 60
+        let s = total % 60
+        return String(format: "%d:%02d", m, s)
     }
 
     // MARK: Convenience
@@ -277,23 +285,27 @@ enum WorkoutPatternDetector {
         detectAll(in: samples, zones: nil)
     }
 
-    /// Epic #44 story 44.5: profiel-bewuste variant. Leidt persoonlijke HR-zones
-    /// af uit `profile` (Friel als LTHR aanwezig is, anders Karvonen op effective
-    /// max + rest) en threadt ze door naar de zone-gating in cardiac drift en
-    /// HR-recovery. Decoupling en cadence fade zijn al intensiteit-onafhankelijk
-    /// en hebben geen zone-input nodig.
+    /// Epic #44 story 44.5 + Epic #47: profiel-bewuste variant. Leidt persoonlijke
+    /// HR-zones (Friel-LTHR voorkeur, anders Karvonen) en `referenceHR` (LTHR
+    /// voorkeur, anders 0.88 × maxHR) uit `profile` af en threadt beide door:
+    /// `zones` voor de cardiac-drift-gate, `referenceHR` voor de HR-recovery-
+    /// drempels. Decoupling en cadence fade zijn intensiteit-onafhankelijk en
+    /// hebben geen profiel-input nodig.
     static func detectAll(in samples: [WorkoutSample],
                           profile: UserPhysicalProfile) -> [WorkoutPattern] {
-        detectAll(in: samples, zones: heartRateZones(from: profile))
+        detectAll(in: samples,
+                  zones: heartRateZones(from: profile),
+                  referenceHR: referenceHeartRate(from: profile))
     }
 
     static func detectAll(in samples: [WorkoutSample],
-                          zones: [HeartRateZone]?) -> [WorkoutPattern] {
+                          zones: [HeartRateZone]?,
+                          referenceHR: Double? = nil) -> [WorkoutPattern] {
         var patterns: [WorkoutPattern] = []
         if let p = detectAerobicDecoupling(in: samples) { patterns.append(p) }
         if let p = detectCardiacDrift(in: samples, zones: zones) { patterns.append(p) }
         if let p = detectCadenceFade(in: samples) { patterns.append(p) }
-        if let p = detectHeartRateRecovery(in: samples, zones: zones) { patterns.append(p) }
+        if let p = detectHeartRateRecovery(in: samples, referenceHR: referenceHR) { patterns.append(p) }
         return patterns
     }
 
@@ -309,6 +321,20 @@ enum WorkoutPatternDetector {
             return nil
         }
         return HeartRateZoneCalculator.karvonen(maxHR: maxHR, restingHR: restHR)
+    }
+
+    /// Referentie-HR voor HR-recovery-drempels (Epic #47). LTHR is het meest
+    /// fysiologisch correcte ankerpunt; bij ontbreken vallen we terug op de
+    /// gangbare `LTHR ≈ 0.88 × maxHR`-relatie. Bij geen van beide returnt nil
+    /// zodat de detector op `referenceHRFallback` (165 BPM) terugvalt.
+    static func referenceHeartRate(from profile: UserPhysicalProfile) -> Double? {
+        if let lthr = profile.lactateThresholdHR?.value, lthr > 0 {
+            return lthr
+        }
+        if let maxHR = profile.maxHeartRate?.value, maxHR > 0 {
+            return maxHR * 0.88
+        }
+        return nil
     }
 
     // MARK: Sample-helpers
@@ -347,21 +373,5 @@ enum WorkoutPatternDetector {
         }
         guard !values.isEmpty else { return nil }
         return values.reduce(0, +) / Double(values.count)
-    }
-
-    /// Nearest-sample lookup zonder dependency op `WorkoutAnalysisHelpers` zodat
-    /// de detector zelf-stantig blijft. O(n) lineaire scan.
-    private static func nearestSample(at targetDate: Date, in samples: [WorkoutSample]) -> WorkoutSample? {
-        guard let first = samples.first else { return nil }
-        var best = first
-        var bestDelta = abs(first.timestamp.timeIntervalSince(targetDate))
-        for sample in samples.dropFirst() {
-            let delta = abs(sample.timestamp.timeIntervalSince(targetDate))
-            if delta < bestDelta {
-                bestDelta = delta
-                best = sample
-            }
-        }
-        return best
     }
 }
