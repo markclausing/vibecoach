@@ -6,29 +6,26 @@ Een iOS-app (SwiftUI + SwiftData) die fungeert als persoonlijke, slimme fitnessc
 
 ## 🚀 Huidige Status
 
-**Laatst gemerged — Epic #46 ✅ GitHub Actions DAG-visualisatie & Pipeline-uitbreiding (alle 4 hoofd-stories live: `lint` / `unit-tests` / `ui-tests` / `coverage-report` jobs met DAG-relaties; UI-tests-flakiness datagedreven opgelost via xcresult-analyse — parallel-disable + 3 test-code-fixes; SwiftLint prep-PR loste 938→0 violations op + parallele `lint`-job met `--strict` blokkeert nieuwe regressies) · `CLAUDE.md` uitgebreid met 4 tech-debt-lessons · SwiftData V1→V2 schema-migratie (tech-debt, eerste `VersionedSchema` + 5 migratie-tests) · `ChatViewModel` cache-formatters geëxtraheerd (tech-debt, +27 unit tests) · `Services/FitnessDataService.swift` opgesplitst (tech-debt, pure file-split) · `Models/FitnessGoal.swift` opgesplitst (tech-debt, PR A — pure file-split) · `print` → `AppLoggers` migratie in `Services/` (tech-debt, PII-fix) · Epic #45 ✅ Per-workout context (14d) in coach-prompt · Epic #44 ✅ Persoonlijke HR Zones & FTP · Epic #32 ✅ Deep-Dive Fysiologische Analyse · Epic #42 ✅ Always-on Dual-Source Sync · Epic #41 ✅ Dual-Source Single-Record-of-Truth**
+VibeCoach is **production-ready** als persoonlijke iOS fitnesscoach. De kernfeatures:
 
-VibeCoach is een production-ready iOS-app met fysiologisch correcte coaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur. Testsuite combined (unit + UI tests): **61% coverage op testable code** (Models 80%, Services 59%, ViewModels 59%) en **43% op `Views/`** — de UI-tests-laag dekt de SwiftUI-bodies die unit-tests niet kunnen bereiken. Het CI `coverage-report`-artifact (Epic #46.3) toont per-bundle + combined aggregaat; zie [`docs/ROADMAP.md`](docs/ROADMAP.md) Epic #36 voor de per-bestand uitsplitsing.
+- **Fysiologisch correcte coaching** — Vibe Score (readiness), persoonlijke HR-zones + FTP, en een patroon-detector die aerobic decoupling, cardiac drift, cadence fade en trage HR-recovery in workout-data herkent.
+- **Dual-source data** — HealthKit en Strava draaien always-on naast elkaar; smart-ingest en automatische dedupe voorkomen dat een armer record (HK zonder power) een rijker record (Strava mét power) overschrijft.
+- **Contextuele intelligentie** — Open-Meteo weer, slaapfase-analyse, blessure-bewuste planning.
+- **BYOK AI** — Gemini (default), OpenAI of Anthropic; sleutel in Keychain, model configureerbaar in Settings.
+- **Proactief & privacy-first** — Management by Exception (alleen waarschuwen bij afwijkingen), HealthKit-data blijft on-device.
 
-Configureerbare Gemini-modellen zitten in Settings → AI Coach Configuratie (Epic #35). De catalogus wordt live opgehaald via de Cloudflare Worker (`/ai/models`) die op zijn beurt de Google Generative Language API bevraagt — nieuwe modellen verschijnen automatisch in de picker, geen app-release nodig. Defaults: `gemini-flash-latest` (primair) en `gemini-flash-lite-latest` (fallback).
+**CI:** 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) op `macos-latest`, plus CodeQL-scan van Swift + Actions-workflows. Testsuite: **61% combined coverage op testable code** (Models 80%, Services 59%, ViewModels 59%) + 43% op `Views/` via UI-tests.
 
-Strava-rides met powermeter komen volledig door (Epic #40): een nightly scenePhase-pijplijn haalt 5s-streams van `cyclingPower`, `cadence` en `velocity` op via de bestaande Strava-OAuth, koppelt ze aan de juiste `ActivityRecord` via deterministische UUIDs (geen schema-migratie nodig), en draait daarna `ActivityDeduplicator` (Epic #41) en `SessionReclassifier` zodat dubbele HK+Strava-records worden samengevoegd en de zone-distributie-classificatie ook voor Strava-records werkt. Handmatig gekozen sessieTypes blijven beschermd via `manualSessionTypeOverride`.
+**Recent afgesloten:** Epic #46 (CI-pipeline & DAG + SwiftLint-integratie), #45 (per-workout context in coach-prompt), #44 (persoonlijke HR-zones & FTP), #42 (always-on dual-source sync), #41 (single-record-of-truth dedupe), #40 (Strava power-stream ingest), #32 (deep-dive fysiologische analyse). Tech-debt-traject loopt parallel: SwiftData V1→V2 migratie, file-splits van grote modules, logger-discipline, DST-safe date math.
 
-Dual-source ingest is met Epic #41 zelfreinigend gemaakt: `FitnessDataService.ensureValidToken()` valideert + refresht het Strava-token vóór elke API-call (geen silent 401's meer), en `ActivityDeduplicator.smartInsert(_:into:)` voorkomt aan de voordeur dat een armer record (HK zonder power) een rijker record (Strava met power) overschrijft — ongeacht de volgorde waarin beide bronnen binnenkomen. De handmatige "Verwijder Dubbele Activiteiten"-knop is daarmee overbodig geworden en uit Settings verwijderd.
+**Volgende pickup:** geen actieve sprint vastgepind. Open follow-ups in [`docs/ROADMAP.md`](docs/ROADMAP.md): TestFlight-deploy (46.B1), semver-versioning (46.B6), Strict Concurrency `Complete` (39.3), force-unwrap-audit. Nieuwe Epics komen pas op tafel bij een concrete pijn.
 
-Met Epic #42 zijn HK + Strava daarnaast volledig **always-on**: beide sync-paden draaien concurrent via `async let` in zowel de auto-sync (`AppTabHostView`) als de manuele Settings-sync, ongeacht de bron-voorkeur. De `selectedDataSource`-toggle is hernoemd van "Primaire databron" naar "Bron-voorkeur" en bepaalt alleen nog welke bron de coach als eerste aanspreekt voor de huidige status; de sync-laag is volledig ontkoppeld. Backwards-compat: AppStorage-key + enum-rawValues ongewijzigd, dus bestaande gebruikers behouden hun toggle-stand.
+**Meer info:**
+- Volledige historie en backlog → [`docs/ROADMAP.md`](docs/ROADMAP.md)
+- Architectuur (Dual Engine, dual-source pijplijn, BYOK, CI) → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- Project-regels voor AI-assistenten → [`CLAUDE.md`](CLAUDE.md)
 
-Met Epic #32 ✅ afgesloten heeft de coach een nieuwe laag van fysiologische intelligentie: `WorkoutPatternDetector` herkent **aerobic decoupling**, **cardiac drift**, **cadence fade** en **trage HR-recovery** in een 5s-resampled sample-reeks (Joe Friel / TrainingPeaks-drempels), `WorkoutAnalysisView` toont de patronen als `PointMark`-pins op de HR-chart + chip-row + "Coach-analyse"-card met een 3-zin Gemini-synthese ("decoupling + cardiac drift = aerobic ceiling overschreden — was dat bewust drempel-werk?"), gecached per workout zodat herhaald openen geen API-call kost. Significante patronen uit recente workouts injecteren tegelijk in de chat-coach-prompt zodat de coach er proactief naar refereert wanneer je reflecteert op uitvoering of trainingsplan-aanpassingen vraagt.
-
-Naast feature-werk loopt nu een tech-debt-traject n.a.v. de codebase-audit (mei 2026). Eerste afgeronde stap: alle DST-onveilige `TimeInterval`-wiskunde (delen door 86 400 of `7 × 86 400`) is vervangen door kalender-gebaseerde berekeningen via een nieuwe `Calendar+DSTSafe`-extension en gecentraliseerde `FitnessGoal.weeksRemaining` / `daysRemaining` / `totalDays` computed properties — geborgd met `CalendarDSTSafeTests` (8 tests, beide DST-grenzen). Volgende geplande tech-debt-stappen uit de audit: `print(...)` → `AppLoggers.*` migratie in `Services/`, opsplitsen `Models/FitnessGoal.swift` (1131 regels) en `Services/FitnessDataService.swift` (1880 regels).
-
-**Volgende pickup:** Epic #46-backlog-items zodra hun trigger ontstaat (TestFlight-deploy 46.B1, semver-versioning 46.B6, snapshot-tests 46.B2, dependency-scan 46.B3, perf-regression 46.B4, concurrency-strict-matrix 46.B5). Andere open follow-ups: bron-voorkeur-tiebreaker in `ActivityDeduplicator` (Epic #42), Strict Concurrency `Complete` (⏳ Epic #39 story 39.3), of een `chore/force-unwrap-audit`-PR voor de 77 force-unwrap-warnings die in Epic #46.2 bewust niet werden geactiveerd. Geen actieve sprint vastgepind.
-
-Volledige historie en backlog: zie [`docs/ROADMAP.md`](docs/ROADMAP.md).
-Technische architectuur (Dual Engine, Cloudflare Proxy, Keychain): zie [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-Project-regels voor AI-assistenten: zie [`CLAUDE.md`](CLAUDE.md).
-
-> **Talen:** UI, AI-coach-prompt en code-comments zijn momenteel Nederlandstalig (Swift-variabelen blijven Engels conform Swift-conventie). Een eventuele Engelse uitrol staat in [`docs/ROADMAP.md`](docs/ROADMAP.md) als ⏳ Epic #37 — speculatief, ~100–130u werk verspreid over UI-strings, AI-prompt-refactor, blessure-keyword-detectie en optionele comment-migratie. Geen actieve toezegging.
+> **Talen:** UI, AI-prompt en code-comments zijn Nederlandstalig (Swift-variabelen Engels per Swift-conventie). Engelse i18n staat als ⏳ Epic #37 in de roadmap; geen actieve toezegging.
 
 ---
 
