@@ -12,6 +12,13 @@ env:
   # Opt-in naar Node.js 24 voor alle JavaScript-actions (GitHub dwingt dit vanaf 2026-06-02).
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+# Cancel oudere runs op dezelfde branch zodra een nieuwe push binnenkomt
+# (typisch: force-push tijdens PR-iteratie). Bespaart macOS-runner-minuten en
+# voorkomt verwarrende status-rollups van oude commits.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     name: SwiftLint
