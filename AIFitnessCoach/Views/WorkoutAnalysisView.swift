@@ -29,6 +29,12 @@ struct WorkoutAnalysisView: View {
     @State private var patterns: [WorkoutPattern] = []
     @State private var insightState: InsightState = .idle
     @State private var selectedPatternKind: WorkoutPatternKind?
+    /// Onafhankelijke task voor de detect-/AI-flow. Bewust unstructured zodat
+    /// een pull-to-refresh-gesture die SwiftUI's `refreshable`-task vroegtijdig
+    /// cancelt (bekende UX-glitch wanneer de gesture eindigt vóór de Gemini-call
+    /// klaar is) niet de werker meeneemt — anders verdwijnt de coach-tekst zonder
+    /// vervanging in `.idle`.
+    @State private var insightTask: Task<Void, Never>?
 
     private enum InsightState: Equatable {
         case idle                 // Nog geen patronen of geen API-key
@@ -187,6 +193,10 @@ struct WorkoutAnalysisView: View {
         .task(id: samples.count) {
             await computePatternsAndLoadInsight()
         }
+        .onDisappear {
+            insightTask?.cancel()
+            insightTask = nil
+        }
         .refreshable {
             // Epic #44 story 44.5 + 44.6 testflow: pull-to-refresh leegt de
             // `WorkoutInsightCache`-entry voor deze workout en herhaalt de detect-/
@@ -194,7 +204,15 @@ struct WorkoutAnalysisView: View {
             // wijzigingen (nieuwe LTHR/max in Settings) terug te zien op een
             // bestaande workout zonder dat je hoeft te wachten op een natuurlijke
             // pattern-fingerprint-shift.
-            await refreshAnalysis()
+            //
+            // De Gemini-call kan 1-3s duren — langer dan SwiftUI's refreshable-task
+            // soms wacht voor 'ie cancelt. Daarom draait de werker als unstructured
+            // `Task` (overleeft refreshable-cancellation), en awaiten we hier alleen
+            // op een korte gating zodat de pull-spinner niet instant flasht. De
+            // in-card "Coach analyseert…"-spinner toont de echte voortgang.
+            insightTask?.cancel()
+            insightTask = Task { await refreshAnalysis() }
+            try? await Task.sleep(nanoseconds: 600_000_000)
         }
     }
 
