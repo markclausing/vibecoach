@@ -172,6 +172,19 @@ struct WorkoutAnalysisView: View {
         return (bpParts + phaseParts).joined(separator: "|")
     }
 
+    /// Epic #49: cache-key voor weer-context. Verandert zodra HK-metadata wordt
+    /// bijgewerkt (bv. na DeepSync of een latere ingest), zodat een eerder
+    /// gegenereerde Coach-analyse zonder hitte-context vervangen wordt door
+    /// een nieuwe met de hitte-weging erin. "w_empty" als geen weerdata —
+    /// stabiele key bij niet-aanwezig zodat we niet steeds opnieuw genereren.
+    private func weatherFingerprint(_ activity: ActivityRecord) -> String {
+        let parts: [String] = [
+            activity.temperatureCelsius.map { "t\(Int($0.rounded()))" } ?? "",
+            activity.humidityPercent.map { "h\(Int($0.rounded()))" } ?? ""
+        ].filter { !$0.isEmpty }
+        return parts.isEmpty ? "w_empty" : parts.joined(separator: "_")
+    }
+
     /// Combineert de gestelde drempels tot een korte sleutel. Lege drempels worden
     /// genegeerd; resultaat is leeg-string-achtig ("p_empty") als de gebruiker geen
     /// drempels heeft ingesteld. Niet cryptografisch — alleen botsings-vrij genoeg
@@ -259,18 +272,19 @@ struct WorkoutAnalysisView: View {
     /// `WorkoutPatternFormatter.fingerprint` voor de cache-key zodat re-classificatie
     /// (story 40.4 / 32.1 follow-ups) automatisch een nieuwe analyse triggert.
     private func computePatternsAndLoadInsight() async {
-        guard !samples.isEmpty else {
-            patterns = []
-            insightState = .idle
-            return
-        }
         // Epic #44 story 44.5: zone-gates aanzetten zodra de gebruiker LTHR of
         // max+rest heeft ingesteld. Zonder profielwaarden valt de detector terug
         // op het populatie-globale gedrag van vóór 44.5.
-        let detected = WorkoutPatternDetector.detectAll(
-            in: samples,
-            profile: UserProfileService.cachedProfile()
-        )
+        // Epic #49: bij lege samples (typisch Strava-only wandelingen — Strava
+        // levert geen 5s-buckets voor walking, alleen voor cycling/running) blijft
+        // de detector-output leeg, maar we genereren wél een coach-frame op basis
+        // van activity-velden + weer-context. Geen samples ≠ geen analyse.
+        let detected: [WorkoutPattern] = samples.isEmpty
+            ? []
+            : WorkoutPatternDetector.detectAll(
+                in: samples,
+                profile: UserProfileService.cachedProfile()
+              )
         patterns = detected
         // Epic #47 follow-up: ook bij lege patterns een Coach-analyse genereren
         // (positieve uitvoerings-bevestiging). De system-instruction zegt dan
@@ -301,6 +315,7 @@ struct WorkoutAnalysisView: View {
         let fingerprint = WorkoutPatternFormatter.fingerprint(for: detected)
             + "|" + profileFingerprint(UserProfileService.cachedProfile())
             + "|" + goalsFingerprint(blueprints: blueprintResults, periodization: periodizationResults)
+            + "|" + weatherFingerprint(activity)
         if let cached = cache.cached(for: activity.id, fingerprint: fingerprint) {
             insightState = .loaded(cached)
             return
@@ -334,7 +349,9 @@ struct WorkoutAnalysisView: View {
             ftp: profile.ftp?.value,
             recoveryEvents: recoveryEvents,
             goalsContext: goalsContext.isEmpty ? nil : goalsContext,
-            periodizationContext: periodizationContext.isEmpty ? nil : periodizationContext
+            periodizationContext: periodizationContext.isEmpty ? nil : periodizationContext,
+            temperatureCelsius: activity.temperatureCelsius,
+            humidityPercent: activity.humidityPercent
         )
         do {
             let text = try await service.generateInsight(
@@ -514,6 +531,42 @@ struct WorkoutAnalysisView: View {
         return "slecht"
     }
 
+    // MARK: Weather context chip (Epic #49)
+
+    /// Compacte pill rechts in de Coach-analyse-header die toont welke weer-data
+    /// de coach kreeg. Transparantie-laag: zelfs als de coach het weer niet
+    /// expliciet in z'n analyse benoemt, ziet de gebruiker dat de informatie wél
+    /// is meegegeven (en blijkbaar niet relevant werd gevonden). Verschijnt alleen
+    /// als HK-metadata aanwezig is — bij missing-weather is er niets te tonen en
+    /// blijft de header schoon.
+    @ViewBuilder
+    private var weatherContextChip: some View {
+        if activity.temperatureCelsius != nil || activity.humidityPercent != nil {
+            HStack(spacing: 8) {
+                if let temp = activity.temperatureCelsius {
+                    HStack(spacing: 3) {
+                        Image(systemName: "thermometer.medium")
+                            .font(.caption2)
+                        Text("\(Int(temp.rounded()))°C")
+                            .font(.caption.monospacedDigit())
+                    }
+                }
+                if let humidity = activity.humidityPercent {
+                    HStack(spacing: 3) {
+                        Image(systemName: "humidity.fill")
+                            .font(.caption2)
+                        Text("\(Int(humidity.rounded()))%")
+                            .font(.caption.monospacedDigit())
+                    }
+                }
+            }
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(.tertiary.opacity(0.25)))
+        }
+    }
+
     // MARK: Insight card
 
     @ViewBuilder
@@ -525,6 +578,7 @@ struct WorkoutAnalysisView: View {
                 Text("Coach-analyse")
                     .font(.headline)
                 Spacer()
+                weatherContextChip
             }
             switch insightState {
             case .idle:
@@ -1042,6 +1096,19 @@ struct WorkoutAnalysisView: View {
             statTile(label: "Afstand", value: distanceKm, icon: "ruler")
             statTile(label: "Gem. hartslag", value: avgHR, icon: "heart")
             statTile(label: "TRIMP", value: trimp, icon: "flame")
+            // Epic #49: weer-tiles uit HK-metadata, alleen wanneer de iPhone tijdens
+            // de workout aanwezig was. Beide optioneel — soms heeft HK wel temp en
+            // geen humidity (of andersom), dan tonen we alleen wat we hebben.
+            if let temp = activity.temperatureCelsius {
+                statTile(label: "Temperatuur",
+                         value: "\(Int(temp.rounded())) °C",
+                         icon: "thermometer.medium")
+            }
+            if let humidity = activity.humidityPercent {
+                statTile(label: "Luchtvochtigheid",
+                         value: "\(Int(humidity.rounded())) %",
+                         icon: "humidity.fill")
+            }
         }
     }
 

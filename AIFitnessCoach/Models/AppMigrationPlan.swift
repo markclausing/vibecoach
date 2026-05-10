@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - SwiftData Migration Plan (mei 2026 tech-debt audit)
 //
-// Geketende migraties: SchemaV1 → SchemaV2.
+// Geketende migraties: SchemaV1 → SchemaV2 → SchemaV3.
 //
 // V2 voegt twee soorten constraints toe die op een vol DB-veld zitten:
 //   - `@Attribute(.unique)` op `DailyReadiness.date`
@@ -17,16 +17,32 @@ import SwiftData
 // van type aan, maar niet de impliciete String → enum-mapping. We capturen daarom de
 // V1-strings in `willMigrate`, deleten de V1-records, en re-inserten ze als V2-records
 // in `didMigrate`. (Symptom heeft géén foreign-key relaties — UUID-regeneratie is OK.)
+//
+// V3 voegt twee optionele velden toe aan `ActivityRecord` (Epic #49 — weather metadata):
+// `temperatureCelsius` en `humidityPercent`. Pure addition, dus `MigrationStage.lightweight`
+// is voldoende. Reden om tóch te bumpen: zonder schema-versie ziet SwiftData een
+// hash-mismatch op SchemaV2 en de fallback in `makeModelContainer` wist dan de hele
+// store. Zie CLAUDE.md §2.1 — élke `@Model`-wijziging vereist een schema-bump.
 
 enum AppMigrationPlan: SchemaMigrationPlan {
 
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self]
     }
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2]
+        [migrateV1toV2, migrateV2toV3]
     }
+
+    // MARK: - V2 → V3: pure addition (weather-metadata op ActivityRecord)
+
+    /// `MigrationStage.lightweight` is voldoende voor pure additions van optionele
+    /// velden — SwiftData voegt de kolommen toe, bestaande records krijgen `nil`.
+    /// Geen `willMigrate`/`didMigrate` nodig.
+    static let migrateV2toV3 = MigrationStage.lightweight(
+        fromVersion: SchemaV2.self,
+        toVersion: SchemaV3.self
+    )
 
     // MARK: - V1 → V2: dedupe + symptoms-rebuild + schema-flip
 

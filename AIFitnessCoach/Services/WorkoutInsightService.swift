@@ -95,6 +95,20 @@ final class WorkoutInsightService {
     Niet alle blocks opsommen — kies één concrete koppeling die je analyse
     onderbouwt. Geen actief doel of geen blueprint = niet noemen.
 
+    **Weer tijdens de workout** (Epic #49): wanneer een `[WEER TIJDENS WORKOUT]`-
+    blok aanwezig is, weeg temperatuur en luchtvochtigheid expliciet mee als
+    verklaring voor drift, decoupling of verhoogde HR. Stel **geen** vragen
+    meer als "was het warm?" — die informatie heb je al. Drempels: temperatuur
+    >25°C of luchtvochtigheid >70% zijn relevante hitte-stress-grenzen voor
+    cardiale drift. **Bij hitte (>25°C) of hoge luchtvochtigheid (>70°%)
+    samen met drift/decoupling: noem de weersconditie expliciet als (mede-)
+    oorzaak in je analyse — bijv. "Bij 28°C en 72% luchtvochtigheid is een
+    HR-drift van 6% verwacht; je conditie was niet de bottleneck."** Bij
+    koeler weer (<15°C) en matige drift: zoek de oorzaak elders (vermoeidheid,
+    slaap, te ambitieus tempo) en noem koel weer **niet** als verklaring.
+    Geen weer-blok = de iPhone heeft geen metadata vastgelegd; vraag er
+    **niet** naar, val terug op generieke aannames.
+
     Stijl: Nederlandstalig, tweede persoon, geen jargon zonder uitleg, geen lijsten of
     markdown. Eindig zonder "Als je vragen hebt..."-clichés.
     """
@@ -158,6 +172,12 @@ final class WorkoutInsightService {
         /// Epic #48: periodisatie-fase per doel (Base/Build/Peak/Taper) +
         /// succescriteria. Joined `PeriodizationResult.coachingContext`-blokken.
         let periodizationContext: String?
+        /// Epic #49: omgevings-temperatuur (°C) en luchtvochtigheid (%) op het
+        /// moment van de workout, uit `HKMetadataKeyWeather*`. Beide nil → blok
+        /// valt weg uit de prompt en de coach valt terug op generieke aannames
+        /// over hitte/dehydratie.
+        let temperatureCelsius: Double?
+        let humidityPercent: Double?
 
         init(sportLabel: String,
              durationMinutes: Int,
@@ -169,7 +189,9 @@ final class WorkoutInsightService {
              ftp: Double? = nil,
              recoveryEvents: [RecoveryEventSummary] = [],
              goalsContext: String? = nil,
-             periodizationContext: String? = nil) {
+             periodizationContext: String? = nil,
+             temperatureCelsius: Double? = nil,
+             humidityPercent: Double? = nil) {
             self.sportLabel = sportLabel
             self.durationMinutes = durationMinutes
             self.sessionTypeLabel = sessionTypeLabel
@@ -181,6 +203,8 @@ final class WorkoutInsightService {
             self.recoveryEvents = recoveryEvents
             self.goalsContext = goalsContext
             self.periodizationContext = periodizationContext
+            self.temperatureCelsius = temperatureCelsius
+            self.humidityPercent = humidityPercent
         }
     }
 
@@ -310,6 +334,20 @@ final class WorkoutInsightService {
             lines.append("")
             lines.append("[PERIODISERING]")
             lines.append(phase)
+        }
+
+        // Epic #49: weer-context tijdens de workout. Alleen toevoegen als
+        // minstens één van de twee beschikbaar is — coach valt anders terug
+        // op generieke aannames i.p.v. naar hitte te vragen.
+        if context.temperatureCelsius != nil || context.humidityPercent != nil {
+            lines.append("")
+            lines.append("[WEER TIJDENS WORKOUT]")
+            if let temp = context.temperatureCelsius {
+                lines.append("- Temperatuur: \(Int(temp.rounded()))°C")
+            }
+            if let humidity = context.humidityPercent {
+                lines.append("- Luchtvochtigheid: \(Int(humidity.rounded()))%")
+            }
         }
 
         lines.append("")

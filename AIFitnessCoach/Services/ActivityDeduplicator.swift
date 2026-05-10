@@ -141,6 +141,27 @@ enum ActivityDeduplicator {
         score(record: new, samplesCount: 0) > score(record: existing, samplesCount: 0)
     }
 
+    /// Cross-source field-completion (Epic #49). Wanneer dedupe één bron als "winner"
+    /// kiest verliezen we normaal alle velden van de loser. Voor "soft" velden die
+    /// een bron-onafhankelijke betekenis hebben (zoals omgevings-temperatuur en
+    /// luchtvochtigheid uit `HKMetadataKeyWeather*`) is dat zonde — de winner heeft
+    /// die velden vaak niet, de loser wel. Deze helper kopieert ze door **als de
+    /// winner het veld nog leeg heeft**, zodat de uiteindelijke record het beste
+    /// van beide bronnen combineert. Wordt geroepen vóór `delete(loser)` of vóór
+    /// het weggooien van de candidate-die-verliest.
+    ///
+    /// Uitbreidbaar: nieuwe "soft" velden hier toevoegen volgens hetzelfde patroon
+    /// (alleen overschrijven als de winner nil is — geen aannames over welk veld
+    /// de "betere" waarde heeft).
+    static func enrichEmptyFields(into winner: ActivityRecord, from loser: ActivityRecord) {
+        if winner.temperatureCelsius == nil, let temp = loser.temperatureCelsius {
+            winner.temperatureCelsius = temp
+        }
+        if winner.humidityPercent == nil, let humidity = loser.humidityPercent {
+            winner.humidityPercent = humidity
+        }
+    }
+
     /// Smart-insert pipeline voor één incoming record. Volgt drie lagen:
     ///   1. **Source-id match** → idempotente skip (re-sync van dezelfde bron).
     ///   2. **Cross-source match** binnen ±5s + sport-categorie:
@@ -179,10 +200,18 @@ enum ActivityDeduplicator {
             guard groups.count == 1 else { continue }
 
             if shouldReplace(existing: existing, new: candidate) {
+                // Epic #49: pak velden van de verliezer over die de winner mist —
+                // zo verliezen we geen weer-metadata van een armer HK-record als
+                // het rijkere Strava-record geen weer heeft.
+                Self.enrichEmptyFields(into: candidate, from: existing)
                 context.delete(existing)
                 context.insert(candidate)
                 return .replaced
             } else {
+                // Existing wint, maar de candidate (vaak HK met weer-metadata) kan
+                // velden hebben die de existing (vaak Strava zonder weer) mist.
+                // Doorzetten vóór we de candidate weggooien.
+                Self.enrichEmptyFields(into: existing, from: candidate)
                 return .skippedExistingRicher
             }
         }
@@ -214,6 +243,19 @@ enum ActivityDeduplicator {
         }
 
         let decision = decide(records: allRecords) { counts[$0.id] ?? 0 }
+
+        // Epic #49: cross-source field-completion vóór delete. Pak weer-metadata
+        // van losers door naar de winner zodat een Strava-winner de HK-temperatuur
+        // niet verliest. Pair losers aan hun winner via dezelfde groeperings-logica
+        // als `decide` zelf gebruikt.
+        let winnersByGroup = Dictionary(uniqueKeysWithValues: decision.winners.map { ($0.id, $0) })
+        let groups = findDuplicateGroups(allRecords)
+        for group in groups where group.count > 1 {
+            guard let winner = group.first(where: { winnersByGroup[$0.id] != nil }) else { continue }
+            for loser in group where loser.id != winner.id {
+                Self.enrichEmptyFields(into: winner, from: loser)
+            }
+        }
 
         for loser in decision.losers {
             context.delete(loser)

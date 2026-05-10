@@ -125,6 +125,13 @@ actor HealthKitSyncService {
                 title: nil
             )
 
+            // Epic 49: lees weer-metadata uit HKWorkout. iPhone schrijft tijdens
+            // outdoor-workouts `HKMetadataKeyWeatherTemperature` (HKQuantity in
+            // graden Fahrenheit) en `HKMetadataKeyWeatherHumidity` (HKQuantity in
+            // percent). Voor records zonder metadata blijven beide nil — coach
+            // valt dan terug op generieke aannames i.p.v. naar hitte te vragen.
+            let (weatherTempC, weatherHumidity) = Self.extractWeather(from: workout.metadata)
+
             let record = ActivityRecord(
                 id: workoutId,
                 name: recordName,
@@ -134,7 +141,9 @@ actor HealthKitSyncService {
                 sportCategory: SportCategory.from(hkType: workout.workoutActivityType.rawValue),
                 startDate: workout.startDate,
                 trimp: trimp,
-                sessionType: suggestedSessionType
+                sessionType: suggestedSessionType,
+                temperatureCelsius: weatherTempC,
+                humidityPercent: weatherHumidity
             )
 
             // Epic 41.4: smart-insert beschermt tegen cross-source verarming.
@@ -196,5 +205,37 @@ actor HealthKitSyncService {
             }
             healthKitManager.healthStore.execute(query)
         }
+    }
+
+    // MARK: - Weather metadata (Epic 49)
+
+    /// Pakt temperatuur (in graden Celsius) en luchtvochtigheid (%) uit een
+    /// HKWorkout-metadata-dictionary. Apple slaat deze tijdens outdoor-workouts
+    /// op als HKQuantity-waarden in respectievelijk degF en %. Returnt (nil, nil)
+    /// als de keys ontbreken (Strava-only ingest, indoor-workout, oude iOS).
+    /// Static + internal voor unit-test-zichtbaarheid.
+    static func extractWeather(from metadata: [String: Any]?) -> (temperatureCelsius: Double?, humidityPercent: Double?) {
+        guard let metadata else { return (nil, nil) }
+        var tempC: Double?
+        var humidity: Double?
+
+        if let q = metadata[HKMetadataKeyWeatherTemperature] as? HKQuantity {
+            // Apple gebruikt degF in metadata; converteer expliciet naar Celsius
+            // zodat we niet afhankelijk zijn van de gebruikers-locale.
+            if q.is(compatibleWith: .degreeCelsius()) {
+                tempC = q.doubleValue(for: .degreeCelsius())
+            } else if q.is(compatibleWith: .degreeFahrenheit()) {
+                tempC = q.doubleValue(for: .degreeFahrenheit())
+                tempC = tempC.map { ($0 - 32) * 5 / 9 }
+            }
+        }
+        if let q = metadata[HKMetadataKeyWeatherHumidity] as? HKQuantity,
+           q.is(compatibleWith: .percent()) {
+            // HK levert percent als 0–1 of 0–100 afhankelijk van bron — normaliseer
+            // op 0–100 voor de coach-prompt en UI-formatting.
+            let raw = q.doubleValue(for: .percent())
+            humidity = raw <= 1.0 ? raw * 100 : raw
+        }
+        return (tempC, humidity)
     }
 }
