@@ -174,25 +174,13 @@ jobs:
           path: UnitTests.xcresult
 
       - name: Generate Coverage Markdown
-        # Genereert een per-target markdown-tabel uit de .xcresult-bundle.
-        # Filtert test-targets weg (alleen production-code is interessant).
+        # Per-directory split + "testable code"-aggregaat. Het enkele target-
+        # percentage van `xccov --report` is misleidend omdat Views (alleen
+        # door UI-tests dekbaar) de denominator zwaar drukken. Zie
+        # `scripts/coverage-report.py` voor de implementatie + uitleg.
         run: |
           xcrun xccov view --report --json UnitTests.xcresult > coverage.json
-
-          {
-            echo "# Code Coverage Report"
-            echo ""
-            echo "| Target | Coverage | Covered / Total Lines |"
-            echo "|---|---|---|"
-            jq -r '
-              .targets[]
-              | select(.name | endswith("Tests.xctest") | not)
-              | "| \(.name) | \(.lineCoverage * 100 | floor)% | \(.coveredLines) / \(.executableLines) |"
-            ' coverage.json
-            echo ""
-            echo "_Gegenereerd uit \`UnitTests.xcresult\` van de \`unit-tests\`-job._"
-          } > coverage.md
-
+          python3 scripts/coverage-report.py coverage.json coverage.md
           cat coverage.md
 
       - name: Upload Coverage Report
