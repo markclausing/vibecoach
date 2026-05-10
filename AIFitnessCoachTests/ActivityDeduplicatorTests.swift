@@ -175,4 +175,105 @@ final class ActivityDeduplicatorTests: XCTestCase {
         // Beide Strava-records (deviceWatts) moeten winnen
         XCTAssertEqual(Set(decision.winners.map(\.id)), Set(["111111", "222222"]))
     }
+
+    // MARK: Cross-source weather-merge (Epic #49)
+
+    func testEnrichEmptyFields_copiesWeatherFromLoserToWinner() {
+        let strava = ActivityRecord(
+            id: "strava-1",
+            name: "Ride",
+            distance: 50_000, movingTime: 3600, averageHeartrate: 145,
+            sportCategory: .cycling, startDate: baseDate
+        )
+        let hk = ActivityRecord(
+            id: "hk-1",
+            name: "Ride",
+            distance: 50_000, movingTime: 3600, averageHeartrate: 145,
+            sportCategory: .cycling, startDate: baseDate,
+            temperatureCelsius: 27.5, humidityPercent: 68.0
+        )
+
+        ActivityDeduplicator.enrichEmptyFields(into: strava, from: hk)
+
+        XCTAssertEqual(strava.temperatureCelsius, 27.5,
+                       "Strava-winner moet HK-temperatuur overnemen")
+        XCTAssertEqual(strava.humidityPercent, 68.0)
+    }
+
+    func testEnrichEmptyFields_doesNotOverwriteExistingValues() {
+        let winner = ActivityRecord(
+            id: "w",
+            name: "Ride",
+            distance: 10_000, movingTime: 1800, averageHeartrate: 140,
+            sportCategory: .cycling, startDate: baseDate,
+            temperatureCelsius: 22.0, humidityPercent: 50.0
+        )
+        let loser = ActivityRecord(
+            id: "l",
+            name: "Ride",
+            distance: 10_000, movingTime: 1800, averageHeartrate: 140,
+            sportCategory: .cycling, startDate: baseDate,
+            temperatureCelsius: 99.0, humidityPercent: 99.0
+        )
+
+        ActivityDeduplicator.enrichEmptyFields(into: winner, from: loser)
+
+        XCTAssertEqual(winner.temperatureCelsius, 22.0,
+                       "Bestaande winner-waarde mag niet overschreven worden")
+        XCTAssertEqual(winner.humidityPercent, 50.0)
+    }
+
+    func testSmartInsert_skippedExistingRicher_enrichesExistingWithCandidateWeather() throws {
+        // Bestaand Strava-record (rijker via deviceWatts) zonder weer.
+        let strava = makeRecord(id: "strava-1", startOffset: 0, deviceWatts: true)
+        try context.save()
+
+        // HK-record komt binnen met weer-metadata. Strava is rijker → HK wordt
+        // geweigerd, maar de weer-velden moeten doorgesluisd worden naar Strava.
+        let hk = ActivityRecord(
+            id: UUID().uuidString,
+            name: "HK ride",
+            distance: 10_000, movingTime: 3600, averageHeartrate: 145,
+            sportCategory: .cycling,
+            startDate: baseDate.addingTimeInterval(2),
+            temperatureCelsius: 28.0, humidityPercent: 71.0
+        )
+
+        let result = try ActivityDeduplicator.smartInsert(hk, into: context)
+
+        XCTAssertEqual(result, .skippedExistingRicher)
+        XCTAssertEqual(strava.temperatureCelsius, 28.0,
+                       "Strava-record moet HK-weather overnemen ondanks dat HK geweigerd wordt")
+        XCTAssertEqual(strava.humidityPercent, 71.0)
+    }
+
+    func testSmartInsert_replaced_carriesOverWeatherFromOldRecord() throws {
+        // Bestaand HK-record met weer (armer want geen power).
+        let hk = ActivityRecord(
+            id: UUID().uuidString,
+            name: "HK ride",
+            distance: 10_000, movingTime: 3600, averageHeartrate: 145,
+            sportCategory: .cycling, startDate: baseDate,
+            temperatureCelsius: 26.0, humidityPercent: 60.0
+        )
+        context.insert(hk)
+        try context.save()
+
+        // Strava-record komt binnen, rijker → vervangt HK. Weer mag niet verloren gaan.
+        let strava = ActivityRecord(
+            id: "strava-1",
+            name: "Strava ride",
+            distance: 10_000, movingTime: 3600, averageHeartrate: 145,
+            sportCategory: .cycling,
+            startDate: baseDate.addingTimeInterval(1),
+            deviceWatts: true
+        )
+
+        let result = try ActivityDeduplicator.smartInsert(strava, into: context)
+
+        XCTAssertEqual(result, .replaced)
+        XCTAssertEqual(strava.temperatureCelsius, 26.0,
+                       "Vervangende Strava-record moet HK-weather erfen")
+        XCTAssertEqual(strava.humidityPercent, 60.0)
+    }
 }
