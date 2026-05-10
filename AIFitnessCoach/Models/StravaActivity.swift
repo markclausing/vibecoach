@@ -20,6 +20,12 @@ struct StravaActivity: Codable, Equatable {
     /// Filter voor `fetchActivityStreams`-trigger: alleen ritten met `device_watts == true`.
     let device_watts: Bool?
 
+    /// Epic #50: GPS-startcoördinaten als `[lat, lng]`. Strava levert dit veld voor
+    /// alle outdoor-activiteiten met GPS — leeg array of nil bij indoor/manual.
+    /// Wordt gebruikt om historische weerdata op te vragen via Open-Meteo archive-API
+    /// voor ritten zonder iPhone-aanwezigheid (Garmin/fietscomputer-only).
+    let start_latlng: [Double]?
+
     enum CodingKeys: String, CodingKey {
         case id
         case name
@@ -29,6 +35,7 @@ struct StravaActivity: Codable, Equatable {
         case type
         case start_date
         case device_watts
+        case start_latlng
     }
 
     init(id: Int64,
@@ -38,7 +45,8 @@ struct StravaActivity: Codable, Equatable {
          average_heartrate: Double?,
          type: String,
          start_date: String,
-         device_watts: Bool? = nil) {
+         device_watts: Bool? = nil,
+         start_latlng: [Double]? = nil) {
         self.id = id
         self.name = name
         self.distance = distance
@@ -47,6 +55,7 @@ struct StravaActivity: Codable, Equatable {
         self.type = type
         self.start_date = start_date
         self.device_watts = device_watts
+        self.start_latlng = start_latlng
     }
 
     init(from decoder: Decoder) throws {
@@ -59,6 +68,10 @@ struct StravaActivity: Codable, Equatable {
         type              = try c.decode(String.self, forKey: .type)
         start_date        = try c.decode(String.self, forKey: .start_date)
         device_watts      = try c.decodeIfPresent(Bool.self, forKey: .device_watts)
+        // Strava levert lege array `[]` voor indoor — normaliseer naar nil zodat
+        // callers één coherent "geen locatie"-signaal hebben.
+        let raw = try c.decodeIfPresent([Double].self, forKey: .start_latlng)
+        start_latlng = (raw?.count == 2) ? raw : nil
     }
 }
 
