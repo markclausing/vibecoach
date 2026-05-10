@@ -8,7 +8,7 @@ Een iOS-app (SwiftUI + SwiftData) die fungeert als persoonlijke, slimme fitnessc
 
 **Laatst gemerged — Epic #46 🔄 GitHub Actions DAG-visualisatie (46.1 + 46.3 + 46.4 live: `unit-tests` / `ui-tests` / `coverage-report` jobs met `needs:`-relaties; UI-tests-flakiness datagedreven opgelost via xcresult-analyse — parallel-disable + 3 test-code-fixes; 46.2 SwiftLint uitgesteld) · `CLAUDE.md` uitgebreid met 4 tech-debt-lessons · SwiftData V1→V2 schema-migratie (tech-debt, eerste `VersionedSchema` + 5 migratie-tests) · `ChatViewModel` cache-formatters geëxtraheerd (tech-debt, +27 unit tests) · `Services/FitnessDataService.swift` opgesplitst (tech-debt, pure file-split) · `Models/FitnessGoal.swift` opgesplitst (tech-debt, PR A — pure file-split) · `print` → `AppLoggers` migratie in `Services/` (tech-debt, PII-fix) · Epic #45 ✅ Per-workout context (14d) in coach-prompt · Epic #44 ✅ Persoonlijke HR Zones & FTP · Epic #32 ✅ Deep-Dive Fysiologische Analyse · Epic #42 ✅ Always-on Dual-Source Sync · Epic #41 ✅ Dual-Source Single-Record-of-Truth**
 
-VibeCoach is een production-ready iOS-app met fysiologisch correcte coaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur. Testsuite: **51% code coverage** (gemeten met `xcodebuild -enableCodeCoverage YES` over de volledige unit + UI suite). Alle kritieke Services + Models zitten boven de 80% — zie [`docs/ROADMAP.md`](docs/ROADMAP.md) Epic #36 voor de per-bestand uitsplitsing.
+VibeCoach is een production-ready iOS-app met fysiologisch correcte coaching, contextuele weersintelligentie (Open-Meteo), slaapfase-analyse, blessure-bewuste planning en een BYOK AI-architectuur. Testsuite: **52% coverage op testable code** (Services 46%, ViewModels 59%, Models 77%) — `Views/` wordt door UI-tests gedekt, niet door unit-tests, dus die wegen niet mee in deze metric. Het CI `coverage-report`-artifact (Epic #46.3) toont per-directory de splitsing; zie [`docs/ROADMAP.md`](docs/ROADMAP.md) Epic #36 voor de per-bestand uitsplitsing.
 
 Configureerbare Gemini-modellen zitten in Settings → AI Coach Configuratie (Epic #35). De catalogus wordt live opgehaald via de Cloudflare Worker (`/ai/models`) die op zijn beurt de Google Generative Language API bevraagt — nieuwe modellen verschijnen automatisch in de picker, geen app-release nodig. Defaults: `gemini-flash-latest` (primair) en `gemini-flash-lite-latest` (fallback).
 
@@ -53,7 +53,7 @@ Project-regels voor AI-assistenten: zie [`CLAUDE.md`](CLAUDE.md).
 | **Data** | Apple HealthKit (HRV, slaap + slaapfases, workouts) + optioneel Strava OAuth2 via Cloudflare Worker |
 | **Weer** | Open-Meteo API (gratis, geen API-sleutel) via CoreLocation + URLSession |
 | **Achtergrond** | `HKObserverQuery` (Engine A) + `BGAppRefreshTask` (Engine B) |
-| **Testen** | XCTest unit tests + XCUITest UI tests — **51% coverage** (Services + Models ≥80%, Views beperkt door SwiftUI-testbaarheid) |
+| **Testen** | XCTest unit tests + XCUITest UI tests — **52% coverage op testable code** (Services 46%, ViewModels 59%, Models 77%); `Views/` aparte slice via UI-tests |
 | **Versiebeheer** | GitHub |
 
 ---
