@@ -246,6 +246,8 @@ Per gedetecteerde pauze levert hij een `PauseRecoveryEvent` met:
 
 Itereert `PauseDetector.detect(in:)`-output, berekent per event `ratio = drop / referenceHR`, en pint de pauze met de laagste ratio (slechtste recovery — Management by Exception §1: alleen exceptions tonen, en dan over het zwakste signaal).
 
+**Pin-overweging staat los van detectie.** PauseDetector vindt pauzes ≥45s voor de coach-prompt-context, maar voor pin-overweging filtert de pattern-detector op `hrRecoveryMinPauseForPinSeconds = 90`. Reden: een verkeerslicht-/kruising-stop van 45-89s is fysiologisch geen "recovery-event om de gebruiker over te informeren". Vóór deze grens won een korte stop met kleine drop (4-8 BPM in 60s) regelmatig de pin van een lange koffiestop met uitstekend herstel — de slechtste-ratio-strategie pakt het verkeerde signaal als korte stops überhaupt mogen meedoen.
+
 Drempels relatief aan `referenceHR`:
 - `≥ 0.15` ratio → uitstekend, geen pin
 - `0.12 – 0.15` → mild

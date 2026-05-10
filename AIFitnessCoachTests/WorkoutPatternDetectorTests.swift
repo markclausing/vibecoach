@@ -265,12 +265,13 @@ final class WorkoutPatternDetectorTests: XCTestCase {
 
     // MARK: HR recovery (Epic #47 — pauze-based)
 
-    /// Bouwt een 20-min cycling-rit met een pauze van 90s op index 60..78.
-    /// HR daalt lineair tijdens de pauze met `dropOver60s` BPM in de eerste 60s.
+    /// Bouwt een 20-min cycling-rit met een pauze van 95s op index 60..80
+    /// (boven de 90s minimum-pin-grens). HR daalt lineair met `dropOver60s` BPM
+    /// in de eerste 60s, blijft daarna op het lage niveau.
     private func samplesWithSinglePause(dropOver60s: Double,
                                          peakHR: Double = 180) -> [WorkoutSample] {
         let pauseStart = 60
-        let pauseEnd = 78  // exclusive
+        let pauseEnd = 80  // exclusive — 20 buckets × 5s = 95s pauze
         return makeSamples(count: 240,
                            heartRate: { i in
                                if i < pauseStart { return peakHR }
@@ -349,10 +350,10 @@ final class WorkoutPatternDetectorTests: XCTestCase {
     }
 
     func testHRRecovery_MultiplePauses_PinsWorstRecovery() {
-        // Twee pauzes: één met 30 BPM drop (uitstekend, geen pin) en één met
+        // Twee pauzes ≥90s: één met 30 BPM drop (uitstekend, geen pin) en één met
         // 10 BPM drop (significant). Detector moet de slechtste pinnen.
-        let pauseA = 60..<78   // 90s
-        let pauseB = 150..<168 // 90s
+        let pauseA = 60..<80   // 95s
+        let pauseB = 150..<170 // 95s
         let stillIndexes = Set(pauseA).union(Set(pauseB))
         let samples = makeSamples(count: 240,
                                   heartRate: { i in
@@ -374,6 +375,54 @@ final class WorkoutPatternDetectorTests: XCTestCase {
         XCTAssertEqual(pattern.severity, .significant,
                        "Slechtste pauze (10 BPM drop) moet de pin bepalen, niet de uitstekende (30 BPM)")
         XCTAssertEqual(pattern.value, 10, accuracy: 1)
+    }
+
+    func testHRRecovery_ShortPauseUnder90s_NotPinnedDespiteSlowDrop() {
+        // Verkeerslicht-stop van 60s met slechts 4 BPM drop — fysiologisch te kort
+        // om als recovery-event te framen. Ook al is de ratio < 0.09 (significant),
+        // de pin moet uitblijven omdat pauze < `hrRecoveryMinPauseForPinSeconds`.
+        // Dit is exact het Epic #47 follow-up scenario waar verkeerslicht-stops de
+        // pin van de échte (uitstekende) lange pauze afpakten.
+        let stillRange = 60..<73  // 13 buckets × 5s = 60s
+        let samples = makeSamples(count: 240,
+                                  heartRate: { i in
+                                      if stillRange.contains(i) {
+                                          let elapsed = Double(i - 60) * 5.0
+                                          return 175 - 4 * min(elapsed / 60.0, 1.0)
+                                      }
+                                      return i < 60 ? 175 : 171
+                                  },
+                                  power: { i in stillRange.contains(i) ? 0 : 200 },
+                                  cadence: { i in stillRange.contains(i) ? 0 : 90 })
+        XCTAssertNil(WorkoutPatternDetector.detectHeartRateRecovery(in: samples),
+                     "Pauze < 90s mag geen pin opleveren ook al is de ratio onder de drempel")
+    }
+
+    func testHRRecovery_LongUnskepablePauseWinsOverShortBadPause() {
+        // Echt rit-scenario uit Epic #47 follow-up: korte verkeerslicht-stop (60s,
+        // drop 4 BPM = ratio 0.024 → "significant") + lange koffiestop (5min,
+        // drop 35 BPM = ratio 0.21 → "uitstekend"). Vóór deze fix won de korte
+        // stop de pin omdat hij de slechtste ratio had. Nu wordt de korte stop
+        // uitgesloten van pin-overweging en de lange pauze is uitstekend → geen pin.
+        let shortPause = 30..<43   // 60s
+        let longPause = 100..<160  // 5min
+        let stillIndexes = Set(shortPause).union(Set(longPause))
+        let samples = makeSamples(count: 240,
+                                  heartRate: { i in
+                                      if shortPause.contains(i) {
+                                          let elapsed = Double(i - 30) * 5.0
+                                          return 175 - 4 * min(elapsed / 60.0, 1.0)
+                                      }
+                                      if longPause.contains(i) {
+                                          let elapsed = Double(i - 100) * 5.0
+                                          return 180 - 35 * min(elapsed / 90.0, 1.0)
+                                      }
+                                      return 175
+                                  },
+                                  power: { i in stillIndexes.contains(i) ? 0 : 200 },
+                                  cadence: { i in stillIndexes.contains(i) ? 0 : 90 })
+        XCTAssertNil(WorkoutPatternDetector.detectHeartRateRecovery(in: samples),
+                     "Lange pauze met uitstekend herstel + korte stop met trage drop = geen pin (korte stop niet pin-waardig)")
     }
 
     func testHRRecovery_AllPausesGood_ReturnsNil() {
