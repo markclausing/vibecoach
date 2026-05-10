@@ -105,6 +105,10 @@ struct AppTabHostView: View {
                     trimp: basicTRIMPFallback,
                     deviceWatts: activity.device_watts
                 )
+                // Epic #50: vraag historische weerdata op voor outdoor Strava-ritten
+                // zonder iPhone-aanwezigheid (Garmin/fietscomputer-only). Faalt
+                // graceful — bij API-fout blijft het record gewoon zonder weer-data.
+                await HistoricalWeatherService.enrichRecord(record, from: activity, startDate: date)
                 _ = try? ActivityDeduplicator.smartInsert(record, into: modelContext)
             }
             try? modelContext.save()

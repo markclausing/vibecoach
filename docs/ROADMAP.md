@@ -570,9 +570,22 @@ Aanleiding: bij een drempelsessie of warme rit vraagt de coach vaak naar hitte a
 
 ---
 
-### ⏳ Epic-backlog: Open-Meteo historisch weer voor Garmin-/fietscomputer-only ritten
+### 🔄 Epic #50: Open-Meteo historisch weer voor Garmin-/fietscomputer-only ritten
 
-Vervolg op Epic #49 (HK weather-metadata). Mark's wielrensessies via Garmin Edge worden naar Strava gesynced; iPhone is tijdens de rit niet aanwezig, dus `HKMetadataKeyWeather*` ontbreekt. Voor deze ritten is de cross-source merge uit #49 ineffectief. Oplossing: gebruik Strava's `start_latlng` + `startDate` om Open-Meteo's `archive-api.open-meteo.com/v1/archive` te bevragen voor historische temperatuur/luchtvochtigheid. Privacy-overweging: GPS afronden op 0.1° (~11km) vóór API-call zodat exacte locatie niet gelekt wordt. Cache per workout-ID — historisch weer verandert niet meer. Pickup-trigger: Mark's behoefte na #49-merge bevestigd voor Garmin-getrackte rit (mei 2026). Effort: ~half-dag voor service + integratie + caching.
+Vervolg op Epic #49 (HK weather-metadata). Garmin/fietscomputer-only wielrensessies hebben geen iPhone-tegenhanger in HK, dus `HKMetadataKeyWeather*` ontbreekt en de cross-source merge uit #49 levert niets op. Met Strava's `start_latlng` + `startDate` kunnen we Open-Meteo's archive-API bevragen voor historische temperatuur/luchtvochtigheid op die specifieke locatie en tijd.
+
+**Sub-stories:**
+
+* **✅ 50.1 — Strava DTO uitbreiden:** `start_latlng: [Double]?` toegevoegd aan `StravaActivity`. Strava levert het als `[lat, lng]` array; lege array (indoor/manual) wordt naar nil genormaliseerd voor coherent "geen locatie"-signaal.
+* **✅ 50.2 — `HistoricalWeatherService`:** Pure-Swift met geïnjecteerde `WeatherURLFetcher` (testbaar zonder echte HTTP-call). Bouwt URL voor archive-API (>5 dagen oud) of forecast-API met `past_days` (recenter). Privacy: GPS-coords afgerond op 0.1° (~11km) vóór API-call. Hour-bucket-extractie matcht het uur dichtst bij de workout-startdate. Faalt graceful — bij netwerk-/API-fout krijgt caller `(nil, nil)`.
+* **✅ 50.3 — Strava ingest-integratie:** Nieuwe `enrichRecord(_:from:startDate:)`-extension op de service. Aangeroepen in `AppTabHostView.performAutoSync` (auto-sync, max 14 calls) en `SettingsView.runStravaHistoricalSync` (1-jaar-knop, ~50-100 calls). Idempotent — slaat over als record al weer-data heeft (bijv. via Epic #49 cross-source merge). Combineert met Epic #49: bestaande HK-cross-source merge wint waar mogelijk; Open-Meteo vult de rest aan.
+* **✅ 50.4 — Tests:** `HistoricalWeatherServiceTests` (11 tests): privacy-rounding, archive-vs-forecast-URL-keuze, hour-bucket-matching, graceful handling van Open-Meteo-`null`-waarden, fout-paden (invalid coords, out-of-range date, niet-2xx response), end-to-end met mock-fetcher.
+
+**Privacy-overweging:** Open-Meteo logt geen request-IPs en is open-source, maar we sturen alsnog GPS-coords erheen. Door af te ronden op 0.1° (~11km radius) lekken we geen exacte locatie — voor weer-classificatie ruim genoeg (temperatuur-gradient over 11km is meestal <1°C).
+
+**Tradeoff:** ~10s extra op de "Sync historische data"-knop voor 100 ritten (sequentieel). Auto-sync-impact verwaarloosbaar (max 14 calls per run). Open-Meteo gratis-tier dekt 1000 calls/dag — ruim binnen budget voor één gebruiker.
+
+**Status:** 🔄 — geïmplementeerd op `feature/epic-50-historical-weather`. 769 unit-tests groen. Wacht op CI + on-device validatie + merge.
 
 ---
 

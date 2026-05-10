@@ -78,6 +78,7 @@
 		AF5BAC3C2362460FA4F3E823 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54462929885341098579ABB5 /* Theme.swift */; };
 		B1A4F7B2D6E8F0A1B2C3D405 /* WorkoutSample.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A4F7B2D6E8F0A1B2C3D405 /* WorkoutSample.swift */; };
 		B1C2D3E4F5A6B7C8D9E0F1A2 /* WeatherManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */; };
+		B1C2D3E4F5A6B7C8D9E0F1B2 /* HistoricalWeatherService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D3E4F5A6B7C8D9E0F1B2C3 /* HistoricalWeatherService.swift */; };
 		B2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */; };
 		B3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */; };
 		B49CB5209082C67DC40F4FA5 /* FitnessDataError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */; };
@@ -131,6 +132,7 @@
 		D9C4F7B2D6E8F0A1B2C3D405 /* PauseDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9C4F7B2D6E8F0A1B2C3D405 /* PauseDetectorTests.swift */; };
 		DACAF7B2D6E8F0A1B2C3D405 /* WorkoutInsightServicePromptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACAF7B2D6E8F0A1B2C3D405 /* WorkoutInsightServicePromptTests.swift */; };
 		DBCAF7B2D6E8F0A1B2C3D405 /* HealthKitWeatherExtractionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBCAF7B2D6E8F0A1B2C3D405 /* HealthKitWeatherExtractionTests.swift */; };
+		DCCAF7B2D6E8F0A1B2C3D405 /* HistoricalWeatherServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECCAF7B2D6E8F0A1B2C3D405 /* HistoricalWeatherServiceTests.swift */; };
 		D8A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift */; };
 		D9A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift */; };
 		DAA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift */; };
@@ -274,6 +276,7 @@
 		D571DD52B0002B0002B0002B /* Calendar+DSTSafe.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "Calendar+DSTSafe.swift"; sourceTree = "<group>"; };
 		C1C2BF572AF13DE2A83E51CF /* StravaAuthServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaAuthServiceTests.swift; sourceTree = "<group>"; };
 		C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeatherManager.swift; sourceTree = "<group>"; };
+		C2D3E4F5A6B7C8D9E0F1B2C3 /* HistoricalWeatherService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoricalWeatherService.swift; sourceTree = "<group>"; };
 		C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIFitnessCoachApp.swift; sourceTree = "<group>"; };
 		D5D0010102D001010100D002 /* SchemaV1.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaV1.swift; sourceTree = "<group>"; };
 		D5D0020102D002010100D002 /* SchemaV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaV2.swift; sourceTree = "<group>"; };
@@ -301,6 +304,7 @@
 		E9C4F7B2D6E8F0A1B2C3D405 /* PauseDetectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PauseDetectorTests.swift; sourceTree = "<group>"; };
 		EACAF7B2D6E8F0A1B2C3D405 /* WorkoutInsightServicePromptTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightServicePromptTests.swift; sourceTree = "<group>"; };
 		EBCAF7B2D6E8F0A1B2C3D405 /* HealthKitWeatherExtractionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthKitWeatherExtractionTests.swift; sourceTree = "<group>"; };
+		ECCAF7B2D6E8F0A1B2C3D405 /* HistoricalWeatherServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoricalWeatherServiceTests.swift; sourceTree = "<group>"; };
 		E8B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutPatternFormatter.swift; sourceTree = "<group>"; };
 		E9B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutPatternFormatterTests.swift; sourceTree = "<group>"; };
 		EAB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightCache.swift; sourceTree = "<group>"; };
@@ -488,6 +492,7 @@
 				E9C4F7B2D6E8F0A1B2C3D405 /* PauseDetectorTests.swift */,
 				EACAF7B2D6E8F0A1B2C3D405 /* WorkoutInsightServicePromptTests.swift */,
 				EBCAF7B2D6E8F0A1B2C3D405 /* HealthKitWeatherExtractionTests.swift */,
+				ECCAF7B2D6E8F0A1B2C3D405 /* HistoricalWeatherServiceTests.swift */,
 				E9B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift */,
 				EBB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift */,
 				F0C4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculatorTests.swift */,
@@ -549,6 +554,7 @@
 				F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */,
 				F46C4D7E8F9A0B1C2D3E4F5A /* FutureProjectionService.swift */,
 				C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */,
+				C2D3E4F5A6B7C8D9E0F1B2C3 /* HistoricalWeatherService.swift */,
 				AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */,
 				3500FFEECC00AA04BB02CC03 /* AIModelCatalogService.swift */,
 				268DC6609F434E5DA4FF63F7 /* ThemeManager.swift */,
@@ -907,6 +913,7 @@
 				D9C4F7B2D6E8F0A1B2C3D405 /* PauseDetectorTests.swift in Sources */,
 				DACAF7B2D6E8F0A1B2C3D405 /* WorkoutInsightServicePromptTests.swift in Sources */,
 				DBCAF7B2D6E8F0A1B2C3D405 /* HealthKitWeatherExtractionTests.swift in Sources */,
+				DCCAF7B2D6E8F0A1B2C3D405 /* HistoricalWeatherServiceTests.swift in Sources */,
 				D9A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift in Sources */,
 				DBA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift in Sources */,
 				E0C4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculatorTests.swift in Sources */,
@@ -989,6 +996,7 @@
 				E35A2B5C6D7E8F9A0B1C2D3E /* NutritionService.swift in Sources */,
 				E46B3C6D7E8F9A0B1C2D3E4F /* FutureProjectionService.swift in Sources */,
 				B1C2D3E4F5A6B7C8D9E0F1A2 /* WeatherManager.swift in Sources */,
+				B1C2D3E4F5A6B7C8D9E0F1B2 /* HistoricalWeatherService.swift in Sources */,
 				13CD8B16330404CA41A93BDE /* NetworkSession.swift in Sources */,
 				AF5BAC3C2362460FA4F3E823 /* Theme.swift in Sources */,
 				F754D7AF116C4FDFBCDA66E3 /* ThemeManager.swift in Sources */,

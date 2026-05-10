@@ -208,6 +208,11 @@ struct SettingsView: View {
                     trimp: basicTRIMPFallback,
                     deviceWatts: activity.device_watts
                 )
+                // Epic #50: historische weerdata via Open-Meteo voor Strava-only
+                // ritten (Garmin/fietscomputer). Sequentieel — voor 12 maanden ≈
+                // 100 calls, ~10s extra op de "Sync historische data"-knop. Faal-
+                // tolerant: API-fout = doorlopend zonder weer.
+                await HistoricalWeatherService.enrichRecord(record, from: activity, startDate: date)
                 if let result = try? ActivityDeduplicator.smartInsert(record, into: modelContext),
                    result == .inserted || result == .replaced {
                     newRecordsCount += 1
