@@ -192,6 +192,8 @@ Detectie wordt **gegated op persoonlijke HR-zones** (Epic 44): cardiac drift tri
 
 `WorkoutAnalysisView` rendert significante patronen als `PointMark`-pins op de HR-chart + chip-row + "Coach-analyse"-card met een 3-zin Gemini-synthese (gecached per workout, geen herhaalde API-calls). Patronen uit recente workouts (`WorkoutHistoryContextBuilder`, Epic 45) worden ook in de chat-coach-prompt geïnjecteerd zodat de coach er proactief naar refereert bij plan-aanpassingen.
 
+**Coach-analyse-context (Epic #48):** naast patterns en recovery-events krijgt de `WorkoutInsightService` ook de doel- en periodisatie-status mee — `BlueprintContextFormatter.format(results:)` voor blueprint-milestones (✅/❌ per kritieke training) en `PeriodizationResult.coachingContext` voor de actieve fase (Base/Build/Peak/Taper) + succescriteria. De system-instruction draagt de coach op om bij elke analyse één concrete koppeling met het doel te leggen ("past in je Build-fase voor de marathon, en deze 32km nadert je 28km long-run-mijlpaal") wanneer die context aanwezig is. Cache-key bevat een `goalsFingerprint` zodat een milestone-behaal of fase-overgang automatisch een nieuwe analyse triggert in plaats van een verouderde framing uit de cache te serveren.
+
 ---
 
 ## 11. CI Pipeline (Epic 46)

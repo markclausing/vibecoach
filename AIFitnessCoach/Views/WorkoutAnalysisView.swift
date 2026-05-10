@@ -21,6 +21,11 @@ struct WorkoutAnalysisView: View {
     @EnvironmentObject var planManager: TrainingPlanManager
 
     @Query private var samples: [WorkoutSample]
+    /// Epic #48: actieve doelen + alle activities + readiness voor blueprint- en
+    /// periodisatie-context die de Coach-analyse meekrijgt.
+    @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
+    @Query(sort: \ActivityRecord.startDate, order: .forward) private var allActivitiesForContext: [ActivityRecord]
+    @Query(sort: \DailyReadiness.date, order: .reverse) private var readinessRecords: [DailyReadiness]
 
     @State private var scrubbedDate: Date?
 
@@ -144,6 +149,29 @@ struct WorkoutAnalysisView: View {
         }
     }
 
+    /// Epic #48: laatste readiness-record (van vandaag of recenter), gebruikt
+    /// als input voor `PeriodizationEngine.evaluateAllGoals` zodat de
+    /// IntentModifier de VibeScore-drempel correct evalueert.
+    private var latestReadinessForContext: DailyReadiness? {
+        readinessRecords.first
+    }
+
+    /// Epic #48: stabiele fingerprint voor de blueprint- + periodisatie-state.
+    /// Verandert zodra een doel toegevoegd/verwijderd wordt, een milestone
+    /// behaald is, of een fase-overgang plaatsvindt. Botsings-vrij genoeg voor
+    /// cache-invalidatie van de Coach-analyse — geen cryptografische hash nodig.
+    private func goalsFingerprint(blueprints: [BlueprintCheckResult],
+                                   periodization: [PeriodizationResult]) -> String {
+        if blueprints.isEmpty && periodization.isEmpty { return "g_empty" }
+        let bpParts = blueprints.map { result in
+            "\(result.goal.id):\(result.satisfiedCount)/\(result.totalCount)"
+        }
+        let phaseParts = periodization.map { result in
+            "\(result.goal.id):\(result.phase.rawValue)"
+        }
+        return (bpParts + phaseParts).joined(separator: "|")
+    }
+
     /// Combineert de gestelde drempels tot een korte sleutel. Lege drempels worden
     /// genegeerd; resultaat is leeg-string-achtig ("p_empty") als de gebruiker geen
     /// drempels heeft ingesteld. Niet cryptografisch — alleen botsings-vrij genoeg
@@ -248,13 +276,31 @@ struct WorkoutAnalysisView: View {
         // (positieve uitvoerings-bevestiging). De system-instruction zegt dan
         // "schrijf een korte positieve frame".
 
+        // Epic #48: blueprint- en periodisatie-context per actief doel. Hergebruikt
+        // dezelfde formatters die de chat-coach al gebruikt zodat het format
+        // identiek blijft. `BlueprintChecker.checkAllGoals` filtert zelf op doelen
+        // met blueprint-type; `PeriodizationEngine.evaluateAllGoals` werkt op alle
+        // niet-voltooide doelen.
+        let activeGoals = goals.filter { !$0.isCompleted && Date() < $0.targetDate }
+        let blueprintResults = BlueprintChecker.checkAllGoals(activeGoals, activities: allActivitiesForContext)
+        let periodizationResults = PeriodizationEngine.evaluateAllGoals(
+            activeGoals,
+            activities: allActivitiesForContext,
+            latestReadinessScore: latestReadinessForContext?.readinessScore
+        )
+        let goalsContext = BlueprintContextFormatter.format(results: blueprintResults)
+        let periodizationContext = periodizationResults
+            .map { $0.coachingContext }
+            .joined(separator: "\n\n")
+
         let cache = WorkoutInsightCache()
-        // Epic #44 update: cache-key combineert pattern-fingerprint met profiel-
-        // fingerprint. Een wijziging in LTHR / max / FTP invalideert de cache
-        // automatisch, ook als de patronen identiek blijven — anders zou een
-        // gebruiker die zijn drempels aanpast oude analyses blijven zien.
+        // Epic #44 + #48 update: cache-key combineert pattern-fingerprint met
+        // profiel-fingerprint én een doelen-fingerprint. Een wijziging in
+        // LTHR/max/FTP, milestone-status of fase-overgang invalideert de cache
+        // automatisch — anders zou een verouderde framing in de UI blijven hangen.
         let fingerprint = WorkoutPatternFormatter.fingerprint(for: detected)
             + "|" + profileFingerprint(UserProfileService.cachedProfile())
+            + "|" + goalsFingerprint(blueprints: blueprintResults, periodization: periodizationResults)
         if let cached = cache.cached(for: activity.id, fingerprint: fingerprint) {
             insightState = .loaded(cached)
             return
@@ -286,7 +332,9 @@ struct WorkoutAnalysisView: View {
             maxHeartRate: profile.maxHeartRate?.value,
             lactateThresholdHR: profile.lactateThresholdHR?.value,
             ftp: profile.ftp?.value,
-            recoveryEvents: recoveryEvents
+            recoveryEvents: recoveryEvents,
+            goalsContext: goalsContext.isEmpty ? nil : goalsContext,
+            periodizationContext: periodizationContext.isEmpty ? nil : periodizationContext
         )
         do {
             let text = try await service.generateInsight(
