@@ -6,9 +6,11 @@ import SwiftData
 ///  • Pre-check (sport zonder cadence/power-stream → geen detectie)
 ///  • Minimum-duur-grens (verkeerslicht 30s = niet, 90s pauze = wel, 50s pauze = wel)
 ///  • Power+cadence beide-stil-eis (alleen power=0 of alleen cadence=0 niet genoeg)
-///  • Recovery-window = min(60s, pauze-duur)
+///  • Peak-anchored meting: drop = piek-binnen-pauze − min in 90s na piek
+///  • Recovery-window = min(90s, pauze-eind − peak-time) — clampt op pauze-eind
+///  • Post-stop-piek-effect: HR die eerst nog stijgt vóór 'ie zakt wordt correct gevangen
 ///  • Pauze tot einde workout (cool-down)
-///  • HR-data-edge-cases (nil-HR aan start, geen meetbare drop)
+///  • HR-data-edge-cases (nil-HR aan start, vlak HR-profiel = drop 0)
 @MainActor
 final class PauseDetectorTests: XCTestCase {
 
@@ -84,16 +86,17 @@ final class PauseDetectorTests: XCTestCase {
     }
 
     func testPause50s_DetectedWithShortenedWindow() {
-        // Stilstand van 50s (10 samples 60..70). Pauze ≥ 45s, window = 50s (kort dan 60s).
+        // Stilstand van 50s (10 samples 60..<70 = 9 buckets * 5s = 45s).
+        // HR start op piek 170 en daalt monotoon. Peak-anchored window valt
+        // samen met de pauze-duur (45s) want kort dan 90s.
         let stillRange = 60..<70
         let samples = makeSamples(count: 240,
                                   heartRate: { i in
                                       if stillRange.contains(i) {
-                                          // HR daalt lineair van 170 → 145 binnen het 50s-window.
                                           let elapsed = Double(i - 60) * 5.0
                                           return 170 - (25 * elapsed / 50.0)
                                       }
-                                      return i < 60 ? 170 : 165
+                                      return i < 60 ? 170 : 145
                                   },
                                   power: { i in stillRange.contains(i) ? 0 : 200 },
                                   cadence: { i in stillRange.contains(i) ? 0 : 90 })
@@ -101,21 +104,19 @@ final class PauseDetectorTests: XCTestCase {
         XCTAssertEqual(events.count, 1)
         guard let event = events.first else { return XCTFail("Verwacht één event") }
         XCTAssertEqual(event.durationSeconds, 45, accuracy: 0.01)
-        XCTAssertEqual(event.measurementWindow.upperBound.timeIntervalSince(event.measurementWindow.lowerBound),
-                       45, accuracy: 0.01,
-                       "Voor pauze < 60s moet het meetwindow gelijk zijn aan de pauze-duur")
-        XCTAssertEqual(event.hrAtPauseStart, 170, accuracy: 0.5)
-        XCTAssertGreaterThan(event.drop, 20, "HR daalde 25 BPM in 50s — drop > 20 verwacht")
+        XCTAssertEqual(event.peakHRInPause, 170, accuracy: 0.5)
+        XCTAssertGreaterThan(event.drop, 20, "HR daalde monotoon 22.5 BPM — drop > 20 verwacht")
     }
 
-    func testPause90s_DetectedWithFull60sWindow() {
-        // Stilstand van 90s (18 samples 60..78). Window beperkt tot 60s.
+    func testPause90s_DetectedWithFull90sWindow() {
+        // Stilstand van 90s (18 samples 60..<78 = 17 buckets * 5s = 85s).
+        // HR daalt monotoon van piek 180 → 132 over de pauze. Peak-anchored window
+        // valt samen met pauze-eind (85s).
         let stillRange = 60..<78
         let samples = makeSamples(count: 240,
                                   heartRate: { i in
                                       if stillRange.contains(i) {
                                           let elapsed = Double(i - 60) * 5.0
-                                          // HR daalt lineair tot 130 over 90s
                                           return 180 - (50 * elapsed / 90.0)
                                       }
                                       return i < 60 ? 180 : 130
@@ -125,13 +126,62 @@ final class PauseDetectorTests: XCTestCase {
         let events = PauseDetector.detect(in: samples)
         XCTAssertEqual(events.count, 1)
         guard let event = events.first else { return XCTFail("Verwacht één event") }
-        XCTAssertEqual(event.durationSeconds, 85, accuracy: 5,
-                       "Pauze-duur ≈ aantal-stille-samples × 5s")
+        XCTAssertEqual(event.durationSeconds, 85, accuracy: 0.01)
+        XCTAssertEqual(event.peakHRInPause, 180, accuracy: 0.5)
+        // HR daalde lineair 50 × (85/90) ≈ 47 BPM over de hele pauze.
+        XCTAssertEqual(event.drop, 47, accuracy: 2)
+    }
+
+    func testLongPause_PeakAtStart_WindowClampedTo90s() {
+        // Pauze van 5 min (60 buckets, t=0..300s in pauze). HR-trajectorie:
+        // piek meteen op t=0 (180), zakt lineair naar 100 op t=300s.
+        // Peak-anchored window = 90s vanaf t=0 → pakt drop in [0, 90s].
+        let stillRange = 60..<120
+        let samples = makeSamples(count: 240,
+                                  heartRate: { i in
+                                      if stillRange.contains(i) {
+                                          let elapsed = Double(i - 60) * 5.0
+                                          return 180 - (80 * elapsed / 300.0)
+                                      }
+                                      return i < 60 ? 180 : 100
+                                  },
+                                  power: { i in stillRange.contains(i) ? 0 : 200 },
+                                  cadence: { i in stillRange.contains(i) ? 0 : 90 })
+        let events = PauseDetector.detect(in: samples)
+        guard let event = events.first else { return XCTFail("Verwacht event") }
         XCTAssertEqual(event.measurementWindow.upperBound.timeIntervalSince(event.measurementWindow.lowerBound),
-                       60, accuracy: 0.01,
-                       "Window moet bij ≥60s-pauze precies 60s zijn")
-        // Drop in 60s ≈ 50 × (60/90) ≈ 33 BPM
-        XCTAssertEqual(event.drop, 33, accuracy: 3)
+                       90, accuracy: 0.01,
+                       "Bij pauze >>90s moet meetwindow precies 90s zijn (vanaf piek)")
+        // HR daalde 80 × (90/300) = 24 BPM in de eerste 90s. Volledige pauze-drop
+        // (80 BPM) wordt bewust niet gerapporteerd — vagaal-tijdvenster is 90s.
+        XCTAssertEqual(event.drop, 24, accuracy: 2)
+    }
+
+    func testPause_HRPeaksAfterStop_PeakDriftCaptured() {
+        // Echte fysiologische scenario (uit Epic #47 root-cause): HR piekt 10s
+        // na pauze-start (post-stop-adrenaline), zakt dan flink. Bij first-sample-
+        // anchoring zou de drop te laag zijn; peak-anchoring vangt de echte daling.
+        // Pauze van 90s (60..<78), HR-trajectorie:
+        //   t=0..15s: stijgt 175 → 180 (piek op t=10s, sample i=62)
+        //   t=15..90s: zakt 180 → 140
+        let stillRange = 60..<78
+        let samples = makeSamples(count: 240,
+                                  heartRate: { i in
+                                      if stillRange.contains(i) {
+                                          let elapsed = Double(i - 60) * 5.0
+                                          if elapsed <= 10 { return 175 + (5 * elapsed / 10) } // 175→180
+                                          return 180 - (40 * (elapsed - 10) / 75) // 180→140 over 75s
+                                      }
+                                      return 175
+                                  },
+                                  power: { i in stillRange.contains(i) ? 0 : 200 },
+                                  cadence: { i in stillRange.contains(i) ? 0 : 90 })
+        let events = PauseDetector.detect(in: samples)
+        guard let event = events.first else { return XCTFail("Verwacht event") }
+        XCTAssertEqual(event.peakHRInPause, 180, accuracy: 0.5,
+                       "Piek moet de HR-spike net na stop oppikken, niet de eerste sample")
+        XCTAssertGreaterThan(event.drop, 35,
+                             "Met peak-anchoring moet drop ≈ 40 BPM zijn, niet ~5 BPM zoals first-anchoring zou geven")
     }
 
     // MARK: Power+cadence beide-stil-eis

@@ -233,9 +233,14 @@ Pure-Swift, AppStorage-vrij, geen framework-deps. Detecteert aaneengesloten samp
 
 Per gedetecteerde pauze levert hij een `PauseRecoveryEvent` met:
 - `pauseRange`: volledige tijdspanne van de pauze
-- `measurementWindow`: `min(60s, pauze-duur)` vanaf pauze-start (Optie A — eerlijk voor 45-60s-pauzes, simpeler dan pro-rata drempels)
-- `hrAtPauseStart`: eerste HR-data binnen het pauze-window
-- `minHRInWindow`: laagste HR die in `measurementWindow` is gezien
+- `peakHRInPause`: hoogste HR binnen de pauze — ankerpunt voor de meting
+- `measurementWindow`: 90s vanaf `peakHRInPause`-tijdstip, geclampt op pauze-eind
+- `minHRInWindow`: laagste HR die in dat window is gezien
+- `drop = peakHRInPause − minHRInWindow`
+
+**Waarom peak-anchored, niet pauze-start-anchored?** Bij een abrupte stop piekt de HR vaak nog 5-15 seconden vóór 'ie begint te dalen (post-stop adrenaline / sympathische respons op de overgang). Als je vanaf het eerste pauze-sample meet pak je de plateau-fase, niet de daling — een 40 BPM visuele dip wordt dan als "4 BPM" gerapporteerd. Vanaf de piek meten levert de fysiologische HRR op die we eigenlijk willen rapporteren.
+
+**Waarom 90s, niet de klassieke 60s?** De vagaal-dominante HRR-fase loopt tot ~90s na stop. Bij fitte atleten en real-world cool-downs komt de daling vaak pas op gang in seconden 10-30. 60s zou bij Mark-achtige profielen de daling onderschatten; 90s vangt 'm correct zonder dat de meting in de langzame sympathische fase belandt.
 
 ### `WorkoutPatternDetector.detectHeartRateRecovery` — pauze-iteratie
 
