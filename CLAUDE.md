@@ -31,13 +31,14 @@ Lees dit bij elke sessie als basis voor alle beslissingen.
 
 ### 2.1 Schema-migratie protocol
 
-Vereist bij elke `@Model`-wijziging die niet pure additions is — rename, type-change, of een nieuwe `@Attribute(.unique)` / `#Unique` op een bestaand veld:
+**Verplicht bij élke `@Model`-wijziging — óók pure additions** (mei 2026 incident: Epic #49 voegde twee optionele velden toe aan `ActivityRecord` zonder schema-bump; SwiftData's lightweight inference werkt anders bij een explicit `migrationPlan` en de container-init faalde → fallback wiste `FitnessGoal` + `UserPreference` lokaal-only data). Geen uitzonderingen meer voor "pure additions".
 
-1. **Snapshot het oude schema** in `Models/SchemaV<N>.swift` als `enum SchemaV<N>: VersionedSchema`. Nested `@Model` types houden **dezelfde unqualified naam** als de live types (bijv. `SchemaV1.Symptom` — niet `V1Symptom`) zodat de SwiftData entity-naam matcht met wat in de bestaande store staat. Mismatchende entity-namen breken de migratie met "Cannot use staged migration with an unknown model version".
-2. Voeg een nieuwe `MigrationStage` toe aan `AppMigrationPlan`. Schemas die ongewijzigd blijven (bijv. `FitnessGoal`) worden in beide schema's direct gerefereerd — niet ge-snapshot.
+1. **Snapshot het oude schema** in `Models/SchemaV<N>.swift` als `enum SchemaV<N>: VersionedSchema`. Nested `@Model` types houden **dezelfde unqualified naam** als de live types (bijv. `SchemaV1.Symptom` — niet `V1Symptom`) zodat de SwiftData entity-naam matcht met wat in de bestaande store staat. Mismatchende entity-namen breken de migratie met "Cannot use staged migration with an unknown model version". Eerder-versie-schema's die het gewijzigde type al referenden moeten ook bijgewerkt worden — laat ze verwijzen naar de snapshot van de meest recente onveranderde versie (bijv. `SchemaV1.models` wijst naar `SchemaV2.ActivityRecord.self` als V1 → V2 voor ActivityRecord een no-op was).
+2. Voeg een nieuwe `MigrationStage` toe aan `AppMigrationPlan`. Voor **pure additions** is `MigrationStage.lightweight(fromVersion:toVersion:)` voldoende. Schemas die ongewijzigd blijven (bijv. `FitnessGoal`) worden in beide schema's direct gerefereerd — niet ge-snapshot.
 3. **Type-changes** (bijv. `String` → enum): capture-in-`willMigrate` + restore-in-`didMigrate`. `@Attribute(originalName:)` alleen kan een rename mét behoud van type aan, géén impliciete type-conversie naar een RawRepresentable-enum.
 4. **Nieuwe unique-constraints op vol veld**: dedupe in `willMigrate` vóór de schema-flip — anders faalt de constraint-applicatie hard met een SQLite-violation.
-5. Schrijf altijd een `SchemaMigrationV<N>To<M>Tests` met een **file-backed** seed-store als happy-path-vangnet. In-memory stores werken niet voor migratie-paden (er is geen V<N>-store-bestand om vanaf te starten).
+5. **Bump de container-init in `AIFitnessCoachApp.makeModelContainer()`** naar de nieuwe `SchemaV<M>.models` zodat de migration plan ook daadwerkelijk wordt aangesproken.
+6. Schrijf altijd een `SchemaMigrationV<N>To<M>Tests` met een **file-backed** seed-store als happy-path-vangnet. In-memory stores werken niet voor migratie-paden (er is geen V<N>-store-bestand om vanaf te starten). Test minstens (1) dat `FitnessGoal` + `UserPreference` records de migratie overleven (lokaal-only verlies-risico) en (2) dat nieuwe velden schrijfbaar zijn na migratie.
 
 ---
 

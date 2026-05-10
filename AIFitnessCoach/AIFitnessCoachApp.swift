@@ -159,10 +159,10 @@ struct AIFitnessCoachApp: App {
             #endif
         }()
 
-        let schema = Schema(SchemaV2.models)
+        let schema = Schema(SchemaV3.models)
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isUITesting)
 
-        // Eerste poging: laad bestaande store en draai V1 → V2 migratie als nodig.
+        // Eerste poging: laad bestaande store en draai migratie-keten (V1 → V2 → V3).
         do {
             return try ModelContainer(
                 for: schema,
@@ -173,12 +173,13 @@ struct AIFitnessCoachApp: App {
             AppLoggers.fitnessDataService.error("""
                 ModelContainer-init met migratieplan faalde: \
                 \(error.localizedDescription, privacy: .public). \
-                Val terug op fresh DB — Symptom + UserPreference records zijn verloren, \
-                HK + Strava re-syncen vanzelf zodra de app opent.
+                Val terug op fresh DB — FitnessGoal, UserPreference en Symptom \
+                records zijn verloren, HK + Strava activities re-syncen vanzelf \
+                zodra de app opent.
                 """)
         }
 
-        // Fallback: verwijder de corrupte store en bouw een lege V2-container.
+        // Fallback: verwijder de corrupte store en bouw een lege V3-container.
         // Tijdens UI-tests draaien we in-memory (`isStoredInMemoryOnly`), dus geen
         // file-cleanup nodig — sla die stap dan over.
         if !isUITesting {
