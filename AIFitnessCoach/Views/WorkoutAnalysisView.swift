@@ -170,8 +170,8 @@ struct WorkoutAnalysisView: View {
                 summaryCard
                 if !patterns.isEmpty {
                     patternChipsRow
-                    insightCard
                 }
+                insightCard
                 if hasSamples {
                     scrubberHeader
                         .animation(.easeOut(duration: 0.15), value: scrubbedSample?.timestamp)
@@ -244,10 +244,9 @@ struct WorkoutAnalysisView: View {
             profile: UserProfileService.cachedProfile()
         )
         patterns = detected
-        guard !detected.isEmpty else {
-            insightState = .idle
-            return
-        }
+        // Epic #47 follow-up: ook bij lege patterns een Coach-analyse genereren
+        // (positieve uitvoerings-bevestiging). De system-instruction zegt dan
+        // "schrijf een korte positieve frame".
 
         let cache = WorkoutInsightCache()
         // Epic #44 update: cache-key combineert pattern-fingerprint met profiel-

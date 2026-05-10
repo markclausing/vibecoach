@@ -77,6 +77,14 @@ enum WorkoutPatternDetector {
     /// de oude absolute drempels (165 × 0.15 = 24.75 ≈ 25 BPM goed-grens).
     static let referenceHRFallback: Double = 165.0
 
+    /// Minimum-pauze-duur om als pin in aanmerking te komen. Pauzes 45-89s blijven
+    /// wél als coach-context-events naar de prompt (informeren over rit-structuur),
+    /// maar leveren géén pin op — een verkeerslicht-/kruising-stop is fysiologisch
+    /// geen "recovery-event om de gebruiker over te informeren". Onder 90s zit je
+    /// nog vóór de vagaal-dominante HRR-fase volledig op gang komt; pinnen van een
+    /// kleine drop in die window framet de gebruiker misleidend (Epic #47 follow-up).
+    static let hrRecoveryMinPauseForPinSeconds: TimeInterval = 90
+
     /// Workouts korter dan 10 minuten zijn te kort voor halve-vs-halve-vergelijkingen.
     static let minimumDurationSeconds: TimeInterval = 600
 
@@ -240,11 +248,15 @@ enum WorkoutPatternDetector {
         let refHR = (referenceHR ?? referenceHRFallback)
         guard refHR > 0 else { return nil }
 
-        // Voor elk event: bereken ratio + severity. Filter "uitstekende" events
-        // eruit — die mogen wel naar de coach-prompt-context (positief framen),
-        // maar krijgen geen pin.
+        // Voor elk event: bereken ratio + severity. Twee filters voor pin-overweging:
+        //  1. Pauze ≥ `hrRecoveryMinPauseForPinSeconds` — verkeerslicht-stops 45-89s
+        //     leveren geen pin, alleen coach-context. Een korte stop is fysiologisch
+        //     geen "recovery-event om over te rapporteren".
+        //  2. Ratio < `hrRecoveryGoodRatio` — uitstekende recovery wordt niet gepind
+        //     (Management by Exception §1), wel naar coach-context.
         var pinnable: [(event: PauseRecoveryEvent, ratio: Double, severity: WorkoutPattern.Severity)] = []
         for event in events {
+            guard event.durationSeconds >= hrRecoveryMinPauseForPinSeconds else { continue }
             guard event.drop > 0 else { continue }
             let ratio = event.drop / refHR
             guard ratio < hrRecoveryGoodRatio else { continue }

@@ -21,10 +21,10 @@ import Foundation
 struct PauseRecoveryEvent: Equatable {
     /// Volledige tijdspanne van de pauze (start van eerste stille sample t/m eind van laatste).
     let pauseRange: ClosedRange<Date>
-    /// Window waarin we de HR-min hebben gemeten — `min(recoveryWindowSeconds, pauze-duur)`
-    /// vanaf de **piek-HR-binnen-de-pauze**, niet vanaf pauze-start. Reden: bij een
-    /// abrupte stop piekt de HR vaak nog 5-15s vóór 'ie begint te dalen, en als je
-    /// vanaf het eerste pauze-sample meet pak je de plateau-fase i.p.v. de daling.
+    /// Window waarin we de HR-min hebben gemeten: van de piek-HR-binnen-de-pauze
+    /// tot het pauze-eind. Niet vanaf pauze-start (bij een abrupte stop piekt HR
+    /// vaak nog 5-15s) en niet beperkt tot een vagaal-tijdvenster (bij langere
+    /// pauzes komt de daling vaak pas na 90s op gang).
     let measurementWindow: ClosedRange<Date>
     /// Hoogste HR binnen de pauze — ankerpunt voor de drop-berekening.
     let peakHRInPause: Double
@@ -50,11 +50,11 @@ enum PauseDetector {
     /// volwaardig signaal). Zie Epic #47 ontwerp-discussie.
     static let minimumPauseSeconds: TimeInterval = 45
 
-    /// Maximaal recovery-meet-window vanaf de piek-HR-binnen-de-pauze. 90s vangt
-    /// vagaal herstel ruim (klassieke HRR-norm is 60s, maar bij fitte atleten en
-    /// real-world cool-downs komt de daling vaak pas op gang in seconden 10-30).
-    /// Voor pauzes korter dan dit valt het window samen met het pauze-eind.
-    static let recoveryWindowSeconds: TimeInterval = 90
+    // (Voorheen: `recoveryWindowSeconds = 90` cap vanaf piek. Verwijderd in
+    // Epic #47-followup omdat een 10min-pauze met visueel 40 BPM drop dan als
+    // "3 BPM" werd gerapporteerd — het cool-down-venster kapte af voor de
+    // werkelijke daling op gang kwam. Window loopt nu door tot pauze-eind;
+    // drempels (% van LTHR) regelen welke drops pin-waardig zijn.)
 
     /// "Stil"-drempel voor power en cadence. Kleine drift rond 0 (sensor-ruis,
     /// freewheelen) niet als activiteit interpreteren.
@@ -124,11 +124,15 @@ enum PauseDetector {
     /// Bouwt een `PauseRecoveryEvent` uit een aaneengesloten run van stille samples.
     /// Returnt nil als de pauze te kort is of geen HR-data bevat.
     ///
-    /// Meet-strategie: vind de piek-HR binnen de pauze, meet 90s vanaf daar (geclampt
-    /// op pauze-eind), bereken `peak − min`. Reden: bij een abrupte stop piekt de HR
-    /// vaak nog kort vóór 'ie begint te dalen — vanaf het eerste pauze-sample meten
-    /// pakt de plateau-fase, niet de daling. Vanaf de piek meten levert de
-    /// fysiologische HRR-meting op die we eigenlijk willen rapporteren.
+    /// Meet-strategie: vind de piek-HR binnen de pauze, meet `peak − min` over
+    /// `[peakTime, pauze.end]`. Reden voor peak-anchoring: bij een abrupte stop
+    /// piekt de HR vaak nog kort vóór 'ie begint te dalen — vanaf het eerste
+    /// pauze-sample meten pakt de plateau-fase, niet de daling. Reden om over de
+    /// hele pauze te meten (i.p.v. een vagaal-tijdvenster van 60-90s): bij een
+    /// langere koffie-/foto-stop komt de werkelijke daling vaak pas na de eerste
+    /// 90s op gang. Een 10-min pauze met visueel 40 BPM drop werd voorheen als
+    /// "3 BPM" gerapporteerd omdat het venster afkapte. Drempels (% van LTHR in
+    /// `WorkoutPatternDetector`) regelen welke drops pin-waardig zijn.
     private static func makeEvent(from samples: [WorkoutSample], runStart: Int, runEnd: Int) -> PauseRecoveryEvent? {
         let startSample = samples[runStart]
         let endSample = samples[runEnd]
@@ -148,23 +152,16 @@ enum PauseDetector {
         guard let pkIdx = peakIndex else { return nil }
         let peakSample = samples[pkIdx]
 
-        // Stap 2: bepaal het meet-window vanaf de piek (geclampt op pauze-eind).
-        let measurementEndDate = min(
-            peakSample.timestamp.addingTimeInterval(recoveryWindowSeconds),
-            endSample.timestamp
-        )
-
-        // Stap 3: minimum-HR binnen [peakTime, measurementEnd].
+        // Stap 2: minimum-HR binnen [peakTime, pauze.end] — over de hele rest van
+        // de pauze, niet beperkt tot 60-90s.
         var minHR: Double = peakHR
         for i in pkIdx...runEnd {
-            let sample = samples[i]
-            guard sample.timestamp <= measurementEndDate else { break }
-            guard let hr = sample.heartRate, hr > 0 else { continue }
+            guard let hr = samples[i].heartRate, hr > 0 else { continue }
             if hr < minHR { minHR = hr }
         }
 
         let pauseRange = startSample.timestamp...endSample.timestamp
-        let measurementWindow = peakSample.timestamp...measurementEndDate
+        let measurementWindow = peakSample.timestamp...endSample.timestamp
         return PauseRecoveryEvent(
             pauseRange: pauseRange,
             measurementWindow: measurementWindow,

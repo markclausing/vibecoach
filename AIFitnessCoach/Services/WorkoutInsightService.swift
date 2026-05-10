@@ -15,7 +15,6 @@ final class WorkoutInsightService {
 
     enum InsightError: Error, LocalizedError, Equatable {
         case missingAPIKey
-        case noPatterns
         case rateLimited(retried: Bool)
         case authenticationFailed
         case contentBlocked
@@ -26,8 +25,6 @@ final class WorkoutInsightService {
             switch self {
             case .missingAPIKey:
                 return "Geen API-sleutel ingesteld. Open Instellingen → AI Coach om er één toe te voegen."
-            case .noPatterns:
-                return "Deze workout heeft geen significante fysiologische patronen — geen analyse nodig."
             case .rateLimited(let retried):
                 let suffix = retried ? " (primair én fallback-model)" : ""
                 return "AI-quotum bereikt\(suffix). Probeer het over een paar minuten opnieuw."
@@ -75,6 +72,14 @@ final class WorkoutInsightService {
        Eindig met een open vraag.
     3. Bij intentionele hoge intensiteit zonder mismatch: stel een kalibratie-vraag
        ("voelde dit als drempelwerk of zat er nog ruimte?"), geen oorzaak-zoektocht.
+
+    **Geen patronen** gedetecteerd? De rit was metrisch in orde — geen drift, fade
+    of trage recovery. Schrijf dan een korte, **positieve** uitvoerings-bevestiging
+    op basis van duur, sessie-type en eventuele recovery-events. Bijv. "Een nette
+    duurrit van 2 uur in je endurance-zone, met goed parasympatisch herstel tijdens
+    je pauze." Geen zorgen-vragen, geen doelloze koetjes-en-kalfjes — gewoon kort
+    bevestigen wat goed ging. Kies één concrete observatie (zone-gedrag, recovery,
+    duur-passendheid) en laat de rest weg.
 
     **Recovery-events** (pauzes binnen de rit) zijn een aparte signaal-laag. Een
     "uitstekend"-label = sterk parasympatisch herstel; benoem dat positief als het
@@ -177,7 +182,6 @@ final class WorkoutInsightService {
     /// werken bij een tijdelijke 503/429 op het primaire model.
     func generateInsight(patterns: [WorkoutPattern],
                          context: InsightContext) async throws -> String {
-        guard !patterns.isEmpty else { throw InsightError.noPatterns }
         guard let primary = primaryFactory() else { throw InsightError.missingAPIKey }
 
         let prompt = buildPrompt(patterns: patterns, context: context)
@@ -255,7 +259,7 @@ final class WorkoutInsightService {
 
         lines.append("")
         lines.append("Gedetecteerde patronen:")
-        lines.append(snippet)
+        lines.append(snippet.isEmpty ? "Geen significante patronen gedetecteerd — uitvoering was binnen verwachting." : snippet)
 
         // Epic #47: pauze-gebaseerde recovery-events meegeven — ook positieve.
         // Coach kan dan bij vraag "hoe ging mijn rit?" het uitstekende herstel
