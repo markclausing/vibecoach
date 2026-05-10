@@ -88,6 +88,13 @@ final class WorkoutInsightService {
     als losstaande pin. Geen recovery-events = de rit had geen rust-window; benoem
     het niet.
 
+    **Doelen-status** en **periodisering** (Epic #48): wanneer aanwezig, verbind
+    de uitvoering expliciet met het actieve doel en de huidige fase. Bijvoorbeeld
+    "past in je Build-fase voor de marathon, en deze 32km nadert je 28km long-run-
+    mijlpaal" of "goede tempo-sessie in je Peak-fase, nog 1 ✅ van de 4 om te halen".
+    Niet alle blocks opsommen — kies één concrete koppeling die je analyse
+    onderbouwt. Geen actief doel of geen blueprint = niet noemen.
+
     Stijl: Nederlandstalig, tweede persoon, geen jargon zonder uitleg, geen lijsten of
     markdown. Eindig zonder "Als je vragen hebt..."-clichés.
     """
@@ -144,6 +151,13 @@ final class WorkoutInsightService {
         /// Stelt de coach in staat om bij goede recovery positief te framen,
         /// los van het pin-systeem (dat alleen exceptions toont conform §1).
         let recoveryEvents: [RecoveryEventSummary]
+        /// Epic #48: blueprint-status per actief doel (titel, weken-resterend,
+        /// milestones ✅/❌). Output van `BlueprintContextFormatter.format(results:)`.
+        /// nil/leeg → blok valt weg, coach noemt doelen niet.
+        let goalsContext: String?
+        /// Epic #48: periodisatie-fase per doel (Base/Build/Peak/Taper) +
+        /// succescriteria. Joined `PeriodizationResult.coachingContext`-blokken.
+        let periodizationContext: String?
 
         init(sportLabel: String,
              durationMinutes: Int,
@@ -153,7 +167,9 @@ final class WorkoutInsightService {
              maxHeartRate: Double? = nil,
              lactateThresholdHR: Double? = nil,
              ftp: Double? = nil,
-             recoveryEvents: [RecoveryEventSummary] = []) {
+             recoveryEvents: [RecoveryEventSummary] = [],
+             goalsContext: String? = nil,
+             periodizationContext: String? = nil) {
             self.sportLabel = sportLabel
             self.durationMinutes = durationMinutes
             self.sessionTypeLabel = sessionTypeLabel
@@ -163,6 +179,8 @@ final class WorkoutInsightService {
             self.lactateThresholdHR = lactateThresholdHR
             self.ftp = ftp
             self.recoveryEvents = recoveryEvents
+            self.goalsContext = goalsContext
+            self.periodizationContext = periodizationContext
         }
     }
 
@@ -227,7 +245,10 @@ final class WorkoutInsightService {
         return desc.contains("Code=-999") || desc.contains("\"cancelled\"")
     }
 
-    private func buildPrompt(patterns: [WorkoutPattern], context: InsightContext) -> String {
+    /// Internal voor `@testable` zichtbaarheid in `WorkoutInsightServiceTests`
+    /// (Epic #48). Bouwt de complete prompt zonder daadwerkelijk een API-call
+    /// te doen — handig voor unit-testen van blok-conditie's en formatting.
+    func buildPrompt(patterns: [WorkoutPattern], context: InsightContext) -> String {
         let snippet = WorkoutPatternFormatter.promptSnippet(for: patterns) ?? ""
 
         var lines: [String] = ["Workout-context:"]
@@ -274,6 +295,21 @@ final class WorkoutInsightService {
                 let dur = String(format: "%d:%02d", mins, secs)
                 lines.append("- pauze van \(dur), HR daalde \(Int(event.drop.rounded())) BPM (\(event.qualityLabel))")
             }
+        }
+
+        // Epic #48: doelen-status (blueprint milestones per actief doel) en
+        // periodisering (huidige fase + succescriteria per doel). Beide blokken
+        // worden weggelaten als ze leeg/nil zijn — coach valt dan terug op pure
+        // uitvoerings-analyse zonder doel-koppeling.
+        if let goals = context.goalsContext, !goals.isEmpty {
+            lines.append("")
+            lines.append("[DOELEN-STATUS]")
+            lines.append(goals)
+        }
+        if let phase = context.periodizationContext, !phase.isEmpty {
+            lines.append("")
+            lines.append("[PERIODISERING]")
+            lines.append(phase)
         }
 
         lines.append("")

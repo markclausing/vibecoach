@@ -531,3 +531,21 @@ Oplossingsrichting: vervang globale-piek-+-60s door **pauze-gebaseerde detectie*
 **Tradeoff:** workouts zonder pauze (interval-tests, korte tempo-loops) krijgen geen HR-recovery-pin meer — correct gedrag, want zonder rust-window kun je geen recovery meten. De cardiac-drift-detector vangt vermoeidheids-signalen op die zich anders manifesteren (HR-stijging tussen helften bij gelijke intensiteit), dus we verliezen geen detection-laag.
 
 **Status:** ✅ — geïmplementeerd op `feature/epic-47-pause-based-hr-recovery`. Alle 730 unit-tests groen, inclusief 13 nieuwe `PauseDetectorTests` en herschreven HR-recovery-scenarios. Wacht op on-device validatie + merge.
+
+---
+
+### 🔄 Epic #48: Coach-analyse koppelt aan doelen + periodisering
+
+Aanleiding: na Epic #47 toont de Coach-analyse-tegel altijd een korte uitvoerings-bevestiging — ook bij ritten zonder patterns (positieve framing). Maar de tekst staat los van de bredere context: *waarom* deed je deze rit? Past hij in je Build-fase voor de marathon? Tikt 'ie een long-run-mijlpaal aan? Op het Dashboard heeft de chat-coach al toegang tot doel-status (`BlueprintContextFormatter`) en periodisatie (`PeriodizationResult.coachingContext`) via `ChatViewModel.cacheActiveBlueprints` / `cachePeriodizationStatus`. Diezelfde infrastructuur willen we per workout meegeven aan de `WorkoutInsightService` zodat de Coach-analyse expliciet de brug slaat naar het doel.
+
+**Sub-stories:**
+
+* **✅ 48.1 — `InsightContext` uitbreiden:** Twee optionele velden bij `WorkoutInsightService.InsightContext`: `goalsContext: String?` (output van `BlueprintContextFormatter.format(results:)`) en `periodizationContext: String?` (joined `PeriodizationResult.coachingContext`-blokken). Bij geen actief doel of geen blueprint blijft het veld nil en valt het blok in de prompt weg.
+* **✅ 48.2 — `WorkoutAnalysisView` bouwt de context:** `@Query` voor `FitnessGoal` (active filter), `ActivityRecord`, `DailyReadiness` (latest). Roep `BlueprintChecker.checkAllGoals(goals, activities:)` en `PeriodizationEngine.evaluateAllGoals(goals, activities:, latestReadinessScore:)` aan, formatteer met de bestaande helpers en geef de strings mee aan `InsightContext`. Hergebruikt exact dezelfde infrastructuur die de chat-coach gebruikt — geen duplicate format-logica.
+* **✅ 48.3 — `buildPrompt` + system-instruction:** Twee nieuwe blokken in de prompt: `[DOELEN-STATUS]` en `[PERIODISERING]`, alleen als de strings niet leeg zijn. System-instruction krijgt regel 5: "Verbind de uitvoering expliciet met het doel en de huidige fase wanneer aanwezig — bijv. 'past in je Build-fase voor de marathon, en deze 32km nadert je 28km long-run-mijlpaal'. Geen actief doel = niet noemen." Stijl-clausule blijft 3 zinnen max; coach kiest het meest relevante verband.
+* **✅ 48.4 — Cache-key uitbreiden met goals-fingerprint:** Huidige cache-key is `pattern-fingerprint + profile-fingerprint`. Toevoegen: `goals-fingerprint` (hash van actieve doel-IDs + milestone-status + periodisatie-fase per doel) zodat een nieuwe doel-status (milestone behaald, fase-overgang) automatisch een nieuwe Coach-analyse triggert in plaats van een verouderde framing uit de cache te serveren.
+* **✅ 48.5 — Tests + docs:** Nieuwe `WorkoutInsightServiceTests` voor de uitgebreide prompt-bouw (bevestigt dat `[DOELEN-STATUS]` + `[PERIODISERING]` worden meegestuurd wanneer beschikbaar, en weggelaten worden bij nil). ARCHITECTURE.md §10 (Workout Pattern Detection) krijgt een korte update over de uitgebreide insight-context.
+
+**Tradeoff:** meer tokens per AI-call → iets hogere API-kosten. Voor power-users die actief doel-gericht trainen weegt de winst (specifiekere, doel-bewuste framings i.p.v. losse rit-observaties) ruim op tegen de kosten. Workouts zonder actief doel of zonder blueprint vallen automatisch terug op het pre-Epic-#48 gedrag.
+
+**Status:** 🔄 — geïmplementeerd op `feature/epic-48-coach-analysis-goals`. Alle 742 unit-tests groen, inclusief 8 nieuwe `WorkoutInsightServicePromptTests` voor de blok-conditie's. Wacht op CI + on-device validatie + merge.
