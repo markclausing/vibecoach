@@ -1095,6 +1095,19 @@ struct WorkoutAnalysisView: View {
             statTile(label: "Afstand", value: distanceKm, icon: "ruler")
             statTile(label: "Gem. hartslag", value: avgHR, icon: "heart")
             statTile(label: "TRIMP", value: trimp, icon: "flame")
+            // Epic #49: weer-tiles uit HK-metadata, alleen wanneer de iPhone tijdens
+            // de workout aanwezig was. Beide optioneel — soms heeft HK wel temp en
+            // geen humidity (of andersom), dan tonen we alleen wat we hebben.
+            if let temp = activity.temperatureCelsius {
+                statTile(label: "Temperatuur",
+                         value: "\(Int(temp.rounded())) °C",
+                         icon: "thermometer.medium")
+            }
+            if let humidity = activity.humidityPercent {
+                statTile(label: "Luchtvochtigheid",
+                         value: "\(Int(humidity.rounded())) %",
+                         icon: "humidity.fill")
+            }
         }
     }
 
