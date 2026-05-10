@@ -157,11 +157,75 @@ Drie helpers draaien sequentieel in dezelfde `.task` (volgorde is bewust):
 
 De pijplijn is volledig idempotent: een tweede run op een schone DB doet niets. Reden voor deze volgorde: dedupe vóór reclassify scheelt classify-cycles op records die toch verwijderd worden; backfill vóór dedupe zorgt dat sample-counts kloppen voor de rijkdom-heuristiek.
 
+### Smart-ingest aan de voordeur (Epic 41)
+
+Naast de scenePhase-pijplijn is er een tweede, preventieve laag: `ActivityDeduplicator.smartInsert(_:into:)` wordt aangeroepen door **alle** ingest-paden (HealthKit-sync, Strava auto-sync, Strava historical-sync). Drie-laagse check per record:
+
+1. **Source-id idempotent** — record met dezelfde HK-uuid of Strava-id bestaat al → no-op.
+2. **±5s cross-source vergelijk** — kandidaat-cluster opzoeken; als bestaand record rijker is, weiger insert. Als nieuw record rijker, vervang het bestaande.
+3. **Reguliere insert** — geen conflict, gewoon toevoegen.
+
+Resultaat: een armer HK-record overschrijft nooit een rijker Strava-record met deviceWatts, ongeacht de volgorde waarin beide bronnen binnenkomen. De handmatige "Verwijder Dubbele Activiteiten"-debug-knop (pre-Epic-41) is uit Settings verwijderd — auto-dedupe + smart-ingest dekken beide kanten af.
+
+### `ensureValidToken()` als token-guard
+
+`FitnessDataService.ensureValidToken()` is de centrale guard vóór elke Strava-API-call. Valideert + refresht het OAuth-token via de Cloudflare Worker bij (bijna-)expiry. Vijf interne callers (`fetchLatestActivity`, `fetchActivityById`, `fetchActivityStreams`, `fetchRecentActivities`, `fetchHistoricalActivities`) routen door deze ene functie — geen silent 401's meer verderop in de pijplijn.
+
+### Always-on sync (Epic 42)
+
+`AppTabHostView.performAutoSync` en `SettingsView.syncHistoricalData` draaien beide bron-paden **concurrent via `async let`**, ongeacht de `selectedDataSource`-toggle. De toggle is hernoemd naar "Bron-voorkeur" en bepaalt alleen nog welke bron de coach als eerste aanspreekt voor de huidige status; de sync-laag is volledig ontkoppeld. Bestaande gebruikers behouden hun toggle-stand (AppStorage-key + raw-values ongewijzigd).
+
 ---
 
-## 10. HR-recovery via pauze-detectie (Epic #47)
+## 10. Workout Pattern Detection (Epic 32)
 
-HR-recovery is fysiologisch alleen interpreteerbaar wanneer de externe load wegvalt — een vagaal-tonus-meting tegen een continu inspanning is geen recovery, maar een willekeurige spike-naar-spike-vergelijking. De vorige aanpak (globale piek + meet HR exact 60s later, in `WorkoutPatternDetector.detectHeartRateRecovery` van Epic 32) maakte die fout: bij continue rides zat de gebruiker 60s na de piek alweer te trappen, dus een visuele dip van 40 BPM tijdens een korte stop kwam als "4 BPM drop" uit de detector.
+`WorkoutPatternDetector` analyseert een 5s-resampled sample-reeks (HR + power + cadence) en herkent vier fysiologische signalen volgens Joe Friel / TrainingPeaks-drempels:
+
+| Pattern | Wat het detecteert |
+|---|---|
+| **Aerobic decoupling** | HR drift bij gelijke power → aerobic ceiling overschreden |
+| **Cardiac drift** | HR stijgt zonder pace-toename → vermoeidheid / dehydratie |
+| **Cadence fade** | Cadence valt weg in late workout-fase → spier-fatigue signal |
+| **Trage HR-recovery** | HR daalt onvoldoende tijdens een rust-pauze → onvoldoende parasympatisch herstel (zie §12) |
+
+Detectie wordt **gegated op persoonlijke HR-zones** (Epic 44): cardiac drift triggert alleen in Z1-Z3 (Z4/Z5-drift is verwacht). HR-recovery is in Epic #47 herschreven naar pauze-gebaseerde detectie met `referenceHR`-schaling — zie §12 voor de details. Decoupling en cadence fade nemen geen profiel-input.
+
+`WorkoutAnalysisView` rendert significante patronen als `PointMark`-pins op de HR-chart + chip-row + "Coach-analyse"-card met een 3-zin Gemini-synthese (gecached per workout, geen herhaalde API-calls). Patronen uit recente workouts (`WorkoutHistoryContextBuilder`, Epic 45) worden ook in de chat-coach-prompt geïnjecteerd zodat de coach er proactief naar refereert bij plan-aanpassingen.
+
+---
+
+## 11. CI Pipeline (Epic 46)
+
+GitHub Actions draait twee workflows op elke push naar `main` en elke PR:
+
+### `iOS CI` — 4-job DAG
+
+```
+┌─ SwiftLint        (parallel, geen needs)
+├─ Unit Tests ──────┬─ UI Tests
+└──────────────────┴─ Coverage Report
+```
+
+- **`SwiftLint`** — `swiftlint --strict` op `.swiftlint.yml`-config. 938→0 violations baseline; 1 nieuwe violation breekt CI.
+- **`Unit Tests`** — `xcodebuild test -only-testing:AIFitnessCoachTests -enableCodeCoverage YES`. xcresult als artifact (7d).
+- **`UI Tests`** — `-only-testing:AIFitnessCoachUITests -parallel-testing-enabled NO`. Sequentieel om xctrunner-clone-flakiness te vermijden (Epic 46.4 root-cause). xcresult + CoreSimulator-logs als artifacts (14d).
+- **`Coverage Report`** — `needs: [unit-tests, ui-tests]`. `scripts/coverage-report.py` mergt beide xcresults per-file (max-coverage approximatie) en genereert per-directory markdown met aggregaten (Testable / Views / Totaal).
+
+### `CodeQL Security Analysis`
+
+Matrix met twee talen, elk op de juiste runner:
+- **Swift** op `macos-latest` met manuele `xcodebuild clean build`.
+- **Actions** op `ubuntu-latest` (10× goedkoper) — pure YAML-statische-analyse op workflow-files.
+
+### Concurrency
+
+Beide workflows hebben `concurrency: ${{ github.workflow }}-${{ github.ref }}` met `cancel-in-progress: true` — force-pushes op een PR-branch cancelen oudere in-flight runs. Bespaart runner-minuten en voorkomt rollup-verwarring.
+
+---
+
+## 12. HR-recovery via pauze-detectie (Epic #47)
+
+HR-recovery is fysiologisch alleen interpreteerbaar wanneer de externe load wegvalt — een vagaal-tonus-meting tegen een continu inspanning is geen recovery, maar een willekeurige spike-naar-spike-vergelijking. De Epic 32-implementatie maakte die fout: globale piek + meet HR exact 60s later. Bij continue rides zat de gebruiker 60s na de piek alweer te trappen, dus een visuele dip van 40 BPM tijdens een korte stop kwam als "4 BPM drop" uit de detector.
 
 ### `Services/PauseDetector.swift`
 
