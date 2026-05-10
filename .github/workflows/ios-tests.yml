@@ -13,6 +13,27 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  lint:
+    name: SwiftLint
+    runs-on: macos-latest
+    # Geen `needs:` — draait parallel aan unit-tests voor snelle feedback.
+    # `swiftlint --strict` faalt op zowel violations als warnings, zodat het
+    # 0-baseline (Epic #46.2 prep-PR) niet stilzwijgend kan eroderen.
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        # `macos-latest` runner image bevat SwiftLint niet meer pre-installed
+        # (was vroeger wel zo). Brew is wel pre-installed; install duurt ~10s.
+        run: brew install swiftlint
+
+      - name: Run SwiftLint
+        # `--strict` upgrade warnings naar errors zodat 1 nieuwe violation CI breekt.
+        # `github-actions-logging` reporter geeft inline annotations op het PR-diff.
+        run: swiftlint --strict --reporter github-actions-logging
+
   unit-tests:
     name: Unit Tests
     runs-on: macos-latest
