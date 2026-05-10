@@ -15,8 +15,9 @@ env:
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    # Swift analyse draait op macOS (alleen taal in deze repo sinds de Node.js-backend is verwijderd).
-    runs-on: macos-latest
+    # Per-matrix-cel runner: Swift vereist macOS (Xcode-build), Actions-taal
+    # parseert YAML en draait dus prima op het 10x goedkopere ubuntu-latest.
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     permissions:
       security-events: write
@@ -30,6 +31,13 @@ jobs:
         include:
           - language: swift
             build-mode: manual
+            runner: macos-latest
+          # `actions` taal scant `.github/workflows/*.yml` op security-issues
+          # (untrusted-input-injection, niet-gepinde action-versies, secret-leakage).
+          # Geen build nodig — pure YAML-statische-analyse.
+          - language: actions
+            build-mode: none
+            runner: ubuntu-latest
 
     steps:
       - name: Checkout Repository
