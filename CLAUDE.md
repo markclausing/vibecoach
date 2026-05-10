@@ -143,10 +143,11 @@ Mogen direct op `main` (uitzondering op §8). Voor feature-PR's: code + docs in 
   - `docs/{korte-beschrijving}` — pure documentatie-updates (zelden nodig — meestal hoort docs bij een feature-PR; zie §7)
 - Workflow per branch:
   1. Branch aanmaken → code bouwen → pushen
-  2. Gebruiker pulled en test (bij feature branches op device)
-  3. Feedback → fixes aanbrengen op **dezelfde** branch
-  4. Tevreden → gebruiker maakt PR → CI draait → **squash & merge** naar main
-  5. Bij start van de volgende sprint: verwijder gemergte branches lokaal én remote
+  2. Direct na de eerste push **maakt de assistent automatisch de PR aan** via `gh pr create` (titel uit de branch-naam, body met `## Summary` + `## Test plan`-checklist conform de Claude Code-default). Geen aparte goedkeuring vragen — de PR is een doorgeefluik, geen merge-actie.
+  3. Gebruiker pulled en test (bij feature branches op device)
+  4. Feedback → fixes aanbrengen op **dezelfde** branch (push update bestaande PR automatisch)
+  5. Tevreden → gebruiker doet **squash & merge** naar main (de assistent merget niet)
+  6. Bij start van de volgende sprint: verwijder gemergte branches lokaal én remote
 - PR-discipline:
   - **Eén fix per PR** — geen meeliftende refactors of "en-terwijl-ik-toch-bezig-was" wijzigingen
   - Link altijd de bron in de PR-beschrijving: CodeQL-alert-ID, issue-nummer, crash-report, of user-melding
