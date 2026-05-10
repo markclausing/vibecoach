@@ -41,6 +41,15 @@ final class ActivityRecord {
     // automatisch zou herclassificeren op basis van zone-distributie.
     var manualSessionTypeOverride: Bool?
 
+    // Epic 49: omgevings-temperatuur en luchtvochtigheid op moment van de workout.
+    // Gevuld vanuit `HKMetadataKeyWeatherTemperature` / `HKMetadataKeyWeatherHumidity`
+    // als HealthKit ze heeft (iPhone tijdens workout aanwezig). Nil voor records zonder
+    // metadata of voor Strava-only ritten. Wordt door `WorkoutInsightService` als
+    // context aan de coach meegegeven zodat hitte/luchtvochtigheid hitte-gerelateerde
+    // patronen (drift, decoupling) verklaart zonder dat de coach erom hoeft te vragen.
+    var temperatureCelsius: Double?
+    var humidityPercent: Double?
+
     /// Menselijke naam voor UI en AI-context.
     /// Legacy HealthKit-records bevatten soms 'HealthKit <rawValue>' (bijv. 'HealthKit 52') —
     /// deze property vervangt dat altijd door de leesbare naam van de SportCategory.
@@ -51,7 +60,7 @@ final class ActivityRecord {
         return name
     }
 
-    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil, rpe: Int? = nil, mood: String? = nil, sessionType: SessionType? = nil, deviceWatts: Bool? = nil, manualSessionTypeOverride: Bool? = nil) {
+    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil, rpe: Int? = nil, mood: String? = nil, sessionType: SessionType? = nil, deviceWatts: Bool? = nil, manualSessionTypeOverride: Bool? = nil, temperatureCelsius: Double? = nil, humidityPercent: Double? = nil) {
         self.id = id
         self.name = name
         self.distance = distance
@@ -65,6 +74,8 @@ final class ActivityRecord {
         self.sessionType = sessionType
         self.deviceWatts = deviceWatts
         self.manualSessionTypeOverride = manualSessionTypeOverride
+        self.temperatureCelsius = temperatureCelsius
+        self.humidityPercent = humidityPercent
     }
 }
 

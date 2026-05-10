@@ -194,6 +194,8 @@ Detectie wordt **gegated op persoonlijke HR-zones** (Epic 44): cardiac drift tri
 
 **Coach-analyse-context (Epic #48):** naast patterns en recovery-events krijgt de `WorkoutInsightService` ook de doel- en periodisatie-status mee — `BlueprintContextFormatter.format(results:)` voor blueprint-milestones (✅/❌ per kritieke training) en `PeriodizationResult.coachingContext` voor de actieve fase (Base/Build/Peak/Taper) + succescriteria. De system-instruction draagt de coach op om bij elke analyse één concrete koppeling met het doel te leggen ("past in je Build-fase voor de marathon, en deze 32km nadert je 28km long-run-mijlpaal") wanneer die context aanwezig is. Cache-key bevat een `goalsFingerprint` zodat een milestone-behaal of fase-overgang automatisch een nieuwe analyse triggert in plaats van een verouderde framing uit de cache te serveren.
 
+**Weer-context (Epic #49):** `ActivityRecord.temperatureCelsius` en `humidityPercent` worden tijdens HK-ingest gevuld vanuit `HKMetadataKeyWeatherTemperature` / `HKMetadataKeyWeatherHumidity` (Apple slaat ze op zodra de iPhone tijdens een outdoor-workout aanwezig was). `WorkoutInsightService` injecteert ze als `[WEER TIJDENS WORKOUT]`-blok in de prompt zodat de coach hitte/luchtvochtigheid expliciet mee kan wegen — drempels in de system-instruction: temperatuur >25°C of luchtvochtigheid >70% zijn relevante hitte-stress-grenzen voor cardiale drift. Geen metadata = geen blok = coach valt terug op generieke aannames i.p.v. naar hitte te vragen. Cache-fingerprint bevat `weatherFingerprint` zodat een latere DeepSync met aangevulde metadata een nieuwe analyse triggert.
+
 ---
 
 ## 11. CI Pipeline (Epic 46)

@@ -172,6 +172,19 @@ struct WorkoutAnalysisView: View {
         return (bpParts + phaseParts).joined(separator: "|")
     }
 
+    /// Epic #49: cache-key voor weer-context. Verandert zodra HK-metadata wordt
+    /// bijgewerkt (bv. na DeepSync of een latere ingest), zodat een eerder
+    /// gegenereerde Coach-analyse zonder hitte-context vervangen wordt door
+    /// een nieuwe met de hitte-weging erin. "w_empty" als geen weerdata —
+    /// stabiele key bij niet-aanwezig zodat we niet steeds opnieuw genereren.
+    private func weatherFingerprint(_ activity: ActivityRecord) -> String {
+        let parts: [String] = [
+            activity.temperatureCelsius.map { "t\(Int($0.rounded()))" } ?? "",
+            activity.humidityPercent.map { "h\(Int($0.rounded()))" } ?? ""
+        ].filter { !$0.isEmpty }
+        return parts.isEmpty ? "w_empty" : parts.joined(separator: "_")
+    }
+
     /// Combineert de gestelde drempels tot een korte sleutel. Lege drempels worden
     /// genegeerd; resultaat is leeg-string-achtig ("p_empty") als de gebruiker geen
     /// drempels heeft ingesteld. Niet cryptografisch — alleen botsings-vrij genoeg
@@ -301,6 +314,7 @@ struct WorkoutAnalysisView: View {
         let fingerprint = WorkoutPatternFormatter.fingerprint(for: detected)
             + "|" + profileFingerprint(UserProfileService.cachedProfile())
             + "|" + goalsFingerprint(blueprints: blueprintResults, periodization: periodizationResults)
+            + "|" + weatherFingerprint(activity)
         if let cached = cache.cached(for: activity.id, fingerprint: fingerprint) {
             insightState = .loaded(cached)
             return
@@ -334,7 +348,9 @@ struct WorkoutAnalysisView: View {
             ftp: profile.ftp?.value,
             recoveryEvents: recoveryEvents,
             goalsContext: goalsContext.isEmpty ? nil : goalsContext,
-            periodizationContext: periodizationContext.isEmpty ? nil : periodizationContext
+            periodizationContext: periodizationContext.isEmpty ? nil : periodizationContext,
+            temperatureCelsius: activity.temperatureCelsius,
+            humidityPercent: activity.humidityPercent
         )
         do {
             let text = try await service.generateInsight(

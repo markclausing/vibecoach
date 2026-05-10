@@ -534,7 +534,7 @@ Oplossingsrichting: vervang globale-piek-+-60s door **pauze-gebaseerde detectie*
 
 ---
 
-### 🔄 Epic #48: Coach-analyse koppelt aan doelen + periodisering
+### ✅ Epic #48: Coach-analyse koppelt aan doelen + periodisering
 
 Aanleiding: na Epic #47 toont de Coach-analyse-tegel altijd een korte uitvoerings-bevestiging — ook bij ritten zonder patterns (positieve framing). Maar de tekst staat los van de bredere context: *waarom* deed je deze rit? Past hij in je Build-fase voor de marathon? Tikt 'ie een long-run-mijlpaal aan? Op het Dashboard heeft de chat-coach al toegang tot doel-status (`BlueprintContextFormatter`) en periodisatie (`PeriodizationResult.coachingContext`) via `ChatViewModel.cacheActiveBlueprints` / `cachePeriodizationStatus`. Diezelfde infrastructuur willen we per workout meegeven aan de `WorkoutInsightService` zodat de Coach-analyse expliciet de brug slaat naar het doel.
 
@@ -548,4 +548,28 @@ Aanleiding: na Epic #47 toont de Coach-analyse-tegel altijd een korte uitvoering
 
 **Tradeoff:** meer tokens per AI-call → iets hogere API-kosten. Voor power-users die actief doel-gericht trainen weegt de winst (specifiekere, doel-bewuste framings i.p.v. losse rit-observaties) ruim op tegen de kosten. Workouts zonder actief doel of zonder blueprint vallen automatisch terug op het pre-Epic-#48 gedrag.
 
-**Status:** 🔄 — geïmplementeerd op `feature/epic-48-coach-analysis-goals`. Alle 742 unit-tests groen, inclusief 8 nieuwe `WorkoutInsightServicePromptTests` voor de blok-conditie's. Wacht op CI + on-device validatie + merge.
+**Status:** ✅ — gemerged via PR #258. On-device gevalideerd: coach legt nu één concrete koppeling met de actieve fase/mijlpaal i.p.v. een losse rit-observatie.
+
+---
+
+### 🔄 Epic #49: HK weather-metadata in Coach-analyse
+
+Aanleiding: bij een drempelsessie of warme rit vraagt de coach vaak naar hitte als verklaring voor drift/decoupling — terwijl HealthKit de werkelijke temperatuur en luchtvochtigheid tijdens de workout al opslaat in `HKMetadataKeyWeatherTemperature` / `HKMetadataKeyWeatherHumidity` zodra de iPhone aanwezig was. Doel: die metadata uitlezen en aan de coach-prompt meegeven, zodat de coach hitte/luchtvochtigheid mee kan wegen i.p.v. ernaar te vragen.
+
+**Sub-stories:**
+
+* **✅ 49.1 — `ActivityRecord` uitbreiden:** Twee optionele velden — `temperatureCelsius: Double?` en `humidityPercent: Double?`. Pure addition, dus geen schema-versie-bump nodig (SwiftData lightweight migration).
+* **✅ 49.2 — HK ingest-pad:** Nieuwe `HealthKitSyncService.extractWeather(from:)`-static-helper leest `HKMetadataKeyWeatherTemperature` (Apple gebruikt degF; converteer expliciet naar Celsius) en `HKMetadataKeyWeatherHumidity` (kan 0-1 of 0-100 zijn; normaliseer op 0-100). Defensief tegen wrong-type-values en ontbrekende keys → nil zonder crash.
+* **✅ 49.3 — Coach-prompt:** `WorkoutInsightService.InsightContext` krijgt `temperatureCelsius` + `humidityPercent`. `buildPrompt` voegt `[WEER TIJDENS WORKOUT]`-blok toe wanneer ten minste één veld gevuld is. System-instruction krijgt regel: "weeg temperatuur >25°C of luchtvochtigheid >70% expliciet mee als verklaring voor drift/decoupling — vraag er niet meer naar". Geen blok = val terug op generieke aannames.
+* **✅ 49.4 — Cache-key:** `WorkoutAnalysisView` cache-fingerprint krijgt `weatherFingerprint` zodat een DeepSync of latere ingest-update de Coach-analyse opnieuw genereert met de bijgewerkte hitte-context.
+* **✅ 49.5 — Tests + docs:** `HealthKitWeatherExtractionTests` (9 tests) borgt unit-conversie + edge-cases (missing/empty/wrong-type). ARCHITECTURE.md §10 update over de weer-context.
+
+**Tradeoff:** alleen workouts waar de iPhone aanwezig was hebben metadata. Strava-only ritten en oude HK-records zonder weer blijven zonder context — de coach valt daar terug op generieke aannames. Bij blijkende behoefte volgt later een Epic met GPS + historische weer-API als fallback.
+
+**Status:** 🔄 — geïmplementeerd op `feature/epic-49-weather-metadata`. 743 unit-tests groen. Wacht op CI + on-device validatie + merge.
+
+---
+
+### ⏳ Epic-backlog: Mentale benefit van workouts
+
+Idee voor een toekomstige Epic — nog niet uitgewerkt. Gedachte: niet alleen fysieke metrics tonen (TRIMP, HR, recovery), maar ook iets over mood/energie/stress-impact zodat de coach kan zeggen "je voelt je hier de rest van de dag goed door" of "deze sessie helpt je stress af te bouwen". Open punten: welke signalen (HRV-respons na rit, post-RPE-mood, slaap-respons in nacht erna), welke UI (extra tegel onder Vibe Score? Veld op WorkoutAnalysisView?), hoe de coach dit framet, en hoe we het onderscheiden van pure fysieke load. Pickup-trigger: gebruiker wil meer expliciete "waarom train ik dit"-context bij workouts.
