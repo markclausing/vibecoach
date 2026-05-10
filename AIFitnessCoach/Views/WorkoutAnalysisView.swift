@@ -272,18 +272,19 @@ struct WorkoutAnalysisView: View {
     /// `WorkoutPatternFormatter.fingerprint` voor de cache-key zodat re-classificatie
     /// (story 40.4 / 32.1 follow-ups) automatisch een nieuwe analyse triggert.
     private func computePatternsAndLoadInsight() async {
-        guard !samples.isEmpty else {
-            patterns = []
-            insightState = .idle
-            return
-        }
         // Epic #44 story 44.5: zone-gates aanzetten zodra de gebruiker LTHR of
         // max+rest heeft ingesteld. Zonder profielwaarden valt de detector terug
         // op het populatie-globale gedrag van vóór 44.5.
-        let detected = WorkoutPatternDetector.detectAll(
-            in: samples,
-            profile: UserProfileService.cachedProfile()
-        )
+        // Epic #49: bij lege samples (typisch Strava-only wandelingen — Strava
+        // levert geen 5s-buckets voor walking, alleen voor cycling/running) blijft
+        // de detector-output leeg, maar we genereren wél een coach-frame op basis
+        // van activity-velden + weer-context. Geen samples ≠ geen analyse.
+        let detected: [WorkoutPattern] = samples.isEmpty
+            ? []
+            : WorkoutPatternDetector.detectAll(
+                in: samples,
+                profile: UserProfileService.cachedProfile()
+              )
         patterns = detected
         // Epic #47 follow-up: ook bij lege patterns een Coach-analyse genereren
         // (positieve uitvoerings-bevestiging). De system-instruction zegt dan

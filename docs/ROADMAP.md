@@ -570,6 +570,12 @@ Aanleiding: bij een drempelsessie of warme rit vraagt de coach vaak naar hitte a
 
 ---
 
+### ⏳ Epic-backlog: Open-Meteo historisch weer voor Garmin-/fietscomputer-only ritten
+
+Vervolg op Epic #49 (HK weather-metadata). Mark's wielrensessies via Garmin Edge worden naar Strava gesynced; iPhone is tijdens de rit niet aanwezig, dus `HKMetadataKeyWeather*` ontbreekt. Voor deze ritten is de cross-source merge uit #49 ineffectief. Oplossing: gebruik Strava's `start_latlng` + `startDate` om Open-Meteo's `archive-api.open-meteo.com/v1/archive` te bevragen voor historische temperatuur/luchtvochtigheid. Privacy-overweging: GPS afronden op 0.1° (~11km) vóór API-call zodat exacte locatie niet gelekt wordt. Cache per workout-ID — historisch weer verandert niet meer. Pickup-trigger: Mark's behoefte na #49-merge bevestigd voor Garmin-getrackte rit (mei 2026). Effort: ~half-dag voor service + integratie + caching.
+
+---
+
 ### ⏳ Epic-backlog: Mentale benefit van workouts
 
 Idee voor een toekomstige Epic — nog niet uitgewerkt. Gedachte: niet alleen fysieke metrics tonen (TRIMP, HR, recovery), maar ook iets over mood/energie/stress-impact zodat de coach kan zeggen "je voelt je hier de rest van de dag goed door" of "deze sessie helpt je stress af te bouwen". Open punten: welke signalen (HRV-respons na rit, post-RPE-mood, slaap-respons in nacht erna), welke UI (extra tegel onder Vibe Score? Veld op WorkoutAnalysisView?), hoe de coach dit framet, en hoe we het onderscheiden van pure fysieke load. Pickup-trigger: gebruiker wil meer expliciete "waarom train ik dit"-context bij workouts.
