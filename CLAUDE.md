@@ -7,11 +7,11 @@ Lees dit bij elke sessie als basis voor alle beslissingen.
 
 ## 0. Meta: Autonoom Context Management
 
-**Proactieve Updates:** Claude is verantwoordelijk voor het actueel houden van dit bestand. Bij een nieuwe architectuurkeuze, een structureel opgeloste bug (bijv. een iOS-quirk), of een nieuwe project-standaard: update `CLAUDE.md` direct en zonder toestemming te vragen.
+**Proactieve Updates:** Claude is verantwoordelijk voor het actueel houden van **alle vier project-doc-files** (`README.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `CLAUDE.md`). Bij een nieuwe architectuurkeuze, een structureel opgeloste bug (bijv. een iOS-quirk), of een nieuwe project-standaard: update direct in de juiste file zonder toestemming te vragen. Zie §7 voor de scope-verdeling per file.
 
 **Token Optimalisatie (The Cache):** Als er veel heen-en-weer wordt gepraat over een complex concept, vat Claude de eindconclusie samen, voegt deze toe als harde regel, en meldt: *"Ik heb de regels bijgewerkt. Je kunt nu `/compact` typen om tokens te besparen."*
 
-**Epic Overgangen:** Bij de start van een nieuwe Epic controleert Claude zowel `CLAUDE.md` als `README.md` op oude of irrelevante regels die verwijderd kunnen worden om de cache schoon te houden.
+**Epic Overgangen:** Bij de start van een nieuwe Epic controleert Claude alle doc-files op oude of irrelevante regels die verwijderd kunnen worden om de cache schoon te houden.
 
 ---
 
@@ -69,20 +69,64 @@ Vereist bij elke `@Model`-wijziging die niet pure additions is — rename, type-
 
 ---
 
-## 6. Testen
+## 6. Testbeleid
 
-- Elke nieuwe functionaliteit krijgt **Unit Tests (XCTest)** voor de onderliggende logica.
-- Voor kern-flows ('Happy Paths') ook **XCUITest UI-tests**.
-- Geen zware test-suite: alleen wat écht waarde heeft. Geen tests schrijven voor triviale getters of SwiftData-boilerplate.
+### Wat WEL testen
+- **Pure-Swift logica** in `Services/`, `Models/`, `ViewModels/`-helpers: classifiers, calculators, formatters, schedulers. Hoogste ROI — gemakkelijk te testen, vangt regressies vroeg.
+- **Schema-migraties** (zie §2.1): file-backed seed-store-tests verplicht. In-memory stores werken niet voor migratie-paden.
+- **Domeinregels met edge cases:** HR-zone-grenzen, blessure-keyword-detectie, DST-overgangen, dedupe-heuristieken, threshold-detectie. Hier zitten de subtiele bugs.
+- **Happy-path UI-flows** via XCUITest: onboarding, navigatie naar elke tab, doel aanmaken. Niet meer dan dat.
+
+### Wat NIET testen
+- Triviale getters/setters of SwiftData-boilerplate. Geen waarde, alleen onderhoudslast.
+- View-laag-orchestratie zonder clean injection-seam (concurrent sync, `async let`-flows in `performAutoSync`). Document i.p.v. test in PR-checklist + on-device validatie.
+- iOS-framework-zaken die in simulator-sandbox niet werken (Keychain entitlements, BGTaskScheduler-timing).
+
+### Testbaarheid borgen
+- **Pure-Swift helpers AppStorage-/UserDefaults-vrij houden.** Caller injecteert state via parameters. Voorbeelden: `ActivityDeduplicator`, `SessionClassifier`, `WorkoutPatternDetector`, `PhysiologicalThresholdEstimator`. Een helper die `@AppStorage` leest is een test-nachtmerrie en een main-actor-isolatie-probleem in één.
+- **Mocking voor UI-tests** via `UITestMockEnvironment.setup()` (gegated op `-UITesting`-launchArgument + `#if DEBUG`). Schrijft dummy API-key, weersdata, periodisatie-context zodat views renderen zonder live API-calls. `UITestMockGenerativeModel` vervangt de Gemini-call met een hardcoded JSON-response.
+- **Test-only bypasses** in productie-code mogen alleen achter `-UITesting`-check + comment die uitlegt waarom (zie `ChatView`'s `hasAPIKey`-gate als voorbeeld).
+
+### CI-discipline (geleerd via Epic 46.4)
+- **UI-tests draaien sequentieel op CI** (`-parallel-testing-enabled NO`). Parallel-clones triggeren `ipc/mig server died` op GitHub `macos-latest`-runners. Lokaal blijft scheme-config parallel voor snelheid.
+- **Bij UI-test-failures op CI eerst de xcresult-bundle inspecteren** via `xcrun xcresulttool get test-results activities --test-id <id>`, vóór je het op runner-flakiness gooit. Test-code-bugs (verborgen NavigationBar in V2.0, `.textField`-lookup voor SwiftUI's `.textView`-rendering, te-korte timeouts) zijn vaker de oorzaak dan echte runner-issues.
+- **Coverage is signal, geen KPI.** De `coverage-report`-job genereert per-directory + combined aggregaten. Streef naar hoge dekking op `Services/` + `Models/` + `ViewModels/` (testable code); `Views/` blijft beperkt door SwiftUI-testbaarheid en wordt apart gerapporteerd.
 
 ---
 
-## 7. README Protocol
+## 7. Documentatie-Discipline
 
-- Elke PR **moet** een README-update bevatten in dezelfde commit.
-- Afgeronde sprints afvinken (✅), actieve sprints markeren (🔄), geplande sprints markeren (⏳).
-- Altijd het eerstvolgende logische doel toevoegen zodat de roadmap vooruitkijkt.
-- Epic-statussen en roadmap worden **uitsluitend** bijgehouden in `README.md`.
+Vier files dragen samen de project-state. Elk heeft een eigen scope; **geen overlap, geen duplicatie**.
+
+### Verdeling
+
+| File | Scope | Wie leest het | Vuistregel voor lengte |
+|---|---|---|---|
+| **`README.md`** | High-level "wat is dit en waar zit de info" | Nieuwe lezer / GitHub-bezoeker | Huidige Status < 1 scherm |
+| **`docs/ROADMAP.md`** | Epic-historie + actieve & geplande stories (✅ / 🔄 / ⏳) + backlog | Wie wil weten "wat hebben we gedaan en wat komt nog" | Per Epic ~3-15 regels; alle details erin |
+| **`docs/ARCHITECTURE.md`** | Per architectuur-laag uitleggen "hoe werkt dit en waarom" | Wie de code begrijpt en wil weten waarom keuzes zo zijn | Per concept een sectie met code-pointers |
+| **`CLAUDE.md`** | Vaste regels & patronen voor het werken aan deze codebase | AI-assistant + nieuwe collaborators | Stabiel; alleen update als regel verandert |
+
+### Update-protocol bij nieuwe functionaliteit
+
+Elke PR die functionaliteit toevoegt **moet** alle relevante files updaten — niet alleen één van de vier:
+
+- **`README.md`** — alleen aanraken als de feature in de "kernfeatures"-bullet-list verschijnt of de "Recent afgesloten"-regel update vraagt. Anders: niet aanraken (voorkomt versuffing van het overzicht).
+- **`docs/ROADMAP.md`** — Epic-status van ⏳ → 🔄 → ✅, sub-stories afvinken, "Effort gerealiseerd" + "Status"-regel updaten. Bij start van een nieuwe Epic: nieuwe sectie aanmaken met aanleiding + sub-stories.
+- **`docs/ARCHITECTURE.md`** — als de feature een nieuwe architectuur-keuze introduceert (nieuwe service-laag, sync-pijplijn, security-pattern) of bestaande sectie aanpast. Pure refactors zonder architectuur-wijziging hoeven hier niets.
+- **`CLAUDE.md`** — alleen als de feature een nieuw permanent patroon vastlegt (testbeleid, datum-handling, logger-discipline). Eenmalige Epic-werkzaamheden niet hier — die horen in ROADMAP.
+
+### Statussen in ROADMAP
+
+- ✅ afgerond, gemerged op `main`
+- 🔄 actief, branch open of in review
+- ⏳ gepland of speculatief, nog geen toezegging
+
+Altijd het eerstvolgende logische doel toevoegen zodat de roadmap vooruitkijkt.
+
+### Pure docs-only PR's
+
+Mogen direct op `main` (uitzondering op §8). Voor feature-PR's: code + docs in dezelfde commit. Splits niet kunstmatig in code-PR + docs-PR.
 
 ---
 
@@ -95,6 +139,8 @@ Vereist bij elke `@Model`-wijziging die niet pure additions is — rename, type-
   - `hotfix/{korte-beschrijving}` — productie-kritiek, fast-track merge
   - `security/{alert-id-of-beschrijving}` — security-fixes (bijv. `security/codeql-dob-logging`)
   - `ci/{korte-beschrijving}` — workflow/pipeline-wijzigingen
+  - `chore/{korte-beschrijving}` — tech-debt, cleanup, refactors zonder gedragsverandering (bijv. `chore/swiftlint-cleanup`)
+  - `docs/{korte-beschrijving}` — pure documentatie-updates (zelden nodig — meestal hoort docs bij een feature-PR; zie §7)
 - Workflow per branch:
   1. Branch aanmaken → code bouwen → pushen
   2. Gebruiker pulled en test (bij feature branches op device)
