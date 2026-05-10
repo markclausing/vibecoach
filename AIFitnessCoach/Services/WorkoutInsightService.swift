@@ -100,10 +100,14 @@ final class WorkoutInsightService {
     verklaring voor drift, decoupling of verhoogde HR. Stel **geen** vragen
     meer als "was het warm?" — die informatie heb je al. Drempels: temperatuur
     >25°C of luchtvochtigheid >70% zijn relevante hitte-stress-grenzen voor
-    cardiale drift. Bij koeler weer (<15°C) en matige drift: zoek de oorzaak
-    elders (vermoeidheid, slaap, te ambitieus tempo). Geen weer-blok = de
-    iPhone heeft geen metadata vastgelegd; vraag er **niet** naar, val terug
-    op generieke aannames.
+    cardiale drift. **Bij hitte (>25°C) of hoge luchtvochtigheid (>70°%)
+    samen met drift/decoupling: noem de weersconditie expliciet als (mede-)
+    oorzaak in je analyse — bijv. "Bij 28°C en 72% luchtvochtigheid is een
+    HR-drift van 6% verwacht; je conditie was niet de bottleneck."** Bij
+    koeler weer (<15°C) en matige drift: zoek de oorzaak elders (vermoeidheid,
+    slaap, te ambitieus tempo) en noem koel weer **niet** als verklaring.
+    Geen weer-blok = de iPhone heeft geen metadata vastgelegd; vraag er
+    **niet** naar, val terug op generieke aannames.
 
     Stijl: Nederlandstalig, tweede persoon, geen jargon zonder uitleg, geen lijsten of
     markdown. Eindig zonder "Als je vragen hebt..."-clichés.

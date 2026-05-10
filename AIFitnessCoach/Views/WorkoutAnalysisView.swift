@@ -530,6 +530,42 @@ struct WorkoutAnalysisView: View {
         return "slecht"
     }
 
+    // MARK: Weather context chip (Epic #49)
+
+    /// Compacte pill rechts in de Coach-analyse-header die toont welke weer-data
+    /// de coach kreeg. Transparantie-laag: zelfs als de coach het weer niet
+    /// expliciet in z'n analyse benoemt, ziet de gebruiker dat de informatie wél
+    /// is meegegeven (en blijkbaar niet relevant werd gevonden). Verschijnt alleen
+    /// als HK-metadata aanwezig is — bij missing-weather is er niets te tonen en
+    /// blijft de header schoon.
+    @ViewBuilder
+    private var weatherContextChip: some View {
+        if activity.temperatureCelsius != nil || activity.humidityPercent != nil {
+            HStack(spacing: 8) {
+                if let temp = activity.temperatureCelsius {
+                    HStack(spacing: 3) {
+                        Image(systemName: "thermometer.medium")
+                            .font(.caption2)
+                        Text("\(Int(temp.rounded()))°C")
+                            .font(.caption.monospacedDigit())
+                    }
+                }
+                if let humidity = activity.humidityPercent {
+                    HStack(spacing: 3) {
+                        Image(systemName: "humidity.fill")
+                            .font(.caption2)
+                        Text("\(Int(humidity.rounded()))%")
+                            .font(.caption.monospacedDigit())
+                    }
+                }
+            }
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(.tertiary.opacity(0.25)))
+        }
+    }
+
     // MARK: Insight card
 
     @ViewBuilder
@@ -541,6 +577,7 @@ struct WorkoutAnalysisView: View {
                 Text("Coach-analyse")
                     .font(.headline)
                 Spacer()
+                weatherContextChip
             }
             switch insightState {
             case .idle:
