@@ -183,6 +183,9 @@ struct WorkoutAnalysisView: View {
                     emptyStateCard
                 }
                 statsGrid
+                #if DEBUG
+                pauseDebugCard
+                #endif
             }
             .padding(.horizontal)
             .padding(.vertical, 12)
@@ -453,6 +456,72 @@ struct WorkoutAnalysisView: View {
                 .strokeBorder(themeManager.primaryAccentColor.opacity(0.20), lineWidth: 1)
         )
     }
+
+    // MARK: - Debug: pauze-events (Epic #47 follow-up)
+    //
+    // Tijdelijke DEBUG-only card die alle door `PauseDetector` gevonden pauzes
+    // toont met hun duur en HR-drop. Helpt te diagnosticeren waarom een rit
+    // wel/niet de verwachte pin krijgt — zie of er verkeerslicht-stops bij
+    // zitten, of de "lange koffiestop" als één pauze wordt gezien, of er
+    // sensor-jitter is die de detector misleidt.
+
+    #if DEBUG
+    @ViewBuilder
+    private var pauseDebugCard: some View {
+        let events = PauseDetector.detect(in: samples)
+        let referenceHR = WorkoutPatternDetector.referenceHeartRate(from: UserProfileService.cachedProfile())
+            ?? WorkoutPatternDetector.referenceHRFallback
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "ladybug")
+                Text("DEBUG · Pauze-events")
+                    .font(.headline)
+                Spacer()
+                Text("ref-HR \(Int(referenceHR))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if events.isEmpty {
+                Text("Geen pauzes gedetecteerd (power+cadence beide <5 voor ≥45s).")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(Array(events.enumerated()), id: \.offset) { _, event in
+                    let mins = Int(event.durationSeconds) / 60
+                    let secs = Int(event.durationSeconds) % 60
+                    let ratio = referenceHR > 0 ? event.drop / referenceHR : 0
+                    let isPinnable = event.durationSeconds >= WorkoutPatternDetector.hrRecoveryMinPauseForPinSeconds
+                    HStack(spacing: 6) {
+                        Text(String(format: "%d:%02d", mins, secs))
+                            .font(.caption.monospaced())
+                            .frame(width: 50, alignment: .leading)
+                        Text("piek \(Int(event.peakHRInPause)) → min \(Int(event.minHRInWindow))")
+                            .font(.caption)
+                        Spacer()
+                        Text("Δ\(Int(event.drop)) bpm")
+                            .font(.caption.monospaced())
+                            .foregroundStyle(event.drop < 10 ? .red : .primary)
+                        Text(String(format: "(%.0f%%)", ratio * 100))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 38, alignment: .trailing)
+                        Text(isPinnable ? "📌" : "—")
+                            .font(.caption)
+                            .frame(width: 18)
+                    }
+                }
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.yellow.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.yellow.opacity(0.4), lineWidth: 1)
+        )
+    }
+    #endif
 
     // MARK: Coach Comparison (Story 33.4)
 
