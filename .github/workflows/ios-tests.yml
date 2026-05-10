@@ -161,26 +161,45 @@ jobs:
   coverage-report:
     name: Coverage Report
     runs-on: macos-latest
-    needs: unit-tests
+    needs: [unit-tests, ui-tests]
+    # Draai ook bij een rode UI-tests-job — dan rapporteren we de unit-tests-
+    # coverage los (UI bundle ontbreekt, script accepteert dat als single-
+    # bundle modus). Cancellation wel respecteren.
+    if: ${{ !cancelled() && needs.unit-tests.result == 'success' }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Download xcresult Bundle
+      - name: Download Unit Tests xcresult
         uses: actions/download-artifact@v4
         with:
           name: unit-tests-xcresult
           path: UnitTests.xcresult
 
+      - name: Download UI Tests xcresult
+        # `continue-on-error` voor het zeldzame geval dat UI-tests hard
+        # crashten en de upload faalde. Script werkt dan in single-bundle modus.
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-tests-xcresult
+          path: UITests.xcresult
+        continue-on-error: true
+
       - name: Generate Coverage Markdown
-        # Per-directory split + "testable code"-aggregaat. Het enkele target-
-        # percentage van `xccov --report` is misleidend omdat Views (alleen
-        # door UI-tests dekbaar) de denominator zwaar drukken. Zie
-        # `scripts/coverage-report.py` voor de implementatie + uitleg.
+        # Per-directory split + per-bundle aggregate + combined (max-merge).
+        # UI-tests-bundle bevat ook coverage (scheme-default; geen extra
+        # `-enableCodeCoverage` flag nodig). Zie `scripts/coverage-report.py`.
         run: |
-          xcrun xccov view --report --json UnitTests.xcresult > coverage.json
-          python3 scripts/coverage-report.py coverage.json coverage.md
+          xcrun xccov view --report --json UnitTests.xcresult > unit.json
+          ARGS="unit-tests=unit.json"
+          if [ -d UITests.xcresult ] && [ -n "$(ls UITests.xcresult 2>/dev/null)" ]; then
+            xcrun xccov view --report --json UITests.xcresult > ui.json
+            ARGS="$ARGS ui-tests=ui.json"
+          else
+            echo "::warning::UI-tests bundle ontbreekt — single-bundle coverage-rapport"
+          fi
+          python3 scripts/coverage-report.py coverage.md $ARGS
           cat coverage.md
 
       - name: Upload Coverage Report
