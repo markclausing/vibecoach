@@ -186,9 +186,9 @@ Resultaat: een armer HK-record overschrijft nooit een rijker Strava-record met d
 | **Aerobic decoupling** | HR drift bij gelijke power → aerobic ceiling overschreden |
 | **Cardiac drift** | HR stijgt zonder pace-toename → vermoeidheid / dehydratie |
 | **Cadence fade** | Cadence valt weg in late workout-fase → spier-fatigue signal |
-| **Trage HR-recovery** | HR daalt onvoldoende na intensieve interval → onvoldoende herstel |
+| **Trage HR-recovery** | HR daalt onvoldoende tijdens een rust-pauze → onvoldoende parasympatisch herstel (zie §12) |
 
-Detectie wordt **gegated op persoonlijke HR-zones** (Epic 44): cardiac drift triggert alleen in Z1-Z3 (Z4/Z5-drift is verwacht), HR-recovery vereist een Z3+-piek. Detector accepteert optioneel `[HeartRateZone]` als parameter; zonder zones valt 'ie terug op populatie-defaults.
+Detectie wordt **gegated op persoonlijke HR-zones** (Epic 44): cardiac drift triggert alleen in Z1-Z3 (Z4/Z5-drift is verwacht). HR-recovery is in Epic #47 herschreven naar pauze-gebaseerde detectie met `referenceHR`-schaling — zie §12 voor de details. Decoupling en cadence fade nemen geen profiel-input.
 
 `WorkoutAnalysisView` rendert significante patronen als `PointMark`-pins op de HR-chart + chip-row + "Coach-analyse"-card met een 3-zin Gemini-synthese (gecached per workout, geen herhaalde API-calls). Patronen uit recente workouts (`WorkoutHistoryContextBuilder`, Epic 45) worden ook in de chat-coach-prompt geïnjecteerd zodat de coach er proactief naar refereert bij plan-aanpassingen.
 
@@ -220,3 +220,39 @@ Matrix met twee talen, elk op de juiste runner:
 ### Concurrency
 
 Beide workflows hebben `concurrency: ${{ github.workflow }}-${{ github.ref }}` met `cancel-in-progress: true` — force-pushes op een PR-branch cancelen oudere in-flight runs. Bespaart runner-minuten en voorkomt rollup-verwarring.
+
+---
+
+## 12. HR-recovery via pauze-detectie (Epic #47)
+
+HR-recovery is fysiologisch alleen interpreteerbaar wanneer de externe load wegvalt — een vagaal-tonus-meting tegen een continu inspanning is geen recovery, maar een willekeurige spike-naar-spike-vergelijking. De Epic 32-implementatie maakte die fout: globale piek + meet HR exact 60s later. Bij continue rides zat de gebruiker 60s na de piek alweer te trappen, dus een visuele dip van 40 BPM tijdens een korte stop kwam als "4 BPM drop" uit de detector.
+
+### `Services/PauseDetector.swift`
+
+Pure-Swift, AppStorage-vrij, geen framework-deps. Detecteert aaneengesloten samples waar zowel `power < 5` als `cadence < 5` (nil-waarden tellen als "geen signaal", niet als "actief") voor minimaal `minimumPauseSeconds = 45`. Pre-check: workout moet minimaal 10 samples met daadwerkelijke activiteit hebben — voorkomt dat een sport zonder beide sensoren (zwemmen) als één lange pauze wordt gezien.
+
+Per gedetecteerde pauze levert hij een `PauseRecoveryEvent` met:
+- `pauseRange`: volledige tijdspanne van de pauze
+- `measurementWindow`: `min(60s, pauze-duur)` vanaf pauze-start (Optie A — eerlijk voor 45-60s-pauzes, simpeler dan pro-rata drempels)
+- `hrAtPauseStart`: eerste HR-data binnen het pauze-window
+- `minHRInWindow`: laagste HR die in `measurementWindow` is gezien
+
+### `WorkoutPatternDetector.detectHeartRateRecovery` — pauze-iteratie
+
+Itereert `PauseDetector.detect(in:)`-output, berekent per event `ratio = drop / referenceHR`, en pint de pauze met de laagste ratio (slechtste recovery — Management by Exception §1: alleen exceptions tonen, en dan over het zwakste signaal).
+
+Drempels relatief aan `referenceHR`:
+- `≥ 0.15` ratio → uitstekend, geen pin
+- `0.12 – 0.15` → mild
+- `0.09 – 0.12` → moderate
+- `< 0.09` → significant
+
+`referenceHR` cascade: `lactateThresholdHR` (voorkeur, fysiologisch correctste anker) → `0.88 × maxHeartRate` (gangbare LTHR/HRmax-relatie) → `referenceHRFallback = 165` (populatie-default die de oude absolute drempels reproduceert: 165 × 0.15 ≈ 25 BPM goed-grens).
+
+### Coach-prompt — `WorkoutInsightService.RecoveryEventSummary`
+
+Naast de pin krijgt de coach via `WorkoutInsightService.InsightContext.recoveryEvents` **alle** gedetecteerde pauze-events mee — ook de uitstekende. De system-instruction van de service vertelt de AI hoe hij ermee omgaat: een uitstekende recovery mag positief gefraamd worden ("je autonome zenuwstelsel reageerde sterk") wanneer relevant voor de patronen, een matig/slecht-event versterkt vermoeidheids-vermoedens uit andere patronen. Workouts zonder pauze (interval-tests, tempo-loops) leveren geen events op en de coach noemt het niet — geen meet-window = geen onderwerp.
+
+### Tradeoff vs. cardiac drift
+
+Workouts zonder pauze krijgen geen HR-recovery-signaal meer. Dat is correct gedrag, maar betekent dat de `cardiacDrift`-detector (HR-stijging tussen helft 1 en 2 bij gelijke intensiteit) nu de enige HR-only-vermoeidheids-laag is voor continue rides. Dat is bewust: drift werkt op de feitelijke fysiologische signal van Z1-Z3-aerobic-werk en is wel zinvol op continue effort, terwijl recovery alleen tijdens rust-windows fysiologisch correct gemeten kan worden.

@@ -248,7 +248,18 @@ struct WorkoutAnalysisView: View {
         // Epic #44 update: rijke context meegeven zodat de coach het sessie-type
         // (drempelwerk vs. recovery) en de persoonlijke zones kan meewegen — geen
         // populatie-aannames meer over wat "hoog" of "rustig" voor jou betekent.
+        // Epic #47: pauze-recovery-events als aparte laag in de prompt zodat de
+        // coach uitstekend herstel positief kan framen ook als er geen pin is.
         let profile = UserProfileService.cachedProfile()
+        let referenceHR = WorkoutPatternDetector.referenceHeartRate(from: profile)
+            ?? WorkoutPatternDetector.referenceHRFallback
+        let recoveryEvents = PauseDetector.detect(in: samples).map { event in
+            WorkoutInsightService.RecoveryEventSummary(
+                durationSeconds: event.durationSeconds,
+                drop: event.drop,
+                qualityLabel: recoveryQualityLabel(drop: event.drop, referenceHR: referenceHR)
+            )
+        }
         let context = WorkoutInsightService.InsightContext(
             sportLabel: activity.sportCategory.displayName,
             durationMinutes: max(1, activity.movingTime / 60),
@@ -257,7 +268,8 @@ struct WorkoutAnalysisView: View {
             zones: WorkoutPatternDetector.heartRateZones(from: profile),
             maxHeartRate: profile.maxHeartRate?.value,
             lactateThresholdHR: profile.lactateThresholdHR?.value,
-            ftp: profile.ftp?.value
+            ftp: profile.ftp?.value,
+            recoveryEvents: recoveryEvents
         )
         do {
             let text = try await service.generateInsight(
@@ -367,6 +379,18 @@ struct WorkoutAnalysisView: View {
         case .moderate:    return .orange
         case .significant: return .red
         }
+    }
+
+    /// Epic #47: vertaalt een pauze-recovery-drop naar een label voor de coach-prompt.
+    /// Drempels matchen de pin-grenzen in `WorkoutPatternDetector` zodat het label en
+    /// de eventuele pin consistent zijn — een "matig" event hoort bij een moderate-pin.
+    private func recoveryQualityLabel(drop: Double, referenceHR: Double) -> String {
+        guard referenceHR > 0 else { return "onbekend" }
+        let ratio = drop / referenceHR
+        if ratio >= WorkoutPatternDetector.hrRecoveryGoodRatio { return "uitstekend" }
+        if ratio >= WorkoutPatternDetector.hrRecoveryMildRatio { return "goed" }
+        if ratio >= WorkoutPatternDetector.hrRecoveryModerateRatio { return "matig" }
+        return "slecht"
     }
 
     // MARK: Insight card

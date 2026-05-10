@@ -57,7 +57,7 @@ final class WorkoutPatternDetectorTests: XCTestCase {
         XCTAssertNil(WorkoutPatternDetector.detectCardiacDrift(in: samples))
         XCTAssertNil(WorkoutPatternDetector.detectCadenceFade(in: samples))
         XCTAssertNil(WorkoutPatternDetector.detectHeartRateRecovery(in: samples))
-        XCTAssertTrue(WorkoutPatternDetector.detectAll(in: samples).isEmpty)
+        XCTAssertTrue(WorkoutPatternDetector.detectAll(in: samples, zones: nil).isEmpty)
     }
 
     func testTooShortWorkout_HalvesAndCadenceSkipped() {
@@ -143,40 +143,10 @@ final class WorkoutPatternDetectorTests: XCTestCase {
         XCTAssertEqual(pattern?.severity, .moderate)
     }
 
-    func testHRRecovery_LowPeakWithZones_SkippedByZoneGate() {
-        // Piek 150 BPM (Z2 voor maxHR=195+rest=60), 11 BPM drop in 60s.
-        // Zonder zones zou dit als significant rapporteren; mét zones moeten we
-        // skippen want piek is geen "echte aerobic+ effort".
-        let samples = makeSamples(count: 240, heartRate: { i in
-            if i == 60 { return 150 }
-            if i > 60 && i <= 72 {
-                let elapsed = Double(i - 60) * 5.0
-                return 150 - (11 * elapsed / 60.0)
-            }
-            if i > 72 { return 139 }
-            return 130
-        })
-        let zones = HeartRateZoneCalculator.karvonen(maxHR: 195, restingHR: 60)
-        XCTAssertNil(WorkoutPatternDetector.detectHeartRateRecovery(in: samples, zones: zones),
-                     "Lage piek (Z2) is geen recovery-event om over te rapporteren")
-    }
-
-    func testHRRecovery_HighPeakWithZones_StillFires() {
-        // Piek 180 BPM (Z4 voor maxHR=195+rest=60), 11 BPM drop in 60s.
-        let samples = makeSamples(count: 240, heartRate: { i in
-            if i == 60 { return 180 }
-            if i > 60 && i <= 72 {
-                let elapsed = Double(i - 60) * 5.0
-                return 180 - (11 * elapsed / 60.0)
-            }
-            if i > 72 { return 169 }
-            return 140
-        })
-        let zones = HeartRateZoneCalculator.karvonen(maxHR: 195, restingHR: 60)
-        let pattern = WorkoutPatternDetector.detectHeartRateRecovery(in: samples, zones: zones)
-        XCTAssertNotNil(pattern, "Echte high-intensity piek (Z4+) blijft rapporteren")
-        XCTAssertEqual(pattern?.severity, .significant)
-    }
+    // Epic #47: HR-recovery zone-gates vervallen — recovery wordt nu alleen in
+    // gedetecteerde pauzes gemeten, en daar is geen zone-gate meer nodig
+    // (een pauze impliceert al dat de externe load wegvalt). Drempels schalen
+    // op `referenceHR` (LTHR / 0.88 × maxHR / fallback).
 
     func testDetectAll_WithProfile_AppliesZoneGate() {
         // Z2-only workout met 13% cardiac drift (zou zonder zones triggeren) maar
@@ -293,45 +263,123 @@ final class WorkoutPatternDetectorTests: XCTestCase {
                      "Zero-cadence samples (stops) mogen het kwartiel-gemiddelde niet omlaag trekken")
     }
 
-    // MARK: HR recovery
+    // MARK: HR recovery (Epic #47 — pauze-based)
 
-    func testHRRecovery_GoodRecovery_ReturnsNil() {
-        // Piek 180 BPM, daalt naar 150 in 60s = 30 BPM drop. Boven `hrRecoveryGood` (25),
-        // dus niet gerapporteerd.
-        let samples = makeSamples(count: 240, heartRate: { i in
-            if i == 60 { return 180 }
-            if i > 60 && i <= 72 {
-                let elapsed = Double(i - 60) * 5.0 // seconden
-                return 180 - (30 * elapsed / 60.0) // lineair naar 150
-            }
-            if i > 72 { return 150 }
-            return 140
-        })
-        XCTAssertNil(WorkoutPatternDetector.detectHeartRateRecovery(in: samples))
+    /// Bouwt een 20-min cycling-rit met een pauze van 90s op index 60..78.
+    /// HR daalt lineair tijdens de pauze met `dropOver60s` BPM in de eerste 60s.
+    private func samplesWithSinglePause(dropOver60s: Double,
+                                         peakHR: Double = 180) -> [WorkoutSample] {
+        let pauseStart = 60
+        let pauseEnd = 78  // exclusive
+        return makeSamples(count: 240,
+                           heartRate: { i in
+                               if i < pauseStart { return peakHR }
+                               if i < pauseEnd {
+                                   let elapsed = Double(i - pauseStart) * 5.0
+                                   // Lineair dalen, geclamped op 60s (window-eind)
+                                   let progress = min(elapsed / 60.0, 1.0)
+                                   return peakHR - dropOver60s * progress
+                               }
+                               return peakHR - dropOver60s
+                           },
+                           power: { i in (pauseStart..<pauseEnd).contains(i) ? 0 : 200 },
+                           cadence: { i in (pauseStart..<pauseEnd).contains(i) ? 0 : 90 })
     }
 
-    func testHRRecovery_PoorRecovery_ReturnsSignificant() {
-        // Piek 180 BPM, daalt slechts 10 BPM in 60s. Onder moderate-drempel (15) → significant.
-        let samples = makeSamples(count: 240, heartRate: { i in
-            if i == 60 { return 180 }
-            if i > 60 && i <= 72 {
-                let elapsed = Double(i - 60) * 5.0
-                return 180 - (10 * elapsed / 60.0)
-            }
-            if i > 72 { return 170 }
-            return 140
-        })
+    func testHRRecovery_NoPauseInWorkout_ReturnsNil() {
+        // Continue rit zonder pauze (de scenario uit het screenshot van Epic #47).
+        // Geen pauze → geen recovery-pin, ook niet als HR rond een piek visueel
+        // wel een dip toonde.
+        let samples = makeSamples(count: 240,
+                                  heartRate: { i in i == 60 ? 180 : 165 },
+                                  power: { _ in 200 },
+                                  cadence: { _ in 90 })
+        XCTAssertNil(WorkoutPatternDetector.detectHeartRateRecovery(in: samples),
+                     "Zonder pauze (continue effort) mag er geen HR-recovery-pin zijn")
+    }
+
+    func testHRRecovery_GoodRecoveryInPause_ReturnsNil() {
+        // Pauze van 90s, HR daalt 30 BPM in 60s → ratio 30/165 ≈ 0.18 > 0.15 (good)
+        // → geen pin (uitstekend herstel).
+        let samples = samplesWithSinglePause(dropOver60s: 30)
+        XCTAssertNil(WorkoutPatternDetector.detectHeartRateRecovery(in: samples),
+                     "Uitstekend herstel mag geen pin tonen (Management by Exception §1)")
+    }
+
+    func testHRRecovery_PoorRecoveryInPause_ReturnsSignificant() {
+        // Pauze van 90s, HR daalt slechts 10 BPM in 60s → ratio 10/165 ≈ 0.06 < 0.09
+        // → significant.
+        let samples = samplesWithSinglePause(dropOver60s: 10)
         guard let pattern = WorkoutPatternDetector.detectHeartRateRecovery(in: samples) else {
-            return XCTFail("Verwacht poor-recovery patroon")
+            return XCTFail("Verwacht significant HR-recovery-pin bij trage pauze-recovery")
         }
         XCTAssertEqual(pattern.kind, .heartRateRecovery)
         XCTAssertEqual(pattern.severity, .significant)
+        XCTAssertTrue(pattern.detail.contains("pauze"),
+                      "Detail moet 'pauze' vermelden, niet 'piek'")
     }
 
-    func testHRRecovery_PeakAtEnd_ReturnsNil() {
-        // Piek bij laatste sample — geen 60s recovery-window.
-        let samples = makeSamples(count: 240, heartRate: { i in i == 239 ? 180 : 140 })
-        XCTAssertNil(WorkoutPatternDetector.detectHeartRateRecovery(in: samples))
+    func testHRRecovery_ModerateRecoveryInPause_ReturnsModerate() {
+        // Drop 17 BPM op 165 → ratio ≈ 0.103 → tussen 0.09 en 0.12 → moderate.
+        let samples = samplesWithSinglePause(dropOver60s: 17)
+        guard let pattern = WorkoutPatternDetector.detectHeartRateRecovery(in: samples) else {
+            return XCTFail("Verwacht moderate-pin")
+        }
+        XCTAssertEqual(pattern.severity, .moderate)
+    }
+
+    func testHRRecovery_MildRecoveryInPause_ReturnsMild() {
+        // Drop 22 BPM op 165 → ratio ≈ 0.133 → tussen 0.12 en 0.15 → mild.
+        let samples = samplesWithSinglePause(dropOver60s: 22)
+        guard let pattern = WorkoutPatternDetector.detectHeartRateRecovery(in: samples) else {
+            return XCTFail("Verwacht mild-pin")
+        }
+        XCTAssertEqual(pattern.severity, .mild)
+    }
+
+    func testHRRecovery_WithLTHR_ScalesThresholds() {
+        // Drop 20 BPM met LTHR=150 → ratio ≈ 0.133 → mild (zou bij fallback 165 ook mild zijn).
+        // Maar drop 20 met LTHR=200 → ratio = 0.10 → moderate. Bewijs dat referenceHR
+        // de drempel daadwerkelijk schaalt.
+        let samples = samplesWithSinglePause(dropOver60s: 20)
+        let mildAtLTHR150 = WorkoutPatternDetector.detectHeartRateRecovery(in: samples, referenceHR: 150)
+        let moderateAtLTHR200 = WorkoutPatternDetector.detectHeartRateRecovery(in: samples, referenceHR: 200)
+        XCTAssertEqual(mildAtLTHR150?.severity, .mild)
+        XCTAssertEqual(moderateAtLTHR200?.severity, .moderate)
+    }
+
+    func testHRRecovery_MultiplePauses_PinsWorstRecovery() {
+        // Twee pauzes: één met 30 BPM drop (uitstekend, geen pin) en één met
+        // 10 BPM drop (significant). Detector moet de slechtste pinnen.
+        let pauseA = 60..<78   // 90s
+        let pauseB = 150..<168 // 90s
+        let stillIndexes = Set(pauseA).union(Set(pauseB))
+        let samples = makeSamples(count: 240,
+                                  heartRate: { i in
+                                      if pauseA.contains(i) {
+                                          let elapsed = Double(i - 60) * 5.0
+                                          return 180 - 30 * min(elapsed / 60.0, 1.0)
+                                      }
+                                      if pauseB.contains(i) {
+                                          let elapsed = Double(i - 150) * 5.0
+                                          return 180 - 10 * min(elapsed / 60.0, 1.0)
+                                      }
+                                      return 180
+                                  },
+                                  power: { i in stillIndexes.contains(i) ? 0 : 200 },
+                                  cadence: { i in stillIndexes.contains(i) ? 0 : 90 })
+        guard let pattern = WorkoutPatternDetector.detectHeartRateRecovery(in: samples) else {
+            return XCTFail("Verwacht pin op slechtste pauze")
+        }
+        XCTAssertEqual(pattern.severity, .significant,
+                       "Slechtste pauze (10 BPM drop) moet de pin bepalen, niet de uitstekende (30 BPM)")
+        XCTAssertEqual(pattern.value, 10, accuracy: 1)
+    }
+
+    func testHRRecovery_AllPausesGood_ReturnsNil() {
+        // Eén pauze met uitstekend herstel — geen pin, ook niet door fallback-regel.
+        let samples = samplesWithSinglePause(dropOver60s: 30)
+        XCTAssertNil(WorkoutPatternDetector.detectHeartRateRecovery(in: samples, referenceHR: 165))
     }
 
     // MARK: detectAll aggregation
