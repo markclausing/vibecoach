@@ -176,11 +176,16 @@ enum ActivityDeduplicator {
                             into context: ModelContext) throws -> SmartInsertResult {
         // Laag 1 — source-id idempotency. Werkt voor zowel HK-UUID's als deterministische
         // Strava-id's omdat `ActivityRecord.id` altijd gelijk is aan de stored source-id.
+        // Epic #50: incoming candidate kan velden hebben die het bestaande mist (typisch
+        // weer-data uit Open-Meteo bij re-sync van een Garmin-rit). Doorgesluisd via
+        // `enrichEmptyFields` vóór de skip — anders gaat de nieuwe data verloren.
         let candidateID = candidate.id
         let sameIDFetch = FetchDescriptor<ActivityRecord>(
             predicate: #Predicate { $0.id == candidateID }
         )
-        if let existingSameID = try? context.fetch(sameIDFetch), !existingSameID.isEmpty {
+        if let existingSameID = try? context.fetch(sameIDFetch),
+           let existing = existingSameID.first {
+            Self.enrichEmptyFields(into: existing, from: candidate)
             return .skippedSameSource
         }
 
