@@ -247,6 +247,63 @@ final class ActivityDeduplicatorTests: XCTestCase {
         XCTAssertEqual(strava.humidityPercent, 71.0)
     }
 
+    func testSmartInsert_skippedSameSource_enrichesExistingWithCandidateWeather() throws {
+        // Bestaande Strava-record uit eerdere sync zonder weer.
+        let strava = makeRecord(id: "strava-1", startOffset: 0, deviceWatts: true)
+        try context.save()
+        XCTAssertNil(strava.temperatureCelsius)
+
+        // Re-sync: zelfde Strava-id, maar nu mét Open-Meteo-data uit Epic #50.
+        // Laag 1 (id-match) skipt de insert, maar de weer-velden moeten doorvloeien
+        // naar het bestaande record — anders gaat de fetch verloren bij elke re-sync.
+        let resync = ActivityRecord(
+            id: "strava-1",
+            name: "Re-synced ride",
+            distance: 10_000, movingTime: 3600, averageHeartrate: 145,
+            sportCategory: .cycling, startDate: baseDate,
+            deviceWatts: true,
+            temperatureCelsius: 26.5, humidityPercent: 64.0
+        )
+
+        let result = try ActivityDeduplicator.smartInsert(resync, into: context)
+
+        XCTAssertEqual(result, .skippedSameSource)
+        XCTAssertEqual(strava.temperatureCelsius, 26.5,
+                       "Bestaande record moet weer-data van re-sync candidate erven")
+        XCTAssertEqual(strava.humidityPercent, 64.0)
+    }
+
+    func testSmartInsert_skippedSameSource_doesNotOverwriteExistingWeather() throws {
+        // Bestaande record had al weer-data (bv. uit eerdere Open-Meteo-fetch).
+        // Re-sync mag die niet overschrijven, ook niet als nieuwe waarde verschilt.
+        let strava = ActivityRecord(
+            id: "strava-2",
+            name: "Ride",
+            distance: 10_000, movingTime: 3600, averageHeartrate: 145,
+            sportCategory: .cycling, startDate: baseDate,
+            deviceWatts: true,
+            temperatureCelsius: 22.0, humidityPercent: 50.0
+        )
+        context.insert(strava)
+        try context.save()
+
+        let resync = ActivityRecord(
+            id: "strava-2",
+            name: "Re-synced",
+            distance: 10_000, movingTime: 3600, averageHeartrate: 145,
+            sportCategory: .cycling, startDate: baseDate,
+            deviceWatts: true,
+            temperatureCelsius: 99.0, humidityPercent: 99.0
+        )
+
+        let result = try ActivityDeduplicator.smartInsert(resync, into: context)
+
+        XCTAssertEqual(result, .skippedSameSource)
+        XCTAssertEqual(strava.temperatureCelsius, 22.0,
+                       "Bestaande weer-waarde mag niet overschreven worden bij re-sync")
+        XCTAssertEqual(strava.humidityPercent, 50.0)
+    }
+
     func testSmartInsert_replaced_carriesOverWeatherFromOldRecord() throws {
         // Bestaand HK-record met weer (armer want geen power).
         let hk = ActivityRecord(
