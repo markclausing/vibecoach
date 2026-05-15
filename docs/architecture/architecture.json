@@ -6,7 +6,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 2,
+    "docRevision": 3,
     "lastUpdated": "2026-05-15",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
@@ -1025,6 +1025,256 @@
     ],
     "concurrency": "concurrency: ${{ github.workflow }}-${{ github.ref }} met cancel-in-progress: true op beide workflows. Force-pushes op een PR-branch cancelen oudere in-flight runs.",
     "node24OptIn": "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true env-var anticipeert GitHub's Node 24-migratie (2026-06-02)."
+  },
+  "agent": {
+    "summary": "VibeCoach wordt mede ontwikkeld door een AI-assistent (Claude Code, Opus 4.7). De agent volgt het beleid in CLAUDE.md, gebruikt een persistent memory-systeem voor user-context, en handhaaft de documentatie-discipline (§7) waardoor architectuur, roadmap en deze viewer mee evolueren met de code.",
+    "system": {
+      "tool": "Claude Code (CLI + IDE-integratie)",
+      "model": "claude-opus-4-7",
+      "rulesFile": "CLAUDE.md",
+      "memoryFile": "~/.claude/projects/-Users-.../memory/MEMORY.md",
+      "philosophy": "Proactieve doc-updates zonder toestemming vragen; samenvatten + cache-vriendelijk werken; bij Epic-overgangen oude regels opruimen."
+    },
+    "principles": [
+      {
+        "id": "agent-management-by-exception",
+        "title": "Management by Exception (ook voor de agent)",
+        "description": "De agent waarschuwt of vraagt alleen bij afwijkingen — niet bij elke trivial choice. Acties met blast-radius (destructive git, force-push, shared infra) krijgen wel expliciete confirmation."
+      },
+      {
+        "id": "agent-doc-autonomy",
+        "title": "Autonoom context-management",
+        "description": "Bij nieuwe architectuur, structureel opgeloste bug, of nieuwe project-standaard: update direct in de juiste doc-file zonder toestemming. Zie CLAUDE.md §0."
+      },
+      {
+        "id": "agent-pr-discipline",
+        "title": "Eén fix per PR",
+        "description": "Geen meeliftende refactors. Link altijd de bron (CodeQL alert, issue, crash-report). Regression-test toevoegen waar haalbaar."
+      },
+      {
+        "id": "agent-dutch",
+        "title": "Nederlands, tenzij anders",
+        "description": "Antwoorden + comments in het Nederlands. Code-identifiers in het Engels (Swift-conventie). Beknopt — geen onnodige samenvattingen."
+      }
+    ],
+    "rules": [
+      {
+        "id": "datamodel",
+        "section": "§2 + §2.1",
+        "title": "SwiftData Strictness + Migratie-protocol",
+        "summary": "Type-safe enums, no raw strings. Élke @Model-wijziging vereist een schema-snapshot + MigrationStage + file-backed migratie-test — óók pure additions.",
+        "highlights": [
+          "Snapshot oude schema in Models/SchemaV<N>.swift; nested @Model-types houden dezelfde unqualified naam",
+          "Voor pure additions: MigrationStage.lightweight(from:to:) volstaat",
+          "Type-changes (String → enum): willMigrate + didMigrate capture/restore",
+          "Bump container-init in AIFitnessCoachApp.makeModelContainer() naar nieuwe SchemaV<M>.models",
+          "Test verplicht: FitnessGoal + UserPreference overleven migratie + nieuwe velden schrijfbaar"
+        ]
+      },
+      {
+        "id": "time",
+        "section": "§3",
+        "title": "Tijd & Datum",
+        "summary": "Nooit TimeInterval-math voor periodes. Altijd Calendar.current.date(byAdding:to:). Base-building berekent vanaf Date(), niet targetDate.",
+        "highlights": [
+          "TimeInterval × 86400 → bugs met zomertijd en schrikkeljaren",
+          "Calendar werkt correct over DST-grenzen"
+        ]
+      },
+      {
+        "id": "background",
+        "section": "§4",
+        "title": "Dual Engine Architecture",
+        "summary": "Engine A (HKObserverQuery) reageert op actie, Engine B (BGAppRefreshTask) op inactie. ProactiveNotificationService is de singleton voor beide.",
+        "highlights": [
+          "Cooldown: max 1 proactieve notificatie per doel per 24u",
+          "Risicodata gecached in UserDefaults vanuit DashboardView (onAppear + na refresh)"
+        ]
+      },
+      {
+        "id": "swiftui",
+        "section": "§5",
+        "title": "SwiftUI & iOS Stijlregels",
+        "summary": "Eén top-level type per bestand. Soft cap ±500 LOC per Swift-file. Standaard iOS-componenten — simpel, modern, native.",
+        "highlights": [
+          "Bij @Model-classes is één-per-file verplicht",
+          "Complexe logica via comments in het Nederlands",
+          "Pure file-splits zonder semantische wijzigingen zijn altijd veilig"
+        ]
+      },
+      {
+        "id": "testing",
+        "section": "§6",
+        "title": "Testbeleid",
+        "summary": "Pure-Swift logica + edge cases + happy-path UI. NIET: triviale getters, view-orchestratie zonder injection-seam, simulator-onhaalbare frameworks.",
+        "highlights": [
+          "Pure-Swift helpers AppStorage-/UserDefaults-vrij houden",
+          "UI-tests sequentieel op CI (-parallel-testing-enabled NO)",
+          "Coverage is signal, geen KPI",
+          "Bij UI-test-failures eerst xcresult inspecteren"
+        ]
+      },
+      {
+        "id": "docs",
+        "section": "§7",
+        "title": "Documentatie-Discipline",
+        "summary": "Vier source-of-truth files (README, ROADMAP, ARCHITECTURE, CLAUDE) + twee afgeleide artefacten (architecture.html + .json). Geen overlap, geen duplicatie.",
+        "highlights": [
+          "Elke feature-PR update relevante docs in dezelfde commit",
+          "ROADMAP-statussen: ✅ ⟶ 🔄 ⟶ ⏳",
+          "Pure docs-only PR's mogen direct op main",
+          "Architectuur-viewer wordt mee-bijgewerkt bij module-laag-wijzigingen (§7 Architectuur-visualisatie)"
+        ]
+      },
+      {
+        "id": "git",
+        "section": "§8",
+        "title": "Git Workflow",
+        "summary": "Branch + PR — nooit direct op main. Branchnaam-conventies per type. Assistent maakt PR direct na eerste push aan, mergt niet.",
+        "highlights": [
+          "feature/epic-{nr}-..., fix/..., hotfix/..., security/..., ci/..., chore/..., docs/...",
+          "Eén fix per PR, geen meeliftende refactors",
+          "Squash & merge — door de gebruiker, niet de agent",
+          "Nooit --no-verify of force-push naar main"
+        ]
+      },
+      {
+        "id": "xcodeproj",
+        "section": "§9",
+        "title": "Xcode Project Beheer",
+        "summary": "project.pbxproj heeft skip-worktree aan. Nieuwe Swift-files vereisen handmatige toevoeging aan PBXFileReference + BuildFile + PBXGroup + PBXSourcesBuildPhase.",
+        "highlights": [
+          "Vergeet je dit: CI-build faalt met 'cannot find X in scope'",
+          "Tijdelijk skip-worktree uitschakelen, stagen, committen, weer aanzetten"
+        ]
+      },
+      {
+        "id": "logging",
+        "section": "§11",
+        "title": "Logger & Privacy",
+        "summary": "Geen print() in Services/Models/ViewModels. AppLoggers.<categorie>.<level>(...) met expliciete privacy-modifiers voor user-data.",
+        "highlights": [
+          "privacy: .private — HRV, slaap, TRIMP, leeftijd, doeltitels, UUIDs, tokens, RPE/mood",
+          "privacy: .public — framework-foutcodes, tellers, niet-identificerende status-flags",
+          "Géén losse static let logger per service — centraliseer in AppLoggers"
+        ]
+      },
+      {
+        "id": "defensive-init",
+        "section": "§12",
+        "title": "Defensieve App-Init",
+        "summary": "Op het kritieke launch-pad: nooit fatalError als eerste catch. Probeer → log + fallback → pas bij tweede falen fatalError.",
+        "highlights": [
+          "Bij migratie-falen: verwijder corrupte SQLite-store + WAL/SHM-sidecars",
+          "UserDefaults-flag (vibecoach_migrationFallbackAt) als haakje voor UI-melding",
+          "HK + Strava-data zijn re-syncbaar — data-loss-risico acceptabel boven brick"
+        ]
+      }
+    ],
+    "workflows": [
+      {
+        "id": "branch-types",
+        "title": "Branchnaam-conventies",
+        "items": [
+          { "pattern": "feature/epic-{nr}-{korte-beschrijving}", "use": "Nieuwe epics/sprints" },
+          { "pattern": "fix/{korte-beschrijving}", "use": "Reguliere bugfixes" },
+          { "pattern": "hotfix/{korte-beschrijving}", "use": "Productie-kritiek, fast-track merge" },
+          { "pattern": "security/{alert-id-of-beschrijving}", "use": "Security-fixes" },
+          { "pattern": "ci/{korte-beschrijving}", "use": "Workflow/pipeline-wijzigingen" },
+          { "pattern": "chore/{korte-beschrijving}", "use": "Tech-debt, refactors zonder gedragswijziging" },
+          { "pattern": "docs/{korte-beschrijving}", "use": "Pure documentatie-updates (zeldzaam)" }
+        ]
+      },
+      {
+        "id": "pr-flow",
+        "title": "PR-flow per branch",
+        "steps": [
+          "Branch aanmaken → code bouwen → pushen",
+          "Assistent maakt PR direct via `gh pr create` (titel uit branch-naam, body met Summary + Test plan)",
+          "Gebruiker pulled en test (feature-branches op device)",
+          "Feedback → fixes op dezelfde branch (push update bestaande PR)",
+          "Tevreden → gebruiker doet squash & merge",
+          "Volgende sprint: verwijder gemergte branches lokaal + remote"
+        ]
+      },
+      {
+        "id": "doc-update-protocol",
+        "title": "Doc-update-protocol per PR-type",
+        "matrix": [
+          { "trigger": "Nieuwe Epic of grote feature", "files": ["ROADMAP.md", "ARCHITECTURE.md (indien nieuwe keuze)", "architecture.json + .html"] },
+          { "trigger": "Bugfix / refactor zonder structuur-wijziging", "files": [] },
+          { "trigger": "Nieuwe service / @Model / @StateObject", "files": ["architecture.json + .html (bump docRevision)"] },
+          { "trigger": "Nieuwe permanente regel", "files": ["CLAUDE.md"] },
+          { "trigger": "Schema-migratie", "files": ["SchemaV<N>.swift snapshot", "AppMigrationPlan.swift", "SchemaMigrationV<N>To<M>Tests.swift", "container-init bump"] }
+        ]
+      }
+    ],
+    "lessonsLearned": [
+      {
+        "id": "schema-pure-add",
+        "date": "2026-05",
+        "epic": "Epic #49",
+        "incident": "Twee optionele velden toegevoegd aan ActivityRecord zónder schema-bump. SwiftData's lightweight inference werkt anders bij een explicit migrationPlan — container-init faalde, fallback wiste FitnessGoal + UserPreference (lokaal-only).",
+        "rule": "Verplicht bij élke @Model-wijziging — óók pure additions — een SchemaV<N>-snapshot + MigrationStage. Geen uitzonderingen meer.",
+        "rulesAffected": ["§2.1"]
+      },
+      {
+        "id": "xcuitest-parallel",
+        "date": "2026",
+        "epic": "Epic 46.4",
+        "incident": "XCUITest faalde flaky op GitHub macos-latest met `ipc/mig server died`. Root-cause: parallelle xctrunner-clones (\"Clone 2 of iPhone 16 Pro\") crashen onder load.",
+        "rule": "UI-tests op CI sequentieel draaien (`-parallel-testing-enabled NO`). Bij failures eerst xcresult-activity-log inspecteren vóór op runner-flakiness te wijzen — vaker zit het in test-code (verborgen NavBar, te-korte timeouts).",
+        "rulesAffected": ["§6 CI-discipline"]
+      },
+      {
+        "id": "hr-recovery-window",
+        "date": "2026",
+        "epic": "Epic #47",
+        "incident": "Globale piek + meet HR exact 60s later. Bij continue rides was de gebruiker 60s na de piek alweer aan het trappen, dus een visuele dip van 40 BPM tijdens een korte stop kwam als '4 BPM drop' uit de detector.",
+        "rule": "HR-recovery alleen meten tijdens gedetecteerde pauzes (power<5 + cadence<5 voor ≥45s). Peak-anchored 90s window i.p.v. 60s vanaf pauze-start — vagale HRR-fase loopt tot ~90s, abrupte stop piekt nog 5-15s na stop voor 'ie begint te dalen.",
+        "rulesAffected": ["Architecture §12"]
+      },
+      {
+        "id": "logger-duplicates",
+        "date": "2025",
+        "epic": "Logger-cleanup",
+        "incident": "Drie duplicate `static let logger = Logger(...)` declaraties in verschillende services liepen uit de hand — verschillende subsystem-strings, sommige zonder privacy-modifiers.",
+        "rule": "Centraliseer in AppLoggers — één logger per categorie, privacy-modifiers verplicht voor user-data. Géén static let logger per service.",
+        "rulesAffected": ["§11"]
+      },
+      {
+        "id": "strava-secret-leak",
+        "date": "Security audit",
+        "epic": "C-01",
+        "incident": "Strava client_secret zat hardcoded in Secrets.swift — uit de IPA te extraheren door elke gebruiker die de binary kon openen.",
+        "rule": "OAuth-flow via een Cloudflare Worker-proxy met het secret als Worker Secret. Client authenticeert met shared X-Client-Token + random state-UUID (CSRF).",
+        "rulesAffected": ["Architecture §2"]
+      },
+      {
+        "id": "smart-ingest",
+        "date": "2026",
+        "epic": "Epic #41",
+        "incident": "Een armere HK-record overschreef regelmatig een rijker Strava-record met deviceWatts wanneer de syncs in de verkeerde volgorde binnenkwamen. Handmatige 'Verwijder Dubbele Activiteiten'-knop in Settings was de workaround.",
+        "rule": "Smart-ingest aan de voordeur: drie-laagse check (source-id idempotent → ±5s cross-source vergelijk → reguliere insert) bij alle ingest-paden. Handmatige knop verwijderd — auto-dedupe + smart-ingest dekken beide kanten.",
+        "rulesAffected": ["Architecture §9"]
+      },
+      {
+        "id": "apns-deeplink-vector",
+        "date": "M-08",
+        "epic": "Security mitigation",
+        "incident": "APNs-payload met willekeurige `activityId` kon de app navigeren — potentiele social-engineering-vector.",
+        "rule": "Whitelist in AppDelegate.isAllowedNotificationPayload(_:) — alleen `goalRisk` en `recovery_plan` payloads. Alle andere stil genegeerd, in willPresent én didReceive.",
+        "rulesAffected": ["Architecture §5"]
+      },
+      {
+        "id": "fatalerror-launch",
+        "date": "2026",
+        "epic": "Defensive-init",
+        "incident": "ModelContainer-init met migration plan kon falen en de app brickte tot reinstall. Crash-loop omdat fatalError de eerste catch was.",
+        "rule": "Op het kritieke launch-pad: probeer → log + fallback (verwijder corrupte store) → pas bij tweede falen fatalError. HK + Strava-data zijn re-syncbaar; data-loss-risico is acceptabel boven brick.",
+        "rulesAffected": ["§12"]
+      }
+    ]
   },
   "tags": {
     "engine-a": "HKObserverQuery-driven proactive notifications",
