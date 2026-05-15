@@ -6,7 +6,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 1,
+    "docRevision": 2,
     "lastUpdated": "2026-05-15",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
@@ -793,6 +793,238 @@
     "haptics": "UIImpactFeedbackGenerator (.medium) bij key-bevestigingen",
     "language": "Nederlands voor UI/prompts/comments; Engels voor Swift-identifiers",
     "philosophy": "Serene Visual Overhaul (Epic 29) — zachte gradients, hierarchical SF Symbols, vaste 6-thema-palet"
+  },
+  "testing": {
+    "summary": "Pure-Swift logica in Services/Models/ViewModels-helpers krijgt unit-test-dekking; happy-path UI-flows via XCUITest. Bewust niet alles: triviale getters, view-laag-orchestratie zonder injection-seam, en simulator-sandbox-onhaalbare frameworks blijven ongetest.",
+    "docRef": "CLAUDE.md §6 — Testbeleid",
+    "policy": [
+      {
+        "id": "test-yes",
+        "title": "Wat WEL testen",
+        "items": [
+          "Pure-Swift logica in Services/, Models/, ViewModels/-helpers (classifiers, calculators, formatters, schedulers)",
+          "Schema-migraties met file-backed seed-stores (in-memory werkt niet voor migratie-paden)",
+          "Domeinregels met edge cases: HR-zone-grenzen, blessure-keyword-detectie, DST-overgangen, dedupe-heuristieken",
+          "Happy-path UI-flows via XCUITest: onboarding, navigatie naar elke tab, doel aanmaken"
+        ]
+      },
+      {
+        "id": "test-no",
+        "title": "Wat NIET testen",
+        "items": [
+          "Triviale getters/setters of SwiftData-boilerplate",
+          "View-laag-orchestratie zonder clean injection-seam (concurrent sync, async let-flows)",
+          "iOS-framework-zaken die in simulator-sandbox niet werken (Keychain entitlements, BGTaskScheduler-timing)"
+        ]
+      },
+      {
+        "id": "testability",
+        "title": "Testbaarheid borgen",
+        "items": [
+          "Pure-Swift helpers AppStorage-/UserDefaults-vrij houden — caller injecteert state via parameters",
+          "Mocking voor UI-tests via UITestMockEnvironment.setup() (gegated op -UITesting + #if DEBUG)",
+          "Test-only bypasses in productie-code alleen achter -UITesting-check + comment"
+        ]
+      }
+    ],
+    "suites": [
+      {
+        "id": "unit",
+        "name": "Unit Tests (XCTest)",
+        "target": "AIFitnessCoachTests",
+        "fileCount": 62,
+        "framework": "XCTest",
+        "execution": "xcodebuild test -only-testing:AIFitnessCoachTests -enableCodeCoverage YES",
+        "description": "Pure-Swift-tests met file-backed SwiftData-stores waar nodig. Geen netwerk — alle externe calls vervangen door MockNetworkSession / MockGenerativeModel / MockTokenStore.",
+        "highlights": [
+          "ActivityDeduplicatorTests — smart-ingest 3-laagse check (source-id, ±5s cross-source, rijkdom-heuristiek)",
+          "PauseDetectorTests — peak-anchored 90s window, minimumPauseSeconds=45, 10-actieve-samples-pre-check",
+          "WorkoutPatternDetectorTests — HR-zone-gegate decoupling, drift, cadence fade, recovery",
+          "SchemaMigrationV1ToV2Tests + V2ToV3Tests — file-backed seed-stores als migratie-vangnet",
+          "CalendarDSTSafeTests — date-math zonder TimeInterval-bugs over zomertijd",
+          "KeychainServiceTests — round-trip + service-naam-isolatie",
+          "ProactiveNotificationServiceTests — Engine A/B cooldown-logic"
+        ]
+      },
+      {
+        "id": "ui",
+        "name": "UI Tests (XCUITest)",
+        "target": "AIFitnessCoachUITests",
+        "fileCount": 5,
+        "framework": "XCUITest",
+        "execution": "xcodebuild test -only-testing:AIFitnessCoachUITests -parallel-testing-enabled NO",
+        "description": "Sequentieel op CI om xctrunner-clone-flakiness te vermijden (Epic 46.4). UITestMockEnvironment injecteert dummy API-key + weersdata + UITestMockGenerativeModel zodat views renderen zonder live API-calls.",
+        "highlights": [
+          "AIFitnessCoachUITests — TabBar-navigatie + Dashboard happy-path",
+          "AIFitnessCoachUITestsLaunchTests — launch-screenshot voor App Store",
+          "AIModelPickerUITests — E2E coverage van de model-picker (gestart via -UITestOpenAICoachConfig shortcut)",
+          "GoalsUITests — doel aanmaken / bewerken / verwijderen",
+          "OnboardingE2ETests — 4-pagina TabView-flow met permissie-knoppen"
+        ]
+      },
+      {
+        "id": "migration",
+        "name": "Schema Migration Tests",
+        "target": "AIFitnessCoachTests",
+        "fileCount": 2,
+        "framework": "XCTest + file-backed ModelContainer",
+        "description": "Verplicht bij élke @Model-wijziging (CLAUDE.md §2.1). Test minstens (1) dat FitnessGoal/UserPreference de migratie overleven en (2) dat nieuwe velden schrijfbaar zijn na migratie.",
+        "highlights": [
+          "SchemaMigrationV1ToV2Tests",
+          "SchemaMigrationV2ToV3Tests"
+        ]
+      }
+    ],
+    "categories": [
+      { "title": "Pure-Swift services", "modules": ["ActivityDeduplicator", "PauseDetector", "WorkoutPatternDetector", "SessionClassifier", "ReadinessCalculator", "PeriodizationEngine", "PhysiologicalThresholdEstimator", "HeartRateZoneCalculator", "PowerZoneCalculator"] },
+      { "title": "ViewModel-formatters", "modules": ["BlueprintContextFormatter", "WorkoutHistoryContextBuilder", "PreferencesContextFormatter"] },
+      { "title": "Schema & migratie", "modules": ["AppMigrationPlan", "SchemaV1", "SchemaV2", "SchemaV3"] },
+      { "title": "Auth & storage", "modules": ["KeychainService", "UserAPIKeyStore", "StravaAuthService"] }
+    ],
+    "infrastructure": [
+      {
+        "id": "GenerativeModelProtocol",
+        "purpose": "Injection-seam voor de AI-call. Productie levert Gemini/OpenAI/Anthropic, tests leveren MockGenerativeModel of UITestMockGenerativeModel.",
+        "file": "AIFitnessCoach/ViewModels/GenerativeModelProtocol.swift"
+      },
+      {
+        "id": "MockGenerativeModel",
+        "purpose": "Unit-test mock — geprogrammeerde responses per prompt.",
+        "file": "AIFitnessCoachTests/MockGenerativeModel.swift"
+      },
+      {
+        "id": "MockTokenStore",
+        "purpose": "Vervangt KeychainService in tests die OAuth-flow raken.",
+        "file": "AIFitnessCoachTests/MockTokenStore.swift"
+      },
+      {
+        "id": "MockNetworkSession",
+        "purpose": "Stub voor URLSession — programmable per host/path. Voorkomt netwerk-IO in unit-tests.",
+        "file": "AIFitnessCoachTests/Mocks/MockNetworkSession.swift"
+      },
+      {
+        "id": "UITestMockEnvironment",
+        "purpose": "Bootstrap voor XCUITest: schrijft dummy API-key in Keychain, fake weather + periodisation, en swapt de generative model. Gegated op -UITesting + #if DEBUG.",
+        "file": "AIFitnessCoach/Services/UITestMockEnvironment.swift"
+      }
+    ],
+    "coverage": {
+      "summary": "61% combined coverage op testable code. Coverage is signal, geen KPI — `Views/` blijft beperkt door SwiftUI-testbaarheid en wordt apart gerapporteerd.",
+      "tool": "scripts/coverage-report.py (max-merge per file over unit-tests + ui-tests xcresults)",
+      "byDirectory": [
+        { "path": "Models", "pct": 80 },
+        { "path": "Services", "pct": 59 },
+        { "path": "ViewModels", "pct": 59 },
+        { "path": "Views", "pct": 43 }
+      ]
+    },
+    "lessonsLearned": [
+      {
+        "title": "UI-tests sequentieel op CI",
+        "body": "Parallel-clones triggeren `ipc/mig server died` op GitHub macos-latest-runners (Epic 46.4 root-cause). `-parallel-testing-enabled NO` op CI, lokaal blijft scheme-config parallel voor snelheid."
+      },
+      {
+        "title": "Eerst xcresult inspecteren, dan op runner-flakiness wijzen",
+        "body": "`xcrun xcresulttool get test-results activities --test-id <id>` levert vaak test-code-bugs (verborgen NavigationBar, te-korte timeouts) als oorzaak — niet de runner."
+      },
+      {
+        "title": "In-memory stores werken niet voor migratie-tests",
+        "body": "Migration plan vereist een V<N>-store-bestand om vanaf te starten. File-backed seed-store is verplicht in SchemaMigration*Tests."
+      }
+    ]
+  },
+  "ci": {
+    "summary": "GitHub Actions draait twee workflows op elke push naar `main` en elke PR: `iOS CI` (4-job DAG) en `CodeQL Security Analysis` (Swift + Actions matrix). Concurrency-groep per branch cancelt oudere in-flight runs bij force-push.",
+    "docRef": "docs/ARCHITECTURE.md#11",
+    "platform": "GitHub Actions",
+    "workflows": [
+      {
+        "id": "ios-ci",
+        "name": "iOS CI",
+        "file": ".github/workflows/ios-tests.yml",
+        "triggers": ["push:main", "pull_request:main"],
+        "runner": "macos-latest",
+        "description": "Lint + Unit Tests + UI Tests + Coverage Report als DAG. Coverage draait pas als beide test-jobs klaar zijn (of als alleen unit-tests slagen — UI-bundle is dan optioneel)."
+      },
+      {
+        "id": "codeql",
+        "name": "CodeQL Security Analysis",
+        "file": ".github/workflows/codeql.yml",
+        "triggers": ["push:main", "pull_request:main", "schedule:weekly"],
+        "runner": "matrix (macos-latest voor swift, ubuntu-latest voor actions)",
+        "description": "Twee parallelle matrix-cellen: Swift op macOS met manuele xcodebuild, Actions-taal op Ubuntu (10× goedkoper) voor YAML-statische-analyse."
+      }
+    ],
+    "jobs": [
+      {
+        "id": "lint",
+        "name": "SwiftLint",
+        "workflow": "ios-ci",
+        "needs": [],
+        "runner": "macos-latest",
+        "description": "swiftlint --strict op .swiftlint.yml. 938→0 violations baseline; 1 nieuwe violation breekt CI. github-actions-logging reporter geeft inline annotations op het PR-diff.",
+        "duration": "~30s"
+      },
+      {
+        "id": "unit-tests",
+        "name": "Unit Tests",
+        "workflow": "ios-ci",
+        "needs": [],
+        "runner": "macos-latest",
+        "description": "xcodebuild test -only-testing:AIFitnessCoachTests -enableCodeCoverage YES. xcresult-bundle als artifact (7d retentie).",
+        "artifacts": ["unit-tests-xcresult"]
+      },
+      {
+        "id": "ui-tests",
+        "name": "UI Tests",
+        "workflow": "ios-ci",
+        "needs": ["unit-tests"],
+        "runner": "macos-latest",
+        "description": "Sequentieel (-parallel-testing-enabled NO) om xctrunner-clone-crashes te vermijden. Boot simulator + bootstatus vóór xcodebuild voor SpringBoard-warmup. xcresult + CoreSimulator-logs als artifacts (14d retentie).",
+        "artifacts": ["ui-tests-xcresult", "coresimulator-logs"]
+      },
+      {
+        "id": "coverage-report",
+        "name": "Coverage Report",
+        "workflow": "ios-ci",
+        "needs": ["unit-tests", "ui-tests"],
+        "runner": "macos-latest",
+        "description": "Mergt beide xcresults per-file (max-coverage) via scripts/coverage-report.py. Genereert per-directory markdown met aggregaten (Testable / Views / Totaal). Draait ook bij rode UI-tests-job — dan single-bundle modus.",
+        "artifacts": ["coverage-report"]
+      },
+      {
+        "id": "codeql-swift",
+        "name": "CodeQL Swift",
+        "workflow": "codeql",
+        "needs": [],
+        "runner": "macos-latest",
+        "description": "Manuele `xcodebuild clean build` + codeql-action analyze. Build-mode `manual` omdat autobuild faalt op SwiftData-projecten."
+      },
+      {
+        "id": "codeql-actions",
+        "name": "CodeQL Actions",
+        "workflow": "codeql",
+        "needs": [],
+        "runner": "ubuntu-latest",
+        "description": "Pure YAML-statische-analyse op `.github/workflows/*.yml`. Detecteert untrusted-input-injection, niet-gepinde actions, secret-leakage. Geen build nodig — 10× goedkoper dan macOS-runner."
+      }
+    ],
+    "envSetup": [
+      {
+        "step": "Setup Dummy Secrets",
+        "detail": "`cp AIFitnessCoach/Secrets-template.swift AIFitnessCoach/Secrets.swift` — zodat het project compileert zonder echte sleutels."
+      },
+      {
+        "step": "Dynamische simulator-ID",
+        "detail": "`xcrun simctl list devices available | grep iPhone | ...` — geen hardcoded model-namen, werkt over Xcode-updates heen."
+      },
+      {
+        "step": "CFBundleVersion via Build Phase",
+        "detail": "Run-Script Build Phase zet CFBundleVersion op `git rev-list --count HEAD` — lokaal en in CI, geen handmatige bumps."
+      }
+    ],
+    "concurrency": "concurrency: ${{ github.workflow }}-${{ github.ref }} met cancel-in-progress: true op beide workflows. Force-pushes op een PR-branch cancelen oudere in-flight runs.",
+    "node24OptIn": "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true env-var anticipeert GitHub's Node 24-migratie (2026-06-02)."
   },
   "tags": {
     "engine-a": "HKObserverQuery-driven proactive notifications",

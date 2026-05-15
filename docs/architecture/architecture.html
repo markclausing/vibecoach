@@ -646,6 +646,322 @@
     margin-left: 6px;
   }
 
+  /* ===== Testing view ===== */
+  .qa-section { margin-bottom: 28px; }
+  .qa-section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    font-weight: 600;
+    margin: 0 0 12px 4px;
+  }
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .stat-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .stat-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    color: var(--primary);
+  }
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .stat-bar {
+    height: 4px;
+    background: var(--bg);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .stat-bar-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 999px;
+    transition: width var(--transition);
+  }
+  .policy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+  }
+  .policy-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .policy-card.yes { border-left: 3px solid var(--primary); }
+  .policy-card.no { border-left: 3px solid var(--border-strong); opacity: 0.92; }
+  .policy-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    color: var(--text);
+  }
+  .policy-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .policy-list li {
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 4px 0 4px 16px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .policy-list li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 11px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--primary);
+    opacity: 0.5;
+  }
+  .suite-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 14px;
+  }
+  .suite-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+  }
+  .suite-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .suite-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .suite-count {
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+  }
+  .suite-target {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-bottom: 8px;
+  }
+  .suite-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0 0 12px 0;
+  }
+  .suite-highlights {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+  .suite-highlights li {
+    font-size: 12px;
+    color: var(--text);
+    padding: 3px 0 3px 14px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .suite-highlights li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    top: 1px;
+    color: var(--primary);
+    font-weight: 700;
+  }
+  .mini-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .mini-list li {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-bottom: 6px;
+  }
+  .mini-list-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 2px 0;
+  }
+  .mini-list-body {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0;
+  }
+  .mini-list-file {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-top: 4px;
+  }
+
+  /* ===== CI view ===== */
+  .workflow-card {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .workflow-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  .workflow-name {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .workflow-meta {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+  .workflow-trigger {
+    font-size: 11px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 1px 7px;
+    border-radius: 999px;
+    margin-right: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .workflow-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 4px 0 14px 0;
+  }
+  .dag {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+  .dag-job {
+    flex: 0 0 220px;
+    background: var(--bg-elev-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    position: relative;
+    transition: all var(--transition);
+  }
+  .dag-job:hover {
+    border-color: var(--primary-line);
+    transform: translateY(-1px);
+  }
+  .dag-job.has-needs {
+    border-left: 3px solid var(--primary);
+  }
+  .dag-job-name {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 2px 0;
+  }
+  .dag-job-runner {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 10px;
+    color: var(--text-faint);
+    margin-bottom: 8px;
+  }
+  .dag-job-desc {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 8px 0;
+  }
+  .dag-job-needs {
+    font-size: 10px;
+    color: var(--primary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+  .dag-job-artifacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .dag-job-artifact {
+    font-size: 10px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  .info-strip {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-bottom: 8px;
+  }
+  .info-strip-title {
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0 0 2px 0;
+  }
+  .info-strip-body {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.5;
+  }
+
   /* Hidden view */
   .view { display: none; }
   .view.active { display: block; }
@@ -665,6 +981,8 @@
     <button class="tab" data-view="layers">Lagen</button>
     <button class="tab" data-view="subsystems">Subsystemen</button>
     <button class="tab" data-view="flows">Flows</button>
+    <button class="tab" data-view="testing">Tests</button>
+    <button class="tab" data-view="ci">CI</button>
   </nav>
   <div class="topbar-spacer"></div>
   <div class="controls">
@@ -732,6 +1050,24 @@
       </div>
       <div id="flows" class="flow-grid"></div>
     </section>
+
+    <!-- Testing -->
+    <section class="view" id="view-testing">
+      <div class="view-header">
+        <h1 class="view-title">Test-strategie</h1>
+        <p class="view-sub" id="testingSummary"></p>
+      </div>
+      <div id="testingContent"></div>
+    </section>
+
+    <!-- CI -->
+    <section class="view" id="view-ci">
+      <div class="view-header">
+        <h1 class="view-title">CI Pipeline</h1>
+        <p class="view-sub" id="ciSummary"></p>
+      </div>
+      <div id="ciContent"></div>
+    </section>
   </main>
 
   <aside class="detail-panel" id="detailPanel">
@@ -750,7 +1086,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 1,
+    "docRevision": 2,
     "lastUpdated": "2026-05-15",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
@@ -1538,6 +1874,238 @@
     "language": "Nederlands voor UI/prompts/comments; Engels voor Swift-identifiers",
     "philosophy": "Serene Visual Overhaul (Epic 29) — zachte gradients, hierarchical SF Symbols, vaste 6-thema-palet"
   },
+  "testing": {
+    "summary": "Pure-Swift logica in Services/Models/ViewModels-helpers krijgt unit-test-dekking; happy-path UI-flows via XCUITest. Bewust niet alles: triviale getters, view-laag-orchestratie zonder injection-seam, en simulator-sandbox-onhaalbare frameworks blijven ongetest.",
+    "docRef": "CLAUDE.md §6 — Testbeleid",
+    "policy": [
+      {
+        "id": "test-yes",
+        "title": "Wat WEL testen",
+        "items": [
+          "Pure-Swift logica in Services/, Models/, ViewModels/-helpers (classifiers, calculators, formatters, schedulers)",
+          "Schema-migraties met file-backed seed-stores (in-memory werkt niet voor migratie-paden)",
+          "Domeinregels met edge cases: HR-zone-grenzen, blessure-keyword-detectie, DST-overgangen, dedupe-heuristieken",
+          "Happy-path UI-flows via XCUITest: onboarding, navigatie naar elke tab, doel aanmaken"
+        ]
+      },
+      {
+        "id": "test-no",
+        "title": "Wat NIET testen",
+        "items": [
+          "Triviale getters/setters of SwiftData-boilerplate",
+          "View-laag-orchestratie zonder clean injection-seam (concurrent sync, async let-flows)",
+          "iOS-framework-zaken die in simulator-sandbox niet werken (Keychain entitlements, BGTaskScheduler-timing)"
+        ]
+      },
+      {
+        "id": "testability",
+        "title": "Testbaarheid borgen",
+        "items": [
+          "Pure-Swift helpers AppStorage-/UserDefaults-vrij houden — caller injecteert state via parameters",
+          "Mocking voor UI-tests via UITestMockEnvironment.setup() (gegated op -UITesting + #if DEBUG)",
+          "Test-only bypasses in productie-code alleen achter -UITesting-check + comment"
+        ]
+      }
+    ],
+    "suites": [
+      {
+        "id": "unit",
+        "name": "Unit Tests (XCTest)",
+        "target": "AIFitnessCoachTests",
+        "fileCount": 62,
+        "framework": "XCTest",
+        "execution": "xcodebuild test -only-testing:AIFitnessCoachTests -enableCodeCoverage YES",
+        "description": "Pure-Swift-tests met file-backed SwiftData-stores waar nodig. Geen netwerk — alle externe calls vervangen door MockNetworkSession / MockGenerativeModel / MockTokenStore.",
+        "highlights": [
+          "ActivityDeduplicatorTests — smart-ingest 3-laagse check (source-id, ±5s cross-source, rijkdom-heuristiek)",
+          "PauseDetectorTests — peak-anchored 90s window, minimumPauseSeconds=45, 10-actieve-samples-pre-check",
+          "WorkoutPatternDetectorTests — HR-zone-gegate decoupling, drift, cadence fade, recovery",
+          "SchemaMigrationV1ToV2Tests + V2ToV3Tests — file-backed seed-stores als migratie-vangnet",
+          "CalendarDSTSafeTests — date-math zonder TimeInterval-bugs over zomertijd",
+          "KeychainServiceTests — round-trip + service-naam-isolatie",
+          "ProactiveNotificationServiceTests — Engine A/B cooldown-logic"
+        ]
+      },
+      {
+        "id": "ui",
+        "name": "UI Tests (XCUITest)",
+        "target": "AIFitnessCoachUITests",
+        "fileCount": 5,
+        "framework": "XCUITest",
+        "execution": "xcodebuild test -only-testing:AIFitnessCoachUITests -parallel-testing-enabled NO",
+        "description": "Sequentieel op CI om xctrunner-clone-flakiness te vermijden (Epic 46.4). UITestMockEnvironment injecteert dummy API-key + weersdata + UITestMockGenerativeModel zodat views renderen zonder live API-calls.",
+        "highlights": [
+          "AIFitnessCoachUITests — TabBar-navigatie + Dashboard happy-path",
+          "AIFitnessCoachUITestsLaunchTests — launch-screenshot voor App Store",
+          "AIModelPickerUITests — E2E coverage van de model-picker (gestart via -UITestOpenAICoachConfig shortcut)",
+          "GoalsUITests — doel aanmaken / bewerken / verwijderen",
+          "OnboardingE2ETests — 4-pagina TabView-flow met permissie-knoppen"
+        ]
+      },
+      {
+        "id": "migration",
+        "name": "Schema Migration Tests",
+        "target": "AIFitnessCoachTests",
+        "fileCount": 2,
+        "framework": "XCTest + file-backed ModelContainer",
+        "description": "Verplicht bij élke @Model-wijziging (CLAUDE.md §2.1). Test minstens (1) dat FitnessGoal/UserPreference de migratie overleven en (2) dat nieuwe velden schrijfbaar zijn na migratie.",
+        "highlights": [
+          "SchemaMigrationV1ToV2Tests",
+          "SchemaMigrationV2ToV3Tests"
+        ]
+      }
+    ],
+    "categories": [
+      { "title": "Pure-Swift services", "modules": ["ActivityDeduplicator", "PauseDetector", "WorkoutPatternDetector", "SessionClassifier", "ReadinessCalculator", "PeriodizationEngine", "PhysiologicalThresholdEstimator", "HeartRateZoneCalculator", "PowerZoneCalculator"] },
+      { "title": "ViewModel-formatters", "modules": ["BlueprintContextFormatter", "WorkoutHistoryContextBuilder", "PreferencesContextFormatter"] },
+      { "title": "Schema & migratie", "modules": ["AppMigrationPlan", "SchemaV1", "SchemaV2", "SchemaV3"] },
+      { "title": "Auth & storage", "modules": ["KeychainService", "UserAPIKeyStore", "StravaAuthService"] }
+    ],
+    "infrastructure": [
+      {
+        "id": "GenerativeModelProtocol",
+        "purpose": "Injection-seam voor de AI-call. Productie levert Gemini/OpenAI/Anthropic, tests leveren MockGenerativeModel of UITestMockGenerativeModel.",
+        "file": "AIFitnessCoach/ViewModels/GenerativeModelProtocol.swift"
+      },
+      {
+        "id": "MockGenerativeModel",
+        "purpose": "Unit-test mock — geprogrammeerde responses per prompt.",
+        "file": "AIFitnessCoachTests/MockGenerativeModel.swift"
+      },
+      {
+        "id": "MockTokenStore",
+        "purpose": "Vervangt KeychainService in tests die OAuth-flow raken.",
+        "file": "AIFitnessCoachTests/MockTokenStore.swift"
+      },
+      {
+        "id": "MockNetworkSession",
+        "purpose": "Stub voor URLSession — programmable per host/path. Voorkomt netwerk-IO in unit-tests.",
+        "file": "AIFitnessCoachTests/Mocks/MockNetworkSession.swift"
+      },
+      {
+        "id": "UITestMockEnvironment",
+        "purpose": "Bootstrap voor XCUITest: schrijft dummy API-key in Keychain, fake weather + periodisation, en swapt de generative model. Gegated op -UITesting + #if DEBUG.",
+        "file": "AIFitnessCoach/Services/UITestMockEnvironment.swift"
+      }
+    ],
+    "coverage": {
+      "summary": "61% combined coverage op testable code. Coverage is signal, geen KPI — `Views/` blijft beperkt door SwiftUI-testbaarheid en wordt apart gerapporteerd.",
+      "tool": "scripts/coverage-report.py (max-merge per file over unit-tests + ui-tests xcresults)",
+      "byDirectory": [
+        { "path": "Models", "pct": 80 },
+        { "path": "Services", "pct": 59 },
+        { "path": "ViewModels", "pct": 59 },
+        { "path": "Views", "pct": 43 }
+      ]
+    },
+    "lessonsLearned": [
+      {
+        "title": "UI-tests sequentieel op CI",
+        "body": "Parallel-clones triggeren `ipc/mig server died` op GitHub macos-latest-runners (Epic 46.4 root-cause). `-parallel-testing-enabled NO` op CI, lokaal blijft scheme-config parallel voor snelheid."
+      },
+      {
+        "title": "Eerst xcresult inspecteren, dan op runner-flakiness wijzen",
+        "body": "`xcrun xcresulttool get test-results activities --test-id <id>` levert vaak test-code-bugs (verborgen NavigationBar, te-korte timeouts) als oorzaak — niet de runner."
+      },
+      {
+        "title": "In-memory stores werken niet voor migratie-tests",
+        "body": "Migration plan vereist een V<N>-store-bestand om vanaf te starten. File-backed seed-store is verplicht in SchemaMigration*Tests."
+      }
+    ]
+  },
+  "ci": {
+    "summary": "GitHub Actions draait twee workflows op elke push naar `main` en elke PR: `iOS CI` (4-job DAG) en `CodeQL Security Analysis` (Swift + Actions matrix). Concurrency-groep per branch cancelt oudere in-flight runs bij force-push.",
+    "docRef": "docs/ARCHITECTURE.md#11",
+    "platform": "GitHub Actions",
+    "workflows": [
+      {
+        "id": "ios-ci",
+        "name": "iOS CI",
+        "file": ".github/workflows/ios-tests.yml",
+        "triggers": ["push:main", "pull_request:main"],
+        "runner": "macos-latest",
+        "description": "Lint + Unit Tests + UI Tests + Coverage Report als DAG. Coverage draait pas als beide test-jobs klaar zijn (of als alleen unit-tests slagen — UI-bundle is dan optioneel)."
+      },
+      {
+        "id": "codeql",
+        "name": "CodeQL Security Analysis",
+        "file": ".github/workflows/codeql.yml",
+        "triggers": ["push:main", "pull_request:main", "schedule:weekly"],
+        "runner": "matrix (macos-latest voor swift, ubuntu-latest voor actions)",
+        "description": "Twee parallelle matrix-cellen: Swift op macOS met manuele xcodebuild, Actions-taal op Ubuntu (10× goedkoper) voor YAML-statische-analyse."
+      }
+    ],
+    "jobs": [
+      {
+        "id": "lint",
+        "name": "SwiftLint",
+        "workflow": "ios-ci",
+        "needs": [],
+        "runner": "macos-latest",
+        "description": "swiftlint --strict op .swiftlint.yml. 938→0 violations baseline; 1 nieuwe violation breekt CI. github-actions-logging reporter geeft inline annotations op het PR-diff.",
+        "duration": "~30s"
+      },
+      {
+        "id": "unit-tests",
+        "name": "Unit Tests",
+        "workflow": "ios-ci",
+        "needs": [],
+        "runner": "macos-latest",
+        "description": "xcodebuild test -only-testing:AIFitnessCoachTests -enableCodeCoverage YES. xcresult-bundle als artifact (7d retentie).",
+        "artifacts": ["unit-tests-xcresult"]
+      },
+      {
+        "id": "ui-tests",
+        "name": "UI Tests",
+        "workflow": "ios-ci",
+        "needs": ["unit-tests"],
+        "runner": "macos-latest",
+        "description": "Sequentieel (-parallel-testing-enabled NO) om xctrunner-clone-crashes te vermijden. Boot simulator + bootstatus vóór xcodebuild voor SpringBoard-warmup. xcresult + CoreSimulator-logs als artifacts (14d retentie).",
+        "artifacts": ["ui-tests-xcresult", "coresimulator-logs"]
+      },
+      {
+        "id": "coverage-report",
+        "name": "Coverage Report",
+        "workflow": "ios-ci",
+        "needs": ["unit-tests", "ui-tests"],
+        "runner": "macos-latest",
+        "description": "Mergt beide xcresults per-file (max-coverage) via scripts/coverage-report.py. Genereert per-directory markdown met aggregaten (Testable / Views / Totaal). Draait ook bij rode UI-tests-job — dan single-bundle modus.",
+        "artifacts": ["coverage-report"]
+      },
+      {
+        "id": "codeql-swift",
+        "name": "CodeQL Swift",
+        "workflow": "codeql",
+        "needs": [],
+        "runner": "macos-latest",
+        "description": "Manuele `xcodebuild clean build` + codeql-action analyze. Build-mode `manual` omdat autobuild faalt op SwiftData-projecten."
+      },
+      {
+        "id": "codeql-actions",
+        "name": "CodeQL Actions",
+        "workflow": "codeql",
+        "needs": [],
+        "runner": "ubuntu-latest",
+        "description": "Pure YAML-statische-analyse op `.github/workflows/*.yml`. Detecteert untrusted-input-injection, niet-gepinde actions, secret-leakage. Geen build nodig — 10× goedkoper dan macOS-runner."
+      }
+    ],
+    "envSetup": [
+      {
+        "step": "Setup Dummy Secrets",
+        "detail": "`cp AIFitnessCoach/Secrets-template.swift AIFitnessCoach/Secrets.swift` — zodat het project compileert zonder echte sleutels."
+      },
+      {
+        "step": "Dynamische simulator-ID",
+        "detail": "`xcrun simctl list devices available | grep iPhone | ...` — geen hardcoded model-namen, werkt over Xcode-updates heen."
+      },
+      {
+        "step": "CFBundleVersion via Build Phase",
+        "detail": "Run-Script Build Phase zet CFBundleVersion op `git rev-list --count HEAD` — lokaal en in CI, geen handmatige bumps."
+      }
+    ],
+    "concurrency": "concurrency: ${{ github.workflow }}-${{ github.ref }} met cancel-in-progress: true op beide workflows. Force-pushes op een PR-branch cancelen oudere in-flight runs.",
+    "node24OptIn": "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true env-var anticipeert GitHub's Node 24-migratie (2026-06-02)."
+  },
   "tags": {
     "engine-a": "HKObserverQuery-driven proactive notifications",
     "engine-b": "BGAppRefreshTask-driven inaction trigger",
@@ -1845,6 +2413,213 @@
     card.appendChild(list);
     flowsEl.appendChild(card);
   });
+
+  // ===== Testing view =====
+  (function renderTesting() {
+    const T = DATA.testing;
+    if (!T) return;
+    document.getElementById('testingSummary').textContent = T.summary || '';
+    const root = document.getElementById('testingContent');
+
+    // Stats row: coverage + suite counts
+    const stats = document.createElement('div');
+    stats.className = 'qa-section';
+    const totalTests = (T.suites || []).reduce((a, s) => a + (s.fileCount || 0), 0);
+    const cov = T.coverage || {};
+    const statRow = document.createElement('div');
+    statRow.className = 'stat-row';
+    const overallPct = cov.byDirectory ? Math.round(cov.byDirectory.reduce((a, d) => a + d.pct, 0) / cov.byDirectory.length) : null;
+    const cards = [
+      { label: 'Test-bestanden', value: totalTests, sub: (T.suites || []).map(s => `${s.fileCount} ${s.name.split(' ')[0].toLowerCase()}`).join(' · ') },
+      ...(cov.byDirectory || []).map(d => ({ label: d.path + '/', value: d.pct + '%', sub: 'coverage', bar: d.pct }))
+    ];
+    cards.forEach(c => {
+      const el = document.createElement('div');
+      el.className = 'stat-card';
+      el.innerHTML = `
+        <div class="stat-label">${escape(c.label)}</div>
+        <div class="stat-value">${escape(String(c.value))}</div>
+        ${c.sub ? `<div class="stat-sub">${escape(c.sub)}</div>` : ''}
+        ${c.bar != null ? `<div class="stat-bar"><div class="stat-bar-fill" style="width:${c.bar}%"></div></div>` : ''}
+      `;
+      statRow.appendChild(el);
+    });
+    stats.appendChild(statRow);
+    if (cov.summary) {
+      const note = document.createElement('p');
+      note.className = 'stat-sub';
+      note.style.marginTop = '8px';
+      note.textContent = cov.summary;
+      stats.appendChild(note);
+    }
+    root.appendChild(stats);
+
+    // Policy
+    if (T.policy && T.policy.length) {
+      const section = document.createElement('div');
+      section.className = 'qa-section';
+      section.innerHTML = `<h3 class="qa-section-title">Beleid</h3>`;
+      const grid = document.createElement('div');
+      grid.className = 'policy-grid';
+      T.policy.forEach(p => {
+        const card = document.createElement('div');
+        const cls = p.id === 'test-yes' ? 'yes' : (p.id === 'test-no' ? 'no' : '');
+        card.className = `policy-card ${cls}`;
+        card.innerHTML = `
+          <h4 class="policy-title">${escape(p.title)}</h4>
+          <ul class="policy-list">${p.items.map(i => `<li>${escape(i)}</li>`).join('')}</ul>
+        `;
+        grid.appendChild(card);
+      });
+      section.appendChild(grid);
+      root.appendChild(section);
+    }
+
+    // Suites
+    if (T.suites && T.suites.length) {
+      const section = document.createElement('div');
+      section.className = 'qa-section';
+      section.innerHTML = `<h3 class="qa-section-title">Suites</h3>`;
+      const grid = document.createElement('div');
+      grid.className = 'suite-grid';
+      T.suites.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'suite-card';
+        card.innerHTML = `
+          <div class="suite-head">
+            <h4 class="suite-name">${escape(s.name)}</h4>
+            <span class="suite-count">${s.fileCount} files</span>
+          </div>
+          <div class="suite-target">${escape(s.target || '')}${s.framework ? ' · ' + escape(s.framework) : ''}</div>
+          <p class="suite-desc">${escape(s.description || '')}</p>
+          ${(s.highlights && s.highlights.length) ? `
+            <ul class="suite-highlights">${s.highlights.map(h => `<li>${escape(h)}</li>`).join('')}</ul>
+          ` : ''}
+        `;
+        grid.appendChild(card);
+      });
+      section.appendChild(grid);
+      root.appendChild(section);
+    }
+
+    // Infrastructure (mocks)
+    if (T.infrastructure && T.infrastructure.length) {
+      const section = document.createElement('div');
+      section.className = 'qa-section';
+      section.innerHTML = `<h3 class="qa-section-title">Mock-infrastructuur</h3>`;
+      const ul = document.createElement('ul');
+      ul.className = 'mini-list';
+      T.infrastructure.forEach(m => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <h4 class="mini-list-title">${escape(m.id)}</h4>
+          <p class="mini-list-body">${escape(m.purpose)}</p>
+          ${m.file ? `<div class="mini-list-file">${escape(m.file)}</div>` : ''}
+        `;
+        ul.appendChild(li);
+      });
+      section.appendChild(ul);
+      root.appendChild(section);
+    }
+
+    // Lessons learned
+    if (T.lessonsLearned && T.lessonsLearned.length) {
+      const section = document.createElement('div');
+      section.className = 'qa-section';
+      section.innerHTML = `<h3 class="qa-section-title">Lessons learned</h3>`;
+      T.lessonsLearned.forEach(l => {
+        const strip = document.createElement('div');
+        strip.className = 'info-strip';
+        strip.innerHTML = `
+          <h4 class="info-strip-title">${escape(l.title)}</h4>
+          <p class="info-strip-body">${escape(l.body)}</p>
+        `;
+        section.appendChild(strip);
+      });
+      root.appendChild(section);
+    }
+  })();
+
+  // ===== CI view =====
+  (function renderCI() {
+    const C = DATA.ci;
+    if (!C) return;
+    document.getElementById('ciSummary').textContent = C.summary || '';
+    const root = document.getElementById('ciContent');
+
+    // Workflows + jobs DAG
+    (C.workflows || []).forEach(wf => {
+      const card = document.createElement('div');
+      card.className = 'workflow-card';
+      const triggers = (wf.triggers || []).map(t => `<span class="workflow-trigger">${escape(t)}</span>`).join(' ');
+      card.innerHTML = `
+        <div class="workflow-head">
+          <h3 class="workflow-name">${escape(wf.name)}</h3>
+          <span class="workflow-meta">${escape(wf.file)}</span>
+        </div>
+        <div>${triggers}<span class="workflow-meta" style="margin-left:6px">runner: ${escape(wf.runner)}</span></div>
+        <p class="workflow-desc">${escape(wf.description || '')}</p>
+      `;
+      const dag = document.createElement('div');
+      dag.className = 'dag';
+      const jobs = (C.jobs || []).filter(j => j.workflow === wf.id);
+      // Sort by dependency: jobs with no `needs` first, then in order
+      const sorted = jobs.slice().sort((a, b) => (a.needs || []).length - (b.needs || []).length);
+      sorted.forEach(j => {
+        const jc = document.createElement('div');
+        jc.className = 'dag-job' + ((j.needs || []).length ? ' has-needs' : '');
+        const needs = (j.needs && j.needs.length) ? `<div class="dag-job-needs">needs: ${j.needs.join(', ')}</div>` : '';
+        const artifacts = (j.artifacts && j.artifacts.length) ? `<div class="dag-job-artifacts">${j.artifacts.map(a => `<span class="dag-job-artifact">${escape(a)}</span>`).join('')}</div>` : '';
+        jc.innerHTML = `
+          <h4 class="dag-job-name">${escape(j.name)}</h4>
+          <div class="dag-job-runner">${escape(j.runner || '')}${j.duration ? ' · ' + escape(j.duration) : ''}</div>
+          ${needs}
+          <p class="dag-job-desc">${escape(j.description || '')}</p>
+          ${artifacts}
+        `;
+        dag.appendChild(jc);
+      });
+      card.appendChild(dag);
+      root.appendChild(card);
+    });
+
+    // Env setup
+    if (C.envSetup && C.envSetup.length) {
+      const section = document.createElement('div');
+      section.className = 'qa-section';
+      section.innerHTML = `<h3 class="qa-section-title">Environment setup</h3>`;
+      C.envSetup.forEach(e => {
+        const strip = document.createElement('div');
+        strip.className = 'info-strip';
+        strip.innerHTML = `
+          <h4 class="info-strip-title">${escape(e.step)}</h4>
+          <p class="info-strip-body">${escape(e.detail)}</p>
+        `;
+        section.appendChild(strip);
+      });
+      root.appendChild(section);
+    }
+
+    // Concurrency + Node 24
+    if (C.concurrency || C.node24OptIn) {
+      const section = document.createElement('div');
+      section.className = 'qa-section';
+      section.innerHTML = `<h3 class="qa-section-title">Pipeline-policies</h3>`;
+      if (C.concurrency) {
+        const strip = document.createElement('div');
+        strip.className = 'info-strip';
+        strip.innerHTML = `<h4 class="info-strip-title">Concurrency</h4><p class="info-strip-body">${escape(C.concurrency)}</p>`;
+        section.appendChild(strip);
+      }
+      if (C.node24OptIn) {
+        const strip = document.createElement('div');
+        strip.className = 'info-strip';
+        strip.innerHTML = `<h4 class="info-strip-title">Node 24 opt-in</h4><p class="info-strip-body">${escape(C.node24OptIn)}</p>`;
+        section.appendChild(strip);
+      }
+      root.appendChild(section);
+    }
+  })();
 
   // ===== Module selection / detail panel =====
   function selectModule(id) {
