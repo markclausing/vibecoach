@@ -3,6 +3,8 @@
 Deze file beschrijft de belangrijkste technische bouwstenen. Voor projectregels en afspraken: zie [CLAUDE.md](../CLAUDE.md). Voor geleverde features: zie [ROADMAP.md](ROADMAP.md).
 
 > **Interactief overzicht:** open [`architecture/architecture.html`](architecture/architecture.html) in een browser voor een klikbare versie van dit document (modules, dependencies, flows). De bijbehorende [`architecture.json`](architecture/architecture.json) bevat dezelfde data machine-leesbaar voor AI-agents.
+>
+> Beide files zijn **afgeleid** van deze `ARCHITECTURE.md` + de codebase — ze versioneren mee met de app via `meta.appVersion` (= `CFBundleShortVersionString`) en een eigen `meta.docRevision`. Bij wijzigingen aan deze file of aan de module-laag in `AIFitnessCoach/` moeten ze in dezelfde commit worden geüpdatet. Zie [CLAUDE.md §7 — Architectuur-visualisatie](../CLAUDE.md#architectuur-visualisatie-afgeleide-artefacten) voor het update-protocol.
 
 ---
 

@@ -129,6 +129,38 @@ Altijd het eerstvolgende logische doel toevoegen zodat de roadmap vooruitkijkt.
 
 Mogen direct op `main` (uitzondering op §8). Voor feature-PR's: code + docs in dezelfde commit. Splits niet kunstmatig in code-PR + docs-PR.
 
+### Architectuur-visualisatie (afgeleide artefacten)
+
+Naast de vier source-of-truth-files (§7 tabel) leven er twee **afgeleide** documenten die de architectuur in een klikbare en machine-leesbare vorm presenteren:
+
+| File | Doel | Bron |
+|---|---|---|
+| **`docs/architecture/architecture.html`** | Interactieve viewer voor mensen — lagen, modules, subsystemen, flows, klikbare dependency-graph | Afgeleid van `docs/ARCHITECTURE.md` + codebase |
+| **`docs/architecture/architecture.json`** | Machine-leesbare structuur voor AI-agents — zelfde data, JSON-schema | Afgeleid van `docs/ARCHITECTURE.md` + codebase |
+
+**Geen source-of-truth.** Beide files derive van de codebase + `ARCHITECTURE.md`. Bij conflicten wint de codebase, daarna `ARCHITECTURE.md`, daarna deze files. Voeg nooit nieuwe architectuur-uitleg uitsluitend hier toe — schrijf het eerst in `ARCHITECTURE.md` en sync hierheen.
+
+**Update-discipline.** Elke PR die `ARCHITECTURE.md` raakt of een module-laag wijziging in `AIFitnessCoach/` introduceert (nieuw `Service`, nieuw `@Model`, nieuw `@StateObject` in `AIFitnessCoachApp`, nieuwe externe API, nieuwe subsystem/flow) moet ook deze twee bestanden meenemen in dezelfde commit:
+
+1. Voeg/wijzig de module in `architecture.json` (id, layer, kind, file, description, uses, tags).
+2. Voeg eventueel een entry toe aan `subsystems` of `flows`.
+3. Bump `meta.docRevision` met 1.
+4. Zet `meta.lastUpdated` op vandaag (ISO `YYYY-MM-DD`).
+5. Re-injecteer de JSON in `architecture.html` via:
+   ```sh
+   python3 -c "import json; \
+     data=open('docs/architecture/architecture.json').read(); \
+     json.loads(data); \
+     html=open('docs/architecture/architecture.html').read(); \
+     import re; \
+     new=re.sub(r'(<script id=\"architecture-data\" type=\"application/json\">)([\s\S]*?)(</script>)', lambda m: m.group(1)+chr(10)+data+chr(10)+m.group(3), html); \
+     open('docs/architecture/architecture.html','w').write(new)"
+   ```
+
+Pure refactors zonder structurele wijziging (rename binnen één bestand, force-unwrap-fix, logger-cleanup) hoeven deze files niet aan te raken.
+
+**Versioning.** `meta.appVersion` matcht `CFBundleShortVersionString` in `AIFitnessCoach/Info.plist`. Bij iedere bump van die plist-waarde wordt `appVersion` mee bijgewerkt én `docRevision` weer op `1` gezet. `docRevision` telt binnen één app-versie hoe vaak de architectuur is herzien — dat geeft AI-agents en code-reviewers een eenduidig anker om te zien of een gecachet beeld nog actueel is. `meta.buildNumberSource` legt vast hoe `CFBundleVersion` zelf bepaald wordt (git commit count via een Build Phase script) — dat dynamische getal nemen we *niet* over in de docs, anders zou elke commit een doc-bump triggeren.
+
 ---
 
 ## 8. Git Workflow
