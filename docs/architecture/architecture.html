@@ -193,6 +193,14 @@
     gap: 0;
     min-height: calc(100vh - 60px);
   }
+  /* Detail-panel is alleen relevant op de Lagen-view (klikbare module-graph).
+     Op andere views verbergen we het + collapsen we de grid naar 2 kolommen. */
+  .layout:not([data-view="layers"]) {
+    grid-template-columns: 260px 1fr;
+  }
+  .layout:not([data-view="layers"]) .detail-panel {
+    display: none;
+  }
   .sidebar {
     padding: 24px 18px;
     border-right: 1px solid var(--border);
@@ -216,10 +224,12 @@
     top: 60px;
   }
   @media (max-width: 1200px) {
-    .layout { grid-template-columns: 220px 1fr 320px; }
+    .layout[data-view="layers"] { grid-template-columns: 220px 1fr 320px; }
   }
   @media (max-width: 900px) {
-    .layout { grid-template-columns: 1fr; }
+    .layout, .layout[data-view="layers"], .layout:not([data-view="layers"]) {
+      grid-template-columns: 1fr;
+    }
     .sidebar, .detail-panel { position: static; max-height: none; border: none; border-top: 1px solid var(--border); }
   }
 
@@ -1254,7 +1264,7 @@
   </div>
 </header>
 
-<div class="layout">
+<div class="layout" data-view="overview">
   <aside class="sidebar">
     <div class="side-group">
       <input class="search-input" id="searchInput" type="search" placeholder="Zoek modules, services...">
@@ -2734,9 +2744,11 @@
   modeToggle.addEventListener('click', () => setMode(document.body.dataset.mode === 'dark' ? 'light' : 'dark'));
 
   // ===== Tabs =====
+  const layoutEl = document.querySelector('.layout');
   document.querySelectorAll('.tab').forEach(btn => {
     btn.addEventListener('click', () => {
       activeView = btn.dataset.view;
+      layoutEl.dataset.view = activeView;
       document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === btn));
       document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + activeView));
     });
