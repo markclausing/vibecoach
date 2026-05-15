@@ -1199,12 +1199,15 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
+    table-layout: fixed;
   }
   .wf-table th, .wf-table td {
     text-align: left;
     padding: 6px 10px;
     border-bottom: 1px solid var(--border);
     vertical-align: top;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
   .wf-table th {
     color: var(--text-faint);
@@ -1216,13 +1219,14 @@
   .wf-table td:first-child {
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     color: var(--primary);
-    white-space: nowrap;
+    width: 42%;
   }
   .wf-table td:last-child { color: var(--text-muted); }
   .wf-files {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
+    max-width: 100%;
   }
   .wf-file {
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -1232,6 +1236,9 @@
     color: var(--text-muted);
     padding: 1px 6px;
     border-radius: 4px;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   /* Hidden view */
