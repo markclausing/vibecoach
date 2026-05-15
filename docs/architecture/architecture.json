@@ -1,0 +1,822 @@
+{
+  "$schema": "https://vibecoach.app/schema/architecture-v1.json",
+  "meta": {
+    "name": "VibeCoach",
+    "bundleIdentifier": "com.markclausing.aifitnesscoach",
+    "version": "1.0",
+    "generated": "2026-05-15",
+    "platform": "iOS 17+",
+    "language": "Swift 5.9+",
+    "ui": "SwiftUI",
+    "persistence": "SwiftData",
+    "stack": [
+      "SwiftUI",
+      "SwiftData",
+      "HealthKit",
+      "Strava OAuth2",
+      "Open-Meteo",
+      "BYOK AI (Gemini / OpenAI / Anthropic)",
+      "BackgroundTasks (BGAppRefreshTask)",
+      "UserNotifications"
+    ],
+    "summary": "iOS-app die fungeert als persoonlijke, proactieve fitnesscoach. Combineert HealthKit + Strava + AI (BYOK) om trainingsschema's dynamisch bij te sturen volgens het Management-by-Exception-principe."
+  },
+  "principles": [
+    {
+      "id": "management-by-exception",
+      "title": "Management by Exception",
+      "description": "De app waarschuwt nooit bij goed gedrag — alleen bij afwijkingen (te zwaar of te licht trainen). Een rode status komt altijd samen met een AI-gegenereerd herstelplan."
+    },
+    {
+      "id": "privacy-first",
+      "title": "Privacy-first",
+      "description": "HealthKit-data blijft on-device. AI-sleutels in Keychain. Strava client_secret in een Cloudflare Worker, nooit in de IPA."
+    },
+    {
+      "id": "type-safety",
+      "title": "Type-safe domain model",
+      "description": "SwiftData met strict enums (SportCategory, EventFormat, TrainingPhase). Ruwe externe data wordt bij de voordeur gemapt vóór persistentie."
+    },
+    {
+      "id": "byok",
+      "title": "Bring Your Own Key",
+      "description": "De gebruiker brengt zijn eigen API-sleutel (Gemini / OpenAI / Anthropic). Geen Secrets-fallback, geen backend AI-proxy."
+    },
+    {
+      "id": "dual-engine",
+      "title": "Proactief zonder open app",
+      "description": "Twee onafhankelijke achtergrond-triggers — Engine A reageert op actie (nieuwe workout), Engine B op inactie. Volledig lokaal, geen APNs in de proactieve flow."
+    }
+  ],
+  "layers": [
+    {
+      "id": "app",
+      "name": "App-bootstrap",
+      "order": 0,
+      "description": "Entry-point, ModelContainer-init, AppDelegate, AppNavigationState. Routeert tussen Onboarding en de tab-host."
+    },
+    {
+      "id": "views",
+      "name": "Views (SwiftUI)",
+      "order": 1,
+      "description": "Schermen + componenten. Lezen state via @EnvironmentObject (ThemeManager, AppNavigationState, TrainingPlanManager) en queryen SwiftData via @Query."
+    },
+    {
+      "id": "viewmodels",
+      "name": "ViewModels & Formatters",
+      "order": 2,
+      "description": "Pure-Swift context-builders en prompt-formatters die voor de AI-coach de juiste blokken samenstellen (blueprint, intent, history, vibe, preferences)."
+    },
+    {
+      "id": "services",
+      "name": "Services",
+      "order": 3,
+      "description": "Domeinlogica: HealthKit-sync, Strava OAuth, fysiologische berekeningen, periodisering, pattern-detectie, weer. Pure-Swift waar mogelijk (testbaar zonder UI)."
+    },
+    {
+      "id": "models",
+      "name": "Models (SwiftData @Model)",
+      "order": 4,
+      "description": "Persistent domain types + schema-snapshots (SchemaV1/V2/V3) + migratieplan."
+    },
+    {
+      "id": "external",
+      "name": "External Systems",
+      "order": 5,
+      "description": "Apple-frameworks (HealthKit, BGTaskScheduler), Strava API via Cloudflare Worker-proxy, Open-Meteo, en drie AI-providers."
+    }
+  ],
+  "modules": [
+    {
+      "id": "AIFitnessCoachApp",
+      "layer": "app",
+      "kind": "entry",
+      "file": "AIFitnessCoach/AIFitnessCoachApp.swift",
+      "description": "@main entry-point. Bouwt ModelContainer met AppMigrationPlan + defensieve fallback. Injecteert env-objects (AppNavigationState, TrainingPlanManager, ThemeManager).",
+      "uses": ["AppDelegate", "AppMigrationPlan", "SchemaV3", "ThemeManager", "TrainingPlanManager", "AppNavigationState", "UserAPIKeyStore", "UITestMockEnvironment"],
+      "tags": ["epic-13", "epic-29", "epic-31"]
+    },
+    {
+      "id": "AppDelegate",
+      "layer": "app",
+      "kind": "delegate",
+      "file": "AIFitnessCoach/AIFitnessCoachApp.swift",
+      "description": "Registreert BGTaskScheduler (Engine B-handler) en is UNUserNotificationCenterDelegate met M-08-whitelist (alleen `goalRisk` en `recovery_plan`-payloads).",
+      "uses": ["ProactiveNotificationService", "AppNavigationState"],
+      "tags": ["engine-b", "m-08"]
+    },
+    {
+      "id": "ContentView",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/ContentView.swift",
+      "description": "Root-router: kiest tussen OnboardingView en AppTabHostView op basis van `hasCompletedOnboarding`.",
+      "uses": ["OnboardingView", "AppTabHostView"]
+    },
+    {
+      "id": "AppTabHostView",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/AppTabHostView.swift",
+      "description": "Hoofd-tabbar met 5 tabs (Dashboard, Goals, Coach, Memory, Settings). Beheert de always-on dual-source sync via async-let.",
+      "uses": ["DashboardView", "GoalsListView", "ChatView", "SettingsView", "HealthKitSyncService", "FitnessDataService"],
+      "tags": ["epic-42"]
+    },
+    {
+      "id": "DashboardView",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/DashboardView.swift",
+      "description": "Hoofdscherm: Vibe Score, doelen-burndown, weekkalender, dedupe + reclassify-pijplijn in scenePhase. Cached risicodata in UserDefaults voor Engine A/B.",
+      "uses": ["VibeScoreCardV2", "WeekTimelineView", "BlueprintTimelineView", "ReadinessCalculator", "ActivityDeduplicator", "SessionReclassifier", "StravaStreamIngestService", "WorkoutSampleService"],
+      "tags": ["epic-13", "epic-14", "epic-32", "epic-40", "epic-41"]
+    },
+    {
+      "id": "GoalsListView",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/GoalsListView.swift",
+      "description": "Detail-hub per doel: blueprint-milestones, periodisering-fase, herstelplan-banner.",
+      "uses": ["FitnessGoal", "BlueprintChecker", "PeriodizationEngine", "EditGoalView"],
+      "tags": ["epic-17", "epic-23"]
+    },
+    {
+      "id": "ChatView",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/ChatView.swift",
+      "description": "AI-coach met coach-kaarten (Epic 30). Geblokkeerd zolang er geen API-sleutel in de Keychain staat.",
+      "uses": ["ChatViewModel", "UserAPIKeyStore", "NoAPIKeyView"]
+    },
+    {
+      "id": "WorkoutAnalysisView",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/WorkoutAnalysisView.swift",
+      "description": "Per-workout deep-dive: HR-chart met pattern-pins, chip-row, 3-zins Coach-analyse (gecached per workout). Bevat manualSessionTypeOverride-flow.",
+      "uses": ["WorkoutPatternDetector", "WorkoutInsightService", "WorkoutInsightCache", "WorkoutSampleService", "WorkoutPatternFormatter"],
+      "tags": ["epic-32", "epic-40", "epic-47", "epic-48", "epic-49"]
+    },
+    {
+      "id": "SettingsView",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/SettingsView.swift",
+      "description": "Instellingen: AI-provider + sleutel, thema-picker, drempel-instellingen, historische sync, bron-voorkeur (HK/Strava).",
+      "uses": ["AIProviderSettingsView", "TrainingThresholdsSettingsView", "ThemeManager", "UserAPIKeyStore", "FitnessDataService"]
+    },
+    {
+      "id": "OnboardingView",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/OnboardingView.swift",
+      "description": "4-pagina TabView-carousel met permissie-knoppen (HealthKit, notificaties) en BYOK-invoer.",
+      "uses": ["HealthKitManager", "UserAPIKeyStore", "OnboardingTemplateView"]
+    },
+    {
+      "id": "ChatViewModel",
+      "layer": "viewmodels",
+      "kind": "viewmodel",
+      "file": "AIFitnessCoach/ViewModels/ChatViewModel.swift",
+      "description": "Orkestreert de AI-call: bouwt de prompt-blokken via de formatters, leest de sleutel uit de Keychain, streamt het antwoord. Test-bypass via GenerativeModelProtocol.",
+      "uses": ["GenerativeModelProtocol", "UserAPIKeyStore", "VibeScoreContextFormatter", "BlueprintContextFormatter", "IntentContextFormatter", "PreferencesContextFormatter", "WorkoutHistoryContextBuilder", "LastWorkoutContextFormatter", "SymptomContextFormatter", "UserOverrideContextFormatter", "PlanResetPromptBuilder"]
+    },
+    {
+      "id": "WorkoutHistoryContextBuilder",
+      "layer": "viewmodels",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/ViewModels/WorkoutHistoryContextBuilder.swift",
+      "description": "Bouwt per-workout context-blok voor de coach-prompt (Epic 45). Voegt pattern-detections uit recente workouts toe.",
+      "uses": ["WorkoutPatternDetector", "WorkoutSampleService"],
+      "tags": ["epic-45"]
+    },
+    {
+      "id": "BlueprintContextFormatter",
+      "layer": "viewmodels",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/ViewModels/BlueprintContextFormatter.swift",
+      "description": "Formatteert blueprint-milestones (✅/❌ per kritieke training) voor de coach-prompt (Epic 48).",
+      "uses": ["BlueprintChecker", "GoalBlueprint"],
+      "tags": ["epic-48"]
+    },
+    {
+      "id": "PeriodizationEngine",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/PeriodizationEngine.swift",
+      "description": "Bepaalt de actieve TrainingPhase (Base/Build/Peak/Taper) en wekelijkse TRIMP-target met fase-multiplier (×1.00 / ×1.15 / ×1.30 / ×0.60).",
+      "uses": ["TrainingPhase", "FitnessGoal"],
+      "tags": ["epic-16"]
+    },
+    {
+      "id": "ReadinessCalculator",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/ReadinessCalculator.swift",
+      "description": "Berekent de dagelijkse Vibe Score (0–100) uit HRV (50%, 7-daagse persoonlijke baseline) + slaap (50%, lineair 5–8u).",
+      "uses": ["HealthKitManager", "DailyReadiness"],
+      "tags": ["epic-14"]
+    },
+    {
+      "id": "ProactiveNotificationService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/ProactiveNotificationService.swift",
+      "description": "Singleton die Engine A (HKObserverQuery) en Engine B (BGAppRefreshTask) beheert. Cooldown: max 1 proactieve notificatie per doel per 24u.",
+      "uses": ["HealthKitManager", "ReadinessCalculator", "TrainingPlanManager"],
+      "tags": ["engine-a", "engine-b", "epic-13"]
+    },
+    {
+      "id": "HealthKitManager",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/HealthKitManager.swift",
+      "description": "Toegangspoort tot HealthKit: HRV, slaapfases, workouts. enableBackgroundDelivery voor Engine A.",
+      "uses": ["HealthKitPermissionTypes", "WorkoutSample"]
+    },
+    {
+      "id": "HealthKitSyncService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/HealthKitSyncService.swift",
+      "description": "Periodieke + on-demand sync van HK-workouts naar ActivityRecord. Gebruikt ActivityDeduplicator.smartInsert om dubbele records te voorkomen.",
+      "uses": ["HealthKitManager", "ActivityDeduplicator", "ActivityRecord"]
+    },
+    {
+      "id": "FitnessDataService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/FitnessDataService.swift",
+      "description": "Strava-client. Centrale `ensureValidToken()`-guard refresht via Cloudflare Worker; alle endpoints (fetchLatestActivity, fetchActivityById, fetchActivityStreams, fetchRecentActivities, fetchHistoricalActivities) routen hierdoor.",
+      "uses": ["StravaAuthService", "TokenStore", "ActivityDeduplicator", "ActivityRecord", "NetworkSession"],
+      "tags": ["security-c01", "epic-42"]
+    },
+    {
+      "id": "StravaAuthService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/StravaAuthService.swift",
+      "description": "OAuth2 met Cloudflare Worker-proxy. Geen client_secret in de IPA — alleen een shared X-Client-Token. CSRF-bescherming via random `state`-UUID.",
+      "uses": ["TokenStore", "NetworkSession"],
+      "tags": ["security-c01", "security-h01"]
+    },
+    {
+      "id": "ActivityDeduplicator",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/ActivityDeduplicator.swift",
+      "description": "Pure-Swift dedupe. `smartInsert` aan de voordeur (HK + Strava ingest) en `runDedupe` als scenePhase-pass. Rijkdom-heuristiek: samples > deviceWatts > trimp > avgHR > stable id-tiebreaker.",
+      "uses": ["ActivityRecord", "WorkoutSampleService"],
+      "tags": ["epic-41"]
+    },
+    {
+      "id": "StravaStreamIngestService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/StravaStreamIngestService.swift",
+      "description": "Backfill van Strava `/streams` voor recente records zonder samples. Schrijft via WorkoutSampleStore. 100ms throttle.",
+      "uses": ["FitnessDataService", "WorkoutSampleService"],
+      "tags": ["epic-40"]
+    },
+    {
+      "id": "WorkoutSampleService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/WorkoutSampleService.swift",
+      "description": "Read/write voor fijngranulaire workout-samples (5s-buckets HR/power/cadence/speed/distance). FK = workoutUUID. Idempotente replaceSamples.",
+      "uses": ["WorkoutSample", "SampleResampler", "UUID+Deterministic"],
+      "tags": ["epic-32"]
+    },
+    {
+      "id": "SessionClassifier",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/SessionClassifier.swift",
+      "description": "Bepaalt sessietype (Easy / Tempo / Threshold / Interval / VO2max) op basis van HR-zone-distributie. Fallback op avg-HR bij ontbrekende samples.",
+      "uses": ["HeartRateZones", "WorkoutSample", "SessionType"]
+    },
+    {
+      "id": "SessionReclassifier",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/SessionReclassifier.swift",
+      "description": "Hertraint sessie-type voor records die net samples kregen (na Strava backfill). Beschermd door ActivityRecord.manualSessionTypeOverride.",
+      "uses": ["SessionClassifier", "ActivityRecord"],
+      "tags": ["epic-40"]
+    },
+    {
+      "id": "WorkoutPatternDetector",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/WorkoutPatternDetector.swift",
+      "description": "Detecteert vier patronen (aerobic decoupling, cardiac drift, cadence fade, trage HR-recovery) op 5s-resampled samples. Gegated op persoonlijke HR-zones.",
+      "uses": ["PauseDetector", "HeartRateZones", "SampleResampler", "PhysiologicalThresholdService"],
+      "tags": ["epic-32", "epic-44", "epic-47"]
+    },
+    {
+      "id": "PauseDetector",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/PauseDetector.swift",
+      "description": "Pure-Swift, AppStorage-vrij. Detecteert aaneengesloten samples met power<5 en cadence<5 voor minimaal 45s. Peak-anchored 90s recovery window.",
+      "uses": ["WorkoutSample"],
+      "tags": ["epic-47"]
+    },
+    {
+      "id": "WorkoutInsightService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/WorkoutInsightService.swift",
+      "description": "Genereert 3-zins Coach-analyse per workout met patterns + recovery-events + blueprint-context + periodization-context + weather-context. Gemini-call, gecached.",
+      "uses": ["WorkoutInsightCache", "WorkoutPatternFormatter", "BlueprintContextFormatter", "PeriodizationEngine", "GenerativeModelProtocol"],
+      "tags": ["epic-32", "epic-48", "epic-49"]
+    },
+    {
+      "id": "WorkoutInsightCache",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/WorkoutInsightCache.swift",
+      "description": "Cache-key bevat goalsFingerprint + weatherFingerprint zodat milestone-behaal, fase-overgang of latere weersync de cache invalideert.",
+      "uses": ["WorkoutInsightService"],
+      "tags": ["epic-48", "epic-49"]
+    },
+    {
+      "id": "HistoricalWeatherService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/HistoricalWeatherService.swift",
+      "description": "Bevraagt Open-Meteo (archive of forecast met past_days) voor Strava-records zonder iPhone-aanwezigheid. GPS afgerond op 0.1° voor privacy.",
+      "uses": ["NetworkSession", "ActivityRecord"],
+      "tags": ["epic-50"]
+    },
+    {
+      "id": "WeatherManager",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/WeatherManager.swift",
+      "description": "Realtime weer via Open-Meteo + CoreLocation voor dashboard-context.",
+      "uses": ["NetworkSession"]
+    },
+    {
+      "id": "HeartRateZoneCalculator",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/HeartRateZoneCalculator.swift",
+      "description": "Berekent persoonlijke HR-zones uit max-HR en lactateThresholdHR.",
+      "uses": ["HeartRateZones", "UserConfiguration"],
+      "tags": ["epic-44"]
+    },
+    {
+      "id": "PowerZoneCalculator",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/PowerZoneCalculator.swift",
+      "description": "Berekent Coggan power-zones uit FTP.",
+      "uses": ["UserConfiguration"],
+      "tags": ["epic-44"]
+    },
+    {
+      "id": "PhysiologicalThresholdService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/PhysiologicalThresholdService.swift",
+      "description": "Beheert opslag/retrieval van LTHR + FTP. Voedt PauseDetector en WorkoutPatternDetector met referenceHR.",
+      "uses": ["UserConfiguration", "PhysiologicalThresholdEstimator"],
+      "tags": ["epic-44"]
+    },
+    {
+      "id": "PhysiologicalThresholdEstimator",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/PhysiologicalThresholdEstimator.swift",
+      "description": "Pure-Swift estimator die LTHR/FTP afleidt uit historische workout-data wanneer de gebruiker ze niet handmatig instelt.",
+      "uses": ["ActivityRecord", "WorkoutSample"],
+      "tags": ["epic-44"]
+    },
+    {
+      "id": "BlueprintChecker",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/BlueprintChecker.swift",
+      "description": "Detecteert blueprint-type (Marathon / Halve / Fietstocht) via sleutelwoorden of SportCategory-fallback. Markeert essentialWorkouts als behaald/gemist.",
+      "uses": ["GoalBlueprint", "FitnessGoal", "ActivityRecord"],
+      "tags": ["epic-17"]
+    },
+    {
+      "id": "InjuryImpactMatrix",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/InjuryImpactMatrix.swift",
+      "description": "Penalty-multiplier (1.0–1.4×) op TRIMP bij risicovolle sport+blessure-koppeling.",
+      "uses": ["Symptom", "SportCategory"],
+      "tags": ["epic-14b"]
+    },
+    {
+      "id": "KeychainService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/KeychainService.swift",
+      "description": "Wrapper om kSecClassGenericPassword. Service-naam `VibeCoach_UserAIKey`.",
+      "uses": [],
+      "tags": ["security-c02"]
+    },
+    {
+      "id": "UserAPIKeyStore",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/UserAPIKeyStore.swift",
+      "description": "Type-veilige laag boven KeychainService. Bevat de eenmalige migratie uit UserDefaults (idempotent).",
+      "uses": ["KeychainService"],
+      "tags": ["security-c02"]
+    },
+    {
+      "id": "TokenStore",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/TokenStore.swift",
+      "description": "Strava OAuth-token opslag in Keychain.",
+      "uses": ["KeychainService"]
+    },
+    {
+      "id": "AppLoggers",
+      "layer": "services",
+      "kind": "infrastructure",
+      "file": "AIFitnessCoach/Services/AppLoggers.swift",
+      "description": "Gecentraliseerde os.Logger-instances per categorie. Privacy-modifiers verplicht voor user-data (HRV, RPE, tokens, UUIDs).",
+      "uses": [],
+      "tags": ["logging"]
+    },
+    {
+      "id": "ThemeManager",
+      "layer": "services",
+      "kind": "infrastructure",
+      "file": "AIFitnessCoach/Services/ThemeManager.swift",
+      "description": "Beheert actief thema (moss/stone/mist/clay/sakura/ink), saturatie en SF Symbol-iconografie. Adaptief op light/dark.",
+      "uses": ["Theme"],
+      "tags": ["epic-29"]
+    },
+    {
+      "id": "TrainingPlanManager",
+      "layer": "services",
+      "kind": "store",
+      "file": "AIFitnessCoach/Models/TrainingPlanManager.swift",
+      "description": "Single Source of Truth voor het actieve 7-daagse schema. Geconsumeerd door Dashboard, Goals en Coach.",
+      "uses": ["SuggestedWorkout", "FitnessGoal"],
+      "tags": ["epic-11"]
+    },
+    {
+      "id": "UITestMockEnvironment",
+      "layer": "services",
+      "kind": "test-infra",
+      "file": "AIFitnessCoach/Services/UITestMockEnvironment.swift",
+      "description": "Gegated op -UITesting + #if DEBUG. Schrijft dummy API-key, weersdata, periodisatie-context. UITestMockGenerativeModel vervangt de Gemini-call.",
+      "uses": ["GenerativeModelProtocol"],
+      "tags": ["testing"]
+    },
+    {
+      "id": "ActivityRecord",
+      "layer": "models",
+      "kind": "model",
+      "file": "AIFitnessCoach/Models/ActivityRecord.swift",
+      "description": "@Model voor een workout — HK-uuid of Strava-id, sport, TRIMP, avgHR, deviceWatts, temperatureCelsius, humidityPercent, manualSessionTypeOverride.",
+      "uses": ["SportCategory", "SessionType"]
+    },
+    {
+      "id": "WorkoutSample",
+      "layer": "models",
+      "kind": "model",
+      "file": "AIFitnessCoach/Models/WorkoutSample.swift",
+      "description": "@Model voor 5s-bucket sample. Sleutel: workoutUUID. Eén ActivityRecord ↔ N samples (geen SwiftData-relatie, gefilterde fetch).",
+      "uses": [],
+      "tags": ["epic-32"]
+    },
+    {
+      "id": "FitnessGoal",
+      "layer": "models",
+      "kind": "model",
+      "file": "AIFitnessCoach/Models/FitnessGoal.swift",
+      "description": "Trainingsdoel: title, targetDate, blueprint, sportCategory, recoveryPlanActiveSince.",
+      "uses": ["SportCategory", "TrainingPhase", "GoalBlueprint"]
+    },
+    {
+      "id": "DailyReadiness",
+      "layer": "models",
+      "kind": "model",
+      "file": "AIFitnessCoach/Models/DailyReadiness.swift",
+      "description": "Per-dag Vibe Score cache: hrvScore, sleepScore, totalScore.",
+      "uses": []
+    },
+    {
+      "id": "UserConfiguration",
+      "layer": "models",
+      "kind": "model",
+      "file": "AIFitnessCoach/Models/UserConfiguration.swift",
+      "description": "Athletische instellingen: maxHR, lactateThresholdHR, FTP, gewicht.",
+      "uses": []
+    },
+    {
+      "id": "UserPreference",
+      "layer": "models",
+      "kind": "model",
+      "file": "AIFitnessCoach/Models/UserPreference.swift",
+      "description": "Smart Expiring Memory: gewenste sport, beschikbare dagen, voorkeuren met optionele vervaldatum.",
+      "uses": []
+    },
+    {
+      "id": "Symptom",
+      "layer": "models",
+      "kind": "model",
+      "file": "AIFitnessCoach/Models/Symptom.swift",
+      "description": "Blessure/klacht met bodyArea-enum en vervaldatum. Lokaal-only — niet re-syncbaar.",
+      "uses": []
+    },
+    {
+      "id": "AppMigrationPlan",
+      "layer": "models",
+      "kind": "migration",
+      "file": "AIFitnessCoach/Models/AppMigrationPlan.swift",
+      "description": "SchemaMigrationPlan met staged stages tussen SchemaV1 → V2 → V3. Type-changes via willMigrate/didMigrate.",
+      "uses": ["SchemaV1", "SchemaV2", "SchemaV3"]
+    },
+    {
+      "id": "SchemaV1",
+      "layer": "models",
+      "kind": "schema-snapshot",
+      "file": "AIFitnessCoach/Models/SchemaV1.swift",
+      "description": "Frozen snapshot van het oude schema. Nested @Model types houden dezelfde unqualified naam.",
+      "uses": []
+    },
+    {
+      "id": "SchemaV2",
+      "layer": "models",
+      "kind": "schema-snapshot",
+      "file": "AIFitnessCoach/Models/SchemaV2.swift",
+      "description": "Tussenversie. Bevat de eerste type-veilige enums (SportCategory).",
+      "uses": []
+    },
+    {
+      "id": "SchemaV3",
+      "layer": "models",
+      "kind": "schema-snapshot",
+      "file": "AIFitnessCoach/Models/SchemaV3.swift",
+      "description": "Huidige schema-versie. `models` wordt door AIFitnessCoachApp.makeModelContainer() gebruikt als bron-of-truth.",
+      "uses": []
+    },
+    {
+      "id": "HealthKit",
+      "layer": "external",
+      "kind": "framework",
+      "description": "Apple HealthKit: HRV (heartRateVariabilitySDNN), sleepAnalysis (incl. fases), workouts. Engine A draait op HKObserverQuery + enableBackgroundDelivery.",
+      "uses": []
+    },
+    {
+      "id": "BGTaskScheduler",
+      "layer": "external",
+      "kind": "framework",
+      "description": "iOS BackgroundTasks. Voor Engine B: BGAppRefreshTask geregistreerd in AppDelegate vóór return true.",
+      "uses": []
+    },
+    {
+      "id": "UNUserNotificationCenter",
+      "layer": "external",
+      "kind": "framework",
+      "description": "Lokale notificatie-scheduling. Geen APNs in de proactieve flow.",
+      "uses": []
+    },
+    {
+      "id": "vibecoach-proxy",
+      "layer": "external",
+      "kind": "service",
+      "description": "Cloudflare Worker (https://github.com/markclausing/vibecoach-proxy). Endpoints `/oauth/strava/exchange` en `/oauth/strava/refresh`. Strava client_secret als Worker Secret.",
+      "uses": []
+    },
+    {
+      "id": "Strava-API",
+      "layer": "external",
+      "kind": "api",
+      "description": "Strava REST API — activities + streams (HR, power, cadence, speed, distance). Alle calls via FitnessDataService.ensureValidToken().",
+      "uses": []
+    },
+    {
+      "id": "Open-Meteo",
+      "layer": "external",
+      "kind": "api",
+      "description": "Gratis weer-API. `api.open-meteo.com/v1/forecast` (realtime + past_days) + `archive-api.open-meteo.com` (>5 dagen oud).",
+      "uses": []
+    },
+    {
+      "id": "AI-Providers",
+      "layer": "external",
+      "kind": "api",
+      "description": "Gemini (default `gemini-flash-latest`), OpenAI, Anthropic. BYOK via UserAPIKeyStore. Geen backend-proxy.",
+      "uses": []
+    }
+  ],
+  "subsystems": [
+    {
+      "id": "dual-engine",
+      "title": "Dual Engine Architectuur",
+      "docRef": "docs/ARCHITECTURE.md#1",
+      "epic": "Epic 13",
+      "description": "Twee onafhankelijke achtergrond-triggers — Engine A reageert op nieuwe HK-workouts, Engine B op te lange inactiviteit met een rood doel.",
+      "modules": ["ProactiveNotificationService", "AppDelegate", "HealthKitManager", "DashboardView", "BGTaskScheduler", "UNUserNotificationCenter"]
+    },
+    {
+      "id": "strava-oauth-proxy",
+      "title": "Strava OAuth via Cloudflare Worker",
+      "docRef": "docs/ARCHITECTURE.md#2",
+      "epic": "Security audit C-01",
+      "description": "Client_secret verplaatst van Secrets.swift naar Worker Secret. CSRF-bescherming via random state-UUID.",
+      "modules": ["StravaAuthService", "FitnessDataService", "TokenStore", "vibecoach-proxy", "Strava-API"]
+    },
+    {
+      "id": "byok",
+      "title": "BYOK — API-Sleutels in Keychain",
+      "docRef": "docs/ARCHITECTURE.md#3",
+      "epic": "Security audit C-02",
+      "description": "Geen Secrets-fallback. Migratie uit UserDefaults is idempotent.",
+      "modules": ["UserAPIKeyStore", "KeychainService", "ChatViewModel", "SettingsView", "AddGoalView"]
+    },
+    {
+      "id": "dual-source-pipeline",
+      "title": "Dual-source Sample-pijplijn",
+      "docRef": "docs/ARCHITECTURE.md#9",
+      "epic": "Epic 32 / 40 / 41 / 42",
+      "description": "WorkoutSample met workoutUUID-FK (deterministisch afgeleid voor Strava). Smart-ingest aan de voordeur + scenePhase-pass (backfill → dedupe → reclassify).",
+      "modules": ["WorkoutSample", "WorkoutSampleService", "ActivityDeduplicator", "SessionReclassifier", "StravaStreamIngestService", "HealthKitSyncService", "FitnessDataService"]
+    },
+    {
+      "id": "pattern-detection",
+      "title": "Workout Pattern Detection",
+      "docRef": "docs/ARCHITECTURE.md#10",
+      "epic": "Epic 32 / 44 / 47",
+      "description": "Vier patronen op 5s-resampled samples, gegated op persoonlijke HR-zones. HR-recovery is pauze-gebaseerd (peak-anchored 90s window).",
+      "modules": ["WorkoutPatternDetector", "PauseDetector", "SampleResampler", "PhysiologicalThresholdService", "HeartRateZoneCalculator"]
+    },
+    {
+      "id": "coach-context",
+      "title": "Coach-prompt Context-injectie",
+      "docRef": "docs/ARCHITECTURE.md#10",
+      "epic": "Epic 45 / 48 / 49",
+      "description": "ChatViewModel componeert de prompt uit losse formatter-blokken; WorkoutInsightService heeft een eigen context-pijplijn met cache-fingerprint op goals + weather.",
+      "modules": ["ChatViewModel", "WorkoutInsightService", "WorkoutInsightCache", "BlueprintContextFormatter", "WorkoutHistoryContextBuilder", "VibeScoreContextFormatter", "PreferencesContextFormatter"]
+    },
+    {
+      "id": "ci",
+      "title": "CI Pipeline (Epic 46)",
+      "docRef": "docs/ARCHITECTURE.md#11",
+      "epic": "Epic 46",
+      "description": "GitHub Actions: SwiftLint + Unit Tests + UI Tests (sequentieel) + Coverage Report DAG. Plus CodeQL voor Swift + Actions.",
+      "modules": []
+    }
+  ],
+  "flows": [
+    {
+      "id": "app-launch",
+      "name": "App Launch",
+      "trigger": "User opent app",
+      "steps": [
+        { "module": "AIFitnessCoachApp", "action": "Init ModelContainer met AppMigrationPlan; fallback bij migratie-fout" },
+        { "module": "AppDelegate", "action": "Registreer BGTaskScheduler-handler vóór return true" },
+        { "module": "AppDelegate", "action": "Als onboarded: setupEngineA() + scheduleEngineB()" },
+        { "module": "ContentView", "action": "Route naar OnboardingView of AppTabHostView" },
+        { "module": "AppTabHostView", "action": "Trigger TriggerAutoSync (HK + Strava concurrent via async let)" }
+      ]
+    },
+    {
+      "id": "engine-a",
+      "name": "Engine A — Action Trigger",
+      "trigger": "Nieuwe HKWorkout in HealthKit",
+      "steps": [
+        { "module": "HealthKit", "action": "HKObserverQuery wekt de app via enableBackgroundDelivery" },
+        { "module": "ProactiveNotificationService", "action": "Check of een doel op rood staat (cache in UserDefaults)" },
+        { "module": "ProactiveNotificationService", "action": "Als ja + cooldown OK: schedule lokale push (type=goalRisk)" },
+        { "module": "UNUserNotificationCenter", "action": "Toon banner; deep-link naar Goals tab" }
+      ]
+    },
+    {
+      "id": "engine-b",
+      "name": "Engine B — Inaction Trigger",
+      "trigger": "Dagelijkse BGAppRefreshTask",
+      "steps": [
+        { "module": "BGTaskScheduler", "action": "Wek de app op het geplande moment" },
+        { "module": "ProactiveNotificationService", "action": "Check: >2 dagen inactief én rood doel?" },
+        { "module": "ProactiveNotificationService", "action": "Schedule empathische motivatie-notificatie" }
+      ]
+    },
+    {
+      "id": "workout-ingest",
+      "name": "Workout Ingest (HK of Strava)",
+      "trigger": "Auto-sync of nieuwe HKWorkout",
+      "steps": [
+        { "module": "HealthKitSyncService", "action": "Fetch nieuwe HK-workouts; map naar ActivityRecord" },
+        { "module": "FitnessDataService", "action": "Fetch Strava-activities via ensureValidToken()" },
+        { "module": "ActivityDeduplicator", "action": "smartInsert: source-id idempotent → ±5s cross-source check → insert" },
+        { "module": "StravaStreamIngestService", "action": "Backfill /streams voor records zonder samples" },
+        { "module": "ActivityDeduplicator", "action": "scenePhase: runDedupe op laatste 10 records" },
+        { "module": "SessionReclassifier", "action": "Hertraint records die net samples kregen" }
+      ]
+    },
+    {
+      "id": "workout-analysis",
+      "name": "Workout Deep-Dive",
+      "trigger": "User opent WorkoutAnalysisView",
+      "steps": [
+        { "module": "WorkoutSampleService", "action": "Fetch samples voor workoutUUID" },
+        { "module": "SampleResampler", "action": "Resample naar 5s buckets" },
+        { "module": "WorkoutPatternDetector", "action": "Detecteer 4 patronen (gegated op HR-zones)" },
+        { "module": "PauseDetector", "action": "Vind ≥45s pauzes voor recovery-events" },
+        { "module": "WorkoutInsightService", "action": "Bouw context + check cache (goalsFingerprint + weatherFingerprint)" },
+        { "module": "AI-Providers", "action": "Gemini-call voor 3-zins Coach-analyse" },
+        { "module": "WorkoutInsightCache", "action": "Cache resultaat per workout" }
+      ]
+    },
+    {
+      "id": "chat-coach",
+      "name": "Chat met AI-Coach",
+      "trigger": "User stuurt bericht in ChatView",
+      "steps": [
+        { "module": "ChatViewModel", "action": "Lees API-key uit Keychain (UserAPIKeyStore)" },
+        { "module": "VibeScoreContextFormatter", "action": "[VIBE SCORE]-blok" },
+        { "module": "BlueprintContextFormatter", "action": "[BLUEPRINT]-blok met milestones" },
+        { "module": "PreferencesContextFormatter", "action": "[VOORKEUREN]-blok" },
+        { "module": "WorkoutHistoryContextBuilder", "action": "[RECENTE WORKOUTS]-blok met patterns" },
+        { "module": "GenerativeModelProtocol", "action": "Stream response van gekozen provider" }
+      ]
+    },
+    {
+      "id": "strava-oauth",
+      "name": "Strava OAuth",
+      "trigger": "User klikt Strava-koppelen",
+      "steps": [
+        { "module": "StravaAuthService", "action": "Bouw authorize-URL met random state-UUID (CSRF)" },
+        { "module": "Strava-API", "action": "User authorizeert; redirect met code + state" },
+        { "module": "StravaAuthService", "action": "Valideer state tegen callback-URL" },
+        { "module": "vibecoach-proxy", "action": "POST /oauth/strava/exchange (X-Client-Token header)" },
+        { "module": "TokenStore", "action": "Sla tokens op in Keychain" }
+      ]
+    },
+    {
+      "id": "byok-migration",
+      "name": "BYOK Migratie (eenmalig)",
+      "trigger": "Eerste launch na C-02 update",
+      "steps": [
+        { "module": "AIFitnessCoachApp", "action": "init() roept UserAPIKeyStore.migrateFromUserDefaultsIfNeeded()" },
+        { "module": "UserAPIKeyStore", "action": "Lees legacy UserDefaults-key; schrijf naar Keychain; wis UserDefaults-entry" }
+      ]
+    },
+    {
+      "id": "schema-migration",
+      "name": "SwiftData Schema-migratie",
+      "trigger": "App-launch met oude DB-versie",
+      "steps": [
+        { "module": "AIFitnessCoachApp", "action": "ModelContainer(for: SchemaV3, migrationPlan: AppMigrationPlan)" },
+        { "module": "AppMigrationPlan", "action": "Execute staged stages V1→V2→V3" },
+        { "module": "AIFitnessCoachApp", "action": "Bij falen: log + delete corrupte store + fresh V3 + UserDefaults-flag voor UI-melding" }
+      ]
+    }
+  ],
+  "styleGuide": {
+    "themes": [
+      { "id": "moss",   "displayName": "Mos",    "primaryLight": "#4D804D", "primaryDark": "#85BC85", "backgroundLight": "#F2F7EF", "backgroundDark": "#1A211A", "icon": "leaf.fill" },
+      { "id": "stone",  "displayName": "Steen",  "primaryLight": "#78736D", "primaryDark": "#B3ABA1", "backgroundLight": "#F5F2EF", "backgroundDark": "#1F1C1A", "icon": "mountain.2.fill" },
+      { "id": "mist",   "displayName": "Nevel",  "primaryLight": "#618AAD", "primaryDark": "#94BCDB", "backgroundLight": "#F0F5FA", "backgroundDark": "#141A24", "icon": "cloud.fog.fill" },
+      { "id": "clay",   "displayName": "Klei",   "primaryLight": "#AD6642", "primaryDark": "#D69970", "backgroundLight": "#FAF2EB", "backgroundDark": "#241712", "icon": "circle.hexagongrid.fill" },
+      { "id": "sakura", "displayName": "Sakura", "primaryLight": "#B36685", "primaryDark": "#E1A8BC", "backgroundLight": "#FCF2F7", "backgroundDark": "#21141A", "icon": "camera.macro" },
+      { "id": "ink",    "displayName": "Inkt",   "primaryLight": "#384775", "primaryDark": "#859ED1", "backgroundLight": "#F2F2FA", "backgroundDark": "#121219", "icon": "pencil.and.outline" }
+    ],
+    "iconSet": "SF Symbols, hierarchical rendering (SereneIconStyle)",
+    "haptics": "UIImpactFeedbackGenerator (.medium) bij key-bevestigingen",
+    "language": "Nederlands voor UI/prompts/comments; Engels voor Swift-identifiers",
+    "philosophy": "Serene Visual Overhaul (Epic 29) — zachte gradients, hierarchical SF Symbols, vaste 6-thema-palet"
+  },
+  "tags": {
+    "engine-a": "HKObserverQuery-driven proactive notifications",
+    "engine-b": "BGAppRefreshTask-driven inaction trigger",
+    "security-c01": "Strava client_secret naar Cloudflare Worker",
+    "security-c02": "AI API-key uit UserDefaults naar Keychain",
+    "security-h01": "CSRF-state UUID op OAuth-callback",
+    "m-08": "Notificatie-payload whitelist",
+    "epic-11": "TrainingPlanManager als Single Source of Truth",
+    "epic-13": "Proactieve Coach & Background Sync",
+    "epic-14": "Vibe Score (HRV + sleep readiness)",
+    "epic-14b": "Injury-Impact Matrix",
+    "epic-16": "Dynamische Periodisering & Macrocycli",
+    "epic-17": "Goal-Specific Blueprints",
+    "epic-29": "Serene Visual Overhaul (themes)",
+    "epic-31": "V2.0 Onboarding-flow",
+    "epic-32": "Workout Pattern Detection + samples-pijplijn",
+    "epic-40": "Strava power-stream ingest",
+    "epic-41": "Single-record-of-truth dedupe",
+    "epic-42": "Always-on dual-source sync",
+    "epic-44": "Persoonlijke HR-zones & FTP",
+    "epic-45": "Per-workout context in coach-prompt",
+    "epic-46": "CI Pipeline + SwiftLint",
+    "epic-47": "HR-recovery via pauze-detectie",
+    "epic-48": "Coach-analyse koppelt aan doelen + periodisering",
+    "epic-49": "HK weather-metadata in Coach-analyse",
+    "epic-50": "Open-Meteo historisch weer voor Garmin-only ritten",
+    "logging": "AppLoggers + privacy-modifiers",
+    "testing": "UITestMockEnvironment + GenerativeModelProtocol"
+  }
+}

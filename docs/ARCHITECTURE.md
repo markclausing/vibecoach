@@ -2,6 +2,8 @@
 
 Deze file beschrijft de belangrijkste technische bouwstenen. Voor projectregels en afspraken: zie [CLAUDE.md](../CLAUDE.md). Voor geleverde features: zie [ROADMAP.md](ROADMAP.md).
 
+> **Interactief overzicht:** open [`architecture/architecture.html`](architecture/architecture.html) in een browser voor een klikbare versie van dit document (modules, dependencies, flows). De bijbehorende [`architecture.json`](architecture/architecture.json) bevat dezelfde data machine-leesbaar voor AI-agents.
+
 ---
 
 ## 1. Dual Engine Architectuur (Epic 13)
