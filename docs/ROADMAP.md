@@ -602,7 +602,7 @@ Aanleiding: systeemanalyse vanuit het gebruikersperspectief (drie parallelle aud
 * **⏳ 51.E — Onboarding & toestemmingen:** HealthKit als vereist, notificaties als optioneel, status-banner bij skip, achteraf-intrekken-detectie, status-overzicht in Settings
 * **⏳ 51.F — Data syncen:** auto-sync-fouten zichtbaar, Strava 429 retry-cooldown, HK per-type permissie, weer-fout non-blocking met retry-marker, offline-banner, captive-portal-detectie
 * **⏳ 51.G — Proactieve coach (achtergrond):** status-rij in Settings, notificatie-permissie pre-check, registratie-fout zichtbaar
-* **🔄 51.H — App-updates & data-veiligheid:** `MigrationFallbackStore` + Dashboard-`MigrationFallbackBanner` sluit de halve implementatie uit CLAUDE.md §12 (de `vibecoach_migrationFallbackAt`-flag wordt nu daadwerkelijk getoond bij de gebruiker); `AppVersionInfo` rendert marketing-versie + build-nummer onderaan Settings. 11 unit-tests (5 store + 6 version-info).
+* **✅ 51.H — App-updates & data-veiligheid:** `MigrationFallbackStore` + Dashboard-`MigrationFallbackBanner` sluit de halve implementatie uit CLAUDE.md §12 (de `vibecoach_migrationFallbackAt`-flag wordt nu daadwerkelijk getoond bij de gebruiker); `AppVersionInfo` rendert marketing-versie + build-nummer onderaan Settings. 11 unit-tests (5 store + 6 version-info). Gemerged via PR #267.
 
 **Volgorde:** start met de quick wins die data-bescherming raken (H + C), dan de coach-reputatie-items (A1, A5), dan sync-zichtbaarheid (F1, F2, F5), dan de overige groepen.
 
