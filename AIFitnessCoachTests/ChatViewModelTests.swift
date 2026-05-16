@@ -475,8 +475,11 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.first?.role, .user)
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         let errorText = viewModel.messages.last?.text ?? ""
-        XCTAssertTrue(errorText.contains("API-sleutel is ongeldig"),
-                      "Moet de invalidAPIKey-boodschap tonen, niet de generieke fallback-tekst. Kreeg: \(errorText)")
+        // Epic #51-A5: bericht komt nu uit `ChatErrorMessageMapper.invalidAPIKey`
+        // — koppel direct aan de constante zodat tekst-tweaks niet stilletjes
+        // dit pad breken en de test mee evolueert met de mapper.
+        XCTAssertEqual(errorText, ChatErrorMessageMapper.invalidAPIKey,
+                       "Moet de invalidAPIKey-boodschap tonen, niet de generieke fallback-tekst. Kreeg: \(errorText)")
         XCTAssertEqual(viewModel.retryStatusMessage, "", "retryStatusMessage moet weer leeg zijn na afloop.")
     }
 

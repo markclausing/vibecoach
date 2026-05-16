@@ -39,6 +39,8 @@
 		DA10FF20AA30BB40CC50DD60 /* MigrationFallbackBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA01FF02AA03BB04CC05DD06 /* MigrationFallbackBanner.swift */; };
 		DC10FF20AA30BB40CC50DD60 /* AppVersionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */; };
 		DE10FF20AA30BB40CC50DD60 /* PhysiologicalThresholdValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */; };
+		E010FF20AA30BB40CC50DD60 /* ChatScopeInstruction.swift in Sources */ = {isa = PBXBuildFile; fileRef = E001FF02AA03BB04CC05DD06 /* ChatScopeInstruction.swift */; };
+		E110FF20AA30BB40CC50DD60 /* ChatErrorMessageMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E101FF02AA03BB04CC05DD06 /* ChatErrorMessageMapper.swift */; };
 		5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */; };
 		531DF0798000FFC0CACC940E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4D1D9B3991F419262E294E /* SettingsView.swift */; };
 		543CBE0027B161C9AFDE3824 /* AIFitnessCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */; };
@@ -64,6 +66,8 @@
 		DB10FF20AA30BB40CC50DD60 /* MigrationFallbackStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB01FF02AA03BB04CC05DD06 /* MigrationFallbackStoreTests.swift */; };
 		DD10FF20AA30BB40CC50DD60 /* AppVersionInfoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD01FF02AA03BB04CC05DD06 /* AppVersionInfoTests.swift */; };
 		DF10FF20AA30BB40CC50DD60 /* PhysiologicalThresholdValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidatorTests.swift */; };
+		E210FF20AA30BB40CC50DD60 /* ChatScopeInstructionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E201FF02AA03BB04CC05DD06 /* ChatScopeInstructionTests.swift */; };
+		E310FF20AA30BB40CC50DD60 /* ChatErrorMessageMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E301FF02AA03BB04CC05DD06 /* ChatErrorMessageMapperTests.swift */; };
 		9E9427B7C484EE11E612C120 /* StravaActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */; };
 		A12B3C4D5E6F7A8B9C0D1E2F /* GapAnalysisCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B23C4D5E6F7A8B9C0D1E2F3A /* GapAnalysisCardView.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */; };
@@ -221,6 +225,8 @@
 		DA01FF02AA03BB04CC05DD06 /* MigrationFallbackBanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MigrationFallbackBanner.swift; sourceTree = "<group>"; };
 		DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppVersionInfo.swift; sourceTree = "<group>"; };
 		DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalThresholdValidator.swift; sourceTree = "<group>"; };
+		E001FF02AA03BB04CC05DD06 /* ChatScopeInstruction.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatScopeInstruction.swift; sourceTree = "<group>"; };
+		E101FF02AA03BB04CC05DD06 /* ChatErrorMessageMapper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatErrorMessageMapper.swift; sourceTree = "<group>"; };
 		203C295EF5D568151B5D1BEF /* EditGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditGoalView.swift; sourceTree = "<group>"; };
 		2233445566778899001122BB /* UserProfileServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserProfileServiceTests.swift; sourceTree = "<group>"; };
 		268DC6609F434E5DA4FF63F7 /* ThemeManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
@@ -247,6 +253,8 @@
 		DB01FF02AA03BB04CC05DD06 /* MigrationFallbackStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MigrationFallbackStoreTests.swift; sourceTree = "<group>"; };
 		DD01FF02AA03BB04CC05DD06 /* AppVersionInfoTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppVersionInfoTests.swift; sourceTree = "<group>"; };
 		DF01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalThresholdValidatorTests.swift; sourceTree = "<group>"; };
+		E201FF02AA03BB04CC05DD06 /* ChatScopeInstructionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatScopeInstructionTests.swift; sourceTree = "<group>"; };
+		E301FF02AA03BB04CC05DD06 /* ChatErrorMessageMapperTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatErrorMessageMapperTests.swift; sourceTree = "<group>"; };
 		758A7ECDF66FE523D3217100 /* FitnessDataServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataServiceTests.swift; sourceTree = "<group>"; };
 		769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoal.swift; sourceTree = "<group>"; };
 		D5A0010102A001010100A002 /* Symptom.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Symptom.swift; sourceTree = "<group>"; };
@@ -460,6 +468,8 @@
 				DB01FF02AA03BB04CC05DD06 /* MigrationFallbackStoreTests.swift */,
 				DD01FF02AA03BB04CC05DD06 /* AppVersionInfoTests.swift */,
 				DF01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidatorTests.swift */,
+				E201FF02AA03BB04CC05DD06 /* ChatScopeInstructionTests.swift */,
+				E301FF02AA03BB04CC05DD06 /* ChatErrorMessageMapperTests.swift */,
 				758A7ECDF66FE523D3217100 /* FitnessDataServiceTests.swift */,
 				FD41D2D02372B05947DC9CBC /* Mocks */,
 				BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */,
@@ -557,6 +567,7 @@
 				D9B4F7B2D6E8F0A1B2C3D9F0 /* MigrationFallbackStore.swift */,
 				DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */,
 				DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */,
+				E101FF02AA03BB04CC05DD06 /* ChatErrorMessageMapper.swift */,
 				EDA9519ECAE22F903D67C756 /* TokenStore.swift */,
 				60758C181F9C986190D5A369 /* StravaAuthService.swift */,
 				F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */,
@@ -614,6 +625,7 @@
 				D5C0030102C003010100C002 /* IntentContextFormatter.swift */,
 				D5C0040102C004010100C002 /* SymptomContextFormatter.swift */,
 				6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */,
+				E001FF02AA03BB04CC05DD06 /* ChatScopeInstruction.swift */,
 				EAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift */,
 				F1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift */,
 				E45A4500D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilder.swift */,
@@ -888,6 +900,8 @@
 				DB10FF20AA30BB40CC50DD60 /* MigrationFallbackStoreTests.swift in Sources */,
 				DD10FF20AA30BB40CC50DD60 /* AppVersionInfoTests.swift in Sources */,
 				DF10FF20AA30BB40CC50DD60 /* PhysiologicalThresholdValidatorTests.swift in Sources */,
+				E210FF20AA30BB40CC50DD60 /* ChatScopeInstructionTests.swift in Sources */,
+				E310FF20AA30BB40CC50DD60 /* ChatErrorMessageMapperTests.swift in Sources */,
 				0ED375BF4E3F9C2FB4E3A5F9 /* FitnessDataServiceTests.swift in Sources */,
 				FA26082FD3260BAC05A7AAEB /* MockNetworkSession.swift in Sources */,
 				34B36AEEDAF09C2EA9BC6241 /* SettingsViewTests.swift in Sources */,
@@ -967,6 +981,7 @@
 				D5C0040101C004010100C001 /* SymptomContextFormatter.swift in Sources */,
 				75D1A92071CFBE1BA9750D59 /* Secrets.swift in Sources */,
 				5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */,
+				E010FF20AA30BB40CC50DD60 /* ChatScopeInstruction.swift in Sources */,
 				7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */,
 				D571DD51A0001A0001A0001A /* Calendar+DSTSafe.swift in Sources */,
 				A3BB100A32BF93E6C7587F72 /* FitnessGoal.swift in Sources */,
@@ -1005,6 +1020,7 @@
 				D9A4F7B2D6E8F0A1B2C3D9F0 /* MigrationFallbackStore.swift in Sources */,
 				DC10FF20AA30BB40CC50DD60 /* AppVersionInfo.swift in Sources */,
 				DE10FF20AA30BB40CC50DD60 /* PhysiologicalThresholdValidator.swift in Sources */,
+				E110FF20AA30BB40CC50DD60 /* ChatErrorMessageMapper.swift in Sources */,
 				DB076B94561F03C4EB2D8C5E /* TokenStore.swift in Sources */,
 				06C5198C4908FF10CCF1E836 /* StravaAuthService.swift in Sources */,
 				26CFC95E9F1D535817250215 /* FitnessDataService.swift in Sources */,

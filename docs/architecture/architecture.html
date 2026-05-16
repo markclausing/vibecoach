@@ -1375,7 +1375,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 5,
+    "docRevision": 6,
     "lastUpdated": "2026-05-16",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
@@ -1835,6 +1835,24 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/PhysiologicalThresholdValidator.swift",
       "description": "Pure-Swift validator voor de vier persoonlijke trainingsdrempels (Max HR, Rust HR, LTHR, FTP). Twee soorten checks: per-veld range (warning bij ongewoon, error bij absurd) + cross-validatie over het profiel (Max HR > Rust HR, LTHR < Max HR, LTHR > Rust HR). Voedt ThresholdEditSheet live-feedback en de zone-card-uitleg.",
+      "uses": [],
+      "tags": ["epic-51"]
+    },
+    {
+      "id": "ChatScopeInstruction",
+      "layer": "viewmodels",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/ViewModels/ChatScopeInstruction.swift",
+      "description": "Expliciete scope-restrictie die ChatViewModel bovenaan de system-prompt plakt. Lijst toegestane coaching-onderwerpen (training, herstel, blessures, doelen, sport-voeding) + vaste weigerings-framing voor off-topic-vragen. Uitzondering voor sport-gerelateerde 'off-topic' vragen (bv. 'kan ik trainen met deze hoofdpijn?').",
+      "uses": [],
+      "tags": ["epic-51"]
+    },
+    {
+      "id": "ChatErrorMessageMapper",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/ChatErrorMessageMapper.swift",
+      "description": "Pure-Swift mapper van ruwe SDK-/netwerkfouten naar specifieke gebruikersmeldingen. URLError-codes voor offline/timeout/DNS/cancelled; GenerateContentError-cases via type-naam-matching (geen circulaire SDK-dep) voor safety-block / invalid-key / overload. Vervangt de oude generieke 'tijdelijk probleem'-melding in ChatViewModel.",
       "uses": [],
       "tags": ["epic-51"]
     },

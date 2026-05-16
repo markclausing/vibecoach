@@ -421,7 +421,10 @@ class ChatViewModel: ObservableObject {
             return UITestMockGenerativeModel()
         }
         #endif
-        let systemInstruction = """
+        // Epic #51-A1: scope-instructie staat als eerste blok zodat het model
+        // off-topic-vragen weigert vóór hij überhaupt aan de andere coaching-regels
+        // toekomt. Tekst leeft in ChatScopeInstruction zodat hij los testbaar is.
+        let systemInstruction = ChatScopeInstruction.text + """
             Jij bent een samenwerkende, meedenkende en proactieve AI fitness-coach.
             Je analyseert niet alleen vermoeidheid, maar je helpt de gebruiker actief om de eerstvolgende stap te plannen richting hun gestelde doelen.
             Stel je op als een slimme trainingspartner — niet als een waarschuwende dokter.
@@ -1443,25 +1446,15 @@ class ChatViewModel: ObservableObject {
             // Reset retry-statusbericht
             retryStatusMessage = ""
 
-            // Verwerk fout als alle pogingen zijn mislukt
+            // Verwerk fout als alle pogingen zijn mislukt.
+            // Epic #51-A5: specifieke meldingen per fout-categorie (offline /
+            // timeout / DNS / safety-block / invalid key / overbelast / generiek)
+            // via de pure-Swift `ChatErrorMessageMapper`. De oude case-statement
+            // herkende alleen Gemini-SDK-types en vertaalde de rest in één
+            // generieke "tijdelijk probleem", waardoor offline-situaties en
+            // ingetrokken sleutels niet uit elkaar te houden waren.
             if let error = finalError {
-                let userFacingMessage: String
-                if let geminiError = error as? GenerateContentError {
-                    switch geminiError {
-                    case .promptBlocked:
-                        // Prompt geblokkeerd door veiligheidsfilters
-                        userFacingMessage = "Je bericht kon niet verwerkt worden. Dit komt soms voor door veiligheidsfilters van de AI. Probeer het opnieuw of stel je vraag anders."
-                    case .invalidAPIKey:
-                        userFacingMessage = "De API-sleutel is ongeldig. Controleer de sleutel via Instellingen → AI Coach Configuratie."
-                    case .internalError:
-                        // Zowel primair als fallback model faalden met 503/429. 
-                        userFacingMessage = "De AI-service is tijdelijk overbelast. Wacht even en probeer het opnieuw."
-                    default:
-                        userFacingMessage = "Er is een tijdelijk probleem met de AI-service. Probeer het opnieuw."
-                    }
-                } else {
-                    userFacingMessage = "Er is een tijdelijk probleem. Probeer het opnieuw."
-                }
+                let userFacingMessage = ChatErrorMessageMapper.userFacingMessage(for: error)
                 messages.append(ChatMessage(role: .ai, text: userFacingMessage, isError: true))
                 // Spiegel de foutmelding in de banner-state zodat screens zonder
                 // zichtbare chat (zoals Dashboard tijdens pull-to-refresh) óók feedback tonen.
