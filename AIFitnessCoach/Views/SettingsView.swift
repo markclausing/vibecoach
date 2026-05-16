@@ -674,7 +674,18 @@ struct SettingsView: View {
                             .padding(.bottom, 12)
                     }
 
-                    Spacer(minLength: 40)
+                    // Epic #51-H2: app-versie + build-nummer onderaan zodat de
+                    // gebruiker bij support-vragen meteen kan zien op welke
+                    // versie hij draait. Niet-interactief, niet selecteerbaar.
+                    Text(AppVersionInfo.displayString)
+                        .font(.caption2)
+                        .foregroundColor(.secondary.opacity(0.7))
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 8)
+                        .padding(.bottom, 24)
+                        .accessibilityIdentifier("settings.versionLabel")
+
+                    Spacer(minLength: 16)
                 }
             }
             .onScrollGeometryChange(for: Bool.self) { geometry in

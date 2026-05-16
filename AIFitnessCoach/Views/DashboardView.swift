@@ -1466,6 +1466,12 @@ struct DashboardView: View {
                         .padding(.horizontal)
                     }
 
+                    // Epic #51-H: migratie-fallback-banner. Verschijnt enkel als
+                    // de SwiftData-migratie tijdens de laatste app-launch faalde
+                    // en de fresh-DB-fallback (CLAUDE.md §12) lokaal-only data
+                    // (FitnessGoal/UserPreference/Symptom) heeft gewist.
+                    MigrationFallbackBanner()
+
                     // Epic #38 Story 38.2: stille-sync-detectie. Toont alleen
                     // wanneer de laatste HK-sync 0 workouts opleverde én
                     // workout-auth-status níet `sharingAuthorized` is. Stille
