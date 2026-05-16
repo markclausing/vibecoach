@@ -589,6 +589,25 @@ Vervolg op Epic #49 (HK weather-metadata). Garmin/fietscomputer-only wielrensess
 
 ---
 
+### ⏳ Epic #51: Foutmeldingen, validatie & zichtbaarheid (user-feedback hardening)
+
+Aanleiding: systeemanalyse vanuit het gebruikersperspectief (drie parallelle audits op coach-chat, settings/forms en data-laag → UI-fout-propagatie) legde een serie unhappy flows bloot waar de app stille fouten, ontbrekende validatie of verwarrende feedback geeft. Niet kapot — wel in conflict met het Management-by-Exception-principe. Volledige scope + acceptatiecriteria per sub-story in [issue #265](https://github.com/markclausing/vibecoach/issues/265).
+
+**Functionele groepering** (elk een eigen PR):
+
+* **⏳ 51.A — Coach-gesprek:** scope-guardrails in system-prompt, provider-switch flow, lange-gesprek-trimming, paste-limit, specifieke foutmeldingen, request-cancellation
+* **⏳ 51.B — Doelen aanmaken & beheren:** datum minstens +7 dagen, realistische stretch-tijden per sport, titel-trim, soft-delete tegen stale coach-context
+* **⏳ 51.C — Profiel & trainingsdrempels:** Max HR > Rust HR cross-validatie, realistische ranges per drempel, Keychain-fout zichtbaar, zones-card uitleg
+* **⏳ 51.D — AI-provider & API-sleutel:** auto-trim bij plakken, prefix-detectie voor verkeerde provider, test-feedback persistent
+* **⏳ 51.E — Onboarding & toestemmingen:** HealthKit als vereist, notificaties als optioneel, status-banner bij skip, achteraf-intrekken-detectie, status-overzicht in Settings
+* **⏳ 51.F — Data syncen:** auto-sync-fouten zichtbaar, Strava 429 retry-cooldown, HK per-type permissie, weer-fout non-blocking met retry-marker, offline-banner, captive-portal-detectie
+* **⏳ 51.G — Proactieve coach (achtergrond):** status-rij in Settings, notificatie-permissie pre-check, registratie-fout zichtbaar
+* **⏳ 51.H — App-updates & data-veiligheid:** migratie-fallback-banner (`vibecoach_migrationFallbackAt`-flag is gedefinieerd in CLAUDE.md §12 maar nergens uitgelezen), versie + build-nummer in Settings
+
+**Volgorde:** start met de quick wins die data-bescherming raken (H + C), dan de coach-reputatie-items (A1, A5), dan sync-zichtbaarheid (F1, F2, F5), dan de overige groepen.
+
+---
+
 ### ⏳ Epic-backlog: Mentale benefit van workouts
 
 Idee voor een toekomstige Epic — nog niet uitgewerkt. Gedachte: niet alleen fysieke metrics tonen (TRIMP, HR, recovery), maar ook iets over mood/energie/stress-impact zodat de coach kan zeggen "je voelt je hier de rest van de dag goed door" of "deze sessie helpt je stress af te bouwen". Open punten: welke signalen (HRV-respons na rit, post-RPE-mood, slaap-respons in nacht erna), welke UI (extra tegel onder Vibe Score? Veld op WorkoutAnalysisView?), hoe de coach dit framet, en hoe we het onderscheiden van pure fysieke load. Pickup-trigger: gebruiker wil meer expliciete "waarom train ik dit"-context bij workouts.
