@@ -213,7 +213,9 @@ struct TrainingThresholdsSettingsView: View {
                     "Z\($0.index) \($0.name) · \($0.lowerBPM)-\($0.upperBPM) BPM"
                 })
             } else {
-                Text("Stel een Max HR + Rust HR in (Karvonen) of een LTHR (Friel) om HR-zones te zien.")
+                // Epic #51-C4: uitleg op basis van wát er ontbreekt of fysiologisch
+                // niet klopt, i.p.v. één generieke "stel drempels in"-melding.
+                Text(PhysiologicalThresholdValidator.emptyHRZonesExplanation(for: validatorInput))
                     .font(.caption).foregroundStyle(.tertiary)
                     .padding(.horizontal, 14)
             }
@@ -226,7 +228,7 @@ struct TrainingThresholdsSettingsView: View {
                     return "Z\(zone.index) \(zone.name) · \(bound)"
                 })
             } else {
-                Text("Stel een FTP in om power-zones te zien.")
+                Text(PhysiologicalThresholdValidator.emptyPowerZonesExplanation(for: validatorInput))
                     .font(.caption).foregroundStyle(.tertiary)
                     .padding(.horizontal, 14)
                     .padding(.bottom, 14)
@@ -252,6 +254,17 @@ struct TrainingThresholdsSettingsView: View {
     }
 
     // MARK: Computed
+
+    /// Mapping van het UI-profiel naar de validator-input. Wordt gebruikt door
+    /// de zone-card-uitleg en (via ThresholdEditSheet) door de live-validatie.
+    private var validatorInput: PhysiologicalThresholdValidator.ProfileInput {
+        PhysiologicalThresholdValidator.ProfileInput(
+            maxHR: profile.maxHeartRate?.value,
+            restingHR: profile.restingHeartRate?.value,
+            lthr: profile.lactateThresholdHR?.value,
+            ftp: profile.ftp?.value
+        )
+    }
 
     private var heartRateZones: [HeartRateZone]? {
         if let lthr = profile.lactateThresholdHR?.value, lthr > 0 {
@@ -296,16 +309,27 @@ struct TrainingThresholdsSettingsView: View {
     // MARK: Actions
 
     private func applyManualEdit(kind: ThresholdKind, newValue: Double?) {
+        let intent: ThresholdValue?
         if let v = newValue, v > 0 {
-            UserProfileService.saveThreshold(
-                ThresholdValue(value: v, source: .manual),
-                forKey: kind.storageKey
-            )
+            intent = ThresholdValue(value: v, source: .manual)
         } else {
-            UserProfileService.saveThreshold(nil, forKey: kind.storageKey)
+            intent = nil
         }
+
+        UserProfileService.saveThreshold(intent, forKey: kind.storageKey)
         profile = UserProfileService.cachedProfile()
-        feedbackMessage = "\(kind.label) bijgewerkt."
+
+        // Epic #51-C3: round-trip-check. JSONEncoder() faalt zelden voor een
+        // simpele ThresholdValue, maar de oude `try?` slokte fouten stilletjes
+        // op — de gebruiker zag dan "bijgewerkt" terwijl er niets persisted was.
+        // Door direct na de save terug te lezen detecteren we de mismatch.
+        let persisted = UserProfileService.cachedThreshold(forKey: kind.storageKey)
+        if persisted?.value != intent?.value {
+            feedbackMessage = "\(kind.label) opslaan mislukt — probeer opnieuw."
+            AppLoggers.physiologicalThreshold.error("Round-trip-check faalde voor \(kind.label, privacy: .public)")
+        } else {
+            feedbackMessage = "\(kind.label) bijgewerkt."
+        }
     }
 
     private func runAutoDetect() {
@@ -381,6 +405,27 @@ private struct ThresholdEditSheet: View {
         }
     }
 
+    /// Live-validatie: combineert per-veld range-check met cross-validatie tegen
+    /// de andere drempels in het profiel. Returnt de meest ernstige issue zodat
+    /// de UI één duidelijke melding kan tonen i.p.v. een lijst.
+    private var liveIssue: PhysiologicalThresholdValidator.Issue? {
+        let parsed = Double(rawValue)
+        let fieldIssue = PhysiologicalThresholdValidator.validateField(validatorKind, value: parsed)
+        if fieldIssue.severity == .error { return fieldIssue }
+
+        let cross = PhysiologicalThresholdValidator.validateProfile(simulatedProfile(parsed: parsed))
+        if let crossError = cross.first(where: { $0.severity == .error }) {
+            return crossError
+        }
+        return fieldIssue.severity == .ok ? nil : fieldIssue
+    }
+
+    private var canSave: Bool {
+        // Lege string = wissen, altijd toegestaan. Anders moet er geen error-issue zijn.
+        guard !rawValue.isEmpty else { return true }
+        return (liveIssue?.severity ?? .ok) != .error
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -389,6 +434,12 @@ private struct ThresholdEditSheet: View {
                         TextField("Waarde", text: $rawValue)
                             .keyboardType(.numberPad)
                         Text(kind.unit).foregroundStyle(.secondary)
+                    }
+                    if let issue = liveIssue {
+                        Label(issue.message, systemImage: issue.severity == .error ? "exclamationmark.triangle.fill" : "info.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(issue.severity == .error ? .red : .orange)
+                            .accessibilityIdentifier("threshold.issue")
                     }
                 } header: {
                     Text(kind.label)
@@ -407,6 +458,7 @@ private struct ThresholdEditSheet: View {
                         onSave(Double(rawValue))
                         dismiss()
                     }
+                    .disabled(!canSave)
                 }
                 ToolbarItem(placement: .destructiveAction) {
                     if !rawValue.isEmpty {
@@ -418,5 +470,36 @@ private struct ThresholdEditSheet: View {
                 }
             }
         }
+    }
+
+    /// Mapt de view-lokale `ThresholdKind` naar de validator-enum zodat we niet
+    /// twee parallel-enums hoeven te onderhouden.
+    private var validatorKind: PhysiologicalThresholdValidator.Kind {
+        switch kind {
+        case .maxHR:     return .maxHR
+        case .restingHR: return .restingHR
+        case .lthr:      return .lthr
+        case .ftp:       return .ftp
+        }
+    }
+
+    /// Bouwt een hypothetisch profiel met de raw input als nieuwe waarde voor
+    /// `kind`; de andere drempels komen uit het opgeslagen profiel. Voedt de
+    /// cross-validatie zodat "Max HR > Rust HR" ook checkt wanneer je nu de
+    /// Rust HR aan het bewerken bent.
+    private func simulatedProfile(parsed: Double?) -> PhysiologicalThresholdValidator.ProfileInput {
+        var input = PhysiologicalThresholdValidator.ProfileInput(
+            maxHR: profile.maxHeartRate?.value,
+            restingHR: profile.restingHeartRate?.value,
+            lthr: profile.lactateThresholdHR?.value,
+            ftp: profile.ftp?.value
+        )
+        switch kind {
+        case .maxHR:     input.maxHR = parsed
+        case .restingHR: input.restingHR = parsed
+        case .lthr:      input.lthr = parsed
+        case .ftp:       input.ftp = parsed
+        }
+        return input
     }
 }
