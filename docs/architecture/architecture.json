@@ -6,8 +6,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 3,
-    "lastUpdated": "2026-05-15",
+    "docRevision": 4,
+    "lastUpdated": "2026-05-16",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -132,8 +132,17 @@
       "kind": "view",
       "file": "AIFitnessCoach/Views/DashboardView.swift",
       "description": "Hoofdscherm: Vibe Score, doelen-burndown, weekkalender, dedupe + reclassify-pijplijn in scenePhase. Cached risicodata in UserDefaults voor Engine A/B.",
-      "uses": ["VibeScoreCardV2", "WeekTimelineView", "BlueprintTimelineView", "ReadinessCalculator", "ActivityDeduplicator", "SessionReclassifier", "StravaStreamIngestService", "WorkoutSampleService"],
-      "tags": ["epic-13", "epic-14", "epic-32", "epic-40", "epic-41"]
+      "uses": ["VibeScoreCardV2", "WeekTimelineView", "BlueprintTimelineView", "ReadinessCalculator", "ActivityDeduplicator", "SessionReclassifier", "StravaStreamIngestService", "WorkoutSampleService", "MigrationFallbackBanner"],
+      "tags": ["epic-13", "epic-14", "epic-32", "epic-40", "epic-41", "epic-51"]
+    },
+    {
+      "id": "MigrationFallbackBanner",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/MigrationFallbackBanner.swift",
+      "description": "Banner op Dashboard die verschijnt zodra MigrationFallbackStore een actieve fallback-datum heeft. Communiceert dat lokaal-only data (FitnessGoal/UserPreference/Symptom) opnieuw is opgebouwd; HK + Strava-workouts re-syncen vanzelf. Sluit-knop wist de flag.",
+      "uses": ["MigrationFallbackStore", "DashboardBannerView"],
+      "tags": ["epic-51"]
     },
     {
       "id": "GoalsListView",
@@ -432,6 +441,24 @@
       "description": "Type-veilige laag boven KeychainService. Bevat de eenmalige migratie uit UserDefaults (idempotent).",
       "uses": ["KeychainService"],
       "tags": ["security-c02"]
+    },
+    {
+      "id": "MigrationFallbackStore",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/MigrationFallbackStore.swift",
+      "description": "Pure-Swift wrapper rond de `vibecoach_migrationFallbackAt` UserDefaults-flag. Geschreven door AIFitnessCoachApp bij geslaagde fresh-DB-fallback (CLAUDE.md §12); gelezen door MigrationFallbackBanner; gewist op gebruiker-dismiss. AppStorage-vrij voor testbaarheid.",
+      "uses": [],
+      "tags": ["epic-51"]
+    },
+    {
+      "id": "AppVersionInfo",
+      "layer": "services",
+      "kind": "infrastructure",
+      "file": "AIFitnessCoach/Services/AppVersionInfo.swift",
+      "description": "Leest CFBundleShortVersionString + CFBundleVersion uit Bundle.main en formatteert als 'VibeCoach 2.0.0 (build 627)' voor de Settings-footer. Bundle-injectie via parameter zodat tests een fixture-bundle kunnen leveren.",
+      "uses": [],
+      "tags": ["epic-51"]
     },
     {
       "id": "TokenStore",
@@ -1302,6 +1329,7 @@
     "epic-48": "Coach-analyse koppelt aan doelen + periodisering",
     "epic-49": "HK weather-metadata in Coach-analyse",
     "epic-50": "Open-Meteo historisch weer voor Garmin-only ritten",
+    "epic-51": "User-feedback hardening — foutmeldingen, validatie & zichtbaarheid",
     "logging": "AppLoggers + privacy-modifiers",
     "testing": "UITestMockEnvironment + GenerativeModelProtocol"
   }

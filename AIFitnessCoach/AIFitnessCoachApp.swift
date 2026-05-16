@@ -147,8 +147,8 @@ struct AIFitnessCoachApp: App {
 
     /// UserDefaults-key die geschreven wordt zodra de migratie faalde en we naar
     /// een fresh DB moesten terugvallen. Bevat een `Date()`. Views (bijv. Dashboard)
-    /// kunnen hier op pollen om de gebruiker te informeren.
-    static let migrationFallbackKey = "vibecoach_migrationFallbackAt"
+    /// pollen via `MigrationFallbackStore` (Epic #51-H) en tonen een banner.
+    static let migrationFallbackKey = MigrationFallbackStore.key
 
     private static func makeModelContainer() -> ModelContainer {
         let isUITesting: Bool = {
@@ -184,7 +184,7 @@ struct AIFitnessCoachApp: App {
         // file-cleanup nodig — sla die stap dan over.
         if !isUITesting {
             deleteCorruptStore(at: config.url)
-            UserDefaults.standard.set(Date(), forKey: migrationFallbackKey)
+            MigrationFallbackStore().recordFallback()
         }
 
         do {
