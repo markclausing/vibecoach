@@ -19,6 +19,13 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Least-privilege GITHUB_TOKEN voor alle jobs. Geen van de jobs schrijft
+# naar de repo: ze checkout-en, builden, draaien tests en uploaden artifacts
+# (actions/upload-artifact gebruikt een aparte runtime-token, niet GITHUB_TOKEN).
+# Sluit CodeQL `actions/missing-workflow-permissions`-alerts #5–#8.
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: SwiftLint
