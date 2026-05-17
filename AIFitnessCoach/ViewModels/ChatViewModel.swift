@@ -40,9 +40,17 @@ class ChatViewModel: ObservableObject {
     /// vraag na een model-switch nog steeds via het oude model ging.
     private var _modelBuiltForName: String?
     private var model: GenerativeModelProtocol {
-        if let existing = _model,
-           _modelBuiltForName == AIModelAppStorageKey.resolvedPrimary() {
-            return existing
+        if let existing = _model {
+            // Door tests of `-UITesting` geïnjecteerde mocks hebben geen
+            // `_modelBuiltForName`. Die laten we onaangeroerd — anders zou de
+            // getter de mock overschrijven met een live `RealGenerativeModel`
+            // die op de `hasAPIKey`-gate stuit.
+            if let builtName = _modelBuiltForName,
+               builtName != AIModelAppStorageKey.resolvedPrimary() {
+                // Wel zelf gebouwd én de geconfigureerde modelnaam is gewijzigd → rebuild.
+            } else {
+                return existing
+            }
         }
         let resolvedName = AIModelAppStorageKey.resolvedPrimary()
         let built = buildGenerativeModel(modelName: resolvedName)
