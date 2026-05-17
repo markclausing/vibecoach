@@ -5,18 +5,21 @@ import os.log
 
 // MARK: - Epic 32 Story 32.1: 30-daagse Deep Sync Orchestrator
 //
-// Eenmalige historische sync: alle HKWorkouts uit de afgelopen 30 dagen worden door de
+// Doorlopende historische sync: alle HKWorkouts uit de afgelopen 30 dagen worden door de
 // `WorkoutSampleIngestService` gehaald zodat de `WorkoutSample`-store gevuld is voor
 // fysiologische analyses (Story 32.2 + 32.3).
 //
 // Idempotentie & hervatting:
-//   • `processedWorkoutUUIDs` (UserDefaults, JSON-encoded UUID-set) wordt per succesvol
-//     verwerkte workout direct weggeschreven. Een crash midden in de sync betekent dat
-//     de volgende run alleen de overgebleven workouts oppakt.
-//   • `hasCompletedInitialDeepSync` (Bool) gaat pas op true wanneer ALLE workouts in
-//     het venster verwerkt zijn — anders draait de sync de volgende keer gewoon door.
+//   • `processedWorkoutUUIDs` (UserDefaults, JSON-encoded UUID-set) is permanent — per
+//     succesvol verwerkte workout direct weggeschreven, en blijft over runs heen zodat
+//     reeds-binnen-gehaalde samples niet opnieuw gefetched worden.
 //   • Faalt één workout? Loggen en doorgaan met de rest. Niet-gemarkeerde UUIDs worden
 //     bij de volgende run vanzelf opnieuw geprobeerd.
+//   • Geen one-shot guard meer: `runIfNeeded()` draait bij élke trigger door. Een
+//     nieuwe workout vanuit auto-sync wordt zo binnen één view-refresh opgepakt
+//     i.p.v. eeuwig op de "Deep Sync loopt"-placeholder te blijven hangen
+//     (#fix-workout-samples-loading — voorheen blokkeerde de legacy completion-flag
+//     elke run na de eerste backfill).
 
 private let log = Logger(subsystem: "com.markclausing.aifitnesscoach", category: "DeepSync")
 
@@ -86,17 +89,20 @@ final class DeepSyncService: ObservableObject {
 
     // MARK: Public API
 
-    /// True wanneer de eenmalige historische sync volledig is afgerond.
+    /// Legacy-flag uit het oorspronkelijke "eenmalige backfill"-ontwerp. Wordt niet
+    /// meer geschreven; alleen behouden zodat oude installaties hem niet als stale
+    /// data laten staan en bestaande tests/migraties hem kunnen blijven lezen.
+    /// Gebruik voor productiebeslissingen: kijk naar `status` of de processed-set.
     var hasCompletedInitialDeepSync: Bool {
         userDefaults.bool(forKey: Self.completedFlagKey)
     }
 
-    /// Idempotent — meerdere keren oproepen heeft geen effect zolang de sync al volledig liep.
-    /// Geschikt om vanuit `DashboardView.task` te triggeren.
+    /// Idempotent — kan vrij vaak getriggerd worden (bij elke DashboardView.task en
+    /// vanuit auto-sync na nieuwe HK-imports). De `processed`-UUID-set zorgt dat
+    /// reeds-binnen-gehaalde samples niet opnieuw worden gefetched.
     func runIfNeeded() async {
-        guard !hasCompletedInitialDeepSync else { return }
-
-        // Voorkom dubbel-trigger als de view meerdere keren onAppear schiet.
+        // Voorkom dubbel-trigger als de view meerdere keren onAppear schiet of
+        // auto-sync en .task tegelijk firen.
         if case .syncing = status { return }
 
         let calendar = Calendar.current
@@ -143,15 +149,14 @@ final class DeepSyncService: ObservableObject {
     // MARK: Private
 
     private func finalizeIfComplete(processed: Set<UUID>, allWorkoutUUIDs: Set<UUID>) {
+        // De processed-set wordt nooit meer gewist: hij is single-source-of-truth voor
+        // dedupe over runs heen. Nieuwe workouts uit auto-sync krijgen samples
+        // doordat hun UUID niet in de set staat — runIfNeeded() pikt ze op bij de
+        // eerstvolgende trigger zonder dat een legacy completion-flag de boel blokkeert.
         if processed.isSuperset(of: allWorkoutUUIDs) {
-            // Alles verwerkt — flag aan, processed-set wegruimen (de flag is nu de waarheid).
-            userDefaults.set(true, forKey: Self.completedFlagKey)
-            userDefaults.removeObject(forKey: Self.processedUUIDsKey)
             status = .completed
-            log.info("Deep sync completed — flag set, processed-set cleared")
+            log.info("Deep sync round done — alle \(allWorkoutUUIDs.count, privacy: .public) workout(s) in venster hebben samples")
         } else {
-            // Sommige workouts zijn gefaald. Status = completed (run is af),
-            // maar flag blijft false zodat next-run ze opnieuw probeert.
             let missing = allWorkoutUUIDs.subtracting(processed).count
             status = .completed
             log.notice("Deep sync round done — \(missing, privacy: .public) workout(s) zullen volgende run opnieuw worden geprobeerd")

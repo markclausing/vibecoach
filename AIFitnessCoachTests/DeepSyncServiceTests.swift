@@ -54,18 +54,23 @@ final class DeepSyncServiceTests: XCTestCase {
 
     // MARK: Tests
 
-    func testSkipsWhenAlreadyCompleted() async {
+    /// fix/workout-samples-loading: ook met de legacy completion-flag op true moet
+    /// DeepSync nog draaien voor pending workouts — anders blijven net-binnen-
+    /// gekomen workouts eeuwig op de "samples ontbreken"-placeholder hangen.
+    func testRunsEvenWhenLegacyCompletedFlagIsSet() async {
         defaults.set(true, forKey: DeepSyncService.completedFlagKey)
-        let service = makeService(workouts: [makeWorkout()])
+        let workout = makeWorkout()
+        let service = makeService(workouts: [workout])
 
         await service.runIfNeeded()
 
-        XCTAssertEqual(mockIngest.ingestCalls.count, 0,
-                       "Met de completed-flag aan mag ingest niet meer worden aangeroepen")
-        XCTAssertEqual(service.status, .idle)
+        XCTAssertEqual(mockIngest.ingestCalls.count, 1,
+                       "Legacy completion-flag mag de incremental sync niet meer blokkeren")
+        XCTAssertEqual(mockIngest.ingestCalls.first, workout.uuid)
+        XCTAssertEqual(service.status, .completed)
     }
 
-    func testProcessesAllWorkoutsAndSetsFlag() async {
+    func testProcessesAllWorkouts() async {
         let workouts = [makeWorkout(secondsAgo: 60),
                         makeWorkout(secondsAgo: 120),
                         makeWorkout(secondsAgo: 180)]
@@ -75,11 +80,53 @@ final class DeepSyncServiceTests: XCTestCase {
 
         XCTAssertEqual(mockIngest.ingestCalls.count, 3)
         XCTAssertEqual(Set(mockIngest.ingestCalls), Set(workouts.map(\.uuid)))
-        XCTAssertTrue(service.hasCompletedInitialDeepSync,
-                      "Na een schone run moet de flag op true staan")
         XCTAssertEqual(service.status, .completed)
-        // Cleanup-stap: processed-set is gewist nu de flag de waarheid is.
-        XCTAssertNil(defaults.data(forKey: DeepSyncService.processedUUIDsKey))
+
+        // Processed-set blijft staan (single-source-of-truth voor dedupe over runs heen).
+        let savedData = defaults.data(forKey: DeepSyncService.processedUUIDsKey)
+        XCTAssertNotNil(savedData, "Processed-set moet permanent zijn — niet meer gewist bij completion")
+        let savedUUIDs = (try? JSONDecoder().decode([UUID].self, from: savedData!)) ?? []
+        XCTAssertEqual(Set(savedUUIDs), Set(workouts.map(\.uuid)))
+    }
+
+    /// fix/workout-samples-loading: nadat alle workouts samples hebben, mag een
+    /// tweede run géén HK-quantity-queries triggeren — anders raakt elke
+    /// view-refresh in de I/O-laag.
+    func testSecondRunSkipsAlreadyProcessedWorkouts() async {
+        let workouts = [makeWorkout(secondsAgo: 60),
+                        makeWorkout(secondsAgo: 120)]
+        let service = makeService(workouts: workouts)
+
+        await service.runIfNeeded()
+        XCTAssertEqual(mockIngest.ingestCalls.count, 2, "Eerste run verwerkt alle workouts")
+
+        // Tweede run met dezelfde workouts moet niks meer doen.
+        mockIngest.resetIngestCalls()
+        await service.runIfNeeded()
+
+        XCTAssertEqual(mockIngest.ingestCalls.count, 0,
+                       "Tweede run mag geen ingest meer triggeren — alles zit al in processed-set")
+        XCTAssertEqual(service.status, .completed)
+    }
+
+    /// fix/workout-samples-loading: een nieuwe workout (die niet in de processed-set
+    /// zit) moet bij de volgende runIfNeeded() worden opgepakt — dit is het pad
+    /// waarlangs nieuwe HK-workouts van auto-sync hun grafiek-data krijgen.
+    func testIncrementalRunIngestsOnlyNewWorkouts() async {
+        let existing = makeWorkout(secondsAgo: 600)
+        let service1 = makeService(workouts: [existing])
+        await service1.runIfNeeded()
+        XCTAssertEqual(mockIngest.ingestCalls.count, 1)
+
+        // Nieuwe workout komt erbij — service moet alleen deze nieuwe pakken.
+        mockIngest.resetIngestCalls()
+        let newWorkout = makeWorkout(secondsAgo: 60)
+        let service2 = makeService(workouts: [existing, newWorkout])
+        await service2.runIfNeeded()
+
+        XCTAssertEqual(mockIngest.ingestCalls.count, 1,
+                       "Alleen de nieuwe workout mag worden geïngest, niet de al-verwerkte")
+        XCTAssertEqual(mockIngest.ingestCalls.first, newWorkout.uuid)
     }
 
     func testResumesSkippingAlreadyProcessedWorkouts() async {
@@ -97,7 +144,7 @@ final class DeepSyncServiceTests: XCTestCase {
                        "Slechts 3 nieuwe workouts moeten worden geïngest")
         XCTAssertEqual(Set(mockIngest.ingestCalls),
                        Set(workouts.suffix(3).map(\.uuid)))
-        XCTAssertTrue(service.hasCompletedInitialDeepSync)
+        XCTAssertEqual(service.status, .completed)
     }
 
     func testFailingWorkoutDoesNotBlockRest() async {
@@ -112,8 +159,6 @@ final class DeepSyncServiceTests: XCTestCase {
 
         XCTAssertEqual(mockIngest.ingestCalls.count, 3,
                        "Alle drie moeten geprobeerd zijn — falen zonder skip-logica is een regressie")
-        XCTAssertFalse(service.hasCompletedInitialDeepSync,
-                       "Met één falende workout mag de flag NIET op true gaan — anders raakt die workout voor altijd kwijt")
 
         // De geslaagde twee staan in de processed-set zodat de volgende run alleen #2 hoeft te retryen.
         let savedData = defaults.data(forKey: DeepSyncService.processedUUIDsKey)
@@ -129,8 +174,6 @@ final class DeepSyncServiceTests: XCTestCase {
         await service.runIfNeeded()
 
         XCTAssertEqual(mockIngest.ingestCalls.count, 0)
-        XCTAssertTrue(service.hasCompletedInitialDeepSync,
-                      "Geen workouts = niets te doen = sync afgerond")
         XCTAssertEqual(service.status, .completed)
     }
 
@@ -162,5 +205,12 @@ final class MockIngestService: WorkoutSampleIngesting, @unchecked Sendable {
         if failOnUUIDs.contains(workout.uuid) {
             throw NSError(domain: "MockIngestError", code: 1, userInfo: nil)
         }
+    }
+
+    /// fix/workout-samples-loading: gebruikt door tests die twee opeenvolgende runs
+    /// op dezelfde service simuleren. Mock zelf blijft `private(set)` zodat ingest
+    /// alleen via de protocol-call kan worden geregistreerd.
+    func resetIngestCalls() {
+        ingestCalls.removeAll()
     }
 }

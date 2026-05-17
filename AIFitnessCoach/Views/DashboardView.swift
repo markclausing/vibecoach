@@ -1759,9 +1759,12 @@ struct DashboardView: View {
                 }
                 WeatherManager.shared.requestWeatherIfNeeded()
             }
-            // Epic 32 Story 32.1: eenmalige 30-daagse historische sync van workout-samples.
-            // De service is intern idempotent (UserDefaults-flag + processed-UUID-set) — we mogen
-            // 'm vrij vaak triggeren; na de eerste succesvolle run doet hij niets meer.
+            // Epic 32 Story 32.1: 30-daagse Deep Sync van workout-samples.
+            // Sinds fix/workout-samples-loading: geen one-shot completion-flag meer —
+            // de service draait door zodra Dashboard opnieuw verschijnt, idempotent via
+            // de processed-UUID-set. Nieuwe workouts uit auto-sync krijgen samen daarmee
+            // hun grafiek-data zonder dat de gebruiker eindeloos op de placeholder
+            // "Deep Sync loopt op de achtergrond" blijft hangen.
             .task {
                 let store = WorkoutSampleStore(modelContainer: modelContext.container)
                 let ingest = WorkoutSampleIngestService()
