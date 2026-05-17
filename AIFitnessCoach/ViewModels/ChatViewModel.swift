@@ -32,12 +32,38 @@ class ChatViewModel: ObservableObject {
     /// Lazy: wordt pas aangemaakt bij het eerste AI-verzoek, niet bij app-start.
     /// Tests kunnen een mock injecteren via de init-parameter.
     private var _model: GenerativeModelProtocol?
+    /// Epic #51-A2: de modelnaam waarvoor `_model` opgebouwd is. Wordt
+    /// vergeleken met de huidige AppStorage-keuze om automatisch te rebuilden
+    /// als de gebruiker in Settings van Gemini-model wisselt. Zonder deze check
+    /// bleef het lazy-gebouwde model hangen op de oude naam tot een
+    /// `rebuildRealModel()`-trigger (alleen key-flow), waardoor de eerstvolgende
+    /// vraag na een model-switch nog steeds via het oude model ging.
+    private var _modelBuiltForName: String?
     private var model: GenerativeModelProtocol {
-        if let existing = _model { return existing }
-        let built = buildGenerativeModel()
+        if let existing = _model,
+           _modelBuiltForName == AIModelAppStorageKey.resolvedPrimary() {
+            return existing
+        }
+        let resolvedName = AIModelAppStorageKey.resolvedPrimary()
+        let built = buildGenerativeModel(modelName: resolvedName)
         _model = built
+        _modelBuiltForName = resolvedName
         return built
     }
+
+    /// Epic #51-A2: snapshot van de primaire/fallback modelnamen die in gebruik
+    /// zijn voor de huidige `fetchAIResponse`-call. Wordt door de UI vergeleken
+    /// met de actuele AppStorage-keuze om een banner te tonen als de gebruiker
+    /// tijdens `isTyping` van model wisselt.
+    @Published private(set) var activeRequestPrimaryModel: String = ""
+    @Published private(set) var activeRequestFallbackModel: String = ""
+
+    /// Epic #51-A6: handle naar de lopende AI-Task zodat `cancelOngoingRequest()`
+    /// hem kan annuleren wanneer de gebruiker de Coach-tab verlaat (of een
+    /// nieuw bericht stuurt voordat het vorige terug is). Zonder deze referentie
+    /// bleef de Gemini-call doorlopen tot natural completion en kon er een
+    /// "ghost"-antwoord verschijnen bij terugkeer in de tab.
+    private var currentRequestTask: Task<Void, Never>?
 
     /// Service voor externe API calls (Sprint 4.2).
     private let fitnessDataService: FitnessDataService
@@ -1401,7 +1427,21 @@ class ChatViewModel: ObservableObject {
         // Wis een eventuele vorige foutbanner zodra er een nieuwe call start.
         lastAIErrorMessage = nil
 
-        Task {
+        // Epic #51-A2: snapshot de modelnamen die we voor déze call gaan
+        // gebruiken zodat de UI de banner kan tonen als de gebruiker tijdens
+        // isTyping van model wisselt. We lezen de keys hier — niet via een
+        // @AppStorage-property — om expliciet één keer per call te snapshotten.
+        activeRequestPrimaryModel = AIModelAppStorageKey.resolvedPrimary()
+        activeRequestFallbackModel = AIModelAppStorageKey.resolvedFallback()
+
+        // Epic #51-A6: vorige Task netjes opruimen mocht de gebruiker een
+        // nieuwe vraag sturen voordat de vorige terug is (defensief — UI
+        // disablet de send-knop tijdens isTyping, maar deze guard voorkomt
+        // dat een race-conditie tot dubbele responses leidt).
+        currentRequestTask?.cancel()
+
+        currentRequestTask = Task { [weak self] in
+            guard let self = self else { return }
             // Maak een dynamische array van ModelContent.Part objects
             var promptParts: [ModelContent.Part] = []
 
@@ -1446,6 +1486,18 @@ class ChatViewModel: ObservableObject {
             // Reset retry-statusbericht
             retryStatusMessage = ""
 
+            // Epic #51-A6: als de Task ondertussen geannuleerd is (gebruiker
+            // verliet de Coach-tab of stuurde een nieuwe vraag voordat deze
+            // terug was), willen we géén foutbubble tonen en geen banner. We
+            // resetten alleen de typing-state en laten de chat schoon.
+            if Task.isCancelled || finalError is CancellationError {
+                self.isTyping = false
+                self.currentRequestTask = nil
+                self.activeRequestPrimaryModel = ""
+                self.activeRequestFallbackModel = ""
+                return
+            }
+
             // Verwerk fout als alle pogingen zijn mislukt.
             // Epic #51-A5: specifieke meldingen per fout-categorie (offline /
             // timeout / DNS / safety-block / invalid key / overbelast / generiek)
@@ -1460,6 +1512,9 @@ class ChatViewModel: ObservableObject {
                 // zichtbare chat (zoals Dashboard tijdens pull-to-refresh) óók feedback tonen.
                 lastAIErrorMessage = userFacingMessage
                 isTyping = false
+                self.currentRequestTask = nil
+                self.activeRequestPrimaryModel = ""
+                self.activeRequestFallbackModel = ""
                 return
             }
 
@@ -1526,6 +1581,45 @@ class ChatViewModel: ObservableObject {
 
             messages.append(ChatMessage(role: .ai, text: motivationText, suggestedPlan: parsedPlan))
             isTyping = false
+            // Epic #51-A2/A6: housekeeping na succesvolle voltooiing — Task-handle
+            // vrijgeven en active-model-snapshot wissen zodat de banner verdwijnt
+            // en de volgende cancel() niet per ongeluk op een afgeronde Task hapt.
+            self.currentRequestTask = nil
+            self.activeRequestPrimaryModel = ""
+            self.activeRequestFallbackModel = ""
         }
+    }
+
+    /// Epic #51-A6: annuleert een lopende AI-call (bijv. wanneer de gebruiker
+    /// de Coach-tab verlaat tijdens de spinner). De catch in de Task vangt de
+    /// `CancellationError` op, ruimt de typing-state op en laat geen
+    /// foutbubble in de chat verschijnen — een geannuleerd verzoek mag niet
+    /// als een mislukte call voelen.
+    func cancelOngoingRequest() {
+        guard let task = currentRequestTask else { return }
+        task.cancel()
+        // Defensief: ook synchroon de UI-state resetten zodat een direct
+        // her-renderende ChatView niet kort nog "Coach is aan het typen..."
+        // toont voordat de Task zelf bij de cleanup-branch komt.
+        isTyping = false
+        retryStatusMessage = ""
+        currentRequestTask = nil
+        activeRequestPrimaryModel = ""
+        activeRequestFallbackModel = ""
+    }
+
+    /// Epic #51-A2: banner-tekst die ChatView toont wanneer de gebruiker tijdens
+    /// een actief antwoord in Settings van Gemini-model wisselt. Retourneert
+    /// `nil` zolang er geen wijziging is — dan rendert ChatView geen banner.
+    /// Bewust een computed property zodat de waarde altijd verse AppStorage-
+    /// waarden leest (de snapshot leeft op `activeRequestPrimary/FallbackModel`).
+    var modelSwitchNotice: String? {
+        guard isTyping else { return nil }
+        return ChatModelSwitchNotice.message(
+            activePrimary: activeRequestPrimaryModel,
+            activeFallback: activeRequestFallbackModel,
+            configuredPrimary: AIModelAppStorageKey.resolvedPrimary(),
+            configuredFallback: AIModelAppStorageKey.resolvedFallback()
+        )
     }
 }
