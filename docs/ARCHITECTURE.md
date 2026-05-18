@@ -179,6 +179,10 @@ Resultaat: een armer HK-record overschrijft nooit een rijker Strava-record met d
 
 `AppTabHostView.performAutoSync` en `SettingsView.syncHistoricalData` draaien beide bron-paden **concurrent via `async let`**, ongeacht de `selectedDataSource`-toggle. De toggle is hernoemd naar "Bron-voorkeur" en bepaalt alleen nog welke bron de coach als eerste aanspreekt voor de huidige status; de sync-laag is volledig ontkoppeld. Bestaande gebruikers behouden hun toggle-stand (AppStorage-key + raw-values ongewijzigd).
 
+### Deep Sync: doorlopend i.p.v. eenmalig
+
+`DeepSyncService.runIfNeeded()` (Services/DeepSyncService.swift:96+) heette ooit de **eenmalige** 30-daagse historische sync. Sinds de fix `fix/workout-samples-loading` is de "eenmalige completion-flag" (`DeepSync.hasCompletedInitialDeepSync`) **uitgeschakeld**: hij wordt niet meer geschreven en de guard die op die flag stuurde is weg. De service draait nu door bij elke trigger (DashboardView.task én na `runHealthKitAutoSync` in AppTabHostView), maar blijft idempotent via de permanente `processed`-UUID-set in UserDefaults. Resultaat: een workout die net via auto-sync binnenkomt krijgt binnen één view-refresh zijn samples — voorheen bleef hij eeuwig op de "Deep Sync loopt op de achtergrond"-placeholder hangen omdat de flag al op true stond uit de allereerste backfill.
+
 ---
 
 ## 10. Workout Pattern Detection (Epic 32)

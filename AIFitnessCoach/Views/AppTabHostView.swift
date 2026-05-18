@@ -46,6 +46,17 @@ struct AppTabHostView: View {
             // workout-auth != .sharingAuthorized = banner.
             let count = try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
             UserDefaults.standard.set(count, forKey: "vibecoach_lastHKWorkoutsCount")
+
+            // fix/workout-samples-loading: vraag DeepSync direct om samples voor de
+            // net-geïnserteerde workouts. Zonder deze trigger pikt DeepSync alleen op
+            // bij DashboardView.task — een gebruiker die net na een workout direct
+            // de Coach- of Doelen-tab opent zou zo eeuwig op de "Deep Sync loopt"-
+            // placeholder blijven hangen. Idempotent: de processed-UUID-set in
+            // DeepSyncService voorkomt herhaalde HK-quantity-fetches.
+            let store = WorkoutSampleStore(modelContainer: modelContext.container)
+            let ingest = WorkoutSampleIngestService()
+            let deepSync = DeepSyncService(ingestService: ingest, store: store)
+            await deepSync.runIfNeeded()
         } catch {
             // Stille fout: HK kan niet-geautoriseerd zijn, geen reden om te blokkeren.
             // Schrijf count=0 zodat de banner-evaluator alsnog kan triggeren als
