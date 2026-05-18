@@ -34,6 +34,23 @@ struct ChatView: View {
     // Epic 34.1: V2.0 Fit & Finish — scroll-state voor materiaal-overlay in de top safe area.
     @State private var isChatScrolled: Bool = false
 
+    // Epic #51-A2: AppStorage-snapshot van de model-keuze. We hebben de waarden
+    // hier (i.p.v. enkel in ChatViewModel) nodig zodat SwiftUI de
+    // `modelSwitchNotice`-banner her-rendert zodra de gebruiker in Settings
+    // wisselt — een computed property op het viewmodel alleen triggert geen
+    // view-update.
+    @AppStorage(AIModelAppStorageKey.primary) private var configuredPrimaryModel: String = AIModelAppStorageKey.defaultPrimary
+    @AppStorage(AIModelAppStorageKey.fallback) private var configuredFallbackModel: String = AIModelAppStorageKey.defaultFallback
+
+    // Epic #51-A3: of de gebruiker het archief van oudere berichten heeft
+    // uitgeklapt. Default `false` houdt lange gesprekken kort op het scherm;
+    // tap op de "Toon eerdere X berichten"-rij toggled het hele archief.
+    @State private var showArchivedMessages: Bool = false
+
+    // Epic #51-A4: korte toast-tekst wanneer een paste de char-limit overschreed
+    // en automatisch is afgekapt. `nil` als er niets te melden is.
+    @State private var inputTrimNotice: String?
+
     /// Werkt het actuele profiel bij vanuit SwiftData.
     private func refreshProfileContext() {
         do {
@@ -172,6 +189,30 @@ private let suggestionChips = [
                     NoAPIKeyView()
                 } else {
 
+                    // Epic #51-A2: model-switch banner — verschijnt alleen tijdens
+                    // isTyping als de gebruiker in Settings van Gemini-model wisselt.
+                    // Tekst leeft in `ChatModelSwitchNotice` (pure-Swift, los testbaar).
+                    if let switchNotice = ChatModelSwitchNotice.message(
+                        activePrimary: viewModel.activeRequestPrimaryModel,
+                        activeFallback: viewModel.activeRequestFallbackModel,
+                        configuredPrimary: configuredPrimaryModel,
+                        configuredFallback: configuredFallbackModel
+                    ), viewModel.isTyping {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.triangle.2.circlepath").font(.caption)
+                            Text(switchNotice)
+                                .font(.caption).fontWeight(.medium)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(.ultraThinMaterial)
+                        .overlay(Color.blue.opacity(0.10))
+                        .foregroundStyle(.primary)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .accessibilityIdentifier("ChatModelSwitchBanner")
+                    }
+
                     // Waarschuwingsbanner (behouden)
                     if currentProfile?.isRecoveryNeeded == true && !warningDismissed {
                         HStack(spacing: 8) {
@@ -230,7 +271,57 @@ private let suggestionChips = [
                                     }
                                     .padding(.vertical, 8)
 
-                                    ForEach(viewModel.messages) { message in
+                                    // Epic #51-A3: split lange gesprekken in een ingeklapt archief
+                                    // (oudste berichten) + zichtbare staart. ConversationTrimmer
+                                    // is een pure-Swift split-helper zonder ChatMessage-deps.
+                                    let trim = ChatConversationTrimmer.split(messages: viewModel.messages)
+
+                                    if !trim.archived.isEmpty {
+                                        Button {
+                                            withAnimation(.easeInOut(duration: 0.2)) {
+                                                showArchivedMessages.toggle()
+                                            }
+                                        } label: {
+                                            HStack(spacing: 6) {
+                                                Image(systemName: showArchivedMessages ? "chevron.down" : "chevron.right")
+                                                    .font(.caption2)
+                                                Text(showArchivedMessages
+                                                     ? "Verberg \(trim.archived.count) eerdere berichten"
+                                                     : "Toon \(trim.archived.count) eerdere berichten")
+                                                    .font(.caption).fontWeight(.medium)
+                                                Spacer()
+                                            }
+                                            .foregroundStyle(.secondary)
+                                            .padding(.horizontal, 8).padding(.vertical, 6)
+                                            .background(Color(.tertiarySystemBackground))
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        }
+                                        .accessibilityIdentifier("ChatArchiveToggle")
+
+                                        if showArchivedMessages {
+                                            ForEach(trim.archived) { message in
+                                                MessageBubble(
+                                                    message: message,
+                                                    onSkipWorkout: { workout in
+                                                        refreshProfileContext()
+                                                        viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                                    },
+                                                    onAlternativeWorkout: { workout in
+                                                        refreshProfileContext()
+                                                        viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                                    },
+                                                    onRetry: {
+                                                        refreshProfileContext()
+                                                        viewModel.retryLastMessage(contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                                    }
+                                                )
+                                                .id(message.id)
+                                                .opacity(0.85)
+                                            }
+                                        }
+                                    }
+
+                                    ForEach(trim.visible) { message in
                                         MessageBubble(
                                             message: message,
                                             onSkipWorkout: { workout in
@@ -311,6 +402,31 @@ private let suggestionChips = [
 
                     Divider()
 
+                    // Epic #51-A4: char-counter + trim-toast. Counter verschijnt
+                    // pas vanaf 80% van de limiet zodat de UI bij normaal typen
+                    // rustig blijft; toast wordt geset door de clamp-`onChange`
+                    // hieronder zodra een paste werd afgekapt.
+                    if ChatInputValidator.shouldShowCounter(viewModel.inputText) {
+                        HStack {
+                            Spacer()
+                            Text("\(viewModel.inputText.count) / \(ChatInputValidator.maxLength)")
+                                .font(.caption2)
+                                .foregroundStyle(viewModel.inputText.count >= ChatInputValidator.maxLength ? .orange : .secondary)
+                        }
+                        .padding(.horizontal, 16)
+                        .accessibilityIdentifier("ChatInputCounter")
+                    }
+                    if let trimNotice = inputTrimNotice {
+                        HStack(spacing: 6) {
+                            Image(systemName: "scissors").font(.caption2)
+                            Text(trimNotice).font(.caption)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 4)
+                        .foregroundStyle(.orange)
+                        .accessibilityIdentifier("ChatInputTrimNotice")
+                    }
+
                     // ── Invoerbalk
                     HStack(alignment: .bottom, spacing: 12) {
                         // Epic 39 Story 39.2: PhotosPicker's label-closure is @Sendable;
@@ -340,6 +456,22 @@ private let suggestionChips = [
                             .cornerRadius(20)
                             .lineLimit(1...5)
                             .accessibilityIdentifier("ChatInputField")
+                            // Epic #51-A4: clamp inputText op `maxLength`. Een
+                            // paste die de limiet overschrijdt wordt afgekapt en
+                            // de toast verschijnt eenmalig. We schrijven alleen
+                            // terug wanneer de waarde daadwerkelijk verandert
+                            // om een feedback-loop te voorkomen.
+                            .onChange(of: viewModel.inputText) { _, newValue in
+                                let result = ChatInputValidator.clamp(newValue)
+                                if result.didClamp {
+                                    viewModel.inputText = result.clamped
+                                    inputTrimNotice = "Tekst ingekort tot \(ChatInputValidator.maxLength) tekens."
+                                    Task { @MainActor in
+                                        try? await Task.sleep(nanoseconds: 3_000_000_000)
+                                        inputTrimNotice = nil
+                                    }
+                                }
+                            }
 
                         Button(action: {
                             refreshProfileContext()
@@ -365,6 +497,12 @@ private let suggestionChips = [
                 refreshProfileContext()
                 setupPreferenceCallback()
                 showWelcomeInsightIfNeeded()
+            }
+            // Epic #51-A6: bij tab-switch of view-dismiss annuleren we een
+            // lopende AI-call zodat er bij terugkeer geen "ghost"-response
+            // verschijnt en de spinner niet eeuwig blijft draaien.
+            .onDisappear {
+                viewModel.cancelOngoingRequest()
             }
         }
     }

@@ -6,8 +6,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 6,
-    "lastUpdated": "2026-05-16",
+    "docRevision": 7,
+    "lastUpdated": "2026-05-17",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -484,6 +484,33 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/ChatErrorMessageMapper.swift",
       "description": "Pure-Swift mapper van ruwe SDK-/netwerkfouten naar specifieke gebruikersmeldingen. URLError-codes voor offline/timeout/DNS/cancelled; GenerateContentError-cases via type-naam-matching (geen circulaire SDK-dep) voor safety-block / invalid-key / overload. Vervangt de oude generieke 'tijdelijk probleem'-melding in ChatViewModel.",
+      "uses": [],
+      "tags": ["epic-51"]
+    },
+    {
+      "id": "ChatModelSwitchNotice",
+      "layer": "services",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/Services/ChatModelSwitchNotice.swift",
+      "description": "Pure-Swift helper die de banner-tekst genereert wanneer de gebruiker in Settings van Gemini-model wisselt tijdens een lopende coach-call. Vergelijkt de active-request-snapshot (uit ChatViewModel) met de huidige AppStorage-modelnamen en geeft een specifieke melding terug — primary-wijziging krijgt voorrang boven fallback-wijziging.",
+      "uses": [],
+      "tags": ["epic-51"]
+    },
+    {
+      "id": "ChatConversationTrimmer",
+      "layer": "services",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/Services/ChatConversationTrimmer.swift",
+      "description": "Generic pure-Swift split-helper die een message-array boven 50 items in een gearchiveerd voor-deel (oudste) en een zichtbare staart splitst. Wordt door ChatView gebruikt om lange gesprekken in te klappen achter een 'Toon eerdere X berichten'-toggle. UI-optimalisatie alleen — de chat-API ontvangt geen message-history.",
+      "uses": [],
+      "tags": ["epic-51"]
+    },
+    {
+      "id": "ChatInputValidator",
+      "layer": "services",
+      "kind": "validator",
+      "file": "AIFitnessCoach/Services/ChatInputValidator.swift",
+      "description": "Pure-Swift validator die chat-input clampt op 5000 tekens (maxLength) en de counter pas vanaf 4000 tekens (80%) zichtbaar maakt. Een paste die de limiet overschrijdt wordt afgekapt en gemarkeerd via didClamp zodat de view een eenmalige trim-toast kan tonen. Voorkomt 45s-timeouts bij grote tekstblokken.",
       "uses": [],
       "tags": ["epic-51"]
     },
