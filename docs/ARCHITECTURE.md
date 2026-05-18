@@ -183,7 +183,15 @@ Resultaat: een armer HK-record overschrijft nooit een rijker Strava-record met d
 
 `DeepSyncService.runIfNeeded()` (Services/DeepSyncService.swift:96+) heette ooit de **eenmalige** 30-daagse historische sync. Sinds de fix `fix/workout-samples-loading` is de "eenmalige completion-flag" (`DeepSync.hasCompletedInitialDeepSync`) **uitgeschakeld**: hij wordt niet meer geschreven en de guard die op die flag stuurde is weg. De service draait nu door bij elke trigger (DashboardView.task én na `runHealthKitAutoSync` in AppTabHostView), maar blijft idempotent via de permanente `processed`-UUID-set in UserDefaults. Resultaat: een workout die net via auto-sync binnenkomt krijgt binnen één view-refresh zijn samples — voorheen bleef hij eeuwig op de "Deep Sync loopt op de achtergrond"-placeholder hangen omdat de flag al op true stond uit de allereerste backfill.
 
----
+### Sync-zichtbaarheid: één banner voor drie failure-modes (Epic #51-F)
+
+Voorheen faalden de auto-syncs stilletjes — een verlopen Strava-token, een 429 rate-limit of een afgesloten netwerkverbinding leidden hooguit tot een `print()` in het Xcode-console. Sinds Epic #51-F (F1/F2/F5) is er één centrale `SyncStatusBanner` op het Dashboard die — afhankelijk van de huidige status-snapshot — een offline-, rate-limit- of fout-banner toont.
+
+**Datapad:** `AppTabHostView.runStravaAutoSync` / `runHealthKitAutoSync` schrijven succes en fouten weg naar `SyncStatusStore` (Services/SyncStatusStore.swift). De store is pure-Swift, UserDefaults-backed (Doubles voor de timestamps zodat `@AppStorage` in de View ze reactief kan binden) en filtert `.missingToken` expliciet uit — gebruikers zonder Strava-koppeling krijgen geen banner over een sync die ze nooit ingeschakeld hebben. Een `SyncStatusSnapshot` is de waardetype-input voor `SyncBannerStateBuilder` (pure functie, geen side-effects); de builder bepaalt welke staat zichtbaar wordt: **offline > rate-limited > error > nil**.
+
+**Rate-limit-cooldown (F2):** `FitnessDataService.validateHTTPResponse` detecteert HTTP 429, gebruikt `StravaRateLimitParser` om uit `Retry-After` (delta-seconds óf HTTP-datum) een absolute `Date` te berekenen — fallback 15 min, klok-skew-bescherming voor stale-date-headers — en persisteert die in `StravaRateLimitStore`. `ensureValidToken()` checkt vóór elk request of de cooldown nog actief is en throwt direct `.rateLimited` zonder het netwerk te raken; zo wordt voorkomen dat een retry-storm vlak na launch een banner laat knipperen of een cascadende 429 forceert. Een succesvolle 2xx-response wist de cooldown automatisch.
+
+**Offline-detectie (F5):** `NetworkReachabilityMonitor` is een lichte `NWPathMonitor`-wrapper als `@MainActor` singleton, gestart in `AIFitnessCoachApp.init()` zodat hij vanaf launch de juiste state heeft. De banner observeert hem via `@ObservedObject` voor live re-render; de "Laatste sync HH:MM"-tekst komt uit `SyncStatusSnapshot.lastAnySyncSuccessAt` (max van Strava + HK timestamps).
 
 ## 10. Workout Pattern Detection (Epic 32)
 

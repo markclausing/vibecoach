@@ -241,6 +241,150 @@ final class FitnessDataServiceTests: XCTestCase {
             XCTFail("Threw unexpected error: \(error)")
         }
     }
+
+    // MARK: - Epic #51-F2: 429-detectie + cooldown
+
+    /// Helper — verse `StravaRateLimitStore` per test zodat `UserDefaults.standard`
+    /// niet vervuilt en tests onderling onafhankelijk blijven.
+    private func makeFreshRateLimitStore(suite: String = #function) -> (StravaRateLimitStore, UserDefaults) {
+        let defaults = UserDefaults(suiteName: "rateLimitTests-\(suite)-\(UUID().uuidString)")!
+        defaults.removePersistentDomain(forName: defaults.dictionaryRepresentation().first?.key ?? "")
+        return (StravaRateLimitStore(defaults: defaults), defaults)
+    }
+
+    private func makeAuthorizedTokenStore() throws -> MockTokenStore {
+        let store = MockTokenStore()
+        try store.saveToken("valid_token", forService: "StravaToken")
+        let futureDate = Date().addingTimeInterval(3600).timeIntervalSince1970
+        try store.saveToken(String(futureDate), forService: "StravaTokenExpiresAt")
+        try store.saveToken("refresh_token", forService: "StravaRefreshToken")
+        return store
+    }
+
+    func testFetchLatestActivity_RateLimited_ThrowsAndPersistsCooldown() async throws {
+        let mockTokenStore = try makeAuthorizedTokenStore()
+        let (rateLimitStore, _) = makeFreshRateLimitStore()
+
+        let mockSession = MockNetworkSession()
+        mockSession.dataToReturn = Data()
+        mockSession.responseToReturn = HTTPURLResponse(
+            url: URL(string: "https://strava.com")!,
+            statusCode: 429,
+            httpVersion: nil,
+            headerFields: ["Retry-After": "60"]
+        )
+
+        let service = FitnessDataService(
+            tokenStore: mockTokenStore,
+            session: mockSession,
+            rateLimitStore: rateLimitStore
+        )
+
+        do {
+            _ = try await service.fetchLatestActivity()
+            XCTFail("Verwachtte .rateLimited")
+        } catch FitnessDataError.rateLimited(let retryAfter) {
+            XCTAssertGreaterThan(retryAfter.timeIntervalSinceNow, 50, "Cooldown moet ~60s in de toekomst liggen")
+            XCTAssertLessThan(retryAfter.timeIntervalSinceNow, 70)
+            XCTAssertNotNil(rateLimitStore.currentCooldown(), "Cooldown moet persistent zijn opgeslagen")
+        } catch {
+            XCTFail("Onverwachte fout: \(error)")
+        }
+    }
+
+    func testActiveCooldown_BlocksFurtherRequestsWithoutNetworkCall() async throws {
+        let mockTokenStore = try makeAuthorizedTokenStore()
+        let (rateLimitStore, _) = makeFreshRateLimitStore()
+        let future = Date().addingTimeInterval(300)
+        rateLimitStore.record(until: future)
+
+        let mockSession = MockNetworkSession()
+        // Bewust geen response setten — als de service een netwerk-call doet, faalt mockSession.
+
+        let service = FitnessDataService(
+            tokenStore: mockTokenStore,
+            session: mockSession,
+            rateLimitStore: rateLimitStore
+        )
+
+        do {
+            _ = try await service.fetchLatestActivity()
+            XCTFail("Verwachtte .rateLimited tijdens actieve cooldown")
+        } catch FitnessDataError.rateLimited(let retryAfter) {
+            XCTAssertEqual(retryAfter.timeIntervalSince1970, future.timeIntervalSince1970, accuracy: 0.1)
+            XCTAssertEqual(mockSession.callCount, 0, "Mag geen netwerk-call doen tijdens actieve cooldown")
+        } catch {
+            XCTFail("Onverwachte fout: \(error)")
+        }
+    }
+
+    func testSuccessfulResponse_ClearsStaleCooldown() async throws {
+        let mockTokenStore = try makeAuthorizedTokenStore()
+        let (rateLimitStore, _) = makeFreshRateLimitStore()
+        // Een korte cooldown die we artificieel direct laten verlopen voor de
+        // happy-path-test: we vertrouwen erop dat de service na een 200-response
+        // de store wist, niet dat de cooldown-check 'm passeert.
+        let pastCooldown = Date().addingTimeInterval(-5)
+        rateLimitStore.record(until: pastCooldown)
+
+        let jsonResponse = """
+        [
+            {
+                "id": 1,
+                "name": "Sample Activity",
+                "distance": 1000.0,
+                "moving_time": 600,
+                "average_heartrate": 130.0,
+                "type": "Run",
+                "start_date": "2024-01-01T10:00:00Z"
+            }
+        ]
+        """
+        let mockSession = MockNetworkSession()
+        mockSession.dataToReturn = jsonResponse.data(using: .utf8)
+        mockSession.responseToReturn = HTTPURLResponse(
+            url: URL(string: "https://strava.com")!,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        )
+
+        let service = FitnessDataService(
+            tokenStore: mockTokenStore,
+            session: mockSession,
+            rateLimitStore: rateLimitStore
+        )
+
+        _ = try await service.fetchLatestActivity()
+        XCTAssertNil(rateLimitStore.currentCooldown(), "Succesvolle response moet de cooldown wissen")
+    }
+
+    func testExpiredCooldown_AllowsRequest() async throws {
+        let mockTokenStore = try makeAuthorizedTokenStore()
+        let (rateLimitStore, _) = makeFreshRateLimitStore()
+        rateLimitStore.record(until: Date().addingTimeInterval(-60))
+
+        let mockSession = MockNetworkSession()
+        mockSession.dataToReturn = "[]".data(using: .utf8)
+        mockSession.responseToReturn = HTTPURLResponse(
+            url: URL(string: "https://strava.com")!,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        )
+
+        let service = FitnessDataService(
+            tokenStore: mockTokenStore,
+            session: mockSession,
+            rateLimitStore: rateLimitStore
+        )
+
+        // Should succeed (return nil because empty array) — niet throws.
+        let result = try await service.fetchLatestActivity()
+        XCTAssertNil(result)
+        XCTAssertEqual(mockSession.callCount, 1)
+        XCTAssertNil(rateLimitStore.currentCooldown())
+    }
 }
 
 @MainActor

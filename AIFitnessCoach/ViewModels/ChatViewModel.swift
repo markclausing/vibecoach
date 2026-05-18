@@ -1349,6 +1349,11 @@ class ChatViewModel: ObservableObject {
             switch error {
             case .missingToken: errorMsg += "Je bent niet ingelogd op Strava. Ga naar instellingen om te koppelen."
             case .unauthorized: errorMsg += "Je Strava sessie is verlopen. Koppel opnieuw in de instellingen."
+            case .rateLimited(let retryAfter):
+                let f = DateFormatter()
+                f.locale = Locale(identifier: "nl_NL")
+                f.dateFormat = "HH:mm"
+                errorMsg += "Strava-limiet bereikt — hervat om \(f.string(from: retryAfter))."
             case .networkError(let desc): errorMsg += "Netwerkfout (\(desc))."
             case .decodingError(let desc): errorMsg += "Data onleesbaar (\(desc))."
             case .invalidResponse: errorMsg += "Ongeldig antwoord van de server."
