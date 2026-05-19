@@ -28,4 +28,15 @@ enum HealthKitSyncStatusEvaluator {
                            workoutAuthStatus: HKAuthorizationStatus) -> Bool {
         workoutCount == 0 && workoutAuthStatus != .sharingAuthorized
     }
+
+    // MARK: - Epic #51-F3: per-type gap detectie
+
+    /// Returneert de subset van critical types die *expliciet zijn geweigerd*
+    /// (`.sharingDenied`). `.notDetermined` valt bewust buiten — een verse
+    /// install heeft nog niets beslist en mag niet meteen met een rode banner
+    /// worden begroet. De foreground-permission-retrigger uit Epic 38 vangt
+    /// die `notDetermined`-gevallen alsnog op via een echte prompt.
+    static func criticalDeniedTypes(statuses: [HealthKitPermissionTypes.TypeStatus]) -> [HealthKitPermissionTypes.TypeStatus] {
+        statuses.filter { $0.status == .sharingDenied }
+    }
 }

@@ -64,6 +64,10 @@ enum SyncErrorCategory: String, Codable, Equatable {
 /// geen UserDefaults — caller bouwt 'm en geeft 'm aan de builder.
 struct SyncStatusSnapshot: Equatable {
     var isOffline: Bool
+    /// Epic #51-F6: NWPathMonitor zegt `.satisfied` maar een live response of
+    /// de Apple-probe leverde HTML i.p.v. JSON op. Aparte staat dan `isOffline`
+    /// zodat de banner een specifieke melding kan tonen.
+    var isCaptivePortal: Bool = false
     var stravaRateLimitedUntil: Date?
     var lastStravaError: SyncErrorCategory?
     var lastStravaErrorAt: Date?

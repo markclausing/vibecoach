@@ -2136,43 +2136,83 @@ struct HealthKitPermissionWarningBanner: View {
     /// allereerste app-launch vóór de eerste auto-sync-cyclus).
     @AppStorage("vibecoach_lastHKWorkoutsCount") private var lastHKWorkoutsCount: Int = -1
     @State private var workoutAuthStatus: HKAuthorizationStatus = .notDetermined
+    @State private var deniedTypes: [HealthKitPermissionTypes.TypeStatus] = []
 
-    private var shouldShow: Bool {
+    private var shouldShowMissingDataBanner: Bool {
         lastHKWorkoutsCount >= 0 &&
             HealthKitSyncStatusEvaluator.shouldWarn(
                 workoutCount: lastHKWorkoutsCount,
                 workoutAuthStatus: workoutAuthStatus)
     }
 
+    /// Epic #51-F3: aparte banner voor het scenario "workouts wel, maar HRV/
+    /// hartslag/actieve energie expliciet geweigerd". Anders blijft de Vibe
+    /// Score leeg zonder uitleg. Toon alleen als de missing-data-banner níet
+    /// al getoond wordt (anders dubbele rode kaarten).
+    private var shouldShowDeniedTypesBanner: Bool {
+        !shouldShowMissingDataBanner && !deniedTypes.isEmpty
+    }
+
     var body: some View {
         Group {
-            if shouldShow {
-                DashboardBannerView(icon: "exclamationmark.icloud", color: .red) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Geen HealthKit-data gevonden")
-                            .font(.subheadline.bold())
-                        Text("Controleer of de app toestemming heeft voor Workouts en Hartslag — anders blijft het Dashboard leeg.")
-                            .font(.caption)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Button {
-                            if let url = URL(string: UIApplication.openSettingsURLString) {
-                                UIApplication.shared.open(url)
-                            }
-                        } label: {
-                            Text("Open Instellingen")
-                                .font(.caption.bold())
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color.red.opacity(0.15))
-                                .clipShape(Capsule())
-                        }
-                    }
-                }
+            if shouldShowMissingDataBanner {
+                missingDataBanner
+            } else if shouldShowDeniedTypesBanner {
+                deniedTypesBanner
             }
         }
-        .onAppear {
-            workoutAuthStatus = HealthKitManager.shared.healthStore.authorizationStatus(for: .workoutType())
+        .onAppear(perform: refreshAuthState)
+    }
+
+    @ViewBuilder
+    private var missingDataBanner: some View {
+        DashboardBannerView(icon: "exclamationmark.icloud", color: .red) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Geen HealthKit-data gevonden")
+                    .font(.subheadline.bold())
+                Text("Controleer of de app toestemming heeft voor Workouts en Hartslag — anders blijft het Dashboard leeg.")
+                    .font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+                openSettingsButton
+            }
         }
+    }
+
+    @ViewBuilder
+    private var deniedTypesBanner: some View {
+        DashboardBannerView(icon: "heart.text.square", color: .orange) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Apple Health-toegang ontbreekt")
+                    .font(.subheadline.bold())
+                Text("De volgende metingen zijn geweigerd waardoor je Vibe Score onbetrouwbaar is: \(deniedTypes.map(\.displayName).joined(separator: ", ")).")
+                    .font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+                openSettingsButton
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var openSettingsButton: some View {
+        Button {
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+            }
+        } label: {
+            Text("Open Instellingen")
+                .font(.caption.bold())
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.red.opacity(0.15))
+                .clipShape(Capsule())
+        }
+    }
+
+    private func refreshAuthState() {
+        let store = HealthKitManager.shared.healthStore
+        workoutAuthStatus = store.authorizationStatus(for: .workoutType())
+        let statuses = HealthKitPermissionTypes.criticalTypeStatuses(in: store)
+        deniedTypes = HealthKitSyncStatusEvaluator.criticalDeniedTypes(statuses: statuses)
     }
 }
 

@@ -96,8 +96,20 @@ final class HistoricalWeatherService {
         )
 
         let (data, response) = try await fetcher.data(from: url)
-        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            throw WeatherFetchError.requestFailed(statusCode: http.statusCode)
+        if let http = response as? HTTPURLResponse {
+            if !(200..<300).contains(http.statusCode) {
+                throw WeatherFetchError.requestFailed(statusCode: http.statusCode)
+            }
+            // Epic #51-F6: portal-hijack-detectie. Open-Meteo retourneert
+            // altijd JSON; krijgen we HTML terug, dan zit een captive-portal
+            // tussen. Markeer en gooi een specifieke fout zodat een naïeve
+            // decode-error niet de eigenlijke oorzaak verbergt.
+            if CaptivePortalDetector.isLikelyCaptivePortal(response: http, data: data) {
+                Task { @MainActor in
+                    NetworkReachabilityMonitor.shared.flagCaptivePortal()
+                }
+                throw WeatherFetchError.requestFailed(statusCode: http.statusCode)
+            }
         }
 
         let decoded = try JSONDecoder().decode(OpenMeteoHourlyResponse.self, from: data)
@@ -220,9 +232,25 @@ extension HistoricalWeatherService {
     static func enrichRecord(_ record: ActivityRecord,
                              from activity: StravaActivity,
                              startDate: Date,
-                             service: HistoricalWeatherService = HistoricalWeatherService()) async {
+                             service: HistoricalWeatherService = HistoricalWeatherService(),
+                             retryStore: WeatherRetryStore = WeatherRetryStore(),
+                             retryCooldown: TimeInterval = 3_600,
+                             now: Date = Date()) async {
         guard record.temperatureCelsius == nil, record.humidityPercent == nil,
               let coords = activity.start_latlng, coords.count == 2 else { return }
+        let activityID = String(activity.id)
+
+        // Epic #51-F4: retry-cooldown. Een recent gefaalde enrichment niet
+        // direct bij de volgende foreground-trigger opnieuw doen — anders
+        // hameren we Open-Meteo bij een persistente fout. Cooldown verloopt
+        // standaard na 1 uur zodat een volgende sync 'm gewoon weer probeert
+        // (de smartInsert-merge in ActivityDeduplicator vult dan de nil-weer-
+        // velden van het bestaande DB-record aan).
+        if let lastFailure = retryStore.failedSince(activityID: activityID),
+           now.timeIntervalSince(lastFailure) < retryCooldown {
+            return
+        }
+
         do {
             let (temp, humidity) = try await service.fetchWeather(
                 latitude: coords[0],
@@ -231,7 +259,13 @@ extension HistoricalWeatherService {
             )
             if let t = temp { record.temperatureCelsius = t }
             if let h = humidity { record.humidityPercent = h }
+            // Epic #51-F4: succes → wis de eventuele failure-marker.
+            retryStore.clear(activityID: activityID)
         } catch {
+            // Epic #51-F4: markeer dat de enrichment is gemist; een latere
+            // sync (≥1 uur later, na verlopen cooldown) probeert dezelfde
+            // activity automatisch opnieuw.
+            retryStore.markFailed(activityID: activityID, at: now)
             AppLoggers.weather.error("Open-Meteo fetch faalde voor activity \(activity.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
     }

@@ -8,6 +8,7 @@ final class SyncBannerStateBuilderTests: XCTestCase {
     private func emptySnapshot() -> SyncStatusSnapshot {
         SyncStatusSnapshot(
             isOffline: false,
+            isCaptivePortal: false,
             stravaRateLimitedUntil: nil,
             lastStravaError: nil,
             lastStravaErrorAt: nil,
@@ -148,6 +149,52 @@ final class SyncBannerStateBuilderTests: XCTestCase {
         snap.lastStravaError = .rateLimit
         snap.lastStravaErrorAt = now
         XCTAssertNil(SyncBannerStateBuilder.state(from: snap, now: now))
+    }
+
+    // MARK: Captive portal (Epic #51-F6)
+
+    func testCaptivePortalShownWhenFlagSet() {
+        var snap = emptySnapshot()
+        snap.isCaptivePortal = true
+        snap.lastStravaSuccessAt = now.addingTimeInterval(-120)
+
+        guard case .captivePortal(let last) = SyncBannerStateBuilder.state(from: snap, now: now) else {
+            return XCTFail("Verwachtte .captivePortal")
+        }
+        XCTAssertEqual(last, now.addingTimeInterval(-120))
+    }
+
+    func testOfflineOutranksCaptivePortal() {
+        // Bij echte offline-status is captive-portal niet relevant — wis-bare
+        // staat zou anders flikkeren tussen banners als de NWPath wisselt.
+        var snap = emptySnapshot()
+        snap.isOffline = true
+        snap.isCaptivePortal = true
+
+        guard case .offline = SyncBannerStateBuilder.state(from: snap, now: now) else {
+            return XCTFail("Verwachtte .offline")
+        }
+    }
+
+    func testCaptivePortalOutranksRateLimit() {
+        var snap = emptySnapshot()
+        snap.isCaptivePortal = true
+        snap.stravaRateLimitedUntil = now.addingTimeInterval(300)
+
+        guard case .captivePortal = SyncBannerStateBuilder.state(from: snap, now: now) else {
+            return XCTFail("Verwachtte .captivePortal")
+        }
+    }
+
+    func testCaptivePortalOutranksErrors() {
+        var snap = emptySnapshot()
+        snap.isCaptivePortal = true
+        snap.lastStravaError = .network
+        snap.lastStravaErrorAt = now
+
+        guard case .captivePortal = SyncBannerStateBuilder.state(from: snap, now: now) else {
+            return XCTFail("Verwachtte .captivePortal")
+        }
     }
 
     // MARK: lastAnySyncSuccessAt helper

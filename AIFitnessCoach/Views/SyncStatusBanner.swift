@@ -50,6 +50,7 @@ struct SyncStatusBanner: View {
     private func currentState() -> SyncBannerState? {
         let snapshot = SyncStatusSnapshot(
             isOffline: !reachability.isOnline,
+            isCaptivePortal: reachability.isCaptivePortal,
             stravaRateLimitedUntil: timestampOrNil(rateLimitedUntilTimestamp),
             lastStravaError: SyncErrorCategory(rawValue: stravaErrorRaw),
             lastStravaErrorAt: timestampOrNil(stravaErrorAtTimestamp),
@@ -85,6 +86,22 @@ struct SyncStatusBanner: View {
                     } else {
                         Text("Open de app opnieuw als je weer online bent.")
                             .font(.caption)
+                    }
+                }
+            }
+        case .captivePortal(let lastSyncAt):
+            DashboardBannerView(icon: "wifi.exclamationmark", color: .orange) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Geen toegang tot internet")
+                        .font(.subheadline.bold())
+                    if let date = lastSyncAt {
+                        Text("Het netwerk lijkt online maar blokkeert de syncs (hotel-portal of VPN?). Laatste sync \(Self.timeFormatter.string(from: date)).")
+                            .font(.caption)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } else {
+                        Text("Het netwerk lijkt online maar blokkeert de syncs. Controleer of je nog moet inloggen op het Wi-Fi.")
+                            .font(.caption)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }

@@ -63,4 +63,60 @@ enum HealthKitPermissionTypes {
     static func criticalNotDetermined(in store: HKHealthStore) -> Set<HKObjectType> {
         critical.filter { store.authorizationStatus(for: $0) == .notDetermined }
     }
+
+    // MARK: - Epic #51-F3: per-type permissie-zichtbaarheid
+
+    /// User-facing label voor een HK-type. Geen Apple-API; gebaseerd op de
+    /// rauwe identifier. Niet exhaustive — alleen de types die we in de
+    /// Dashboard-banner of Settings-overzicht tonen.
+    static func displayName(for type: HKObjectType) -> String {
+        switch (type as? HKQuantityType)?.identifier {
+        case HKQuantityTypeIdentifier.heartRate.rawValue: return "Hartslag"
+        case HKQuantityTypeIdentifier.restingHeartRate.rawValue: return "Rust-hartslag"
+        case HKQuantityTypeIdentifier.heartRateVariabilitySDNN.rawValue: return "HRV"
+        case HKQuantityTypeIdentifier.activeEnergyBurned.rawValue: return "Actieve energie"
+        case HKQuantityTypeIdentifier.vo2Max.rawValue: return "Cardio Fitness (VO₂max)"
+        case HKQuantityTypeIdentifier.stepCount.rawValue: return "Stappen"
+        case HKQuantityTypeIdentifier.bodyMass.rawValue: return "Gewicht"
+        default: break
+        }
+        if (type as? HKCategoryType)?.identifier == HKCategoryTypeIdentifier.sleepAnalysis.rawValue {
+            return "Slaap"
+        }
+        if type == HKObjectType.workoutType() {
+            return "Workouts"
+        }
+        return type.identifier
+    }
+
+    /// Snapshot per critical-type: hoe het kritisch wordt gerapporteerd. Wordt
+    /// gebruikt voor zowel de Dashboard-banner als de Settings-sectie zodat
+    /// de twee oppervlakken garantie consistent zijn.
+    struct TypeStatus: Identifiable, Equatable {
+        let type: HKObjectType
+        let displayName: String
+        let status: HKAuthorizationStatus
+        var id: String { type.identifier }
+    }
+
+    /// Volgorde van weergave — workouts eerst (algemeenste signaal), daarna
+    /// signaalspecifieke types die door de Vibe Score worden geconsumeerd.
+    static let displayOrder: [HKObjectType] = [
+        HKObjectType.workoutType(),
+        HKQuantityType.quantityType(forIdentifier: .heartRate)!,
+        HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
+        HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
+    ]
+
+    /// Returnt de status van alle types in `displayOrder`. Sync — HK's
+    /// `authorizationStatus(for:)` is een directe lookup zonder query.
+    static func criticalTypeStatuses(in store: HKHealthStore) -> [TypeStatus] {
+        displayOrder.map { type in
+            TypeStatus(
+                type: type,
+                displayName: displayName(for: type),
+                status: store.authorizationStatus(for: type)
+            )
+        }
+    }
 }

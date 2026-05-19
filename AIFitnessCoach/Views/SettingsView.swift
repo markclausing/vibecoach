@@ -328,6 +328,10 @@ struct SettingsView: View {
                     .padding(.horizontal)
                     .padding(.bottom, 24)
 
+                    // ── HEALTHKIT-TOESTEMMINGEN (Epic #51-F3)
+                    HealthKitPermissionsSection()
+                        .padding(.bottom, 24)
+
                     // ── JOUW PROFIEL
                     settingsSectionLabel("JOUW PROFIEL")
                     settingsCard {

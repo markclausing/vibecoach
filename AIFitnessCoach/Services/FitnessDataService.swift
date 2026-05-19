@@ -88,7 +88,7 @@ actor FitnessDataService {
                 throw FitnessDataError.networkError("Fout bij ophalen refresh token: \(error.localizedDescription)")
             }
 
-            _ = try validateHTTPResponse(response)
+            _ = try validateHTTPResponse(response, data: data)
 
             // Parse the response
             do {
@@ -127,7 +127,7 @@ actor FitnessDataService {
             throw FitnessDataError.networkError(error.localizedDescription)
         }
 
-        _ = try validateHTTPResponse(response)
+        _ = try validateHTTPResponse(response, data: data)
 
         do {
             let decoder = JSONDecoder()
@@ -161,7 +161,7 @@ actor FitnessDataService {
             throw FitnessDataError.networkError(error.localizedDescription)
         }
 
-        _ = try validateHTTPResponse(response, statusOverrides: [
+        _ = try validateHTTPResponse(response, data: data, statusOverrides: [
             404: .networkError("Activiteit met ID \(id) niet gevonden")
         ])
 
@@ -199,7 +199,7 @@ actor FitnessDataService {
             throw FitnessDataError.networkError(error.localizedDescription)
         }
 
-        _ = try validateHTTPResponse(response)
+        _ = try validateHTTPResponse(response, data: data)
 
         do {
             let athlete = try JSONDecoder().decode(StravaAthlete.self, from: data)
@@ -237,7 +237,7 @@ actor FitnessDataService {
             throw FitnessDataError.networkError(error.localizedDescription)
         }
 
-        _ = try validateHTTPResponse(response, statusOverrides: [
+        _ = try validateHTTPResponse(response, data: data, statusOverrides: [
             404: .networkError("Streams voor activiteit \(activityId) niet gevonden")
         ])
 
@@ -287,7 +287,7 @@ actor FitnessDataService {
                 throw FitnessDataError.networkError(error.localizedDescription)
             }
 
-            _ = try validateHTTPResponse(response)
+            _ = try validateHTTPResponse(response, data: data)
 
             do {
                 let batch = try decoder.decode([StravaActivity].self, from: data)
@@ -342,7 +342,7 @@ actor FitnessDataService {
                 throw FitnessDataError.networkError(error.localizedDescription)
             }
 
-            _ = try validateHTTPResponse(response)
+            _ = try validateHTTPResponse(response, data: data)
 
             do {
                 let pageActivities = try decoder.decode([StravaActivity].self, from: data)
@@ -369,6 +369,9 @@ actor FitnessDataService {
     /// - Detecteert 429 → `.rateLimited(retryAfter:)` + persisteert cooldown
     ///   in `StravaRateLimitStore` zodat opvolgende calls (ook na app-restart)
     ///   meteen via `ensureValidToken()` worden afgevangen (Epic #51-F2)
+    /// - Detecteert captive-portal (Epic #51-F6) — content-type `text/html`
+    ///   of HTML-prefix op een endpoint dat JSON had moeten teruggeven →
+    ///   `NetworkReachabilityMonitor.flagCaptivePortal()` + `.networkError`
     /// - `statusOverrides` mappen specifieke statuscodes naar een eigen
     ///   `FitnessDataError` (bv. 404 → `.networkError("...niet gevonden")`)
     /// - Bij een succesvolle 2xx response wist `rateLimitStore` zichzelf —
@@ -377,6 +380,7 @@ actor FitnessDataService {
     /// - Returns: De `HTTPURLResponse` (voor toekomstige header-inspectie)
     private func validateHTTPResponse(
         _ response: URLResponse,
+        data: Data = Data(),
         statusOverrides: [Int: FitnessDataError] = [:]
     ) throws -> HTTPURLResponse {
         guard let http = response as? HTTPURLResponse else {
@@ -395,6 +399,14 @@ actor FitnessDataService {
             throw FitnessDataError.rateLimited(retryAfter: retryAfter)
         }
 
+        if CaptivePortalDetector.isLikelyCaptivePortal(response: http, data: data) {
+            Task { @MainActor in
+                NetworkReachabilityMonitor.shared.flagCaptivePortal()
+            }
+            AppLoggers.fitnessDataService.notice("Strava-endpoint gaf HTML terug — captive-portal vermoed")
+            throw FitnessDataError.networkError("Schijnbaar online, maar geen toegang tot internet")
+        }
+
         if let override = statusOverrides[http.statusCode] {
             throw override
         }
@@ -403,8 +415,12 @@ actor FitnessDataService {
             throw FitnessDataError.networkError("Onverwachte HTTP status code: \(http.statusCode)")
         }
 
-        // Succesvolle response — eventuele eerdere cooldown is voorbij.
+        // Succesvolle response — eventuele eerdere cooldown is voorbij, en
+        // we hebben kennelijk gewoon internet (geen captive-portal-hijack).
         rateLimitStore.clear()
+        Task { @MainActor in
+            NetworkReachabilityMonitor.shared.clearCaptivePortal()
+        }
         return http
     }
 }

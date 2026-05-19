@@ -40,4 +40,44 @@ final class HealthKitSyncStatusEvaluatorTests: XCTestCase {
                           "workoutCount > 0 mag nooit een banner triggeren (status: \(status.rawValue))")
         }
     }
+
+    // MARK: - Epic #51-F3: per-type gap detectie
+
+    private func makeStatus(_ identifier: HKQuantityTypeIdentifier,
+                            status: HKAuthorizationStatus) -> HealthKitPermissionTypes.TypeStatus {
+        let type = HKQuantityType.quantityType(forIdentifier: identifier)!
+        return HealthKitPermissionTypes.TypeStatus(
+            type: type,
+            displayName: HealthKitPermissionTypes.displayName(for: type),
+            status: status
+        )
+    }
+
+    func testCriticalDeniedTypes_OnlyReturnsExplicitlyDenied() {
+        let statuses: [HealthKitPermissionTypes.TypeStatus] = [
+            makeStatus(.heartRate, status: .sharingAuthorized),
+            makeStatus(.heartRateVariabilitySDNN, status: .sharingDenied),
+            makeStatus(.activeEnergyBurned, status: .notDetermined)
+        ]
+        let denied = HealthKitSyncStatusEvaluator.criticalDeniedTypes(statuses: statuses)
+        XCTAssertEqual(denied.count, 1)
+        XCTAssertEqual(denied.first?.displayName, "HRV")
+    }
+
+    func testCriticalDeniedTypes_NotDeterminedIsNotADenial() {
+        // Verse install: alles `.notDetermined`. Geen rode banner.
+        let statuses: [HealthKitPermissionTypes.TypeStatus] = [
+            makeStatus(.heartRate, status: .notDetermined),
+            makeStatus(.heartRateVariabilitySDNN, status: .notDetermined)
+        ]
+        XCTAssertEqual(HealthKitSyncStatusEvaluator.criticalDeniedTypes(statuses: statuses).count, 0)
+    }
+
+    func testCriticalDeniedTypes_AllAuthorizedReturnsEmpty() {
+        let statuses: [HealthKitPermissionTypes.TypeStatus] = [
+            makeStatus(.heartRate, status: .sharingAuthorized),
+            makeStatus(.heartRateVariabilitySDNN, status: .sharingAuthorized)
+        ]
+        XCTAssertTrue(HealthKitSyncStatusEvaluator.criticalDeniedTypes(statuses: statuses).isEmpty)
+    }
 }

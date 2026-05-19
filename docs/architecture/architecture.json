@@ -6,8 +6,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 8,
-    "lastUpdated": "2026-05-18",
+    "docRevision": 9,
+    "lastUpdated": "2026-05-19",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -564,9 +564,36 @@
       "layer": "views",
       "kind": "banner",
       "file": "AIFitnessCoach/Views/SyncStatusBanner.swift",
-      "description": "Dashboard-banner die SyncBannerStateBuilder consumeert en — afhankelijk van de staat — een offline-melding (met laatste-sync-tijd), rate-limit-melding (hervat om HH:MM) of fout-melding (Strava/HealthKit, dismissable) toont. Reactief via @ObservedObject op NetworkReachabilityMonitor + @AppStorage-bindings op de SyncStatusStore-keys.",
+      "description": "Dashboard-banner die SyncBannerStateBuilder consumeert en — afhankelijk van de staat — een offline-melding (met laatste-sync-tijd), captive-portal-melding (F6), rate-limit-melding (hervat om HH:MM) of fout-melding (Strava/HealthKit, dismissable) toont. Reactief via @ObservedObject op NetworkReachabilityMonitor + @AppStorage-bindings op de SyncStatusStore-keys.",
       "uses": ["SyncStatusStore", "SyncBannerStateBuilder", "NetworkReachabilityMonitor", "DashboardBannerView"],
       "tags": ["epic-51", "epic-51-f"]
+    },
+    {
+      "id": "CaptivePortalDetector",
+      "layer": "services",
+      "kind": "parser",
+      "file": "AIFitnessCoach/Services/CaptivePortalDetector.swift",
+      "description": "Pure-Swift helpers voor twee captive-portal-detectie-modi. Reactief: `isLikelyCaptivePortal(response:data:)` checkt Content-Type én HTML/markup-prefix (na BOM-strip) zodat een hotel-portal of corporate VPN-redirect onderscheiden wordt van een echte server-fout op een JSON-endpoint. Actief: `isAppleProbeSuccess(data:response:)` herkent het exacte 'Success'-token in Apple's hotspot-detect-pagina. Beide AppStorage-vrij; caller bepaalt wat met het resultaat te doen.",
+      "uses": [],
+      "tags": ["epic-51", "epic-51-f", "epic-51-f6"]
+    },
+    {
+      "id": "WeatherRetryStore",
+      "layer": "services",
+      "kind": "store",
+      "file": "AIFitnessCoach/Services/WeatherRetryStore.swift",
+      "description": "UserDefaults-dict `[activityID: failedAt]` om Open-Meteo-falen vast te leggen zonder schema-migratie. HistoricalWeatherService respecteert een 1u-retry-cooldown via `candidatesReadyForRetry(from:now:cooldown:)`. Markeer bij failure, wis bij succes; bewust pure-Swift + UserDefaults-injectable zodat unit-tests met een fresh suite werken.",
+      "uses": [],
+      "tags": ["epic-51", "epic-51-f", "epic-51-f4"]
+    },
+    {
+      "id": "HealthKitPermissionsSection",
+      "layer": "views",
+      "kind": "section",
+      "file": "AIFitnessCoach/Views/HealthKitPermissionsSection.swift",
+      "description": "Settings-sectie die per kritisch HK-type (workouts, hartslag, HRV, actieve energie) een rij met status-badge toont (groen/grijs/rood) plus een deeplink naar iOS-instellingen wanneer ten minste één type `.sharingDenied` is. Refreshed bij scenePhase `.active` zodat iOS-aanpassingen direct zichtbaar worden.",
+      "uses": ["HealthKitPermissionTypes", "HealthKitManager"],
+      "tags": ["epic-51", "epic-51-f", "epic-51-f3"]
     },
     {
       "id": "TokenStore",

@@ -1,14 +1,16 @@
 import Foundation
 
-// MARK: - Epic #51-F1/F2/F5: Sync-banner-state-builder
+// MARK: - Epic #51-F1/F2/F5/F6: Sync-banner-state-builder
 //
 // Pure functie die op basis van een `SyncStatusSnapshot` bepaalt welke banner
 // moet worden getoond. Eén banner tegelijk volgens deze prioriteit:
 //   1. **offline** — `isOffline == true`  (wint van alles, want zonder
 //      verbinding zijn alle sub-fouten irrelevant)
-//   2. **rate-limit** — `stravaRateLimitedUntil > now`
-//   3. **error** — meest recente niet-rate-limit-fout op Strava of HK
-//   4. **nil** — geen banner
+//   2. **captive-portal** — `isCaptivePortal == true` (F6 — netwerk lijkt
+//      open maar wordt actief geblokkeerd door portal of VPN-redirect)
+//   3. **rate-limit** — `stravaRateLimitedUntil > now`
+//   4. **error** — meest recente niet-rate-limit-fout op Strava of HK
+//   5. **nil** — geen banner
 //
 // AppStorage-vrij, side-effect-vrij, deterministisch. Tests verifiëren elke
 // prioriteit-grens zodat we niet in productie ontdekken dat een rate-limit
@@ -16,6 +18,7 @@ import Foundation
 
 enum SyncBannerState: Equatable {
     case offline(lastSyncAt: Date?)
+    case captivePortal(lastSyncAt: Date?)
     case rateLimited(until: Date)
     case stravaError(SyncErrorCategory)
     case healthKitError(SyncErrorCategory)
@@ -32,6 +35,10 @@ enum SyncBannerStateBuilder {
                       now: Date = Date()) -> SyncBannerState? {
         if snapshot.isOffline {
             return .offline(lastSyncAt: snapshot.lastAnySyncSuccessAt)
+        }
+
+        if snapshot.isCaptivePortal {
+            return .captivePortal(lastSyncAt: snapshot.lastAnySyncSuccessAt)
         }
 
         if let until = snapshot.stravaRateLimitedUntil, until > now {
