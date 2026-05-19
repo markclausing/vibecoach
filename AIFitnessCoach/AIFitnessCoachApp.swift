@@ -270,6 +270,12 @@ struct AIFitnessCoachApp: App {
         // C-02: verplaats de user AI API-sleutel eenmalig uit UserDefaults
         // naar de Keychain. Idempotent — na migratie is dit een no-op.
         UserAPIKeyStore.migrateFromUserDefaultsIfNeeded()
+
+        // Epic #51-F5: start de NWPathMonitor zodat `SyncStatusBanner` direct
+        // bij launch de juiste online/offline-state heeft. Idempotent.
+        Task { @MainActor in
+            NetworkReachabilityMonitor.shared.start()
+        }
     }
 
     @ViewBuilder

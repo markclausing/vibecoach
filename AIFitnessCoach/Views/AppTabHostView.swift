@@ -19,6 +19,12 @@ struct AppTabHostView: View {
     /// Guard tegen gelijktijdige auto-sync runs (race condition fix voor duplicate records).
     @State private var isAutoSyncing = false
 
+    /// Epic #51-F1/F2/F5: schrijft per-source succes/foutmeldingen weg zodat
+    /// `SyncStatusBanner` op het Dashboard ze direct kan tonen. Bewust silent
+    /// voor `.missingToken` — gebruiker zonder Strava-koppeling krijgt geen
+    /// banner over een sync die hij nooit ingeschakeld heeft.
+    private let syncStatusStore = SyncStatusStore()
+
     /// Voert asynchroon de data-synchronisatie voor de afgelopen 14 dagen uit op de achtergrond.
     /// Epic #42 Story 42.1: HK + Strava lopen onafhankelijk, ongeacht `selectedDataSource`.
     /// De toggle is daarmee een "voorkeur" geworden (label/tiebreaker), geen exclusieve
@@ -46,6 +52,7 @@ struct AppTabHostView: View {
             // workout-auth != .sharingAuthorized = banner.
             let count = try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
             UserDefaults.standard.set(count, forKey: "vibecoach_lastHKWorkoutsCount")
+            syncStatusStore.recordHKSuccess()
 
             // fix/workout-samples-loading: vraag DeepSync direct om samples voor de
             // net-geïnserteerde workouts. Zonder deze trigger pikt DeepSync alleen op
@@ -62,6 +69,7 @@ struct AppTabHostView: View {
             // Schrijf count=0 zodat de banner-evaluator alsnog kan triggeren als
             // de auth-status dat ondersteunt.
             UserDefaults.standard.set(0, forKey: "vibecoach_lastHKWorkoutsCount")
+            syncStatusStore.recordHKError(error)
             print("Auto-sync HealthKit gefaald: \(error.localizedDescription)")
         }
     }
@@ -123,9 +131,13 @@ struct AppTabHostView: View {
                 _ = try? ActivityDeduplicator.smartInsert(record, into: modelContext)
             }
             try? modelContext.save()
+            syncStatusStore.recordStravaSuccess()
         } catch FitnessDataError.missingToken {
             // Gebruiker heeft Strava niet gekoppeld — geen reden om te loggen elke launch.
+            // Bewust géén `recordStravaError` zodat we geen banner tonen aan iemand
+            // zonder Strava-koppeling (Epic #51-F1).
         } catch {
+            syncStatusStore.recordStravaError(error)
             print("Auto-sync Strava gefaald: \(error.localizedDescription)")
         }
     }

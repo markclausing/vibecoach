@@ -6,8 +6,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 7,
-    "lastUpdated": "2026-05-17",
+    "docRevision": 8,
+    "lastUpdated": "2026-05-18",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -513,6 +513,60 @@
       "description": "Pure-Swift validator die chat-input clampt op 5000 tekens (maxLength) en de counter pas vanaf 4000 tekens (80%) zichtbaar maakt. Een paste die de limiet overschrijdt wordt afgekapt en gemarkeerd via didClamp zodat de view een eenmalige trim-toast kan tonen. Voorkomt 45s-timeouts bij grote tekstblokken.",
       "uses": [],
       "tags": ["epic-51"]
+    },
+    {
+      "id": "StravaRateLimitParser",
+      "layer": "services",
+      "kind": "parser",
+      "file": "AIFitnessCoach/Services/StravaRateLimitParser.swift",
+      "description": "Pure-Swift parser die uit een 429-response het Retry-After-tijdstip extraheert. Ondersteunt zowel delta-seconds (`60`) als RFC 7231 IMF-datum (`Mon, 06 May 2024 13:03:20 GMT`). Default-cooldown 15 min wanneer de header ontbreekt of misvormd is; datums in het verleden vallen terug op de default i.p.v. een directe retry om retry-storms te voorkomen.",
+      "uses": [],
+      "tags": ["epic-51", "epic-51-f"]
+    },
+    {
+      "id": "StravaRateLimitStore",
+      "layer": "services",
+      "kind": "store",
+      "file": "AIFitnessCoach/Services/StravaRateLimitStore.swift",
+      "description": "UserDefaults-backed store voor de Strava-rate-limit-cooldown. Schrijft het retry-tijdstip als Double zodat @AppStorage in SyncStatusBanner er reactief op kan binden; `currentCooldown(now:)` wist verlopen entries automatisch. Geinjecteerd in FitnessDataService zodat een 429 over app-launches heen wordt gerespecteerd.",
+      "uses": [],
+      "tags": ["epic-51", "epic-51-f"]
+    },
+    {
+      "id": "NetworkReachabilityMonitor",
+      "layer": "services",
+      "kind": "monitor",
+      "file": "AIFitnessCoach/Services/NetworkReachabilityMonitor.swift",
+      "description": "Lichte @MainActor singleton-wrapper rond NWPathMonitor. Publiceert `isOnline` (Bool) en mirrort de offline-status naar UserDefaults zodat niet-View-laag-callers (SyncStatusStore-snapshot) een synchrone lees-pad hebben. Idempotente `start()`; gestart vanuit AIFitnessCoachApp.init zodat de banner direct vanaf launch de juiste state heeft.",
+      "uses": [],
+      "tags": ["epic-51", "epic-51-f"]
+    },
+    {
+      "id": "SyncStatusStore",
+      "layer": "services",
+      "kind": "store",
+      "file": "AIFitnessCoach/Services/SyncStatusStore.swift",
+      "description": "Pure-Swift, UserDefaults-backed store met per-source last-success-timestamps en last-error-categorieën (network/auth/rateLimit/decoding/other). Filtert FitnessDataError.missingToken uit — gebruikers zonder Strava-koppeling krijgen geen banner. Levert een SyncStatusSnapshot voor SyncBannerStateBuilder. Schrijft Double-timestamps (Unix epoch) zodat @AppStorage in de View reactief kan lezen.",
+      "uses": ["StravaRateLimitStore"],
+      "tags": ["epic-51", "epic-51-f"]
+    },
+    {
+      "id": "SyncBannerStateBuilder",
+      "layer": "services",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/Services/SyncBannerStateBuilder.swift",
+      "description": "Pure functie die op basis van een SyncStatusSnapshot de juiste banner-staat bepaalt. Strict priority offline > rate-limited > error > nil; bij twee error-bronnen wint de meest recente. Een achtergebleven `.rateLimit`-category wordt genegeerd zodra de cooldown verlopen is zodat de banner niet permanent blijft hangen.",
+      "uses": [],
+      "tags": ["epic-51", "epic-51-f"]
+    },
+    {
+      "id": "SyncStatusBanner",
+      "layer": "views",
+      "kind": "banner",
+      "file": "AIFitnessCoach/Views/SyncStatusBanner.swift",
+      "description": "Dashboard-banner die SyncBannerStateBuilder consumeert en — afhankelijk van de staat — een offline-melding (met laatste-sync-tijd), rate-limit-melding (hervat om HH:MM) of fout-melding (Strava/HealthKit, dismissable) toont. Reactief via @ObservedObject op NetworkReachabilityMonitor + @AppStorage-bindings op de SyncStatusStore-keys.",
+      "uses": ["SyncStatusStore", "SyncBannerStateBuilder", "NetworkReachabilityMonitor", "DashboardBannerView"],
+      "tags": ["epic-51", "epic-51-f"]
     },
     {
       "id": "TokenStore",

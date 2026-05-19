@@ -44,6 +44,12 @@
 		E410FF20AA30BB40CC50DD60 /* ChatModelSwitchNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E401FF02AA03BB04CC05DD06 /* ChatModelSwitchNotice.swift */; };
 		E510FF20AA30BB40CC50DD60 /* ChatConversationTrimmer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E501FF02AA03BB04CC05DD06 /* ChatConversationTrimmer.swift */; };
 		E610FF20AA30BB40CC50DD60 /* ChatInputValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E601FF02AA03BB04CC05DD06 /* ChatInputValidator.swift */; };
+		EA10FF20AA30BB40CC50DD60 /* StravaRateLimitParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA01FF02AA03BB04CC05DD06 /* StravaRateLimitParser.swift */; };
+		EB10FF20AA30BB40CC50DD60 /* StravaRateLimitStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB01FF02AA03BB04CC05DD06 /* StravaRateLimitStore.swift */; };
+		EC10FF20AA30BB40CC50DD60 /* NetworkReachabilityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC01FF02AA03BB04CC05DD06 /* NetworkReachabilityMonitor.swift */; };
+		ED10FF20AA30BB40CC50DD60 /* SyncStatusStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED01FF02AA03BB04CC05DD06 /* SyncStatusStore.swift */; };
+		EF10FF20AA30BB40CC50DD60 /* SyncBannerStateBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF01FF02AA03BB04CC05DD06 /* SyncBannerStateBuilder.swift */; };
+		F010FF20AA30BB40CC50DD60 /* SyncStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F001FF02AA03BB04CC05DD06 /* SyncStatusBanner.swift */; };
 		5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */; };
 		531DF0798000FFC0CACC940E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4D1D9B3991F419262E294E /* SettingsView.swift */; };
 		543CBE0027B161C9AFDE3824 /* AIFitnessCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */; };
@@ -74,6 +80,8 @@
 		E710FF20AA30BB40CC50DD60 /* ChatModelSwitchNoticeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E701FF02AA03BB04CC05DD06 /* ChatModelSwitchNoticeTests.swift */; };
 		E810FF20AA30BB40CC50DD60 /* ChatConversationTrimmerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E801FF02AA03BB04CC05DD06 /* ChatConversationTrimmerTests.swift */; };
 		E910FF20AA30BB40CC50DD60 /* ChatInputValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E901FF02AA03BB04CC05DD06 /* ChatInputValidatorTests.swift */; };
+		F110FF20AA30BB40CC50DD60 /* StravaRateLimitParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F101FF02AA03BB04CC05DD06 /* StravaRateLimitParserTests.swift */; };
+		F210FF20AA30BB40CC50DD60 /* SyncBannerStateBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F201FF02AA03BB04CC05DD06 /* SyncBannerStateBuilderTests.swift */; };
 		9E9427B7C484EE11E612C120 /* StravaActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFC6614564EA2DCFCEB00BD7 /* StravaActivity.swift */; };
 		A12B3C4D5E6F7A8B9C0D1E2F /* GapAnalysisCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B23C4D5E6F7A8B9C0D1E2F3A /* GapAnalysisCardView.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */; };
@@ -236,6 +244,12 @@
 		E401FF02AA03BB04CC05DD06 /* ChatModelSwitchNotice.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatModelSwitchNotice.swift; sourceTree = "<group>"; };
 		E501FF02AA03BB04CC05DD06 /* ChatConversationTrimmer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatConversationTrimmer.swift; sourceTree = "<group>"; };
 		E601FF02AA03BB04CC05DD06 /* ChatInputValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatInputValidator.swift; sourceTree = "<group>"; };
+		EA01FF02AA03BB04CC05DD06 /* StravaRateLimitParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaRateLimitParser.swift; sourceTree = "<group>"; };
+		EB01FF02AA03BB04CC05DD06 /* StravaRateLimitStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaRateLimitStore.swift; sourceTree = "<group>"; };
+		EC01FF02AA03BB04CC05DD06 /* NetworkReachabilityMonitor.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NetworkReachabilityMonitor.swift; sourceTree = "<group>"; };
+		ED01FF02AA03BB04CC05DD06 /* SyncStatusStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SyncStatusStore.swift; sourceTree = "<group>"; };
+		EF01FF02AA03BB04CC05DD06 /* SyncBannerStateBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SyncBannerStateBuilder.swift; sourceTree = "<group>"; };
+		F001FF02AA03BB04CC05DD06 /* SyncStatusBanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SyncStatusBanner.swift; sourceTree = "<group>"; };
 		203C295EF5D568151B5D1BEF /* EditGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditGoalView.swift; sourceTree = "<group>"; };
 		2233445566778899001122BB /* UserProfileServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserProfileServiceTests.swift; sourceTree = "<group>"; };
 		268DC6609F434E5DA4FF63F7 /* ThemeManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
@@ -267,6 +281,8 @@
 		E701FF02AA03BB04CC05DD06 /* ChatModelSwitchNoticeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatModelSwitchNoticeTests.swift; sourceTree = "<group>"; };
 		E801FF02AA03BB04CC05DD06 /* ChatConversationTrimmerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatConversationTrimmerTests.swift; sourceTree = "<group>"; };
 		E901FF02AA03BB04CC05DD06 /* ChatInputValidatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatInputValidatorTests.swift; sourceTree = "<group>"; };
+		F101FF02AA03BB04CC05DD06 /* StravaRateLimitParserTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaRateLimitParserTests.swift; sourceTree = "<group>"; };
+		F201FF02AA03BB04CC05DD06 /* SyncBannerStateBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SyncBannerStateBuilderTests.swift; sourceTree = "<group>"; };
 		758A7ECDF66FE523D3217100 /* FitnessDataServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataServiceTests.swift; sourceTree = "<group>"; };
 		769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoal.swift; sourceTree = "<group>"; };
 		D5A0010102A001010100A002 /* Symptom.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Symptom.swift; sourceTree = "<group>"; };
@@ -485,6 +501,8 @@
 				E701FF02AA03BB04CC05DD06 /* ChatModelSwitchNoticeTests.swift */,
 				E801FF02AA03BB04CC05DD06 /* ChatConversationTrimmerTests.swift */,
 				E901FF02AA03BB04CC05DD06 /* ChatInputValidatorTests.swift */,
+				F101FF02AA03BB04CC05DD06 /* StravaRateLimitParserTests.swift */,
+				F201FF02AA03BB04CC05DD06 /* SyncBannerStateBuilderTests.swift */,
 				758A7ECDF66FE523D3217100 /* FitnessDataServiceTests.swift */,
 				FD41D2D02372B05947DC9CBC /* Mocks */,
 				BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */,
@@ -560,6 +578,7 @@
 				A57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift */,
 				AA01BB02CC03DD04EE05FF06 /* DashboardHeaderView.swift */,
 				DA01FF02AA03BB04CC05DD06 /* MigrationFallbackBanner.swift */,
+				F001FF02AA03BB04CC05DD06 /* SyncStatusBanner.swift */,
 				BB01CC02DD03EE04FF05AA06 /* VibeScoreCardV2.swift */,
 				CC01DD02EE03FF04AA05BB06 /* WeekTimelineView.swift */,
 				DD01EE02FF03AA04BB05CC06 /* TrendWidgetView.swift */,
@@ -586,6 +605,11 @@
 				E401FF02AA03BB04CC05DD06 /* ChatModelSwitchNotice.swift */,
 				E501FF02AA03BB04CC05DD06 /* ChatConversationTrimmer.swift */,
 				E601FF02AA03BB04CC05DD06 /* ChatInputValidator.swift */,
+				EA01FF02AA03BB04CC05DD06 /* StravaRateLimitParser.swift */,
+				EB01FF02AA03BB04CC05DD06 /* StravaRateLimitStore.swift */,
+				EC01FF02AA03BB04CC05DD06 /* NetworkReachabilityMonitor.swift */,
+				ED01FF02AA03BB04CC05DD06 /* SyncStatusStore.swift */,
+				EF01FF02AA03BB04CC05DD06 /* SyncBannerStateBuilder.swift */,
 				EDA9519ECAE22F903D67C756 /* TokenStore.swift */,
 				60758C181F9C986190D5A369 /* StravaAuthService.swift */,
 				F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */,
@@ -923,6 +947,8 @@
 				E710FF20AA30BB40CC50DD60 /* ChatModelSwitchNoticeTests.swift in Sources */,
 				E810FF20AA30BB40CC50DD60 /* ChatConversationTrimmerTests.swift in Sources */,
 				E910FF20AA30BB40CC50DD60 /* ChatInputValidatorTests.swift in Sources */,
+				F110FF20AA30BB40CC50DD60 /* StravaRateLimitParserTests.swift in Sources */,
+				F210FF20AA30BB40CC50DD60 /* SyncBannerStateBuilderTests.swift in Sources */,
 				0ED375BF4E3F9C2FB4E3A5F9 /* FitnessDataServiceTests.swift in Sources */,
 				FA26082FD3260BAC05A7AAEB /* MockNetworkSession.swift in Sources */,
 				34B36AEEDAF09C2EA9BC6241 /* SettingsViewTests.swift in Sources */,
@@ -1045,6 +1071,12 @@
 				E410FF20AA30BB40CC50DD60 /* ChatModelSwitchNotice.swift in Sources */,
 				E510FF20AA30BB40CC50DD60 /* ChatConversationTrimmer.swift in Sources */,
 				E610FF20AA30BB40CC50DD60 /* ChatInputValidator.swift in Sources */,
+				EA10FF20AA30BB40CC50DD60 /* StravaRateLimitParser.swift in Sources */,
+				EB10FF20AA30BB40CC50DD60 /* StravaRateLimitStore.swift in Sources */,
+				EC10FF20AA30BB40CC50DD60 /* NetworkReachabilityMonitor.swift in Sources */,
+				ED10FF20AA30BB40CC50DD60 /* SyncStatusStore.swift in Sources */,
+				EF10FF20AA30BB40CC50DD60 /* SyncBannerStateBuilder.swift in Sources */,
+				F010FF20AA30BB40CC50DD60 /* SyncStatusBanner.swift in Sources */,
 				DB076B94561F03C4EB2D8C5E /* TokenStore.swift in Sources */,
 				06C5198C4908FF10CCF1E836 /* StravaAuthService.swift in Sources */,
 				26CFC95E9F1D535817250215 /* FitnessDataService.swift in Sources */,

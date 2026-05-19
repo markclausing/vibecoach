@@ -10,11 +10,16 @@ actor FitnessDataService {
 
     private let tokenStore: TokenStore
     private let session: NetworkSession
+    private let rateLimitStore: StravaRateLimitStore
 
-    // Dependency Injection voor de opslag van tokens en netwerksessies
-    init(tokenStore: TokenStore = KeychainService.shared, session: NetworkSession = URLSession.shared) {
+    // Dependency Injection voor de opslag van tokens, netwerksessies en het
+    // rate-limit-cooldown-window (Epic #51-F2).
+    init(tokenStore: TokenStore = KeychainService.shared,
+         session: NetworkSession = URLSession.shared,
+         rateLimitStore: StravaRateLimitStore = StravaRateLimitStore()) {
         self.tokenStore = tokenStore
         self.session = session
+        self.rateLimitStore = rateLimitStore
     }
 
     /// Epic 41.3: zorgt dat de caller een geldig Strava access-token in handen krijgt.
@@ -22,8 +27,16 @@ actor FitnessDataService {
     /// vóór de API-call ververst wordt, en throwt `.missingToken` als er geen geldig
     /// token uit de store komt — dat geeft elke API-call één centrale guard tegen
     /// silent 401's.
+    ///
+    /// Epic #51-F2: vóór alles wordt de Strava-rate-limit-cooldown gecheckt.
+    /// Tijdens een actieve cooldown gaat geen enkel request de deur uit; zo
+    /// voorkomen we een retry-storm vlak na launch terwijl de banner nog
+    /// aangeeft *"hervat om HH:MM"*.
     @discardableResult
     func ensureValidToken() async throws -> String {
+        if let until = rateLimitStore.currentCooldown() {
+            throw FitnessDataError.rateLimited(retryAfter: until)
+        }
         try await refreshTokenIfNeeded()
         guard let token = try tokenStore.getToken(forService: "StravaToken"), !token.isEmpty else {
             throw FitnessDataError.missingToken
@@ -75,13 +88,7 @@ actor FitnessDataService {
                 throw FitnessDataError.networkError("Fout bij ophalen refresh token: \(error.localizedDescription)")
             }
 
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw FitnessDataError.invalidResponse
-            }
-
-            if !(200...299).contains(httpResponse.statusCode) {
-                throw FitnessDataError.networkError("Refresh mislukt met status code: \(httpResponse.statusCode)")
-            }
+            _ = try validateHTTPResponse(response)
 
             // Parse the response
             do {
@@ -120,15 +127,7 @@ actor FitnessDataService {
             throw FitnessDataError.networkError(error.localizedDescription)
         }
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw FitnessDataError.invalidResponse
-        }
-
-        if httpResponse.statusCode == 401 {
-            throw FitnessDataError.unauthorized
-        } else if !(200...299).contains(httpResponse.statusCode) {
-            throw FitnessDataError.networkError("Onverwachte HTTP status code: \(httpResponse.statusCode)")
-        }
+        _ = try validateHTTPResponse(response)
 
         do {
             let decoder = JSONDecoder()
@@ -162,17 +161,9 @@ actor FitnessDataService {
             throw FitnessDataError.networkError(error.localizedDescription)
         }
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw FitnessDataError.invalidResponse
-        }
-
-        if httpResponse.statusCode == 401 {
-            throw FitnessDataError.unauthorized
-        } else if httpResponse.statusCode == 404 {
-             throw FitnessDataError.networkError("Activiteit met ID \(id) niet gevonden")
-        } else if !(200...299).contains(httpResponse.statusCode) {
-            throw FitnessDataError.networkError("Onverwachte HTTP status code: \(httpResponse.statusCode)")
-        }
+        _ = try validateHTTPResponse(response, statusOverrides: [
+            404: .networkError("Activiteit met ID \(id) niet gevonden")
+        ])
 
         do {
             let decoder = JSONDecoder()
@@ -208,15 +199,7 @@ actor FitnessDataService {
             throw FitnessDataError.networkError(error.localizedDescription)
         }
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw FitnessDataError.invalidResponse
-        }
-
-        if httpResponse.statusCode == 401 {
-            throw FitnessDataError.unauthorized
-        } else if !(200...299).contains(httpResponse.statusCode) {
-            throw FitnessDataError.networkError("Onverwachte HTTP status code: \(httpResponse.statusCode)")
-        }
+        _ = try validateHTTPResponse(response)
 
         do {
             let athlete = try JSONDecoder().decode(StravaAthlete.self, from: data)
@@ -254,17 +237,9 @@ actor FitnessDataService {
             throw FitnessDataError.networkError(error.localizedDescription)
         }
 
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw FitnessDataError.invalidResponse
-        }
-
-        if httpResponse.statusCode == 401 {
-            throw FitnessDataError.unauthorized
-        } else if httpResponse.statusCode == 404 {
-            throw FitnessDataError.networkError("Streams voor activiteit \(activityId) niet gevonden")
-        } else if !(200...299).contains(httpResponse.statusCode) {
-            throw FitnessDataError.networkError("Onverwachte HTTP status code: \(httpResponse.statusCode)")
-        }
+        _ = try validateHTTPResponse(response, statusOverrides: [
+            404: .networkError("Streams voor activiteit \(activityId) niet gevonden")
+        ])
 
         do {
             return try JSONDecoder().decode(StravaStreamSet.self, from: data)
@@ -312,16 +287,7 @@ actor FitnessDataService {
                 throw FitnessDataError.networkError(error.localizedDescription)
             }
 
-            guard let httpResp = response as? HTTPURLResponse else {
-                throw FitnessDataError.invalidResponse
-            }
-
-            if httpResp.statusCode == 401 {
-                throw FitnessDataError.unauthorized
-            }
-            guard httpResp.statusCode == 200 else {
-                throw FitnessDataError.invalidResponse
-            }
+            _ = try validateHTTPResponse(response)
 
             do {
                 let batch = try decoder.decode([StravaActivity].self, from: data)
@@ -376,15 +342,7 @@ actor FitnessDataService {
                 throw FitnessDataError.networkError(error.localizedDescription)
             }
 
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw FitnessDataError.invalidResponse
-            }
-
-            if httpResponse.statusCode == 401 {
-                throw FitnessDataError.unauthorized
-            } else if !(200...299).contains(httpResponse.statusCode) {
-                throw FitnessDataError.networkError("Onverwachte HTTP status code: \(httpResponse.statusCode)")
-            }
+            _ = try validateHTTPResponse(response)
 
             do {
                 let pageActivities = try decoder.decode([StravaActivity].self, from: data)
@@ -402,5 +360,51 @@ actor FitnessDataService {
         }
 
         return allActivities
+    }
+
+    // MARK: - HTTP-validatie
+
+    /// Centrale HTTP-response-validatie voor alle Strava-endpoints.
+    /// - Detecteert 401 → `.unauthorized`
+    /// - Detecteert 429 → `.rateLimited(retryAfter:)` + persisteert cooldown
+    ///   in `StravaRateLimitStore` zodat opvolgende calls (ook na app-restart)
+    ///   meteen via `ensureValidToken()` worden afgevangen (Epic #51-F2)
+    /// - `statusOverrides` mappen specifieke statuscodes naar een eigen
+    ///   `FitnessDataError` (bv. 404 → `.networkError("...niet gevonden")`)
+    /// - Bij een succesvolle 2xx response wist `rateLimitStore` zichzelf —
+    ///   in combinatie met `currentCooldown()` blijft de banner exact zo
+    ///   lang als de server zegt actief
+    /// - Returns: De `HTTPURLResponse` (voor toekomstige header-inspectie)
+    private func validateHTTPResponse(
+        _ response: URLResponse,
+        statusOverrides: [Int: FitnessDataError] = [:]
+    ) throws -> HTTPURLResponse {
+        guard let http = response as? HTTPURLResponse else {
+            throw FitnessDataError.invalidResponse
+        }
+
+        if http.statusCode == 401 {
+            throw FitnessDataError.unauthorized
+        }
+
+        if http.statusCode == 429 {
+            let retryAfter = StravaRateLimitParser.retryAfter(headers: http.allHeaderFields,
+                                                              now: Date())
+            rateLimitStore.record(until: retryAfter)
+            AppLoggers.fitnessDataService.notice("Strava rate-limit bereikt — hervat om \(retryAfter, privacy: .public)")
+            throw FitnessDataError.rateLimited(retryAfter: retryAfter)
+        }
+
+        if let override = statusOverrides[http.statusCode] {
+            throw override
+        }
+
+        if !(200...299).contains(http.statusCode) {
+            throw FitnessDataError.networkError("Onverwachte HTTP status code: \(http.statusCode)")
+        }
+
+        // Succesvolle response — eventuele eerdere cooldown is voorbij.
+        rateLimitStore.clear()
+        return http
     }
 }
