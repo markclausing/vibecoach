@@ -45,10 +45,8 @@ enum CaptivePortalDetector {
     /// terug. Returnt `true` wanneer dat patroon zichtbaar is.
     static func isLikelyCaptivePortal(response: HTTPURLResponse, data: Data) -> Bool {
         if let contentType = contentType(from: response) {
-            for htmlType in htmlContentTypes {
-                if contentType.hasPrefix(htmlType) {
-                    return true
-                }
+            for htmlType in htmlContentTypes where contentType.hasPrefix(htmlType) {
+                return true
             }
         }
         return startsWithMarkup(data)
@@ -96,10 +94,8 @@ enum CaptivePortalDetector {
             return false
         }
         let trimmed = prefix.trimmingCharacters(in: .whitespacesAndNewlines)
-        for markup in markupPrefixes {
-            if trimmed.hasPrefix(markup) {
-                return true
-            }
+        for markup in markupPrefixes where trimmed.hasPrefix(markup) {
+            return true
         }
         return false
     }
