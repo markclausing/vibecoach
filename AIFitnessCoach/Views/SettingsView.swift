@@ -626,9 +626,11 @@ struct SettingsView: View {
                             // Wis een eerdere fout zodat een retry niet meteen
                             // de oude melding toont.
                             stravaAuthService.authError = nil
-                            stravaAuthService.isAuthenticated
-                                ? stravaAuthService.logout()
-                                : stravaAuthService.authenticate()
+                            if stravaAuthService.isAuthenticated {
+                                stravaAuthService.logout()
+                            } else {
+                                stravaAuthService.authenticate()
+                            }
                         } label: {
                             SettingsRowV2(
                                 icon: "figure.run",
