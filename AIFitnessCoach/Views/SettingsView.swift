@@ -623,6 +623,9 @@ struct SettingsView: View {
                         }.buttonStyle(.plain)
                         settingsDivider
                         Button {
+                            // Wis een eerdere fout zodat een retry niet meteen
+                            // de oude melding toont.
+                            stravaAuthService.authError = nil
                             stravaAuthService.isAuthenticated
                                 ? stravaAuthService.logout()
                                 : stravaAuthService.authenticate()
@@ -636,6 +639,14 @@ struct SettingsView: View {
                                 hasChevron: true
                             )
                         }.buttonStyle(.plain)
+                        if let stravaError = stravaAuthService.authError {
+                            Text(stravaError)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .padding(.horizontal, 16)
+                                .padding(.bottom, 12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
                     .padding(.bottom, 24)
 
