@@ -623,9 +623,14 @@ struct SettingsView: View {
                         }.buttonStyle(.plain)
                         settingsDivider
                         Button {
-                            stravaAuthService.isAuthenticated
-                                ? stravaAuthService.logout()
-                                : stravaAuthService.authenticate()
+                            // Wis een eerdere fout zodat een retry niet meteen
+                            // de oude melding toont.
+                            stravaAuthService.authError = nil
+                            if stravaAuthService.isAuthenticated {
+                                stravaAuthService.logout()
+                            } else {
+                                stravaAuthService.authenticate()
+                            }
                         } label: {
                             SettingsRowV2(
                                 icon: "figure.run",
@@ -636,6 +641,14 @@ struct SettingsView: View {
                                 hasChevron: true
                             )
                         }.buttonStyle(.plain)
+                        if let stravaError = stravaAuthService.authError {
+                            Text(stravaError)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .padding(.horizontal, 16)
+                                .padding(.bottom, 12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
                     .padding(.bottom, 24)
 
