@@ -159,10 +159,10 @@ struct AIFitnessCoachApp: App {
             #endif
         }()
 
-        let schema = Schema(SchemaV3.models)
+        let schema = Schema(SchemaV4.models)
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isUITesting)
 
-        // Eerste poging: laad bestaande store en draai migratie-keten (V1 → V2 → V3).
+        // Eerste poging: laad bestaande store en draai migratie-keten (V1 → V2 → V3 → V4).
         do {
             return try ModelContainer(
                 for: schema,
@@ -179,7 +179,7 @@ struct AIFitnessCoachApp: App {
                 """)
         }
 
-        // Fallback: verwijder de corrupte store en bouw een lege V3-container.
+        // Fallback: verwijder de corrupte store en bouw een lege V4-container.
         // Tijdens UI-tests draaien we in-memory (`isStoredInMemoryOnly`), dus geen
         // file-cleanup nodig — sla die stap dan over.
         if !isUITesting {

@@ -23,15 +23,20 @@ import SwiftData
 // is voldoende. Reden om tóch te bumpen: zonder schema-versie ziet SwiftData een
 // hash-mismatch op SchemaV2 en de fallback in `makeModelContainer` wist dan de hele
 // store. Zie CLAUDE.md §2.1 — élke `@Model`-wijziging vereist een schema-bump.
+//
+// V4 voegt twee optionele velden toe aan `ActivityRecord` (Epic #52 — GPS-start-coords):
+// `startLatitude` en `startLongitude`. Pure addition, ook `.lightweight`. Nodig om
+// hourly weer-range bij Coach-call te kunnen ophalen zonder de bron-API opnieuw te
+// bevragen.
 
 enum AppMigrationPlan: SchemaMigrationPlan {
 
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV3.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self]
     }
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2, migrateV2toV3]
+        [migrateV1toV2, migrateV2toV3, migrateV3toV4]
     }
 
     // MARK: - V2 → V3: pure addition (weather-metadata op ActivityRecord)
@@ -42,6 +47,16 @@ enum AppMigrationPlan: SchemaMigrationPlan {
     static let migrateV2toV3 = MigrationStage.lightweight(
         fromVersion: SchemaV2.self,
         toVersion: SchemaV3.self
+    )
+
+    // MARK: - V3 → V4: pure addition (GPS-coords op ActivityRecord)
+
+    /// Pure addition van `startLatitude` + `startLongitude`. Bestaande records
+    /// krijgen `nil` — voor HK-only ritten valt de Coach-analyse terug op de
+    /// snapshot in `temperatureCelsius`/`humidityPercent`.
+    static let migrateV3toV4 = MigrationStage.lightweight(
+        fromVersion: SchemaV3.self,
+        toVersion: SchemaV4.self
     )
 
     // MARK: - V1 → V2: dedupe + symptoms-rebuild + schema-flip

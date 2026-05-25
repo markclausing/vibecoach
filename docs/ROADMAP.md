@@ -614,6 +614,25 @@ Aanleiding: systeemanalyse vanuit het gebruikersperspectief (drie parallelle aud
 
 ---
 
+### 🔄 Epic #52: Workout-analyse aanscherpen (weer + prompt + cadens)
+
+Aanleiding: gebruikersfeedback bij een 90-minuten-hardloop op 24 mei 2026. Drie afwijkingen op het verwachte gedrag van de workout-detail-coach:
+1. **Weer-snapshot mismatcht werkelijkheid.** HK-metadata logt één temperatuur bij rit-start (15°C om 9:43); tijdens de rit liep het op naar ~22°C. De Coach kreeg alleen die 15°C te zien en kon de hitte niet meewegen.
+2. **Prompt eindigt met een vraag.** De analyse op `WorkoutAnalysisView` heeft geen chat-functie, dus elke open vraag aan de gebruiker blijft hangen.
+3. **Geen cadens-grafiek voor hardlopen.** Cycling toont cadens via `cyclingCadence`; running heeft géén native HK-identifier en bleef leeg, terwijl Strava-streams cadens al zelf leveren.
+
+**Sub-stories** (één Epic-PR conform multi-story workflow):
+
+* **✅ 52.1 — Hourly weer-aggregaat over workout-venster:** `HistoricalWeatherService.fetchWeatherRange(latitude:longitude:startDate:endDate:)` haalt alle uurlijkse Open-Meteo-waarden binnen `[start, end]` op en aggregeert tot peak + avg voor temperatuur en luchtvochtigheid (pure helper `extractWindowAggregates` — 4 unit-tests). `WorkoutInsightService.InsightContext` krijgt 4 nieuwe range-velden; `buildPrompt` toont een `[WEER TIJDENS WORKOUT — range]`-blok bij aanwezigheid, anders het bestaande snapshot-blok. System-instruction-paragraaf bijgewerkt: piek-temperatuur is de ondergrens voor hitte-stress-evaluatie. Schema V3 → V4 (lightweight migration) voegt `startLatitude` + `startLongitude` toe aan `ActivityRecord`; `enrichRecord` persisteert die bij elke Strava-ingest zodat de Coach-call achteraf de range kan ophalen zonder de Strava-API opnieuw te bevragen. SchemaV3 krijgt zijn eigen `ActivityRecord`-snapshot (mei-2026-incident-vangnet conform CLAUDE.md §2.1). 4 unit-tests V3→V4-migratie (FitnessGoal + UserPreference overleven, coords schrijfbaar na migratie).
+* **✅ 52.2 — Coach-prompt strikter: geen vragen meer:** system-instruction op meerdere plaatsen aangepast — "Eindig met een open vraag" en "stel een kalibratie-vraag" vervangen door observatie-statements. Nieuwe top-level regel: "Deze analyse verschijnt op een detail-view zonder chat-functie. Stel **nooit** een vraag aan de gebruiker." Afsluiter onderaan: "Eindig nooit met een vraagteken." Geen code-safety-net (alleen prompt-instructie) — als Gemini bij hoge uitzondering tóch een vraag genereert, valt dat op tijdens on-device validatie.
+* **✅ 52.3 — Running cadens-grafiek + Coach-context:** `WorkoutSampleService.fetchRunningStepCadence` aggregeert HK `stepCount` via `HKStatisticsCollectionQuery` over 5s-buckets en rekent om naar steps-per-minute. Strava cadence-stream blijft de fallback (al ondersteund door bestaande ingest). Nieuwe `cadenceChart` in `WorkoutAnalysisView` voor running-workouts (LineMark + scrubber, geen normatieve zone-bands). `WorkoutInsightService.InsightContext` krijgt `averageCadenceSPM` + `peakCadenceSPM`; system-instruction-paragraaf voor cadens met drempels (160 / 180 spm, piek-vs-gem > 20 spm) en de regel dat cadens alleen wordt aangeroerd bij een gerelateerd pattern. Cache-fingerprint uitgebreid met cadens zodat nieuwe samples een fresh analyse triggeren.
+
+**Effort gerealiseerd:** ~600 LOC over `Models/`, `Services/`, `Views/` + 11 nieuwe unit-tests (7 weer-range + 4 schema-migratie).
+
+**Status:** 🔄 — geïmplementeerd op `feature/epic-52-workout-analysis-sharpening`. Build groen op iPhone 17 simulator. Schema-migratie- en weather-aggregate-tests groen. Wacht op CI + on-device validatie + merge.
+
+---
+
 ### ⏳ Epic-backlog: Mentale benefit van workouts
 
 Idee voor een toekomstige Epic — nog niet uitgewerkt. Gedachte: niet alleen fysieke metrics tonen (TRIMP, HR, recovery), maar ook iets over mood/energie/stress-impact zodat de coach kan zeggen "je voelt je hier de rest van de dag goed door" of "deze sessie helpt je stress af te bouwen". Open punten: welke signalen (HRV-respons na rit, post-RPE-mood, slaap-respons in nacht erna), welke UI (extra tegel onder Vibe Score? Veld op WorkoutAnalysisView?), hoe de coach dit framet, en hoe we het onderscheiden van pure fysieke load. Pickup-trigger: gebruiker wil meer expliciete "waarom train ik dit"-context bij workouts.
