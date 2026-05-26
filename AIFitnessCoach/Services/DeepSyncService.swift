@@ -56,6 +56,18 @@ final class DeepSyncService: ObservableObject {
 
     static let completedFlagKey   = "DeepSync.hasCompletedInitialDeepSync"
     static let processedUUIDsKey  = "DeepSync.processedWorkoutUUIDs"
+    /// Epic #52: ingest-revisie — bumpen zodra `WorkoutSampleService.ingestSamples`
+    /// een nieuw signaal gaat fetchen waardoor bestaande samples op de store
+    /// onvolledig zijn. Bij launch met een lagere of ontbrekende revisie clear
+    /// `runIfNeeded()` de processed-set zodat álle workouts in het 30-daagse
+    /// venster opnieuw worden geïngestred — éénmalig, in achtergrond.
+    static let ingestRevisionKey  = "DeepSync.ingestRevision"
+
+    /// Huidige ingest-revisie. Bump dit bij élke wijziging in `WorkoutSampleService`
+    /// die nieuwe samples ophaalt voor bestaande workouts.
+    /// - 1 (impliciet voor nil): Epic #32 — HR, power, cadence (cycling), speed, distance
+    /// - 2: Epic #52 — running cadence via `stepCount`
+    static let currentIngestRevision = 2
 
     /// Productie-init — gebruikt `HKHealthStore` voor het workout-fetchen.
     convenience init(ingestService: WorkoutSampleIngesting,
@@ -104,6 +116,11 @@ final class DeepSyncService: ObservableObject {
         // Voorkom dubbel-trigger als de view meerdere keren onAppear schiet of
         // auto-sync en .task tegelijk firen.
         if case .syncing = status { return }
+
+        // Epic #52: ingest-revisie-bump triggert eenmalige re-ingest van alle
+        // workouts in het venster, zodat nieuwe signalen (running cadence uit
+        // stepCount) ook voor reeds-bestaande HK-workouts beschikbaar komen.
+        applyIngestRevisionMigrationIfNeeded()
 
         let calendar = Calendar.current
         let endDate = Date()
@@ -173,6 +190,22 @@ final class DeepSyncService: ObservableObject {
         if let data = try? JSONEncoder().encode(Array(uuids)) {
             userDefaults.set(data, forKey: Self.processedUUIDsKey)
         }
+    }
+
+    /// Epic #52: éénmalige migratie bij ingest-revisie-bump. Wist de processed-set
+    /// zodat álle workouts in het 30-daagse venster opnieuw worden geïngestred.
+    /// `replaceSamples` in `WorkoutSampleStore` is idempotent — bestaande samples
+    /// per workout-UUID worden gewist en vervangen door de nieuwe rijkere reeks
+    /// (inclusief running cadence). Geen data-verlies; alleen tijdelijke extra
+    /// HK-quantity-fetches bij eerstvolgende run.
+    private func applyIngestRevisionMigrationIfNeeded() {
+        let stored = userDefaults.integer(forKey: Self.ingestRevisionKey)
+        guard stored < Self.currentIngestRevision else { return }
+
+        log.info("Ingest-revisie-bump van \(stored, privacy: .public) → \(Self.currentIngestRevision, privacy: .public): processed-set wissen voor re-ingest")
+        userDefaults.removeObject(forKey: Self.processedUUIDsKey)
+        userDefaults.removeObject(forKey: Self.completedFlagKey)
+        userDefaults.set(Self.currentIngestRevision, forKey: Self.ingestRevisionKey)
     }
 
     // MARK: HealthKit fetch (productie)
