@@ -72,8 +72,11 @@ final class SchemaMigrationV2ToV3Tests: XCTestCase {
             // UserPreference — lokaal-only, wordt gewist als de store-init faalt.
             ctx.insert(UserPreference(preferenceText: "Voorkeur voor ochtendlopen"))
 
-            // Een ActivityRecord — schema-eindpunt van Epic #49.
-            ctx.insert(ActivityRecord(
+            // Epic #52: V2-snapshot van ActivityRecord — sinds V3 ook een snapshot
+            // heeft (Epic #52, GPS-coords als pure addition op V4), kan de live
+            // class niet meer als shorthand worden gebruikt in seed/fetch van een
+            // V2- of V3-schema-store. Gebruik altijd het schema-specifieke type.
+            ctx.insert(SchemaV2.ActivityRecord(
                 id: UUID().uuidString,
                 name: "Lange duurloop",
                 distance: 32_000,
@@ -87,7 +90,7 @@ final class SchemaMigrationV2ToV3Tests: XCTestCase {
         let container = try openV3Store()
         let goals = try container.mainContext.fetch(FetchDescriptor<FitnessGoal>())
         let prefs = try container.mainContext.fetch(FetchDescriptor<UserPreference>())
-        let activities = try container.mainContext.fetch(FetchDescriptor<ActivityRecord>())
+        let activities = try container.mainContext.fetch(FetchDescriptor<SchemaV3.ActivityRecord>())
 
         XCTAssertEqual(goals.count, 1, "FitnessGoal moet de migratie overleven")
         XCTAssertEqual(prefs.count, 1, "UserPreference moet de migratie overleven")
@@ -99,7 +102,7 @@ final class SchemaMigrationV2ToV3Tests: XCTestCase {
         let activityID = UUID().uuidString
 
         try seedV2Store { ctx in
-            ctx.insert(ActivityRecord(
+            ctx.insert(SchemaV2.ActivityRecord(
                 id: activityID,
                 name: "Pre-Epic-49 rit",
                 distance: 50_000,
@@ -111,7 +114,7 @@ final class SchemaMigrationV2ToV3Tests: XCTestCase {
         }
 
         let container = try openV3Store()
-        let all = try container.mainContext.fetch(FetchDescriptor<ActivityRecord>())
+        let all = try container.mainContext.fetch(FetchDescriptor<SchemaV3.ActivityRecord>())
         guard let record = all.first(where: { $0.id == activityID }) else {
             return XCTFail("Geseedde record niet gevonden na migratie")
         }
@@ -121,7 +124,7 @@ final class SchemaMigrationV2ToV3Tests: XCTestCase {
 
     func test_migration_canWriteWeatherFieldsAfterMigration() throws {
         try seedV2Store { ctx in
-            ctx.insert(ActivityRecord(
+            ctx.insert(SchemaV2.ActivityRecord(
                 id: UUID().uuidString,
                 name: "Test rit",
                 distance: 10_000,
@@ -133,7 +136,7 @@ final class SchemaMigrationV2ToV3Tests: XCTestCase {
         }
 
         let container = try openV3Store()
-        let all = try container.mainContext.fetch(FetchDescriptor<ActivityRecord>())
+        let all = try container.mainContext.fetch(FetchDescriptor<SchemaV3.ActivityRecord>())
         guard let record = all.first else { return XCTFail("Verwacht record") }
 
         // Schrijf naar de nieuwe velden — bewijst dat de kolommen daadwerkelijk
@@ -143,7 +146,7 @@ final class SchemaMigrationV2ToV3Tests: XCTestCase {
         try container.mainContext.save()
 
         let reopened = try openV3Store()
-        let reloaded = try reopened.mainContext.fetch(FetchDescriptor<ActivityRecord>())
+        let reloaded = try reopened.mainContext.fetch(FetchDescriptor<SchemaV3.ActivityRecord>())
         XCTAssertEqual(reloaded.first?.temperatureCelsius, 28.0)
         XCTAssertEqual(reloaded.first?.humidityPercent, 65.0)
     }
