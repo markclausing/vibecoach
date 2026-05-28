@@ -253,11 +253,25 @@ final class WorkoutSampleIngestService {
         default:
             return []
         }
+        return try await fetchStepCadence(start: workout.startDate, end: workout.endDate)
+    }
+
+    /// Cadens-reeks (spm) voor een tijd-window — los van een specifieke `HKWorkout`.
+    ///
+    /// **Epic #52 follow-up (cross-source fix):** de getoonde `ActivityRecord` kan
+    /// een Strava-record zijn dat bij dedup van een HK-tegenhanger heeft "gewonnen"
+    /// (Strava `device_watts` scoort hoger). De `stepCount`-data van de Apple Watch
+    /// leeft dan onder de HK-workout-UUID, terwijl de view samples onder de Strava-
+    /// UUID opvraagt — cadens raakt zo zoek. Een query op puur `[start, end]`
+    /// omzeilt die UUID-fragmentatie: HealthKit dedupliceert `stepCount` zelf over
+    /// bronnen, dus we krijgen de Watch-stappen ongeacht welk record won.
+    ///
+    /// Aanroepbaar vanuit de view-laag (`WorkoutAnalysisView`) als de opgeslagen
+    /// samples geen cadens bevatten.
+    func fetchStepCadence(start: Date, end: Date) async throws -> [TimedValue] {
         guard let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
             return []
         }
-        let start = workout.startDate
-        let end = workout.endDate
         guard end > start else { return [] }
 
         let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
