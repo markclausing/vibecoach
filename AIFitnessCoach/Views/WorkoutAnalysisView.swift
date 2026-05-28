@@ -112,6 +112,18 @@ struct WorkoutAnalysisView: View {
         )
     }
 
+    /// Epic #52: cadens (spm) op de scrubber-positie. Leest uit `cadencePoints`
+    /// (samples óf HK-fallback) zodat de scrubber-waarde ook klopt wanneer de
+    /// cadens niet uit de opgeslagen samples maar uit de HK-stepCount-query komt.
+    private var scrubbedCadence: Double? {
+        guard let scrubbedDate else { return nil }
+        return WorkoutAnalysisHelpers.nearestSample(
+            at: scrubbedDate,
+            in: cadencePoints,
+            timestamp: { $0.timestamp }
+        )?.spm
+    }
+
     private var chartDomain: ClosedRange<Date> {
         guard let first = samples.first?.timestamp,
               let last  = samples.last?.timestamp,
@@ -981,6 +993,10 @@ struct WorkoutAnalysisView: View {
                     metricLabel(title: "BPM",
                                 value: sample?.heartRate.map { String(format: "%.0f", $0) } ?? "—")
                     secondaryMetricLabel(for: sample)
+                    if showCadenceChart {
+                        metricLabel(title: "spm",
+                                    value: scrubbedCadence.map { String(format: "%.0f", $0) } ?? "—")
+                    }
                 }
             }
         }
