@@ -6,8 +6,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 9,
-    "lastUpdated": "2026-05-25",
+    "docRevision": 10,
+    "lastUpdated": "2026-05-29",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -166,9 +166,9 @@
       "layer": "views",
       "kind": "view",
       "file": "AIFitnessCoach/Views/WorkoutAnalysisView.swift",
-      "description": "Per-workout deep-dive: HR-chart met pattern-pins, chip-row, 3-zins Coach-analyse (gecached per workout). Bevat manualSessionTypeOverride-flow.",
-      "uses": ["WorkoutPatternDetector", "WorkoutInsightService", "WorkoutInsightCache", "WorkoutSampleService", "WorkoutPatternFormatter"],
-      "tags": ["epic-32", "epic-40", "epic-47", "epic-48", "epic-49"]
+      "description": "Per-workout deep-dive: HR-chart met pattern-pins, chip-row, secundaire + cadens-grafiek (running), scrubber-card, 3-zins Coach-analyse (gecached per workout). Haalt hourly weer-range + HK-stepCount-cadens-fallback op. Bevat manualSessionTypeOverride-flow.",
+      "uses": ["WorkoutPatternDetector", "WorkoutInsightService", "WorkoutInsightCache", "WorkoutSampleService", "WorkoutPatternFormatter", "HistoricalWeatherService"],
+      "tags": ["epic-32", "epic-40", "epic-47", "epic-48", "epic-49", "epic-52"]
     },
     {
       "id": "SettingsView",

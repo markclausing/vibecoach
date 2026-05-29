@@ -16,7 +16,7 @@ VibeCoach is **production-ready** als persoonlijke iOS fitnesscoach. De kernfeat
 
 **CI:** 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) op `macos-latest`, plus CodeQL-scan van Swift + Actions-workflows. Testsuite: **61% combined coverage op testable code** (Models 80%, Services 59%, ViewModels 59%) + 43% op `Views/` via UI-tests.
 
-**Recent afgesloten:** Epic #46 (CI-pipeline & DAG + SwiftLint-integratie), #45 (per-workout context in coach-prompt), #44 (persoonlijke HR-zones & FTP), #42 (always-on dual-source sync), #41 (single-record-of-truth dedupe), #40 (Strava power-stream ingest), #32 (deep-dive fysiologische analyse). Tech-debt-traject loopt parallel: SwiftData V1→V2 migratie, file-splits van grote modules, logger-discipline, DST-safe date math.
+**Recent afgesloten:** Epic #52 (workout-analyse aanscherpen — hourly weer-range, vraagloze coach-prompt, running cadens-grafiek met cross-source HK-fallback), #46 (CI-pipeline & DAG + SwiftLint-integratie), #45 (per-workout context in coach-prompt), #44 (persoonlijke HR-zones & FTP), #42 (always-on dual-source sync), #41 (single-record-of-truth dedupe), #40 (Strava power-stream ingest), #32 (deep-dive fysiologische analyse). Tech-debt-traject loopt parallel: SwiftData V1→V4 migraties, file-splits van grote modules, logger-discipline, DST-safe date math.
 
 **Volgende pickup:** geen actieve sprint vastgepind. Open follow-ups in [`docs/ROADMAP.md`](docs/ROADMAP.md): TestFlight-deploy (46.B1), semver-versioning (46.B6), Strict Concurrency `Complete` (39.3), force-unwrap-audit. Nieuwe Epics komen pas op tafel bij een concrete pijn.
 
