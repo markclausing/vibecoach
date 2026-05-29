@@ -79,12 +79,22 @@ final class WorkoutSampleIngestService {
         async let cadenceSeries   = fetchSeries(in: workout, identifier: cadenceIdentifier(for: workout), unit: HKUnit(from: "count/min"))
         async let speedSeries     = fetchSeries(in: workout, identifier: speedIdentifier(for: workout), unit: HKUnit.meter().unitDivided(by: .second()))
         async let distanceSeries  = fetchSeries(in: workout, identifier: distanceIdentifier(for: workout), unit: .meter())
+        // Epic #52: voor running is er géén `HKQuantityTypeIdentifier.runningCadence`.
+        // We leiden cadens (steps per minute, spm) af uit `stepCount` via een
+        // `HKStatisticsCollectionQuery` over 5s-buckets. Andere sporten geven nil
+        // en deze series blijft leeg — geen vervuiling van fiets-cadence.
+        async let runningCadenceSeries = fetchRunningStepCadence(for: workout)
 
-        let hr       = try await heartRateSeries
-        let power    = try await powerSeries
-        let cadence  = try await cadenceSeries
-        let speed    = try await speedSeries
-        let distance = try await distanceSeries
+        let hr             = try await heartRateSeries
+        let power          = try await powerSeries
+        let cadenceNative  = try await cadenceSeries
+        let speed          = try await speedSeries
+        let distance       = try await distanceSeries
+        let runningCadence = try await runningCadenceSeries
+        // Cycling-cadence wint van de afgeleide running-cadence (bron-prioriteit).
+        // Voor running is `cadenceNative` per definitie leeg (cadenceIdentifier nil),
+        // dus we vallen automatisch terug op de stepCount-afgeleide spm-reeks.
+        let cadence = cadenceNative.isEmpty ? runningCadence : cadenceNative
 
         // Resample elk signaal volgens zijn fysiologisch correcte strategie.
         let hrBuckets       = resampler.resample(samples: hr, from: start, to: end, strategy: .average)
@@ -210,14 +220,92 @@ final class WorkoutSampleIngestService {
         }
     }
 
-    /// Cadence-type — `cyclingCadence` voor fietsen, `runningStrideLength` heeft geen cadans dus we
-    /// laten running-cadence (nog) leeg. Story 32.x kan dit uitbreiden.
+    /// Cadence-type — `cyclingCadence` voor fietsen. Running heeft géén native
+    /// HK-cadence-identifier; voor running gebruiken we `fetchRunningStepCadence`
+    /// (Epic #52) die stepCount via een StatisticsCollectionQuery aggregeert.
     private func cadenceIdentifier(for workout: HKWorkout) -> HKQuantityTypeIdentifier? {
         switch workout.workoutActivityType {
         case .cycling:
             return .cyclingCadence
         default:
             return nil
+        }
+    }
+
+    // MARK: - Epic #52: running cadence uit stepCount
+
+    /// Aggregeert HealthKit `stepCount` over 5s-buckets en rekent om naar SPM
+    /// (steps per minute). Alleen voor running/walking/hiking — andere sporten
+    /// returnen een lege array zodat het signaal niet stiekem in cycling-cadence
+    /// terechtkomt.
+    ///
+    /// **Waarom StatisticsCollectionQuery en niet de bestaande `fetchSeries`?**
+    /// `stepCount` is een `cumulativeQuantityType`, niet een rate. Per-sample
+    /// ticks via `HKQuantitySeriesSampleQueryDescriptor` geven verschillende
+    /// interval-lengtes (Apple Watch logt soms per 10s, soms per 30s). Een
+    /// expliciete 5s-bucket-query met `cumulativeSum`-statistics levert een
+    /// gegarandeerd uniform grid dat 1-op-1 op de andere signalen kan worden
+    /// gelegd. Conversie: `(steps_in_5s_bucket / 5) * 60 = spm`.
+    private func fetchRunningStepCadence(for workout: HKWorkout) async throws -> [TimedValue] {
+        switch workout.workoutActivityType {
+        case .running, .walking, .hiking:
+            break
+        default:
+            return []
+        }
+        return try await fetchStepCadence(start: workout.startDate, end: workout.endDate)
+    }
+
+    /// Cadens-reeks (spm) voor een tijd-window — los van een specifieke `HKWorkout`.
+    ///
+    /// **Epic #52 follow-up (cross-source fix):** de getoonde `ActivityRecord` kan
+    /// een Strava-record zijn dat bij dedup van een HK-tegenhanger heeft "gewonnen"
+    /// (Strava `device_watts` scoort hoger). De `stepCount`-data van de Apple Watch
+    /// leeft dan onder de HK-workout-UUID, terwijl de view samples onder de Strava-
+    /// UUID opvraagt — cadens raakt zo zoek. Een query op puur `[start, end]`
+    /// omzeilt die UUID-fragmentatie: HealthKit dedupliceert `stepCount` zelf over
+    /// bronnen, dus we krijgen de Watch-stappen ongeacht welk record won.
+    ///
+    /// Aanroepbaar vanuit de view-laag (`WorkoutAnalysisView`) als de opgeslagen
+    /// samples geen cadens bevatten.
+    func fetchStepCadence(start: Date, end: Date) async throws -> [TimedValue] {
+        guard let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
+            return []
+        }
+        guard end > start else { return [] }
+
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+        let bucketSize = resampler.bucketSeconds
+        let bucket = DateComponents(second: Int(bucketSize))
+
+        return try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[TimedValue], Error>) in
+            let query = HKStatisticsCollectionQuery(
+                quantityType: stepType,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum,
+                anchorDate: start,
+                intervalComponents: bucket
+            )
+            query.initialResultsHandler = { _, statsCollection, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                guard let statsCollection else {
+                    continuation.resume(returning: [])
+                    return
+                }
+                var samples: [TimedValue] = []
+                statsCollection.enumerateStatistics(from: start, to: end) { stats, _ in
+                    guard let sum = stats.sumQuantity() else { return }
+                    let steps = sum.doubleValue(for: .count())
+                    // SPM = (steps / 5s) * 60. Eén stap per 5s = 12 spm (zeer langzaam wandelen).
+                    let spm = (steps / bucketSize) * 60.0
+                    samples.append(TimedValue(timestamp: stats.startDate, value: spm))
+                }
+                continuation.resume(returning: samples)
+            }
+            healthStore.execute(query)
         }
     }
 }

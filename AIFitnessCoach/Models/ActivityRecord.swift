@@ -50,6 +50,15 @@ final class ActivityRecord {
     var temperatureCelsius: Double?
     var humidityPercent: Double?
 
+    // Epic #52: GPS-start-coördinaten. Gevuld vanuit `StravaActivity.start_latlng`
+    // bij ingest (zie `HistoricalWeatherService.enrichRecord`); voor HK-only ritten
+    // momenteel nil — de Coach-analyse valt dan terug op de single-point snapshot
+    // hierboven. Nodig om bij latere Coach-calls hourly weer-range te kunnen
+    // ophalen (peak/avg over [start, end]) zonder de Strava-API opnieuw te bevragen.
+    // Pure-additie schema V3 → V4 (lightweight migration).
+    var startLatitude: Double?
+    var startLongitude: Double?
+
     /// Menselijke naam voor UI en AI-context.
     /// Legacy HealthKit-records bevatten soms 'HealthKit <rawValue>' (bijv. 'HealthKit 52') —
     /// deze property vervangt dat altijd door de leesbare naam van de SportCategory.
@@ -60,7 +69,7 @@ final class ActivityRecord {
         return name
     }
 
-    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil, rpe: Int? = nil, mood: String? = nil, sessionType: SessionType? = nil, deviceWatts: Bool? = nil, manualSessionTypeOverride: Bool? = nil, temperatureCelsius: Double? = nil, humidityPercent: Double? = nil) {
+    init(id: String, name: String, distance: Double, movingTime: Int, averageHeartrate: Double?, sportCategory: SportCategory, startDate: Date, trimp: Double? = nil, rpe: Int? = nil, mood: String? = nil, sessionType: SessionType? = nil, deviceWatts: Bool? = nil, manualSessionTypeOverride: Bool? = nil, temperatureCelsius: Double? = nil, humidityPercent: Double? = nil, startLatitude: Double? = nil, startLongitude: Double? = nil) {
         self.id = id
         self.name = name
         self.distance = distance
@@ -76,6 +85,8 @@ final class ActivityRecord {
         self.manualSessionTypeOverride = manualSessionTypeOverride
         self.temperatureCelsius = temperatureCelsius
         self.humidityPercent = humidityPercent
+        self.startLatitude = startLatitude
+        self.startLongitude = startLongitude
     }
 }
 

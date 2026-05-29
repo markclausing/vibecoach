@@ -48,6 +48,9 @@ final class WorkoutInsightService {
     /// Epic #44 update: leest sessie-type en persoonlijke zones uit de context
     /// zodat een opzettelijke threshold-/VO2max-sessie niet als "te hard" wordt
     /// geframed; alleen onverwacht hoge HR triggert een waarschuwende toon.
+    /// Epic #52 update: harde regel dat de analyse nooit met een vraag eindigt —
+    /// deze view heeft geen chat-functie, dus elke open vraag blijft hangen
+    /// zonder beantwoording.
     private static let systemInstruction: String = """
     Je bent een sportfysiologisch analist die patronen in een workout interpreteert.
 
@@ -60,6 +63,11 @@ final class WorkoutInsightService {
       — gebruik deze om "hoog" of "rustig" correct te interpreteren. Een HR die
       voor een gemiddelde gebruiker hoog is, kan voor déze gebruiker normaal Z2/Z3 zijn.
 
+    **Belangrijk — geen vragen.** Deze analyse verschijnt op een detail-view zonder
+    chat-functie. Stel **nooit** een vraag aan de gebruiker (geen kalibratie-vraag,
+    geen open vraag over hoe het voelde, geen "was het warm?"). Sluit altijd af met
+    een observatie, conclusie of vaststelling. De gebruiker kan hier niet antwoorden.
+
     Schrijf max. 3 zinnen die:
     1. De patronen verbinden met het sessie-type. Een **threshold- of vo2max-sessie**
        waarbij HR in Z4-Z5 belandt is precies wat de bedoeling was — frame dat als
@@ -67,11 +75,13 @@ final class WorkoutInsightService {
        drempel-bereik"), nooit als waarschuwing. Hetzelfde geldt voor een titel die
        intervaltraining/tempo/race aankondigt.
     2. Bij een **mismatch** tussen sessie-type en patronen (bv. "recovery"-sessie die
-       in Z4 belandt, of een "endurance"-rit met zware drift): wijs op mogelijke
-       externe factoren (hitte, slaap, beginnende ziekte, te ambitieus tempo gekozen).
-       Eindig met een open vraag.
-    3. Bij intentionele hoge intensiteit zonder mismatch: stel een kalibratie-vraag
-       ("voelde dit als drempelwerk of zat er nog ruimte?"), geen oorzaak-zoektocht.
+       in Z4 belandt, of een "endurance"-rit met zware drift): noem mogelijke
+       externe factoren (hitte, slaap, beginnende ziekte, te ambitieus tempo gekozen)
+       en sluit af met de meest waarschijnlijke verklaring als statement — niet
+       als vraag.
+    3. Bij intentionele hoge intensiteit zonder mismatch: geef een uitvoerings-
+       observatie ("je hebt 18 minuten in je drempelzone doorgebracht — die intentie
+       is geleverd"). Geen kalibratie-vraag, geen oorzaak-zoektocht.
 
     **Geen patronen** gedetecteerd? De rit was metrisch in orde — geen drift, fade
     of trage recovery. Schrijf dan een korte, **positieve** uitvoerings-bevestiging
@@ -95,22 +105,51 @@ final class WorkoutInsightService {
     Niet alle blocks opsommen — kies één concrete koppeling die je analyse
     onderbouwt. Geen actief doel of geen blueprint = niet noemen.
 
-    **Weer tijdens de workout** (Epic #49): wanneer een `[WEER TIJDENS WORKOUT]`-
-    blok aanwezig is, weeg temperatuur en luchtvochtigheid expliciet mee als
-    verklaring voor drift, decoupling of verhoogde HR. Stel **geen** vragen
+    **Weer tijdens de workout** (Epic #49 + Epic #52): wanneer een `[WEER TIJDENS
+    WORKOUT]`-blok aanwezig is, weeg temperatuur en luchtvochtigheid expliciet mee
+    als verklaring voor drift, decoupling of verhoogde HR. Stel **geen** vragen
     meer als "was het warm?" — die informatie heb je al. Drempels: temperatuur
     >25°C of luchtvochtigheid >70% zijn relevante hitte-stress-grenzen voor
-    cardiale drift. **Bij hitte (>25°C) of hoge luchtvochtigheid (>70°%)
-    samen met drift/decoupling: noem de weersconditie expliciet als (mede-)
-    oorzaak in je analyse — bijv. "Bij 28°C en 72% luchtvochtigheid is een
-    HR-drift van 6% verwacht; je conditie was niet de bottleneck."** Bij
-    koeler weer (<15°C) en matige drift: zoek de oorzaak elders (vermoeidheid,
-    slaap, te ambitieus tempo) en noem koel weer **niet** als verklaring.
-    Geen weer-blok = de iPhone heeft geen metadata vastgelegd; vraag er
-    **niet** naar, val terug op generieke aannames.
+    cardiale drift. **Bij hitte (>25°C) of hoge luchtvochtigheid (>70%) samen
+    met drift/decoupling: noem de weersconditie expliciet als (mede-)oorzaak in
+    je analyse — bijv. "Bij 28°C en 72% luchtvochtigheid is een HR-drift van 6%
+    verwacht; je conditie was niet de bottleneck."**
+
+    **Range vs. snapshot (Epic #52):** Bij een **range**-blok zie je piek + gem.
+    over het volledige workout-venster (bv. "Piek 22°C, gem. 19°C; luchtvocht
+    piek 94%, gem. 88%"). Gebruik dan **de piek** als ondergrens voor hitte-
+    stress-evaluatie — een rit die om 9u bij 15°C begon maar onderweg naar 22°C
+    piek liep, telt voor hitte-analyse als een 22°C-rit, niet als een 15°C-rit.
+    Bij een **snapshot**-blok (één temperatuur en/of luchtvochtigheid zonder
+    piek/gem.-context) is dat een momentopname van rit-start — vermeld dat
+    impliciet door geen sterke conclusies te trekken over hitte-impact bij
+    langere ritten, tenzij die ene meting al > 25°C is.
+
+    Bij koeler weer (piek <15°C) en matige drift: zoek de oorzaak elders
+    (vermoeidheid, slaap, te ambitieus tempo) en noem koel weer **niet** als
+    verklaring. Geen weer-blok = de iPhone heeft geen metadata vastgelegd en er
+    waren geen coords om Open-Meteo te bevragen; val terug op generieke aannames.
+
+    **Cadens (Epic #52, alleen running):** Bij een `[CADENS]`-blok zie je gem.
+    en/of piek-cadens in steps per minute (spm). Gebruik dit als één signaal
+    voor loop-efficiëntie en vermoeidheid, niet als normatief oordeel — er is
+    geen universeel "ideaal" (atleten lopen overal tussen 160 en 200 spm naar
+    omstandigheden en lichaamsbouw). Relevante observaties:
+    - **gem. < 160 spm**: relatief lage cadens; bij langere ritten kan
+      overstride een rol spelen, maar koppel het alléén als er ook een
+      bijbehorende pattern is (cadence fade of decoupling). Geen losse
+      cadens-bemoeienis als de uitvoering verder schoon was.
+    - **gem. > 180 spm**: vlotte, korte stappen; benoem het positief als de
+      sessie ook fluent verliep (geen drift, goede HR-recovery).
+    - **piek - gem. > 20 spm**: er zat een sprintje of versnelling in;
+      benoembaar als er ook een HR-spike of intervalstructuur uit het sessie-
+      type bleek. Niet als de gebruiker een rustige duurloop deed — dan was
+      het waarschijnlijk verkeerslicht-restart of vergelijkbaar.
+    Geen `[CADENS]`-blok = geen cadens-data; vraag er **niet** naar.
 
     Stijl: Nederlandstalig, tweede persoon, geen jargon zonder uitleg, geen lijsten of
-    markdown. Eindig zonder "Als je vragen hebt..."-clichés.
+    markdown. Eindig zonder "Als je vragen hebt..."-clichés. **Eindig nooit met een
+    vraagteken** — deze view heeft geen chat. Sluit af met een conclusie of observatie.
     """
 
     private let primaryFactory: () -> GenerativeModelProtocol?
@@ -175,9 +214,28 @@ final class WorkoutInsightService {
         /// Epic #49: omgevings-temperatuur (°C) en luchtvochtigheid (%) op het
         /// moment van de workout, uit `HKMetadataKeyWeather*`. Beide nil → blok
         /// valt weg uit de prompt en de coach valt terug op generieke aannames
-        /// over hitte/dehydratie.
+        /// over hitte/dehydratie. Voor records mét GPS-coords krijgt Epic #52
+        /// voorrang (hourly-range), maar deze snapshot blijft het fallback-pad
+        /// voor HK-only ritten zonder geregistreerde coords.
         let temperatureCelsius: Double?
         let humidityPercent: Double?
+        /// Epic #52: hourly weer-aggregaat over het volledige workout-venster.
+        /// Piek (warmste uur tijdens de rit) en gemiddelde voor zowel temperatuur
+        /// als luchtvochtigheid. Wanneer aanwezig krijgt deze range voorrang
+        /// op de snapshot — een 90-min run die om 9:43 bij 15°C startte maar
+        /// onderweg naar 22°C piek liep, wordt fair als 22°C-rit geëvalueerd.
+        /// Alle subvelden optioneel; nil → blok valt weg.
+        let peakTempCelsius: Double?
+        let avgTempCelsius: Double?
+        let peakHumidityPercent: Double?
+        let avgHumidityPercent: Double?
+        /// Epic #52: cadens (steps per minute) tijdens een hardloop. Gemiddelde
+        /// over niet-nul samples (rust-buckets uitgesloten) + piek (95e
+        /// percentiel om sprintje-spikes af te vlakken). Alleen aanwezig voor
+        /// running-workouts; cycling-cadens wordt vandaag niet in deze prompt
+        /// meegenomen. Beide nil → blok valt weg.
+        let averageCadenceSPM: Double?
+        let peakCadenceSPM: Double?
 
         init(sportLabel: String,
              durationMinutes: Int,
@@ -191,7 +249,13 @@ final class WorkoutInsightService {
              goalsContext: String? = nil,
              periodizationContext: String? = nil,
              temperatureCelsius: Double? = nil,
-             humidityPercent: Double? = nil) {
+             humidityPercent: Double? = nil,
+             peakTempCelsius: Double? = nil,
+             avgTempCelsius: Double? = nil,
+             peakHumidityPercent: Double? = nil,
+             avgHumidityPercent: Double? = nil,
+             averageCadenceSPM: Double? = nil,
+             peakCadenceSPM: Double? = nil) {
             self.sportLabel = sportLabel
             self.durationMinutes = durationMinutes
             self.sessionTypeLabel = sessionTypeLabel
@@ -205,6 +269,12 @@ final class WorkoutInsightService {
             self.periodizationContext = periodizationContext
             self.temperatureCelsius = temperatureCelsius
             self.humidityPercent = humidityPercent
+            self.peakTempCelsius = peakTempCelsius
+            self.avgTempCelsius = avgTempCelsius
+            self.peakHumidityPercent = peakHumidityPercent
+            self.avgHumidityPercent = avgHumidityPercent
+            self.averageCadenceSPM = averageCadenceSPM
+            self.peakCadenceSPM = peakCadenceSPM
         }
     }
 
@@ -336,17 +406,53 @@ final class WorkoutInsightService {
             lines.append(phase)
         }
 
-        // Epic #49: weer-context tijdens de workout. Alleen toevoegen als
-        // minstens één van de twee beschikbaar is — coach valt anders terug
-        // op generieke aannames i.p.v. naar hitte te vragen.
-        if context.temperatureCelsius != nil || context.humidityPercent != nil {
+        // Epic #49 + #52: weer-context tijdens de workout. Range (hourly piek + gem.)
+        // krijgt voorrang op snapshot wanneer aanwezig — een 90-min run pikt zo de
+        // warmte tijdens de rit op, niet alleen de single-point bij rit-start.
+        // Alleen toevoegen als minstens één van de velden beschikbaar is.
+        let hasRange = context.peakTempCelsius != nil
+            || context.avgTempCelsius != nil
+            || context.peakHumidityPercent != nil
+            || context.avgHumidityPercent != nil
+        let hasSnapshot = context.temperatureCelsius != nil || context.humidityPercent != nil
+        if hasRange {
             lines.append("")
-            lines.append("[WEER TIJDENS WORKOUT]")
+            lines.append("[WEER TIJDENS WORKOUT — range]")
+            if let peak = context.peakTempCelsius, let avg = context.avgTempCelsius {
+                lines.append("- Temperatuur: piek \(Int(peak.rounded()))°C, gem. \(Int(avg.rounded()))°C")
+            } else if let peak = context.peakTempCelsius {
+                lines.append("- Temperatuur: piek \(Int(peak.rounded()))°C")
+            } else if let avg = context.avgTempCelsius {
+                lines.append("- Temperatuur: gem. \(Int(avg.rounded()))°C")
+            }
+            if let peak = context.peakHumidityPercent, let avg = context.avgHumidityPercent {
+                lines.append("- Luchtvochtigheid: piek \(Int(peak.rounded()))%, gem. \(Int(avg.rounded()))%")
+            } else if let peak = context.peakHumidityPercent {
+                lines.append("- Luchtvochtigheid: piek \(Int(peak.rounded()))%")
+            } else if let avg = context.avgHumidityPercent {
+                lines.append("- Luchtvochtigheid: gem. \(Int(avg.rounded()))%")
+            }
+        } else if hasSnapshot {
+            lines.append("")
+            lines.append("[WEER TIJDENS WORKOUT — snapshot]")
             if let temp = context.temperatureCelsius {
                 lines.append("- Temperatuur: \(Int(temp.rounded()))°C")
             }
             if let humidity = context.humidityPercent {
                 lines.append("- Luchtvochtigheid: \(Int(humidity.rounded()))%")
+            }
+        }
+
+        // Epic #52: cadens-context voor hardloop. Alleen toonbaar bij minstens
+        // één van de twee waardes — anders valt het blok stil weg.
+        if context.averageCadenceSPM != nil || context.peakCadenceSPM != nil {
+            lines.append("")
+            lines.append("[CADENS]")
+            if let avg = context.averageCadenceSPM {
+                lines.append("- Gem. cadens: \(Int(avg.rounded())) spm")
+            }
+            if let peak = context.peakCadenceSPM {
+                lines.append("- Piek-cadens: \(Int(peak.rounded())) spm")
             }
         }
 

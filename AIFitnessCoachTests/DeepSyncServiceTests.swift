@@ -19,6 +19,12 @@ final class DeepSyncServiceTests: XCTestCase {
         defaultsSuiteName = "test.deepsync.\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: defaultsSuiteName)
         defaults.removePersistentDomain(forName: defaultsSuiteName)
+        // Epic #52: tests gaan default uit van "gebruiker zit al op de laatste
+        // ingest-revisie" — anders wist `applyIngestRevisionMigrationIfNeeded`
+        // de geseede processed-set en interfereert het met dedupe-asserts.
+        // De expliciete migration-test seed bewust géén revisie om het pad te
+        // kunnen triggeren.
+        defaults.set(DeepSyncService.currentIngestRevision, forKey: DeepSyncService.ingestRevisionKey)
 
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         container = try ModelContainer(for: WorkoutSample.self, configurations: config)
@@ -175,6 +181,50 @@ final class DeepSyncServiceTests: XCTestCase {
 
         XCTAssertEqual(mockIngest.ingestCalls.count, 0)
         XCTAssertEqual(service.status, .completed)
+    }
+
+    // MARK: Epic #52 — ingest-revisie-migratie
+
+    /// Bij een ingest-revisie-bump moet de processed-set worden gewist zodat
+    /// álle workouts in het venster opnieuw worden geïngest (om running cadens
+    /// uit `stepCount` ook voor bestaande HK-workouts beschikbaar te maken).
+    func testIngestRevisionBumpClearsProcessedSetAndReIngestsAll() async {
+        // Simuleer een oudere installatie: revisie ontbreekt (= 0) en de
+        // processed-set is gevuld met al-verwerkte workout-UUIDs van vóór
+        // Epic #52.
+        defaults.removeObject(forKey: DeepSyncService.ingestRevisionKey)
+        let workouts = (0..<3).map { makeWorkout(secondsAgo: TimeInterval(60 + $0 * 60)) }
+        let preExistingProcessed = Set(workouts.map(\.uuid))
+        if let data = try? JSONEncoder().encode(Array(preExistingProcessed)) {
+            defaults.set(data, forKey: DeepSyncService.processedUUIDsKey)
+        }
+
+        let service = makeService(workouts: workouts)
+        await service.runIfNeeded()
+
+        XCTAssertEqual(mockIngest.ingestCalls.count, 3,
+                       "Alle workouts moeten opnieuw worden geïngest na revisie-bump")
+        XCTAssertEqual(defaults.integer(forKey: DeepSyncService.ingestRevisionKey),
+                       DeepSyncService.currentIngestRevision,
+                       "Nieuwe revisie moet zijn opgeslagen zodat de migratie niet opnieuw triggert")
+    }
+
+    /// Sanity check op de happy path: gebruiker zit al op de laatste revisie,
+    /// migratie is no-op en de processed-set blijft intact tussen runs.
+    func testNoIngestRevisionBumpKeepsProcessedSet() async {
+        // setUp heeft `currentIngestRevision` al gezet — geen migratie verwacht.
+        let workouts = [makeWorkout(secondsAgo: 60), makeWorkout(secondsAgo: 120)]
+        let processedBefore: Set<UUID> = [workouts[0].uuid]
+        if let data = try? JSONEncoder().encode(Array(processedBefore)) {
+            defaults.set(data, forKey: DeepSyncService.processedUUIDsKey)
+        }
+
+        let service = makeService(workouts: workouts)
+        await service.runIfNeeded()
+
+        XCTAssertEqual(mockIngest.ingestCalls.count, 1,
+                       "Alleen de niet-geprocesste workout moet worden geïngest")
+        XCTAssertEqual(mockIngest.ingestCalls.first, workouts[1].uuid)
     }
 
     func testPersistsProgressAfterEachWorkout() async {

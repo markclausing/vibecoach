@@ -69,6 +69,32 @@ struct WorkoutAnalysisView: View {
     private var hasSpeed: Bool { samples.contains { $0.speed != nil } }
     private var hasPower: Bool { samples.contains { $0.power != nil } }
 
+    /// Epic #52 cross-source fix: HK-`stepCount`-afgeleide cadens, los opgehaald
+    /// wanneer de opgeslagen samples geen cadens bevatten. Dit gebeurt wanneer de
+    /// getoonde `ActivityRecord` een Strava-record is dat van een HK-tegenhanger
+    /// "won" bij dedup — de Watch-stappen leven dan onder een andere UUID dan de
+    /// view opvraagt. Zie `loadCadenceFallbackIfNeeded()`.
+    @State private var hkCadenceSeries: [TimedValue] = []
+
+    /// Unified cadens-databron voor grafiek + stats. Eerst de opgeslagen samples
+    /// (Strava-cadence-stream of HK-ingest); bij afwezigheid de los-opgehaalde
+    /// HK-stepCount-reeks. Nul-buckets (verkeerslicht, koffiestop) blijven erin
+    /// voor de grafiek; stats filteren ze zelf.
+    private var cadencePoints: [(timestamp: Date, spm: Double)] {
+        let fromSamples = samples.compactMap { sample -> (timestamp: Date, spm: Double)? in
+            guard let cadence = sample.cadence else { return nil }
+            return (sample.timestamp, cadence)
+        }
+        if !fromSamples.isEmpty { return fromSamples }
+        return hkCadenceSeries.map { (timestamp: $0.timestamp, spm: $0.value) }
+    }
+
+    /// Epic #52: cadens-grafiek tonen we alleen voor hardlopen (HK stepCount-afgeleide
+    /// of Strava-stream — beide leveren spm). Voor cycling zit cadens als secundair
+    /// signaal in een eigen chart-flow (zou een vierde grafiek worden); buiten scope.
+    private var hasCadence: Bool { cadencePoints.contains { $0.spm > 0 } }
+    private var showCadenceChart: Bool { activity.sportCategory == .running && hasCadence }
+
     private var secondarySeries: SecondarySeries {
         WorkoutAnalysisHelpers.chooseSecondarySeries(
             sportCategory: activity.sportCategory.rawValue,
@@ -84,6 +110,18 @@ struct WorkoutAnalysisView: View {
             in: samples,
             timestamp: { $0.timestamp }
         )
+    }
+
+    /// Epic #52: cadens (spm) op de scrubber-positie. Leest uit `cadencePoints`
+    /// (samples óf HK-fallback) zodat de scrubber-waarde ook klopt wanneer de
+    /// cadens niet uit de opgeslagen samples maar uit de HK-stepCount-query komt.
+    private var scrubbedCadence: Double? {
+        guard let scrubbedDate else { return nil }
+        return WorkoutAnalysisHelpers.nearestSample(
+            at: scrubbedDate,
+            in: cadencePoints,
+            timestamp: { $0.timestamp }
+        )?.spm
     }
 
     private var chartDomain: ClosedRange<Date> {
@@ -149,6 +187,42 @@ struct WorkoutAnalysisView: View {
         }
     }
 
+    /// Epic #52: Y-domain voor de cadens-grafiek. Tight rond actuele data zodat
+    /// het verloop binnen één rit goed leesbaar is. Default 140-200 spm (typische
+    /// hardloop-range) wanneer er nog geen data is, voorkomt een lege as.
+    private var cadenceYDomain: ClosedRange<Double> {
+        let values = cadencePoints.map(\.spm).filter { $0 > 0 }
+        guard let minC = values.min(), let maxC = values.max() else {
+            return 140...200
+        }
+        let lower = max(60, minC - 10).rounded(.down)
+        let upper = min(240, maxC + 10).rounded(.up)
+        return lower...upper
+    }
+
+    /// Epic #52: gemiddelde cadens (spm) over de niet-nul punten — nul-buckets
+    /// (verkeerslicht, koffiestop) tellen niet mee. Nil als er geen cadens is.
+    private var averageCadence: Double? {
+        Self.cadenceStats(from: cadencePoints).avg
+    }
+
+    /// Epic #52: piek-cadens (95e percentiel) — niet de hoogste outlier maar de
+    /// "typische top" om sprintje-spikes af te vlakken.
+    private var peakCadence: Double? {
+        Self.cadenceStats(from: cadencePoints).peak
+    }
+
+    /// Pure helper: gem. + piek (95e percentiel) over niet-nul cadens-punten.
+    /// Static zodat zowel de computed properties (grafiek-bron) als de prompt-
+    /// context (lokaal-gefetchte reeks) hem kunnen gebruiken zonder @State-race.
+    private static func cadenceStats(from points: [(timestamp: Date, spm: Double)]) -> (avg: Double?, peak: Double?) {
+        let values = points.map(\.spm).filter { $0 > 0 }.sorted()
+        guard !values.isEmpty else { return (nil, nil) }
+        let avg = values.reduce(0, +) / Double(values.count)
+        let idx = min(values.count - 1, Int((Double(values.count) * 0.95).rounded(.down)))
+        return (avg, values[idx])
+    }
+
     /// Epic #48: laatste readiness-record (van vandaag of recenter), gebruikt
     /// als input voor `PeriodizationEngine.evaluateAllGoals` zodat de
     /// IntentModifier de VibeScore-drempel correct evalueert.
@@ -177,12 +251,71 @@ struct WorkoutAnalysisView: View {
     /// gegenereerde Coach-analyse zonder hitte-context vervangen wordt door
     /// een nieuwe met de hitte-weging erin. "w_empty" als geen weerdata —
     /// stabiele key bij niet-aanwezig zodat we niet steeds opnieuw genereren.
-    private func weatherFingerprint(_ activity: ActivityRecord) -> String {
-        let parts: [String] = [
-            activity.temperatureCelsius.map { "t\(Int($0.rounded()))" } ?? "",
-            activity.humidityPercent.map { "h\(Int($0.rounded()))" } ?? ""
-        ].filter { !$0.isEmpty }
+    /// Epic #52: voegt range-piek toe zodat een latere hourly-range-fetch
+    /// (die de snapshot kan overrulen) ook een fresh-cache-entry triggert.
+    private func weatherFingerprint(_ activity: ActivityRecord,
+                                    range: HistoricalWeatherService.WeatherRange?) -> String {
+        var parts: [String] = []
+        if let t = activity.temperatureCelsius { parts.append("t\(Int(t.rounded()))") }
+        if let h = activity.humidityPercent { parts.append("h\(Int(h.rounded()))") }
+        if let peak = range?.peakTempCelsius { parts.append("pt\(Int(peak.rounded()))") }
+        if let avg = range?.avgTempCelsius { parts.append("at\(Int(avg.rounded()))") }
+        if let peak = range?.peakHumidityPercent { parts.append("ph\(Int(peak.rounded()))") }
+        if let avg = range?.avgHumidityPercent { parts.append("ah\(Int(avg.rounded()))") }
         return parts.isEmpty ? "w_empty" : parts.joined(separator: "_")
+    }
+
+    /// Epic #52: cache-fingerprint voor running-cadens. Verandert zodra nieuwe
+    /// cadens-samples binnenkomen (DeepSync of Strava-stream-ingest), zodat een
+    /// eerder gegenereerde Coach-analyse die nog géén cadens-context had,
+    /// vervangen wordt door een nieuwe met de spm-weging erin. "c_empty"
+    /// wanneer geen cadens-data — stabiele key, geen onnodige invalidaties.
+    private func cadenceFingerprint() -> String {
+        guard activity.sportCategory == .running else { return "c_na" }
+        var parts: [String] = []
+        if let avg = averageCadence { parts.append("a\(Int(avg.rounded()))") }
+        if let peak = peakCadence { parts.append("p\(Int(peak.rounded()))") }
+        return parts.isEmpty ? "c_empty" : parts.joined(separator: "_")
+    }
+
+    /// Epic #52 cross-source fix: vult `hkCadenceSeries` met HK-`stepCount`-
+    /// afgeleide cadens als (a) het een hardloop-workout is en (b) de opgeslagen
+    /// samples geen cadens bevatten. Dat laatste gebeurt wanneer de getoonde
+    /// record een Strava-record is dat van de HK-tegenhanger won bij dedup — de
+    /// Watch-stappen leven dan onder de HK-workout-UUID, niet de Strava-UUID die
+    /// de `@Query` opvraagt. De directe HK-query op `[start, end]` omzeilt dat.
+    /// Faal-tolerant: bij geen HK-data of een query-fout blijft de reeks leeg en
+    /// verdwijnt de grafiek stil (geen cadens-bron beschikbaar).
+    private func loadCadenceFallbackIfNeeded() async {
+        guard activity.sportCategory == .running else { return }
+        guard !samples.contains(where: { ($0.cadence ?? 0) > 0 }) else { return }
+
+        let end = activity.startDate.addingTimeInterval(TimeInterval(max(60, activity.movingTime)))
+        let series = (try? await WorkoutSampleIngestService().fetchStepCadence(
+            start: activity.startDate, end: end
+        )) ?? []
+        hkCadenceSeries = series
+    }
+
+    /// Epic #52: helper om de hourly weer-range op te halen voor deze workout.
+    /// Returnt `nil` als er geen GPS-coords op het record staan (HK-only ritten)
+    /// of als de API faalt — caller valt dan terug op de snapshot in
+    /// `activity.temperatureCelsius`/`humidityPercent`. Faal-tolerant zodat
+    /// een offline gebruiker of API-timeout de Coach-analyse niet blokkeert.
+    private func fetchWeatherRange() async -> HistoricalWeatherService.WeatherRange? {
+        guard let lat = activity.startLatitude, let lon = activity.startLongitude else {
+            return nil
+        }
+        let end = activity.startDate.addingTimeInterval(TimeInterval(max(60, activity.movingTime)))
+        do {
+            return try await HistoricalWeatherService().fetchWeatherRange(
+                latitude: lat, longitude: lon,
+                startDate: activity.startDate, endDate: end
+            )
+        } catch {
+            AppLoggers.weather.error("Hourly weer-range fetch faalde voor activity \(activity.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
     }
 
     /// Combineert de gestelde drempels tot een korte sleutel. Lege drempels worden
@@ -219,6 +352,9 @@ struct WorkoutAnalysisView: View {
                     heartRateChart
                     if secondarySeries != .none {
                         secondaryChart
+                    }
+                    if showCadenceChart {
+                        cadenceChart
                     }
                 } else {
                     emptyStateCard
@@ -307,6 +443,18 @@ struct WorkoutAnalysisView: View {
             .map { $0.coachingContext }
             .joined(separator: "\n\n")
 
+        // Epic #52: hourly weer-range vóór de cache-check ophalen — de range
+        // gaat in de fingerprint, dus zonder fetch zou een nieuwe range geen
+        // cache-invalidatie triggeren. Voor records zonder GPS-coords valt deze
+        // call snel terug op nil en is de fingerprint-bijdrage stabiel.
+        let weatherRange = await fetchWeatherRange()
+
+        // Epic #52 cross-source fix: als de opgeslagen samples geen cadens hebben
+        // maar het is een hardloop-workout, haal de cadens rechtstreeks uit
+        // HealthKit (stepCount over [start, end]). Dit dekt het geval waarin een
+        // Strava-record bij dedup won en de Watch-stappen onder de HK-UUID staan.
+        await loadCadenceFallbackIfNeeded()
+
         let cache = WorkoutInsightCache()
         // Epic #44 + #48 update: cache-key combineert pattern-fingerprint met
         // profiel-fingerprint én een doelen-fingerprint. Een wijziging in
@@ -315,7 +463,8 @@ struct WorkoutAnalysisView: View {
         let fingerprint = WorkoutPatternFormatter.fingerprint(for: detected)
             + "|" + profileFingerprint(UserProfileService.cachedProfile())
             + "|" + goalsFingerprint(blueprints: blueprintResults, periodization: periodizationResults)
-            + "|" + weatherFingerprint(activity)
+            + "|" + weatherFingerprint(activity, range: weatherRange)
+            + "|" + cadenceFingerprint()
         if let cached = cache.cached(for: activity.id, fingerprint: fingerprint) {
             insightState = .loaded(cached)
             return
@@ -338,6 +487,12 @@ struct WorkoutAnalysisView: View {
                 qualityLabel: recoveryQualityLabel(drop: event.drop, referenceHR: referenceHR)
             )
         }
+        // Epic #52: cadens-stats voor running. Voor cycling laten we deze nil zodat
+        // de Coach geen cadens-koppeling probeert te leggen waar de prompt-regels
+        // expliciet "alleen running" zeggen.
+        let runningAvgCadence = activity.sportCategory == .running ? averageCadence : nil
+        let runningPeakCadence = activity.sportCategory == .running ? peakCadence : nil
+
         let context = WorkoutInsightService.InsightContext(
             sportLabel: activity.sportCategory.displayName,
             durationMinutes: max(1, activity.movingTime / 60),
@@ -351,7 +506,13 @@ struct WorkoutAnalysisView: View {
             goalsContext: goalsContext.isEmpty ? nil : goalsContext,
             periodizationContext: periodizationContext.isEmpty ? nil : periodizationContext,
             temperatureCelsius: activity.temperatureCelsius,
-            humidityPercent: activity.humidityPercent
+            humidityPercent: activity.humidityPercent,
+            peakTempCelsius: weatherRange?.peakTempCelsius,
+            avgTempCelsius: weatherRange?.avgTempCelsius,
+            peakHumidityPercent: weatherRange?.peakHumidityPercent,
+            avgHumidityPercent: weatherRange?.avgHumidityPercent,
+            averageCadenceSPM: runningAvgCadence,
+            peakCadenceSPM: runningPeakCadence
         )
         do {
             let text = try await service.generateInsight(
@@ -832,6 +993,10 @@ struct WorkoutAnalysisView: View {
                     metricLabel(title: "BPM",
                                 value: sample?.heartRate.map { String(format: "%.0f", $0) } ?? "—")
                     secondaryMetricLabel(for: sample)
+                    if showCadenceChart {
+                        metricLabel(title: "spm",
+                                    value: scrubbedCadence.map { String(format: "%.0f", $0) } ?? "—")
+                    }
                 }
             }
         }
@@ -1006,6 +1171,56 @@ struct WorkoutAnalysisView: View {
         case .speed: return sample.speed
         case .power: return sample.power
         case .none:  return nil
+        }
+    }
+
+    // MARK: - Epic #52: cadens-grafiek voor hardlopen
+
+    /// Steps-per-minute grafiek onder de secundaire chart. Volgt het zelfde
+    /// patroon als de HR-chart: LineMark met catmullRom-interpolatie, gedeelde
+    /// scrubber, tight Y-domain. Geen zone-bands — voor running cadens bestaat
+    /// nog geen breed-geaccepteerde zone-indeling die we hier veilig kunnen
+    /// renderen (180 spm wordt populair als "ideaal" maar is fysiologisch niet
+    /// universeel — vermijden om geen normatief gevoel op te roepen).
+    @ViewBuilder
+    private var cadenceChart: some View {
+        let accent = themeManager.primaryAccentColor
+        chartCard(title: "Cadens", unit: "spm") {
+            Chart {
+                ForEach(cadencePoints, id: \.timestamp) { point in
+                    if point.spm > 0 {
+                        LineMark(
+                            x: .value("Tijd", point.timestamp),
+                            y: .value("spm", point.spm)
+                        )
+                        .interpolationMethod(.catmullRom)
+                        .foregroundStyle(accent)
+                        .lineStyle(StrokeStyle(lineWidth: 2.0, lineCap: .round))
+                    }
+                }
+                if let scrubbedDate {
+                    RuleMark(x: .value("Scrubber", scrubbedDate))
+                        .foregroundStyle(accent.opacity(0.45))
+                        .lineStyle(StrokeStyle(lineWidth: 1.0))
+                }
+            }
+            .chartXScale(domain: chartDomain)
+            .chartYScale(domain: cadenceYDomain)
+            .chartXAxis(.hidden)
+            .chartYAxis {
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
+                    AxisGridLine().foregroundStyle(.secondary.opacity(0.15))
+                    AxisValueLabel {
+                        if let spm = value.as(Double.self) {
+                            Text("\(Int(spm))")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            .frame(height: 140)
+            .chartOverlay { proxy in scrubGestureLayer(proxy: proxy) }
         }
     }
 

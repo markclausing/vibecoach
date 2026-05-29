@@ -22,7 +22,7 @@ final class HistoricalWeatherServiceTests: XCTestCase {
     func testMakeURL_olderThanArchiveLag_usesArchiveEndpoint() throws {
         let date = Date().addingTimeInterval(-30 * 86_400)
         let url = try HistoricalWeatherService.makeURL(
-            latitude: 52.4, longitude: 4.9, date: date, useArchive: true
+            latitude: 52.4, longitude: 4.9, startDate: date, endDate: date, useArchive: true
         )
         XCTAssertTrue(url.absoluteString.contains("archive-api.open-meteo.com"))
         XCTAssertTrue(url.absoluteString.contains("start_date="))
@@ -32,7 +32,7 @@ final class HistoricalWeatherServiceTests: XCTestCase {
     func testMakeURL_recentDate_usesForecastEndpoint() throws {
         let date = Date().addingTimeInterval(-2 * 86_400)
         let url = try HistoricalWeatherService.makeURL(
-            latitude: 52.4, longitude: 4.9, date: date, useArchive: false
+            latitude: 52.4, longitude: 4.9, startDate: date, endDate: date, useArchive: false
         )
         XCTAssertTrue(url.absoluteString.contains("api.open-meteo.com/v1/forecast"))
         XCTAssertTrue(url.absoluteString.contains("past_days="))
@@ -40,10 +40,100 @@ final class HistoricalWeatherServiceTests: XCTestCase {
 
     func testMakeURL_includesHourlyParameters() throws {
         let url = try HistoricalWeatherService.makeURL(
-            latitude: 52.4, longitude: 4.9, date: Date(), useArchive: true
+            latitude: 52.4, longitude: 4.9, startDate: Date(), endDate: Date(), useArchive: true
         )
         XCTAssertTrue(url.absoluteString.contains("hourly=temperature_2m,relative_humidity_2m")
                       || url.absoluteString.contains("temperature_2m%2Crelative_humidity_2m"))
+    }
+
+    // MARK: - Epic #52: window-aggregate extraction
+
+    func testExtractWindowAggregates_picksHoursWithinWindow() {
+        // Workout: 2026-05-24 09:43 → 11:13 UTC (90 min, zoals in de Epic-screenshot)
+        let start = ISO8601DateFormatter().date(from: "2026-05-24T09:43:00Z")!
+        let end = ISO8601DateFormatter().date(from: "2026-05-24T11:13:00Z")!
+
+        // 24 uur data: temp loopt op van 14°C (00:00) → 22°C (10:00) → 25°C (12:00) → 26°C (14:00)
+        let times = (0..<24).map { String(format: "2026-05-24T%02d:00", $0) }
+        var temps: [Double?] = (0..<24).map { Double(14 + min($0, 12)) }
+        temps[9] = 18; temps[10] = 22; temps[11] = 24
+        let hums: [Double?] = [88, 86, 84, 82, 80, 78, 78, 80, 84, 90, 94, 92, 88]
+            + Array(repeating: 85.0 as Double?, count: 11)
+        let response = OpenMeteoHourlyResponse(
+            hourly: .init(time: times, temperature_2m: temps, relative_humidity_2m: hums)
+        )
+
+        let agg = HistoricalWeatherService.extractWindowAggregates(
+            from: response, start: start, end: end
+        )
+
+        // Window pakt uren 09:00, 10:00, 11:00 (allemaal ≥ startBucket en ≤ end).
+        // Verwacht: temp piek 24 (11:00), avg = (18+22+24)/3 ≈ 21.33
+        XCTAssertEqual(agg.peakTempCelsius ?? -1, 24, accuracy: 0.01)
+        XCTAssertEqual(agg.avgTempCelsius ?? -1, (18.0 + 22.0 + 24.0) / 3.0, accuracy: 0.01)
+        XCTAssertEqual(agg.peakHumidityPercent ?? -1, 94, accuracy: 0.01)
+        XCTAssertEqual(agg.avgHumidityPercent ?? -1, (90.0 + 94.0 + 92.0) / 3.0, accuracy: 0.01)
+        XCTAssertEqual(agg.hourlyBucketCount, 3)
+    }
+
+    func testExtractWindowAggregates_ignoresNilBuckets() {
+        let start = ISO8601DateFormatter().date(from: "2026-05-24T10:00:00Z")!
+        let end = ISO8601DateFormatter().date(from: "2026-05-24T12:30:00Z")!
+
+        let response = OpenMeteoHourlyResponse(
+            hourly: .init(
+                time: ["2026-05-24T10:00", "2026-05-24T11:00", "2026-05-24T12:00"],
+                temperature_2m: [20.0, nil, 24.0],
+                relative_humidity_2m: [nil, 85.0, nil]
+            )
+        )
+
+        let agg = HistoricalWeatherService.extractWindowAggregates(
+            from: response, start: start, end: end
+        )
+
+        XCTAssertEqual(agg.peakTempCelsius ?? -1, 24, accuracy: 0.01)
+        XCTAssertEqual(agg.avgTempCelsius ?? -1, (20.0 + 24.0) / 2.0, accuracy: 0.01)
+        XCTAssertEqual(agg.peakHumidityPercent ?? -1, 85, accuracy: 0.01)
+        XCTAssertEqual(agg.avgHumidityPercent ?? -1, 85, accuracy: 0.01)
+    }
+
+    func testExtractWindowAggregates_emptyResponseReturnsAllNil() {
+        let start = ISO8601DateFormatter().date(from: "2026-05-24T10:00:00Z")!
+        let end = start.addingTimeInterval(3600)
+        let response = OpenMeteoHourlyResponse(
+            hourly: .init(time: [], temperature_2m: [], relative_humidity_2m: [])
+        )
+        let agg = HistoricalWeatherService.extractWindowAggregates(
+            from: response, start: start, end: end
+        )
+        XCTAssertNil(agg.peakTempCelsius)
+        XCTAssertNil(agg.avgTempCelsius)
+        XCTAssertNil(agg.peakHumidityPercent)
+        XCTAssertNil(agg.avgHumidityPercent)
+        XCTAssertEqual(agg.hourlyBucketCount, 0)
+    }
+
+    func testExtractWindowAggregates_workoutWithinOneHour_picksStartBucket() {
+        // Korte run: 09:43 → 09:55 → moet bucket 09:00 pakken (begin van het uur).
+        let start = ISO8601DateFormatter().date(from: "2026-05-24T09:43:00Z")!
+        let end = ISO8601DateFormatter().date(from: "2026-05-24T09:55:00Z")!
+
+        let response = OpenMeteoHourlyResponse(
+            hourly: .init(
+                time: ["2026-05-24T08:00", "2026-05-24T09:00", "2026-05-24T10:00"],
+                temperature_2m: [12.0, 16.0, 20.0],
+                relative_humidity_2m: [80.0, 75.0, 70.0]
+            )
+        )
+
+        let agg = HistoricalWeatherService.extractWindowAggregates(
+            from: response, start: start, end: end
+        )
+        // Pakt alleen 09:00 (start is 09:43, startBucket = 09:00; end = 09:55 valt vóór 10:00).
+        XCTAssertEqual(agg.peakTempCelsius ?? -1, 16, accuracy: 0.01)
+        XCTAssertEqual(agg.avgTempCelsius ?? -1, 16, accuracy: 0.01)
+        XCTAssertEqual(agg.hourlyBucketCount, 1)
     }
 
     // MARK: - Hour-bucket extractie
