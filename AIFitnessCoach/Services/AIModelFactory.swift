@@ -320,11 +320,12 @@ enum AIProviderHTTP {
 // MARK: - Respons-DTO's
 
 private struct OpenAIChatResponse: Decodable {
-    struct Choice: Decodable {
-        struct Message: Decodable { let content: String? }
-        let message: Message
-    }
+    struct Choice: Decodable { let message: OpenAIChatMessage }
     let choices: [Choice]
+}
+
+private struct OpenAIChatMessage: Decodable {
+    let content: String?
 }
 
 private struct AnthropicMessageResponse: Decodable {
