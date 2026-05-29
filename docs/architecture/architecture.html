@@ -1375,7 +1375,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 10,
+    "docRevision": 11,
     "lastUpdated": "2026-05-29",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
@@ -1388,7 +1388,7 @@
       "HealthKit",
       "Strava OAuth2",
       "Open-Meteo",
-      "BYOK AI (Gemini / OpenAI / Anthropic)",
+      "BYOK AI (Gemini / OpenAI / Anthropic / Mistral)",
       "BackgroundTasks (BGAppRefreshTask)",
       "UserNotifications"
     ],
@@ -1466,8 +1466,21 @@
       "kind": "entry",
       "file": "AIFitnessCoach/AIFitnessCoachApp.swift",
       "description": "@main entry-point. Bouwt ModelContainer met AppMigrationPlan + defensieve fallback. Injecteert env-objects (AppNavigationState, TrainingPlanManager, ThemeManager).",
-      "uses": ["AppDelegate", "AppMigrationPlan", "SchemaV3", "ThemeManager", "TrainingPlanManager", "AppNavigationState", "UserAPIKeyStore", "UITestMockEnvironment"],
-      "tags": ["epic-13", "epic-29", "epic-31"]
+      "uses": [
+        "AppDelegate",
+        "AppMigrationPlan",
+        "SchemaV3",
+        "ThemeManager",
+        "TrainingPlanManager",
+        "AppNavigationState",
+        "UserAPIKeyStore",
+        "UITestMockEnvironment"
+      ],
+      "tags": [
+        "epic-13",
+        "epic-29",
+        "epic-31"
+      ]
     },
     {
       "id": "AppDelegate",
@@ -1475,8 +1488,14 @@
       "kind": "delegate",
       "file": "AIFitnessCoach/AIFitnessCoachApp.swift",
       "description": "Registreert BGTaskScheduler (Engine B-handler) en is UNUserNotificationCenterDelegate met M-08-whitelist (alleen `goalRisk` en `recovery_plan`-payloads).",
-      "uses": ["ProactiveNotificationService", "AppNavigationState"],
-      "tags": ["engine-b", "m-08"]
+      "uses": [
+        "ProactiveNotificationService",
+        "AppNavigationState"
+      ],
+      "tags": [
+        "engine-b",
+        "m-08"
+      ]
     },
     {
       "id": "ContentView",
@@ -1484,7 +1503,10 @@
       "kind": "view",
       "file": "AIFitnessCoach/ContentView.swift",
       "description": "Root-router: kiest tussen OnboardingView en AppTabHostView op basis van `hasCompletedOnboarding`.",
-      "uses": ["OnboardingView", "AppTabHostView"]
+      "uses": [
+        "OnboardingView",
+        "AppTabHostView"
+      ]
     },
     {
       "id": "AppTabHostView",
@@ -1492,8 +1514,17 @@
       "kind": "view",
       "file": "AIFitnessCoach/Views/AppTabHostView.swift",
       "description": "Hoofd-tabbar met 5 tabs (Dashboard, Goals, Coach, Memory, Settings). Beheert de always-on dual-source sync via async-let.",
-      "uses": ["DashboardView", "GoalsListView", "ChatView", "SettingsView", "HealthKitSyncService", "FitnessDataService"],
-      "tags": ["epic-42"]
+      "uses": [
+        "DashboardView",
+        "GoalsListView",
+        "ChatView",
+        "SettingsView",
+        "HealthKitSyncService",
+        "FitnessDataService"
+      ],
+      "tags": [
+        "epic-42"
+      ]
     },
     {
       "id": "DashboardView",
@@ -1501,8 +1532,25 @@
       "kind": "view",
       "file": "AIFitnessCoach/Views/DashboardView.swift",
       "description": "Hoofdscherm: Vibe Score, doelen-burndown, weekkalender, dedupe + reclassify-pijplijn in scenePhase. Cached risicodata in UserDefaults voor Engine A/B.",
-      "uses": ["VibeScoreCardV2", "WeekTimelineView", "BlueprintTimelineView", "ReadinessCalculator", "ActivityDeduplicator", "SessionReclassifier", "StravaStreamIngestService", "WorkoutSampleService", "MigrationFallbackBanner"],
-      "tags": ["epic-13", "epic-14", "epic-32", "epic-40", "epic-41", "epic-51"]
+      "uses": [
+        "VibeScoreCardV2",
+        "WeekTimelineView",
+        "BlueprintTimelineView",
+        "ReadinessCalculator",
+        "ActivityDeduplicator",
+        "SessionReclassifier",
+        "StravaStreamIngestService",
+        "WorkoutSampleService",
+        "MigrationFallbackBanner"
+      ],
+      "tags": [
+        "epic-13",
+        "epic-14",
+        "epic-32",
+        "epic-40",
+        "epic-41",
+        "epic-51"
+      ]
     },
     {
       "id": "MigrationFallbackBanner",
@@ -1510,8 +1558,13 @@
       "kind": "view",
       "file": "AIFitnessCoach/Views/MigrationFallbackBanner.swift",
       "description": "Banner op Dashboard die verschijnt zodra MigrationFallbackStore een actieve fallback-datum heeft. Communiceert dat lokaal-only data (FitnessGoal/UserPreference/Symptom) opnieuw is opgebouwd; HK + Strava-workouts re-syncen vanzelf. Sluit-knop wist de flag.",
-      "uses": ["MigrationFallbackStore", "DashboardBannerView"],
-      "tags": ["epic-51"]
+      "uses": [
+        "MigrationFallbackStore",
+        "DashboardBannerView"
+      ],
+      "tags": [
+        "epic-51"
+      ]
     },
     {
       "id": "GoalsListView",
@@ -1519,8 +1572,16 @@
       "kind": "view",
       "file": "AIFitnessCoach/Views/GoalsListView.swift",
       "description": "Detail-hub per doel: blueprint-milestones, periodisering-fase, herstelplan-banner.",
-      "uses": ["FitnessGoal", "BlueprintChecker", "PeriodizationEngine", "EditGoalView"],
-      "tags": ["epic-17", "epic-23"]
+      "uses": [
+        "FitnessGoal",
+        "BlueprintChecker",
+        "PeriodizationEngine",
+        "EditGoalView"
+      ],
+      "tags": [
+        "epic-17",
+        "epic-23"
+      ]
     },
     {
       "id": "ChatView",
@@ -1528,7 +1589,11 @@
       "kind": "view",
       "file": "AIFitnessCoach/Views/ChatView.swift",
       "description": "AI-coach met coach-kaarten (Epic 30). Geblokkeerd zolang er geen API-sleutel in de Keychain staat.",
-      "uses": ["ChatViewModel", "UserAPIKeyStore", "NoAPIKeyView"]
+      "uses": [
+        "ChatViewModel",
+        "UserAPIKeyStore",
+        "NoAPIKeyView"
+      ]
     },
     {
       "id": "WorkoutAnalysisView",
@@ -1536,8 +1601,22 @@
       "kind": "view",
       "file": "AIFitnessCoach/Views/WorkoutAnalysisView.swift",
       "description": "Per-workout deep-dive: HR-chart met pattern-pins, chip-row, secundaire + cadens-grafiek (running), scrubber-card, 3-zins Coach-analyse (gecached per workout). Haalt hourly weer-range + HK-stepCount-cadens-fallback op. Bevat manualSessionTypeOverride-flow.",
-      "uses": ["WorkoutPatternDetector", "WorkoutInsightService", "WorkoutInsightCache", "WorkoutSampleService", "WorkoutPatternFormatter", "HistoricalWeatherService"],
-      "tags": ["epic-32", "epic-40", "epic-47", "epic-48", "epic-49", "epic-52"]
+      "uses": [
+        "WorkoutPatternDetector",
+        "WorkoutInsightService",
+        "WorkoutInsightCache",
+        "WorkoutSampleService",
+        "WorkoutPatternFormatter",
+        "HistoricalWeatherService"
+      ],
+      "tags": [
+        "epic-32",
+        "epic-40",
+        "epic-47",
+        "epic-48",
+        "epic-49",
+        "epic-52"
+      ]
     },
     {
       "id": "SettingsView",
@@ -1545,7 +1624,13 @@
       "kind": "view",
       "file": "AIFitnessCoach/Views/SettingsView.swift",
       "description": "Instellingen: AI-provider + sleutel, thema-picker, drempel-instellingen, historische sync, bron-voorkeur (HK/Strava).",
-      "uses": ["AIProviderSettingsView", "TrainingThresholdsSettingsView", "ThemeManager", "UserAPIKeyStore", "FitnessDataService"]
+      "uses": [
+        "AIProviderSettingsView",
+        "TrainingThresholdsSettingsView",
+        "ThemeManager",
+        "UserAPIKeyStore",
+        "FitnessDataService"
+      ]
     },
     {
       "id": "OnboardingView",
@@ -1553,7 +1638,11 @@
       "kind": "view",
       "file": "AIFitnessCoach/Views/OnboardingView.swift",
       "description": "4-pagina TabView-carousel met permissie-knoppen (HealthKit, notificaties) en BYOK-invoer.",
-      "uses": ["HealthKitManager", "UserAPIKeyStore", "OnboardingTemplateView"]
+      "uses": [
+        "HealthKitManager",
+        "UserAPIKeyStore",
+        "OnboardingTemplateView"
+      ]
     },
     {
       "id": "ChatViewModel",
@@ -1561,7 +1650,20 @@
       "kind": "viewmodel",
       "file": "AIFitnessCoach/ViewModels/ChatViewModel.swift",
       "description": "Orkestreert de AI-call: bouwt de prompt-blokken via de formatters, leest de sleutel uit de Keychain, streamt het antwoord. Test-bypass via GenerativeModelProtocol.",
-      "uses": ["GenerativeModelProtocol", "UserAPIKeyStore", "VibeScoreContextFormatter", "BlueprintContextFormatter", "IntentContextFormatter", "PreferencesContextFormatter", "WorkoutHistoryContextBuilder", "LastWorkoutContextFormatter", "SymptomContextFormatter", "UserOverrideContextFormatter", "PlanResetPromptBuilder"]
+      "uses": [
+        "GenerativeModelProtocol",
+        "UserAPIKeyStore",
+        "VibeScoreContextFormatter",
+        "BlueprintContextFormatter",
+        "IntentContextFormatter",
+        "PreferencesContextFormatter",
+        "WorkoutHistoryContextBuilder",
+        "LastWorkoutContextFormatter",
+        "SymptomContextFormatter",
+        "UserOverrideContextFormatter",
+        "PlanResetPromptBuilder",
+        "AIModelFactory"
+      ]
     },
     {
       "id": "WorkoutHistoryContextBuilder",
@@ -1569,8 +1671,13 @@
       "kind": "formatter",
       "file": "AIFitnessCoach/ViewModels/WorkoutHistoryContextBuilder.swift",
       "description": "Bouwt per-workout context-blok voor de coach-prompt (Epic 45). Voegt pattern-detections uit recente workouts toe.",
-      "uses": ["WorkoutPatternDetector", "WorkoutSampleService"],
-      "tags": ["epic-45"]
+      "uses": [
+        "WorkoutPatternDetector",
+        "WorkoutSampleService"
+      ],
+      "tags": [
+        "epic-45"
+      ]
     },
     {
       "id": "BlueprintContextFormatter",
@@ -1578,8 +1685,13 @@
       "kind": "formatter",
       "file": "AIFitnessCoach/ViewModels/BlueprintContextFormatter.swift",
       "description": "Formatteert blueprint-milestones (✅/❌ per kritieke training) voor de coach-prompt (Epic 48).",
-      "uses": ["BlueprintChecker", "GoalBlueprint"],
-      "tags": ["epic-48"]
+      "uses": [
+        "BlueprintChecker",
+        "GoalBlueprint"
+      ],
+      "tags": [
+        "epic-48"
+      ]
     },
     {
       "id": "PeriodizationEngine",
@@ -1587,8 +1699,13 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/PeriodizationEngine.swift",
       "description": "Bepaalt de actieve TrainingPhase (Base/Build/Peak/Taper) en wekelijkse TRIMP-target met fase-multiplier (×1.00 / ×1.15 / ×1.30 / ×0.60).",
-      "uses": ["TrainingPhase", "FitnessGoal"],
-      "tags": ["epic-16"]
+      "uses": [
+        "TrainingPhase",
+        "FitnessGoal"
+      ],
+      "tags": [
+        "epic-16"
+      ]
     },
     {
       "id": "ReadinessCalculator",
@@ -1596,8 +1713,13 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/ReadinessCalculator.swift",
       "description": "Berekent de dagelijkse Vibe Score (0–100) uit HRV (50%, 7-daagse persoonlijke baseline) + slaap (50%, lineair 5–8u).",
-      "uses": ["HealthKitManager", "DailyReadiness"],
-      "tags": ["epic-14"]
+      "uses": [
+        "HealthKitManager",
+        "DailyReadiness"
+      ],
+      "tags": [
+        "epic-14"
+      ]
     },
     {
       "id": "ProactiveNotificationService",
@@ -1605,8 +1727,16 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/ProactiveNotificationService.swift",
       "description": "Singleton die Engine A (HKObserverQuery) en Engine B (BGAppRefreshTask) beheert. Cooldown: max 1 proactieve notificatie per doel per 24u.",
-      "uses": ["HealthKitManager", "ReadinessCalculator", "TrainingPlanManager"],
-      "tags": ["engine-a", "engine-b", "epic-13"]
+      "uses": [
+        "HealthKitManager",
+        "ReadinessCalculator",
+        "TrainingPlanManager"
+      ],
+      "tags": [
+        "engine-a",
+        "engine-b",
+        "epic-13"
+      ]
     },
     {
       "id": "HealthKitManager",
@@ -1614,7 +1744,10 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/HealthKitManager.swift",
       "description": "Toegangspoort tot HealthKit: HRV, slaapfases, workouts. enableBackgroundDelivery voor Engine A.",
-      "uses": ["HealthKitPermissionTypes", "WorkoutSample"]
+      "uses": [
+        "HealthKitPermissionTypes",
+        "WorkoutSample"
+      ]
     },
     {
       "id": "HealthKitSyncService",
@@ -1622,7 +1755,11 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/HealthKitSyncService.swift",
       "description": "Periodieke + on-demand sync van HK-workouts naar ActivityRecord. Gebruikt ActivityDeduplicator.smartInsert om dubbele records te voorkomen.",
-      "uses": ["HealthKitManager", "ActivityDeduplicator", "ActivityRecord"]
+      "uses": [
+        "HealthKitManager",
+        "ActivityDeduplicator",
+        "ActivityRecord"
+      ]
     },
     {
       "id": "FitnessDataService",
@@ -1630,8 +1767,17 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/FitnessDataService.swift",
       "description": "Strava-client. Centrale `ensureValidToken()`-guard refresht via Cloudflare Worker; alle endpoints (fetchLatestActivity, fetchActivityById, fetchActivityStreams, fetchRecentActivities, fetchHistoricalActivities) routen hierdoor.",
-      "uses": ["StravaAuthService", "TokenStore", "ActivityDeduplicator", "ActivityRecord", "NetworkSession"],
-      "tags": ["security-c01", "epic-42"]
+      "uses": [
+        "StravaAuthService",
+        "TokenStore",
+        "ActivityDeduplicator",
+        "ActivityRecord",
+        "NetworkSession"
+      ],
+      "tags": [
+        "security-c01",
+        "epic-42"
+      ]
     },
     {
       "id": "StravaAuthService",
@@ -1639,8 +1785,14 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/StravaAuthService.swift",
       "description": "OAuth2 met Cloudflare Worker-proxy. Geen client_secret in de IPA — alleen een shared X-Client-Token. CSRF-bescherming via random `state`-UUID.",
-      "uses": ["TokenStore", "NetworkSession"],
-      "tags": ["security-c01", "security-h01"]
+      "uses": [
+        "TokenStore",
+        "NetworkSession"
+      ],
+      "tags": [
+        "security-c01",
+        "security-h01"
+      ]
     },
     {
       "id": "ActivityDeduplicator",
@@ -1648,8 +1800,13 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/ActivityDeduplicator.swift",
       "description": "Pure-Swift dedupe. `smartInsert` aan de voordeur (HK + Strava ingest) en `runDedupe` als scenePhase-pass. Rijkdom-heuristiek: samples > deviceWatts > trimp > avgHR > stable id-tiebreaker.",
-      "uses": ["ActivityRecord", "WorkoutSampleService"],
-      "tags": ["epic-41"]
+      "uses": [
+        "ActivityRecord",
+        "WorkoutSampleService"
+      ],
+      "tags": [
+        "epic-41"
+      ]
     },
     {
       "id": "StravaStreamIngestService",
@@ -1657,8 +1814,13 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/StravaStreamIngestService.swift",
       "description": "Backfill van Strava `/streams` voor recente records zonder samples. Schrijft via WorkoutSampleStore. 100ms throttle.",
-      "uses": ["FitnessDataService", "WorkoutSampleService"],
-      "tags": ["epic-40"]
+      "uses": [
+        "FitnessDataService",
+        "WorkoutSampleService"
+      ],
+      "tags": [
+        "epic-40"
+      ]
     },
     {
       "id": "WorkoutSampleService",
@@ -1666,8 +1828,14 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/WorkoutSampleService.swift",
       "description": "Read/write voor fijngranulaire workout-samples (5s-buckets HR/power/cadence/speed/distance). FK = workoutUUID. Idempotente replaceSamples.",
-      "uses": ["WorkoutSample", "SampleResampler", "UUID+Deterministic"],
-      "tags": ["epic-32"]
+      "uses": [
+        "WorkoutSample",
+        "SampleResampler",
+        "UUID+Deterministic"
+      ],
+      "tags": [
+        "epic-32"
+      ]
     },
     {
       "id": "SessionClassifier",
@@ -1675,7 +1843,11 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/SessionClassifier.swift",
       "description": "Bepaalt sessietype (Easy / Tempo / Threshold / Interval / VO2max) op basis van HR-zone-distributie. Fallback op avg-HR bij ontbrekende samples.",
-      "uses": ["HeartRateZones", "WorkoutSample", "SessionType"]
+      "uses": [
+        "HeartRateZones",
+        "WorkoutSample",
+        "SessionType"
+      ]
     },
     {
       "id": "SessionReclassifier",
@@ -1683,8 +1855,13 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/SessionReclassifier.swift",
       "description": "Hertraint sessie-type voor records die net samples kregen (na Strava backfill). Beschermd door ActivityRecord.manualSessionTypeOverride.",
-      "uses": ["SessionClassifier", "ActivityRecord"],
-      "tags": ["epic-40"]
+      "uses": [
+        "SessionClassifier",
+        "ActivityRecord"
+      ],
+      "tags": [
+        "epic-40"
+      ]
     },
     {
       "id": "WorkoutPatternDetector",
@@ -1692,8 +1869,17 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/WorkoutPatternDetector.swift",
       "description": "Detecteert vier patronen (aerobic decoupling, cardiac drift, cadence fade, trage HR-recovery) op 5s-resampled samples. Gegated op persoonlijke HR-zones.",
-      "uses": ["PauseDetector", "HeartRateZones", "SampleResampler", "PhysiologicalThresholdService"],
-      "tags": ["epic-32", "epic-44", "epic-47"]
+      "uses": [
+        "PauseDetector",
+        "HeartRateZones",
+        "SampleResampler",
+        "PhysiologicalThresholdService"
+      ],
+      "tags": [
+        "epic-32",
+        "epic-44",
+        "epic-47"
+      ]
     },
     {
       "id": "PauseDetector",
@@ -1701,8 +1887,12 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/PauseDetector.swift",
       "description": "Pure-Swift, AppStorage-vrij. Detecteert aaneengesloten samples met power<5 en cadence<5 voor minimaal 45s. Peak-anchored 90s recovery window.",
-      "uses": ["WorkoutSample"],
-      "tags": ["epic-47"]
+      "uses": [
+        "WorkoutSample"
+      ],
+      "tags": [
+        "epic-47"
+      ]
     },
     {
       "id": "WorkoutInsightService",
@@ -1710,8 +1900,19 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/WorkoutInsightService.swift",
       "description": "Genereert 3-zins Coach-analyse per workout met patterns + recovery-events + blueprint-context + periodization-context + weather-context. Gemini-call, gecached.",
-      "uses": ["WorkoutInsightCache", "WorkoutPatternFormatter", "BlueprintContextFormatter", "PeriodizationEngine", "GenerativeModelProtocol"],
-      "tags": ["epic-32", "epic-48", "epic-49"]
+      "uses": [
+        "WorkoutInsightCache",
+        "WorkoutPatternFormatter",
+        "BlueprintContextFormatter",
+        "PeriodizationEngine",
+        "GenerativeModelProtocol",
+        "AIModelFactory"
+      ],
+      "tags": [
+        "epic-32",
+        "epic-48",
+        "epic-49"
+      ]
     },
     {
       "id": "WorkoutInsightCache",
@@ -1719,8 +1920,13 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/WorkoutInsightCache.swift",
       "description": "Cache-key bevat goalsFingerprint + weatherFingerprint zodat milestone-behaal, fase-overgang of latere weersync de cache invalideert.",
-      "uses": ["WorkoutInsightService"],
-      "tags": ["epic-48", "epic-49"]
+      "uses": [
+        "WorkoutInsightService"
+      ],
+      "tags": [
+        "epic-48",
+        "epic-49"
+      ]
     },
     {
       "id": "HistoricalWeatherService",
@@ -1728,8 +1934,13 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/HistoricalWeatherService.swift",
       "description": "Bevraagt Open-Meteo (archive of forecast met past_days) voor Strava-records zonder iPhone-aanwezigheid. GPS afgerond op 0.1° voor privacy.",
-      "uses": ["NetworkSession", "ActivityRecord"],
-      "tags": ["epic-50"]
+      "uses": [
+        "NetworkSession",
+        "ActivityRecord"
+      ],
+      "tags": [
+        "epic-50"
+      ]
     },
     {
       "id": "WeatherManager",
@@ -1737,7 +1948,9 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/WeatherManager.swift",
       "description": "Realtime weer via Open-Meteo + CoreLocation voor dashboard-context.",
-      "uses": ["NetworkSession"]
+      "uses": [
+        "NetworkSession"
+      ]
     },
     {
       "id": "HeartRateZoneCalculator",
@@ -1745,8 +1958,13 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/HeartRateZoneCalculator.swift",
       "description": "Berekent persoonlijke HR-zones uit max-HR en lactateThresholdHR.",
-      "uses": ["HeartRateZones", "UserConfiguration"],
-      "tags": ["epic-44"]
+      "uses": [
+        "HeartRateZones",
+        "UserConfiguration"
+      ],
+      "tags": [
+        "epic-44"
+      ]
     },
     {
       "id": "PowerZoneCalculator",
@@ -1754,8 +1972,12 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/PowerZoneCalculator.swift",
       "description": "Berekent Coggan power-zones uit FTP.",
-      "uses": ["UserConfiguration"],
-      "tags": ["epic-44"]
+      "uses": [
+        "UserConfiguration"
+      ],
+      "tags": [
+        "epic-44"
+      ]
     },
     {
       "id": "PhysiologicalThresholdService",
@@ -1763,8 +1985,13 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/PhysiologicalThresholdService.swift",
       "description": "Beheert opslag/retrieval van LTHR + FTP. Voedt PauseDetector en WorkoutPatternDetector met referenceHR.",
-      "uses": ["UserConfiguration", "PhysiologicalThresholdEstimator"],
-      "tags": ["epic-44"]
+      "uses": [
+        "UserConfiguration",
+        "PhysiologicalThresholdEstimator"
+      ],
+      "tags": [
+        "epic-44"
+      ]
     },
     {
       "id": "PhysiologicalThresholdEstimator",
@@ -1772,8 +1999,13 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/PhysiologicalThresholdEstimator.swift",
       "description": "Pure-Swift estimator die LTHR/FTP afleidt uit historische workout-data wanneer de gebruiker ze niet handmatig instelt.",
-      "uses": ["ActivityRecord", "WorkoutSample"],
-      "tags": ["epic-44"]
+      "uses": [
+        "ActivityRecord",
+        "WorkoutSample"
+      ],
+      "tags": [
+        "epic-44"
+      ]
     },
     {
       "id": "BlueprintChecker",
@@ -1781,8 +2013,14 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/BlueprintChecker.swift",
       "description": "Detecteert blueprint-type (Marathon / Halve / Fietstocht) via sleutelwoorden of SportCategory-fallback. Markeert essentialWorkouts als behaald/gemist.",
-      "uses": ["GoalBlueprint", "FitnessGoal", "ActivityRecord"],
-      "tags": ["epic-17"]
+      "uses": [
+        "GoalBlueprint",
+        "FitnessGoal",
+        "ActivityRecord"
+      ],
+      "tags": [
+        "epic-17"
+      ]
     },
     {
       "id": "InjuryImpactMatrix",
@@ -1790,8 +2028,13 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/InjuryImpactMatrix.swift",
       "description": "Penalty-multiplier (1.0–1.4×) op TRIMP bij risicovolle sport+blessure-koppeling.",
-      "uses": ["Symptom", "SportCategory"],
-      "tags": ["epic-14b"]
+      "uses": [
+        "Symptom",
+        "SportCategory"
+      ],
+      "tags": [
+        "epic-14b"
+      ]
     },
     {
       "id": "KeychainService",
@@ -1800,7 +2043,9 @@
       "file": "AIFitnessCoach/Services/KeychainService.swift",
       "description": "Wrapper om kSecClassGenericPassword. Service-naam `VibeCoach_UserAIKey`.",
       "uses": [],
-      "tags": ["security-c02"]
+      "tags": [
+        "security-c02"
+      ]
     },
     {
       "id": "UserAPIKeyStore",
@@ -1808,8 +2053,12 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/UserAPIKeyStore.swift",
       "description": "Type-veilige laag boven KeychainService. Bevat de eenmalige migratie uit UserDefaults (idempotent).",
-      "uses": ["KeychainService"],
-      "tags": ["security-c02"]
+      "uses": [
+        "KeychainService"
+      ],
+      "tags": [
+        "security-c02"
+      ]
     },
     {
       "id": "MigrationFallbackStore",
@@ -1818,7 +2067,9 @@
       "file": "AIFitnessCoach/Services/MigrationFallbackStore.swift",
       "description": "Pure-Swift wrapper rond de `vibecoach_migrationFallbackAt` UserDefaults-flag. Geschreven door AIFitnessCoachApp bij geslaagde fresh-DB-fallback (CLAUDE.md §12); gelezen door MigrationFallbackBanner; gewist op gebruiker-dismiss. AppStorage-vrij voor testbaarheid.",
       "uses": [],
-      "tags": ["epic-51"]
+      "tags": [
+        "epic-51"
+      ]
     },
     {
       "id": "AppVersionInfo",
@@ -1827,7 +2078,9 @@
       "file": "AIFitnessCoach/Services/AppVersionInfo.swift",
       "description": "Leest CFBundleShortVersionString + CFBundleVersion uit Bundle.main en formatteert als 'VibeCoach 2.0.0 (build 627)' voor de Settings-footer. Bundle-injectie via parameter zodat tests een fixture-bundle kunnen leveren.",
       "uses": [],
-      "tags": ["epic-51"]
+      "tags": [
+        "epic-51"
+      ]
     },
     {
       "id": "PhysiologicalThresholdValidator",
@@ -1836,7 +2089,9 @@
       "file": "AIFitnessCoach/Services/PhysiologicalThresholdValidator.swift",
       "description": "Pure-Swift validator voor de vier persoonlijke trainingsdrempels (Max HR, Rust HR, LTHR, FTP). Twee soorten checks: per-veld range (warning bij ongewoon, error bij absurd) + cross-validatie over het profiel (Max HR > Rust HR, LTHR < Max HR, LTHR > Rust HR). Voedt ThresholdEditSheet live-feedback en de zone-card-uitleg.",
       "uses": [],
-      "tags": ["epic-51"]
+      "tags": [
+        "epic-51"
+      ]
     },
     {
       "id": "ChatScopeInstruction",
@@ -1845,7 +2100,9 @@
       "file": "AIFitnessCoach/ViewModels/ChatScopeInstruction.swift",
       "description": "Expliciete scope-restrictie die ChatViewModel bovenaan de system-prompt plakt. Lijst toegestane coaching-onderwerpen (training, herstel, blessures, doelen, sport-voeding) + vaste weigerings-framing voor off-topic-vragen. Uitzondering voor sport-gerelateerde 'off-topic' vragen (bv. 'kan ik trainen met deze hoofdpijn?').",
       "uses": [],
-      "tags": ["epic-51"]
+      "tags": [
+        "epic-51"
+      ]
     },
     {
       "id": "ChatErrorMessageMapper",
@@ -1854,7 +2111,9 @@
       "file": "AIFitnessCoach/Services/ChatErrorMessageMapper.swift",
       "description": "Pure-Swift mapper van ruwe SDK-/netwerkfouten naar specifieke gebruikersmeldingen. URLError-codes voor offline/timeout/DNS/cancelled; GenerateContentError-cases via type-naam-matching (geen circulaire SDK-dep) voor safety-block / invalid-key / overload. Vervangt de oude generieke 'tijdelijk probleem'-melding in ChatViewModel.",
       "uses": [],
-      "tags": ["epic-51"]
+      "tags": [
+        "epic-51"
+      ]
     },
     {
       "id": "ChatModelSwitchNotice",
@@ -1863,7 +2122,9 @@
       "file": "AIFitnessCoach/Services/ChatModelSwitchNotice.swift",
       "description": "Pure-Swift helper die de banner-tekst genereert wanneer de gebruiker in Settings van Gemini-model wisselt tijdens een lopende coach-call. Vergelijkt de active-request-snapshot (uit ChatViewModel) met de huidige AppStorage-modelnamen en geeft een specifieke melding terug — primary-wijziging krijgt voorrang boven fallback-wijziging.",
       "uses": [],
-      "tags": ["epic-51"]
+      "tags": [
+        "epic-51"
+      ]
     },
     {
       "id": "ChatConversationTrimmer",
@@ -1872,7 +2133,9 @@
       "file": "AIFitnessCoach/Services/ChatConversationTrimmer.swift",
       "description": "Generic pure-Swift split-helper die een message-array boven 50 items in een gearchiveerd voor-deel (oudste) en een zichtbare staart splitst. Wordt door ChatView gebruikt om lange gesprekken in te klappen achter een 'Toon eerdere X berichten'-toggle. UI-optimalisatie alleen — de chat-API ontvangt geen message-history.",
       "uses": [],
-      "tags": ["epic-51"]
+      "tags": [
+        "epic-51"
+      ]
     },
     {
       "id": "ChatInputValidator",
@@ -1881,7 +2144,9 @@
       "file": "AIFitnessCoach/Services/ChatInputValidator.swift",
       "description": "Pure-Swift validator die chat-input clampt op 5000 tekens (maxLength) en de counter pas vanaf 4000 tekens (80%) zichtbaar maakt. Een paste die de limiet overschrijdt wordt afgekapt en gemarkeerd via didClamp zodat de view een eenmalige trim-toast kan tonen. Voorkomt 45s-timeouts bij grote tekstblokken.",
       "uses": [],
-      "tags": ["epic-51"]
+      "tags": [
+        "epic-51"
+      ]
     },
     {
       "id": "StravaRateLimitParser",
@@ -1890,7 +2155,10 @@
       "file": "AIFitnessCoach/Services/StravaRateLimitParser.swift",
       "description": "Pure-Swift parser die uit een 429-response het Retry-After-tijdstip extraheert. Ondersteunt zowel delta-seconds (`60`) als RFC 7231 IMF-datum (`Mon, 06 May 2024 13:03:20 GMT`). Default-cooldown 15 min wanneer de header ontbreekt of misvormd is; datums in het verleden vallen terug op de default i.p.v. een directe retry om retry-storms te voorkomen.",
       "uses": [],
-      "tags": ["epic-51", "epic-51-f"]
+      "tags": [
+        "epic-51",
+        "epic-51-f"
+      ]
     },
     {
       "id": "StravaRateLimitStore",
@@ -1899,7 +2167,10 @@
       "file": "AIFitnessCoach/Services/StravaRateLimitStore.swift",
       "description": "UserDefaults-backed store voor de Strava-rate-limit-cooldown. Schrijft het retry-tijdstip als Double zodat @AppStorage in SyncStatusBanner er reactief op kan binden; `currentCooldown(now:)` wist verlopen entries automatisch. Geinjecteerd in FitnessDataService zodat een 429 over app-launches heen wordt gerespecteerd.",
       "uses": [],
-      "tags": ["epic-51", "epic-51-f"]
+      "tags": [
+        "epic-51",
+        "epic-51-f"
+      ]
     },
     {
       "id": "NetworkReachabilityMonitor",
@@ -1908,7 +2179,10 @@
       "file": "AIFitnessCoach/Services/NetworkReachabilityMonitor.swift",
       "description": "Lichte @MainActor singleton-wrapper rond NWPathMonitor. Publiceert `isOnline` (Bool) en mirrort de offline-status naar UserDefaults zodat niet-View-laag-callers (SyncStatusStore-snapshot) een synchrone lees-pad hebben. Idempotente `start()`; gestart vanuit AIFitnessCoachApp.init zodat de banner direct vanaf launch de juiste state heeft.",
       "uses": [],
-      "tags": ["epic-51", "epic-51-f"]
+      "tags": [
+        "epic-51",
+        "epic-51-f"
+      ]
     },
     {
       "id": "SyncStatusStore",
@@ -1916,8 +2190,13 @@
       "kind": "store",
       "file": "AIFitnessCoach/Services/SyncStatusStore.swift",
       "description": "Pure-Swift, UserDefaults-backed store met per-source last-success-timestamps en last-error-categorieën (network/auth/rateLimit/decoding/other). Filtert FitnessDataError.missingToken uit — gebruikers zonder Strava-koppeling krijgen geen banner. Levert een SyncStatusSnapshot voor SyncBannerStateBuilder. Schrijft Double-timestamps (Unix epoch) zodat @AppStorage in de View reactief kan lezen.",
-      "uses": ["StravaRateLimitStore"],
-      "tags": ["epic-51", "epic-51-f"]
+      "uses": [
+        "StravaRateLimitStore"
+      ],
+      "tags": [
+        "epic-51",
+        "epic-51-f"
+      ]
     },
     {
       "id": "SyncBannerStateBuilder",
@@ -1926,7 +2205,10 @@
       "file": "AIFitnessCoach/Services/SyncBannerStateBuilder.swift",
       "description": "Pure functie die op basis van een SyncStatusSnapshot de juiste banner-staat bepaalt. Strict priority offline > rate-limited > error > nil; bij twee error-bronnen wint de meest recente. Een achtergebleven `.rateLimit`-category wordt genegeerd zodra de cooldown verlopen is zodat de banner niet permanent blijft hangen.",
       "uses": [],
-      "tags": ["epic-51", "epic-51-f"]
+      "tags": [
+        "epic-51",
+        "epic-51-f"
+      ]
     },
     {
       "id": "SyncStatusBanner",
@@ -1934,8 +2216,16 @@
       "kind": "banner",
       "file": "AIFitnessCoach/Views/SyncStatusBanner.swift",
       "description": "Dashboard-banner die SyncBannerStateBuilder consumeert en — afhankelijk van de staat — een offline-melding (met laatste-sync-tijd), rate-limit-melding (hervat om HH:MM) of fout-melding (Strava/HealthKit, dismissable) toont. Reactief via @ObservedObject op NetworkReachabilityMonitor + @AppStorage-bindings op de SyncStatusStore-keys.",
-      "uses": ["SyncStatusStore", "SyncBannerStateBuilder", "NetworkReachabilityMonitor", "DashboardBannerView"],
-      "tags": ["epic-51", "epic-51-f"]
+      "uses": [
+        "SyncStatusStore",
+        "SyncBannerStateBuilder",
+        "NetworkReachabilityMonitor",
+        "DashboardBannerView"
+      ],
+      "tags": [
+        "epic-51",
+        "epic-51-f"
+      ]
     },
     {
       "id": "TokenStore",
@@ -1943,7 +2233,9 @@
       "kind": "service",
       "file": "AIFitnessCoach/Services/TokenStore.swift",
       "description": "Strava OAuth-token opslag in Keychain.",
-      "uses": ["KeychainService"]
+      "uses": [
+        "KeychainService"
+      ]
     },
     {
       "id": "AppLoggers",
@@ -1952,7 +2244,9 @@
       "file": "AIFitnessCoach/Services/AppLoggers.swift",
       "description": "Gecentraliseerde os.Logger-instances per categorie. Privacy-modifiers verplicht voor user-data (HRV, RPE, tokens, UUIDs).",
       "uses": [],
-      "tags": ["logging"]
+      "tags": [
+        "logging"
+      ]
     },
     {
       "id": "ThemeManager",
@@ -1960,8 +2254,12 @@
       "kind": "infrastructure",
       "file": "AIFitnessCoach/Services/ThemeManager.swift",
       "description": "Beheert actief thema (moss/stone/mist/clay/sakura/ink), saturatie en SF Symbol-iconografie. Adaptief op light/dark.",
-      "uses": ["Theme"],
-      "tags": ["epic-29"]
+      "uses": [
+        "Theme"
+      ],
+      "tags": [
+        "epic-29"
+      ]
     },
     {
       "id": "TrainingPlanManager",
@@ -1969,8 +2267,13 @@
       "kind": "store",
       "file": "AIFitnessCoach/Models/TrainingPlanManager.swift",
       "description": "Single Source of Truth voor het actieve 7-daagse schema. Geconsumeerd door Dashboard, Goals en Coach.",
-      "uses": ["SuggestedWorkout", "FitnessGoal"],
-      "tags": ["epic-11"]
+      "uses": [
+        "SuggestedWorkout",
+        "FitnessGoal"
+      ],
+      "tags": [
+        "epic-11"
+      ]
     },
     {
       "id": "UITestMockEnvironment",
@@ -1978,8 +2281,12 @@
       "kind": "test-infra",
       "file": "AIFitnessCoach/Services/UITestMockEnvironment.swift",
       "description": "Gegated op -UITesting + #if DEBUG. Schrijft dummy API-key, weersdata, periodisatie-context. UITestMockGenerativeModel vervangt de Gemini-call.",
-      "uses": ["GenerativeModelProtocol"],
-      "tags": ["testing"]
+      "uses": [
+        "GenerativeModelProtocol"
+      ],
+      "tags": [
+        "testing"
+      ]
     },
     {
       "id": "ActivityRecord",
@@ -1987,7 +2294,10 @@
       "kind": "model",
       "file": "AIFitnessCoach/Models/ActivityRecord.swift",
       "description": "@Model voor een workout — HK-uuid of Strava-id, sport, TRIMP, avgHR, deviceWatts, temperatureCelsius, humidityPercent, manualSessionTypeOverride.",
-      "uses": ["SportCategory", "SessionType"]
+      "uses": [
+        "SportCategory",
+        "SessionType"
+      ]
     },
     {
       "id": "WorkoutSample",
@@ -1996,7 +2306,9 @@
       "file": "AIFitnessCoach/Models/WorkoutSample.swift",
       "description": "@Model voor 5s-bucket sample. Sleutel: workoutUUID. Eén ActivityRecord ↔ N samples (geen SwiftData-relatie, gefilterde fetch).",
       "uses": [],
-      "tags": ["epic-32"]
+      "tags": [
+        "epic-32"
+      ]
     },
     {
       "id": "FitnessGoal",
@@ -2004,7 +2316,11 @@
       "kind": "model",
       "file": "AIFitnessCoach/Models/FitnessGoal.swift",
       "description": "Trainingsdoel: title, targetDate, blueprint, sportCategory, recoveryPlanActiveSince.",
-      "uses": ["SportCategory", "TrainingPhase", "GoalBlueprint"]
+      "uses": [
+        "SportCategory",
+        "TrainingPhase",
+        "GoalBlueprint"
+      ]
     },
     {
       "id": "DailyReadiness",
@@ -2044,7 +2360,11 @@
       "kind": "migration",
       "file": "AIFitnessCoach/Models/AppMigrationPlan.swift",
       "description": "SchemaMigrationPlan met staged stages tussen SchemaV1 → V2 → V3. Type-changes via willMigrate/didMigrate.",
-      "uses": ["SchemaV1", "SchemaV2", "SchemaV3"]
+      "uses": [
+        "SchemaV1",
+        "SchemaV2",
+        "SchemaV3"
+      ]
     },
     {
       "id": "SchemaV1",
@@ -2118,6 +2438,19 @@
       "kind": "api",
       "description": "Gemini (default `gemini-flash-latest`), OpenAI, Anthropic. BYOK via UserAPIKeyStore. Geen backend-proxy.",
       "uses": []
+    },
+    {
+      "id": "AIModelFactory",
+      "kind": "service",
+      "layer": "services",
+      "file": "AIFitnessCoach/Services/AIModelFactory.swift",
+      "description": "Provider-agnostische client-factory (Epic #53). Routeert per AIProvider naar RealGenerativeModel (Gemini-adapter), OpenAICompatibleModelClient (OpenAI + Mistral, /v1/chat/completions) of AnthropicModelClient (/v1/messages). Kapselt system-instructie-plaatsing, JSON-mode en HTTP-foutmapping (AIProviderHTTP.validate → AIProviderError) in.",
+      "uses": [
+        "GenerativeModelProtocol"
+      ],
+      "tags": [
+        "epic-53"
+      ]
     }
   ],
   "subsystems": [
@@ -2127,7 +2460,14 @@
       "docRef": "docs/ARCHITECTURE.md#1",
       "epic": "Epic 13",
       "description": "Twee onafhankelijke achtergrond-triggers — Engine A reageert op nieuwe HK-workouts, Engine B op te lange inactiviteit met een rood doel.",
-      "modules": ["ProactiveNotificationService", "AppDelegate", "HealthKitManager", "DashboardView", "BGTaskScheduler", "UNUserNotificationCenter"]
+      "modules": [
+        "ProactiveNotificationService",
+        "AppDelegate",
+        "HealthKitManager",
+        "DashboardView",
+        "BGTaskScheduler",
+        "UNUserNotificationCenter"
+      ]
     },
     {
       "id": "strava-oauth-proxy",
@@ -2135,7 +2475,13 @@
       "docRef": "docs/ARCHITECTURE.md#2",
       "epic": "Security audit C-01",
       "description": "Client_secret verplaatst van Secrets.swift naar Worker Secret. CSRF-bescherming via random state-UUID.",
-      "modules": ["StravaAuthService", "FitnessDataService", "TokenStore", "vibecoach-proxy", "Strava-API"]
+      "modules": [
+        "StravaAuthService",
+        "FitnessDataService",
+        "TokenStore",
+        "vibecoach-proxy",
+        "Strava-API"
+      ]
     },
     {
       "id": "byok",
@@ -2143,7 +2489,13 @@
       "docRef": "docs/ARCHITECTURE.md#3",
       "epic": "Security audit C-02",
       "description": "Geen Secrets-fallback. Migratie uit UserDefaults is idempotent.",
-      "modules": ["UserAPIKeyStore", "KeychainService", "ChatViewModel", "SettingsView", "AddGoalView"]
+      "modules": [
+        "UserAPIKeyStore",
+        "KeychainService",
+        "ChatViewModel",
+        "SettingsView",
+        "AddGoalView"
+      ]
     },
     {
       "id": "dual-source-pipeline",
@@ -2151,7 +2503,15 @@
       "docRef": "docs/ARCHITECTURE.md#9",
       "epic": "Epic 32 / 40 / 41 / 42",
       "description": "WorkoutSample met workoutUUID-FK (deterministisch afgeleid voor Strava). Smart-ingest aan de voordeur + scenePhase-pass (backfill → dedupe → reclassify).",
-      "modules": ["WorkoutSample", "WorkoutSampleService", "ActivityDeduplicator", "SessionReclassifier", "StravaStreamIngestService", "HealthKitSyncService", "FitnessDataService"]
+      "modules": [
+        "WorkoutSample",
+        "WorkoutSampleService",
+        "ActivityDeduplicator",
+        "SessionReclassifier",
+        "StravaStreamIngestService",
+        "HealthKitSyncService",
+        "FitnessDataService"
+      ]
     },
     {
       "id": "pattern-detection",
@@ -2159,7 +2519,13 @@
       "docRef": "docs/ARCHITECTURE.md#10",
       "epic": "Epic 32 / 44 / 47",
       "description": "Vier patronen op 5s-resampled samples, gegated op persoonlijke HR-zones. HR-recovery is pauze-gebaseerd (peak-anchored 90s window).",
-      "modules": ["WorkoutPatternDetector", "PauseDetector", "SampleResampler", "PhysiologicalThresholdService", "HeartRateZoneCalculator"]
+      "modules": [
+        "WorkoutPatternDetector",
+        "PauseDetector",
+        "SampleResampler",
+        "PhysiologicalThresholdService",
+        "HeartRateZoneCalculator"
+      ]
     },
     {
       "id": "coach-context",
@@ -2167,7 +2533,15 @@
       "docRef": "docs/ARCHITECTURE.md#10",
       "epic": "Epic 45 / 48 / 49",
       "description": "ChatViewModel componeert de prompt uit losse formatter-blokken; WorkoutInsightService heeft een eigen context-pijplijn met cache-fingerprint op goals + weather.",
-      "modules": ["ChatViewModel", "WorkoutInsightService", "WorkoutInsightCache", "BlueprintContextFormatter", "WorkoutHistoryContextBuilder", "VibeScoreContextFormatter", "PreferencesContextFormatter"]
+      "modules": [
+        "ChatViewModel",
+        "WorkoutInsightService",
+        "WorkoutInsightCache",
+        "BlueprintContextFormatter",
+        "WorkoutHistoryContextBuilder",
+        "VibeScoreContextFormatter",
+        "PreferencesContextFormatter"
+      ]
     },
     {
       "id": "ci",
@@ -2184,11 +2558,26 @@
       "name": "App Launch",
       "trigger": "User opent app",
       "steps": [
-        { "module": "AIFitnessCoachApp", "action": "Init ModelContainer met AppMigrationPlan; fallback bij migratie-fout" },
-        { "module": "AppDelegate", "action": "Registreer BGTaskScheduler-handler vóór return true" },
-        { "module": "AppDelegate", "action": "Als onboarded: setupEngineA() + scheduleEngineB()" },
-        { "module": "ContentView", "action": "Route naar OnboardingView of AppTabHostView" },
-        { "module": "AppTabHostView", "action": "Trigger TriggerAutoSync (HK + Strava concurrent via async let)" }
+        {
+          "module": "AIFitnessCoachApp",
+          "action": "Init ModelContainer met AppMigrationPlan; fallback bij migratie-fout"
+        },
+        {
+          "module": "AppDelegate",
+          "action": "Registreer BGTaskScheduler-handler vóór return true"
+        },
+        {
+          "module": "AppDelegate",
+          "action": "Als onboarded: setupEngineA() + scheduleEngineB()"
+        },
+        {
+          "module": "ContentView",
+          "action": "Route naar OnboardingView of AppTabHostView"
+        },
+        {
+          "module": "AppTabHostView",
+          "action": "Trigger TriggerAutoSync (HK + Strava concurrent via async let)"
+        }
       ]
     },
     {
@@ -2196,10 +2585,22 @@
       "name": "Engine A — Action Trigger",
       "trigger": "Nieuwe HKWorkout in HealthKit",
       "steps": [
-        { "module": "HealthKit", "action": "HKObserverQuery wekt de app via enableBackgroundDelivery" },
-        { "module": "ProactiveNotificationService", "action": "Check of een doel op rood staat (cache in UserDefaults)" },
-        { "module": "ProactiveNotificationService", "action": "Als ja + cooldown OK: schedule lokale push (type=goalRisk)" },
-        { "module": "UNUserNotificationCenter", "action": "Toon banner; deep-link naar Goals tab" }
+        {
+          "module": "HealthKit",
+          "action": "HKObserverQuery wekt de app via enableBackgroundDelivery"
+        },
+        {
+          "module": "ProactiveNotificationService",
+          "action": "Check of een doel op rood staat (cache in UserDefaults)"
+        },
+        {
+          "module": "ProactiveNotificationService",
+          "action": "Als ja + cooldown OK: schedule lokale push (type=goalRisk)"
+        },
+        {
+          "module": "UNUserNotificationCenter",
+          "action": "Toon banner; deep-link naar Goals tab"
+        }
       ]
     },
     {
@@ -2207,9 +2608,18 @@
       "name": "Engine B — Inaction Trigger",
       "trigger": "Dagelijkse BGAppRefreshTask",
       "steps": [
-        { "module": "BGTaskScheduler", "action": "Wek de app op het geplande moment" },
-        { "module": "ProactiveNotificationService", "action": "Check: >2 dagen inactief én rood doel?" },
-        { "module": "ProactiveNotificationService", "action": "Schedule empathische motivatie-notificatie" }
+        {
+          "module": "BGTaskScheduler",
+          "action": "Wek de app op het geplande moment"
+        },
+        {
+          "module": "ProactiveNotificationService",
+          "action": "Check: >2 dagen inactief én rood doel?"
+        },
+        {
+          "module": "ProactiveNotificationService",
+          "action": "Schedule empathische motivatie-notificatie"
+        }
       ]
     },
     {
@@ -2217,12 +2627,30 @@
       "name": "Workout Ingest (HK of Strava)",
       "trigger": "Auto-sync of nieuwe HKWorkout",
       "steps": [
-        { "module": "HealthKitSyncService", "action": "Fetch nieuwe HK-workouts; map naar ActivityRecord" },
-        { "module": "FitnessDataService", "action": "Fetch Strava-activities via ensureValidToken()" },
-        { "module": "ActivityDeduplicator", "action": "smartInsert: source-id idempotent → ±5s cross-source check → insert" },
-        { "module": "StravaStreamIngestService", "action": "Backfill /streams voor records zonder samples" },
-        { "module": "ActivityDeduplicator", "action": "scenePhase: runDedupe op laatste 10 records" },
-        { "module": "SessionReclassifier", "action": "Hertraint records die net samples kregen" }
+        {
+          "module": "HealthKitSyncService",
+          "action": "Fetch nieuwe HK-workouts; map naar ActivityRecord"
+        },
+        {
+          "module": "FitnessDataService",
+          "action": "Fetch Strava-activities via ensureValidToken()"
+        },
+        {
+          "module": "ActivityDeduplicator",
+          "action": "smartInsert: source-id idempotent → ±5s cross-source check → insert"
+        },
+        {
+          "module": "StravaStreamIngestService",
+          "action": "Backfill /streams voor records zonder samples"
+        },
+        {
+          "module": "ActivityDeduplicator",
+          "action": "scenePhase: runDedupe op laatste 10 records"
+        },
+        {
+          "module": "SessionReclassifier",
+          "action": "Hertraint records die net samples kregen"
+        }
       ]
     },
     {
@@ -2230,13 +2658,34 @@
       "name": "Workout Deep-Dive",
       "trigger": "User opent WorkoutAnalysisView",
       "steps": [
-        { "module": "WorkoutSampleService", "action": "Fetch samples voor workoutUUID" },
-        { "module": "SampleResampler", "action": "Resample naar 5s buckets" },
-        { "module": "WorkoutPatternDetector", "action": "Detecteer 4 patronen (gegated op HR-zones)" },
-        { "module": "PauseDetector", "action": "Vind ≥45s pauzes voor recovery-events" },
-        { "module": "WorkoutInsightService", "action": "Bouw context + check cache (goalsFingerprint + weatherFingerprint)" },
-        { "module": "AI-Providers", "action": "Gemini-call voor 3-zins Coach-analyse" },
-        { "module": "WorkoutInsightCache", "action": "Cache resultaat per workout" }
+        {
+          "module": "WorkoutSampleService",
+          "action": "Fetch samples voor workoutUUID"
+        },
+        {
+          "module": "SampleResampler",
+          "action": "Resample naar 5s buckets"
+        },
+        {
+          "module": "WorkoutPatternDetector",
+          "action": "Detecteer 4 patronen (gegated op HR-zones)"
+        },
+        {
+          "module": "PauseDetector",
+          "action": "Vind ≥45s pauzes voor recovery-events"
+        },
+        {
+          "module": "WorkoutInsightService",
+          "action": "Bouw context + check cache (goalsFingerprint + weatherFingerprint)"
+        },
+        {
+          "module": "AI-Providers",
+          "action": "Gemini-call voor 3-zins Coach-analyse"
+        },
+        {
+          "module": "WorkoutInsightCache",
+          "action": "Cache resultaat per workout"
+        }
       ]
     },
     {
@@ -2244,12 +2693,30 @@
       "name": "Chat met AI-Coach",
       "trigger": "User stuurt bericht in ChatView",
       "steps": [
-        { "module": "ChatViewModel", "action": "Lees API-key uit Keychain (UserAPIKeyStore)" },
-        { "module": "VibeScoreContextFormatter", "action": "[VIBE SCORE]-blok" },
-        { "module": "BlueprintContextFormatter", "action": "[BLUEPRINT]-blok met milestones" },
-        { "module": "PreferencesContextFormatter", "action": "[VOORKEUREN]-blok" },
-        { "module": "WorkoutHistoryContextBuilder", "action": "[RECENTE WORKOUTS]-blok met patterns" },
-        { "module": "GenerativeModelProtocol", "action": "Stream response van gekozen provider" }
+        {
+          "module": "ChatViewModel",
+          "action": "Lees API-key uit Keychain (UserAPIKeyStore)"
+        },
+        {
+          "module": "VibeScoreContextFormatter",
+          "action": "[VIBE SCORE]-blok"
+        },
+        {
+          "module": "BlueprintContextFormatter",
+          "action": "[BLUEPRINT]-blok met milestones"
+        },
+        {
+          "module": "PreferencesContextFormatter",
+          "action": "[VOORKEUREN]-blok"
+        },
+        {
+          "module": "WorkoutHistoryContextBuilder",
+          "action": "[RECENTE WORKOUTS]-blok met patterns"
+        },
+        {
+          "module": "GenerativeModelProtocol",
+          "action": "Stream response van gekozen provider"
+        }
       ]
     },
     {
@@ -2257,11 +2724,26 @@
       "name": "Strava OAuth",
       "trigger": "User klikt Strava-koppelen",
       "steps": [
-        { "module": "StravaAuthService", "action": "Bouw authorize-URL met random state-UUID (CSRF)" },
-        { "module": "Strava-API", "action": "User authorizeert; redirect met code + state" },
-        { "module": "StravaAuthService", "action": "Valideer state tegen callback-URL" },
-        { "module": "vibecoach-proxy", "action": "POST /oauth/strava/exchange (X-Client-Token header)" },
-        { "module": "TokenStore", "action": "Sla tokens op in Keychain" }
+        {
+          "module": "StravaAuthService",
+          "action": "Bouw authorize-URL met random state-UUID (CSRF)"
+        },
+        {
+          "module": "Strava-API",
+          "action": "User authorizeert; redirect met code + state"
+        },
+        {
+          "module": "StravaAuthService",
+          "action": "Valideer state tegen callback-URL"
+        },
+        {
+          "module": "vibecoach-proxy",
+          "action": "POST /oauth/strava/exchange (X-Client-Token header)"
+        },
+        {
+          "module": "TokenStore",
+          "action": "Sla tokens op in Keychain"
+        }
       ]
     },
     {
@@ -2269,8 +2751,14 @@
       "name": "BYOK Migratie (eenmalig)",
       "trigger": "Eerste launch na C-02 update",
       "steps": [
-        { "module": "AIFitnessCoachApp", "action": "init() roept UserAPIKeyStore.migrateFromUserDefaultsIfNeeded()" },
-        { "module": "UserAPIKeyStore", "action": "Lees legacy UserDefaults-key; schrijf naar Keychain; wis UserDefaults-entry" }
+        {
+          "module": "AIFitnessCoachApp",
+          "action": "init() roept UserAPIKeyStore.migrateFromUserDefaultsIfNeeded()"
+        },
+        {
+          "module": "UserAPIKeyStore",
+          "action": "Lees legacy UserDefaults-key; schrijf naar Keychain; wis UserDefaults-entry"
+        }
       ]
     },
     {
@@ -2278,20 +2766,77 @@
       "name": "SwiftData Schema-migratie",
       "trigger": "App-launch met oude DB-versie",
       "steps": [
-        { "module": "AIFitnessCoachApp", "action": "ModelContainer(for: SchemaV3, migrationPlan: AppMigrationPlan)" },
-        { "module": "AppMigrationPlan", "action": "Execute staged stages V1→V2→V3" },
-        { "module": "AIFitnessCoachApp", "action": "Bij falen: log + delete corrupte store + fresh V3 + UserDefaults-flag voor UI-melding" }
+        {
+          "module": "AIFitnessCoachApp",
+          "action": "ModelContainer(for: SchemaV3, migrationPlan: AppMigrationPlan)"
+        },
+        {
+          "module": "AppMigrationPlan",
+          "action": "Execute staged stages V1→V2→V3"
+        },
+        {
+          "module": "AIFitnessCoachApp",
+          "action": "Bij falen: log + delete corrupte store + fresh V3 + UserDefaults-flag voor UI-melding"
+        }
       ]
     }
   ],
   "styleGuide": {
     "themes": [
-      { "id": "moss",   "displayName": "Mos",    "primaryLight": "#4D804D", "primaryDark": "#85BC85", "backgroundLight": "#F2F7EF", "backgroundDark": "#1A211A", "icon": "leaf.fill" },
-      { "id": "stone",  "displayName": "Steen",  "primaryLight": "#78736D", "primaryDark": "#B3ABA1", "backgroundLight": "#F5F2EF", "backgroundDark": "#1F1C1A", "icon": "mountain.2.fill" },
-      { "id": "mist",   "displayName": "Nevel",  "primaryLight": "#618AAD", "primaryDark": "#94BCDB", "backgroundLight": "#F0F5FA", "backgroundDark": "#141A24", "icon": "cloud.fog.fill" },
-      { "id": "clay",   "displayName": "Klei",   "primaryLight": "#AD6642", "primaryDark": "#D69970", "backgroundLight": "#FAF2EB", "backgroundDark": "#241712", "icon": "circle.hexagongrid.fill" },
-      { "id": "sakura", "displayName": "Sakura", "primaryLight": "#B36685", "primaryDark": "#E1A8BC", "backgroundLight": "#FCF2F7", "backgroundDark": "#21141A", "icon": "camera.macro" },
-      { "id": "ink",    "displayName": "Inkt",   "primaryLight": "#384775", "primaryDark": "#859ED1", "backgroundLight": "#F2F2FA", "backgroundDark": "#121219", "icon": "pencil.and.outline" }
+      {
+        "id": "moss",
+        "displayName": "Mos",
+        "primaryLight": "#4D804D",
+        "primaryDark": "#85BC85",
+        "backgroundLight": "#F2F7EF",
+        "backgroundDark": "#1A211A",
+        "icon": "leaf.fill"
+      },
+      {
+        "id": "stone",
+        "displayName": "Steen",
+        "primaryLight": "#78736D",
+        "primaryDark": "#B3ABA1",
+        "backgroundLight": "#F5F2EF",
+        "backgroundDark": "#1F1C1A",
+        "icon": "mountain.2.fill"
+      },
+      {
+        "id": "mist",
+        "displayName": "Nevel",
+        "primaryLight": "#618AAD",
+        "primaryDark": "#94BCDB",
+        "backgroundLight": "#F0F5FA",
+        "backgroundDark": "#141A24",
+        "icon": "cloud.fog.fill"
+      },
+      {
+        "id": "clay",
+        "displayName": "Klei",
+        "primaryLight": "#AD6642",
+        "primaryDark": "#D69970",
+        "backgroundLight": "#FAF2EB",
+        "backgroundDark": "#241712",
+        "icon": "circle.hexagongrid.fill"
+      },
+      {
+        "id": "sakura",
+        "displayName": "Sakura",
+        "primaryLight": "#B36685",
+        "primaryDark": "#E1A8BC",
+        "backgroundLight": "#FCF2F7",
+        "backgroundDark": "#21141A",
+        "icon": "camera.macro"
+      },
+      {
+        "id": "ink",
+        "displayName": "Inkt",
+        "primaryLight": "#384775",
+        "primaryDark": "#859ED1",
+        "backgroundLight": "#F2F2FA",
+        "backgroundDark": "#121219",
+        "icon": "pencil.and.outline"
+      }
     ],
     "iconSet": "SF Symbols, hierarchical rendering (SereneIconStyle)",
     "haptics": "UIImpactFeedbackGenerator (.medium) bij key-bevestigingen",
@@ -2380,10 +2925,45 @@
       }
     ],
     "categories": [
-      { "title": "Pure-Swift services", "modules": ["ActivityDeduplicator", "PauseDetector", "WorkoutPatternDetector", "SessionClassifier", "ReadinessCalculator", "PeriodizationEngine", "PhysiologicalThresholdEstimator", "HeartRateZoneCalculator", "PowerZoneCalculator"] },
-      { "title": "ViewModel-formatters", "modules": ["BlueprintContextFormatter", "WorkoutHistoryContextBuilder", "PreferencesContextFormatter"] },
-      { "title": "Schema & migratie", "modules": ["AppMigrationPlan", "SchemaV1", "SchemaV2", "SchemaV3"] },
-      { "title": "Auth & storage", "modules": ["KeychainService", "UserAPIKeyStore", "StravaAuthService"] }
+      {
+        "title": "Pure-Swift services",
+        "modules": [
+          "ActivityDeduplicator",
+          "PauseDetector",
+          "WorkoutPatternDetector",
+          "SessionClassifier",
+          "ReadinessCalculator",
+          "PeriodizationEngine",
+          "PhysiologicalThresholdEstimator",
+          "HeartRateZoneCalculator",
+          "PowerZoneCalculator"
+        ]
+      },
+      {
+        "title": "ViewModel-formatters",
+        "modules": [
+          "BlueprintContextFormatter",
+          "WorkoutHistoryContextBuilder",
+          "PreferencesContextFormatter"
+        ]
+      },
+      {
+        "title": "Schema & migratie",
+        "modules": [
+          "AppMigrationPlan",
+          "SchemaV1",
+          "SchemaV2",
+          "SchemaV3"
+        ]
+      },
+      {
+        "title": "Auth & storage",
+        "modules": [
+          "KeychainService",
+          "UserAPIKeyStore",
+          "StravaAuthService"
+        ]
+      }
     ],
     "infrastructure": [
       {
@@ -2416,10 +2996,22 @@
       "summary": "61% combined coverage op testable code. Coverage is signal, geen KPI — `Views/` blijft beperkt door SwiftUI-testbaarheid en wordt apart gerapporteerd.",
       "tool": "scripts/coverage-report.py (max-merge per file over unit-tests + ui-tests xcresults)",
       "byDirectory": [
-        { "path": "Models", "pct": 80 },
-        { "path": "Services", "pct": 59 },
-        { "path": "ViewModels", "pct": 59 },
-        { "path": "Views", "pct": 43 }
+        {
+          "path": "Models",
+          "pct": 80
+        },
+        {
+          "path": "Services",
+          "pct": 59
+        },
+        {
+          "path": "ViewModels",
+          "pct": 59
+        },
+        {
+          "path": "Views",
+          "pct": 43
+        }
       ]
     },
     "lessonsLearned": [
@@ -2446,7 +3038,10 @@
         "id": "ios-ci",
         "name": "iOS CI",
         "file": ".github/workflows/ios-tests.yml",
-        "triggers": ["push:main", "pull_request:main"],
+        "triggers": [
+          "push:main",
+          "pull_request:main"
+        ],
         "runner": "macos-latest",
         "description": "Lint + Unit Tests + UI Tests + Coverage Report als DAG. Coverage draait pas als beide test-jobs klaar zijn (of als alleen unit-tests slagen — UI-bundle is dan optioneel)."
       },
@@ -2454,7 +3049,11 @@
         "id": "codeql",
         "name": "CodeQL Security Analysis",
         "file": ".github/workflows/codeql.yml",
-        "triggers": ["push:main", "pull_request:main", "schedule:weekly"],
+        "triggers": [
+          "push:main",
+          "pull_request:main",
+          "schedule:weekly"
+        ],
         "runner": "matrix (macos-latest voor swift, ubuntu-latest voor actions)",
         "description": "Twee parallelle matrix-cellen: Swift op macOS met manuele xcodebuild, Actions-taal op Ubuntu (10× goedkoper) voor YAML-statische-analyse."
       }
@@ -2476,25 +3075,37 @@
         "needs": [],
         "runner": "macos-latest",
         "description": "xcodebuild test -only-testing:AIFitnessCoachTests -enableCodeCoverage YES. xcresult-bundle als artifact (7d retentie).",
-        "artifacts": ["unit-tests-xcresult"]
+        "artifacts": [
+          "unit-tests-xcresult"
+        ]
       },
       {
         "id": "ui-tests",
         "name": "UI Tests",
         "workflow": "ios-ci",
-        "needs": ["unit-tests"],
+        "needs": [
+          "unit-tests"
+        ],
         "runner": "macos-latest",
         "description": "Sequentieel (-parallel-testing-enabled NO) om xctrunner-clone-crashes te vermijden. Boot simulator + bootstatus vóór xcodebuild voor SpringBoard-warmup. xcresult + CoreSimulator-logs als artifacts (14d retentie).",
-        "artifacts": ["ui-tests-xcresult", "coresimulator-logs"]
+        "artifacts": [
+          "ui-tests-xcresult",
+          "coresimulator-logs"
+        ]
       },
       {
         "id": "coverage-report",
         "name": "Coverage Report",
         "workflow": "ios-ci",
-        "needs": ["unit-tests", "ui-tests"],
+        "needs": [
+          "unit-tests",
+          "ui-tests"
+        ],
         "runner": "macos-latest",
         "description": "Mergt beide xcresults per-file (max-coverage) via scripts/coverage-report.py. Genereert per-directory markdown met aggregaten (Testable / Views / Totaal). Draait ook bij rode UI-tests-job — dan single-bundle modus.",
-        "artifacts": ["coverage-report"]
+        "artifacts": [
+          "coverage-report"
+        ]
       },
       {
         "id": "codeql-swift",
@@ -2680,13 +3291,34 @@
         "id": "branch-types",
         "title": "Branchnaam-conventies",
         "items": [
-          { "pattern": "feature/epic-{nr}-{korte-beschrijving}", "use": "Nieuwe epics/sprints" },
-          { "pattern": "fix/{korte-beschrijving}", "use": "Reguliere bugfixes" },
-          { "pattern": "hotfix/{korte-beschrijving}", "use": "Productie-kritiek, fast-track merge" },
-          { "pattern": "security/{alert-id-of-beschrijving}", "use": "Security-fixes" },
-          { "pattern": "ci/{korte-beschrijving}", "use": "Workflow/pipeline-wijzigingen" },
-          { "pattern": "chore/{korte-beschrijving}", "use": "Tech-debt, refactors zonder gedragswijziging" },
-          { "pattern": "docs/{korte-beschrijving}", "use": "Pure documentatie-updates (zeldzaam)" }
+          {
+            "pattern": "feature/epic-{nr}-{korte-beschrijving}",
+            "use": "Nieuwe epics/sprints"
+          },
+          {
+            "pattern": "fix/{korte-beschrijving}",
+            "use": "Reguliere bugfixes"
+          },
+          {
+            "pattern": "hotfix/{korte-beschrijving}",
+            "use": "Productie-kritiek, fast-track merge"
+          },
+          {
+            "pattern": "security/{alert-id-of-beschrijving}",
+            "use": "Security-fixes"
+          },
+          {
+            "pattern": "ci/{korte-beschrijving}",
+            "use": "Workflow/pipeline-wijzigingen"
+          },
+          {
+            "pattern": "chore/{korte-beschrijving}",
+            "use": "Tech-debt, refactors zonder gedragswijziging"
+          },
+          {
+            "pattern": "docs/{korte-beschrijving}",
+            "use": "Pure documentatie-updates (zeldzaam)"
+          }
         ]
       },
       {
@@ -2705,11 +3337,39 @@
         "id": "doc-update-protocol",
         "title": "Doc-update-protocol per PR-type",
         "matrix": [
-          { "trigger": "Nieuwe Epic of grote feature", "files": ["ROADMAP.md", "ARCHITECTURE.md (indien nieuwe keuze)", "architecture.json + .html"] },
-          { "trigger": "Bugfix / refactor zonder structuur-wijziging", "files": [] },
-          { "trigger": "Nieuwe service / @Model / @StateObject", "files": ["architecture.json + .html (bump docRevision)"] },
-          { "trigger": "Nieuwe permanente regel", "files": ["CLAUDE.md"] },
-          { "trigger": "Schema-migratie", "files": ["SchemaV<N>.swift snapshot", "AppMigrationPlan.swift", "SchemaMigrationV<N>To<M>Tests.swift", "container-init bump"] }
+          {
+            "trigger": "Nieuwe Epic of grote feature",
+            "files": [
+              "ROADMAP.md",
+              "ARCHITECTURE.md (indien nieuwe keuze)",
+              "architecture.json + .html"
+            ]
+          },
+          {
+            "trigger": "Bugfix / refactor zonder structuur-wijziging",
+            "files": []
+          },
+          {
+            "trigger": "Nieuwe service / @Model / @StateObject",
+            "files": [
+              "architecture.json + .html (bump docRevision)"
+            ]
+          },
+          {
+            "trigger": "Nieuwe permanente regel",
+            "files": [
+              "CLAUDE.md"
+            ]
+          },
+          {
+            "trigger": "Schema-migratie",
+            "files": [
+              "SchemaV<N>.swift snapshot",
+              "AppMigrationPlan.swift",
+              "SchemaMigrationV<N>To<M>Tests.swift",
+              "container-init bump"
+            ]
+          }
         ]
       }
     ],
@@ -2720,7 +3380,9 @@
         "epic": "Epic #49",
         "incident": "Twee optionele velden toegevoegd aan ActivityRecord zónder schema-bump. SwiftData's lightweight inference werkt anders bij een explicit migrationPlan — container-init faalde, fallback wiste FitnessGoal + UserPreference (lokaal-only).",
         "rule": "Verplicht bij élke @Model-wijziging — óók pure additions — een SchemaV<N>-snapshot + MigrationStage. Geen uitzonderingen meer.",
-        "rulesAffected": ["§2.1"]
+        "rulesAffected": [
+          "§2.1"
+        ]
       },
       {
         "id": "xcuitest-parallel",
@@ -2728,7 +3390,9 @@
         "epic": "Epic 46.4",
         "incident": "XCUITest faalde flaky op GitHub macos-latest met `ipc/mig server died`. Root-cause: parallelle xctrunner-clones (\"Clone 2 of iPhone 16 Pro\") crashen onder load.",
         "rule": "UI-tests op CI sequentieel draaien (`-parallel-testing-enabled NO`). Bij failures eerst xcresult-activity-log inspecteren vóór op runner-flakiness te wijzen — vaker zit het in test-code (verborgen NavBar, te-korte timeouts).",
-        "rulesAffected": ["§6 CI-discipline"]
+        "rulesAffected": [
+          "§6 CI-discipline"
+        ]
       },
       {
         "id": "hr-recovery-window",
@@ -2736,7 +3400,9 @@
         "epic": "Epic #47",
         "incident": "Globale piek + meet HR exact 60s later. Bij continue rides was de gebruiker 60s na de piek alweer aan het trappen, dus een visuele dip van 40 BPM tijdens een korte stop kwam als '4 BPM drop' uit de detector.",
         "rule": "HR-recovery alleen meten tijdens gedetecteerde pauzes (power<5 + cadence<5 voor ≥45s). Peak-anchored 90s window i.p.v. 60s vanaf pauze-start — vagale HRR-fase loopt tot ~90s, abrupte stop piekt nog 5-15s na stop voor 'ie begint te dalen.",
-        "rulesAffected": ["Architecture §12"]
+        "rulesAffected": [
+          "Architecture §12"
+        ]
       },
       {
         "id": "logger-duplicates",
@@ -2744,7 +3410,9 @@
         "epic": "Logger-cleanup",
         "incident": "Drie duplicate `static let logger = Logger(...)` declaraties in verschillende services liepen uit de hand — verschillende subsystem-strings, sommige zonder privacy-modifiers.",
         "rule": "Centraliseer in AppLoggers — één logger per categorie, privacy-modifiers verplicht voor user-data. Géén static let logger per service.",
-        "rulesAffected": ["§11"]
+        "rulesAffected": [
+          "§11"
+        ]
       },
       {
         "id": "strava-secret-leak",
@@ -2752,7 +3420,9 @@
         "epic": "C-01",
         "incident": "Strava client_secret zat hardcoded in Secrets.swift — uit de IPA te extraheren door elke gebruiker die de binary kon openen.",
         "rule": "OAuth-flow via een Cloudflare Worker-proxy met het secret als Worker Secret. Client authenticeert met shared X-Client-Token + random state-UUID (CSRF).",
-        "rulesAffected": ["Architecture §2"]
+        "rulesAffected": [
+          "Architecture §2"
+        ]
       },
       {
         "id": "smart-ingest",
@@ -2760,7 +3430,9 @@
         "epic": "Epic #41",
         "incident": "Een armere HK-record overschreef regelmatig een rijker Strava-record met deviceWatts wanneer de syncs in de verkeerde volgorde binnenkwamen. Handmatige 'Verwijder Dubbele Activiteiten'-knop in Settings was de workaround.",
         "rule": "Smart-ingest aan de voordeur: drie-laagse check (source-id idempotent → ±5s cross-source vergelijk → reguliere insert) bij alle ingest-paden. Handmatige knop verwijderd — auto-dedupe + smart-ingest dekken beide kanten.",
-        "rulesAffected": ["Architecture §9"]
+        "rulesAffected": [
+          "Architecture §9"
+        ]
       },
       {
         "id": "apns-deeplink-vector",
@@ -2768,7 +3440,9 @@
         "epic": "Security mitigation",
         "incident": "APNs-payload met willekeurige `activityId` kon de app navigeren — potentiele social-engineering-vector.",
         "rule": "Whitelist in AppDelegate.isAllowedNotificationPayload(_:) — alleen `goalRisk` en `recovery_plan` payloads. Alle andere stil genegeerd, in willPresent én didReceive.",
-        "rulesAffected": ["Architecture §5"]
+        "rulesAffected": [
+          "Architecture §5"
+        ]
       },
       {
         "id": "fatalerror-launch",
@@ -2776,7 +3450,9 @@
         "epic": "Defensive-init",
         "incident": "ModelContainer-init met migration plan kon falen en de app brickte tot reinstall. Crash-loop omdat fatalError de eerste catch was.",
         "rule": "Op het kritieke launch-pad: probeer → log + fallback (verwijder corrupte store) → pas bij tweede falen fatalError. HK + Strava-data zijn re-syncbaar; data-loss-risico is acceptabel boven brick.",
-        "rulesAffected": ["§12"]
+        "rulesAffected": [
+          "§12"
+        ]
       }
     ]
   },

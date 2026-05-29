@@ -16,6 +16,18 @@ enum ChatErrorMessageMapper {
     /// de helpers eerst een fallback-model proberen (zie ChatViewModel) —
     /// deze mapper is voor de definitieve melding nadat alle pogingen falen.
     static func userFacingMessage(for error: Error) -> String {
+        // Epic #53: onze eigen provider-fout van de OpenAI/Claude/Mistral REST-
+        // clients. Getypeerd, dus de eerste en meest specifieke check.
+        if let providerError = error as? AIProviderError {
+            switch providerError {
+            case .overloaded:           return Self.providerOverloaded
+            case .authenticationFailed: return Self.invalidAPIKey
+            case .contentBlocked:       return Self.promptBlocked
+            case .http, .emptyResponse, .decodingFailed:
+                return Self.providerGeneric
+            }
+        }
+
         // Volgorde: meest specifieke check eerst.
         if let urlError = error as? URLError {
             return message(for: urlError)

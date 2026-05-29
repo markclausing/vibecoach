@@ -9,6 +9,7 @@ enum AIProvider: String, CaseIterable, Identifiable {
     case gemini    = "gemini"
     case openAI    = "openai"
     case anthropic = "anthropic"
+    case mistral   = "mistral"
 
     var id: String { rawValue }
 
@@ -17,6 +18,7 @@ enum AIProvider: String, CaseIterable, Identifiable {
         case .gemini:    return "Google Gemini"
         case .openAI:    return "OpenAI GPT"
         case .anthropic: return "Anthropic Claude"
+        case .mistral:   return "Mistral"
         }
     }
 
@@ -26,6 +28,7 @@ enum AIProvider: String, CaseIterable, Identifiable {
         case .gemini:    return "AIzaSy..."
         case .openAI:    return "sk-..."
         case .anthropic: return "sk-ant-..."
+        case .mistral:   return "..."
         }
     }
 
@@ -35,10 +38,15 @@ enum AIProvider: String, CaseIterable, Identifiable {
         case .gemini:    return URL(string: "https://aistudio.google.com/app/apikey")
         case .openAI:    return URL(string: "https://platform.openai.com/api-keys")
         case .anthropic: return URL(string: "https://console.anthropic.com/settings/keys")
+        case .mistral:   return URL(string: "https://console.mistral.ai/api-keys")
         }
     }
 
     /// True als deze provider volledig geïntegreerd is en direct bruikbaar is.
+    /// Epic #53: de client-laag (factory + REST-clients) ondersteunt alle vier de
+    /// providers, maar key-opslag-per-provider (53.3) en de Settings-/onboarding-UI
+    /// (53.6/53.7) volgen in latere sprints. Tot die er zijn blijft Gemini de enige
+    /// die de UI selecteerbaar maakt.
     var isSupported: Bool {
         self == .gemini
     }

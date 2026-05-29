@@ -64,11 +64,20 @@ App Attest / DeviceCheck als tweede factor op de Worker-auth — zodat alleen ec
 
 ## 3. BYOK — API-Sleutels in Keychain
 
-**BYOK-only:** de gebruiker voert zijn eigen AI-API-sleutel in (Gemini / OpenAI / Anthropic). Er is geen Secrets-fallback meer.
+**BYOK-only:** de gebruiker voert zijn eigen AI-API-sleutel in (Gemini / OpenAI / Anthropic / Mistral). Er is geen Secrets-fallback meer.
 
 - Opslag via `UserAPIKeyStore` → `KeychainService` onder service-naam `VibeCoach_UserAIKey`.
 - Eenmalige migratie in `AIFitnessCoachApp.init()` verplaatst bestaande `UserDefaults`-waarden naar de Keychain en wist de legacy-entry (idempotent).
 - `SettingsView`, `AIProviderSettingsView`, `ChatViewModel`, `AddGoalView` lezen/schrijven uitsluitend via de Keychain.
+
+### Provider-agnostische client-laag (Epic #53)
+
+Vóór Epic #53 was de hele inferentie aan Gemini vastgeklonken: het "abstractie"-protocol `GenerativeModelProtocol` leunde op het Google-SDK-type `ModelContent.Part`, en elke call-site bouwde zelf een `GoogleGenerativeAI.GenerativeModel`. Epic #53 introduceert een SDK-vrije laag zodat OpenAI, Anthropic Claude en Mistral achter hetzelfde contract kunnen draaien.
+
+- **SDK-vrij contract** (`ViewModels/GenerativeModelProtocol.swift`): `AIPromptPart` (`.text` / `.imageData`) vervangt `ModelContent.Part`; `AIProviderError` is de uniforme fout (overloaded/auth/contentBlocked/http/empty/decoding); `RealAIProviderClient` is een marker waarmee `ChatViewModel` de API-sleutel-gate alleen op live clients toepast (mocks conformeren bewust niet). `AIProviderError.isOverload(_:)` herkent zowel `.overloaded` als de Gemini `internalError` zodat de 503/429-waterfall provider-agnostisch is.
+- **Factory + clients** (`Services/AIModelFactory.swift`): `AIModelFactory.makeModel(provider:…)` routeert per `AIProvider` naar `RealGenerativeModel` (Gemini-adapter, mapt `AIPromptPart` → SDK), `OpenAICompatibleModelClient` (OpenAI **én** Mistral via `/v1/chat/completions`, `Bearer`-auth, `response_format` voor JSON-mode) of `AnthropicModelClient` (`/v1/messages`, `x-api-key` + `anthropic-version`, JSON via assistant-prefill `{`). Per-provider verschillen (system-instructie-plaatsing, JSON-mode, fout-mapping via `AIProviderHTTP.validate`) zitten volledig in deze laag.
+- **Call-sites** (`ChatViewModel`, `WorkoutInsightService`, `AddGoalView`) zijn nu SDK-vrij en routeren via de factory; alleen `AIModelFactory` (de Gemini-adapter) en `APIKeyValidator` importeren nog `GoogleGenerativeAI`.
+- **Status:** de client-laag ondersteunt alle vier providers, maar key-opslag-per-provider en de Settings-/onboarding-UI volgen in latere Epic #53-sprints; tot dan blijft `gemini` de enige selecteerbare provider en is het runtime-gedrag ongewijzigd.
 
 ---
 

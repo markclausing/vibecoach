@@ -30,6 +30,7 @@
 		3500FFEECC00AA05BB02CC03 /* AIModelCatalogServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */; };
 		3600AABBCC00DD01EE02FF03 /* PeriodizationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3600AABBCC00DD02EE02FF03 /* PeriodizationEngineTests.swift */; };
 		3603AABBCC00DD03EE03FF03 /* APIKeyValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */; };
+		A153FAC710FF20AA30BB4002 /* AIModelClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A153FAC701FF02AA03BB0402 /* AIModelClientTests.swift */; };
 		3604AABBCC00DD05EE04FF04 /* ProactiveNotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3604AABBCC00DD06EE04FF04 /* ProactiveNotificationServiceTests.swift */; };
 		3606AABBCC00DD07EE05FF05 /* KeychainServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3606AABBCC00DD08EE05FF05 /* KeychainServiceTests.swift */; };
 		48E3320BE9BDAC79B8060EEE /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136CF190D3B3F2D63ADC3225 /* KeychainService.swift */; };
@@ -41,6 +42,7 @@
 		DE10FF20AA30BB40CC50DD60 /* PhysiologicalThresholdValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */; };
 		E010FF20AA30BB40CC50DD60 /* ChatScopeInstruction.swift in Sources */ = {isa = PBXBuildFile; fileRef = E001FF02AA03BB04CC05DD06 /* ChatScopeInstruction.swift */; };
 		E110FF20AA30BB40CC50DD60 /* ChatErrorMessageMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E101FF02AA03BB04CC05DD06 /* ChatErrorMessageMapper.swift */; };
+		A153FAC710FF20AA30BB4001 /* AIModelFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A153FAC701FF02AA03BB0401 /* AIModelFactory.swift */; };
 		E410FF20AA30BB40CC50DD60 /* ChatModelSwitchNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E401FF02AA03BB04CC05DD06 /* ChatModelSwitchNotice.swift */; };
 		E510FF20AA30BB40CC50DD60 /* ChatConversationTrimmer.swift in Sources */ = {isa = PBXBuildFile; fileRef = E501FF02AA03BB04CC05DD06 /* ChatConversationTrimmer.swift */; };
 		E610FF20AA30BB40CC50DD60 /* ChatInputValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E601FF02AA03BB04CC05DD06 /* ChatInputValidator.swift */; };
@@ -243,6 +245,7 @@
 		DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalThresholdValidator.swift; sourceTree = "<group>"; };
 		E001FF02AA03BB04CC05DD06 /* ChatScopeInstruction.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatScopeInstruction.swift; sourceTree = "<group>"; };
 		E101FF02AA03BB04CC05DD06 /* ChatErrorMessageMapper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatErrorMessageMapper.swift; sourceTree = "<group>"; };
+		A153FAC701FF02AA03BB0401 /* AIModelFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelFactory.swift; sourceTree = "<group>"; };
 		E401FF02AA03BB04CC05DD06 /* ChatModelSwitchNotice.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatModelSwitchNotice.swift; sourceTree = "<group>"; };
 		E501FF02AA03BB04CC05DD06 /* ChatConversationTrimmer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatConversationTrimmer.swift; sourceTree = "<group>"; };
 		E601FF02AA03BB04CC05DD06 /* ChatInputValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatInputValidator.swift; sourceTree = "<group>"; };
@@ -262,6 +265,7 @@
 		3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelCatalogServiceTests.swift; sourceTree = "<group>"; };
 		3600AABBCC00DD02EE02FF03 /* PeriodizationEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PeriodizationEngineTests.swift; sourceTree = "<group>"; };
 		3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyValidatorTests.swift; sourceTree = "<group>"; };
+		A153FAC701FF02AA03BB0402 /* AIModelClientTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelClientTests.swift; sourceTree = "<group>"; };
 		3604AABBCC00DD06EE04FF04 /* ProactiveNotificationServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProactiveNotificationServiceTests.swift; sourceTree = "<group>"; };
 		3606AABBCC00DD08EE05FF05 /* KeychainServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainServiceTests.swift; sourceTree = "<group>"; };
 		4455667788990011223344DD /* PhysiologicalCalculatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalCalculatorTests.swift; sourceTree = "<group>"; };
@@ -532,6 +536,7 @@
 				3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */,
 				3100FFEECC00AA08BB02CC03 /* OnboardingPersistenceTests.swift */,
 				3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */,
+				A153FAC701FF02AA03BB0402 /* AIModelClientTests.swift */,
 				3604AABBCC00DD06EE04FF04 /* ProactiveNotificationServiceTests.swift */,
 				3606AABBCC00DD08EE05FF05 /* KeychainServiceTests.swift */,
 				E4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift */,
@@ -607,6 +612,7 @@
 				DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */,
 				DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */,
 				E101FF02AA03BB04CC05DD06 /* ChatErrorMessageMapper.swift */,
+				A153FAC701FF02AA03BB0401 /* AIModelFactory.swift */,
 				E401FF02AA03BB04CC05DD06 /* ChatModelSwitchNotice.swift */,
 				E501FF02AA03BB04CC05DD06 /* ChatConversationTrimmer.swift */,
 				E601FF02AA03BB04CC05DD06 /* ChatInputValidator.swift */,
@@ -980,6 +986,7 @@
 				3500FFEECC00AA05BB02CC03 /* AIModelCatalogServiceTests.swift in Sources */,
 				3100FFEECC00AA07BB02CC03 /* OnboardingPersistenceTests.swift in Sources */,
 				3603AABBCC00DD03EE03FF03 /* APIKeyValidatorTests.swift in Sources */,
+				A153FAC710FF20AA30BB4002 /* AIModelClientTests.swift in Sources */,
 				3604AABBCC00DD05EE04FF04 /* ProactiveNotificationServiceTests.swift in Sources */,
 				3606AABBCC00DD07EE05FF05 /* KeychainServiceTests.swift in Sources */,
 				B4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift in Sources */,
@@ -1076,6 +1083,7 @@
 				DC10FF20AA30BB40CC50DD60 /* AppVersionInfo.swift in Sources */,
 				DE10FF20AA30BB40CC50DD60 /* PhysiologicalThresholdValidator.swift in Sources */,
 				E110FF20AA30BB40CC50DD60 /* ChatErrorMessageMapper.swift in Sources */,
+				A153FAC710FF20AA30BB4001 /* AIModelFactory.swift in Sources */,
 				E410FF20AA30BB40CC50DD60 /* ChatModelSwitchNotice.swift in Sources */,
 				E510FF20AA30BB40CC50DD60 /* ChatConversationTrimmer.swift in Sources */,
 				E610FF20AA30BB40CC50DD60 /* ChatInputValidator.swift in Sources */,
