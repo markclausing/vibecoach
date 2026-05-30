@@ -1,9 +1,9 @@
 import Foundation
 import SwiftData
 
-// MARK: - Epic 18: Symptoom & Blessure Intelligentie
+// MARK: - Epic 18: Symptom & Injury Intelligence
 
-/// Lichaamsdelen waarvoor de gebruiker dagelijks een pijnscores kan invoeren.
+/// Body parts for which the user can enter a daily pain score.
 enum BodyArea: String, CaseIterable, Codable {
     case calf      = "Kuit"
     case hand      = "Hand"
@@ -12,7 +12,7 @@ enum BodyArea: String, CaseIterable, Codable {
     case shoulder  = "Schouder"
     case ankle     = "Enkel"
 
-    /// Sleutelwoorden die in UserPreference-teksten duiden op een klacht in dit gebied.
+    /// Keywords in UserPreference texts that indicate a complaint in this area.
     var injuryKeywords: [String] {
         switch self {
         case .calf:     return ["kuit", "scheen", "shin"]
@@ -35,7 +35,7 @@ enum BodyArea: String, CaseIterable, Codable {
         }
     }
 
-    /// Geeft een leesbare ernst-omschrijving voor een gegeven score.
+    /// Returns a readable severity description for a given score.
     static func severityLabel(_ score: Int) -> String {
         switch score {
         case 0:     return "Geen pijn"
@@ -47,18 +47,18 @@ enum BodyArea: String, CaseIterable, Codable {
     }
 }
 
-/// Dagelijkse pijnscore voor één lichaamsdeel. Eén record per gebied per dag (upsert-patroon).
+/// Daily pain score for one body part. One record per area per day (upsert pattern).
 ///
-/// **Schema V2 wijziging:** `bodyAreaRaw: String` → `bodyArea: BodyArea` (type-veilige enum).
-/// `@Attribute(originalName:)` koppelt het aan de oude V1-kolom zodat SwiftData de bestaande
-/// rawValue-strings ("Kuit", "Knie", …) onveranderd kan inlezen — `BodyArea` is `String`-backed
-/// dus de onderliggende opslag blijft identiek.
+/// **Schema V2 change:** `bodyAreaRaw: String` → `bodyArea: BodyArea` (type-safe enum).
+/// `@Attribute(originalName:)` links it to the old V1 column so SwiftData can read the existing
+/// rawValue strings ("Kuit", "Knie", …) unchanged — `BodyArea` is `String`-backed
+/// so the underlying storage stays identical.
 @Model
 final class Symptom {
     @Attribute(.unique) var id: UUID
     @Attribute(originalName: "bodyAreaRaw") var bodyArea: BodyArea
-    var severity: Int            // 0 (geen pijn) t/m 10 (ernstig)
-    var date: Date               // Genormaliseerd naar startOfDay
+    var severity: Int            // 0 (no pain) to 10 (severe)
+    var date: Date               // Normalised to startOfDay
 
     init(bodyArea: BodyArea, severity: Int, date: Date = Date()) {
         self.id = UUID()

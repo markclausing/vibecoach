@@ -1,38 +1,38 @@
 import Foundation
 
-/// De individuele suggestie voor een specifieke dag in de komende week.
+/// The individual suggestion for a specific day in the coming week.
 struct SuggestedWorkout: Codable, Identifiable, Equatable {
     var id: UUID = UUID()
 
-    /// De dag, bijv. "Maandag" of een specifieke datum "2023-11-01"
+    /// The day, e.g. "Maandag" or a specific date "2023-11-01"
     let dateOrDay: String
 
-    /// Type activiteit: e.g. "Hardlopen", "Fietsen", of "Rust"
+    /// Activity type: e.g. "Hardlopen", "Fietsen", or "Rust"
     let activityType: String
 
-    /// Voorgestelde duur in minuten (0 voor rust)
+    /// Suggested duration in minutes (0 for rest)
     let suggestedDurationMinutes: Int
 
-    /// Beoogde belasting (TRIMP), 0 voor rust. Soms stuurt Gemini dit als String, of laat hij het weg.
+    /// Intended load (TRIMP), 0 for rest. Sometimes Gemini sends this as a String, or omits it.
     let targetTRIMP: Int?
 
-    /// Korte toelichting, bijv. "Zone 2 herstelrit" of "Intervaltraining: 5x1000m"
+    /// Short explanation, e.g. "Zone 2 herstelrit" or "Intervaltraining: 5x1000m"
     let description: String
 
-    /// Doel hartslagzone, bijv. "Zone 2"
+    /// Target heart-rate zone, e.g. "Zone 2"
     let heartRateZone: String?
 
-    /// Doel tempo, bijv. "5:30 min/km"
+    /// Target pace, e.g. "5:30 min/km"
     let targetPace: String?
 
-    /// Sprint 17.3: Korte uitleg waarom deze training in het schema staat (fase + succescriteria basis).
-    /// Bijv: "60 km = 50% van je fietsdoel. Verplichte mijlpaal in de Build-fase."
+    /// Sprint 17.3: short explanation of why this workout is in the schedule (phase + success-criteria basis).
+    /// E.g. "60 km = 50% of your cycling goal. Mandatory milestone in the Build phase."
     let reasoning: String?
 
-    // Epic 33 Story 33.2a: Flexibele Planning — "Verplaats sessie".
-    // Optionele override op de door de AI gesuggereerde dag. Default `nil` —
-    // dan valt `displayDate` terug op `resolvedDate` (de string-parse-route).
-    // Bestaande AppStorage-plans zonder dit veld decoderen probleemloos via
+    // Epic 33 Story 33.2a: Flexible planning — "Move session".
+    // Optional override on the AI-suggested day. Default `nil` —
+    // then `displayDate` falls back to `resolvedDate` (the string-parse route).
+    // Existing AppStorage plans without this field decode without issue via
     // `decodeIfPresent` in `init(from:)`.
     var scheduledDate: Date?
     var isSwapped: Bool
@@ -78,14 +78,14 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         dateOrDay = try container.decode(String.self, forKey: .dateOrDay)
         activityType = try container.decode(String.self, forKey: .activityType)
-        // Gemini stuurt null voor rustdagen — decodeIfPresent met fallback naar 0
+        // Gemini sends null for rest days — decodeIfPresent with a fallback to 0
         suggestedDurationMinutes = (try? container.decodeIfPresent(Int.self, forKey: .suggestedDurationMinutes)) ?? 0
         description = try container.decode(String.self, forKey: .description)
         heartRateZone = try container.decodeIfPresent(String.self, forKey: .heartRateZone)
         targetPace    = try container.decodeIfPresent(String.self, forKey: .targetPace)
         reasoning     = try container.decodeIfPresent(String.self, forKey: .reasoning)
 
-        // Probeer targetTRIMP te decoderen als Int, en anders als String en parse naar Int
+        // Try to decode targetTRIMP as an Int, otherwise as a String and parse to Int
         if let intTRIMP = try? container.decodeIfPresent(Int.self, forKey: .targetTRIMP) {
             targetTRIMP = intTRIMP
         } else if let stringTRIMP = try? container.decodeIfPresent(String.self, forKey: .targetTRIMP), let parsedInt = Int(stringTRIMP) {
@@ -94,30 +94,30 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
             targetTRIMP = nil
         }
 
-        // Story 33.2a — backwards-compat: oudere persisted plans hebben deze velden niet.
+        // Story 33.2a — backwards-compat: older persisted plans don't have these fields.
         scheduledDate = try container.decodeIfPresent(Date.self, forKey: .scheduledDate)
         isSwapped     = (try? container.decodeIfPresent(Bool.self, forKey: .isSwapped)) ?? false
     }
 
-    // MARK: - Kalenderlogica
+    // MARK: - Calendar logic
 
-    /// Berekent de eerstvolgende kalenderdag die overeenkomt met `dateOrDay`.
-    /// Ondersteunt Nederlandse dagnamen ("Maandag"…"Zondag"), Engelse dagnamen ("Monday"…"Sunday"),
-    /// samengestelde strings ("Maandag 21 apr") en ISO-datumstrings ("2026-04-10").
-    /// Vandaag wordt als offset 0 beschouwd — een dag in het verleden krijgt +7 dagen.
+    /// Computes the next calendar day matching `dateOrDay`.
+    /// Supports Dutch day names ("Maandag"…"Zondag"), English day names ("Monday"…"Sunday"),
+    /// compound strings ("Maandag 21 apr") and ISO date strings ("2026-04-10").
+    /// Today is treated as offset 0 — a day in the past gets +7 days.
     var resolvedDate: Date {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        // Probeer ISO-datum te parsen
+        // Try to parse an ISO date
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         if let parsed = formatter.date(from: dateOrDay) {
             return calendar.startOfDay(for: parsed)
         }
 
-        // Map dagnamen → weekday-getal (Calendar: 1=zondag … 7=zaterdag)
-        // Ondersteunt Nederlands én Engels zodat ook Gemini-fallback-responses correct worden verwerkt.
+        // Map day names → weekday number (Calendar: 1=Sunday … 7=Saturday)
+        // Supports Dutch and English so Gemini fallback responses are also handled correctly.
         let dayMap: [String: Int] = [
             "zondag": 1, "sunday": 1,
             "maandag": 2, "monday": 2,
@@ -128,7 +128,7 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
             "zaterdag": 7, "saturday": 7
         ]
 
-        // Gebruik alleen het eerste woord zodat "Maandag 21 apr" correct als "maandag" wordt herkend.
+        // Use only the first word so "Maandag 21 apr" is correctly recognised as "maandag".
         let firstWord = dateOrDay.lowercased().components(separatedBy: .whitespaces).first ?? dateOrDay.lowercased()
         guard let targetWeekday = dayMap[firstWord] else { return today }
 
@@ -139,10 +139,10 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         return calendar.date(byAdding: .day, value: daysAhead, to: today) ?? today
     }
 
-    /// Story 33.2a: de echte datum waarop de sessie staat. Indien de gebruiker hem
-    /// heeft verplaatst (`scheduledDate != nil`) telt die override; anders valt-ie
-    /// terug op `resolvedDate` (string-parse uit de AI-suggestie).
-    /// Wordt gebruikt voor sortering, UI-labels én voor de coach-prompt.
+    /// Story 33.2a: the real date the session is on. If the user has
+    /// moved it (`scheduledDate != nil`) that override counts; otherwise it falls
+    /// back to `resolvedDate` (string parse from the AI suggestion).
+    /// Used for sorting, UI labels and the coach prompt.
     var displayDate: Date {
         if let scheduledDate {
             return Calendar.current.startOfDay(for: scheduledDate)
@@ -150,9 +150,9 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         return resolvedDate
     }
 
-    /// Geeft de dag als expliciete datum terug, bijv. "Vrijdag 10 apr".
-    /// Geen 'Vandaag'/'Morgen' — expliciete datums voorkomen verwarring bij stale data.
-    /// Gebruikt `displayDate` zodat verplaatste sessies meteen het nieuwe label tonen.
+    /// Returns the day as an explicit date, e.g. "Vrijdag 10 apr".
+    /// No 'Today'/'Tomorrow' — explicit dates prevent confusion with stale data.
+    /// Uses `displayDate` so moved sessions immediately show the new label.
     var displayDayLabel: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "nl_NL")
@@ -162,20 +162,20 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
     }
 }
 
-/// Structuur om via JSON een nieuw geheugen inclusief optionele verloopdatum te ontvangen.
+/// Structure to receive, via JSON, a new memory including an optional expiry date.
 struct ExtractedPreference: Codable, Equatable {
     let text: String
-    let expirationDate: String? // Verwacht formaat: "YYYY-MM-DD"
+    let expirationDate: String? // Expected format: "YYYY-MM-DD"
 }
 
-/// De gestructureerde JSON-output (vanuit Gemini) voor een compleet weekschema.
+/// The structured JSON output (from Gemini) for a complete weekly schedule.
 struct SuggestedTrainingPlan: Codable, Equatable {
     let motivation: String
     let workouts: [SuggestedWorkout]
     let newPreferences: [ExtractedPreference]?
 
-    // Custom init zodat een Gemini-response met alleen {"motivation": "..."} niet crasht.
-    // Ontbrekende arrays krijgen een lege standaardwaarde in plaats van een decode-fout.
+    // Custom init so a Gemini response with only {"motivation": "..."} does not crash.
+    // Missing arrays get an empty default value instead of a decode error.
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         motivation     = try c.decode(String.self, forKey: .motivation)

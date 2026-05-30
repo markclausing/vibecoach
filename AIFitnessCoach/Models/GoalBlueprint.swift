@@ -2,13 +2,13 @@ import Foundation
 
 // MARK: - Epic 17: Goal-Specific Blueprints — Data Types
 
-/// Ondersteunde blueprint-typen — gedetecteerd via sleutelwoorden in de doeltitel.
+/// Supported blueprint types — detected via keywords in the goal title.
 enum GoalBlueprintType: String, CaseIterable {
     case marathon     = "marathon"
     case halfMarathon = "half_marathon"
     case cyclingTour  = "cycling_tour"
 
-    /// Sleutelwoorden die in de doeltitel moeten voorkomen voor automatische detectie (lowercase).
+    /// Keywords that must appear in the goal title for automatic detection (lowercase).
     var detectionKeywords: [String] {
         switch self {
         case .marathon:
@@ -29,56 +29,56 @@ enum GoalBlueprintType: String, CaseIterable {
     }
 }
 
-/// Een kritieke trainingseis die vóór een bepaald moment behaald moet zijn.
-/// Onderdeel van een GoalBlueprint — één openstaande eis houdt de milestone rood.
+/// A critical training requirement that must be met before a certain moment.
+/// Part of a GoalBlueprint — one outstanding requirement keeps the milestone red.
 struct EssentialWorkout: Equatable {
-    /// Stabiele identifier voor de milestone-check (bijv. "marathon_long_run_32")
+    /// Stable identifier for the milestone check (e.g. "marathon_long_run_32")
     let id: String
-    /// Leesbare beschrijving voor UI en AI-context (bijv. "32 km duurloop")
+    /// Readable description for UI and AI context (e.g. "32 km long run")
     let description: String
-    /// Minimale afstand in meters voor deze eis, of nil als duur leidend is
+    /// Minimum distance in metres for this requirement, or nil if duration is leading
     let minimumDistanceMeters: Double?
-    /// Vereiste sportsoort (type-veilig via SportCategory)
+    /// Required sport type (type-safe via SportCategory)
     let requiredSportCategory: SportCategory
-    /// Aantal weken vóór de einddatum waarbinnen deze workout voltooid moet zijn
+    /// Number of weeks before the end date within which this workout must be completed
     let mustCompleteByWeeksBefore: Int
 }
 
-/// Sportwetenschappelijk trainingsplan voor een specifiek doeltype.
-/// Bevat harde regels die — ongeacht AI-output — altijd van toepassing zijn.
+/// Sports-science training plan for a specific goal type.
+/// Contains hard rules that — regardless of AI output — always apply.
 struct GoalBlueprint {
     let goalType: GoalBlueprintType
-    /// Minimale afstand van de langste duurtraining in meters (bijv. 32.000 voor marathon)
+    /// Minimum distance of the longest endurance workout in metres (e.g. 32,000 for a marathon)
     let minLongRunDistance: Double
-    /// Weken vóór de race dat de afbouwperiode (taper) start
+    /// Weeks before the race that the taper period starts
     let taperPeriodWeeks: Int
-    /// Wekelijkse TRIMP-doelstelling tijdens de opbouwfase
+    /// Weekly TRIMP target during the build phase
     let weeklyTrimpTarget: Double
-    /// Kritieke trainingen die verplicht in het schema moeten voorkomen
+    /// Critical workouts that must appear in the schedule
     let essentialWorkouts: [EssentialWorkout]
 }
 
-/// Voortgangsstatus van één kritieke trainingseis t.o.v. de deadline.
+/// Progress status of one critical training requirement relative to the deadline.
 struct MilestoneStatus: Identifiable, Equatable {
     let id: String
     let description: String
-    /// True als er een passende activiteit gevonden is die aan de eis voldoet
+    /// True if a matching activity has been found that satisfies the requirement
     let isSatisfied: Bool
-    /// Datum waarop de eis behaald werd (alleen ingevuld als isSatisfied == true)
+    /// Date on which the requirement was met (only set if isSatisfied == true)
     let satisfiedByDate: Date?
-    /// Uiterste datum waarop deze workout gedaan moet zijn (berekend vanuit targetDate)
+    /// Latest date by which this workout must be done (computed from targetDate)
     let deadline: Date
-    /// Aantal weken vóór de race dat deze eis uiterlijk voltooid moet zijn
+    /// Number of weeks before the race that this requirement must be completed at the latest
     let weeksBefore: Int
 }
 
-/// Volledige blauwdrukcheck voor één doel: blueprint + alle milestone statussen.
+/// Full blueprint check for one goal: blueprint + all milestone statuses.
 struct BlueprintCheckResult {
     let blueprint: GoalBlueprint
     let goal: FitnessGoal
     let milestones: [MilestoneStatus]
 
-    /// True als alle kritieke eisen waarvan de deadline al verstreken is ook behaald zijn.
+    /// True if all critical requirements whose deadline has already passed are also met.
     var isOnTrack: Bool {
         milestones
             .filter { $0.deadline < Date() }

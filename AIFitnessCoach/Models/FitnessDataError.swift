@@ -1,6 +1,6 @@
 import Foundation
 
-/// Bevat alle verwachte fouten tijdens het ophalen van externe fitness data
+/// Contains all expected errors while fetching external fitness data.
 enum FitnessDataError: Error, LocalizedError, Equatable {
     case missingToken
     case unauthorized // 401

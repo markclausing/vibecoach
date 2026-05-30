@@ -12,30 +12,30 @@ class TrainingPlanManager: ObservableObject {
         loadPlan()
     }
 
-    /// Loads the plan from AppStorage — sorteert altijd chronologisch.
+    /// Loads the plan from AppStorage — always sorts chronologically.
     private func loadPlan() {
         if let decodedPlan = try? JSONDecoder().decode(SuggestedTrainingPlan.self, from: latestSuggestedPlanData) {
             self.activePlan = sorted(decodedPlan)
         }
     }
 
-    /// Updates the plan, sorteert chronologisch, publiceert de wijziging en slaat op in AppStorage.
+    /// Updates the plan, sorts chronologically, publishes the change and saves to AppStorage.
     func updatePlan(_ newPlan: SuggestedTrainingPlan) {
         let sorted = sorted(newPlan)
         self.activePlan = sorted
         if let encoded = try? JSONEncoder().encode(sorted) {
             latestSuggestedPlanData = encoded
         }
-        // Debug: toon de chronologische volgorde na sortering
+        // Debug: show the chronological order after sorting
         print("📅 [TrainingPlan] Gesorteerde volgorde na update:")
         sorted.workouts.forEach { workout in
             print("   \(workout.dateOrDay) → displayDate: \(workout.displayDate)")
         }
     }
 
-    /// Retourneert een nieuw SuggestedTrainingPlan met workouts gesorteerd op `displayDate`
-    /// (chronologisch). Story 33.2a — door op `displayDate` te sorteren bewegen verplaatste
-    /// sessies automatisch naar hun nieuwe positie in de UI.
+    /// Returns a new SuggestedTrainingPlan with workouts sorted by `displayDate`
+    /// (chronologically). Story 33.2a — by sorting on `displayDate`, moved
+    /// sessions automatically shift to their new position in the UI.
     private func sorted(_ plan: SuggestedTrainingPlan) -> SuggestedTrainingPlan {
         let chronological = plan.workouts.sorted { $0.displayDate < $1.displayDate }
         return SuggestedTrainingPlan(
@@ -45,17 +45,17 @@ class TrainingPlanManager: ObservableObject {
         )
     }
 
-    // MARK: - Story 33.2a: Verplaats sessie
+    // MARK: - Story 33.2a: Move session
 
-    /// Verplaatst een geplande workout naar een nieuwe datum. Schrijft de override naar
-    /// `scheduledDate`, markeert `isSwapped = true` (zodat de coach weet dat dit een
-    /// gebruiker-gedreven keuze is), hersorteert de lijst zodat de UI direct meebeweegt
-    /// en persisteert naar AppStorage.
+    /// Moves a planned workout to a new date. Writes the override to
+    /// `scheduledDate`, marks `isSwapped = true` (so the coach knows this is a
+    /// user-driven choice), re-sorts the list so the UI moves along immediately
+    /// and persists to AppStorage.
     /// - Parameters:
-    ///   - workout: De workout om te verplaatsen — gematched op `id`.
-    ///   - newDate: De nieuwe datum (genormaliseerd naar `startOfDay`).
-    /// - Returns: `true` als de workout gevonden en verplaatst is; `false` als de id niet
-    ///   in het actieve plan voorkomt (dan is er niks te doen).
+    ///   - workout: The workout to move — matched by `id`.
+    ///   - newDate: The new date (normalised to `startOfDay`).
+    /// - Returns: `true` if the workout was found and moved; `false` if the id is not
+    ///   in the active plan (then there is nothing to do).
     @discardableResult
     func moveWorkout(_ workout: SuggestedWorkout, to newDate: Date) -> Bool {
         guard let plan = activePlan else { return false }
@@ -63,7 +63,7 @@ class TrainingPlanManager: ObservableObject {
             return false
         }
 
-        // `workouts` is `let` op de struct — bouw een nieuwe array met de override toegepast.
+        // `workouts` is `let` on the struct — build a new array with the override applied.
         var updatedWorkouts = plan.workouts
         var moved = updatedWorkouts[index]
         moved.scheduledDate = Calendar.current.startOfDay(for: newDate)
@@ -76,22 +76,22 @@ class TrainingPlanManager: ObservableObject {
             newPreferences: plan.newPreferences
         )
 
-        // Update via de bestaande pijplijn — sortering op displayDate + persistence
-        // + Published change gebeuren daarbinnen automatisch.
+        // Update via the existing pipeline — sorting on displayDate + persistence
+        // + the Published change happen inside it automatically.
         updatePlan(updatedPlan)
         return true
     }
 
-    // MARK: - Story 33.2b: Merge AI-replan met behoud van swaps
+    // MARK: - Story 33.2b: Merge AI replan while preserving swaps
 
-    /// Merge een door de AI voorgesteld plan met het huidige plan, waarbij handmatig
-    /// verplaatste sessies (`isSwapped == true`) **leidend** zijn. AI-suggesties op
-    /// dagen die overlappen met een swap worden genadeloos gefilterd — defense in
-    /// depth tegen LLM-hallucinaties die "vergeten" dat een dag heilig was.
+    /// Merge an AI-proposed plan with the current plan, where manually
+    /// moved sessions (`isSwapped == true`) are **authoritative**. AI suggestions on
+    /// days that overlap with a swap are mercilessly filtered out — defense in
+    /// depth against LLM hallucinations that "forget" a day was sacred.
     ///
-    /// - Parameter aiPlan: Het volledige door Gemini voorgestelde 7-daagse plan.
-    /// - Returns: `true` als er een actief plan was om mee te mergen; `false` als
-    ///   er nog geen plan bestond (dan kun je beter `updatePlan` direct aanroepen).
+    /// - Parameter aiPlan: The full 7-day plan proposed by Gemini.
+    /// - Returns: `true` if there was an active plan to merge with; `false` if
+    ///   no plan existed yet (then prefer calling `updatePlan` directly).
     @discardableResult
     func mergeReplannedPlan(_ aiPlan: SuggestedTrainingPlan) -> Bool {
         guard let currentPlan = activePlan else {
@@ -102,18 +102,18 @@ class TrainingPlanManager: ObservableObject {
         let currentSwapped = currentPlan.workouts.filter { $0.isSwapped }
         let reservedDays = Set(currentSwapped.map { calendar.startOfDay(for: $0.displayDate) })
 
-        // Filter AI-output: alleen voorstellen voor dagen die NIET door een swap bezet zijn.
+        // Filter AI output: only proposals for days NOT occupied by a swap.
         let aiNonOverlapping = aiPlan.workouts.filter { workout in
             let day = calendar.startOfDay(for: workout.displayDate)
             return !reservedDays.contains(day)
         }
 
-        // Combineer: swaps + AI's voorstellen voor de overige dagen. `updatePlan`
-        // sorteert vervolgens chronologisch op displayDate.
+        // Combine: swaps + the AI's proposals for the remaining days. `updatePlan`
+        // then sorts chronologically by displayDate.
         let merged = currentSwapped + aiNonOverlapping
 
         let mergedPlan = SuggestedTrainingPlan(
-            motivation: aiPlan.motivation,        // AI's motivatie behouden
+            motivation: aiPlan.motivation,        // keep the AI's motivation
             workouts: merged,
             newPreferences: aiPlan.newPreferences
         )

@@ -1,27 +1,27 @@
 import Foundation
 
-// MARK: - Epic 33 Story 33.1: Sessie-Type Taxonomie
+// MARK: - Epic 33 Story 33.1: Session-Type Taxonomy
 //
-// `SessionType` beschrijft de fysiologische intentie van een trainingssessie — niet de
-// activiteit-vorm. Dat is bewust: een interval-training kan zowel `.vo2Max` als `.threshold`
-// zijn afhankelijk van de zone, en `.endurance` past zowel bij een lange duurloop als een
-// rustige fietstocht. De coach gebruikt dit type om feedback te kalibreren ("goed hersteld"
-// bij een Social Ride met lage HR i.p.v. "je was te langzaam").
+// `SessionType` describes the physiological intent of a training session — not the
+// activity form. That is deliberate: an interval workout can be either `.vo2Max` or `.threshold`
+// depending on the zone, and `.endurance` fits both a long run and a
+// relaxed bike ride. The coach uses this type to calibrate feedback ("well recovered"
+// for a Social Ride with low HR instead of "you were too slow").
 
-/// Fysiologische intentie van één trainingssessie. Gekozen uit zeven gangbare
-/// trainings-domein-categorieën — geen sport-specifieke benamingen.
+/// Physiological intent of one training session. Chosen from seven common
+/// training-domain categories — no sport-specific names.
 enum SessionType: String, Codable, CaseIterable, Identifiable {
-    case vo2Max     // 95-100% HRmax — korte intervallen 3-5 min, maximale aerobe stimulus
-    case threshold  // 88-92% HRmax — lactaat-drempel, 8-30 min sustained
-    case tempo      // 80-87% HRmax — sub-threshold "comfortabel hard", aerobe stress
-    case endurance  // 65-78% HRmax — lange aerobe sessie, fundament
-    case recovery   // <65% HRmax — actief herstel, metabool laag
-    case social     // intensiteit niet leidend — mentaal herstel, sociale rit/run
-    case race       // wedstrijd-effort — alle-out, raceday
+    case vo2Max     // 95-100% HRmax — short intervals 3-5 min, maximal aerobic stimulus
+    case threshold  // 88-92% HRmax — lactate threshold, 8-30 min sustained
+    case tempo      // 80-87% HRmax — sub-threshold "comfortably hard", aerobic stress
+    case endurance  // 65-78% HRmax — long aerobic session, foundation
+    case recovery   // <65% HRmax — active recovery, metabolically low
+    case social     // intensity not leading — mental recovery, social ride/run
+    case race       // race effort — all-out, race day
 
     var id: String { rawValue }
 
-    /// Korte Nederlandstalige naam voor UI-context (Picker, badges).
+    /// Short Dutch name for UI context (Picker, badges).
     var displayName: String {
         switch self {
         case .vo2Max:    return "VO₂max"
@@ -34,7 +34,7 @@ enum SessionType: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    /// SF Symbol voor UI-presentatie. Geen accent-kleur — die komt van ThemeManager.
+    /// SF Symbol for UI presentation. No accent colour — that comes from ThemeManager.
     var icon: String {
         switch self {
         case .vo2Max:    return "lungs.fill"
@@ -50,21 +50,21 @@ enum SessionType: String, Codable, CaseIterable, Identifiable {
 
 // MARK: - SessionIntent
 
-/// Beschrijft de fysiologische verwachting per sessie-type — zonebereik en gevoelde inspanning
-/// (RPE, Borg-schaal 1-10). Wordt door de coach gebruikt om afwijkingen te detecteren
-/// ("hoge HR bij een Recovery-sessie suggereert vermoeidheid") en om de planner concrete
-/// targets te geven.
+/// Describes the physiological expectation per session type — zone range and perceived effort
+/// (RPE, Borg scale 1-10). Used by the coach to detect deviations
+/// ("high HR on a Recovery session suggests fatigue") and to give the planner concrete
+/// targets.
 struct SessionIntent {
-    /// Doel-zonebereik op een 1-5 schaal van trainingszones.
+    /// Target zone range on a 1-5 scale of training zones.
     let targetZoneRange: ClosedRange<Int>
-    /// Verwachte RPE op de Borg 1-10 schaal.
+    /// Expected RPE on the Borg 1-10 scale.
     let expectedRPERange: ClosedRange<Int>
-    /// Korte coaching-omschrijving — bedoeld voor AI-prompt-injectie en UI-tooltips.
+    /// Short coaching description — intended for AI-prompt injection and UI tooltips.
     let coachingSummary: String
 }
 
 extension SessionType {
-    /// Fysiologische blauwdruk van dit sessie-type.
+    /// Physiological blueprint of this session type.
     var intent: SessionIntent {
         switch self {
         case .vo2Max:

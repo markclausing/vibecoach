@@ -1,33 +1,33 @@
 import Foundation
 import SwiftData
 
-// MARK: - SwiftData Migration Plan (mei 2026 tech-debt audit)
+// MARK: - SwiftData Migration Plan (May 2026 tech-debt audit)
 //
-// Geketende migraties: SchemaV1 → SchemaV2 → SchemaV3.
+// Chained migrations: SchemaV1 → SchemaV2 → SchemaV3.
 //
-// V2 voegt twee soorten constraints toe die op een vol DB-veld zitten:
-//   - `@Attribute(.unique)` op `DailyReadiness.date`
-//   - `#Unique<>([\.workoutUUID, \.timestamp])` op `WorkoutSample`
-// Als de bestaande store al duplicates bevat, faalt de migratie (constraint-violation
-// op de eerste insert van V2). De `willMigrate`-stap dedupeert dáárom in V1-vorm
-// vóórdat het schema-zwaartepunt naar V2 verschuift.
+// V2 adds two kinds of constraints that sit on a populated DB field:
+//   - `@Attribute(.unique)` on `DailyReadiness.date`
+//   - `#Unique<>([\.workoutUUID, \.timestamp])` on `WorkoutSample`
+// If the existing store already contains duplicates, the migration fails (a constraint
+// violation on the first V2 insert). The `willMigrate` step therefore dedupes in V1 form
+// before the schema centre of gravity shifts to V2.
 //
-// `Symptom.bodyAreaRaw: String` → `Symptom.bodyArea: BodyArea` is een rename plus
-// type-conversie. SwiftData's `@Attribute(originalName:)` kan een rename met behoud
-// van type aan, maar niet de impliciete String → enum-mapping. We capturen daarom de
-// V1-strings in `willMigrate`, deleten de V1-records, en re-inserten ze als V2-records
-// in `didMigrate`. (Symptom heeft géén foreign-key relaties — UUID-regeneratie is OK.)
+// `Symptom.bodyAreaRaw: String` → `Symptom.bodyArea: BodyArea` is a rename plus a
+// type conversion. SwiftData's `@Attribute(originalName:)` can handle a rename that
+// preserves the type, but not the implicit String → enum mapping. We therefore capture
+// the V1 strings in `willMigrate`, delete the V1 records, and re-insert them as V2 records
+// in `didMigrate`. (Symptom has no foreign-key relationships — UUID regeneration is OK.)
 //
-// V3 voegt twee optionele velden toe aan `ActivityRecord` (Epic #49 — weather metadata):
-// `temperatureCelsius` en `humidityPercent`. Pure addition, dus `MigrationStage.lightweight`
-// is voldoende. Reden om tóch te bumpen: zonder schema-versie ziet SwiftData een
-// hash-mismatch op SchemaV2 en de fallback in `makeModelContainer` wist dan de hele
-// store. Zie CLAUDE.md §2.1 — élke `@Model`-wijziging vereist een schema-bump.
+// V3 adds two optional fields to `ActivityRecord` (Epic #49 — weather metadata):
+// `temperatureCelsius` and `humidityPercent`. A pure addition, so `MigrationStage.lightweight`
+// is sufficient. The reason to bump anyway: without a schema version SwiftData sees a
+// hash mismatch on SchemaV2 and the fallback in `makeModelContainer` then wipes the whole
+// store. See CLAUDE.md §2.1 — every `@Model` change requires a schema bump.
 //
-// V4 voegt twee optionele velden toe aan `ActivityRecord` (Epic #52 — GPS-start-coords):
-// `startLatitude` en `startLongitude`. Pure addition, ook `.lightweight`. Nodig om
-// hourly weer-range bij Coach-call te kunnen ophalen zonder de bron-API opnieuw te
-// bevragen.
+// V4 adds two optional fields to `ActivityRecord` (Epic #52 — GPS start coords):
+// `startLatitude` and `startLongitude`. A pure addition, also `.lightweight`. Needed to be
+// able to fetch the hourly weather range at the Coach call without querying the source API
+// again.
 
 enum AppMigrationPlan: SchemaMigrationPlan {
 
@@ -39,32 +39,32 @@ enum AppMigrationPlan: SchemaMigrationPlan {
         [migrateV1toV2, migrateV2toV3, migrateV3toV4]
     }
 
-    // MARK: - V2 → V3: pure addition (weather-metadata op ActivityRecord)
+    // MARK: - V2 → V3: pure addition (weather metadata on ActivityRecord)
 
-    /// `MigrationStage.lightweight` is voldoende voor pure additions van optionele
-    /// velden — SwiftData voegt de kolommen toe, bestaande records krijgen `nil`.
-    /// Geen `willMigrate`/`didMigrate` nodig.
+    /// `MigrationStage.lightweight` is sufficient for pure additions of optional
+    /// fields — SwiftData adds the columns, existing records get `nil`.
+    /// No `willMigrate`/`didMigrate` needed.
     static let migrateV2toV3 = MigrationStage.lightweight(
         fromVersion: SchemaV2.self,
         toVersion: SchemaV3.self
     )
 
-    // MARK: - V3 → V4: pure addition (GPS-coords op ActivityRecord)
+    // MARK: - V3 → V4: pure addition (GPS coords on ActivityRecord)
 
-    /// Pure addition van `startLatitude` + `startLongitude`. Bestaande records
-    /// krijgen `nil` — voor HK-only ritten valt de Coach-analyse terug op de
+    /// Pure addition of `startLatitude` + `startLongitude`. Existing records
+    /// get `nil` — for HK-only rides the Coach analysis falls back to the
     /// snapshot in `temperatureCelsius`/`humidityPercent`.
     static let migrateV3toV4 = MigrationStage.lightweight(
         fromVersion: SchemaV3.self,
         toVersion: SchemaV4.self
     )
 
-    // MARK: - V1 → V2: dedupe + symptoms-rebuild + schema-flip
+    // MARK: - V1 → V2: dedupe + symptoms rebuild + schema flip
 
-    /// Tijdelijke buffer voor Symptom-data tussen `willMigrate` (V1) en `didMigrate` (V2).
-    /// Wordt na elke geslaagde migratie weer leeggemaakt. SwiftData garandeert dat
-    /// `willMigrate` en `didMigrate` sequentieel op dezelfde thread lopen, dus dit is
-    /// thread-safe binnen één migratie-run.
+    /// Temporary buffer for Symptom data between `willMigrate` (V1) and `didMigrate` (V2).
+    /// Cleared after every successful migration. SwiftData guarantees that
+    /// `willMigrate` and `didMigrate` run sequentially on the same thread, so this is
+    /// thread-safe within one migration run.
     private struct PendingSymptom {
         let bodyAreaRaw: String
         let severity: Int
@@ -88,11 +88,11 @@ enum AppMigrationPlan: SchemaMigrationPlan {
         }
     )
 
-    // MARK: - Symptom-rebuild
+    // MARK: - Symptom rebuild
 
-    /// Capture V1-Symptom-data in een swift-side buffer en delete de V1-records.
-    /// Na de schema-flip worden ze in `didMigrate` opnieuw aangemaakt als V2-records
-    /// met de type-veilige `BodyArea`-enum.
+    /// Capture V1 Symptom data in a Swift-side buffer and delete the V1 records.
+    /// After the schema flip they are recreated in `didMigrate` as V2 records
+    /// with the type-safe `BodyArea` enum.
     private static func captureAndDeleteV1Symptoms(in context: ModelContext) throws {
         let v1All = try context.fetch(FetchDescriptor<SchemaV1.Symptom>())
         pendingSymptoms = v1All.map {
@@ -103,9 +103,9 @@ enum AppMigrationPlan: SchemaMigrationPlan {
         }
     }
 
-    /// Plaats de gecaptured V1-data terug als V2-records.
-    /// Onbekende rawValues vallen veilig terug op `.calf` (consistent met het oude
-    /// computed-property gedrag dat hetzelfde fallback gebruikte).
+    /// Restore the captured V1 data as V2 records.
+    /// Unknown rawValues fall back safely to `.calf` (consistent with the old
+    /// computed-property behaviour that used the same fallback).
     private static func restoreSymptomsAsV2(in context: ModelContext) throws {
         for s in pendingSymptoms {
             let area = BodyArea(rawValue: s.bodyAreaRaw) ?? .calf
@@ -113,11 +113,11 @@ enum AppMigrationPlan: SchemaMigrationPlan {
         }
     }
 
-    // MARK: - Dedupe helpers (V1-types)
+    // MARK: - Dedupe helpers (V1 types)
 
-    /// `DailyReadiness`: groepeert op `startOfDay(date)`, behoudt het record met de
-    /// hoogste `readinessScore` (consistent met de runtime upsert-strategie van de
-    /// ReadinessService) en deletet de rest.
+    /// `DailyReadiness`: groups by `startOfDay(date)`, keeps the record with the
+    /// highest `readinessScore` (consistent with the ReadinessService runtime
+    /// upsert strategy) and deletes the rest.
     private static func dedupeDailyReadiness(in context: ModelContext) throws {
         let fetch = FetchDescriptor<SchemaV1.DailyReadiness>()
         let all = try context.fetch(fetch)
@@ -127,7 +127,7 @@ enum AppMigrationPlan: SchemaMigrationPlan {
         let groups = Dictionary(grouping: all) { calendar.startOfDay(for: $0.date) }
 
         for (_, recordsForDay) in groups where recordsForDay.count > 1 {
-            // Hoogste score wint; tie-break op meest recente schrijf-volgorde.
+            // Highest score wins; tie-break on most recent write order.
             let sorted = recordsForDay.sorted { lhs, rhs in
                 if lhs.readinessScore != rhs.readinessScore {
                     return lhs.readinessScore > rhs.readinessScore
@@ -140,9 +140,9 @@ enum AppMigrationPlan: SchemaMigrationPlan {
         }
     }
 
-    /// `WorkoutSample`: groepeert op `(workoutUUID, timestamp)`, behoudt het record
-    /// met de meeste niet-nil velden (rijkste record wint) en deletet de rest.
-    /// Tie-break op insert-volgorde — neemt het laatst toegevoegde record (recentste data).
+    /// `WorkoutSample`: groups by `(workoutUUID, timestamp)`, keeps the record
+    /// with the most non-nil fields (richest record wins) and deletes the rest.
+    /// Tie-break on insert order — takes the last-added record (most recent data).
     private static func dedupeWorkoutSamples(in context: ModelContext) throws {
         let fetch = FetchDescriptor<SchemaV1.WorkoutSample>()
         let all = try context.fetch(fetch)
@@ -170,7 +170,7 @@ enum AppMigrationPlan: SchemaMigrationPlan {
         }
     }
 
-    /// Telt hoeveel optionele meetvelden gevuld zijn — meer = "rijker" record.
+    /// Counts how many optional measurement fields are populated — more = "richer" record.
     private static func nonNilCount(in s: SchemaV1.WorkoutSample) -> Int {
         var n = 0
         if s.heartRate != nil { n += 1 }

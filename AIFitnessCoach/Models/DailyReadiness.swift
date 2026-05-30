@@ -1,28 +1,28 @@
 import Foundation
 import SwiftData
 
-/// Slaat de dagelijkse Readiness Score op, berekend op basis van slaap en HRV (Epic 14).
-/// Er wordt maximaal één record per dag bewaard — upsert via de ReadinessService.
+/// Stores the daily Readiness Score, computed from sleep and HRV (Epic 14).
+/// At most one record per day is kept — upsert via the ReadinessService.
 ///
-/// **Schema V2 wijziging:** `@Attribute(.unique)` op `date` toegevoegd zodat de "max 1 per dag"-
-/// invariant ook DB-zijdig wordt afgedwongen (voorheen alleen via service-laag upsert, race-
-/// gevoelig). Bestaande duplicates worden gededupeerd in `AppMigrationPlan.willMigrateV1toV2`.
+/// **Schema V2 change:** `@Attribute(.unique)` added on `date` so the "max 1 per day"
+/// invariant is also enforced DB-side (previously only via the service-layer upsert, which
+/// was race-prone). Existing duplicates are deduped in `AppMigrationPlan.willMigrateV1toV2`.
 @Model
 final class DailyReadiness {
-    /// Genormaliseerd naar het begin van de dag (00:00:00) voor consistente opslag en queries.
+    /// Normalised to the start of the day (00:00:00) for consistent storage and queries.
     @Attribute(.unique) var date: Date
     var sleepHours: Double
-    /// Gemiddelde HRV van de afgelopen nacht in milliseconden.
+    /// Average HRV of the past night in milliseconds.
     var hrv: Double
-    /// De berekende Vibe/Readiness Score, 0 (volledig overtraind/uitgeput) t/m 100 (optimaal).
+    /// The computed Vibe/Readiness Score, 0 (fully overtrained/exhausted) to 100 (optimal).
     var readinessScore: Int
 
-    // Epic 21 Sprint 2 — Slaapfases (iOS 16+ Apple Watch).
-    // Waarde 0 = ouder device / Watch niet gedragen → geen strafpunt in ReadinessCalculator.
+    // Epic 21 Sprint 2 — sleep stages (iOS 16+ Apple Watch).
+    // Value 0 = older device / Watch not worn → no penalty in ReadinessCalculator.
     var deepSleepMinutes: Int = 0
     var remSleepMinutes: Int  = 0
     var coreSleepMinutes: Int = 0
-    /// Rusthartslag in slagen per minuut, direct vanuit HealthKit. Nil als geen data beschikbaar.
+    /// Resting heart rate in beats per minute, straight from HealthKit. Nil if no data available.
     var restingHeartRate: Double?
 
     init(date: Date, sleepHours: Double, hrv: Double, readinessScore: Int,
