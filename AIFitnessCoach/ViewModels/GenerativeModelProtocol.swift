@@ -30,8 +30,9 @@ public enum AIProviderError: Error, Equatable {
     case authenticationFailed
     /// De respons werd door een veiligheidsfilter geblokkeerd.
     case contentBlocked
-    /// Een andere niet-2xx-statuscode.
-    case http(status: Int)
+    /// Een andere niet-2xx-statuscode. `message` bevat (een ingekorte) provider-
+    /// foutbody zodat de gebruiker/diagnose ziet wáárom (bv. een gedeprecieerd model).
+    case http(status: Int, message: String?)
     /// 2xx, maar geen bruikbare tekst in de respons-body.
     case emptyResponse
     /// De respons-body kon niet ontleed worden naar het verwachte JSON-schema.

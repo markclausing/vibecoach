@@ -43,12 +43,25 @@ enum AIProvider: String, CaseIterable, Identifiable {
     }
 
     /// True als deze provider volledig geïntegreerd is en direct bruikbaar is.
-    /// Epic #53: de client-laag (factory + REST-clients) ondersteunt alle vier de
-    /// providers, maar key-opslag-per-provider (53.3) en de Settings-/onboarding-UI
-    /// (53.6/53.7) volgen in latere sprints. Tot die er zijn blijft Gemini de enige
-    /// die de UI selecteerbaar maakt.
+    /// Epic #53 sprint B: alle vier providers zijn nu bruikbaar — per-provider
+    /// key-opslag (53.3), model-defaults (53.4) en validatie (53.5) staan. De
+    /// provider-specifieke model-*pickers* (53.6) en onboarding (53.7) volgen nog;
+    /// tot dan gebruiken niet-Gemini providers hun default-model.
     var isSupported: Bool {
-        self == .gemini
+        true
+    }
+}
+
+extension AIProvider {
+    /// AppStorage/UserDefaults-sleutel waarin de actieve provider-keuze leeft.
+    /// Eén bron-van-waarheid zodat views (`@AppStorage`) en logica (`current(in:)`)
+    /// dezelfde key delen.
+    static let appStorageKey = "vibecoach_aiProvider"
+
+    /// De op dit moment door de gebruiker gekozen provider. Defaultet naar `.gemini`
+    /// wanneer de key (nog) niet gezet is of een onbekende waarde bevat.
+    static func current(in defaults: UserDefaults = .standard) -> AIProvider {
+        AIProvider(rawValue: defaults.string(forKey: appStorageKey) ?? "") ?? .gemini
     }
 }
 

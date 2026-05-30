@@ -136,8 +136,9 @@ struct AddGoalView: View {
     /// Vraag de Gemini AI om een logische TRIMP belasting
     private func fetchAITargetTRIMP(goal: FitnessGoal, profile: AthleticProfile?) async -> Double {
         // Epic 20 / M-04: BYOK — uitsluitend de door de gebruiker geconfigureerde sleutel.
-        // C-02: sleutel komt uit de Keychain i.p.v. UserDefaults.
-        let activeKey = UserAPIKeyStore.read()
+        // C-02: sleutel komt uit de Keychain i.p.v. UserDefaults. Epic #53: per-provider.
+        let provider = AIProvider.current()
+        let activeKey = UserAPIKeyStore.read(for: provider)
         guard !activeKey.isEmpty else {
             return fallbackTRIMP(for: goal.targetDate)
         }
@@ -158,8 +159,7 @@ struct AddGoalView: View {
 
         // Epic #53: provider-agnostisch via de `AIModelFactory`. Geen system-
         // instructie en geen JSON-mode — we vragen één kaal getal terug. De
-        // modelnaam volgt de Epic #35-keuze van de gebruiker.
-        let provider = AIProvider(rawValue: UserDefaults.standard.string(forKey: "vibecoach_aiProvider") ?? "") ?? .gemini
+        // modelnaam volgt de model-keuze van de gebruiker voor deze provider.
         func requestTRIMP(modelName: String) async throws -> Double? {
             let model = AIModelFactory.makeModel(
                 provider: provider,
@@ -177,13 +177,13 @@ struct AddGoalView: View {
         }
 
         do {
-            if let trimp = try await requestTRIMP(modelName: AIModelAppStorageKey.resolvedPrimary()) {
+            if let trimp = try await requestTRIMP(modelName: AIModelAppStorageKey.resolvedPrimary(for: provider)) {
                 return trimp
             }
         } catch {
             // Bij tijdelijke overbelasting (503/429) stil proberen met het lichtere fallback-model.
             if AIProviderError.isOverload(error),
-               let trimp = try? await requestTRIMP(modelName: AIModelAppStorageKey.resolvedFallback()) {
+               let trimp = try? await requestTRIMP(modelName: AIModelAppStorageKey.resolvedFallback(for: provider)) {
                 return trimp
             }
         }

@@ -28,28 +28,34 @@ enum APIKeyValidationResult: Equatable {
 struct APIKeyValidator {
 
     /// Minimale tekst om verbruik te beperken (1–2 tokens is voldoende voor
-    /// een auth-check — Google valideert de sleutel vóór de inferentie).
+    /// een auth-check — de provider valideert de sleutel vóór de inferentie).
     private static let pingPrompt = "ok"
 
-    /// Modelnaam — in lijn met `ChatViewModel.buildGenerativeModel` zodat we
-    /// exact hetzelfde pad testen als de productie-chat gebruikt.
-    private static let modelName = "gemini-flash-latest"
-
-    /// Voer de validatie uit. Altijd op een Task-hop zodat de UI niet blokkeert.
+    /// Back-compat: valideert een Gemini-sleutel. Delegeert naar de provider-aware
+    /// variant zodat call-sites die nog `validateGeminiKey` aanroepen blijven werken.
     static func validateGeminiKey(_ key: String) async -> APIKeyValidationResult {
+        await validate(key, provider: .gemini)
+    }
+
+    /// Epic #53: valideert een BYOK-sleutel voor een willekeurige provider met een
+    /// minimale ping via de `AIModelFactory`. Gebruikt het goedkoopste model
+    /// (provider-default fallback) om verbruik te beperken. Altijd op een Task-hop
+    /// zodat de UI niet blokkeert.
+    static func validate(_ key: String, provider: AIProvider) async -> APIKeyValidationResult {
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return .invalidKey }
 
-        return await ping(modelName: modelName, key: trimmed)
-    }
-
-    /// Één enkele ping tegen de Gemini API.
-    private static func ping(modelName: String, key: String) async -> APIKeyValidationResult {
-        let model = GenerativeModel(name: modelName, apiKey: key)
-        let content = ModelContent(role: "user", parts: [.text(pingPrompt)])
-
+        let modelName = AIModelCatalog.builtIn(for: provider).defaultFallback
+        let model = AIModelFactory.makeModel(
+            provider: provider,
+            modelName: modelName,
+            systemInstruction: "",
+            jsonMode: false,
+            timeout: 20,
+            apiKey: trimmed
+        )
         do {
-            _ = try await model.generateContent([content])
+            _ = try await model.generateContent([.text(pingPrompt)])
             return .valid
         } catch {
             return classify(error)
@@ -61,6 +67,20 @@ struct APIKeyValidator {
     /// zonder een echte Gemini-call te hoeven doen — `ping(...)` zelf is door
     /// zijn directe `GenerativeModel`-init niet zonder netwerk te testen.
     static func classify(_ error: Error) -> APIKeyValidationResult {
+        // Epic #53: onze eigen provider-fout van de OpenAI/Claude/Mistral REST-clients.
+        if let providerError = error as? AIProviderError {
+            switch providerError {
+            case .authenticationFailed:
+                return .invalidKey
+            case .overloaded:
+                return .rateLimited
+            case .http(let status, let message):
+                return .unknown("HTTP \(status)\(message.map { ": \($0)" } ?? "")")
+            case .contentBlocked, .emptyResponse, .decodingFailed:
+                return .unknown(String(describing: providerError))
+            }
+        }
+
         if let generateError = error as? GenerateContentError {
             switch generateError {
             case .invalidAPIKey:

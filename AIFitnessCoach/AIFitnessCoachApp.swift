@@ -270,6 +270,9 @@ struct AIFitnessCoachApp: App {
         // C-02: verplaats de user AI API-sleutel eenmalig uit UserDefaults
         // naar de Keychain. Idempotent — na migratie is dit een no-op.
         UserAPIKeyStore.migrateFromUserDefaultsIfNeeded()
+        // Epic #53: verplaats de legacy single-key naar de per-provider Gemini-slot.
+        // Idempotent — draait na de UserDefaults→Keychain-migratie hierboven.
+        UserAPIKeyStore.migrateToPerProviderKeysIfNeeded()
 
         // Epic #51-F5: start de NWPathMonitor zodat `SyncStatusBanner` direct
         // bij launch de juiste online/offline-state heeft. Idempotent.

@@ -181,7 +181,7 @@ struct OpenAICompatibleModelClient: GenerativeModelProtocol, RealAIProviderClien
         request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
 
         let (data, response) = try await session.data(for: request)
-        try AIProviderHTTP.validate(response)
+        try AIProviderHTTP.validate(response, data: data)
 
         guard let decoded = try? JSONDecoder().decode(OpenAIChatResponse.self, from: data) else {
             throw AIProviderError.decodingFailed
@@ -268,7 +268,7 @@ struct AnthropicModelClient: GenerativeModelProtocol, RealAIProviderClient {
         request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
 
         let (data, response) = try await session.data(for: request)
-        try AIProviderHTTP.validate(response)
+        try AIProviderHTTP.validate(response, data: data)
 
         guard let decoded = try? JSONDecoder().decode(AnthropicMessageResponse.self, from: data) else {
             throw AIProviderError.decodingFailed
@@ -302,7 +302,7 @@ enum AIPromptPartSplitter {
 
 /// Vertaalt een HTTP-respons naar een `AIProviderError` (of laat 2xx door).
 enum AIProviderHTTP {
-    static func validate(_ response: URLResponse) throws {
+    static func validate(_ response: URLResponse, data: Data) throws {
         guard let http = response as? HTTPURLResponse else { return }
         switch http.statusCode {
         case 200..<300:
@@ -312,8 +312,19 @@ enum AIProviderHTTP {
         case 401, 403:
             throw AIProviderError.authenticationFailed
         default:
-            throw AIProviderError.http(status: http.statusCode)
+            // Neem de (ingekorte) foutbody mee zodat de gebruiker de échte reden
+            // ziet — bv. "model: ... not found" bij een gedeprecieerd model.
+            throw AIProviderError.http(status: http.statusCode, message: shortBody(data))
         }
+    }
+
+    /// Eerste ~300 tekens van de respons-body als platte tekst (zonder newlines),
+    /// genoeg om een provider-foutmelding te herkennen zonder de UI te overspoelen.
+    private static func shortBody(_ data: Data) -> String? {
+        guard let raw = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else { return nil }
+        let collapsed = raw.replacingOccurrences(of: "\n", with: " ")
+        return collapsed.count > 300 ? String(collapsed.prefix(300)) + "…" : collapsed
     }
 }
 

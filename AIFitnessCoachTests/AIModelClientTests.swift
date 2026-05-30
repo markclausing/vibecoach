@@ -230,7 +230,33 @@ final class AIModelClientTests: XCTestCase {
     func testHTTP500_ThrowsHTTPStatus() async {
         let session = makeSession { self.status($0, 500) }
         let client = OpenAICompatibleModelClient(flavor: .openAI, modelName: "m", systemInstruction: "", jsonMode: false, timeout: 10, apiKey: "k", session: session)
-        await assertThrows(client, expected: .http(status: 500))
+        do {
+            _ = try await client.generateContent([.text("x")])
+            XCTFail("Verwachtte .http(500)")
+        } catch let AIProviderError.http(status, _) {
+            XCTAssertEqual(status, 500)
+        } catch {
+            XCTFail("Verwachtte AIProviderError.http, kreeg \(error)")
+        }
+    }
+
+    func testHTTP400_IncludesResponseBodyInError() async {
+        // Regressie (Claude 400): de provider-foutbody moet meekomen zodat de
+        // gebruiker de reden ziet i.p.v. een kale statuscode.
+        let session = makeSession { request in
+            let response = HTTPURLResponse(url: request.url!, statusCode: 400, httpVersion: nil, headerFields: nil)!
+            return (response, Data(#"{"error":{"message":"model: foo not found"}}"#.utf8))
+        }
+        let client = OpenAICompatibleModelClient(flavor: .openAI, modelName: "foo", systemInstruction: "", jsonMode: false, timeout: 10, apiKey: "k", session: session)
+        do {
+            _ = try await client.generateContent([.text("x")])
+            XCTFail("Verwachtte .http(400)")
+        } catch let AIProviderError.http(status, message) {
+            XCTAssertEqual(status, 400)
+            XCTAssertEqual(message?.contains("model: foo not found"), true, "De foutbody hoort meegenomen te worden.")
+        } catch {
+            XCTFail("Verwachtte AIProviderError.http, kreeg \(error)")
+        }
     }
 
     // MARK: - AIProviderError.isOverload
