@@ -92,6 +92,34 @@ final class AIModelPickerUITests: XCTestCase {
         )
     }
 
+    /// Epic #53 (53.6): bij het kiezen van een niet-Gemini provider verschijnt de
+    /// statische provider-model-picker (i.p.v. de Worker-gedreven Gemini-pickers).
+    @MainActor
+    func testSwitchingToMistral_ShowsProviderModelPicker() throws {
+        XCTAssertTrue(
+            app.navigationBars["AI Coach Configuratie"].waitForExistence(timeout: 5),
+            "AIProviderSettingsView rendert niet."
+        )
+
+        // De provider-picker is inline → elke provider is een tappbare rij. Onder
+        // XCUITest wordt zo'n rij als button aangeboden (fallback: staticText).
+        let mistralButton = app.buttons["Mistral"]
+        let mistralText = app.staticTexts["Mistral"]
+        if mistralButton.waitForExistence(timeout: 5) {
+            mistralButton.tap()
+        } else if mistralText.waitForExistence(timeout: 2) {
+            mistralText.tap()
+        } else {
+            return XCTFail("Mistral-optie ontbreekt in de provider-picker.")
+        }
+
+        let primary = app.descendants(matching: .any)["PrimaryProviderModelPicker"]
+        XCTAssertTrue(
+            primary.waitForExistence(timeout: 5),
+            "PrimaryProviderModelPicker verschijnt niet nadat Mistral is gekozen."
+        )
+    }
+
     /// Verifieert dat óf de loader-placeholder óf de pickers verschijnen —
     /// nooit beide afwezig. Bewaakt de `hasAttemptedInitialLoad` gate-logica.
     @MainActor
