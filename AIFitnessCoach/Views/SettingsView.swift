@@ -1390,6 +1390,7 @@ struct AIProviderSettingsView: View {
     @State private var providerModelCatalog: [AIModelDescriptor] = []
     @State private var isLoadingProviderModels: Bool = false
     @State private var providerModelsError: String?
+    @State private var keyHelpURL: IdentifiableURL?
     private let providerModelListService = ProviderModelListService()
 
     private var selectedProvider: AIProvider {
@@ -1422,9 +1423,11 @@ struct AIProviderSettingsView: View {
                     Text("VibeCoach gebruikt jouw eigen API-sleutel om de AI te activeren. De sleutel wordt uitsluitend lokaal op dit apparaat opgeslagen en nooit gedeeld met derden.")
                         .font(.caption)
                     if let url = selectedProvider.getKeyURL {
-                        Link("Hoe kom ik aan een sleutel? →", destination: url)
-                            .font(.caption)
-                            .foregroundColor(.blue)
+                        Button("Hoe kom ik aan een sleutel? →") {
+                            keyHelpURL = IdentifiableURL(url: url)
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
                     }
                 }
             ) {
@@ -1541,6 +1544,10 @@ struct AIProviderSettingsView: View {
             }
         }
         .navigationTitle("AI Coach Configuratie")
+        .sheet(item: $keyHelpURL) { item in
+            SafariView(url: item.url)
+                .ignoresSafeArea()
+        }
         // C-02: Keychain-gekoppelde load/save rond de SecureField.
         .onAppear {
             apiKey = UserAPIKeyStore.read(for: selectedProvider)

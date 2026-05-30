@@ -147,6 +147,7 @@
 		CC33DD44EE55FF6677AA8899 /* ProgressServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD44EE55FF6677AA88990011 /* ProgressServiceTests.swift */; };
 		CC54A4B0A24ABC7666AB3222 /* ChatViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */; };
 		CC77FF11AA3322BB55DD8844 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD88EE22FF4433AA66BB9955 /* OnboardingView.swift */; };
+		B5F1A12710FF20AA30BB5001 /* SafariView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5F1A12701FF02AA03BB0501 /* SafariView.swift */; };
 		CC77FF22AA3322BB55DD8844 /* OnboardingTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD88EE33FF4433AA66BB9955 /* OnboardingTemplateView.swift */; };
 		CCA4F7B2D6E8F0A1B2C3D405 /* UUID+Deterministic.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCA4F7B2D6E8F0A1B2C3D405 /* UUID+Deterministic.swift */; };
 		CDA4F7B2D6E8F0A1B2C3D405 /* UUIDDeterministicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDA4F7B2D6E8F0A1B2C3D405 /* UUIDDeterministicTests.swift */; };
@@ -351,6 +352,7 @@
 		DD01EE02FF03AA04BB05CC06 /* TrendWidgetView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrendWidgetView.swift; sourceTree = "<group>"; };
 		DD44EE55FF6677AA88990011 /* ProgressServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgressServiceTests.swift; sourceTree = "<group>"; };
 		DD88EE22FF4433AA66BB9955 /* OnboardingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		B5F1A12701FF02AA03BB0501 /* SafariView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SafariView.swift; sourceTree = "<group>"; };
 		DD88EE33FF4433AA66BB9955 /* OnboardingTemplateView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingTemplateView.swift; sourceTree = "<group>"; };
 		E0B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityDeduplicator.swift; sourceTree = "<group>"; };
 		E1A4F7B2D6E8F0A1B2C3D405 /* WorkoutSample.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutSample.swift; sourceTree = "<group>"; };
@@ -582,6 +584,7 @@
 				203C295EF5D568151B5D1BEF /* EditGoalView.swift */,
 				CE4D1D9B3991F419262E294E /* SettingsView.swift */,
 				DD88EE22FF4433AA66BB9955 /* OnboardingView.swift */,
+				B5F1A12701FF02AA03BB0501 /* SafariView.swift */,
 				DD88EE33FF4433AA66BB9955 /* OnboardingTemplateView.swift */,
 				D92F0B029D6902862CF50631 /* GoalsListView.swift */,
 				B23C4D5E6F7A8B9C0D1E2F3A /* GapAnalysisCardView.swift */,
@@ -1065,6 +1068,7 @@
 				E632BCD343E9A620341BD347 /* EditGoalView.swift in Sources */,
 				531DF0798000FFC0CACC940E /* SettingsView.swift in Sources */,
 				CC77FF11AA3322BB55DD8844 /* OnboardingView.swift in Sources */,
+				B5F1A12710FF20AA30BB5001 /* SafariView.swift in Sources */,
 				CC77FF22AA3322BB55DD8844 /* OnboardingTemplateView.swift in Sources */,
 				6D21D46EBFDA3ABDB67ECDBF /* GoalsListView.swift in Sources */,
 				A12B3C4D5E6F7A8B9C0D1E2F /* GapAnalysisCardView.swift in Sources */,
