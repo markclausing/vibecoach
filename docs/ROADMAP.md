@@ -676,7 +676,7 @@ Aanleiding: sinds Epic #20 (Sprint 20.1) bestaat de `AIProvider`-enum (`gemini` 
 
 ---
 
-### 🔄 Epic #54: Dynamische model-catalogus per provider
+### ✅ Epic #54: Dynamische model-catalogus per provider
 
 Aanleiding: na Epic #53 koos de model-picker per niet-Gemini provider uit een **statische** `AIModelCatalog.builtIn(for:)`-lijst. Die veroudert snel — een gebruiker zag in zijn OpenAI-account al gpt-5.4 / gpt-5.5-pro terwijl de app `gpt-4.1` als nieuwste toonde. Doel: de modellijst per provider live ophalen, net zoals Gemini dat via de Cloudflare Worker doet.
 
@@ -687,7 +687,7 @@ Aanleiding: na Epic #53 koos de model-picker per niet-Gemini provider uit een **
 
 **Open punten:** geen persistente cache (fetch per Settings-open, zoals Gemini's Worker-route); de OpenAI-chat-filter is heuristisch (een toekomstig niet-chat `gpt-*`-model zou kunnen doorglippen — dan vangt de coach-call-foutbody het op). Eventuele follow-up: caching met TTL + een handmatige "ververs modellen"-knop.
 
-**Status:** 🔄 — geïmplementeerd op `feature/epic-54-dynamic-model-catalogs`. 919 unit-tests groen. Wacht op on-device validatie (live OpenAI/Mistral/Claude model-lijsten).
+**Status:** ✅ — on-device gevalideerd: alle vier providers laden hun live modellijst zodra een sleutel is ingevoerd. Eén UX-verfijning tijdens validatie: zonder ingevoerde sleutel sloeg de fetch stil over (geen fout → leek stuk); footer vraagt nu expliciet om de sleutel in te voeren + te testen, en toont bij een echte fetch-fout de reden (bv. 401/403 als de key geen *Models*-leesrecht heeft). 919 unit-tests groen. PR #279.
 
 ---
 
