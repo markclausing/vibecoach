@@ -53,11 +53,11 @@ extension AIModelCatalog {
         case .anthropic:
             return AIModelCatalog(
                 models: [
-                    AIModelDescriptor(id: "claude-3-5-sonnet-latest", displayName: "Claude 3.5 Sonnet"),
-                    AIModelDescriptor(id: "claude-3-5-haiku-latest", displayName: "Claude 3.5 Haiku")
+                    AIModelDescriptor(id: "claude-sonnet-4-6", displayName: "Claude Sonnet 4.6"),
+                    AIModelDescriptor(id: "claude-haiku-4-5", displayName: "Claude Haiku 4.5")
                 ],
-                defaultPrimary: "claude-3-5-sonnet-latest",
-                defaultFallback: "claude-3-5-haiku-latest"
+                defaultPrimary: "claude-sonnet-4-6",
+                defaultFallback: "claude-haiku-4-5"
             )
         case .mistral:
             return AIModelCatalog(

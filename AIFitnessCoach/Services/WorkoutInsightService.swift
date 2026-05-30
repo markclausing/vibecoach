@@ -494,8 +494,9 @@ final class WorkoutInsightService {
                 return .authenticationFailed
             case .contentBlocked:
                 return .contentBlocked
-            case .http(let status):
-                return .unavailable(retried: retried, detail: "AI-provider gaf HTTP \(status) terug.")
+            case .http(let status, let message):
+                let suffix = message.map { " — \($0)" } ?? ""
+                return .unavailable(retried: retried, detail: "AI-provider gaf HTTP \(status) terug.\(suffix)")
             case .emptyResponse:
                 return .unavailable(retried: retried, detail: "Lege respons van AI-model.")
             case .decodingFailed:

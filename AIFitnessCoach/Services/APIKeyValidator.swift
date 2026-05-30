@@ -74,7 +74,9 @@ struct APIKeyValidator {
                 return .invalidKey
             case .overloaded:
                 return .rateLimited
-            case .contentBlocked, .http, .emptyResponse, .decodingFailed:
+            case .http(let status, let message):
+                return .unknown("HTTP \(status)\(message.map { ": \($0)" } ?? "")")
+            case .contentBlocked, .emptyResponse, .decodingFailed:
                 return .unknown(String(describing: providerError))
             }
         }

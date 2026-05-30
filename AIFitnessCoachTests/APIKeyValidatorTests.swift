@@ -34,7 +34,7 @@ final class APIKeyValidatorTests: XCTestCase {
     }
 
     func testClassify_ProviderHTTP_ReturnsUnknown() {
-        guard case .unknown = APIKeyValidator.classify(AIProviderError.http(status: 500)) else {
+        guard case .unknown = APIKeyValidator.classify(AIProviderError.http(status: 500, message: "boom")) else {
             return XCTFail("HTTP 500 hoort .unknown te zijn.")
         }
     }
