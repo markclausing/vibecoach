@@ -1389,6 +1389,7 @@ struct AIProviderSettingsView: View {
     /// zodra de live `/v1/models`-fetch klaar is (valt stil terug bij fout/lege key).
     @State private var providerModelCatalog: [AIModelDescriptor] = []
     @State private var isLoadingProviderModels: Bool = false
+    @State private var providerModelsError: String?
     private let providerModelListService = ProviderModelListService()
 
     private var selectedProvider: AIProvider {
@@ -1597,24 +1598,60 @@ struct AIProviderSettingsView: View {
         guard !key.isEmpty else { return }
 
         isLoadingProviderModels = true
+        providerModelsError = nil
         Task {
-            let fetched = try? await providerModelListService.fetchModels(provider: provider, apiKey: key)
-            await MainActor.run {
-                isLoadingProviderModels = false
-                // Provider kan tijdens de fetch gewisseld zijn — negeer een stale resultaat.
-                guard selectedProvider == provider, let models = fetched, !models.isEmpty else { return }
-                providerModelCatalog = models
+            do {
+                let models = try await providerModelListService.fetchModels(provider: provider, apiKey: key)
+                await MainActor.run {
+                    isLoadingProviderModels = false
+                    // Provider kan tijdens de fetch gewisseld zijn — negeer stale resultaat.
+                    guard selectedProvider == provider, !models.isEmpty else { return }
+                    providerModelCatalog = models
 
-                let ids = Set(models.map(\.id))
-                let builtIn = AIModelCatalog.builtIn(for: provider)
-                if !ids.contains(customPrimaryModel) {
-                    customPrimaryModel = ids.contains(builtIn.defaultPrimary) ? builtIn.defaultPrimary : (models.first?.id ?? customPrimaryModel)
+                    let ids = Set(models.map(\.id))
+                    let builtIn = AIModelCatalog.builtIn(for: provider)
+                    if !ids.contains(customPrimaryModel) {
+                        customPrimaryModel = ids.contains(builtIn.defaultPrimary) ? builtIn.defaultPrimary : (models.first?.id ?? customPrimaryModel)
+                    }
+                    if !ids.contains(customFallbackModel) {
+                        customFallbackModel = ids.contains(builtIn.defaultFallback) ? builtIn.defaultFallback : (models.last?.id ?? customFallbackModel)
+                    }
                 }
-                if !ids.contains(customFallbackModel) {
-                    customFallbackModel = ids.contains(builtIn.defaultFallback) ? builtIn.defaultFallback : (models.last?.id ?? customFallbackModel)
+            } catch {
+                await MainActor.run {
+                    isLoadingProviderModels = false
+                    guard selectedProvider == provider else { return }
+                    // Epic #54: faalreden tonen i.p.v. stil terugvallen, zodat een
+                    // scope-/auth-probleem (bv. OpenAI-key zonder Models-leesrecht)
+                    // zichtbaar is. De picker blijft de statische fallback tonen.
+                    providerModelsError = Self.describeModelListError(error)
                 }
             }
         }
+    }
+
+    /// Korte, gebruiker-leesbare reden waarom de live model-lijst niet kon laden.
+    private static func describeModelListError(_ error: Error) -> String {
+        if let providerError = error as? AIProviderError {
+            switch providerError {
+            case .authenticationFailed:
+                return "je sleutel mag de modellijst niet ophalen (controleer of de key 'Models'-leesrecht heeft)"
+            case .overloaded:
+                return "provider tijdelijk overbelast"
+            case .emptyResponse:
+                return "geen chat-modellen herkend in de lijst"
+            case .decodingFailed:
+                return "onverwacht lijstformaat"
+            case .http(let status, let message):
+                return "HTTP \(status)\(message.map { ": \($0)" } ?? "")"
+            case .contentBlocked:
+                return "verzoek geblokkeerd"
+            }
+        }
+        if let urlError = error as? URLError {
+            return "netwerkprobleem (\(urlError.code.rawValue))"
+        }
+        return error.localizedDescription
     }
 
     @ViewBuilder
@@ -1623,6 +1660,10 @@ struct AIProviderSettingsView: View {
             Text("Modellen van \(selectedProvider.displayName) ophalen met je sleutel…")
                 .font(.caption)
                 .foregroundColor(.secondary)
+        } else if let err = providerModelsError {
+            Text("Live lijst niet beschikbaar — \(err). Ingebouwde lijst getoond.")
+                .font(.caption)
+                .foregroundColor(.orange)
         } else {
             Text("Live opgehaald met je sleutel. Lukt dat niet, dan tonen we een ingebouwde lijst.")
                 .font(.caption)
