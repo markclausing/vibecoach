@@ -1,25 +1,25 @@
 import Foundation
 import CryptoKit
 
-// MARK: - Epic 40: Deterministische UUID's voor externe ID's
+// MARK: - Epic 40: Deterministic UUIDs for external IDs
 //
-// `WorkoutSample.workoutUUID` is een `UUID`, ontworpen voor HealthKit's UUID's.
-// Strava-activities hebben een `Int64`-ID die geen UUID is. Om beide bronnen in
-// dezelfde tabel te kunnen opslaan zonder schema-wijziging, leiden we voor Strava-
-// records een **deterministische** UUID af: zelfde Strava-ID levert altijd dezelfde
-// UUID op. Dat geeft type-veilige lookup zonder dual-key-pad.
+// `WorkoutSample.workoutUUID` is a `UUID`, designed for HealthKit's UUIDs.
+// Strava activities have an `Int64` ID that is not a UUID. To store both sources in
+// the same table without a schema change, we derive a **deterministic** UUID for Strava
+// records: the same Strava ID always yields the same UUID. That gives type-safe lookup
+// without a dual-key path.
 //
-// Aanpak: SHA-256 hash van een namespace + de Strava-ID, eerste 16 bytes geformatteerd
-// als UUID. Dit is conceptueel een UUIDv5-achtige variant — geen RFC 4122 compliant
-// UUIDv5 (die vereist een specifieke namespace-UUID), maar voor onze interne lookup
-// is deze pragmatische variant volledig sufficient en collision-resistant.
+// Approach: SHA-256 hash of a namespace + the Strava ID, first 16 bytes formatted
+// as a UUID. This is conceptually a UUIDv5-like variant — not an RFC 4122 compliant
+// UUIDv5 (which requires a specific namespace UUID), but for our internal lookup
+// this pragmatic variant is fully sufficient and collision-resistant.
 
 extension UUID {
 
-    /// Leidt een deterministische UUID af van een Strava-activity-ID.
-    /// Zelfde input → altijd zelfde UUID, app-restart-bestendig.
-    /// - Parameter stravaID: De Strava-activity-ID als string (bv. `"12345678901"`).
-    /// - Returns: UUID die als foreign key naar deze Strava-activity dient.
+    /// Derives a deterministic UUID from a Strava activity ID.
+    /// Same input → always the same UUID, app-restart-resilient.
+    /// - Parameter stravaID: The Strava activity ID as a string (e.g. `"12345678901"`).
+    /// - Returns: A UUID serving as a foreign key to this Strava activity.
     static func deterministic(fromStravaID stravaID: String) -> UUID {
         let namespacedInput = "vibecoach.strava.\(stravaID)"
         let data = Data(namespacedInput.utf8)
@@ -33,9 +33,9 @@ extension UUID {
         ))
     }
 
-    /// Voor `ActivityRecord.id`: probeer eerst echte UUID-parse (HealthKit), val
-    /// anders terug op de deterministische Strava-afleiding. Eén plek voor de
-    /// mapping zodat alle callers (UI-query, ingest-koppeling) consistent zijn.
+    /// For `ActivityRecord.id`: first try a real UUID parse (HealthKit), otherwise
+    /// fall back to the deterministic Strava derivation. One place for the
+    /// mapping so all callers (UI query, ingest linking) are consistent.
     static func forActivityRecordID(_ activityID: String) -> UUID {
         if let parsed = UUID(uuidString: activityID) {
             return parsed

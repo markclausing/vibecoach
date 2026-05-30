@@ -1,20 +1,19 @@
 import Foundation
 
-/// Epic #51-A2: genereert de banner-tekst die boven de coach-chat verschijnt
-/// wanneer de gebruiker in Settings van Gemini-model wisselt terwijl er nog
-/// een antwoord onderweg is. Voorkomt verwarring over welk model het lopende
-/// antwoord produceert en dat de volgende vraag automatisch het nieuwe model
-/// gebruikt.
+/// Epic #51-A2: generates the banner text shown above the coach chat
+/// when the user switches model in Settings while a reply is still
+/// in flight. Prevents confusion about which model produces the in-flight
+/// reply and that the next question automatically uses the new model.
 ///
-/// Pure-Swift zodat de tekst-logica los testbaar is van `ChatViewModel`
-/// (geen AppStorage, geen MainActor, geen SDK-types).
+/// Pure-Swift so the text logic is testable independently of `ChatViewModel`
+/// (no AppStorage, no MainActor, no SDK types).
 enum ChatModelSwitchNotice {
 
-    /// Geeft een banner-tekst terug wanneer de actief-gebruikte modelnamen
-    /// (snapshot bij start van de huidige request) afwijken van de momenteel
-    /// in AppStorage geconfigureerde modelnamen.
+    /// Returns banner text when the actively-used model names
+    /// (snapshot at the start of the current request) differ from the currently
+    /// configured model names in AppStorage.
     ///
-    /// - Returns: `nil` als er niets gewijzigd is — caller toont dan geen banner.
+    /// - Returns: `nil` if nothing changed — the caller then shows no banner.
     static func message(activePrimary: String,
                         activeFallback: String,
                         configuredPrimary: String,

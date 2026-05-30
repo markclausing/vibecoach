@@ -1,31 +1,31 @@
 import Foundation
 
-// MARK: - Epic #51-F1/F2/F5: Sync-status-store
+// MARK: - Epic #51-F1/F2/F5: Sync-status store
 //
-// Houdt per data-source de laatste succes-timestamp en de laatste fout-
-// categorie bij zodat de Dashboard-`SyncStatusBanner` met één snapshot
-// kan beslissen wat hij toont (offline > rate-limit > error > nil).
+// Tracks per data source the last success timestamp and the last error
+// category so the Dashboard `SyncStatusBanner` can decide with one snapshot
+// what to show (offline > rate-limit > error > nil).
 //
-// Single-source-of-truth voor de zichtbaarheid van sync-resultaten —
-// auto-sync schrijft naar deze store, View leest via een snapshot. Bewust
-// AppStorage-vrij zodat de helper unit-testbaar blijft met een fresh
+// Single source of truth for the visibility of sync results —
+// auto-sync writes to this store, the View reads via a snapshot. Deliberately
+// AppStorage-free so the helper stays unit-testable with a fresh
 // `UserDefaults(suiteName:)` (CLAUDE.md §6).
 //
-// `.missingToken` is geen banner-waardige fout (gebruiker heeft Strava
-// bewust niet gekoppeld) en moet door de caller via `recordStravaError`
-// worden uitgefilterd. Zie `SyncErrorCategory.from(strava:)`.
+// `.missingToken` is not a banner-worthy error (the user deliberately did not
+// connect Strava) and must be filtered out by the caller via `recordStravaError`.
+// See `SyncErrorCategory.from(strava:)`.
 
-/// Categoriseert sync-fouten zodat het banner-builder zonder de oorspronkelijke
-/// `Error`-instance het juiste type-bericht kan kiezen.
+/// Categorises sync errors so the banner builder can pick the right type message
+/// without the original `Error` instance.
 enum SyncErrorCategory: String, Codable, Equatable {
-    case network          // -1009 offline, hostname not found, generieke transport-fout
-    case authentication   // 401 / token-issue
-    case rateLimit        // 429 — gepaard met `stravaRateLimitedUntil`
-    case decoding         // Server-response misvormd
-    case other            // Onbekend / niet-categoriseerbaar
+    case network          // -1009 offline, hostname not found, generic transport error
+    case authentication   // 401 / token issue
+    case rateLimit        // 429 — paired with `stravaRateLimitedUntil`
+    case decoding         // Server response malformed
+    case other            // Unknown / non-categorisable
 
-    /// Mapping voor `FitnessDataError` — `.missingToken` retourneert `nil`
-    /// omdat dat geen banner-fout is.
+    /// Mapping for `FitnessDataError` — `.missingToken` returns `nil`
+    /// because that is not a banner error.
     static func from(strava error: Error) -> SyncErrorCategory? {
         if let fitnessError = error as? FitnessDataError {
             switch fitnessError {
@@ -49,9 +49,9 @@ enum SyncErrorCategory: String, Codable, Equatable {
         return .other
     }
 
-    /// Mapping voor HealthKit-fouten — vrijwel altijd netwerk- of permissie-
-    /// gerelateerd, maar HK gooit `HKError` met eigen codes. Voor banner-doel-
-    /// einden is een grove categorisering genoeg.
+    /// Mapping for HealthKit errors — almost always network- or permission-
+    /// related, but HK throws `HKError` with its own codes. For banner purposes
+    /// a coarse categorisation is enough.
     static func from(healthKit error: Error) -> SyncErrorCategory {
         if (error as NSError).domain == NSURLErrorDomain {
             return .network
@@ -60,8 +60,8 @@ enum SyncErrorCategory: String, Codable, Equatable {
     }
 }
 
-/// Pure-Swift snapshot voor `SyncBannerStateBuilder`. Geen reference-types,
-/// geen UserDefaults — caller bouwt 'm en geeft 'm aan de builder.
+/// Pure-Swift snapshot for `SyncBannerStateBuilder`. No reference types,
+/// no UserDefaults — the caller builds it and hands it to the builder.
 struct SyncStatusSnapshot: Equatable {
     var isOffline: Bool
     var stravaRateLimitedUntil: Date?
@@ -72,8 +72,8 @@ struct SyncStatusSnapshot: Equatable {
     var lastStravaSuccessAt: Date?
     var lastHKSuccessAt: Date?
 
-    /// Meest recente succesvolle sync (Strava óf HK) — gebruikt voor de
-    /// offline-banner *"Geen verbinding — laatste sync HH:MM"*.
+    /// Most recent successful sync (Strava or HK) — used for the
+    /// offline banner *"No connection — last sync HH:MM"*.
     var lastAnySyncSuccessAt: Date? {
         switch (lastStravaSuccessAt, lastHKSuccessAt) {
         case let (s?, h?): return max(s, h)
@@ -105,7 +105,7 @@ struct SyncStatusStore {
         self.rateLimitStore = rateLimitStore
     }
 
-    // MARK: Recording (caller-side van auto-sync)
+    // MARK: Recording (auto-sync caller side)
 
     func recordStravaSuccess(at date: Date = Date()) {
         defaults.set(date.timeIntervalSince1970, forKey: Keys.lastStravaSyncAt)
@@ -119,10 +119,10 @@ struct SyncStatusStore {
         defaults.removeObject(forKey: Keys.lastHKErrorAt)
     }
 
-    /// Schrijft alleen wanneer de fout banner-waardig is — `.missingToken`
-    /// (gebruiker heeft Strava niet gekoppeld) wordt expliciet uitgefilterd
-    /// zodat we geen "Strava-sync mislukt"-melding tonen aan iemand zonder
-    /// Strava-koppeling.
+    /// Only writes when the error is banner-worthy — `.missingToken`
+    /// (the user has not connected Strava) is explicitly filtered out
+    /// so we don't show a "Strava sync failed" message to someone without a
+    /// Strava connection.
     func recordStravaError(_ error: Error, at date: Date = Date()) {
         guard let category = SyncErrorCategory.from(strava: error) else { return }
         defaults.set(category.rawValue, forKey: Keys.lastStravaErrorCategory)
@@ -135,8 +135,8 @@ struct SyncStatusStore {
         defaults.set(date.timeIntervalSince1970, forKey: Keys.lastHKErrorAt)
     }
 
-    /// Wist beide error-meldingen — gebruikt door de banner-dismiss-actie
-    /// voor de generieke fout-banner.
+    /// Clears both error messages — used by the banner-dismiss action
+    /// for the generic error banner.
     func clearErrors() {
         defaults.removeObject(forKey: Keys.lastStravaErrorCategory)
         defaults.removeObject(forKey: Keys.lastStravaErrorAt)

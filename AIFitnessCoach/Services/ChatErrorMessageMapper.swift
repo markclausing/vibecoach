@@ -1,23 +1,23 @@
 import Foundation
 
-/// Epic #51-A5: vertaalt ruwe SDK-/netwerkfouten naar specifieke, actionable
-/// gebruikers-meldingen. Voorheen werden de meeste niet-Gemini-fouten als één
-/// generieke *"Er is een tijdelijk probleem"* gepresenteerd — gebruikers konden
-/// daardoor offline-situaties, geblokkeerde sleutels en provider-overbelasting
-/// niet uit elkaar houden, en wisten niet wat ze moesten doen.
+/// Epic #51-A5: translates raw SDK/network errors into specific, actionable
+/// user messages. Previously most non-Gemini errors were presented as one
+/// generic *"There is a temporary problem"* — users could therefore not
+/// distinguish offline situations, blocked keys and provider overload,
+/// and did not know what to do.
 ///
-/// Pure-Swift, geen framework-deps op het Gemini-SDK-type-niveau (de SDK is
-/// optioneel beschikbaar; we matchen op `Error.localizedDescription` en
-/// `URLError`-codes zodat tests zonder netwerk + zonder SDK kunnen draaien).
+/// Pure-Swift, no framework deps at the Gemini-SDK type level (the SDK is
+/// optionally available; we match on `Error.localizedDescription` and
+/// `URLError` codes so tests can run without a network and without the SDK).
 enum ChatErrorMessageMapper {
 
-    /// Genereert de tekst die in de chat-bubble + dashboard-banner verschijnt
-    /// bij een mislukte AI-call. Caller bepaalt op basis van het type fout of
-    /// de helpers eerst een fallback-model proberen (zie ChatViewModel) —
-    /// deze mapper is voor de definitieve melding nadat alle pogingen falen.
+    /// Generates the text shown in the chat bubble + dashboard banner
+    /// on a failed AI call. The caller decides, based on the error type, whether
+    /// the helpers first try a fallback model (see ChatViewModel) —
+    /// this mapper is for the final message after all attempts fail.
     static func userFacingMessage(for error: Error) -> String {
-        // Epic #53: onze eigen provider-fout van de OpenAI/Claude/Mistral REST-
-        // clients. Getypeerd, dus de eerste en meest specifieke check.
+        // Epic #53: our own provider error from the OpenAI/Claude/Mistral REST
+        // clients. Typed, so the first and most specific check.
         if let providerError = error as? AIProviderError {
             switch providerError {
             case .overloaded:           return Self.providerOverloaded
@@ -28,15 +28,15 @@ enum ChatErrorMessageMapper {
             }
         }
 
-        // Volgorde: meest specifieke check eerst.
+        // Order: most specific check first.
         if let urlError = error as? URLError {
             return message(for: urlError)
         }
 
-        // Het Gemini-SDK-type `GenerateContentError` is niet door dit module
-        // direct importeerbaar (zou een circulaire dep opleveren). We
-        // herkennen 'm via de stringrepresentatie van het type, wat stabiel
-        // is over SDK-minor-versies en testbaar zonder echte SDK-instantie.
+        // The Gemini-SDK type `GenerateContentError` is not directly importable
+        // by this module (it would create a circular dep). We
+        // recognise it via the string representation of the type, which is stable
+        // across SDK minor versions and testable without a real SDK instance.
         let typeName = String(describing: type(of: error))
         if typeName.contains("GenerateContentError") {
             return message(forGenerateContentErrorDescription: String(describing: error))
@@ -53,7 +53,7 @@ enum ChatErrorMessageMapper {
         return Self.generic
     }
 
-    // MARK: - URLError-mapping
+    // MARK: - URLError mapping
 
     private static func message(for urlError: URLError) -> String {
         switch urlError.code {
@@ -74,11 +74,11 @@ enum ChatErrorMessageMapper {
         }
     }
 
-    // MARK: - GenerateContentError-mapping
+    // MARK: - GenerateContentError mapping
 
-    /// Matcht op de String-representatie van een `GenerateContentError`-case
-    /// zodat we niet afhankelijk zijn van het exacte SDK-type. Stabiel over
-    /// SDK-minor-versies.
+    /// Matches on the String representation of a `GenerateContentError` case
+    /// so we don't depend on the exact SDK type. Stable across
+    /// SDK minor versions.
     private static func message(forGenerateContentErrorDescription raw: String) -> String {
         let lowered = raw.lowercased()
         if lowered.contains("promptblocked") || lowered.contains("safety") {
@@ -93,7 +93,7 @@ enum ChatErrorMessageMapper {
         return Self.providerGeneric
     }
 
-    // MARK: - Vaste teksten
+    // MARK: - Fixed texts
 
     static let networkOffline =
         "Geen internet — controleer je verbinding en probeer opnieuw."
