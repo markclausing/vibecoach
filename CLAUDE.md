@@ -1,152 +1,152 @@
-# VibeCoach — Architectuur & Ontwikkelregels voor Claude
+# VibeCoach — Architecture & Development Rules for Claude
 
-Dit bestand bevat de vaste project-instructies voor de AI-assistent (Claude).
-Lees dit bij elke sessie als basis voor alle beslissingen.
-
----
-
-## 0. Meta: Autonoom Context Management
-
-**Proactieve Updates:** Claude is verantwoordelijk voor het actueel houden van **alle vier project-doc-files** (`README.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `CLAUDE.md`). Bij een nieuwe architectuurkeuze, een structureel opgeloste bug (bijv. een iOS-quirk), of een nieuwe project-standaard: update direct in de juiste file zonder toestemming te vragen. Zie §7 voor de scope-verdeling per file.
-
-**Token Optimalisatie (The Cache):** Als er veel heen-en-weer wordt gepraat over een complex concept, vat Claude de eindconclusie samen, voegt deze toe als harde regel, en meldt: *"Ik heb de regels bijgewerkt. Je kunt nu `/compact` typen om tokens te besparen."*
-
-**Epic Overgangen:** Bij de start van een nieuwe Epic controleert Claude alle doc-files op oude of irrelevante regels die verwijderd kunnen worden om de cache schoon te houden.
+This file contains the fixed project instructions for the AI assistant (Claude).
+Read it at the start of every session as the basis for all decisions.
 
 ---
 
-## 1. Product Filosofie: Management by Exception
+## 0. Meta: Autonomous Context Management
 
-- De app waarschuwt **niet** bij goed gedrag — alleen bij afwijkingen (te zwaar of te licht trainen).
-- Een 'Rode status' in het Dashboard **moet altijd** vergezeld gaan van een AI-gegenereerd herstelplan (Action Phase). Tonen zonder oplossing is onvoldoende.
-- Proactieve notificaties zijn gericht: Engine A reageert op actie (nieuwe workout), Engine B op inactie (stilzitten).
+**Proactive updates:** Claude is responsible for keeping **all four project doc files** up to date (`README.md`, `docs/ROADMAP.md`, `docs/ARCHITECTURE.md`, `CLAUDE.md`). On a new architectural choice, a structurally fixed bug (e.g. an iOS quirk), or a new project standard: update the right file directly without asking permission. See §7 for the scope split per file.
 
----
+**Token optimisation (the cache):** when there is a lot of back-and-forth about a complex concept, Claude summarises the final conclusion, adds it as a hard rule, and reports: *"I've updated the rules. You can type `/compact` now to save tokens."*
 
-## 2. Datamodel: SwiftData Strictness
-
-- Gebruik **nooit** ruwe strings voor categorieën. Uitsluitend type-veilige enums, bijv. `SportCategory: String, Codable`.
-- Bij import vanuit externe bronnen (HealthKit, Strava) wordt de ruwe data **direct bij de voordeur** gemapt naar deze enums — vóórdat het in SwiftData belandt.
-- Voeg geen nieuwe `@Model` klassen toe zonder bijbehorende migratie-overweging.
-
-### 2.1 Schema-migratie protocol
-
-**Verplicht bij élke `@Model`-wijziging — óók pure additions** (mei 2026 incident: Epic #49 voegde twee optionele velden toe aan `ActivityRecord` zonder schema-bump; SwiftData's lightweight inference werkt anders bij een explicit `migrationPlan` en de container-init faalde → fallback wiste `FitnessGoal` + `UserPreference` lokaal-only data). Geen uitzonderingen meer voor "pure additions".
-
-1. **Snapshot het oude schema** in `Models/SchemaV<N>.swift` als `enum SchemaV<N>: VersionedSchema`. Nested `@Model` types houden **dezelfde unqualified naam** als de live types (bijv. `SchemaV1.Symptom` — niet `V1Symptom`) zodat de SwiftData entity-naam matcht met wat in de bestaande store staat. Mismatchende entity-namen breken de migratie met "Cannot use staged migration with an unknown model version". Eerder-versie-schema's die het gewijzigde type al referenden moeten ook bijgewerkt worden — laat ze verwijzen naar de snapshot van de meest recente onveranderde versie (bijv. `SchemaV1.models` wijst naar `SchemaV2.ActivityRecord.self` als V1 → V2 voor ActivityRecord een no-op was).
-2. Voeg een nieuwe `MigrationStage` toe aan `AppMigrationPlan`. Voor **pure additions** is `MigrationStage.lightweight(fromVersion:toVersion:)` voldoende. Schemas die ongewijzigd blijven (bijv. `FitnessGoal`) worden in beide schema's direct gerefereerd — niet ge-snapshot.
-3. **Type-changes** (bijv. `String` → enum): capture-in-`willMigrate` + restore-in-`didMigrate`. `@Attribute(originalName:)` alleen kan een rename mét behoud van type aan, géén impliciete type-conversie naar een RawRepresentable-enum.
-4. **Nieuwe unique-constraints op vol veld**: dedupe in `willMigrate` vóór de schema-flip — anders faalt de constraint-applicatie hard met een SQLite-violation.
-5. **Bump de container-init in `AIFitnessCoachApp.makeModelContainer()`** naar de nieuwe `SchemaV<M>.models` zodat de migration plan ook daadwerkelijk wordt aangesproken.
-6. Schrijf altijd een `SchemaMigrationV<N>To<M>Tests` met een **file-backed** seed-store als happy-path-vangnet. In-memory stores werken niet voor migratie-paden (er is geen V<N>-store-bestand om vanaf te starten). Test minstens (1) dat `FitnessGoal` + `UserPreference` records de migratie overleven (lokaal-only verlies-risico) en (2) dat nieuwe velden schrijfbaar zijn na migratie.
+**Epic transitions:** at the start of a new Epic, Claude checks all doc files for stale or irrelevant rules that can be removed to keep the cache clean.
 
 ---
 
-## 3. Tijd & Datum Logica
+## 1. Product Philosophy: Management by Exception
 
-- Gebruik **nooit** `TimeInterval`-wiskunde (seconden vermenigvuldigen) om periodes in het verleden te berekenen.
-- Gebruik **altijd** `Calendar.current.date(byAdding:to:)` voor tijdsfilters — dit voorkomt bugs met zomertijd en schrikkeljaren.
-- Base-building (historische data voor burndown) wordt altijd berekend vanaf `Date()` (vandaag), **niet** vanaf `targetDate` in de toekomst.
-
----
-
-## 4. Achtergrondprocessen: Dual Engine Architectuur
-
-- **Engine A (Action Trigger):** `HKObserverQuery` + `enableBackgroundDelivery` — de app ontwaakt bij elke nieuwe HealthKit-workout en checkt direct de burndown-afwijking.
-- **Engine B (Inaction Trigger):** `BGAppRefreshTask` via `BGTaskScheduler` — dagelijkse stille achtergrondcheck of de gebruiker te lang stilzit en een doel op rood staat.
-- De `ProactiveNotificationService` (singleton) beheert beide engines. Risicodata wordt gecached in `UserDefaults` vanuit `DashboardView` (bij `onAppear` + na refresh).
-- Cooldown: maximaal 1 proactieve notificatie per doel per 24 uur.
+- The app does **not** warn on good behaviour — only on deviations (training too hard or too light).
+- A 'red status' in the Dashboard **must always** be accompanied by an AI-generated recovery plan (Action Phase). Showing it without a solution is not enough.
+- Proactive notifications are targeted: Engine A reacts to action (new workout), Engine B to inaction (sitting still).
 
 ---
 
-## 5. SwiftUI & iOS Stijlregels
+## 2. Data model: SwiftData Strictness
 
-- Modulaire code: grote schermen opsplitsen in kleinere herbruikbare components.
-- **Eén top-level type per bestand.** Bij `@Model`-classes verplicht; voor structs/enums alleen samenvoegen als ze tightly coupled zijn (bijv. enum + zijn supporting structs zoals `BodyArea` + `Symptom`).
-- **Soft cap: ±500 LOC per Swift-bestand.** Komt het erboven, splits per logische verantwoordelijkheid (model-class, prompt-formatter, query-helper, etc.). Pure file-splits zonder semantische wijzigingen zijn altijd veilig — type-namen blijven identiek, dus SwiftData en callers merken niks.
-- Gebruik standaard iOS-componenten — simpel, modern en native.
-- Complexe logica (API-koppelingen, achtergrondprocessen) uitleggen via comments **in het Nederlands**.
-- Bouw stap voor stap: basis eerst, dan pas complexe features.
+- **Never** use raw strings for categories. Type-safe enums only, e.g. `SportCategory: String, Codable`.
+- When importing from external sources (HealthKit, Strava), raw data is mapped to these enums **right at the front door** — before it reaches SwiftData.
+- Do not add new `@Model` classes without a corresponding migration consideration.
 
----
+### 2.1 Schema migration protocol
 
-## 6. Testbeleid
+**Mandatory for every `@Model` change — including pure additions** (May 2026 incident: Epic #49 added two optional fields to `ActivityRecord` without a schema bump; SwiftData's lightweight inference behaves differently with an explicit `migrationPlan` and the container init failed → the fallback wiped `FitnessGoal` + `UserPreference` local-only data). No more exceptions for "pure additions".
 
-### Wat WEL testen
-- **Pure-Swift logica** in `Services/`, `Models/`, `ViewModels/`-helpers: classifiers, calculators, formatters, schedulers. Hoogste ROI — gemakkelijk te testen, vangt regressies vroeg.
-- **Schema-migraties** (zie §2.1): file-backed seed-store-tests verplicht. In-memory stores werken niet voor migratie-paden.
-- **Domeinregels met edge cases:** HR-zone-grenzen, blessure-keyword-detectie, DST-overgangen, dedupe-heuristieken, threshold-detectie. Hier zitten de subtiele bugs.
-- **Happy-path UI-flows** via XCUITest: onboarding, navigatie naar elke tab, doel aanmaken. Niet meer dan dat.
-
-### Wat NIET testen
-- Triviale getters/setters of SwiftData-boilerplate. Geen waarde, alleen onderhoudslast.
-- View-laag-orchestratie zonder clean injection-seam (concurrent sync, `async let`-flows in `performAutoSync`). Document i.p.v. test in PR-checklist + on-device validatie.
-- iOS-framework-zaken die in simulator-sandbox niet werken (Keychain entitlements, BGTaskScheduler-timing).
-
-### Testbaarheid borgen
-- **Pure-Swift helpers AppStorage-/UserDefaults-vrij houden.** Caller injecteert state via parameters. Voorbeelden: `ActivityDeduplicator`, `SessionClassifier`, `WorkoutPatternDetector`, `PhysiologicalThresholdEstimator`. Een helper die `@AppStorage` leest is een test-nachtmerrie en een main-actor-isolatie-probleem in één.
-- **Mocking voor UI-tests** via `UITestMockEnvironment.setup()` (gegated op `-UITesting`-launchArgument + `#if DEBUG`). Schrijft dummy API-key, weersdata, periodisatie-context zodat views renderen zonder live API-calls. `UITestMockGenerativeModel` vervangt de Gemini-call met een hardcoded JSON-response.
-- **Test-only bypasses** in productie-code mogen alleen achter `-UITesting`-check + comment die uitlegt waarom (zie `ChatView`'s `hasAPIKey`-gate als voorbeeld).
-
-### CI-discipline (geleerd via Epic 46.4)
-- **UI-tests draaien sequentieel op CI** (`-parallel-testing-enabled NO`). Parallel-clones triggeren `ipc/mig server died` op GitHub `macos-latest`-runners. Lokaal blijft scheme-config parallel voor snelheid.
-- **Bij UI-test-failures op CI eerst de xcresult-bundle inspecteren** via `xcrun xcresulttool get test-results activities --test-id <id>`, vóór je het op runner-flakiness gooit. Test-code-bugs (verborgen NavigationBar in V2.0, `.textField`-lookup voor SwiftUI's `.textView`-rendering, te-korte timeouts) zijn vaker de oorzaak dan echte runner-issues.
-- **Coverage is signal, geen KPI.** De `coverage-report`-job genereert per-directory + combined aggregaten. Streef naar hoge dekking op `Services/` + `Models/` + `ViewModels/` (testable code); `Views/` blijft beperkt door SwiftUI-testbaarheid en wordt apart gerapporteerd.
+1. **Snapshot the old schema** in `Models/SchemaV<N>.swift` as `enum SchemaV<N>: VersionedSchema`. Nested `@Model` types keep the **same unqualified name** as the live types (e.g. `SchemaV1.Symptom` — not `V1Symptom`) so the SwiftData entity name matches what is in the existing store. Mismatched entity names break the migration with "Cannot use staged migration with an unknown model version". Earlier-version schemas that already reference the changed type must also be updated — point them at the snapshot of the most recent unchanged version (e.g. `SchemaV1.models` points at `SchemaV2.ActivityRecord.self` if V1 → V2 was a no-op for ActivityRecord).
+2. Add a new `MigrationStage` to `AppMigrationPlan`. For **pure additions**, `MigrationStage.lightweight(fromVersion:toVersion:)` is sufficient. Schemas that stay unchanged (e.g. `FitnessGoal`) are referenced directly in both schemas — not snapshotted.
+3. **Type changes** (e.g. `String` → enum): capture-in-`willMigrate` + restore-in-`didMigrate`. `@Attribute(originalName:)` alone can handle a rename that preserves the type, not an implicit type conversion to a RawRepresentable enum.
+4. **New unique constraints on a populated field**: dedupe in `willMigrate` before the schema flip — otherwise applying the constraint fails hard with a SQLite violation.
+5. **Bump the container init in `AIFitnessCoachApp.makeModelContainer()`** to the new `SchemaV<M>.models` so the migration plan is actually exercised.
+6. Always write a `SchemaMigrationV<N>To<M>Tests` with a **file-backed** seed store as a happy-path safety net. In-memory stores do not work for migration paths (there is no V<N> store file to start from). Test at least (1) that `FitnessGoal` + `UserPreference` records survive the migration (local-only loss risk) and (2) that new fields are writable after migration.
 
 ---
 
-## 7. Documentatie-Discipline
+## 3. Time & Date Logic
 
-Vier files dragen samen de project-state. Elk heeft een eigen scope; **geen overlap, geen duplicatie**.
+- **Never** use `TimeInterval` math (multiplying seconds) to compute periods in the past.
+- **Always** use `Calendar.current.date(byAdding:to:)` for time filters — this avoids bugs with daylight saving time and leap years.
+- Base-building (historical data for burndown) is always computed from `Date()` (today), **not** from `targetDate` in the future.
 
-### Verdeling
+---
 
-| File | Scope | Wie leest het | Vuistregel voor lengte |
+## 4. Background Processes: Dual Engine Architecture
+
+- **Engine A (Action Trigger):** `HKObserverQuery` + `enableBackgroundDelivery` — the app wakes on every new HealthKit workout and immediately checks the burndown deviation.
+- **Engine B (Inaction Trigger):** `BGAppRefreshTask` via `BGTaskScheduler` — a daily silent background check whether the user has been inactive too long while a goal is in the red.
+- The `ProactiveNotificationService` (singleton) manages both engines. Risk data is cached in `UserDefaults` from `DashboardView` (on `onAppear` + after refresh).
+- Cooldown: at most 1 proactive notification per goal per 24 hours.
+
+---
+
+## 5. SwiftUI & iOS Style Rules
+
+- Modular code: split large screens into smaller reusable components.
+- **One top-level type per file.** Mandatory for `@Model` classes; for structs/enums only combine them when they are tightly coupled (e.g. an enum + its supporting structs like `BodyArea` + `Symptom`).
+- **Soft cap: ±500 LOC per Swift file.** If it goes over, split by logical responsibility (model class, prompt formatter, query helper, etc.). Pure file splits without semantic changes are always safe — type names stay identical, so SwiftData and callers notice nothing.
+- Use standard iOS components — simple, modern and native.
+- Explain complex logic (API integrations, background processes) via comments **in English**.
+- Build step by step: basics first, complex features later.
+
+---
+
+## 6. Testing Policy
+
+### What TO test
+- **Pure-Swift logic** in `Services/`, `Models/`, `ViewModels/` helpers: classifiers, calculators, formatters, schedulers. Highest ROI — easy to test, catches regressions early.
+- **Schema migrations** (see §2.1): file-backed seed-store tests mandatory. In-memory stores do not work for migration paths.
+- **Domain rules with edge cases:** HR-zone boundaries, injury-keyword detection, DST transitions, dedupe heuristics, threshold detection. This is where the subtle bugs live.
+- **Happy-path UI flows** via XCUITest: onboarding, navigation to each tab, creating a goal. Nothing more than that.
+
+### What NOT to test
+- Trivial getters/setters or SwiftData boilerplate. No value, only maintenance burden.
+- View-layer orchestration without a clean injection seam (concurrent sync, `async let` flows in `performAutoSync`). Document instead of test, in the PR checklist + on-device validation.
+- iOS-framework things that do not work in the simulator sandbox (Keychain entitlements, BGTaskScheduler timing).
+
+### Safeguarding testability
+- **Keep pure-Swift helpers free of AppStorage/UserDefaults.** The caller injects state via parameters. Examples: `ActivityDeduplicator`, `SessionClassifier`, `WorkoutPatternDetector`, `PhysiologicalThresholdEstimator`. A helper that reads `@AppStorage` is a testing nightmare and a main-actor isolation problem in one.
+- **Mocking for UI tests** via `UITestMockEnvironment.setup()` (gated on the `-UITesting` launch argument + `#if DEBUG`). Writes a dummy API key, weather data, periodisation context so views render without live API calls. `UITestMockGenerativeModel` replaces the Gemini call with a hardcoded JSON response.
+- **Test-only bypasses** in production code are only allowed behind a `-UITesting` check + a comment explaining why (see `ChatView`'s `hasAPIKey` gate as an example).
+
+### CI discipline (learned via Epic 46.4)
+- **UI tests run sequentially on CI** (`-parallel-testing-enabled NO`). Parallel clones trigger `ipc/mig server died` on GitHub `macos-latest` runners. Locally the scheme config stays parallel for speed.
+- **On UI-test failures on CI, inspect the xcresult bundle first** via `xcrun xcresulttool get test-results activities --test-id <id>`, before blaming runner flakiness. Test-code bugs (hidden NavigationBar in V2.0, `.textField` lookup for SwiftUI's `.textView` rendering, too-short timeouts) are more often the cause than real runner issues.
+- **Coverage is signal, not a KPI.** The `coverage-report` job generates per-directory + combined aggregates. Aim for high coverage on `Services/` + `Models/` + `ViewModels/` (testable code); `Views/` stays limited by SwiftUI testability and is reported separately.
+
+---
+
+## 7. Documentation Discipline
+
+Four files together carry the project state. Each has its own scope; **no overlap, no duplication**.
+
+### Split
+
+| File | Scope | Who reads it | Rule of thumb for length |
 |---|---|---|---|
-| **`README.md`** | High-level "wat is dit en waar zit de info" | Nieuwe lezer / GitHub-bezoeker | Huidige Status < 1 scherm |
-| **`docs/ROADMAP.md`** | Epic-historie + actieve & geplande stories (✅ / 🔄 / ⏳) + backlog | Wie wil weten "wat hebben we gedaan en wat komt nog" | Per Epic ~3-15 regels; alle details erin |
-| **`docs/ARCHITECTURE.md`** | Per architectuur-laag uitleggen "hoe werkt dit en waarom" | Wie de code begrijpt en wil weten waarom keuzes zo zijn | Per concept een sectie met code-pointers |
-| **`CLAUDE.md`** | Vaste regels & patronen voor het werken aan deze codebase | AI-assistant + nieuwe collaborators | Stabiel; alleen update als regel verandert |
+| **`README.md`** | High-level "what is this and where is the info" | New reader / GitHub visitor | Current Status < 1 screen |
+| **`docs/ROADMAP.md`** | Epic history + active & planned stories (✅ / 🔄 / ⏳) + backlog | Whoever wants to know "what have we done and what's coming" | ~3-15 lines per Epic; all detail in there |
+| **`docs/ARCHITECTURE.md`** | Per architecture layer, explaining "how does this work and why" | Whoever wants to understand the code and the reasons behind choices | A section per concept with code pointers |
+| **`CLAUDE.md`** | Fixed rules & patterns for working on this codebase | AI assistant + new collaborators | Stable; only update when a rule changes |
 
-### Update-protocol bij nieuwe functionaliteit
+### Update protocol on new functionality
 
-Elke PR die functionaliteit toevoegt **moet** alle relevante files updaten — niet alleen één van de vier:
+Every PR that adds functionality **must** update all relevant files — not just one of the four:
 
-- **`README.md`** — alleen aanraken als de feature in de "kernfeatures"-bullet-list verschijnt of de "Recent afgesloten"-regel update vraagt. Anders: niet aanraken (voorkomt versuffing van het overzicht).
-- **`docs/ROADMAP.md`** — Epic-status van ⏳ → 🔄 → ✅, sub-stories afvinken, "Effort gerealiseerd" + "Status"-regel updaten. Bij start van een nieuwe Epic: nieuwe sectie aanmaken met aanleiding + sub-stories.
-- **`docs/ARCHITECTURE.md`** — als de feature een nieuwe architectuur-keuze introduceert (nieuwe service-laag, sync-pijplijn, security-pattern) of bestaande sectie aanpast. Pure refactors zonder architectuur-wijziging hoeven hier niets.
-- **`CLAUDE.md`** — alleen als de feature een nieuw permanent patroon vastlegt (testbeleid, datum-handling, logger-discipline). Eenmalige Epic-werkzaamheden niet hier — die horen in ROADMAP.
+- **`README.md`** — only touch it if the feature shows up in the "core features" bullet list or requires a "Recently completed" line update. Otherwise: leave it alone (prevents the overview from going stale).
+- **`docs/ROADMAP.md`** — Epic status ⏳ → 🔄 → ✅, tick off sub-stories, update the "Effort realised" + "Status" line. When starting a new Epic: create a new section with rationale + sub-stories.
+- **`docs/ARCHITECTURE.md`** — if the feature introduces a new architectural choice (new service layer, sync pipeline, security pattern) or changes an existing section. Pure refactors without an architectural change need nothing here.
+- **`CLAUDE.md`** — only if the feature establishes a new permanent pattern (testing policy, date handling, logger discipline). One-off Epic work does not belong here — that goes in the ROADMAP.
 
-### Statussen in ROADMAP
+### Statuses in the ROADMAP
 
-- ✅ afgerond, gemerged op `main`
-- 🔄 actief, branch open of in review
-- ⏳ gepland of speculatief, nog geen toezegging
+- ✅ done, merged on `main`
+- 🔄 active, branch open or in review
+- ⏳ planned or speculative, no commitment yet
 
-Altijd het eerstvolgende logische doel toevoegen zodat de roadmap vooruitkijkt.
+Always add the next logical goal so the roadmap looks ahead.
 
-### Pure docs-only PR's
+### Pure docs-only PRs
 
-Mogen direct op `main` (uitzondering op §8). Voor feature-PR's: code + docs in dezelfde commit. Splits niet kunstmatig in code-PR + docs-PR.
+May go directly to `main` (exception to §8). For feature PRs: code + docs in the same commit. Don't artificially split into a code PR + docs PR.
 
-### Architectuur-visualisatie (afgeleide artefacten)
+### Architecture visualisation (derived artefacts)
 
-Naast de vier source-of-truth-files (§7 tabel) leven er twee **afgeleide** documenten die de architectuur in een klikbare en machine-leesbare vorm presenteren:
+Besides the four source-of-truth files (§7 table) there are two **derived** documents that present the architecture in a clickable and machine-readable form:
 
-| File | Doel | Bron |
+| File | Purpose | Source |
 |---|---|---|
-| **`docs/architecture/architecture.html`** | Interactieve viewer voor mensen — lagen, modules, subsystemen, flows, klikbare dependency-graph | Afgeleid van `docs/ARCHITECTURE.md` + codebase |
-| **`docs/architecture/architecture.json`** | Machine-leesbare structuur voor AI-agents — zelfde data, JSON-schema | Afgeleid van `docs/ARCHITECTURE.md` + codebase |
+| **`docs/architecture/architecture.html`** | Interactive viewer for humans — layers, modules, subsystems, flows, clickable dependency graph | Derived from `docs/ARCHITECTURE.md` + codebase |
+| **`docs/architecture/architecture.json`** | Machine-readable structure for AI agents — same data, JSON schema | Derived from `docs/ARCHITECTURE.md` + codebase |
 
-**Geen source-of-truth.** Beide files derive van de codebase + `ARCHITECTURE.md`. Bij conflicten wint de codebase, daarna `ARCHITECTURE.md`, daarna deze files. Voeg nooit nieuwe architectuur-uitleg uitsluitend hier toe — schrijf het eerst in `ARCHITECTURE.md` en sync hierheen.
+**Not source-of-truth.** Both files derive from the codebase + `ARCHITECTURE.md`. On conflicts the codebase wins, then `ARCHITECTURE.md`, then these files. Never add new architecture explanation here only — write it in `ARCHITECTURE.md` first and sync it here.
 
-**Update-discipline.** Elke PR die `ARCHITECTURE.md` raakt of een module-laag wijziging in `AIFitnessCoach/` introduceert (nieuw `Service`, nieuw `@Model`, nieuw `@StateObject` in `AIFitnessCoachApp`, nieuwe externe API, nieuwe subsystem/flow) moet ook deze twee bestanden meenemen in dezelfde commit:
+**Update discipline.** Every PR that touches `ARCHITECTURE.md` or introduces a module-layer change in `AIFitnessCoach/` (new `Service`, new `@Model`, new `@StateObject` in `AIFitnessCoachApp`, new external API, new subsystem/flow) must also include these two files in the same commit:
 
-1. Voeg/wijzig de module in `architecture.json` (id, layer, kind, file, description, uses, tags).
-2. Voeg eventueel een entry toe aan `subsystems` of `flows`.
-3. Bump `meta.docRevision` met 1.
-4. Zet `meta.lastUpdated` op vandaag (ISO `YYYY-MM-DD`).
-5. Re-injecteer de JSON in `architecture.html` via:
+1. Add/change the module in `architecture.json` (id, layer, kind, file, description, uses, tags).
+2. Optionally add an entry to `subsystems` or `flows`.
+3. Bump `meta.docRevision` by 1.
+4. Set `meta.lastUpdated` to today (ISO `YYYY-MM-DD`).
+5. Re-inject the JSON into `architecture.html` via:
    ```sh
    python3 -c "import json; \
      data=open('docs/architecture/architecture.json').read(); \
@@ -157,77 +157,77 @@ Naast de vier source-of-truth-files (§7 tabel) leven er twee **afgeleide** docu
      open('docs/architecture/architecture.html','w').write(new)"
    ```
 
-Pure refactors zonder structurele wijziging (rename binnen één bestand, force-unwrap-fix, logger-cleanup) hoeven deze files niet aan te raken.
+Pure refactors without a structural change (rename within one file, force-unwrap fix, logger cleanup) do not need to touch these files.
 
-**Versioning.** `meta.appVersion` matcht `CFBundleShortVersionString` in `AIFitnessCoach/Info.plist`. Bij iedere bump van die plist-waarde wordt `appVersion` mee bijgewerkt én `docRevision` weer op `1` gezet. `docRevision` telt binnen één app-versie hoe vaak de architectuur is herzien — dat geeft AI-agents en code-reviewers een eenduidig anker om te zien of een gecachet beeld nog actueel is. `meta.buildNumberSource` legt vast hoe `CFBundleVersion` zelf bepaald wordt (git commit count via een Build Phase script) — dat dynamische getal nemen we *niet* over in de docs, anders zou elke commit een doc-bump triggeren.
+**Versioning.** `meta.appVersion` matches `CFBundleShortVersionString` in `AIFitnessCoach/Info.plist`. On every bump of that plist value, `appVersion` is updated too and `docRevision` is reset to `1`. `docRevision` counts, within one app version, how often the architecture was revised — giving AI agents and code reviewers a clear anchor to see whether a cached picture is still current. `meta.buildNumberSource` records how `CFBundleVersion` itself is determined (git commit count via a Build Phase script) — we do *not* mirror that dynamic number into the docs, otherwise every commit would trigger a doc bump.
 
 ---
 
 ## 8. Git Workflow
 
-- Elke code-wijziging gaat via een branch + PR — **nooit direct op `main`**, ook niet voor kleine fixes. Uitzondering: pure README/backlog-updates (docs-only).
-- Branchnaam-conventies per type wijziging:
-  - `feature/epic-{nr}-{korte-beschrijving}` — nieuwe epics/sprints (bijv. `feature/epic-13-proactive-coaching-engine`)
-  - `fix/{korte-beschrijving}` — reguliere bugfixes (bijv. `fix/vibe-score-nil-crash`)
-  - `hotfix/{korte-beschrijving}` — productie-kritiek, fast-track merge
-  - `security/{alert-id-of-beschrijving}` — security-fixes (bijv. `security/codeql-dob-logging`)
-  - `ci/{korte-beschrijving}` — workflow/pipeline-wijzigingen
-  - `chore/{korte-beschrijving}` — tech-debt, cleanup, refactors zonder gedragsverandering (bijv. `chore/swiftlint-cleanup`)
-  - `docs/{korte-beschrijving}` — pure documentatie-updates (zelden nodig — meestal hoort docs bij een feature-PR; zie §7)
+- Every code change goes through a branch + PR — **never directly on `main`**, not even for small fixes. Exception: pure README/backlog updates (docs-only).
+- Branch-name conventions per type of change:
+  - `feature/epic-{nr}-{short-description}` — new epics/sprints (e.g. `feature/epic-13-proactive-coaching-engine`)
+  - `fix/{short-description}` — regular bugfixes (e.g. `fix/vibe-score-nil-crash`)
+  - `hotfix/{short-description}` — production-critical, fast-track merge
+  - `security/{alert-id-or-description}` — security fixes (e.g. `security/codeql-dob-logging`)
+  - `ci/{short-description}` — workflow/pipeline changes
+  - `chore/{short-description}` — tech debt, cleanup, refactors without behaviour change (e.g. `chore/swiftlint-cleanup`)
+  - `docs/{short-description}` — pure documentation updates (rarely needed — usually docs belong with a feature PR; see §7)
 - Workflow per branch:
-  1. Branch aanmaken → code bouwen → pushen
-  2. Direct na de eerste push **maakt de assistent automatisch de PR aan** via `gh pr create` (titel uit de branch-naam, body met `## Summary` + `## Test plan`-checklist conform de Claude Code-default). Geen aparte goedkeuring vragen — de PR is een doorgeefluik, geen merge-actie.
-  3. Gebruiker pulled en test (bij feature branches op device)
-  4. Feedback → fixes aanbrengen op **dezelfde** branch (push update bestaande PR automatisch)
-  5. Tevreden → gebruiker doet **squash & merge** naar main (de assistent merget niet)
-  6. Bij start van de volgende sprint: verwijder gemergte branches lokaal én remote
-- PR-discipline:
-  - **Eén fix per PR** — geen meeliftende refactors of "en-terwijl-ik-toch-bezig-was" wijzigingen
-  - Link altijd de bron in de PR-beschrijving: CodeQL-alert-ID, issue-nummer, crash-report, of user-melding
-  - Regression-test toevoegen waar haalbaar (conform §6)
-- Security-fixes specifiek:
-  - Publieke CodeQL-alerts → reguliere `security/`-branch + PR flow is voldoende
-  - Echte exploitable kwetsbaarheden in productie → gebruik **private GitHub Security Advisory** + private fork, publiceer pas ná de fix
+  1. Create branch → build code → push
+  2. Right after the first push **the assistant automatically creates the PR** via `gh pr create` (title from the branch name, body with `## Summary` + `## Test plan` checklist per the Claude Code default). Don't ask for separate approval — the PR is a conduit, not a merge action.
+  3. The user pulls and tests (for feature branches, on device)
+  4. Feedback → make fixes on the **same** branch (push updates the existing PR automatically)
+  5. Satisfied → the user does a **squash & merge** to main (the assistant does not merge)
+  6. At the start of the next sprint: delete merged branches locally and remote
+- PR discipline:
+  - **One fix per PR** — no piggybacked refactors or "while-I-was-at-it" changes
+  - Always link the source in the PR description: CodeQL alert ID, issue number, crash report, or user report
+  - Add a regression test where feasible (per §6)
+- Security fixes specifically:
+  - Public CodeQL alerts → the regular `security/` branch + PR flow is sufficient
+  - Real exploitable vulnerabilities in production → use a **private GitHub Security Advisory** + private fork, publish only after the fix
 
 ---
 
-## 9. Xcode Project Beheer (`project.pbxproj`)
+## 9. Xcode Project Management (`project.pbxproj`)
 
-- De `skip-worktree` flag staat standaard aan voor `AIFitnessCoach.xcodeproj/project.pbxproj`. Git negeert daardoor wijzigingen aan dit bestand.
-- Bij het aanmaken van een **nieuw Swift-bestand** buiten Xcode (via code-editor of AI-tooling) moet het bestand ook worden toegevoegd aan de Xcode build target in `project.pbxproj`. Dit gaat als volgt:
-  1. Voeg `PBXFileReference`, `PBXBuildFile` en de verwijzing in de `PBXGroup` + `PBXSourcesBuildPhase` toe aan `project.pbxproj`
-  2. Zet de skip-worktree flag tijdelijk uit: `git update-index --no-skip-worktree AIFitnessCoach.xcodeproj/project.pbxproj`
-  3. Stage en commit het bestand
-  4. Zet de flag terug: `git update-index --skip-worktree AIFitnessCoach.xcodeproj/project.pbxproj`
-- Vergeet dit stap nooit — een bestand dat niet in het project staat zal de CI-build laten falen met `cannot find 'X' in scope`.
-
----
-
-## 10. Communicatie
-
-- Antwoord en comments **in het Nederlands**, tenzij de gebruiker expliciet Engels vraagt.
-- Code-variabelen en functienamen in het Engels (Swift-conventie).
-- Wees beknopt — geen onnodige samenvattingen aan het einde van een antwoord.
+- The `skip-worktree` flag is on by default for `AIFitnessCoach.xcodeproj/project.pbxproj`. Git therefore ignores changes to this file.
+- When creating a **new Swift file** outside Xcode (via a code editor or AI tooling), the file must also be added to the Xcode build target in `project.pbxproj`. This goes as follows:
+  1. Add `PBXFileReference`, `PBXBuildFile` and the reference in the `PBXGroup` + `PBXSourcesBuildPhase` to `project.pbxproj`
+  2. Temporarily turn off the skip-worktree flag: `git update-index --no-skip-worktree AIFitnessCoach.xcodeproj/project.pbxproj`
+  3. Stage and commit the file
+  4. Turn the flag back on: `git update-index --skip-worktree AIFitnessCoach.xcodeproj/project.pbxproj`
+- Never forget this step — a file that is not in the project will make the CI build fail with `cannot find 'X' in scope`.
 
 ---
 
-## 11. Logger & Privacy-discipline
+## 10. Communication
 
-- Gebruik **nooit** `print()` in `Services/`, `Models/` of `ViewModels/`. Vervang door `AppLoggers.<categorie>.<level>(...)` (zie `Services/AppLoggers.swift` voor de bestaande categorieën — voeg nieuwe toe als de service buiten de scope van een bestaande valt).
-- Privacy-modifiers zijn **verplicht** voor alles dat user-data kan bevatten. Zonder modifier defaultet `Logger` op `.private`, maar maak het expliciet zodat code-review duidelijk is:
-  - `privacy: .private` voor HRV, slaapminuten, TRIMP, leeftijd, doeltitels, workout-UUIDs, tokens, RPE/mood, bodyArea-rawValues
-  - `privacy: .public` alleen voor framework-foutcodes (bijv. `error.localizedDescription` van iOS-frameworks), tellers (`count, weeks`), en niet-identificerende status-flags (auth-status enums, sport-rawValues)
-- In `Views/` is `print()` toegestaan als debug-aid, maar verwijder ze vóór commit. CI-builds hebben geen lint-regel hiervoor — eigen verantwoordelijkheid.
-- Géén losse `static let logger = Logger(...)` per service. Centraliseer in `AppLoggers` — voorheen leefden er drie duplicates die uit de hand liepen.
+- Reply to the user **in Dutch** (the maintainer's working language), unless the user explicitly asks for English.
+- **Code, code comments and documentation are in English** (see §5 and §7). Code variables and function names follow English Swift conventions.
+- Be concise — no unnecessary summaries at the end of a reply.
 
 ---
 
-## 12. Defensieve App-Init
+## 11. Logger & Privacy Discipline
 
-- Code op het kritieke launch-pad (`ModelContainer`-init, Keychain-migraties, `BGTaskScheduler.register`, fileSystem-bootstraps) gebruikt **nooit** `fatalError` als eerste catch.
-- Patroon:
-  1. Eerste poging: doe het normaal.
-  2. Bij falen: log via `AppLoggers.<x>.error` met `privacy: .public` op de framework-fout, en doe een **fallback** (verwijder corrupte state, gebruik defaults, bouw een lege store).
-  3. Pas bij de tweede falen: `fatalError`. Op dat punt is er iets fundamenteel mis (Application Support kapot, schema corrupt) en bricken is correct gedrag.
-- Voorbeeld: zie `AIFitnessCoachApp.makeModelContainer()`. Bij migratie-falen verwijdert de fallback de corrupte SQLite-store + WAL/SHM-sidecars en bouwt een lege V<latest>-container, met een UserDefaults-flag (`vibecoach_migrationFallbackAt`) als haakje voor toekomstige UI-melding.
-- HK + Strava-data is altijd re-syncbaar via `TriggerAutoSync` zodra de app weer opent; alleen `Symptom` en `UserPreference` zijn lokaal-only. Neem dat data-loss-risico voor lief boven een gebrickte app — een lege DB is hersteld in seconden, een crash-loop is niet hersteld zonder reinstall.
+- **Never** use `print()` in `Services/`, `Models/` or `ViewModels/`. Replace it with `AppLoggers.<category>.<level>(...)` (see `Services/AppLoggers.swift` for the existing categories — add a new one if the service falls outside the scope of an existing one).
+- Privacy modifiers are **mandatory** for anything that can contain user data. Without a modifier `Logger` defaults to `.private`, but make it explicit so code review is clear:
+  - `privacy: .private` for HRV, sleep minutes, TRIMP, age, goal titles, workout UUIDs, tokens, RPE/mood, bodyArea raw values
+  - `privacy: .public` only for framework error codes (e.g. `error.localizedDescription` of iOS frameworks), counters (`count, weeks`), and non-identifying status flags (auth-status enums, sport raw values)
+- In `Views/`, `print()` is allowed as a debug aid, but remove them before commit. CI builds have no lint rule for this — your own responsibility.
+- No loose `static let logger = Logger(...)` per service. Centralise in `AppLoggers` — there used to be three duplicates that got out of hand.
+
+---
+
+## 12. Defensive App Init
+
+- Code on the critical launch path (`ModelContainer` init, Keychain migrations, `BGTaskScheduler.register`, filesystem bootstraps) **never** uses `fatalError` as the first catch.
+- Pattern:
+  1. First attempt: do it normally.
+  2. On failure: log via `AppLoggers.<x>.error` with `privacy: .public` on the framework error, and do a **fallback** (remove corrupt state, use defaults, build an empty store).
+  3. Only on the second failure: `fatalError`. At that point something is fundamentally wrong (Application Support broken, schema corrupt) and bricking is correct behaviour.
+- Example: see `AIFitnessCoachApp.makeModelContainer()`. On migration failure the fallback removes the corrupt SQLite store + WAL/SHM sidecars and builds an empty V<latest> container, with a UserDefaults flag (`vibecoach_migrationFallbackAt`) as a hook for a future UI message.
+- HK + Strava data is always re-syncable via `TriggerAutoSync` once the app reopens; only `Symptom` and `UserPreference` are local-only. Accept that data-loss risk over a bricked app — an empty DB is restored in seconds, a crash loop is not recoverable without a reinstall.

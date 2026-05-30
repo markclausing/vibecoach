@@ -1,81 +1,81 @@
 # VibeCoach
 
-Een iOS-app (SwiftUI + SwiftData) die fungeert als persoonlijke, slimme fitnesscoach. De app combineert Apple HealthKit, Strava en AI (Gemini / OpenAI / Claude / Mistral) om trainingsschema's dynamisch en proactief bij te sturen.
+An iOS app (SwiftUI + SwiftData) that acts as a personal, smart fitness coach. The app combines Apple HealthKit, Strava and AI (Gemini / OpenAI / Claude / Mistral) to dynamically and proactively adjust training schedules.
 
 ---
 
-## 🚀 Huidige Status
+## 🚀 Current Status
 
-VibeCoach is **production-ready** als persoonlijke iOS fitnesscoach. De kernfeatures:
+VibeCoach is **production-ready** as a personal iOS fitness coach. The core features:
 
-- **Fysiologisch correcte coaching** — Vibe Score (readiness), persoonlijke HR-zones + FTP, en een patroon-detector die aerobic decoupling, cardiac drift, cadence fade en trage HR-recovery in workout-data herkent.
-- **Dual-source data** — HealthKit en Strava draaien always-on naast elkaar; smart-ingest en automatische dedupe voorkomen dat een armer record (HK zonder power) een rijker record (Strava mét power) overschrijft.
-- **Contextuele intelligentie** — Open-Meteo weer, slaapfase-analyse, blessure-bewuste planning.
-- **BYOK AI (multi-provider)** — Gemini, OpenAI, Claude of Mistral; elke provider z'n eigen sleutel (Keychain) + live opgehaalde model-keuze, achter één provider-agnostische client-laag.
-- **Proactief & privacy-first** — Management by Exception (alleen waarschuwen bij afwijkingen), HealthKit-data blijft on-device.
+- **Physiologically correct coaching** — Vibe Score (readiness), personal HR zones + FTP, and a pattern detector that recognises aerobic decoupling, cardiac drift, cadence fade and slow HR recovery in workout data.
+- **Dual-source data** — HealthKit and Strava run always-on side by side; smart-ingest and automatic dedupe prevent a poorer record (HK without power) from overwriting a richer record (Strava with power).
+- **Contextual intelligence** — Open-Meteo weather, sleep-stage analysis, injury-aware planning.
+- **BYOK AI (multi-provider)** — Gemini, OpenAI, Claude or Mistral; each provider its own key (Keychain) + live-fetched model selection, behind one provider-agnostic client layer.
+- **Proactive & privacy-first** — Management by Exception (only warn on deviations), HealthKit data stays on-device.
 
-**CI:** 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) op `macos-latest`, plus CodeQL-scan van Swift + Actions-workflows. Testsuite: **61% combined coverage op testable code** (Models 80%, Services 59%, ViewModels 59%) + 43% op `Views/` via UI-tests.
+**CI:** 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) on `macos-latest`, plus a CodeQL scan of Swift + Actions workflows. Test suite: **61% combined coverage on testable code** (Models 80%, Services 59%, ViewModels 59%) + 43% on `Views/` via UI tests.
 
-**Recent afgesloten:** Epic #54 (dynamische model-catalogus per provider — live `/v1/models` direct met de BYOK-sleutel, chat-gefilterd), #53 (multi-provider BYOK — OpenAI, Claude & Mistral naast Gemini: provider-agnostische client-laag, per-provider sleutels & modellen, validatie & onboarding), #52 (workout-analyse aanscherpen — hourly weer-range, vraagloze coach-prompt, running cadens-grafiek met cross-source HK-fallback), #46 (CI-pipeline & DAG + SwiftLint-integratie), #45 (per-workout context in coach-prompt), #44 (persoonlijke HR-zones & FTP), #42 (always-on dual-source sync), #41 (single-record-of-truth dedupe), #40 (Strava power-stream ingest), #32 (deep-dive fysiologische analyse). Tech-debt-traject loopt parallel: SwiftData V1→V4 migraties, file-splits van grote modules, logger-discipline, DST-safe date math.
+**Recently completed:** Epic #54 (dynamic per-provider model catalog — live `/v1/models` directly with the BYOK key, chat-filtered), #53 (multi-provider BYOK — OpenAI, Claude & Mistral alongside Gemini: provider-agnostic client layer, per-provider keys & models, validation & onboarding), #52 (sharper workout analysis — hourly weather range, question-free coach prompt, running cadence chart with cross-source HK fallback), #46 (CI pipeline & DAG + SwiftLint integration), #45 (per-workout context in coach prompt), #44 (personal HR zones & FTP), #42 (always-on dual-source sync), #41 (single-record-of-truth dedupe), #40 (Strava power-stream ingest), #32 (deep-dive physiological analysis). A tech-debt track runs in parallel: SwiftData V1→V4 migrations, file splits of large modules, logger discipline, DST-safe date math.
 
-**Volgende pickup:** geen actieve sprint vastgepind. Open follow-ups in [`docs/ROADMAP.md`](docs/ROADMAP.md): TestFlight-deploy (46.B1), semver-versioning (46.B6), Strict Concurrency `Complete` (39.3), force-unwrap-audit. Nieuwe Epics komen pas op tafel bij een concrete pijn.
+**Next pickup:** no active sprint pinned. Open follow-ups in [`docs/ROADMAP.md`](docs/ROADMAP.md): internationalisation + English codebase (Epic #37), TestFlight deploy (46.B1), semver versioning (46.B6), Strict Concurrency `Complete` (39.3), force-unwrap audit. New Epics only come up when there is concrete pain.
 
-**Meer info:**
-- Volledige historie en backlog → [`docs/ROADMAP.md`](docs/ROADMAP.md)
-- Architectuur (Dual Engine, dual-source pijplijn, BYOK, CI) → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- Project-regels voor AI-assistenten → [`CLAUDE.md`](CLAUDE.md)
+**More info:**
+- Full history and backlog → [`docs/ROADMAP.md`](docs/ROADMAP.md)
+- Architecture (Dual Engine, dual-source pipeline, BYOK, CI) → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- Project rules for AI assistants → [`CLAUDE.md`](CLAUDE.md)
 
-> **Talen:** UI, AI-prompt en code-comments zijn Nederlandstalig (Swift-variabelen Engels per Swift-conventie). Engelse i18n staat als ⏳ Epic #37 in de roadmap; geen actieve toezegging.
+> **Languages:** the codebase is migrating to English (code comments + documentation); Swift variables already follow English Swift conventions. Multi-language UI/AI (NL + EN + DE + ES) and the full English-codebase migration are tracked as Epic #37 in the roadmap.
 
 ---
 
-## 🛠 Installatie & Setup
+## 🛠 Installation & Setup
 
 1. Open `AIFitnessCoach.xcodeproj` in Xcode.
-2. Kopieer in de projectmap `Secrets-template.swift` naar `Secrets.swift`.
-3. Vul in `Secrets.swift` je eigen waarden in (`stravaClientID`, `stravaProxyBaseURL`, `stravaProxyToken`). Het Strava `client_secret` zit niet in de app — dat staat als Cloudflare Worker Secret in de [vibecoach-proxy](https://github.com/markclausing/vibecoach-proxy)-repo.
-4. Selecteer een simulator of fysieke iPhone en druk op Run (Cmd+R).
+2. In the project folder, copy `Secrets-template.swift` to `Secrets.swift`.
+3. Fill in your own values in `Secrets.swift` (`stravaClientID`, `stravaProxyBaseURL`, `stravaProxyToken`). The Strava `client_secret` is not in the app — it lives as a Cloudflare Worker Secret in the [vibecoach-proxy](https://github.com/markclausing/vibecoach-proxy) repo.
+4. Select a simulator or physical iPhone and press Run (Cmd+R).
 
-> Voor Apple HealthKit is testen op een fysiek toestel aanbevolen.
+> For Apple HealthKit, testing on a physical device is recommended.
 
 ---
 
 ## Tech Stack
 
-| Laag | Keuze |
+| Layer | Choice |
 |------|-------|
-| **Platform** | iOS 17+ (macOS + Xcode vereist om te bouwen) |
+| **Platform** | iOS 17+ (macOS + Xcode required to build) |
 | **UI** | SwiftUI + SwiftData |
-| **AI** | BYOK multi-provider — Gemini (default), OpenAI, Claude of Mistral; per provider eigen sleutel + model |
-| **Data** | Apple HealthKit (HRV, slaap + slaapfases, workouts) + optioneel Strava OAuth2 via Cloudflare Worker |
-| **Weer** | Open-Meteo API (gratis, geen API-sleutel) via CoreLocation + URLSession |
-| **Achtergrond** | `HKObserverQuery` (Engine A) + `BGAppRefreshTask` (Engine B) |
-| **Testen** | XCTest unit tests + XCUITest UI tests — **61% combined coverage op testable code** (Models 80%, Services 59%, ViewModels 59%) + 43% op `Views/` via UI-tests |
-| **Versiebeheer** | GitHub |
+| **AI** | BYOK multi-provider — Gemini (default), OpenAI, Claude or Mistral; per-provider key + model |
+| **Data** | Apple HealthKit (HRV, sleep + sleep stages, workouts) + optional Strava OAuth2 via Cloudflare Worker |
+| **Weather** | Open-Meteo API (free, no API key) via CoreLocation + URLSession |
+| **Background** | `HKObserverQuery` (Engine A) + `BGAppRefreshTask` (Engine B) |
+| **Testing** | XCTest unit tests + XCUITest UI tests — **61% combined coverage on testable code** (Models 80%, Services 59%, ViewModels 59%) + 43% on `Views/` via UI tests |
+| **Version control** | GitHub |
 
 ---
 
-## Kernprincipes
+## Core Principles
 
-- **Management by Exception:** de app waarschuwt niet bij goed gedrag — alleen bij afwijkingen. Een rode status komt altijd samen met een AI-gegenereerd herstelplan.
-- **Privacy-first:** HealthKit-data blijft op device. AI-sleutels in Keychain. Strava-secret in Cloudflare Worker.
-- **Type-veilig:** SwiftData met strict enums (`SportCategory`, `EventFormat`, `TrainingPhase`). Geen ruwe strings.
+- **Management by Exception:** the app does not warn on good behaviour — only on deviations. A red status always comes together with an AI-generated recovery plan.
+- **Privacy-first:** HealthKit data stays on device. AI keys in Keychain. Strava secret in the Cloudflare Worker.
+- **Type-safe:** SwiftData with strict enums (`SportCategory`, `EventFormat`, `TrainingPhase`). No raw strings.
 
-Zie [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) voor de Dual Engine- en proxy-architectuur.
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the Dual Engine and proxy architecture.
 
 ---
 
-## Testing Push Notifications in Simulator
+## Testing Push Notifications in the Simulator
 
-Om lokale push-notificaties te testen in de iOS Simulator: maak een `test-push.apns`-bestand en sleep het naar de draaiende simulator (Drag & Drop).
+To test local push notifications in the iOS Simulator: create a `test-push.apns` file and drag it onto the running simulator (drag & drop).
 
 ```json
 {
   "Simulator Target Bundle": "com.markclausing.aifitnesscoach",
   "aps": {
     "alert": {
-      "title": "Doel op rood",
-      "body": "Je wekelijkse Marathon-TRIMP loopt achter — bekijk je herstelplan."
+      "title": "Goal in the red",
+      "body": "Your weekly Marathon TRIMP is falling behind — check your recovery plan."
     },
     "badge": 1,
     "sound": "default"
@@ -84,15 +84,15 @@ Om lokale push-notificaties te testen in de iOS Simulator: maak een `test-push.a
 }
 ```
 
-> De `type`-waarde moet op de M-08 whitelist staan (`goalRisk` of `recovery_plan`), anders wordt de notificatie stil genegeerd.
+> The `type` value must be on the M-08 whitelist (`goalRisk` or `recovery_plan`), otherwise the notification is silently ignored.
 
 ---
 
-## Bijdragen & Workflow
+## Contributing & Workflow
 
-Zie [`CLAUDE.md`](CLAUDE.md) voor de volledige regels. Kort samengevat:
+See [`CLAUDE.md`](CLAUDE.md) for the full rules. In short:
 
-- Elke code-wijziging gaat via een branch + PR — nooit direct op `main`.
-- Branchnamen: `feature/epic-{nr}-...`, `fix/...`, `security/...`, `ci/...`, `chore/...`.
-- Eén fix per PR. README-updates horen bij dezelfde commit.
-- Elke nieuwe feature krijgt XCTest-coverage; happy-paths krijgen een XCUITest.
+- Every code change goes through a branch + PR — never directly on `main`.
+- Branch names: `feature/epic-{nr}-...`, `fix/...`, `security/...`, `ci/...`, `chore/...`.
+- One fix per PR. README updates belong in the same commit.
+- Every new feature gets XCTest coverage; happy paths get an XCUITest.
