@@ -460,11 +460,18 @@ private struct AIProviderPrivacyContent: View {
                         .foregroundColor(.secondary)
 
                     Picker("Provider", selection: $providerRaw) {
-                        Text("Gemini").tag(AIProvider.gemini.rawValue)
-                        Text("OpenAI").tag(AIProvider.openAI.rawValue)
+                        ForEach(AIProvider.allCases) { provider in
+                            Text(provider.shortName).tag(provider.rawValue)
+                        }
                     }
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier("OnboardingProviderPicker")
+
+                    if let provider = AIProvider(rawValue: providerRaw), let url = provider.getKeyURL {
+                        Link("Hoe kom ik aan een \(provider.shortName)-sleutel? →", destination: url)
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                    }
 
                     Text("Je kunt de sleutel zelf later invoeren in Instellingen.")
                         .font(.caption)

@@ -22,6 +22,16 @@ enum AIProvider: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Korte naam voor compacte UI (segmented picker, connectie-subtitle).
+    var shortName: String {
+        switch self {
+        case .gemini:    return "Gemini"
+        case .openAI:    return "OpenAI"
+        case .anthropic: return "Claude"
+        case .mistral:   return "Mistral"
+        }
+    }
+
     /// Placeholder-tekst in het SecureField zodat de gebruiker weet wat het verwachte formaat is.
     var keyPlaceholder: String {
         switch self {

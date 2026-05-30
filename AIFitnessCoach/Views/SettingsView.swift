@@ -90,13 +90,7 @@ struct SettingsView: View {
         guard !apiKey.isEmpty, let provider = AIProvider(rawValue: providerRaw) else {
             return "Geen sleutel"
         }
-        let shortName: String
-        switch provider {
-        case .gemini:    shortName = "Gemini"
-        case .openAI:    shortName = "OpenAI"
-        case .anthropic: shortName = "Anthropic"
-        case .mistral:   shortName = "Mistral"
-        }
+        let shortName = provider.shortName
         // Voor Gemini tonen we ook het gekozen model (Epic #35) — bv. "Gemini · flash-latest".
         // De "gemini-"-prefix strippen we om de card-subtitle compact te houden.
         guard provider == .gemini else { return shortName }
@@ -1383,6 +1377,13 @@ struct AIProviderSettingsView: View {
     @State private var catalogError: String?
     private let catalogService = AIModelCatalogService()
 
+    /// Epic #53 (53.6): model-keuze voor niet-Gemini providers, uit de statische
+    /// `AIModelCatalog.builtIn(for:)`. Gemini gebruikt de dynamische Worker-
+    /// catalogus hierboven; deze twee @State-velden worden per provider geladen/
+    /// gepersisteerd via de provider-gesuffixte `AIModelAppStorageKey`-keys.
+    @State private var customPrimaryModel: String = ""
+    @State private var customFallbackModel: String = ""
+
     private var selectedProvider: AIProvider {
         AIProvider(rawValue: providerRaw) ?? .gemini
     }
@@ -1478,6 +1479,25 @@ struct AIProviderSettingsView: View {
                         .accessibilityIdentifier("FallbackGeminiModelPicker")
                     }
                 }
+            } else {
+                // Epic #53 (53.6): statische model-picker per niet-Gemini provider.
+                // Geen Worker-roundtrip — de catalogus is gecureerd in `AIModelCatalog.builtIn(for:)`.
+                let catalog = AIModelCatalog.builtIn(for: selectedProvider)
+                Section(header: Text("\(selectedProvider.displayName) modellen")) {
+                    Picker("Primair model", selection: $customPrimaryModel) {
+                        ForEach(catalog.models) { model in
+                            Text(model.displayName).tag(model.id)
+                        }
+                    }
+                    .accessibilityIdentifier("PrimaryProviderModelPicker")
+
+                    Picker("Fallback model", selection: $customFallbackModel) {
+                        ForEach(catalog.models) { model in
+                            Text(model.displayName).tag(model.id)
+                        }
+                    }
+                    .accessibilityIdentifier("FallbackProviderModelPicker")
+                }
             }
 
             // Sprint 31.7: Test-ping — valideert de sleutel met een minimale
@@ -1511,17 +1531,37 @@ struct AIProviderSettingsView: View {
         // C-02: Keychain-gekoppelde load/save rond de SecureField.
         .onAppear {
             apiKey = UserAPIKeyStore.read(for: selectedProvider)
+            loadCustomModels()
             loadModelCatalog()
         }
         .onChange(of: apiKey) { _, newValue in
             UserAPIKeyStore.write(newValue, for: selectedProvider)
         }
         .onChange(of: providerRaw) { _, _ in
-            // Epic #53: bij providerwissel de sleutel uit de nieuwe provider-slot
-            // tonen + de test-status resetten (de oude uitslag geldt niet meer).
+            // Epic #53: bij providerwissel de sleutel + model-keuze uit de nieuwe
+            // provider-slot tonen + de test-status resetten (oude uitslag vervalt).
             apiKey = UserAPIKeyStore.read(for: selectedProvider)
+            loadCustomModels()
             testState = .idle
         }
+        // Epic #53 (53.6): persisteer de niet-Gemini model-keuze provider-gescheiden.
+        // Gemini loopt via de @AppStorage-bindingen hierboven, dus die slaan we over.
+        .onChange(of: customPrimaryModel) { _, newValue in
+            guard !newValue.isEmpty, selectedProvider != .gemini else { return }
+            UserDefaults.standard.set(newValue, forKey: AIModelAppStorageKey.primaryKey(for: selectedProvider))
+        }
+        .onChange(of: customFallbackModel) { _, newValue in
+            guard !newValue.isEmpty, selectedProvider != .gemini else { return }
+            UserDefaults.standard.set(newValue, forKey: AIModelAppStorageKey.fallbackKey(for: selectedProvider))
+        }
+    }
+
+    /// Laadt de opgeslagen (of default) model-keuze voor de actieve niet-Gemini
+    /// provider in de picker-bindingen. Voor Gemini is dit een no-op die door de
+    /// `selectedProvider != .gemini`-guard in de persist-handlers wordt genegeerd.
+    private func loadCustomModels() {
+        customPrimaryModel = AIModelAppStorageKey.resolvedPrimary(for: selectedProvider)
+        customFallbackModel = AIModelAppStorageKey.resolvedFallback(for: selectedProvider)
     }
 
     // MARK: - Epic #35 — Model catalogus

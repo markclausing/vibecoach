@@ -278,6 +278,12 @@ final class FitnessGoalTests: XCTestCase {
         }
     }
 
+    func testAIProvider_ShortNames_AllNonEmptyAndUnique() {
+        let shortNames = AIProvider.allCases.map(\.shortName)
+        XCTAssertFalse(shortNames.contains(where: \.isEmpty), "Geen enkele shortName mag leeg zijn.")
+        XCTAssertEqual(Set(shortNames).count, shortNames.count, "shortNames moeten uniek zijn (segmented-picker labels).")
+    }
+
     func testAIProvider_KeyPlaceholders_HaveProviderPrefix() {
         XCTAssertTrue(AIProvider.gemini.keyPlaceholder.hasPrefix("AIzaSy"))
         XCTAssertTrue(AIProvider.openAI.keyPlaceholder.hasPrefix("sk-"))
