@@ -1589,17 +1589,17 @@ struct AIProviderSettingsView: View {
                 feedbackRow(icon: "checkmark.seal.fill",
                             color: .green,
                             title: "Sleutel werkt",
-                            detail: "Gemini heeft de sleutel geaccepteerd.")
+                            detail: "\(selectedProvider.displayName) heeft de sleutel geaccepteerd.")
             case .invalidKey:
                 feedbackRow(icon: "xmark.octagon.fill",
                             color: .red,
                             title: "Sleutel ongeldig",
-                            detail: "Gemini weigert deze sleutel. Controleer of je hem volledig hebt geplakt.")
+                            detail: "\(selectedProvider.displayName) weigert deze sleutel. Controleer of je hem volledig hebt geplakt.")
             case .rateLimited:
                 feedbackRow(icon: "hourglass.circle.fill",
                             color: .orange,
-                            title: "Beide modellen overbelast",
-                            detail: "De Google-servers zijn vol. Je sleutel kán geldig zijn — probeer zo nog eens.")
+                            title: "Model overbelast",
+                            detail: "De servers van \(selectedProvider.displayName) zijn vol. Je sleutel kán geldig zijn — probeer zo nog eens.")
             case .network:
                 feedbackRow(icon: "wifi.exclamationmark",
                             color: .orange,
