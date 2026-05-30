@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import GoogleGenerativeAI
 
 struct AddGoalView: View {
     @Environment(\.modelContext) private var modelContext
@@ -143,11 +142,6 @@ struct AddGoalView: View {
             return fallbackTRIMP(for: goal.targetDate)
         }
 
-        let model = GenerativeModel(
-            name: "gemini-flash-latest",
-            apiKey: activeKey
-        )
-
         var profileText = "Geen specifieke historie bekend."
         if let p = profile {
             profileText = "Trainde recent \(p.averageWeeklyVolumeInSeconds / 60) min per week."
@@ -162,24 +156,36 @@ struct AddGoalView: View {
         Retourneer UITSLUITEND een logisch, kaal getal (Double of Integer) zonder verdere tekst, leestekens of eenheden. Bijv: 4500.
         """
 
-        do {
-            let response = try await model.generateContent(prompt)
-            if let text = response.text?.trimmingCharacters(in: .whitespacesAndNewlines), let trimp = Double(text) {
+        // Epic #53: provider-agnostisch via de `AIModelFactory`. Geen system-
+        // instructie en geen JSON-mode — we vragen één kaal getal terug. De
+        // modelnaam volgt de Epic #35-keuze van de gebruiker.
+        let provider = AIProvider(rawValue: UserDefaults.standard.string(forKey: "vibecoach_aiProvider") ?? "") ?? .gemini
+        func requestTRIMP(modelName: String) async throws -> Double? {
+            let model = AIModelFactory.makeModel(
+                provider: provider,
+                modelName: modelName,
+                systemInstruction: "",
+                jsonMode: false,
+                timeout: 30,
+                apiKey: activeKey
+            )
+            let response = try await model.generateContent([.text(prompt)])
+            if let text = response?.trimmingCharacters(in: .whitespacesAndNewlines), let trimp = Double(text) {
                 return trimp
             }
-        } catch let error as GenerateContentError {
-            if case .internalError = error {
-                // Primair model overbelast (503/429) — probeer stil met het lichtere fallback-model.
-                let fallback = GenerativeModel(name: "gemini-flash-lite-latest", apiKey: activeKey)
-                if let response = try? await fallback.generateContent(prompt),
-                   let text = response.text?.trimmingCharacters(in: .whitespacesAndNewlines),
-                   let trimp = Double(text) {
-                    return trimp
-                }
+            return nil
+        }
+
+        do {
+            if let trimp = try await requestTRIMP(modelName: AIModelAppStorageKey.resolvedPrimary()) {
+                return trimp
             }
-            print("AI TRIMP Fetch failed: \(error)")
         } catch {
-            print("AI TRIMP Fetch failed: \(error)")
+            // Bij tijdelijke overbelasting (503/429) stil proberen met het lichtere fallback-model.
+            if AIProviderError.isOverload(error),
+               let trimp = try? await requestTRIMP(modelName: AIModelAppStorageKey.resolvedFallback()) {
+                return trimp
+            }
         }
 
         return fallbackTRIMP(for: goal.targetDate)

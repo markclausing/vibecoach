@@ -1,6 +1,5 @@
 import Foundation
 @testable import AIFitnessCoach
-import GoogleGenerativeAI
 
 /// Een mock implementatie van de AI voor het unit testen
 class MockGenerativeModel: GenerativeModelProtocol {
@@ -16,9 +15,9 @@ class MockGenerativeModel: GenerativeModelProtocol {
         case genericError
     }
 
-    var receivedParts: [ModelContent.Part] = []
+    var receivedParts: [AIPromptPart] = []
 
-    func generateContent(_ parts: [ModelContent.Part]) async throws -> String? {
+    func generateContent(_ parts: [AIPromptPart]) async throws -> String? {
         receivedParts = parts
 
         if delay > 0 {

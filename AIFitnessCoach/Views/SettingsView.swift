@@ -95,6 +95,7 @@ struct SettingsView: View {
         case .gemini:    shortName = "Gemini"
         case .openAI:    shortName = "OpenAI"
         case .anthropic: shortName = "Anthropic"
+        case .mistral:   shortName = "Mistral"
         }
         // Voor Gemini tonen we ook het gekozen model (Epic #35) — bv. "Gemini · flash-latest".
         // De "gemini-"-prefix strippen we om de card-subtitle compact te houden.

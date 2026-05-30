@@ -1,5 +1,4 @@
 import Foundation
-import GoogleGenerativeAI
 
 // MARK: - Epic 32 Story 32.3b: WorkoutInsightService
 //
@@ -176,16 +175,18 @@ final class WorkoutInsightService {
     private static func makeModel(modelName: String) -> GenerativeModelProtocol? {
         let key = UserAPIKeyStore.read()
         guard !key.isEmpty else { return nil }
-        let config = GenerationConfig()
-        let options = RequestOptions(timeout: 30)
-        let googleModel = GenerativeModel(
-            name: modelName,
-            apiKey: key,
-            generationConfig: config,
-            systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)]),
-            requestOptions: options
+        // Epic #53: provider-agnostisch via de `AIModelFactory`. `jsonMode = false`
+        // — de Coach-analyse is vrije tekst, geen JSON-schema. Timeout 30s zoals
+        // voorheen. De provider komt uit dezelfde AppStorage-key als Settings.
+        let provider = AIProvider(rawValue: UserDefaults.standard.string(forKey: "vibecoach_aiProvider") ?? "") ?? .gemini
+        return AIModelFactory.makeModel(
+            provider: provider,
+            modelName: modelName,
+            systemInstruction: systemInstruction,
+            jsonMode: false,
+            timeout: 30,
+            apiKey: key
         )
-        return RealGenerativeModel(model: googleModel)
     }
 
     /// Workout-context voor de AI-prompt. Velden zijn optioneel; wat onbekend
@@ -480,6 +481,26 @@ final class WorkoutInsightService {
         let combined = "\(caseDescription) \(message)".lowercased()
 
         AppLoggers.workoutInsight.error("AI-call failed (retried=\(retried, privacy: .public)): \(caseDescription, privacy: .public) | localized=\(message, privacy: .public)")
+
+        // Epic #53: getypeerde mapping voor de niet-Gemini REST-clients (OpenAI/
+        // Claude/Mistral) die `AIProviderError` gooien. Gaat vóór de string-matching
+        // zodat we niet afhankelijk zijn van de stringrepresentatie.
+        if let providerError = error as? AIProviderError {
+            switch providerError {
+            case .overloaded:
+                return .rateLimited(retried: retried)
+            case .authenticationFailed:
+                return .authenticationFailed
+            case .contentBlocked:
+                return .contentBlocked
+            case .http(let status):
+                return .unavailable(retried: retried, detail: "AI-provider gaf HTTP \(status) terug.")
+            case .emptyResponse:
+                return .unavailable(retried: retried, detail: "Lege respons van AI-model.")
+            case .decodingFailed:
+                return .unavailable(retried: retried, detail: "Onverwacht antwoordformaat van de AI-provider.")
+            }
+        }
 
         // Specifieke Google-SDK cases — case-naam is stabieler dan localized text.
         if combined.contains("invalidapikey") || combined.contains("api key") || combined.contains("unauthenticated") || combined.contains("unauthorized") {

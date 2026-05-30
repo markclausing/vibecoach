@@ -1,6 +1,5 @@
 #if DEBUG
 import Foundation
-import GoogleGenerativeAI
 
 // MARK: - Sprint 26.1: UI Test Mock Environment
 
@@ -128,7 +127,7 @@ class UITestMockGenerativeModel: GenerativeModelProtocol {
     }
     """
 
-    func generateContent(_ parts: [ModelContent.Part]) async throws -> String? {
+    func generateContent(_ parts: [AIPromptPart]) async throws -> String? {
         // Simuleer 1 seconde netwerklatentie — realistisch en snel genoeg voor tests.
         try await Task.sleep(nanoseconds: 1_000_000_000)
         return Self.hardcodedResponse

@@ -1,7 +1,6 @@
 import Foundation
 import SwiftUI
 import Combine
-import GoogleGenerativeAI
 
 /// De viewmodel die de status van de chat bijhoudt en acties afhandelt.
 @MainActor
@@ -561,30 +560,23 @@ class ChatViewModel: ObservableObject {
             Extra instructie voor `newPreferences`: Als je opmerkt dat de gebruiker een vaste regel, langetermijnvoorkeur, of tijdelijke kwaal/blessure doorgeeft in hun LAATSTE bericht, vul dit array dan aan. Schat in of dit feit permanent is (zoals een vaste sportdag) of tijdelijk (zoals spierpijn, een lichte blessure of kramp). Als het tijdelijk is, bereken dan een logische verloopdatum (bijv. 1 of 2 weken vanaf vandaag) en retourneer deze in de JSON onder `expirationDate` als een "YYYY-MM-DD" string. Laat `expirationDate` leeg (null) bij permanente regels. Herhaal geen regels die je al kent.
             """
 
-            let config = GenerationConfig(
-                responseMIMEType: "application/json"
+            // Epic #53: provider-agnostische constructie via de `AIModelFactory`.
+            // De gekozen provider komt uit dezelfde AppStorage-key als Settings/
+            // onboarding; tot 53.4 model-selectie-per-provider toevoegt blijft de
+            // modelnaam de (Gemini-)naam uit `AIModelAppStorageKey`. JSON-mode aan:
+            // de coach-respons moet altijd het plan-JSON bevatten.
+            // Timeout 45s: genoeg voor een complex JSON-schema-antwoord, maar snel
+            // genoeg om bij overbelasting naar de lite-fallback te schakelen.
+            // Epic 20 / M-04: BYOK-only; C-02: sleutel komt uit de Keychain.
+            let provider = AIProvider(rawValue: UserDefaults.standard.string(forKey: "vibecoach_aiProvider") ?? "") ?? .gemini
+            return AIModelFactory.makeModel(
+                provider: provider,
+                modelName: resolvedModelName,
+                systemInstruction: systemInstruction,
+                jsonMode: true,
+                timeout: 45,
+                apiKey: UserAPIKeyStore.read()
             )
-
-            // Timeout 45s: geeft Google Gemini voldoende ruimte voor een complex
-            // JSON-schema antwoord, maar laat ons snel genoeg falen om naar de
-            // lite-fallback over te schakelen bij overbelasting. 120s was te lang
-            // voor een gebruiker die op een pull-to-refresh wacht.
-            let options = RequestOptions(
-                timeout: 45
-            )
-
-            // Epic 20 / M-04: BYOK-only, geen Secrets-fallback meer.
-            // C-02: sleutel komt uit de Keychain i.p.v. UserDefaults.
-            let initKey = UserAPIKeyStore.read()
-
-            let googleModel = GenerativeModel(
-                name: resolvedModelName,
-                apiKey: initKey,
-                generationConfig: config,
-                systemInstruction: ModelContent(role: "system", parts: [.text(systemInstruction)]),
-                requestOptions: options
-            )
-        return RealGenerativeModel(model: googleModel)
     }
 
     /// Bouwt een lichter fallback-model met dezelfde system instruction en
@@ -1428,7 +1420,7 @@ class ChatViewModel: ObservableObject {
         // Epic 20: BYOK — blokkeer als er geen geldige API-sleutel is geconfigureerd.
         // Uitzondering: als een custom model (bijv. een mock voor unit tests) is geïnjecteerd,
         // slaan we de key-check over zodat tests niet falen op een ontbrekende sleutel.
-        if model is RealGenerativeModel {
+        if model is RealAIProviderClient {
             guard hasAPIKey else {
                 let noKeyMessage = "Je AI Coach slaapt. Voer een API-sleutel in via de Instellingen om hem wakker te maken."
                 messages.append(ChatMessage(role: .ai, text: noKeyMessage))
@@ -1456,16 +1448,15 @@ class ChatViewModel: ObservableObject {
         currentRequestTask = Task { [weak self] in
             guard let self = self else { return }
             // Maak een dynamische array van ModelContent.Part objects
-            var promptParts: [ModelContent.Part] = []
+            var promptParts: [AIPromptPart] = []
 
             if !text.isEmpty {
                 promptParts.append(.text(text))
             }
 
-            // Zet de UIImage om naar JPEG data en wrap het in een SDK Part
+            // Zet de UIImage om naar JPEG data en wrap het in een provider-neutrale part
             if let image = image, let imageData = image.jpegData(compressionQuality: 0.8) {
-                let imagePart = ModelContent.Part.data(mimetype: "image/jpeg", imageData)
-                promptParts.append(imagePart)
+                promptParts.append(.imageData(imageData, mimeType: "image/jpeg"))
             }
 
             print("DEBUG PROMPT: \(text)")
@@ -1480,8 +1471,13 @@ class ChatViewModel: ObservableObject {
 
             do {
                 responseText = try await model.generateContent(promptParts)
-            } catch let primaryError as GenerateContentError {
-                if case .internalError = primaryError {
+            } catch {
+                // Epic #53: provider-agnostische overload-detectie (Gemini
+                // `internalError` én onze eigen `AIProviderError.overloaded`). Bij
+                // een tijdelijke 503/429 schakelen we stil over op het fallback-
+                // model; andere fouten (invalid key, blocked, netwerk) vallen
+                // direct door naar de UI.
+                if AIProviderError.isOverload(error) {
                     retryStatusMessage = "Model tijdelijk overbelast — overschakelen naar lichtere variant..."
                     let fallbackModel = buildFallbackGenerativeModel()
                     do {
@@ -1490,10 +1486,8 @@ class ChatViewModel: ObservableObject {
                         finalError = error
                     }
                 } else {
-                    finalError = primaryError
+                    finalError = error
                 }
-            } catch {
-                finalError = error
             }
 
             // Reset retry-statusbericht
