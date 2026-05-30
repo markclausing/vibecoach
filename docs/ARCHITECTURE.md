@@ -1,308 +1,308 @@
-# VibeCoach Architectuur
+# VibeCoach Architecture
 
-Deze file beschrijft de belangrijkste technische bouwstenen. Voor projectregels en afspraken: zie [CLAUDE.md](../CLAUDE.md). Voor geleverde features: zie [ROADMAP.md](ROADMAP.md).
+This file describes the main technical building blocks. For project rules and conventions, see [CLAUDE.md](../CLAUDE.md). For delivered features, see [ROADMAP.md](ROADMAP.md).
 
-> **Interactief overzicht:** open [`architecture/architecture.html`](architecture/architecture.html) in een browser voor een klikbare versie van dit document (modules, dependencies, flows). De bijbehorende [`architecture.json`](architecture/architecture.json) bevat dezelfde data machine-leesbaar voor AI-agents.
+> **Interactive overview:** open [`architecture/architecture.html`](architecture/architecture.html) in a browser for a clickable version of this document (modules, dependencies, flows). The accompanying [`architecture.json`](architecture/architecture.json) contains the same data machine-readable for AI agents.
 >
-> Beide files zijn **afgeleid** van deze `ARCHITECTURE.md` + de codebase — ze versioneren mee met de app via `meta.appVersion` (= `CFBundleShortVersionString`) en een eigen `meta.docRevision`. Bij wijzigingen aan deze file of aan de module-laag in `AIFitnessCoach/` moeten ze in dezelfde commit worden geüpdatet. Zie [CLAUDE.md §7 — Architectuur-visualisatie](../CLAUDE.md#architectuur-visualisatie-afgeleide-artefacten) voor het update-protocol.
+> Both files are **derived** from this `ARCHITECTURE.md` + the codebase — they version along with the app via `meta.appVersion` (= `CFBundleShortVersionString`) and their own `meta.docRevision`. When changing this file or the module layer in `AIFitnessCoach/`, they must be updated in the same commit. See [CLAUDE.md §7 — Architecture visualisation](../CLAUDE.md#architecture-visualisation-derived-artefacts) for the update protocol.
 
 ---
 
-## 1. Dual Engine Architectuur (Epic 13)
+## 1. Dual Engine Architecture (Epic 13)
 
-VibeCoach coacht proactief zónder dat de gebruiker de app opent. Dat werkt via twee onafhankelijke achtergrond-triggers, beide lokaal op device:
+VibeCoach coaches proactively without the user opening the app. That works via two independent background triggers, both local on device:
 
 ### Engine A — Action Trigger
-**Signaal:** een nieuwe HealthKit-workout.
+**Signal:** a new HealthKit workout.
 
-- `HKObserverQuery` + `enableBackgroundDelivery` — iOS wekt de app bij iedere nieuwe workout.
-- De app checkt direct of een doel op rood staat en stuurt een contextuele lokale push met deep-link naar de coach.
-- Alle analyse gebeurt client-side; er is geen APNs of backend in deze flow.
+- `HKObserverQuery` + `enableBackgroundDelivery` — iOS wakes the app on every new workout.
+- The app immediately checks whether a goal is in the red and sends a contextual local push with a deep link to the coach.
+- All analysis happens client-side; there is no APNs or backend in this flow.
 
 ### Engine B — Inaction Trigger
-**Signaal:** de gebruiker zit te lang stil terwijl een doel op rood staat.
+**Signal:** the user has been inactive too long while a goal is in the red.
 
-- `BGAppRefreshTask` via `BGTaskScheduler` — dagelijkse stille 24-uurs check.
-- Meer dan 2 dagen inactief én een rood doel → empathische motivatienotificatie.
-- De handler wordt geregistreerd in `AppDelegate.application(_:didFinishLaunchingWithOptions:)` vóór `return true`.
+- `BGAppRefreshTask` via `BGTaskScheduler` — a daily silent 24-hour check.
+- More than 2 days inactive plus a red goal → empathetic motivation notification.
+- The handler is registered in `AppDelegate.application(_:didFinishLaunchingWithOptions:)` before `return true`.
 
 ### Shared: ProactiveNotificationService
-- Singleton (`ProactiveNotificationService.shared`) beheert beide engines.
-- Risicodata wordt gecached in `UserDefaults` vanuit `DashboardView` (`onAppear` + na refresh).
-- Cooldown: maximaal **1 proactieve notificatie per doel per 24 uur**.
-- Alle notificaties worden lokaal gescheduled via `UNUserNotificationCenter` — geen APNs, geen backend.
+- A singleton (`ProactiveNotificationService.shared`) manages both engines.
+- Risk data is cached in `UserDefaults` from `DashboardView` (`onAppear` + after refresh).
+- Cooldown: at most **1 proactive notification per goal per 24 hours**.
+- All notifications are scheduled locally via `UNUserNotificationCenter` — no APNs, no backend.
 
 ### Recovery Mode
-- `requestRecoveryPlan()` bouwt automatisch een prompt met actuele TRIMP/week, wekelijks tekort en weken resterend.
-- De AI produceert een concreet 7-daags bijgestuurd schema.
-- De rode banner verandert na actie 3 dagen in een blauwe *"Herstelplan Actief"*-bevestiging.
+- `requestRecoveryPlan()` automatically builds a prompt with the current TRIMP/week, the weekly shortfall and weeks remaining.
+- The AI produces a concrete 7-day adjusted schedule.
+- After action, the red banner changes for 3 days into a blue *"Recovery Plan Active"* confirmation.
 
 ---
 
-## 2. Strava OAuth via Cloudflare Worker-Proxy
+## 2. Strava OAuth via a Cloudflare Worker Proxy
 
-Het Strava `client_secret` zat aanvankelijk hardcoded in `Secrets.swift` — uit de IPA te extraheren door elke gebruiker die de binary kon openen. Sinds de security audit (C-01) loopt de flow via een serverless Cloudflare Worker.
+The Strava `client_secret` was initially hardcoded in `Secrets.swift` — extractable from the IPA by any user who could open the binary. Since the security audit (C-01) the flow runs via a serverless Cloudflare Worker.
 
-### Proxy-architectuur
-- **Aparte repository:** [`vibecoach-proxy`](https://github.com/markclausing/vibecoach-proxy) — Cloudflare Worker.
+### Proxy architecture
+- **Separate repository:** [`vibecoach-proxy`](https://github.com/markclausing/vibecoach-proxy) — Cloudflare Worker.
 - **Endpoints:**
-  - `POST /oauth/strava/exchange` — ruilt een authorization code voor tokens
-  - `POST /oauth/strava/refresh` — ververst een verlopen access token
-- **Secret storage:** het echte Strava `client_secret` staat als **Cloudflare Worker Secret** — nooit in source of IPA.
-- **Client-auth:** de app authenticeert bij de Worker met een shared `X-Client-Token` header (`stravaProxyToken` in `Secrets.swift`). Niet cryptografisch sterk, maar stopt casual scraping.
+  - `POST /oauth/strava/exchange` — exchanges an authorization code for tokens
+  - `POST /oauth/strava/refresh` — refreshes an expired access token
+- **Secret storage:** the real Strava `client_secret` lives as a **Cloudflare Worker Secret** — never in source or IPA.
+- **Client auth:** the app authenticates to the Worker with a shared `X-Client-Token` header (`stravaProxyToken` in `Secrets.swift`). Not cryptographically strong, but stops casual scraping.
 
-### iOS-kant
-- `StravaAuthService.exchangeCodeForToken(_:)` → POST naar Worker
-- `FitnessDataService.refreshTokenIfNeeded()` → POST naar Worker
-- `stravaClientSecret` is uit zowel `Secrets-template.swift` als `Secrets.swift` verwijderd.
-- OAuth-flow voegt een random `state`-UUID toe die tegen de callback-URL wordt gevalideerd (CSRF-bescherming, H-01).
+### iOS side
+- `StravaAuthService.exchangeCodeForToken(_:)` → POST to the Worker
+- `FitnessDataService.refreshTokenIfNeeded()` → POST to the Worker
+- `stravaClientSecret` has been removed from both `Secrets-template.swift` and `Secrets.swift`.
+- The OAuth flow adds a random `state` UUID that is validated against the callback URL (CSRF protection, H-01).
 
 ### Follow-up
-App Attest / DeviceCheck als tweede factor op de Worker-auth — zodat alleen echte app-installaties kunnen bellen. Nog niet geïmplementeerd.
+App Attest / DeviceCheck as a second factor on the Worker auth — so only real app installations can call. Not yet implemented.
 
 ---
 
-## 3. BYOK — API-Sleutels in Keychain
+## 3. BYOK — API Keys in the Keychain
 
-**BYOK-only:** de gebruiker voert zijn eigen AI-API-sleutel in (Gemini / OpenAI / Anthropic / Mistral). Er is geen Secrets-fallback meer.
+**BYOK-only:** the user enters their own AI API key (Gemini / OpenAI / Anthropic / Mistral). There is no Secrets fallback anymore.
 
-- Opslag via `UserAPIKeyStore` → `KeychainService`. **Per provider een eigen slot** (Epic #53): `serviceName(for:)` → `VibeCoach_UserAIKey_<provider>`, zodat een OpenAI-sleutel niet verloren gaat bij tijdelijk wisselen naar Claude.
-- Twee eenmalige migraties in `AIFitnessCoachApp.init()` (beide idempotent): (1) `migrateFromUserDefaultsIfNeeded` — legacy `UserDefaults`-waarde → Keychain; (2) `migrateToPerProviderKeysIfNeeded` — de legacy single-key (`VibeCoach_UserAIKey`) → de Gemini-slot.
-- `SettingsView`, `AIProviderSettingsView`, `ChatViewModel`, `WorkoutInsightService`, `AddGoalView` lezen/schrijven de slot van de **actieve** provider (`UserAPIKeyStore.read(for:)`). De actieve provider komt uit `AIProvider.current()` (centrale `AIProvider.appStorageKey`).
+- Storage via `UserAPIKeyStore` → `KeychainService`. **A separate slot per provider** (Epic #53): `serviceName(for:)` → `VibeCoach_UserAIKey_<provider>`, so an OpenAI key is not lost when temporarily switching to Claude.
+- Two one-time migrations in `AIFitnessCoachApp.init()` (both idempotent): (1) `migrateFromUserDefaultsIfNeeded` — legacy `UserDefaults` value → Keychain; (2) `migrateToPerProviderKeysIfNeeded` — the legacy single key (`VibeCoach_UserAIKey`) → the Gemini slot.
+- `SettingsView`, `AIProviderSettingsView`, `ChatViewModel`, `WorkoutInsightService`, `AddGoalView` read/write the slot of the **active** provider (`UserAPIKeyStore.read(for:)`). The active provider comes from `AIProvider.current()` (central `AIProvider.appStorageKey`).
 
-### Provider-agnostische client-laag (Epic #53)
+### Provider-agnostic client layer (Epic #53)
 
-Vóór Epic #53 was de hele inferentie aan Gemini vastgeklonken: het "abstractie"-protocol `GenerativeModelProtocol` leunde op het Google-SDK-type `ModelContent.Part`, en elke call-site bouwde zelf een `GoogleGenerativeAI.GenerativeModel`. Epic #53 introduceert een SDK-vrije laag zodat OpenAI, Anthropic Claude en Mistral achter hetzelfde contract kunnen draaien.
+Before Epic #53 the entire inference was nailed to Gemini: the "abstraction" protocol `GenerativeModelProtocol` leaned on the Google SDK type `ModelContent.Part`, and every call site built its own `GoogleGenerativeAI.GenerativeModel`. Epic #53 introduces an SDK-free layer so OpenAI, Anthropic Claude and Mistral can run behind the same contract.
 
-- **SDK-vrij contract** (`ViewModels/GenerativeModelProtocol.swift`): `AIPromptPart` (`.text` / `.imageData`) vervangt `ModelContent.Part`; `AIProviderError` is de uniforme fout (overloaded/auth/contentBlocked/http/empty/decoding); `RealAIProviderClient` is een marker waarmee `ChatViewModel` de API-sleutel-gate alleen op live clients toepast (mocks conformeren bewust niet). `AIProviderError.isOverload(_:)` herkent zowel `.overloaded` als de Gemini `internalError` zodat de 503/429-waterfall provider-agnostisch is.
-- **Factory + clients** (`Services/AIModelFactory.swift`): `AIModelFactory.makeModel(provider:…)` routeert per `AIProvider` naar `RealGenerativeModel` (Gemini-adapter, mapt `AIPromptPart` → SDK), `OpenAICompatibleModelClient` (OpenAI **én** Mistral via `/v1/chat/completions`, `Bearer`-auth, `response_format` voor JSON-mode) of `AnthropicModelClient` (`/v1/messages`, `x-api-key` + `anthropic-version`, JSON via assistant-prefill `{`). Per-provider verschillen (system-instructie-plaatsing, JSON-mode, fout-mapping via `AIProviderHTTP.validate`) zitten volledig in deze laag.
-- **Call-sites** (`ChatViewModel`, `WorkoutInsightService`, `AddGoalView`) zijn nu SDK-vrij en routeren via de factory; alleen `AIModelFactory` (de Gemini-adapter) en `APIKeyValidator` importeren nog `GoogleGenerativeAI`.
-- **Model-defaults per provider** (sprint B): `AIModelCatalog.builtIn(for:)` levert een gecureerde catalogus per provider (Gemini = de Worker-catalogus). `AIModelAppStorageKey` is provider-aware (Gemini behoudt de legacy Epic #35-keys). `ChatViewModel` resolvet model + sleutel consistent via één `currentProvider` (rebuild-check, snapshot en banner gebruiken dezelfde resolutie — anders rebuild-loop).
-- **Validatie per provider** (sprint B): `APIKeyValidator.validate(_:provider:)` pingt het goedkoopste provider-model via de factory; `classify(_:)` mapt zowel `AIProviderError` als `GenerateContentError`/`URLError`. Een 4xx neemt de (ingekorte) provider-foutbody mee zodat de gebruiker de echte reden ziet.
-- **UI + onboarding** (sprint C): `AIProviderSettingsView` heeft per provider een sleutelveld (eigen Keychain-slot) + model-picker. De onboarding-stap "Jouw AI" laat alle vier providers kiezen met een `getKeyURL`-link.
-- **Live model-catalogus per provider** (Epic #54): `ProviderModelListService` haalt `/v1/models` op **direct met de user-key** (OpenAI/Anthropic/Mistral) en filtert naar chat-modellen; de sleutel verlaat het toestel niet via onze servers. Gemini blijft op de Cloudflare Worker (`AIModelCatalogService`, onze eigen key). Settings toont de live lijst met de statische `AIModelCatalog.builtIn(for:)` als vangnet.
-- **Status:** ✅ afgerond — Gemini/OpenAI/Claude/Mistral zijn volwaardige BYOK-keuzes. Bestaande Gemini-gebruikers houden hun sleutel en modelkeuze (legacy single-key gemigreerd naar de Gemini-slot).
+- **SDK-free contract** (`ViewModels/GenerativeModelProtocol.swift`): `AIPromptPart` (`.text` / `.imageData`) replaces `ModelContent.Part`; `AIProviderError` is the unified error (overloaded/auth/contentBlocked/http/empty/decoding); `RealAIProviderClient` is a marker by which `ChatViewModel` applies the API-key gate only to live clients (mocks deliberately do not conform). `AIProviderError.isOverload(_:)` recognises both `.overloaded` and the Gemini `internalError` so the 503/429 waterfall is provider-agnostic.
+- **Factory + clients** (`Services/AIModelFactory.swift`): `AIModelFactory.makeModel(provider:…)` routes per `AIProvider` to `RealGenerativeModel` (Gemini adapter, maps `AIPromptPart` → SDK), `OpenAICompatibleModelClient` (OpenAI **and** Mistral via `/v1/chat/completions`, `Bearer` auth, `response_format` for JSON mode) or `AnthropicModelClient` (`/v1/messages`, `x-api-key` + `anthropic-version`, JSON via assistant prefill `{`). Per-provider differences (system-instruction placement, JSON mode, error mapping via `AIProviderHTTP.validate`) live entirely in this layer.
+- **Call sites** (`ChatViewModel`, `WorkoutInsightService`, `AddGoalView`) are now SDK-free and route via the factory; only `AIModelFactory` (the Gemini adapter) and `APIKeyValidator` still import `GoogleGenerativeAI`.
+- **Model defaults per provider** (sprint B): `AIModelCatalog.builtIn(for:)` provides a curated catalog per provider (Gemini = the Worker catalog). `AIModelAppStorageKey` is provider-aware (Gemini keeps the legacy Epic #35 keys). `ChatViewModel` resolves model + key consistently via a single `currentProvider` (rebuild check, snapshot and banner use the same resolution — otherwise a rebuild loop).
+- **Validation per provider** (sprint B): `APIKeyValidator.validate(_:provider:)` pings the cheapest provider model via the factory; `classify(_:)` maps both `AIProviderError` and `GenerateContentError`/`URLError`. A 4xx carries the (truncated) provider error body so the user sees the real reason.
+- **UI + onboarding** (sprint C): `AIProviderSettingsView` has a key field per provider (its own Keychain slot) + a model picker. The onboarding step "Your AI" lets the user pick all four providers with a `getKeyURL` link.
+- **Live model catalog per provider** (Epic #54): `ProviderModelListService` fetches `/v1/models` **directly with the user key** (OpenAI/Anthropic/Mistral) and filters to chat models; the key does not leave the device via our servers. Gemini stays on the Cloudflare Worker (`AIModelCatalogService`, our own key). Settings shows the live list with the static `AIModelCatalog.builtIn(for:)` as a safety net.
+- **Status:** ✅ done — Gemini/OpenAI/Claude/Mistral are fully-fledged BYOK choices. Existing Gemini users keep their key and model choice (legacy single key migrated to the Gemini slot).
 
 ---
 
-## 4. App-bootstrap & Routing
+## 4. App Bootstrap & Routing
 
 ```
 AIFitnessCoachApp (@main)
 ├── @UIApplicationDelegateAdaptor AppDelegate
 │   ├── BGTaskScheduler.register(...)           // Engine B handler
 │   ├── UNUserNotificationCenterDelegate        // incl. M-08 whitelist
-│   └── setupEngineA / scheduleEngineB          // alleen als onboarded
-├── @AppStorage("hasCompletedOnboarding")       // poortwachter
-├── @StateObject AppNavigationState             // tab-state + shared for AppDelegate
+│   └── setupEngineA / scheduleEngineB          // only when onboarded
+├── @AppStorage("hasCompletedOnboarding")       // gatekeeper
+├── @StateObject AppNavigationState             // tab state + shared for AppDelegate
 ├── @StateObject TrainingPlanManager            // Single Source of Truth (Epic 11)
 ├── @StateObject ThemeManager                   // Epic 29
 └── body
-    └── ContentView                             // root + onboarding-routing
-        ├── OnboardingView                      // eerste start
-        └── AppTabHostView                      // hoofd-app (5 tabs)
+    └── ContentView                             // root + onboarding routing
+        ├── OnboardingView                      // first start
+        └── AppTabHostView                      // main app (5 tabs)
             ├── DashboardView                   // Epic 13/14/16/17/18 UI
-            ├── GoalsListView                   // Epic 23 detail-hub
-            ├── ChatView                        // Epic 30 coach-kaarten
-            ├── PreferencesListView             // "Geheugen"
+            ├── GoalsListView                   // Epic 23 detail hub
+            ├── ChatView                        // Epic 30 coach cards
+            ├── PreferencesListView             // "Memory"
             └── SettingsView
 ```
 
 ---
 
-## 5. Notificatie-whitelist (M-08)
+## 5. Notification whitelist (M-08)
 
-Inkomende notificatie-payloads worden gefilterd via een whitelist in `AppDelegate.isAllowedNotificationPayload(_:)`:
+Incoming notification payloads are filtered via a whitelist in `AppDelegate.isAllowedNotificationPayload(_:)`:
 
-| `type`-waarde | Betekenis |
+| `type` value | Meaning |
 |---------------|-----------|
-| `"goalRisk"` | Engine A / B: een doel staat op rood |
-| `"recovery_plan"` | Automatisch gegenereerd herstelplan is klaar |
+| `"goalRisk"` | Engine A / B: a goal is in the red |
+| `"recovery_plan"` | An automatically generated recovery plan is ready |
 
-Alle andere payloads worden stil genegeerd — zowel in `willPresent` als `didReceive`. Regression-test: `StravaAuthServiceTests.testDenied_ActivityIdOnly_ReturnsFalse` borgt dat de oude APNs-`activityId`-branch niet terugsluipt.
+All other payloads are silently ignored — both in `willPresent` and `didReceive`. Regression test: `StravaAuthServiceTests.testDenied_ActivityIdOnly_ReturnsFalse` ensures the old APNs `activityId` branch does not creep back in.
 
 ---
 
 ## 6. SwiftData Strictness
 
-- Geen ruwe strings voor categorieën — uitsluitend type-veilige enums (`SportCategory: String, Codable`, `EventFormat`, `PrimaryIntent`, `TrainingPhase`).
-- Bij import vanuit HealthKit/Strava wordt ruwe data **direct bij de voordeur** gemapt naar deze enums — vóórdat iets in SwiftData belandt.
-- Model-container: `[FitnessGoal, ActivityRecord, UserPreference, DailyReadiness, Symptom, UserConfiguration]`. Bij `-UITesting` launch argument draait hij in-memory.
+- No raw strings for categories — type-safe enums only (`SportCategory: String, Codable`, `EventFormat`, `PrimaryIntent`, `TrainingPhase`).
+- When importing from HealthKit/Strava, raw data is mapped to these enums **right at the front door** — before anything reaches SwiftData.
+- Model container: `[FitnessGoal, ActivityRecord, UserPreference, DailyReadiness, Symptom, UserConfiguration]`. With the `-UITesting` launch argument it runs in-memory.
 
 ---
 
-## 7. Tijd & Datum
+## 7. Time & Date
 
-- Nooit `TimeInterval`-wiskunde voor historische/toekomstige periodes — **altijd** `Calendar.current.date(byAdding:to:)`.
-- Base-building voor burndown wordt berekend vanaf `Date()`, nooit vanaf `targetDate` in de toekomst.
-- Reden: zomertijd, schrikkeljaren, en bugs die vroeger zijn voorgekomen.
+- Never use `TimeInterval` math for historical/future periods — **always** `Calendar.current.date(byAdding:to:)`.
+- Base-building for burndown is computed from `Date()`, never from `targetDate` in the future.
+- Reason: daylight saving time, leap years, and bugs that occurred before.
 
 ---
 
 ## 8. Logging & Privacy
 
-- `os.Logger` met subsystem `com.markclausing.aifitnesscoach`, categorie per service (`FitnessDataService`, `ProactiveNotificationService`, ...).
-- PII en identifiers (user-tokens, device-tokens, sample-waarden) worden getagd met `privacy: .private`.
-- APNs device-token printing staat achter `#if DEBUG` met alleen de laatste 6 tekens.
-- Doel: volledige `print`-migratie naar `os.Logger`. Fase 1 dekt de twee grootste services; de rest volgt in opvolg-PR's.
+- `os.Logger` with subsystem `com.markclausing.aifitnesscoach`, a category per service (`FitnessDataService`, `ProactiveNotificationService`, ...).
+- PII and identifiers (user tokens, device tokens, sample values) are tagged with `privacy: .private`.
+- APNs device-token printing is behind `#if DEBUG` with only the last 6 characters.
+- Goal: a full `print` migration to `os.Logger`. Phase 1 covers the two largest services; the rest follows in follow-up PRs.
 
 ---
 
-## 9. Workout Samples & Dual-Source Pijplijn (Epic 32 / 40 / 41)
+## 9. Workout Samples & Dual-Source Pipeline (Epic 32 / 40 / 41)
 
-Sinds Epic 32 leeft de fijngranulaire workout-data (5s-buckets met HR, power, cadence, speed, distance) los van de workout zelf — de bron-`HKWorkout` of Strava-activity wordt **niet** in SwiftData gepersisteerd. Dat scheelt een redundant model en een schema-migratie iedere keer dat een bron iets verandert; de prijs is dat we een stabiele foreign key nodig hebben om samples aan een record te koppelen.
+Since Epic 32 the fine-grained workout data (5s buckets with HR, power, cadence, speed, distance) lives separately from the workout itself — the source `HKWorkout` or Strava activity is **not** persisted in SwiftData. That saves a redundant model and a schema migration every time a source changes something; the price is that we need a stable foreign key to link samples to a record.
 
 ### `WorkoutSample` — foreign-key model
 - `@Model final class WorkoutSample` in `Models/WorkoutSample.swift`.
-- Sleutel: `workoutUUID: UUID`. Eén `ActivityRecord` ↔ N samples (geen SwiftData-relatie, gewoon een gefilterde fetch).
-- Geschreven door `WorkoutSampleStore.replaceSamples(forWorkoutUUID:)` (idempotent — eerst delete, dan insert), gelezen door `samples(forWorkoutUUID:)` en `sampleCount(forWorkoutUUID:)`.
+- Key: `workoutUUID: UUID`. One `ActivityRecord` ↔ N samples (no SwiftData relationship, just a filtered fetch).
+- Written by `WorkoutSampleStore.replaceSamples(forWorkoutUUID:)` (idempotent — delete first, then insert), read by `samples(forWorkoutUUID:)` and `sampleCount(forWorkoutUUID:)`.
 
-### Deterministische UUID-brug HK ↔ Strava
-HK-workouts brengen hun eigen `HKWorkout.uuid` mee; Strava-records hebben alleen een numerieke `Int64`-id. Om dezelfde `WorkoutSample`-tabel voor beide bronnen te kunnen gebruiken (Epic 40), leiden we voor Strava een UUIDv5-achtige UUID af:
+### Deterministic UUID bridge HK ↔ Strava
+HK workouts bring their own `HKWorkout.uuid`; Strava records only have a numeric `Int64` id. To use the same `WorkoutSample` table for both sources (Epic 40), we derive a UUIDv5-like UUID for Strava:
 
-- `UUID.deterministic(fromStravaID:)` — SHA256 over de Strava-id, eerste 16 bytes als UUID. Stabiel: dezelfde Strava-id geeft altijd dezelfde UUID.
-- `UUID.forActivityRecordID(_:)` — centrale router: `UUID(uuidString:)` voor HK-records (de id is al een UUID-string), anders de deterministische Strava-fallback. Alle code die samples opvraagt voor een `ActivityRecord` gebruikt deze router — nergens hardcoded onderscheid op bron.
+- `UUID.deterministic(fromStravaID:)` — SHA256 over the Strava id, first 16 bytes as a UUID. Stable: the same Strava id always yields the same UUID.
+- `UUID.forActivityRecordID(_:)` — central router: `UUID(uuidString:)` for HK records (the id is already a UUID string), otherwise the deterministic Strava fallback. All code that requests samples for an `ActivityRecord` uses this router — no hardcoded source distinction anywhere.
 
-Resultaat: één tabel, twee bronnen, geen schema-migratie.
+Result: one table, two sources, no schema migration.
 
-**Cross-source cadens-fallback (Epic #52).** De UUID-brug heeft een randgeval: een Apple Watch-run komt vaak óók als Strava-activiteit binnen, en bij dedup wint het Strava-record (`device_watts` → +500 in `ActivityDeduplicator.score`, want de Watch meet running power). De getoonde detailview vraagt samples dan op onder de Strava-UUID, terwijl de Watch-`stepCount` (waaruit running cadens wordt afgeleid) onder de HK-workout-UUID leeft — cadens raakt zo zoek, ook al staat de data in HealthKit. `WorkoutSampleService.fetchStepCadence(start:end:)` is daarom losgemaakt van een specifieke `HKWorkout`: een query op puur het tijd-window omzeilt de UUID-fragmentatie (HealthKit dedupliceert `stepCount` zelf over bronnen). `WorkoutAnalysisView.loadCadenceFallbackIfNeeded()` valt hierop terug wanneer de opgeslagen samples geen cadens bevatten en het een hardloop-workout is; grafiek, scrubber-card én Coach-prompt lezen vervolgens uit een unified `cadencePoints`-bron (opgeslagen samples → HK-fallback).
+**Cross-source cadence fallback (Epic #52).** The UUID bridge has an edge case: an Apple Watch run often also arrives as a Strava activity, and on dedupe the Strava record wins (`device_watts` → +500 in `ActivityDeduplicator.score`, because the Watch measures running power). The shown detail view then requests samples under the Strava UUID, while the Watch `stepCount` (from which running cadence is derived) lives under the HK workout UUID — cadence goes missing even though the data is in HealthKit. `WorkoutSampleService.fetchStepCadence(start:end:)` is therefore decoupled from a specific `HKWorkout`: a query on the time window alone bypasses the UUID fragmentation (HealthKit deduplicates `stepCount` across sources itself). `WorkoutAnalysisView.loadCadenceFallbackIfNeeded()` falls back to this when the stored samples contain no cadence and it is a running workout; chart, scrubber card and Coach prompt then read from a unified `cadencePoints` source (stored samples → HK fallback).
 
-### scenePhase-pijplijn in `DashboardView`
-Drie helpers draaien sequentieel in dezelfde `.task` (volgorde is bewust):
+### scenePhase pipeline in `DashboardView`
+Three helpers run sequentially in the same `.task` (order is deliberate):
 
-1. **`backfillStravaStreams()`** — haalt Strava `/streams` op voor de laatste 10 records zonder samples (100ms throttle), schrijft via `WorkoutSampleStore`. Na deze stap heeft elk Strava-record met powermeter zijn fijngranulaire data.
-2. **`runAutoDedupe()`** — `ActivityDeduplicator.runDedupe` (Epic 41). Groepeert records op startDate (±1s strict cross-sport bypass voor mapping-issues; ±5s loose mits sport matcht), behoudt de "rijkste" via heuristiek (samples > deviceWatts > trimp > avgHR > stable id-tiebreaker). Strava-record met power wint van HK-equivalent zonder.
-3. **`runSessionReclassification()`** — `SessionReclassifier.rerun` (Epic 40 story 40.4). Records die net samples kregen, krijgen nu de zone-distributie-classificatie i.p.v. de avg-HR-fallback van bij ingest. Beschermd via `ActivityRecord.manualSessionTypeOverride` — een handmatige keuze in `WorkoutAnalysisView` overleeft elke rerun.
+1. **`backfillStravaStreams()`** — fetches Strava `/streams` for the last 10 records without samples (100ms throttle), writes via `WorkoutSampleStore`. After this step every Strava record with a power meter has its fine-grained data.
+2. **`runAutoDedupe()`** — `ActivityDeduplicator.runDedupe` (Epic 41). Groups records by startDate (±1s strict cross-sport bypass for mapping issues; ±5s loose if the sport matches), keeps the "richest" via heuristic (samples > deviceWatts > trimp > avgHR > stable id tiebreaker). A Strava record with power beats the HK equivalent without.
+3. **`runSessionReclassification()`** — `SessionReclassifier.rerun` (Epic 40 story 40.4). Records that just got samples now get the zone-distribution classification instead of the avg-HR fallback from ingest. Protected via `ActivityRecord.manualSessionTypeOverride` — a manual choice in `WorkoutAnalysisView` survives every rerun.
 
-De pijplijn is volledig idempotent: een tweede run op een schone DB doet niets. Reden voor deze volgorde: dedupe vóór reclassify scheelt classify-cycles op records die toch verwijderd worden; backfill vóór dedupe zorgt dat sample-counts kloppen voor de rijkdom-heuristiek.
+The pipeline is fully idempotent: a second run on a clean DB does nothing. Reason for this order: dedupe before reclassify saves classify cycles on records that get deleted anyway; backfill before dedupe ensures sample counts are correct for the richness heuristic.
 
-### Smart-ingest aan de voordeur (Epic 41)
+### Smart-ingest at the front door (Epic 41)
 
-Naast de scenePhase-pijplijn is er een tweede, preventieve laag: `ActivityDeduplicator.smartInsert(_:into:)` wordt aangeroepen door **alle** ingest-paden (HealthKit-sync, Strava auto-sync, Strava historical-sync). Drie-laagse check per record:
+Besides the scenePhase pipeline there is a second, preventive layer: `ActivityDeduplicator.smartInsert(_:into:)` is called by **all** ingest paths (HealthKit sync, Strava auto-sync, Strava historical sync). Three-layer check per record:
 
-1. **Source-id idempotent** — record met dezelfde HK-uuid of Strava-id bestaat al → no-op.
-2. **±5s cross-source vergelijk** — kandidaat-cluster opzoeken; als bestaand record rijker is, weiger insert. Als nieuw record rijker, vervang het bestaande.
-3. **Reguliere insert** — geen conflict, gewoon toevoegen.
+1. **Source-id idempotent** — a record with the same HK uuid or Strava id already exists → no-op.
+2. **±5s cross-source compare** — look up the candidate cluster; if the existing record is richer, refuse the insert. If the new record is richer, replace the existing one.
+3. **Regular insert** — no conflict, just add.
 
-Resultaat: een armer HK-record overschrijft nooit een rijker Strava-record met deviceWatts, ongeacht de volgorde waarin beide bronnen binnenkomen. De handmatige "Verwijder Dubbele Activiteiten"-debug-knop (pre-Epic-41) is uit Settings verwijderd — auto-dedupe + smart-ingest dekken beide kanten af.
+Result: a poorer HK record never overwrites a richer Strava record with deviceWatts, regardless of the order in which the two sources arrive. The manual "Remove Duplicate Activities" debug button (pre-Epic-41) has been removed from Settings — auto-dedupe + smart-ingest cover both sides.
 
-### `ensureValidToken()` als token-guard
+### `ensureValidToken()` as token guard
 
-`FitnessDataService.ensureValidToken()` is de centrale guard vóór elke Strava-API-call. Valideert + refresht het OAuth-token via de Cloudflare Worker bij (bijna-)expiry. Vijf interne callers (`fetchLatestActivity`, `fetchActivityById`, `fetchActivityStreams`, `fetchRecentActivities`, `fetchHistoricalActivities`) routen door deze ene functie — geen silent 401's meer verderop in de pijplijn.
+`FitnessDataService.ensureValidToken()` is the central guard before every Strava API call. Validates + refreshes the OAuth token via the Cloudflare Worker on (near-)expiry. Five internal callers (`fetchLatestActivity`, `fetchActivityById`, `fetchActivityStreams`, `fetchRecentActivities`, `fetchHistoricalActivities`) route through this one function — no more silent 401s further down the pipeline.
 
 ### Always-on sync (Epic 42)
 
-`AppTabHostView.performAutoSync` en `SettingsView.syncHistoricalData` draaien beide bron-paden **concurrent via `async let`**, ongeacht de `selectedDataSource`-toggle. De toggle is hernoemd naar "Bron-voorkeur" en bepaalt alleen nog welke bron de coach als eerste aanspreekt voor de huidige status; de sync-laag is volledig ontkoppeld. Bestaande gebruikers behouden hun toggle-stand (AppStorage-key + raw-values ongewijzigd).
+`AppTabHostView.performAutoSync` and `SettingsView.syncHistoricalData` run both source paths **concurrently via `async let`**, regardless of the `selectedDataSource` toggle. The toggle has been renamed to "Source preference" and now only determines which source the coach addresses first for the current status; the sync layer is fully decoupled. Existing users keep their toggle setting (AppStorage key + raw values unchanged).
 
-### Deep Sync: doorlopend i.p.v. eenmalig
+### Deep Sync: continuous instead of one-off
 
-`DeepSyncService.runIfNeeded()` (Services/DeepSyncService.swift:96+) heette ooit de **eenmalige** 30-daagse historische sync. Sinds de fix `fix/workout-samples-loading` is de "eenmalige completion-flag" (`DeepSync.hasCompletedInitialDeepSync`) **uitgeschakeld**: hij wordt niet meer geschreven en de guard die op die flag stuurde is weg. De service draait nu door bij elke trigger (DashboardView.task én na `runHealthKitAutoSync` in AppTabHostView), maar blijft idempotent via de permanente `processed`-UUID-set in UserDefaults. Resultaat: een workout die net via auto-sync binnenkomt krijgt binnen één view-refresh zijn samples — voorheen bleef hij eeuwig op de "Deep Sync loopt op de achtergrond"-placeholder hangen omdat de flag al op true stond uit de allereerste backfill.
+`DeepSyncService.runIfNeeded()` (Services/DeepSyncService.swift:96+) was once the **one-off** 30-day historical sync. Since the fix `fix/workout-samples-loading` the "one-off completion flag" (`DeepSync.hasCompletedInitialDeepSync`) is **disabled**: it is no longer written and the guard that keyed on that flag is gone. The service now runs on every trigger (DashboardView.task and after `runHealthKitAutoSync` in AppTabHostView), but stays idempotent via the permanent `processed` UUID set in UserDefaults. Result: a workout that just arrived via auto-sync gets its samples within one view refresh — previously it hung forever on the "Deep Sync running in the background" placeholder because the flag was already true from the very first backfill.
 
-**Ingest-revisie-migratie (Epic #52):** de permanente `processed`-set heeft een keerzijde — wanneer `WorkoutSampleService.ingestSamples` een nieuw signaal gaat ophalen (running cadens uit `stepCount`), blijven reeds-verwerkte workouts op de oude, onvolledige sample-set hangen. `DeepSyncService.currentIngestRevision` (bumpt mee met zulke wijzigingen) wordt bij launch vergeleken met de opgeslagen revisie; bij een lagere/ontbrekende revisie wist `applyIngestRevisionMigrationIfNeeded` de `processed`-set zodat álle workouts in het venster eenmalig opnieuw worden geïngest. `replaceSamples` is idempotent, dus geen data-verlies — alleen tijdelijke extra HK-fetches bij de eerstvolgende run.
+**Ingest-revision migration (Epic #52):** the permanent `processed` set has a downside — when `WorkoutSampleService.ingestSamples` starts fetching a new signal (running cadence from `stepCount`), already-processed workouts stay on the old, incomplete sample set. `DeepSyncService.currentIngestRevision` (bumped along with such changes) is compared at launch with the stored revision; on a lower/missing revision `applyIngestRevisionMigrationIfNeeded` clears the `processed` set so all workouts in the window are re-ingested once. `replaceSamples` is idempotent, so no data loss — only temporary extra HK fetches on the next run.
 
-### Sync-zichtbaarheid: één banner voor drie failure-modes (Epic #51-F)
+### Sync visibility: one banner for three failure modes (Epic #51-F)
 
-Voorheen faalden de auto-syncs stilletjes — een verlopen Strava-token, een 429 rate-limit of een afgesloten netwerkverbinding leidden hooguit tot een `print()` in het Xcode-console. Sinds Epic #51-F (F1/F2/F5) is er één centrale `SyncStatusBanner` op het Dashboard die — afhankelijk van de huidige status-snapshot — een offline-, rate-limit- of fout-banner toont.
+Previously the auto-syncs failed silently — an expired Strava token, a 429 rate limit or a closed network connection led at most to a `print()` in the Xcode console. Since Epic #51-F (F1/F2/F5) there is one central `SyncStatusBanner` on the Dashboard that — depending on the current status snapshot — shows an offline, rate-limit or error banner.
 
-**Datapad:** `AppTabHostView.runStravaAutoSync` / `runHealthKitAutoSync` schrijven succes en fouten weg naar `SyncStatusStore` (Services/SyncStatusStore.swift). De store is pure-Swift, UserDefaults-backed (Doubles voor de timestamps zodat `@AppStorage` in de View ze reactief kan binden) en filtert `.missingToken` expliciet uit — gebruikers zonder Strava-koppeling krijgen geen banner over een sync die ze nooit ingeschakeld hebben. Een `SyncStatusSnapshot` is de waardetype-input voor `SyncBannerStateBuilder` (pure functie, geen side-effects); de builder bepaalt welke staat zichtbaar wordt: **offline > rate-limited > error > nil**.
+**Data path:** `AppTabHostView.runStravaAutoSync` / `runHealthKitAutoSync` write success and errors to `SyncStatusStore` (Services/SyncStatusStore.swift). The store is pure-Swift, UserDefaults-backed (Doubles for the timestamps so `@AppStorage` in the View can bind to them reactively) and explicitly filters out `.missingToken` — users without a Strava connection get no banner about a sync they never enabled. A `SyncStatusSnapshot` is the value-type input for `SyncBannerStateBuilder` (a pure function, no side effects); the builder determines which state becomes visible: **offline > rate-limited > error > nil**.
 
-**Rate-limit-cooldown (F2):** `FitnessDataService.validateHTTPResponse` detecteert HTTP 429, gebruikt `StravaRateLimitParser` om uit `Retry-After` (delta-seconds óf HTTP-datum) een absolute `Date` te berekenen — fallback 15 min, klok-skew-bescherming voor stale-date-headers — en persisteert die in `StravaRateLimitStore`. `ensureValidToken()` checkt vóór elk request of de cooldown nog actief is en throwt direct `.rateLimited` zonder het netwerk te raken; zo wordt voorkomen dat een retry-storm vlak na launch een banner laat knipperen of een cascadende 429 forceert. Een succesvolle 2xx-response wist de cooldown automatisch.
+**Rate-limit cooldown (F2):** `FitnessDataService.validateHTTPResponse` detects HTTP 429, uses `StravaRateLimitParser` to compute an absolute `Date` from `Retry-After` (delta-seconds or HTTP date) — fallback 15 min, clock-skew protection for stale date headers — and persists it in `StravaRateLimitStore`. `ensureValidToken()` checks before every request whether the cooldown is still active and throws `.rateLimited` directly without touching the network; this prevents a retry storm right after launch from flickering a banner or forcing a cascading 429. A successful 2xx response clears the cooldown automatically.
 
-**Offline-detectie (F5):** `NetworkReachabilityMonitor` is een lichte `NWPathMonitor`-wrapper als `@MainActor` singleton, gestart in `AIFitnessCoachApp.init()` zodat hij vanaf launch de juiste state heeft. De banner observeert hem via `@ObservedObject` voor live re-render; de "Laatste sync HH:MM"-tekst komt uit `SyncStatusSnapshot.lastAnySyncSuccessAt` (max van Strava + HK timestamps).
+**Offline detection (F5):** `NetworkReachabilityMonitor` is a lightweight `NWPathMonitor` wrapper as a `@MainActor` singleton, started in `AIFitnessCoachApp.init()` so it has the correct state from launch. The banner observes it via `@ObservedObject` for live re-render; the "Last sync HH:MM" text comes from `SyncStatusSnapshot.lastAnySyncSuccessAt` (max of the Strava + HK timestamps).
 
 ## 10. Workout Pattern Detection (Epic 32)
 
-`WorkoutPatternDetector` analyseert een 5s-resampled sample-reeks (HR + power + cadence) en herkent vier fysiologische signalen volgens Joe Friel / TrainingPeaks-drempels:
+`WorkoutPatternDetector` analyses a 5s-resampled sample series (HR + power + cadence) and recognises four physiological signals per Joe Friel / TrainingPeaks thresholds:
 
-| Pattern | Wat het detecteert |
+| Pattern | What it detects |
 |---|---|
-| **Aerobic decoupling** | HR drift bij gelijke power → aerobic ceiling overschreden |
-| **Cardiac drift** | HR stijgt zonder pace-toename → vermoeidheid / dehydratie |
-| **Cadence fade** | Cadence valt weg in late workout-fase → spier-fatigue signal |
-| **Trage HR-recovery** | HR daalt onvoldoende tijdens een rust-pauze → onvoldoende parasympatisch herstel (zie §12) |
+| **Aerobic decoupling** | HR drift at equal power → aerobic ceiling exceeded |
+| **Cardiac drift** | HR rises without a pace increase → fatigue / dehydration |
+| **Cadence fade** | Cadence drops off in the late workout phase → muscle-fatigue signal |
+| **Slow HR recovery** | HR drops insufficiently during a rest pause → insufficient parasympathetic recovery (see §12) |
 
-Detectie wordt **gegated op persoonlijke HR-zones** (Epic 44): cardiac drift triggert alleen in Z1-Z3 (Z4/Z5-drift is verwacht). HR-recovery is in Epic #47 herschreven naar pauze-gebaseerde detectie met `referenceHR`-schaling — zie §12 voor de details. Decoupling en cadence fade nemen geen profiel-input.
+Detection is **gated on personal HR zones** (Epic 44): cardiac drift only triggers in Z1-Z3 (Z4/Z5 drift is expected). HR recovery was rewritten in Epic #47 to pause-based detection with `referenceHR` scaling — see §12 for the details. Decoupling and cadence fade take no profile input.
 
-`WorkoutAnalysisView` rendert significante patronen als `PointMark`-pins op de HR-chart + chip-row + "Coach-analyse"-card met een 3-zin Gemini-synthese (gecached per workout, geen herhaalde API-calls). Patronen uit recente workouts (`WorkoutHistoryContextBuilder`, Epic 45) worden ook in de chat-coach-prompt geïnjecteerd zodat de coach er proactief naar refereert bij plan-aanpassingen.
+`WorkoutAnalysisView` renders significant patterns as `PointMark` pins on the HR chart + a chip row + a "Coach analysis" card with a 3-sentence Gemini synthesis (cached per workout, no repeated API calls). Patterns from recent workouts (`WorkoutHistoryContextBuilder`, Epic 45) are also injected into the chat coach prompt so the coach proactively refers to them when adjusting plans.
 
-**Coach-analyse-context (Epic #48):** naast patterns en recovery-events krijgt de `WorkoutInsightService` ook de doel- en periodisatie-status mee — `BlueprintContextFormatter.format(results:)` voor blueprint-milestones (✅/❌ per kritieke training) en `PeriodizationResult.coachingContext` voor de actieve fase (Base/Build/Peak/Taper) + succescriteria. De system-instruction draagt de coach op om bij elke analyse één concrete koppeling met het doel te leggen ("past in je Build-fase voor de marathon, en deze 32km nadert je 28km long-run-mijlpaal") wanneer die context aanwezig is. Cache-key bevat een `goalsFingerprint` zodat een milestone-behaal of fase-overgang automatisch een nieuwe analyse triggert in plaats van een verouderde framing uit de cache te serveren.
+**Coach-analysis context (Epic #48):** besides patterns and recovery events, the `WorkoutInsightService` also receives the goal and periodisation status — `BlueprintContextFormatter.format(results:)` for blueprint milestones (✅/❌ per critical workout) and `PeriodizationResult.coachingContext` for the active phase (Base/Build/Peak/Taper) + success criteria. The system instruction tells the coach to make one concrete link to the goal in every analysis ("fits your Build phase for the marathon, and this 32km approaches your 28km long-run milestone") when that context is present. The cache key contains a `goalsFingerprint` so a milestone achievement or phase transition automatically triggers a new analysis instead of serving a stale framing from the cache.
 
-**Weer-context (Epic #49 + #50 + #52):** `ActivityRecord.temperatureCelsius` en `humidityPercent` worden via twee bronnen gevuld:
-1. **HK-metadata** (Epic #49) — `HKMetadataKeyWeatherTemperature` / `HKMetadataKeyWeatherHumidity` zodra de iPhone tijdens een outdoor-workout aanwezig was. Cross-source merge in `ActivityDeduplicator` zorgt dat Strava-records de HK-weather erven via dedupe.
-2. **Open-Meteo historisch** (Epic #50) — voor Garmin/fietscomputer-only ritten zonder iPhone-aanwezigheid. `HistoricalWeatherService` bevraagt `archive-api.open-meteo.com` (data >5 dagen oud) of `api.open-meteo.com/v1/forecast` met `past_days` (recenter) op basis van Strava's `start_latlng` + `startDate`. Privacy: GPS afgerond op 0.1° (~11km) vóór API-call. Aangeroepen in beide Strava-ingest-paden (auto-sync + historische sync) als idempotente helper — slaat over als HK-merge al weer heeft geleverd.
+**Weather context (Epic #49 + #50 + #52):** `ActivityRecord.temperatureCelsius` and `humidityPercent` are filled via two sources:
+1. **HK metadata** (Epic #49) — `HKMetadataKeyWeatherTemperature` / `HKMetadataKeyWeatherHumidity` whenever the iPhone was present during an outdoor workout. A cross-source merge in `ActivityDeduplicator` ensures Strava records inherit the HK weather via dedupe.
+2. **Open-Meteo historical** (Epic #50) — for Garmin/bike-computer-only rides without iPhone presence. `HistoricalWeatherService` queries `archive-api.open-meteo.com` (data >5 days old) or `api.open-meteo.com/v1/forecast` with `past_days` (more recent) based on Strava's `start_latlng` + `startDate`. Privacy: GPS rounded to 0.1° (~11km) before the API call. Called in both Strava ingest paths (auto-sync + historical sync) as an idempotent helper — skips if the HK merge already supplied weather.
 
-**Hourly weer-range (Epic #52):** een single-point snapshot bij rit-start mist het verloop tijdens een lange workout (een run die om 9:43 bij 15°C begon maar naar 22°C piek liep). `HistoricalWeatherService.fetchWeatherRange(latitude:longitude:startDate:endDate:)` haalt álle uurlijkse buckets binnen `[start, end]` op en aggregeert via de pure helper `extractWindowAggregates` tot peak + avg voor temperatuur én luchtvochtigheid. Schema V3 → V4 (lightweight, zie §6) voegt `startLatitude`/`startLongitude` toe aan `ActivityRecord`; `HistoricalWeatherService.enrichRecord` persisteert die bij elke Strava-ingest zodat de Coach-call de range achteraf kan ophalen zonder de Strava-API opnieuw te bevragen. `WorkoutAnalysisView` haalt de range op vóór de cache-check (zit in de `weatherFingerprint`).
+**Hourly weather range (Epic #52):** a single-point snapshot at ride start misses the variation during a long workout (a run that started at 9:43 at 15°C but peaked at 22°C). `HistoricalWeatherService.fetchWeatherRange(latitude:longitude:startDate:endDate:)` fetches all hourly buckets within `[start, end]` and aggregates, via the pure helper `extractWindowAggregates`, into peak + avg for temperature and humidity. Schema V3 → V4 (lightweight, see §6) adds `startLatitude`/`startLongitude` to `ActivityRecord`; `HistoricalWeatherService.enrichRecord` persists those on every Strava ingest so the Coach call can fetch the range afterwards without querying the Strava API again. `WorkoutAnalysisView` fetches the range before the cache check (it is part of the `weatherFingerprint`).
 
-`WorkoutInsightService` injecteert het uiteindelijke resultaat als `[WEER TIJDENS WORKOUT — range]`-blok (peak + avg) wanneer een range beschikbaar is, anders het `[snapshot]`-blok. De system-instruction draagt de coach op de **piek**-temperatuur als ondergrens voor hitte-stress-evaluatie te gebruiken (drempels: >25°C of >70% luchtvochtigheid). Cache-fingerprint bevat `weatherFingerprint` (incl. range-piek) zodat een latere sync- of range-update een nieuwe analyse triggert.
+`WorkoutInsightService` injects the final result as a `[WEATHER DURING WORKOUT — range]` block (peak + avg) when a range is available, otherwise the `[snapshot]` block. The system instruction tells the coach to use the **peak** temperature as the lower bound for heat-stress evaluation (thresholds: >25°C or >70% humidity). The cache fingerprint contains `weatherFingerprint` (incl. the range peak) so a later sync or range update triggers a new analysis.
 
 ---
 
 ## 11. CI Pipeline (Epic 46)
 
-GitHub Actions draait twee workflows op elke push naar `main` en elke PR:
+GitHub Actions runs two workflows on every push to `main` and every PR:
 
 ### `iOS CI` — 4-job DAG
 
 ```
-┌─ SwiftLint        (parallel, geen needs)
+┌─ SwiftLint        (parallel, no needs)
 ├─ Unit Tests ──────┬─ UI Tests
 └──────────────────┴─ Coverage Report
 ```
 
-- **`SwiftLint`** — `swiftlint --strict` op `.swiftlint.yml`-config. 938→0 violations baseline; 1 nieuwe violation breekt CI.
-- **`Unit Tests`** — `xcodebuild test -only-testing:AIFitnessCoachTests -enableCodeCoverage YES`. xcresult als artifact (7d).
-- **`UI Tests`** — `-only-testing:AIFitnessCoachUITests -parallel-testing-enabled NO`. Sequentieel om xctrunner-clone-flakiness te vermijden (Epic 46.4 root-cause). xcresult + CoreSimulator-logs als artifacts (14d).
-- **`Coverage Report`** — `needs: [unit-tests, ui-tests]`. `scripts/coverage-report.py` mergt beide xcresults per-file (max-coverage approximatie) en genereert per-directory markdown met aggregaten (Testable / Views / Totaal).
+- **`SwiftLint`** — `swiftlint --strict` on the `.swiftlint.yml` config. 938→0 violations baseline; 1 new violation breaks CI.
+- **`Unit Tests`** — `xcodebuild test -only-testing:AIFitnessCoachTests -enableCodeCoverage YES`. xcresult as an artifact (7d).
+- **`UI Tests`** — `-only-testing:AIFitnessCoachUITests -parallel-testing-enabled NO`. Sequential to avoid xctrunner-clone flakiness (Epic 46.4 root cause). xcresult + CoreSimulator logs as artifacts (14d).
+- **`Coverage Report`** — `needs: [unit-tests, ui-tests]`. `scripts/coverage-report.py` merges both xcresults per-file (max-coverage approximation) and generates per-directory markdown with aggregates (Testable / Views / Total).
 
 ### `CodeQL Security Analysis`
 
-Matrix met twee talen, elk op de juiste runner:
-- **Swift** op `macos-latest` met manuele `xcodebuild clean build`.
-- **Actions** op `ubuntu-latest` (10× goedkoper) — pure YAML-statische-analyse op workflow-files.
+A matrix with two languages, each on the right runner:
+- **Swift** on `macos-latest` with a manual `xcodebuild clean build`.
+- **Actions** on `ubuntu-latest` (10× cheaper) — pure YAML static analysis on workflow files.
 
 ### Concurrency
 
-Beide workflows hebben `concurrency: ${{ github.workflow }}-${{ github.ref }}` met `cancel-in-progress: true` — force-pushes op een PR-branch cancelen oudere in-flight runs. Bespaart runner-minuten en voorkomt rollup-verwarring.
+Both workflows have `concurrency: ${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true` — force-pushes on a PR branch cancel older in-flight runs. Saves runner minutes and prevents rollup confusion.
 
 ---
 
-## 12. HR-recovery via pauze-detectie (Epic #47)
+## 12. HR recovery via pause detection (Epic #47)
 
-HR-recovery is fysiologisch alleen interpreteerbaar wanneer de externe load wegvalt — een vagaal-tonus-meting tegen een continu inspanning is geen recovery, maar een willekeurige spike-naar-spike-vergelijking. De Epic 32-implementatie maakte die fout: globale piek + meet HR exact 60s later. Bij continue rides zat de gebruiker 60s na de piek alweer te trappen, dus een visuele dip van 40 BPM tijdens een korte stop kwam als "4 BPM drop" uit de detector.
+HR recovery is only physiologically interpretable when the external load drops away — a vagal-tone measurement against a continuous effort is not recovery, but an arbitrary spike-to-spike comparison. The Epic 32 implementation made that mistake: global peak + measure HR exactly 60s later. On continuous rides the user was pedalling again 60s after the peak, so a visual dip of 40 BPM during a short stop came out of the detector as a "4 BPM drop".
 
 ### `Services/PauseDetector.swift`
 
-Pure-Swift, AppStorage-vrij, geen framework-deps. Detecteert aaneengesloten samples waar zowel `power < 5` als `cadence < 5` (nil-waarden tellen als "geen signaal", niet als "actief") voor minimaal `minimumPauseSeconds = 45`. Pre-check: workout moet minimaal 10 samples met daadwerkelijke activiteit hebben — voorkomt dat een sport zonder beide sensoren (zwemmen) als één lange pauze wordt gezien.
+Pure-Swift, AppStorage-free, no framework deps. Detects contiguous samples where both `power < 5` and `cadence < 5` (nil values count as "no signal", not "active") for at least `minimumPauseSeconds = 45`. Pre-check: the workout must have at least 10 samples with actual activity — prevents a sport without both sensors (swimming) from being seen as one long pause.
 
-Per gedetecteerde pauze levert hij een `PauseRecoveryEvent` met:
-- `pauseRange`: volledige tijdspanne van de pauze
-- `peakHRInPause`: hoogste HR binnen de pauze — ankerpunt voor de meting
-- `measurementWindow`: 90s vanaf `peakHRInPause`-tijdstip, geclampt op pauze-eind
-- `minHRInWindow`: laagste HR die in dat window is gezien
+Per detected pause it yields a `PauseRecoveryEvent` with:
+- `pauseRange`: the full time span of the pause
+- `peakHRInPause`: the highest HR within the pause — anchor point for the measurement
+- `measurementWindow`: 90s from the `peakHRInPause` timestamp, clamped to the pause end
+- `minHRInWindow`: the lowest HR seen in that window
 - `drop = peakHRInPause − minHRInWindow`
 
-**Waarom peak-anchored, niet pauze-start-anchored?** Bij een abrupte stop piekt de HR vaak nog 5-15 seconden vóór 'ie begint te dalen (post-stop adrenaline / sympathische respons op de overgang). Als je vanaf het eerste pauze-sample meet pak je de plateau-fase, niet de daling — een 40 BPM visuele dip wordt dan als "4 BPM" gerapporteerd. Vanaf de piek meten levert de fysiologische HRR op die we eigenlijk willen rapporteren.
+**Why peak-anchored, not pause-start-anchored?** On an abrupt stop the HR often still peaks 5-15 seconds before it starts to drop (post-stop adrenaline / sympathetic response to the transition). If you measure from the first pause sample you capture the plateau phase, not the drop — a 40 BPM visual dip is then reported as "4 BPM". Measuring from the peak yields the physiological HRR we actually want to report.
 
-**Waarom 90s, niet de klassieke 60s?** De vagaal-dominante HRR-fase loopt tot ~90s na stop. Bij fitte atleten en real-world cool-downs komt de daling vaak pas op gang in seconden 10-30. 60s zou bij Mark-achtige profielen de daling onderschatten; 90s vangt 'm correct zonder dat de meting in de langzame sympathische fase belandt.
+**Why 90s, not the classic 60s?** The vagal-dominant HRR phase runs up to ~90s after the stop. In fit athletes and real-world cool-downs the drop often only gets going in seconds 10-30. 60s would underestimate the drop for Mark-like profiles; 90s captures it correctly without the measurement landing in the slow sympathetic phase.
 
-### `WorkoutPatternDetector.detectHeartRateRecovery` — pauze-iteratie
+### `WorkoutPatternDetector.detectHeartRateRecovery` — pause iteration
 
-Itereert `PauseDetector.detect(in:)`-output, berekent per event `ratio = drop / referenceHR`, en pint de pauze met de laagste ratio (slechtste recovery — Management by Exception §1: alleen exceptions tonen, en dan over het zwakste signaal).
+Iterates the `PauseDetector.detect(in:)` output, computes `ratio = drop / referenceHR` per event, and pins the pause with the lowest ratio (worst recovery — Management by Exception §1: only show exceptions, and then the weakest signal).
 
-**Pin-overweging staat los van detectie.** PauseDetector vindt pauzes ≥45s voor de coach-prompt-context, maar voor pin-overweging filtert de pattern-detector op `hrRecoveryMinPauseForPinSeconds = 90`. Reden: een verkeerslicht-/kruising-stop van 45-89s is fysiologisch geen "recovery-event om de gebruiker over te informeren". Vóór deze grens won een korte stop met kleine drop (4-8 BPM in 60s) regelmatig de pin van een lange koffiestop met uitstekend herstel — de slechtste-ratio-strategie pakt het verkeerde signaal als korte stops überhaupt mogen meedoen.
+**Pin consideration is separate from detection.** PauseDetector finds pauses ≥45s for the coach-prompt context, but for pin consideration the pattern detector filters on `hrRecoveryMinPauseForPinSeconds = 90`. Reason: a traffic-light/junction stop of 45-89s is physiologically not a "recovery event to inform the user about". Before this bound, a short stop with a small drop (4-8 BPM in 60s) regularly won the pin over a long coffee stop with excellent recovery — the worst-ratio strategy picks the wrong signal if short stops are allowed to participate at all.
 
-Drempels relatief aan `referenceHR`:
-- `≥ 0.15` ratio → uitstekend, geen pin
+Thresholds relative to `referenceHR`:
+- `≥ 0.15` ratio → excellent, no pin
 - `0.12 – 0.15` → mild
 - `0.09 – 0.12` → moderate
 - `< 0.09` → significant
 
-`referenceHR` cascade: `lactateThresholdHR` (voorkeur, fysiologisch correctste anker) → `0.88 × maxHeartRate` (gangbare LTHR/HRmax-relatie) → `referenceHRFallback = 165` (populatie-default die de oude absolute drempels reproduceert: 165 × 0.15 ≈ 25 BPM goed-grens).
+`referenceHR` cascade: `lactateThresholdHR` (preferred, the most physiologically correct anchor) → `0.88 × maxHeartRate` (common LTHR/HRmax relationship) → `referenceHRFallback = 165` (population default that reproduces the old absolute thresholds: 165 × 0.15 ≈ 25 BPM good bound).
 
-### Coach-prompt — `WorkoutInsightService.RecoveryEventSummary`
+### Coach prompt — `WorkoutInsightService.RecoveryEventSummary`
 
-Naast de pin krijgt de coach via `WorkoutInsightService.InsightContext.recoveryEvents` **alle** gedetecteerde pauze-events mee — ook de uitstekende. De system-instruction van de service vertelt de AI hoe hij ermee omgaat: een uitstekende recovery mag positief gefraamd worden ("je autonome zenuwstelsel reageerde sterk") wanneer relevant voor de patronen, een matig/slecht-event versterkt vermoeidheids-vermoedens uit andere patronen. Workouts zonder pauze (interval-tests, tempo-loops) leveren geen events op en de coach noemt het niet — geen meet-window = geen onderwerp.
+Besides the pin, the coach receives via `WorkoutInsightService.InsightContext.recoveryEvents` **all** detected pause events — including the excellent ones. The service's system instruction tells the AI how to handle them: an excellent recovery may be framed positively ("your autonomic nervous system responded strongly") when relevant to the patterns, a mediocre/poor event reinforces fatigue suspicions from other patterns. Workouts without a pause (interval tests, tempo loops) yield no events and the coach does not mention it — no measurement window = no topic.
 
 ### Tradeoff vs. cardiac drift
 
-Workouts zonder pauze krijgen geen HR-recovery-signaal meer. Dat is correct gedrag, maar betekent dat de `cardiacDrift`-detector (HR-stijging tussen helft 1 en 2 bij gelijke intensiteit) nu de enige HR-only-vermoeidheids-laag is voor continue rides. Dat is bewust: drift werkt op de feitelijke fysiologische signal van Z1-Z3-aerobic-werk en is wel zinvol op continue effort, terwijl recovery alleen tijdens rust-windows fysiologisch correct gemeten kan worden.
+Workouts without a pause no longer get an HR-recovery signal. That is correct behaviour, but it means the `cardiacDrift` detector (HR rise between half 1 and 2 at equal intensity) is now the only HR-only fatigue layer for continuous rides. That is deliberate: drift works on the actual physiological signal of Z1-Z3 aerobic work and is meaningful on continuous effort, while recovery can only be measured physiologically correctly during rest windows.
