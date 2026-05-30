@@ -426,6 +426,7 @@ private struct TRIMPPreviewCard: View {
 /// in Instellingen — dat matcht het prototype.
 private struct AIProviderPrivacyContent: View {
     @Binding var providerRaw: String
+    @State private var keyHelpURL: IdentifiableURL?
 
     var body: some View {
         ScrollView {
@@ -468,9 +469,11 @@ private struct AIProviderPrivacyContent: View {
                     .accessibilityIdentifier("OnboardingProviderPicker")
 
                     if let provider = AIProvider(rawValue: providerRaw), let url = provider.getKeyURL {
-                        Link("Hoe kom ik aan een \(provider.shortName)-sleutel? →", destination: url)
-                            .font(.caption)
-                            .foregroundColor(.blue)
+                        Button("Hoe kom ik aan een \(provider.shortName)-sleutel? →") {
+                            keyHelpURL = IdentifiableURL(url: url)
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
                     }
 
                     Text("Je kunt de sleutel zelf later invoeren in Instellingen.")
@@ -480,6 +483,10 @@ private struct AIProviderPrivacyContent: View {
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 4)
+        }
+        .sheet(item: $keyHelpURL) { item in
+            SafariView(url: item.url)
+                .ignoresSafeArea()
         }
     }
 }
