@@ -1660,6 +1660,11 @@ struct AIProviderSettingsView: View {
             Text("Modellen van \(selectedProvider.displayName) ophalen met je sleutel…")
                 .font(.caption)
                 .foregroundColor(.secondary)
+        } else if apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            // Epic #54: zonder sleutel kunnen we /v1/models niet bevragen → ingebouwde lijst.
+            Text("Voer je \(selectedProvider.displayName)-sleutel in (en test 'm) om je beschikbare modellen live te laden. Tot dan tonen we een ingebouwde lijst.")
+                .font(.caption)
+                .foregroundColor(.secondary)
         } else if let err = providerModelsError {
             Text("Live lijst niet beschikbaar — \(err). Ingebouwde lijst getoond.")
                 .font(.caption)
