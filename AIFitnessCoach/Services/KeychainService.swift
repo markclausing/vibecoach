@@ -1,10 +1,10 @@
 import Foundation
 import Security
 
-/// Implementeert een simpele, native wrapper over iOS Keychain C-API voor opslaan van gevoelige gegevens.
+/// Implements a simple, native wrapper over the iOS Keychain C API for storing sensitive data.
 final class KeychainService: TokenStore {
 
-    // Standaard instantie voor productie
+    // Default instance for production
     static let shared = KeychainService()
 
     private init() {}
@@ -12,8 +12,8 @@ final class KeychainService: TokenStore {
     func saveToken(_ token: String, forService service: String) throws {
         guard let tokenData = token.data(using: .utf8) else { return }
 
-        // De query voor het verwijderen mag NIET de specifieke nieuwe tokenData (kSecValueData) of accessibility bevatten,
-        // anders matcht de delete-functie de oude opgeslagen token niet en krijg je een duplicate item error (-25299) bij SecItemAdd.
+        // The delete query must NOT contain the specific new tokenData (kSecValueData) or accessibility,
+        // otherwise the delete does not match the old stored token and you get a duplicate item error (-25299) on SecItemAdd.
         let deleteQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: service
@@ -24,7 +24,7 @@ final class KeychainService: TokenStore {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: service,
             kSecValueData as String: tokenData,
-            // Opslaan is alleen toegankelijk wanneer het apparaat ontgrendeld is.
+            // Stored data is only accessible while the device is unlocked.
             kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
         ]
 

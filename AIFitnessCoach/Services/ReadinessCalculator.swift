@@ -1,36 +1,36 @@
 import Foundation
 
-// MARK: - Epic 14: Readiness Score Algoritme
+// MARK: - Epic 14: Readiness Score Algorithm
 
-/// Berekent de dagelijkse Vibe/Readiness Score (0-100) op basis van slaap en HRV.
+/// Computes the daily Vibe/Readiness Score (0-100) based on sleep and HRV.
 ///
-/// **Slaap (50% weging):**
-/// - 8+ uur → 100 punten
-/// - 5 uur of minder → 0 punten
-/// - Lineair daartussen (bijv. 6.5 uur ≈ 50 punten)
+/// **Sleep (50% weight):**
+/// - 8+ hours → 100 points
+/// - 5 hours or fewer → 0 points
+/// - Linear in between (e.g. 6.5 hours ≈ 50 points)
 ///
-/// **HRV (50% weging):**
-/// - Gelijk aan of hoger dan 7-daagse baseline → 100 punten
-/// - Meer dan 20% onder de baseline → 0 punten (rode vlag: overtraining / ziekte)
-/// - Lineair daartussen
+/// **HRV (50% weight):**
+/// - Equal to or higher than the 7-day baseline → 100 points
+/// - More than 20% below the baseline → 0 points (red flag: overtraining / illness)
+/// - Linear in between
 struct ReadinessCalculator {
 
-    /// Bereken de Vibe Score.
+    /// Compute the Vibe Score.
     /// - Parameters:
-    ///   - sleepHours: Daadwerkelijke slaaptijd afgelopen nacht in uren.
-    ///   - hrv: Gemiddelde HRV van afgelopen nacht in ms.
-    ///   - hrvBaseline: Gemiddelde HRV van de afgelopen 7 dagen (persoonlijke baseline) in ms.
-    ///   - deepSleepRatio: Optioneel — verhouding diepe slaap t.o.v. totaal (0.0–1.0).
-    ///     Nil = ouder device of geen stage-data → geen strafpunt toegepast.
-    ///     < 0.10 → -15 punten | 0.10–0.15 → -8 punten | ≥ 0.15 → geen straf.
-    /// - Returns: Score van 0 t/m 100.
+    ///   - sleepHours: Actual sleep time last night in hours.
+    ///   - hrv: Average HRV of last night in ms.
+    ///   - hrvBaseline: Average HRV over the past 7 days (personal baseline) in ms.
+    ///   - deepSleepRatio: Optional — ratio of deep sleep to total (0.0–1.0).
+    ///     Nil = older device or no stage data → no penalty applied.
+    ///     < 0.10 → -15 points | 0.10–0.15 → -8 points | ≥ 0.15 → no penalty.
+    /// - Returns: A score from 0 to 100.
     static func calculate(sleepHours: Double, hrv: Double, hrvBaseline: Double,
                           deepSleepRatio: Double? = nil) -> Int {
-        // Slaapscore: lineair van 5 uur (0 punten) tot 8 uur (100 punten)
+        // Sleep score: linear from 5 hours (0 points) to 8 hours (100 points)
         let sleepScore = min(1.0, max(0.0, (sleepHours - 5.0) / 3.0)) * 100.0
 
-        // HRV-score: vergelijken met persoonlijke baseline
-        // Ondergrens = 80% van baseline (meer dan 20% onder = volledige rode vlag)
+        // HRV score: compared with the personal baseline
+        // Lower bound = 80% of baseline (more than 20% below = full red flag)
         let hrvLowerBound = hrvBaseline * 0.80
         let hrvScore: Double
         if hrv >= hrvBaseline {
@@ -43,8 +43,8 @@ struct ReadinessCalculator {
 
         var finalScore = (sleepScore + hrvScore) / 2.0
 
-        // Strafpunt bij onvoldoende diepe slaap — herstel is minder effectief ondanks voldoende uren.
-        // Alleen toegepast als er stage-specifieke data beschikbaar is.
+        // Penalty for insufficient deep sleep — recovery is less effective despite enough hours.
+        // Only applied when stage-specific data is available.
         if let ratio = deepSleepRatio {
             if ratio < 0.10 {
                 finalScore -= 15.0

@@ -1,46 +1,46 @@
 import os
 
-// MARK: - Centrale Logger-namespace (Epic 39 Story 39.1 + tech-debt audit mei 2026)
+// MARK: - Central Logger namespace (Epic 39 Story 39.1 + tech-debt audit May 2026)
 //
-// `Logger` is intern thread-safe, dus actor-isolation eromheen voegt niets toe en
-// bewaart alleen Swift 6-warnings ("main actor-isolated static property cannot be
-// accessed from outside of the actor"). Door alle loggers in een plain `enum` te
-// houden zijn ze nonisolated en vrij toegankelijk vanuit `actor`-, `@MainActor`-
-// en `@Sendable`-contexten.
+// `Logger` is internally thread-safe, so actor isolation around it adds nothing and
+// only produces Swift 6 warnings ("main actor-isolated static property cannot be
+// accessed from outside of the actor"). By keeping all loggers in a plain `enum`
+// they are nonisolated and freely accessible from `actor`, `@MainActor`
+// and `@Sendable` contexts.
 //
-// Migratiebeleid (uit audit): alle `print(...)` in `Services/` is vervangen door
-// een logger-call mét `privacy:`-modifier op PII (HRV, slaap, TRIMP, tokens,
-// notificatie-titels). Public-modifier alleen voor framework-foutcodes en
-// niet-identificerende status-flags. Standaard `.private`-default treedt in
-// werking als je niets opgeeft.
+// Migration policy (from the audit): all `print(...)` in `Services/` has been replaced by
+// a logger call with a `privacy:` modifier on PII (HRV, sleep, TRIMP, tokens,
+// notification titles). The public modifier is only for framework error codes and
+// non-identifying status flags. The default `.private` applies
+// when you specify nothing.
 
 enum AppLoggers {
     private static let subsystem = "com.markclausing.aifitnesscoach"
 
-    /// HRV-, slaap- en profiel-queries. `.private` voor sample-waardes.
+    /// HRV, sleep and profile queries. `.private` for sample values.
     static let athleticProfileManager = Logger(subsystem: subsystem, category: "AthleticProfileManager")
 
-    /// Strava-koppeling, token-refresh en workout-sync via `FitnessDataService`.
+    /// Strava connection, token refresh and workout sync via `FitnessDataService`.
     static let fitnessDataService = Logger(subsystem: subsystem, category: "FitnessDataService")
 
-    /// Dual Engine proactieve notificaties (`HKObserverQuery` + `BGAppRefreshTask`).
+    /// Dual Engine proactive notifications (`HKObserverQuery` + `BGAppRefreshTask`).
     static let proactiveNotification = Logger(subsystem: subsystem, category: "ProactiveNotificationService")
 
-    /// Auto-detect HR/FTP-drempels op basis van workout-statistiek.
+    /// Auto-detect HR/FTP thresholds based on workout statistics.
     static let physiologicalThreshold = Logger(subsystem: subsystem, category: "PhysiologicalThresholdService")
 
-    /// Leeftijd, gewicht en geslacht-flow via HealthKit + UserProfile.
+    /// Age, weight and sex flow via HealthKit + UserProfile.
     static let userProfile = Logger(subsystem: subsystem, category: "UserProfileService")
 
-    /// Open-Meteo weersvoorspelling + CoreLocation.
+    /// Open-Meteo weather forecast + CoreLocation.
     static let weather = Logger(subsystem: subsystem, category: "WeatherManager")
 
-    /// Keychain-opslag voor BYOK API-keys + UserDefaults-migratie.
+    /// Keychain storage for BYOK API keys + UserDefaults migration.
     static let userAPIKey = Logger(subsystem: subsystem, category: "UserAPIKeyStore")
 
-    /// XCUITest mock-omgeving (alleen DEBUG).
+    /// XCUITest mock environment (DEBUG only).
     static let uiTestMock = Logger(subsystem: subsystem, category: "UITestMockEnvironment")
 
-    /// `WorkoutInsightService` AI-call faulures.
+    /// `WorkoutInsightService` AI-call failures.
     static let workoutInsight = Logger(subsystem: subsystem, category: "WorkoutInsightService")
 }
