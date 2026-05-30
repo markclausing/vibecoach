@@ -267,93 +267,107 @@ Authoritatieve coverage-meting in april 2026 toonde dat sleutel-services 0% dekk
 
 ---
 
-### ⏳ Epic #37: Internationalisatie & Engelse Codebasis (speculatief — nog niet besloten)
+### ⏳ Epic #37: Internationalisatie & Engelstalige codebasis (NL + EN + DE + ES)
 
-Twee samenhangende initiatieven die we mogelijk ooit oppakken: de app meertalig maken (NL + EN als startpunt) én de Nederlandstalige codebasis-comments naar Engels migreren. Deze entry dient als concrete scope-analyse zodat een eventuele go/no-go beslissing op feiten kan worden genomen, niet op gut-feel.
+Twee samenhangende sporen, nu mét commitment en richting:
+1. **App meertalig** — Nederlands (huidige basis) + **Engels, Duits, Spaans**, met de localisatie-infra (`Localizable.xcstrings`) zó opgezet dat een extra taal louter een kolom vertalingen is.
+2. **Codebasis volledig Engelstalig** — alle code-comments, alle vier doc-files (README, ARCHITECTURE, ROADMAP, CLAUDE.md) én de in-code prompt-teksten naar Engels.
 
-**Status:** Geen commitment. Deze epic blijft op ⏳ totdat er een concreet bedrijfsbelang is (App Store launch buiten NL/BE, open-source bijdragers buiten NL).
+Cijfers hieronder zijn opnieuw gemeten op de huidige codebase (mei 2026; 127 Swift-files, ~28k LOC) — flink gegroeid t.o.v. de oorspronkelijke analyse.
 
-#### 37.1 — Multi-language UI (i18n)
+**Kern-inzicht dat het zwaarste pad licht maakt:** omdat de codebase tóch naar Engels gaat, herschrijven we de AI system-instruction één keer naar Engels en geven het model een locale-afhankelijke **"respond in {language}"**-directive. We onderhouden dus géén vier vertaalde promptkopieën — de gegenereerde prose komt in de taal van de gebruiker, terwijl de instructie + statische context-labels Engels blijven (LLM's lezen die prima). Dat vervangt de oude "hele prompt per taal templaten"-aanpak.
 
-| Categorie | Inventaris | Effort |
+#### 37.1 — Localisatie-infra + UI-strings
+
+| Categorie | Inventaris | Aanpak |
 |---|---|---|
-| SwiftUI string-literals (`Text` / `Label` / `Button` / `.navigationTitle`) | 237 | 16–20u extractie + 8–12u catalogus |
-| Notificatie-tekst (`ProactiveNotificationService`) | 9 strings | 2–3u |
-| `Locale(identifier: "nl_NL")` hardcoded | 19 plekken | 4–6u parameteriseren |
-| Localization-infra | 0 (geen `Localizable.xcstrings`) | nul-startsituatie |
+| `Localizable.xcstrings` | 0 (nul-start) | String Catalog aanmaken; 4 talen-kolommen |
+| SwiftUI string-literals (`Text`/`Label`/`Button`/`.navigationTitle`) | **291** | extraheren naar keys, `String(localized:)` |
+| Notificatie-teksten (`ProactiveNotificationService`) | ~10 | gelocaliseerde keys |
 
-**Subtotaal i18n-UI:** ~30–40u (~1 sprint).
+Pure-Swift helpers die nu strings teruggeven (formatters) krijgen een `Locale`/key-parameter i.p.v. inline NL-tekst. **Effort:** ~22–30u.
 
-#### 37.2 — Multi-language AI-prompt (kritiek pad)
+#### 37.2 — Locale-aware datum/getal-formattering
 
-De Gemini system instruction in `ChatViewModel.swift` (regels 538–639) is **89 regels Nederlandse instructie** die bovendien expliciet aan het model vraagt Nederlands terug te geven. Daarnaast bouwen 12 cache-functies (`cacheVibeScore`, `cachePeriodizationStatus`, etc.) **185 regels dynamische Nederlandse context** op (regels 704–888), die in elke prompt geïnjecteerd worden.
+**28** plekken met hardcoded `Locale(identifier: "nl_NL")` → device- óf gekozen locale. Datumnamen, getallen en eenheden volgen de actieve taal. **Effort:** ~4–6u.
 
-JSON-sleutels in de respons zijn al Engels (`motivation`, `workouts`, `dateOrDay`, etc.) — alleen de prose-velden (`motivation`, `description`, `reasoning`) zijn Nederlands. Dat is een geluk: de parser hoeft niet aangepast.
+#### 37.3 — Meertalige AI-coach (kritiek pad, maar verlicht)
 
-**Aanpak:** systeem-instructie + context-blokken templaten op `Locale.current.languageCode`; lookup-dict per taal i.p.v. inline string-literals. Ook de AI-rol-instructie (`Reageer in het Nederlands…` → `…in the user's language`) moet locale-aware worden.
+System-instruction in `ChatViewModel` (~90 regels) + ~19 context-formatters/prompt-bouwers + ~34 `Nederlands`/`nl_NL`-referenties. Aanpak conform het kern-inzicht:
+- System-instruction + statische context-labels **naar Engels** (valt samen met 37.6).
+- Locale-afhankelijke `respond in {language}`-directive (NL/EN/DE/ES) i.p.v. het harde "Reageer in het Nederlands".
+- Dynamische waarden (datums, BPM, TRIMP, zones) via 37.2 locale-geformatteerd.
+- JSON-respons-sleutels zijn al Engels — parser ongewijzigd; alleen de prose-velden (`motivation`/`description`/`reasoning`) komen voortaan in de gebruikerstaal.
 
-**Subtotaal AI-prompt-refactor:** 20–24u.
+**Effort:** ~12–16u (was 20–24u dankzij de één-prompt-aanpak).
 
-#### 37.3 — NL-afhankelijke detectielogica
+#### 37.4 — Taal-afhankelijke detectielogica
 
-Twee plekken waar Nederlandse keywords harde productie-logica aansturen — kunnen niet zomaar vertaald worden:
+Productie-logica die op NL-woorden leunt, wordt per-taal:
+- **`BodyArea.injuryKeywords`** — blessure-keywords (`kuit`, `scheen`, …) → keyword-set per taal (NL/EN/DE/ES).
+- **`BodyArea.severityLabel`** — pijnlabels → gelocaliseerd.
+- **`SuggestedWorkout.resolvedDate`** — parseert dagnamen nu bilingual NL+EN; uitbreiden naar DE+ES (bestaand per-taal-lookup-patroon).
 
-- **`BodyArea.injuryKeywords`** (`FitnessGoal.swift:18-25`): 13 sleutelwoorden (`kuit`, `scheen`, `rug`, `knie`, `enkel`, …) detecteren blessures in user-input. Voor EN moet dit een per-taal keyword-set worden.
-- **`BodyArea.severityLabel`** (`FitnessGoal.swift:39-47`): pijn-niveau labels (`Geen pijn`, `Licht`, `Matig`, `Zwaar`, `Ernstig`).
+~21 detectie-hits. **Effort:** ~6–10u (vier keyword-sets + tests).
 
-Positief: `SuggestedWorkout.resolvedDate` parseert dagnamen al **bilingual NL+EN** — dat patroon (per-taal lookup-table) kan voor de andere uitgebreid worden.
+#### 37.5 — Taalkeuze in Settings
 
-**Subtotaal:** 4–6u.
+In-app taalkiezer die de device-locale overruled (default: device-locale, geen forced switch voor bestaande gebruikers). Propageert via `@Environment(\.locale)` + AppStorage; vraagt mogelijk een state-reload. **Effort:** ~6–8u.
 
-#### 37.4 — Comment-migratie naar Engels
+#### 37.6 — Code-comments → Engels
 
 | Metric | Aantal |
 |---|---|
-| Totaal comment-regels (`grep -rE "^\s*//"`) | 3.168 |
-| Geschat % Nederlands (steekproef 20 files) | ~85% |
-| Nederlandse comment-regels | ~2.700 |
-| `// MARK:`-kopjes in NL (Sprint/Epic refs) | ~24 |
-| Variabelen al Engels? | **Ja** (Swift-conventie strikt gevolgd, sample 50/50 Engels) |
+| Totaal comment-regels | **5.077** |
+| Geschat % Nederlands | ~85% (~4.300 regels) |
+| `// MARK:`-kopjes met NL/Epic-refs | tientallen |
+| Variabel-/functienamen | al Engels (Swift-conventie) |
 
-**Risico's:** grote git-blame pollution (~2.700 regel-diff in één PR), mogelijke merge-conflicts met parallelle PR's, devs die op NL-keywords zoeken (`grep "Periodisering"`) moeten omgewenstellen.
+LLM-geassisteerd per file, in behapbare batches om git-blame-vervuiling te spreiden. **Geen runtime-impact** (review-only risico). **Effort:** ~30–40u.
 
-**Geen runtime-impact** — comments hebben geen functie; review-only risico.
+#### 37.7 — Documentatie → Engels + projectregels omdraaien
 
-**Subtotaal:** 27–35u (~1 sprint), kan parallel met i18n.
+README, ARCHITECTURE, ROADMAP, CLAUDE.md naar Engels, plus de afgeleide `architecture.json`/`.html`. **Belangrijk:** dit draait twee staande CLAUDE.md-regels om — §5 ("comments in het Nederlands") en §10 ("antwoord in het Nederlands") — die als onderdeel van deze epic naar Engels worden herschreven. **Effort:** ~16–24u.
 
-#### 37.5 — Locale-switch in Settings
+#### 37.8 — Testsuite-i18n
 
-Toggle in `SettingsView` om expliciete taalkeuze te overrulen (default: device-locale). Vraagt app-restart of state-reload via `@Environment(\.locale)` propagatie.
+UI-tests gebruiken nu hardcoded NL-assertions (`"Goedemorgen…"`, `"Doelen"`). Per taal een geforceerde locale-fixture (launch-arg `-AppleLanguages (xx)`) of assertions tegen localisatie-keys i.p.v. letterlijke tekst. **Effort:** ~12–16u.
 
-**Subtotaal:** 6–8u.
+#### Vertaalproductie
+
+EN/DE/ES-vertalingen van ~291 UI-strings + notificaties: LLM-geassisteerd genereren in de xcstrings, daarna **native review** voor DE + ES (toon/idioom). **Effort:** ~16–24u.
 
 #### Effort-overzicht
 
-| Fasen | Uren | Sprints |
-|---|---|---|
-| 37.1 i18n-UI + 37.5 settings-toggle | 36–48u | 1 |
-| 37.2 AI-prompt-refactor (kritiek pad) | 20–24u | 0.5 |
-| 37.3 detectie-logica | 4–6u | 0.1 |
-| 37.4 comment-migratie (parallel mogelijk) | 27–35u | 0.7 |
-| QA, regressie-tests, beide talen | 12–16u | 0.4 |
-| **Totaal** | **~100–130u** | **~3 sprints** |
+| Onderdeel | Uren |
+|---|---|
+| 37.1 infra + UI-strings | 22–30u |
+| 37.2 locale-formattering | 4–6u |
+| 37.3 AI-coach i18n | 12–16u |
+| 37.4 detectielogica | 6–10u |
+| 37.5 taalkeuze-UI | 6–8u |
+| 37.6 comments → Engels | 30–40u |
+| 37.7 docs → Engels + regels | 16–24u |
+| 37.8 test-i18n | 12–16u |
+| Vertaalproductie + native review | 16–24u |
+| QA over 4 talen | 12–20u |
+| **Totaal** | **~136–194u** (~4–6 sprints) |
 
-#### Aanbevolen aanpak (als ooit gestart)
+#### Aanbevolen fasering (sprints)
 
-1. **Optie minimal:** alleen 37.1 + 37.5 + 37.3 → ~50u (1.5 sprint). UI is meertalig, AI blijft Nederlands. Werkt voor App Store-listing maar niet voor non-NL gebruikers.
-2. **Optie compleet:** alle sub-tasks → ~100–130u. Echte meertalige app inclusief AI-coach in de gekozen taal.
+1. **Engelse codebasis eerst** (37.6 + 37.7 + 37.3-prompt-naar-Engels). Levert direct een consistente Engelstalige basis op; de coach blijft functioneel (Engels) en het is de natuurlijke voorbereiding op i18n. Laag runtime-risico.
+2. **i18n-fundament** (37.1 + 37.2 + 37.5): xcstrings, alle UI-strings geëxtraheerd, locale-formattering, taalkeuze-UI — met voorlopig alleen NL+EN gevuld.
+3. **Coach + detectie meertalig** (37.3-directive + 37.4): respond-in-language + per-taal keyword-sets.
+4. **Talen aanzetten** (vertaalproductie DE+ES + 37.8 test-i18n + QA): DE/ES-kolommen vullen, native review, locale-fixture-tests.
 
 #### Blokkers en risico's
 
-- **AI prompt-complexiteit:** de 274 regels Nederlandse instructie + dynamische context zijn de zwaarste post. Wijzigingen aan de system instruction hebben coach-gedragsimpact die zich pas in productie manifesteert (subjectieve toon).
-- **Test-coverage:** alle UI-tests gebruiken hardcoded NL assertions (`"Goedemorgen…"`, `"Doelen"`-titels). Per taal moet een test-variant of een geforceerde locale-fixture komen.
-- **Backwards-compat voor bestaande NL-gebruikers:** default moet `Locale.current` blijven; geen forced switch.
-- **Scope-creep:** `CLAUDE.md`, `README.md` en `docs/` blijven Nederlands tot een eventuele v2.0 — anders eindeloze documentatie-vertaling. Comment-migratie (37.4) raakt alleen `.swift`-bestanden.
+- **Coach-toon per taal** — `respond in {language}` werkt goed, maar DE/ES-toon manifesteert zich pas in productie; native steekproef aanbevolen vóór release.
+- **Backwards-compat** — default blijft `Locale.current`; bestaande NL-gebruikers merken niets tot ze zelf een taal kiezen.
+- **Git-blame** — 37.6 (~4.300 comment-regels) gespreid over batches/PR's om review behapbaar te houden.
+- **CLAUDE.md-regelwijziging** — §5/§10 omdraaien raakt hoe de assistent zelf werkt; bewust expliciet in 37.7 zodat het geen sluipende inconsistentie wordt.
 
-#### Lage-hangend-fruit als we tóch incrementeel willen beginnen
-
-- **37.5 (Locale-switch UI)** kan losstaand als voorbereidende refactor — geeft toekomstige PR's ergens om naar te toggle.
-- **37.4 (Comment-migratie)** is volledig ontkoppeld van runtime — kan in stilstaande periodes geleidelijk worden opgeruimd, één service tegelijk.
+**Status:** ⏳ — gescoped en geprioriteerd (NL+EN+DE+ES + uitbreidbaar, coach in gebruikerstaal, hele codebasis + docs naar Engels). Nog niet gestart; klaar om sprint 1 (Engelse codebasis) op te pakken.
 
 ---
 
