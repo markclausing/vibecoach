@@ -23,6 +23,22 @@ final class APIKeyValidatorTests: XCTestCase {
                        "Pure whitespace moet als 'leeg' worden geïnterpreteerd na trim.")
     }
 
+    // MARK: - classify: AIProviderError-paden (Epic #53)
+
+    func testClassify_ProviderAuthFailed_ReturnsInvalidKey() {
+        XCTAssertEqual(APIKeyValidator.classify(AIProviderError.authenticationFailed), .invalidKey)
+    }
+
+    func testClassify_ProviderOverloaded_ReturnsRateLimited() {
+        XCTAssertEqual(APIKeyValidator.classify(AIProviderError.overloaded), .rateLimited)
+    }
+
+    func testClassify_ProviderHTTP_ReturnsUnknown() {
+        guard case .unknown = APIKeyValidator.classify(AIProviderError.http(status: 500)) else {
+            return XCTFail("HTTP 500 hoort .unknown te zijn.")
+        }
+    }
+
     // MARK: - classify: GenerateContentError-paden
 
     func testClassify_InvalidAPIKey_ReturnsInvalidKey() {

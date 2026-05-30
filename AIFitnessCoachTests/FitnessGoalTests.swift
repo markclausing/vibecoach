@@ -270,17 +270,28 @@ final class FitnessGoalTests: XCTestCase {
         }
     }
 
-    func testAIProvider_OnlyGeminiIsSupported() {
-        XCTAssertTrue(AIProvider.gemini.isSupported)
-        XCTAssertFalse(AIProvider.openAI.isSupported,
-                       "OpenAI is in Sprint 20.1 nog niet volledig geïntegreerd.")
-        XCTAssertFalse(AIProvider.anthropic.isSupported)
+    func testAIProvider_AllProvidersSupported() {
+        // Epic #53 sprint B: alle vier providers zijn nu bruikbaar (per-provider
+        // key-opslag + model-defaults + validatie).
+        for provider in AIProvider.allCases {
+            XCTAssertTrue(provider.isSupported, "\(provider) hoort sinds Epic #53 ondersteund te zijn.")
+        }
     }
 
     func testAIProvider_KeyPlaceholders_HaveProviderPrefix() {
         XCTAssertTrue(AIProvider.gemini.keyPlaceholder.hasPrefix("AIzaSy"))
         XCTAssertTrue(AIProvider.openAI.keyPlaceholder.hasPrefix("sk-"))
         XCTAssertTrue(AIProvider.anthropic.keyPlaceholder.hasPrefix("sk-ant-"))
+    }
+
+    func testAIProvider_Current_DefaultsToGemini() {
+        let defaults = UserDefaults(suiteName: "test.aiprovider.current")!
+        defaults.removePersistentDomain(forName: "test.aiprovider.current")
+        XCTAssertEqual(AIProvider.current(in: defaults), .gemini)
+        defaults.set("mistral", forKey: AIProvider.appStorageKey)
+        XCTAssertEqual(AIProvider.current(in: defaults), .mistral)
+        defaults.set("bogus", forKey: AIProvider.appStorageKey)
+        XCTAssertEqual(AIProvider.current(in: defaults), .gemini)
     }
 
     // MARK: DataSource

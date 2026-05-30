@@ -165,20 +165,21 @@ final class WorkoutInsightService {
     }
 
     static func makePrimaryModel() -> GenerativeModelProtocol? {
-        makeModel(modelName: AIModelAppStorageKey.resolvedPrimary())
+        let provider = AIProvider.current()
+        return makeModel(provider: provider, modelName: AIModelAppStorageKey.resolvedPrimary(for: provider))
     }
 
     static func makeFallbackModel() -> GenerativeModelProtocol? {
-        makeModel(modelName: AIModelAppStorageKey.resolvedFallback())
+        let provider = AIProvider.current()
+        return makeModel(provider: provider, modelName: AIModelAppStorageKey.resolvedFallback(for: provider))
     }
 
-    private static func makeModel(modelName: String) -> GenerativeModelProtocol? {
-        let key = UserAPIKeyStore.read()
+    private static func makeModel(provider: AIProvider, modelName: String) -> GenerativeModelProtocol? {
+        let key = UserAPIKeyStore.read(for: provider)
         guard !key.isEmpty else { return nil }
         // Epic #53: provider-agnostisch via de `AIModelFactory`. `jsonMode = false`
         // — de Coach-analyse is vrije tekst, geen JSON-schema. Timeout 30s zoals
-        // voorheen. De provider komt uit dezelfde AppStorage-key als Settings.
-        let provider = AIProvider(rawValue: UserDefaults.standard.string(forKey: "vibecoach_aiProvider") ?? "") ?? .gemini
+        // voorheen. Sleutel + modelnaam horen bij de actieve provider.
         return AIModelFactory.makeModel(
             provider: provider,
             modelName: modelName,

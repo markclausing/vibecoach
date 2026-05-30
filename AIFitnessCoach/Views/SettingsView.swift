@@ -114,7 +114,8 @@ struct SettingsView: View {
         // C-02: lees de user API-sleutel uit de Keychain. Wordt elke .onAppear
         // opnieuw uitgevoerd zodat een wijziging in de AI-provider-subview direct
         // zichtbaar is in de hoofd-SettingsView (connectie-indicator + laatste 4 chars).
-        apiKey = UserAPIKeyStore.read()
+        // Epic #53: de sleutel van de actieve provider.
+        apiKey = UserAPIKeyStore.read(for: AIProvider(rawValue: providerRaw) ?? .gemini)
         Task {
             await settingsProfileService.requestProfileReadAuthorization()
             let p = await settingsProfileService.fetchProfile()
@@ -1398,16 +1399,7 @@ struct AIProviderSettingsView: View {
             Section(header: Text("AI Provider")) {
                 Picker("Provider", selection: $providerRaw) {
                     ForEach(AIProvider.allCases) { provider in
-                        HStack {
-                            Text(provider.displayName)
-                            if !provider.isSupported {
-                                Spacer()
-                                Text("Binnenkort")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .tag(provider.rawValue)
+                        Text(provider.displayName).tag(provider.rawValue)
                     }
                 }
                 .pickerStyle(.inline)
@@ -1431,15 +1423,6 @@ struct AIProviderSettingsView: View {
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     .accessibilityIdentifier("APIKeyField")
-
-                if !selectedProvider.isSupported {
-                    HStack {
-                        Image(systemName: "info.circle").foregroundColor(.orange)
-                        Text("\(selectedProvider.displayName) wordt binnenkort ondersteund. Selecteer Gemini voor directe AI-coaching.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
             }
 
             // Status indicator
@@ -1459,9 +1442,10 @@ struct AIProviderSettingsView: View {
                 }
             }
 
-            // Epic #35 — Model-selectie. Alleen tonen als de provider Gemini is;
-            // voor andere providers (nog niet ondersteund) heeft deze keuze
-            // geen betekenis en zou de UI onnodig complex worden.
+            // Epic #35 — Model-selectie. Alleen voor Gemini (dynamische Worker-
+            // catalogus). De provider-specifieke model-pickers voor OpenAI/Claude/
+            // Mistral volgen in Epic #53 story 53.6; tot dan gebruiken die providers
+            // hun gecureerde default-model (`AIModelCatalog.builtIn(for:)`).
             if selectedProvider == .gemini {
                 Section(
                     header: Text("Gemini Modellen"),
@@ -1500,7 +1484,7 @@ struct AIProviderSettingsView: View {
             // auth-call tegen Gemini. De waterfall (primair → fallback op 503/429)
             // staat in `APIKeyValidator` zodat een geldige sleutel tijdens een
             // Google-overload niet onterecht als ongeldig wordt gemarkeerd.
-            if !apiKey.isEmpty && selectedProvider.isSupported {
+            if !apiKey.isEmpty {
                 Section(footer: testFeedbackFooter) {
                     Button {
                         testAPIKey()
@@ -1526,11 +1510,17 @@ struct AIProviderSettingsView: View {
         .navigationTitle("AI Coach Configuratie")
         // C-02: Keychain-gekoppelde load/save rond de SecureField.
         .onAppear {
-            apiKey = UserAPIKeyStore.read()
+            apiKey = UserAPIKeyStore.read(for: selectedProvider)
             loadModelCatalog()
         }
         .onChange(of: apiKey) { _, newValue in
-            UserAPIKeyStore.write(newValue)
+            UserAPIKeyStore.write(newValue, for: selectedProvider)
+        }
+        .onChange(of: providerRaw) { _, _ in
+            // Epic #53: bij providerwissel de sleutel uit de nieuwe provider-slot
+            // tonen + de test-status resetten (de oude uitslag geldt niet meer).
+            apiKey = UserAPIKeyStore.read(for: selectedProvider)
+            testState = .idle
         }
     }
 
@@ -1650,7 +1640,7 @@ struct AIProviderSettingsView: View {
         testedKey = trimmed
 
         Task {
-            let result = await APIKeyValidator.validateGeminiKey(trimmed)
+            let result = await APIKeyValidator.validate(trimmed, provider: selectedProvider)
             await MainActor.run {
                 switch result {
                 case .valid:            testState = .valid

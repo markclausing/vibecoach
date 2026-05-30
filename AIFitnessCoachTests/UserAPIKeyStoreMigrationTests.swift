@@ -89,4 +89,63 @@ final class UserAPIKeyStoreMigrationTests: XCTestCase {
         UserAPIKeyStore.write("  padded-key  \n", using: store)
         XCTAssertEqual(UserAPIKeyStore.read(using: store), "padded-key")
     }
+
+    // MARK: - Epic #53: per-provider key-opslag
+
+    /// Sleutels per provider zijn van elkaar geïsoleerd — een OpenAI-sleutel
+    /// overschrijft de Gemini-sleutel niet en omgekeerd.
+    func testPerProviderKeysAreIsolated() {
+        UserAPIKeyStore.write("gemini-key", for: .gemini, using: store)
+        UserAPIKeyStore.write("openai-key", for: .openAI, using: store)
+        UserAPIKeyStore.write("claude-key", for: .anthropic, using: store)
+
+        XCTAssertEqual(UserAPIKeyStore.read(for: .gemini, using: store), "gemini-key")
+        XCTAssertEqual(UserAPIKeyStore.read(for: .openAI, using: store), "openai-key")
+        XCTAssertEqual(UserAPIKeyStore.read(for: .anthropic, using: store), "claude-key")
+        XCTAssertEqual(UserAPIKeyStore.read(for: .mistral, using: store), "", "Mistral heeft nog geen sleutel.")
+    }
+
+    /// `write(_:for:)` met een lege string wist de provider-slot.
+    func testPerProviderWriteEmptyDeletes() {
+        UserAPIKeyStore.write("temp", for: .mistral, using: store)
+        XCTAssertEqual(UserAPIKeyStore.read(for: .mistral, using: store), "temp")
+        UserAPIKeyStore.write("  ", for: .mistral, using: store)
+        XCTAssertEqual(UserAPIKeyStore.read(for: .mistral, using: store), "")
+    }
+
+    /// De Epic #53-migratie verplaatst de legacy single-key naar de Gemini-slot
+    /// en wist de legacy-entry.
+    func testMigratesLegacyKeyToGeminiSlot() {
+        UserAPIKeyStore.write("legacy-gemini-key", using: store) // schrijft naar de legacy serviceName
+
+        UserAPIKeyStore.migrateToPerProviderKeysIfNeeded(store: store)
+
+        XCTAssertEqual(UserAPIKeyStore.read(for: .gemini, using: store), "legacy-gemini-key")
+        XCTAssertEqual(UserAPIKeyStore.read(using: store), "", "De legacy-slot moet na migratie leeg zijn.")
+    }
+
+    /// Migratie is een no-op wanneer de Gemini-slot al een sleutel heeft — een
+    /// reeds gemigreerde of nieuw ingevoerde sleutel wordt niet overschreven.
+    func testMigrationNoOpWhenGeminiSlotAlreadyFilled() {
+        UserAPIKeyStore.write("existing-gemini", for: .gemini, using: store)
+        UserAPIKeyStore.write("stale-legacy", using: store)
+
+        UserAPIKeyStore.migrateToPerProviderKeysIfNeeded(store: store)
+
+        XCTAssertEqual(UserAPIKeyStore.read(for: .gemini, using: store), "existing-gemini")
+    }
+
+    /// Zonder legacy-sleutel doet de migratie niets.
+    func testMigrationNoOpWhenNoLegacyKey() {
+        UserAPIKeyStore.migrateToPerProviderKeysIfNeeded(store: store)
+        XCTAssertEqual(UserAPIKeyStore.read(for: .gemini, using: store), "")
+    }
+
+    /// Idempotent: tweede run vindt niks meer te migreren.
+    func testMigrationIdempotent() {
+        UserAPIKeyStore.write("legacy", using: store)
+        UserAPIKeyStore.migrateToPerProviderKeysIfNeeded(store: store)
+        UserAPIKeyStore.migrateToPerProviderKeysIfNeeded(store: store)
+        XCTAssertEqual(UserAPIKeyStore.read(for: .gemini, using: store), "legacy")
+    }
 }

@@ -38,6 +38,13 @@ class ChatViewModel: ObservableObject {
     /// `rebuildRealModel()`-trigger (alleen key-flow), waardoor de eerstvolgende
     /// vraag na een model-switch nog steeds via het oude model ging.
     private var _modelBuiltForName: String?
+
+    /// Epic #53: de op dit moment actieve provider (uit AppStorage). Eén bron zodat
+    /// de rebuild-check, de model-snapshot en `buildGenerativeModel` consistent
+    /// dezelfde provider-aware modelnaam resolven — anders ontstaat een rebuild-loop
+    /// (built-naam ≠ vergeleken naam) bij een niet-Gemini provider.
+    private var currentProvider: AIProvider { AIProvider.current() }
+
     private var model: GenerativeModelProtocol {
         if let existing = _model {
             // Door tests of `-UITesting` geïnjecteerde mocks hebben geen
@@ -45,13 +52,13 @@ class ChatViewModel: ObservableObject {
             // getter de mock overschrijven met een live `RealGenerativeModel`
             // die op de `hasAPIKey`-gate stuit.
             if let builtName = _modelBuiltForName,
-               builtName != AIModelAppStorageKey.resolvedPrimary() {
+               builtName != AIModelAppStorageKey.resolvedPrimary(for: currentProvider) {
                 // Wel zelf gebouwd én de geconfigureerde modelnaam is gewijzigd → rebuild.
             } else {
                 return existing
             }
         }
-        let resolvedName = AIModelAppStorageKey.resolvedPrimary()
+        let resolvedName = AIModelAppStorageKey.resolvedPrimary(for: currentProvider)
         let built = buildGenerativeModel(modelName: resolvedName)
         _model = built
         _modelBuiltForName = resolvedName
@@ -211,7 +218,7 @@ class ChatViewModel: ObservableObject {
     /// er altijd een sleutel is ingevuld voordat AI-functionaliteit aangeroepen wordt.
     /// C-02: sleutel wordt gelezen uit de Keychain via `UserAPIKeyStore`.
     func effectiveAPIKey() -> String {
-        return UserAPIKeyStore.read()
+        return UserAPIKeyStore.read(for: currentProvider)
     }
 
     /// Bouwt een nieuw Gemini model op basis van de huidige API-sleutel.
@@ -448,7 +455,8 @@ class ChatViewModel: ObservableObject {
     /// gekozen primaire modelnaam uit `AppStorage`. Zo blijft het mogelijk om
     /// vanuit de fallback-pad expliciet een ander model op te geven.
     private func buildGenerativeModel(modelName: String? = nil) -> GenerativeModelProtocol {
-        let resolvedModelName = modelName ?? AIModelAppStorageKey.resolvedPrimary()
+        let provider = currentProvider
+        let resolvedModelName = modelName ?? AIModelAppStorageKey.resolvedPrimary(for: provider)
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-UITesting") {
             return UITestMockGenerativeModel()
@@ -561,21 +569,18 @@ class ChatViewModel: ObservableObject {
             """
 
             // Epic #53: provider-agnostische constructie via de `AIModelFactory`.
-            // De gekozen provider komt uit dezelfde AppStorage-key als Settings/
-            // onboarding; tot 53.4 model-selectie-per-provider toevoegt blijft de
-            // modelnaam de (Gemini-)naam uit `AIModelAppStorageKey`. JSON-mode aan:
-            // de coach-respons moet altijd het plan-JSON bevatten.
+            // Provider, modelnaam én sleutel zijn provider-aware (sprint B). JSON-
+            // mode aan: de coach-respons moet altijd het plan-JSON bevatten.
             // Timeout 45s: genoeg voor een complex JSON-schema-antwoord, maar snel
             // genoeg om bij overbelasting naar de lite-fallback te schakelen.
             // Epic 20 / M-04: BYOK-only; C-02: sleutel komt uit de Keychain.
-            let provider = AIProvider(rawValue: UserDefaults.standard.string(forKey: "vibecoach_aiProvider") ?? "") ?? .gemini
             return AIModelFactory.makeModel(
                 provider: provider,
                 modelName: resolvedModelName,
                 systemInstruction: systemInstruction,
                 jsonMode: true,
                 timeout: 45,
-                apiKey: UserAPIKeyStore.read()
+                apiKey: UserAPIKeyStore.read(for: provider)
             )
     }
 
@@ -587,7 +592,7 @@ class ChatViewModel: ObservableObject {
     /// built-in default blijft `gemini-flash-lite-latest` — dezelfde waarde
     /// als vóór Epic #35, dus geen regressie voor bestaande installaties.
     private func buildFallbackGenerativeModel() -> GenerativeModelProtocol {
-        return buildGenerativeModel(modelName: AIModelAppStorageKey.resolvedFallback())
+        return buildGenerativeModel(modelName: AIModelAppStorageKey.resolvedFallback(for: currentProvider))
     }
 
     /// Verwijdert de geselecteerde afbeelding uit de invoer.
@@ -1436,8 +1441,8 @@ class ChatViewModel: ObservableObject {
         // gebruiken zodat de UI de banner kan tonen als de gebruiker tijdens
         // isTyping van model wisselt. We lezen de keys hier — niet via een
         // @AppStorage-property — om expliciet één keer per call te snapshotten.
-        activeRequestPrimaryModel = AIModelAppStorageKey.resolvedPrimary()
-        activeRequestFallbackModel = AIModelAppStorageKey.resolvedFallback()
+        activeRequestPrimaryModel = AIModelAppStorageKey.resolvedPrimary(for: currentProvider)
+        activeRequestFallbackModel = AIModelAppStorageKey.resolvedFallback(for: currentProvider)
 
         // Epic #51-A6: vorige Task netjes opruimen mocht de gebruiker een
         // nieuwe vraag sturen voordat de vorige terug is (defensief — UI
@@ -1625,8 +1630,8 @@ class ChatViewModel: ObservableObject {
         return ChatModelSwitchNotice.message(
             activePrimary: activeRequestPrimaryModel,
             activeFallback: activeRequestFallbackModel,
-            configuredPrimary: AIModelAppStorageKey.resolvedPrimary(),
-            configuredFallback: AIModelAppStorageKey.resolvedFallback()
+            configuredPrimary: AIModelAppStorageKey.resolvedPrimary(for: currentProvider),
+            configuredFallback: AIModelAppStorageKey.resolvedFallback(for: currentProvider)
         )
     }
 }

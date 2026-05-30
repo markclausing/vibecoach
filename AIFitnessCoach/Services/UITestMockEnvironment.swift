@@ -43,8 +43,9 @@ enum UITestMockEnvironment {
         // Zet een dummy API-sleutel zodat de Coach tab de chatinterface toont
         // in plaats van de 'NoAPIKeyView'.
         // C-02: de sleutel staat in de Keychain, niet meer in UserDefaults.
-        if UserAPIKeyStore.read().isEmpty {
-            UserAPIKeyStore.write("test-ui-mock-key-do-not-call-api")
+        // Epic #53: UI-tests draaien op de default-provider (Gemini).
+        if UserAPIKeyStore.read(for: .gemini).isEmpty {
+            UserAPIKeyStore.write("test-ui-mock-key-do-not-call-api", for: .gemini)
         }
 
         // Periodisatiecontext (voor Dashboard verificatie in Test 4).
@@ -83,8 +84,10 @@ enum UITestMockEnvironment {
             "selectedDataSource"
         ]
         keysToReset.forEach { defaults.removeObject(forKey: $0) }
-        // C-02: wis ook de Keychain-entry zodat een -ResetState run écht blanco start.
+        // C-02: wis ook de Keychain-entries zodat een -ResetState run écht blanco
+        // start. Epic #53: per provider + de legacy single-key.
         UserAPIKeyStore.delete()
+        AIProvider.allCases.forEach { UserAPIKeyStore.delete(for: $0) }
         AppLoggers.uiTestMock.info("State gereset — \(keysToReset.count, privacy: .public) sleutels gewist (+ Keychain)")
     }
 }

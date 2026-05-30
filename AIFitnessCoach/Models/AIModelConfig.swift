@@ -30,27 +30,94 @@ extension AIModelCatalog {
         defaultPrimary: "gemini-flash-latest",
         defaultFallback: "gemini-flash-lite-latest"
     )
+
+    /// Epic #53 — gecureerde statische catalogus per provider. Gemini gebruikt de
+    /// dynamische Worker-catalogus (`AIModelCatalogService`) met `builtInFallback`
+    /// als offline-vangnet; OpenAI/Claude/Mistral wijzigen hun modellijst traag
+    /// genoeg dat een hardcoded, door ons gevalideerde lijst volstaat — geen
+    /// extra netwerk-roundtrip nodig. `defaultPrimary` is het capabele model,
+    /// `defaultFallback` het goedkopere model voor de 503/429-waterfall.
+    static func builtIn(for provider: AIProvider) -> AIModelCatalog {
+        switch provider {
+        case .gemini:
+            return builtInFallback
+        case .openAI:
+            return AIModelCatalog(
+                models: [
+                    AIModelDescriptor(id: "gpt-4o", displayName: "GPT-4o"),
+                    AIModelDescriptor(id: "gpt-4o-mini", displayName: "GPT-4o mini")
+                ],
+                defaultPrimary: "gpt-4o",
+                defaultFallback: "gpt-4o-mini"
+            )
+        case .anthropic:
+            return AIModelCatalog(
+                models: [
+                    AIModelDescriptor(id: "claude-3-5-sonnet-latest", displayName: "Claude 3.5 Sonnet"),
+                    AIModelDescriptor(id: "claude-3-5-haiku-latest", displayName: "Claude 3.5 Haiku")
+                ],
+                defaultPrimary: "claude-3-5-sonnet-latest",
+                defaultFallback: "claude-3-5-haiku-latest"
+            )
+        case .mistral:
+            return AIModelCatalog(
+                models: [
+                    AIModelDescriptor(id: "mistral-large-latest", displayName: "Mistral Large"),
+                    AIModelDescriptor(id: "mistral-small-latest", displayName: "Mistral Small")
+                ],
+                defaultPrimary: "mistral-large-latest",
+                defaultFallback: "mistral-small-latest"
+            )
+        }
+    }
 }
 
 /// Centrale plek voor de Epic #35 AppStorage-sleutels. Zo voorkomen we
 /// stringtypfouten tussen `SettingsView` en `ChatViewModel`.
 enum AIModelAppStorageKey {
+    /// Gemini behoudt de oorspronkelijke Epic #35-keys zodat de bestaande
+    /// modelkeuze van gebruikers intact blijft. Andere providers krijgen een
+    /// eigen, provider-gesuffixte key (zie `primaryKey(for:)`).
     static let primary = "vibecoach_primaryGeminiModel"
     static let fallback = "vibecoach_fallbackGeminiModel"
 
     static let defaultPrimary = "gemini-flash-latest"
     static let defaultFallback = "gemini-flash-lite-latest"
 
-    /// Leest de door de gebruiker gekozen primaire modelnaam, met fallback naar
-    /// `defaultPrimary` wanneer de sleutel (nog) niet gezet is. De `UserDefaults`-
-    /// parameter is er zodat unit-tests een geïsoleerde suite kunnen injecteren.
-    static func resolvedPrimary(in defaults: UserDefaults = .standard) -> String {
-        defaults.string(forKey: primary) ?? defaultPrimary
+    // MARK: - Per-provider keys (Epic #53)
+
+    /// AppStorage-key voor het primaire model van een provider. Gemini → de
+    /// legacy-key (backward-compat); overige providers → `vibecoach_primaryModel_<raw>`.
+    static func primaryKey(for provider: AIProvider) -> String {
+        provider == .gemini ? primary : "vibecoach_primaryModel_\(provider.rawValue)"
     }
 
-    /// Zie `resolvedPrimary` — idem voor het fallback-model dat na een 503/429
-    /// op het primaire model wordt gebruikt.
+    /// Zie `primaryKey(for:)` — idem voor het fallback-model.
+    static func fallbackKey(for provider: AIProvider) -> String {
+        provider == .gemini ? fallback : "vibecoach_fallbackModel_\(provider.rawValue)"
+    }
+
+    /// Provider-aware resolutie van het primaire model, met fallback naar de
+    /// gecureerde provider-default (`AIModelCatalog.builtIn(for:)`).
+    static func resolvedPrimary(for provider: AIProvider, in defaults: UserDefaults = .standard) -> String {
+        defaults.string(forKey: primaryKey(for: provider)) ?? AIModelCatalog.builtIn(for: provider).defaultPrimary
+    }
+
+    /// Zie `resolvedPrimary(for:)` — idem voor het fallback-model.
+    static func resolvedFallback(for provider: AIProvider, in defaults: UserDefaults = .standard) -> String {
+        defaults.string(forKey: fallbackKey(for: provider)) ?? AIModelCatalog.builtIn(for: provider).defaultFallback
+    }
+
+    // MARK: - Backward-compat (Gemini)
+
+    /// Leest de door de gebruiker gekozen primaire modelnaam. Behouden no-arg
+    /// variant = Gemini, zodat bestaande call-sites en tests ongewijzigd werken.
+    static func resolvedPrimary(in defaults: UserDefaults = .standard) -> String {
+        resolvedPrimary(for: .gemini, in: defaults)
+    }
+
+    /// Zie `resolvedPrimary` — idem voor het fallback-model.
     static func resolvedFallback(in defaults: UserDefaults = .standard) -> String {
-        defaults.string(forKey: fallback) ?? defaultFallback
+        resolvedFallback(for: .gemini, in: defaults)
     }
 }
