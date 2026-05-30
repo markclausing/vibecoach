@@ -44,11 +44,11 @@ extension AIModelCatalog {
         case .openAI:
             return AIModelCatalog(
                 models: [
-                    AIModelDescriptor(id: "gpt-4o", displayName: "GPT-4o"),
-                    AIModelDescriptor(id: "gpt-4o-mini", displayName: "GPT-4o mini")
+                    AIModelDescriptor(id: "gpt-4.1", displayName: "GPT-4.1"),
+                    AIModelDescriptor(id: "gpt-4.1-mini", displayName: "GPT-4.1 mini")
                 ],
-                defaultPrimary: "gpt-4o",
-                defaultFallback: "gpt-4o-mini"
+                defaultPrimary: "gpt-4.1",
+                defaultFallback: "gpt-4.1-mini"
             )
         case .anthropic:
             return AIModelCatalog(
