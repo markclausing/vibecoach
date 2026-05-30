@@ -1,23 +1,23 @@
 import HealthKit
 
-// MARK: - Epic 38 Story 38.1: HealthKit-permissie-typen (single source of truth)
+// MARK: - Epic 38 Story 38.1: HealthKit permission types (single source of truth)
 //
-// Centrale definitie van álle HealthKit-types die de coach gebruikt. Voorkomt
-// drift tussen "wat we vragen" (`requestAuthorization`-call) en "wat we checken
-// op `.notDetermined`-status" (foreground-return-retrigger). Vóór Epic 38 stonden
-// de typesets als inline-arrays in twee verschillende methodes op `HealthKitManager`,
-// waardoor een gemiste type alleen runtime-error opleverde ("Authorization not
-// determined" bij de eerste query).
+// Central definition of all HealthKit types the coach uses. Prevents
+// drift between "what we request" (`requestAuthorization` call) and "what we check
+// for `.notDetermined` status" (foreground-return retrigger). Before Epic 38 the
+// type sets lived as inline arrays in two different methods on `HealthKitManager`,
+// so a missed type only surfaced as a runtime error ("Authorization not
+// determined" on the first query).
 //
-// Cardio Fitness = Apple's term voor `HKQuantityTypeIdentifier.vo2Max` — geen
-// aparte identifier nodig. `activeEnergyBurned` is in Epic 38.1 toegevoegd
-// omdat het ontbrak in de oude lijst maar wel door de coaching-context wordt
-// geconsumeerd.
+// Cardio Fitness = Apple's term for `HKQuantityTypeIdentifier.vo2Max` — no
+// separate identifier needed. `activeEnergyBurned` was added in Epic 38.1
+// because it was missing from the old list but is consumed by the
+// coaching context.
 
 enum HealthKitPermissionTypes {
 
-    /// Read-types: alle data die de coach analyseert (workouts, HR, HRV, slaap,
-    /// VO2Max/Cardio Fitness, active energy, sample-streams uit Epic 32).
+    /// Read types: all data the coach analyses (workouts, HR, HRV, sleep,
+    /// VO2Max/Cardio Fitness, active energy, sample streams from Epic 32).
     static let readTypes: Set<HKObjectType> = [
         HKObjectType.workoutType(),
         HKQuantityType.quantityType(forIdentifier: .heartRate)!,
@@ -31,7 +31,7 @@ enum HealthKitPermissionTypes {
         HKQuantityType.quantityType(forIdentifier: .height)!,
         HKObjectType.characteristicType(forIdentifier: .dateOfBirth)!,
         HKObjectType.characteristicType(forIdentifier: .biologicalSex)!,
-        // Epic 32 — workout-sample-streams
+        // Epic 32 — workout sample streams
         HKQuantityType.quantityType(forIdentifier: .cyclingPower)!,
         HKQuantityType.quantityType(forIdentifier: .cyclingCadence)!,
         HKQuantityType.quantityType(forIdentifier: .runningSpeed)!,
@@ -40,16 +40,16 @@ enum HealthKitPermissionTypes {
         HKQuantityType.quantityType(forIdentifier: .distanceSwimming)!
     ]
 
-    /// Write-types: alleen body-metingen voor de Two-Way Sync (Epic 24).
+    /// Write types: only body measurements for the Two-Way Sync (Epic 24).
     static let writeTypes: Set<HKSampleType> = [
         HKQuantityType.quantityType(forIdentifier: .bodyMass)!,
         HKQuantityType.quantityType(forIdentifier: .height)!
     ]
 
-    /// Cruciale types waarvan ontbrekende toestemming een "stille faal" oplevert
-    /// (geen workouts → leeg dashboard → geen coaching). Wordt gebruikt door de
-    /// foreground-return-retrigger om alleen prompt te tonen wanneer er écht
-    /// iets misgaat — niet voor optionele types zoals `bodyMass`.
+    /// Critical types whose missing permission causes a "silent failure"
+    /// (no workouts → empty dashboard → no coaching). Used by the
+    /// foreground-return retrigger to only show a prompt when something
+    /// genuinely goes wrong — not for optional types like `bodyMass`.
     static let critical: Set<HKObjectType> = [
         HKObjectType.workoutType(),
         HKQuantityType.quantityType(forIdentifier: .heartRate)!,
@@ -57,9 +57,9 @@ enum HealthKitPermissionTypes {
         HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
     ]
 
-    /// Returns alle critical types waarvan de status `.notDetermined` is. Lege
-    /// set betekent: alle critical types zijn al expliciet (`sharingAuthorized`
-    /// of `sharingDenied`) — geen retrigger nodig.
+    /// Returns all critical types whose status is `.notDetermined`. An empty
+    /// set means: all critical types are already explicit (`sharingAuthorized`
+    /// or `sharingDenied`) — no retrigger needed.
     static func criticalNotDetermined(in store: HKHealthStore) -> Set<HKObjectType> {
         critical.filter { store.authorizationStatus(for: $0) == .notDetermined }
     }

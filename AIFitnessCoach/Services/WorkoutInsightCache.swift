@@ -2,20 +2,20 @@ import Foundation
 
 // MARK: - Epic 32 Story 32.3b: WorkoutInsightCache
 //
-// Per-workout cache van de AI-gegenereerde coaching-narrative. Zonder deze cache
-// betaalt de gebruiker een Gemini-call elke keer dat ze `WorkoutAnalysisView`
-// openen — terwijl de patronen niet veranderen tot er een re-classificatie
-// plaatsvindt. Cache-key combineert `activityID` + `pattern-fingerprint`
-// (uit `WorkoutPatternFormatter`), zodat invalidatie automatisch gebeurt
-// zodra detectoren een nieuwe set patronen retourneren voor dezelfde workout.
+// Per-workout cache of the AI-generated coaching narrative. Without this cache
+// the user pays a Gemini call every time they open `WorkoutAnalysisView`
+// — while the patterns don't change until a reclassification
+// happens. The cache key combines `activityID` + `pattern-fingerprint`
+// (from `WorkoutPatternFormatter`), so invalidation happens automatically
+// as soon as the detectors return a new set of patterns for the same workout.
 //
-// Storage: één JSON-blob in `UserDefaults` onder een vaste key. Bewust geen
-// `@Model` — geen relationele queries nodig, en JSON-blob is migratie-vrij
-// als we het schema later aanpassen.
+// Storage: one JSON blob in `UserDefaults` under a fixed key. Deliberately not
+// `@Model` — no relational queries needed, and a JSON blob is migration-free
+// if we change the schema later.
 
 struct WorkoutInsightCache {
 
-    /// Eén cache-entry. `Codable` zodat de hele dictionary in JSON kan.
+    /// One cache entry. `Codable` so the whole dictionary can be JSON.
     struct Entry: Codable, Equatable {
         let text: String
         let fingerprint: String
@@ -30,30 +30,30 @@ struct WorkoutInsightCache {
         self.defaults = defaults
     }
 
-    /// Hit als: entry bestaat én fingerprint matcht. Bij mismatch returnt nil zodat
-    /// caller de entry vers genereert en daarmee de stale-state automatisch overschrijft.
+    /// Hit if: the entry exists and the fingerprint matches. On mismatch returns nil so
+    /// the caller regenerates the entry and thereby overwrites the stale state automatically.
     func cached(for activityID: String, fingerprint: String) -> String? {
         let all = load()
         guard let entry = all[activityID], entry.fingerprint == fingerprint else { return nil }
         return entry.text
     }
 
-    /// Bewaart of overschrijft de entry voor `activityID`. Geen TTL — pattern-
-    /// fingerprint is de enige invalidator.
+    /// Stores or overwrites the entry for `activityID`. No TTL — the pattern
+    /// fingerprint is the only invalidator.
     func store(_ text: String, for activityID: String, fingerprint: String) {
         var all = load()
         all[activityID] = Entry(text: text, fingerprint: fingerprint, generatedAt: Date())
         save(all)
     }
 
-    /// Wist één entry. Handig wanneer de gebruiker bewust een herberekening triggert.
+    /// Clears one entry. Handy when the user deliberately triggers a recalculation.
     func invalidate(activityID: String) {
         var all = load()
         all.removeValue(forKey: activityID)
         save(all)
     }
 
-    /// Wist de hele cache. Vooral nuttig voor tests en als laatste-redmiddel-actie.
+    /// Clears the whole cache. Mainly useful for tests and as a last-resort action.
     func clearAll() {
         defaults.removeObject(forKey: Self.storageKey)
     }
