@@ -328,6 +328,104 @@ enum AIProviderHTTP {
     }
 }
 
+// MARK: - Epic #54: Dynamische model-catalogus per provider
+
+/// Haalt de live model-lijst op bij OpenAI/Anthropic/Mistral, **direct vanaf het
+/// toestel met de BYOK-sleutel van de gebruiker** (de sleutel verlaat het toestel
+/// niet via onze servers — net als de chat-calls). Zo ziet de gebruiker exact de
+/// modellen die zijn key mag aanroepen, inclusief net-uitgebrachte versies.
+///
+/// Gemini loopt bewust níét via deze service maar via de Cloudflare Worker
+/// (`AIModelCatalogService`) met onze eigen key — een globale, gevalideerde lijst.
+/// De caller valt bij een fout of lege sleutel terug op `AIModelCatalog.builtIn(for:)`.
+struct ProviderModelListService {
+    var session: URLSession = .shared
+
+    func fetchModels(provider: AIProvider, apiKey: String) async throws -> [AIModelDescriptor] {
+        guard provider != .gemini else {
+            return AIModelCatalog.builtIn(for: .gemini).models
+        }
+
+        var request = URLRequest(url: Self.endpoint(for: provider))
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        switch provider {
+        case .openAI, .mistral:
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        case .anthropic:
+            request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+            request.setValue(AnthropicModelClient.apiVersion, forHTTPHeaderField: "anthropic-version")
+        case .gemini:
+            break
+        }
+
+        let (data, response) = try await session.data(for: request)
+        try AIProviderHTTP.validate(response, data: data)
+
+        guard let decoded = try? JSONDecoder().decode(ModelListResponse.self, from: data) else {
+            throw AIProviderError.decodingFailed
+        }
+
+        let descriptors = decoded.data
+            .filter { Self.isChatModel(provider: provider, item: $0) }
+            .map { AIModelDescriptor(id: $0.id, displayName: $0.display_name ?? $0.name ?? $0.id) }
+            // Nieuwere versies bovenaan (heuristisch via aflopende id-sortering).
+            .sorted { $0.id > $1.id }
+
+        guard !descriptors.isEmpty else { throw AIProviderError.emptyResponse }
+        return descriptors
+    }
+
+    static func endpoint(for provider: AIProvider) -> URL {
+        switch provider {
+        case .openAI:    return URL(string: "https://api.openai.com/v1/models")!
+        case .mistral:   return URL(string: "https://api.mistral.ai/v1/models")!
+        case .anthropic: return URL(string: "https://api.anthropic.com/v1/models")!
+        case .gemini:    return URL(string: "https://generativelanguage.googleapis.com/v1beta/models")!
+        }
+    }
+
+    /// Filtert de (vaak ruisende) provider-lijst naar chat-bruikbare tekstmodellen.
+    static func isChatModel(provider: AIProvider, item: ModelListResponse.Item) -> Bool {
+        switch provider {
+        case .anthropic:
+            // Anthropic's lijst bevat uitsluitend chat-modellen (claude-*).
+            return true
+        case .mistral:
+            // Mistral markeert chat-support expliciet; sluit embeddings/OCR uit.
+            if let chat = item.capabilities?.completion_chat { return chat }
+            return !item.id.lowercased().contains("embed")
+        case .openAI:
+            // OpenAI's lijst bevat ook embeddings/audio/image/whisper/etc. zonder
+            // duidelijke chat-markering → heuristisch filteren op id.
+            let id = item.id.lowercased()
+            let chatFamily = ["gpt-", "chatgpt-", "o1", "o3", "o4"]
+            guard chatFamily.contains(where: { id.hasPrefix($0) }) else { return false }
+            let nonChat = ["embedding", "audio", "realtime", "transcribe", "tts",
+                           "image", "whisper", "moderation", "dall-e", "search", "instruct"]
+            return !nonChat.contains(where: { id.contains($0) })
+        case .gemini:
+            return true
+        }
+    }
+}
+
+/// Uniforme decode van de `/v1/models`-responses (OpenAI/Anthropic/Mistral delen
+/// het `{ "data": [ { "id": ... } ] }`-grondvorm; velden die een provider niet
+/// levert blijven nil).
+struct ModelListResponse: Decodable {
+    struct Item: Decodable {
+        let id: String
+        let display_name: String?
+        let name: String?
+        let capabilities: Capabilities?
+    }
+    struct Capabilities: Decodable {
+        let completion_chat: Bool?
+    }
+    let data: [Item]
+}
+
 // MARK: - Respons-DTO's
 
 private struct OpenAIChatResponse: Decodable {

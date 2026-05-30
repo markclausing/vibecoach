@@ -1375,7 +1375,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 13,
+    "docRevision": 14,
     "lastUpdated": "2026-05-30",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
@@ -2450,6 +2450,17 @@
       ],
       "tags": [
         "epic-53"
+      ]
+    },
+    {
+      "id": "ProviderModelListService",
+      "kind": "service",
+      "layer": "services",
+      "file": "AIFitnessCoach/Services/AIModelFactory.swift",
+      "description": "Epic #54 — haalt /v1/models live op per provider (OpenAI/Anthropic/Mistral) direct met de BYOK-sleutel, filtert naar chat-modellen, valt terug op AIModelCatalog.builtIn. Gemini blijft op de Worker.",
+      "uses": [],
+      "tags": [
+        "epic-54"
       ]
     }
   ],

@@ -1384,6 +1384,13 @@ struct AIProviderSettingsView: View {
     @State private var customPrimaryModel: String = ""
     @State private var customFallbackModel: String = ""
 
+    /// Epic #54: live model-catalogus per niet-Gemini provider, direct opgehaald
+    /// met de user-key. Begint als de statische `builtIn`-lijst en wordt vervangen
+    /// zodra de live `/v1/models`-fetch klaar is (valt stil terug bij fout/lege key).
+    @State private var providerModelCatalog: [AIModelDescriptor] = []
+    @State private var isLoadingProviderModels: Bool = false
+    private let providerModelListService = ProviderModelListService()
+
     private var selectedProvider: AIProvider {
         AIProvider(rawValue: providerRaw) ?? .gemini
     }
@@ -1480,19 +1487,24 @@ struct AIProviderSettingsView: View {
                     }
                 }
             } else {
-                // Epic #53 (53.6): statische model-picker per niet-Gemini provider.
-                // Geen Worker-roundtrip — de catalogus is gecureerd in `AIModelCatalog.builtIn(for:)`.
-                let catalog = AIModelCatalog.builtIn(for: selectedProvider)
-                Section(header: Text("\(selectedProvider.displayName) modellen")) {
+                // Epic #54: dynamische model-picker per niet-Gemini provider. De lijst
+                // wordt live opgehaald met de user-key (`loadProviderModels`); zolang
+                // dat loopt — of bij een fout/lege key — toont 'ie de statische
+                // `AIModelCatalog.builtIn(for:)` als vangnet zodat de picker nooit leeg is.
+                let models = providerModelCatalog.isEmpty
+                    ? AIModelCatalog.builtIn(for: selectedProvider).models
+                    : providerModelCatalog
+                Section(header: Text("\(selectedProvider.displayName) modellen"),
+                        footer: providerModelsFooter) {
                     Picker("Primair model", selection: $customPrimaryModel) {
-                        ForEach(catalog.models) { model in
+                        ForEach(models) { model in
                             Text(model.displayName).tag(model.id)
                         }
                     }
                     .accessibilityIdentifier("PrimaryProviderModelPicker")
 
                     Picker("Fallback model", selection: $customFallbackModel) {
-                        ForEach(catalog.models) { model in
+                        ForEach(models) { model in
                             Text(model.displayName).tag(model.id)
                         }
                     }
@@ -1533,6 +1545,7 @@ struct AIProviderSettingsView: View {
             apiKey = UserAPIKeyStore.read(for: selectedProvider)
             loadCustomModels()
             loadModelCatalog()
+            loadProviderModels()
         }
         .onChange(of: apiKey) { _, newValue in
             UserAPIKeyStore.write(newValue, for: selectedProvider)
@@ -1543,6 +1556,13 @@ struct AIProviderSettingsView: View {
             apiKey = UserAPIKeyStore.read(for: selectedProvider)
             loadCustomModels()
             testState = .idle
+            // Epic #54: live model-lijst van de nieuwe provider ophalen.
+            loadProviderModels()
+        }
+        .onChange(of: testState) { _, newState in
+            // Epic #54: een net-gevalideerde sleutel ontsluit de live model-lijst —
+            // ververs zodat de gebruiker direct zijn echte modellen ziet.
+            if newState == .valid { loadProviderModels() }
         }
         // Epic #53 (53.6): persisteer de niet-Gemini model-keuze provider-gescheiden.
         // Gemini loopt via de @AppStorage-bindingen hierboven, dus die slaan we over.
@@ -1562,6 +1582,52 @@ struct AIProviderSettingsView: View {
     private func loadCustomModels() {
         customPrimaryModel = AIModelAppStorageKey.resolvedPrimary(for: selectedProvider)
         customFallbackModel = AIModelAppStorageKey.resolvedFallback(for: selectedProvider)
+    }
+
+    /// Epic #54: haalt de live model-lijst van de actieve niet-Gemini provider op
+    /// met de user-key. Begint met de statische lijst (picker nooit leeg) en
+    /// vervangt die zodra de fetch slaagt. Reset de opgeslagen keuze naar een
+    /// geldige als die niet (meer) in de live lijst voorkomt (bv. gedeprecieerd).
+    private func loadProviderModels() {
+        guard selectedProvider != .gemini else { return }
+        let provider = selectedProvider
+        providerModelCatalog = AIModelCatalog.builtIn(for: provider).models
+
+        let key = UserAPIKeyStore.read(for: provider)
+        guard !key.isEmpty else { return }
+
+        isLoadingProviderModels = true
+        Task {
+            let fetched = try? await providerModelListService.fetchModels(provider: provider, apiKey: key)
+            await MainActor.run {
+                isLoadingProviderModels = false
+                // Provider kan tijdens de fetch gewisseld zijn — negeer een stale resultaat.
+                guard selectedProvider == provider, let models = fetched, !models.isEmpty else { return }
+                providerModelCatalog = models
+
+                let ids = Set(models.map(\.id))
+                let builtIn = AIModelCatalog.builtIn(for: provider)
+                if !ids.contains(customPrimaryModel) {
+                    customPrimaryModel = ids.contains(builtIn.defaultPrimary) ? builtIn.defaultPrimary : (models.first?.id ?? customPrimaryModel)
+                }
+                if !ids.contains(customFallbackModel) {
+                    customFallbackModel = ids.contains(builtIn.defaultFallback) ? builtIn.defaultFallback : (models.last?.id ?? customFallbackModel)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var providerModelsFooter: some View {
+        if isLoadingProviderModels {
+            Text("Modellen van \(selectedProvider.displayName) ophalen met je sleutel…")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        } else {
+            Text("Live opgehaald met je sleutel. Lukt dat niet, dan tonen we een ingebouwde lijst.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
     }
 
     // MARK: - Epic #35 — Model catalogus

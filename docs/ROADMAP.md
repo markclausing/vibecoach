@@ -676,6 +676,21 @@ Aanleiding: sinds Epic #20 (Sprint 20.1) bestaat de `AIProvider`-enum (`gemini` 
 
 ---
 
+### 🔄 Epic #54: Dynamische model-catalogus per provider
+
+Aanleiding: na Epic #53 koos de model-picker per niet-Gemini provider uit een **statische** `AIModelCatalog.builtIn(for:)`-lijst. Die veroudert snel — een gebruiker zag in zijn OpenAI-account al gpt-5.4 / gpt-5.5-pro terwijl de app `gpt-4.1` als nieuwste toonde. Doel: de modellijst per provider live ophalen, net zoals Gemini dat via de Cloudflare Worker doet.
+
+**Aanpak:** elke provider heeft een `/v1/models`-endpoint dat we **direct vanaf het toestel met de BYOK-sleutel** aanroepen — de sleutel verlaat het toestel niet via onze servers (net als de chat-calls), dus géén privacy-regressie en de lijst is gebruiker-specifiek. Gemini blijft bewust op de Worker (globale, gevalideerde lijst met onze eigen key); voor OpenAI/Anthropic/Mistral zou de Worker-route de user-key moeten doorgeven, wat we niet willen.
+
+* **✅ 54.1 — `ProviderModelListService`:** haalt `/v1/models` op per provider (OpenAI `Authorization: Bearer`, Anthropic `x-api-key` + `anthropic-version`, Mistral `Bearer`), parseert de gedeelde `{ data: [...] }`-vorm en **filtert naar chat-modellen**: Anthropic = alles (alleen `claude-*`), Mistral = `capabilities.completion_chat`, OpenAI = heuristiek op id (`gpt-`/`chatgpt-`/`o1`/`o3`/`o4`, met uitsluiting van embedding/audio/realtime/transcribe/tts/image/whisper/etc.). Aflopend gesorteerd (nieuwste bovenaan). Valt via de caller terug op `AIModelCatalog.builtIn(for:)` bij fout/lege key. Leeft in `AIModelFactory.swift` (client-subsysteem). 7 unit-tests (URLProtocol-mock, geen live calls).
+* **✅ 54.2 — Settings-wiring:** `AIProviderSettingsView` toont de live lijst voor niet-Gemini providers — begint met de statische lijst (picker nooit leeg), vervangt die zodra de fetch slaagt, en reset een opgeslagen keuze die niet meer in de live lijst staat (gedeprecieerd model). Ververst op `onAppear`, bij providerwissel en na een geslaagde sleutel-test. Footer toont de laad-/bron-status. Gemini behoudt de Worker-catalogus.
+
+**Open punten:** geen persistente cache (fetch per Settings-open, zoals Gemini's Worker-route); de OpenAI-chat-filter is heuristisch (een toekomstig niet-chat `gpt-*`-model zou kunnen doorglippen — dan vangt de coach-call-foutbody het op). Eventuele follow-up: caching met TTL + een handmatige "ververs modellen"-knop.
+
+**Status:** 🔄 — geïmplementeerd op `feature/epic-54-dynamic-model-catalogs`. 919 unit-tests groen. Wacht op on-device validatie (live OpenAI/Mistral/Claude model-lijsten).
+
+---
+
 ### ⏳ Epic-backlog: Mentale benefit van workouts
 
 Idee voor een toekomstige Epic — nog niet uitgewerkt. Gedachte: niet alleen fysieke metrics tonen (TRIMP, HR, recovery), maar ook iets over mood/energie/stress-impact zodat de coach kan zeggen "je voelt je hier de rest van de dag goed door" of "deze sessie helpt je stress af te bouwen". Open punten: welke signalen (HRV-respons na rit, post-RPE-mood, slaap-respons in nacht erna), welke UI (extra tegel onder Vibe Score? Veld op WorkoutAnalysisView?), hoe de coach dit framet, en hoe we het onderscheiden van pure fysieke load. Pickup-trigger: gebruiker wil meer expliciete "waarom train ik dit"-context bij workouts.

@@ -295,6 +295,106 @@ final class AIModelClientTests: XCTestCase {
         XCTAssertTrue(gemini is RealGenerativeModel)
     }
 
+    // MARK: - Epic #54: ProviderModelListService
+
+    func testFetchModels_OpenAI_FiltersToChatModels_AndSendsBearer() async throws {
+        var captured: URLRequest?
+        let session = makeSession { request in
+            captured = request
+            let json = #"{"object":"list","data":[{"id":"gpt-5.4"},{"id":"gpt-4.1-mini"},{"id":"text-embedding-3-large"},{"id":"whisper-1"},{"id":"dall-e-3"},{"id":"gpt-4o-realtime-preview"}]}"#
+            return self.ok(request, json: json)
+        }
+        let service = ProviderModelListService(session: session)
+
+        let models = try await service.fetchModels(provider: .openAI, apiKey: "sk-test")
+
+        let ids = models.map(\.id)
+        XCTAssertEqual(ids, ["gpt-5.4", "gpt-4.1-mini"], "Alleen chat-modellen, aflopend gesorteerd.")
+        XCTAssertFalse(ids.contains("text-embedding-3-large"))
+        XCTAssertFalse(ids.contains("whisper-1"))
+        XCTAssertFalse(ids.contains("dall-e-3"))
+        XCTAssertFalse(ids.contains("gpt-4o-realtime-preview"))
+        XCTAssertEqual(captured?.url?.absoluteString, "https://api.openai.com/v1/models")
+        XCTAssertEqual(captured?.value(forHTTPHeaderField: "Authorization"), "Bearer sk-test")
+    }
+
+    func testFetchModels_Anthropic_KeepsAll_AndSendsHeaders_UsingDisplayName() async throws {
+        var captured: URLRequest?
+        let session = makeSession { request in
+            captured = request
+            let json = #"{"data":[{"id":"claude-sonnet-4-6","display_name":"Claude Sonnet 4.6"},{"id":"claude-haiku-4-5","display_name":"Claude Haiku 4.5"}],"has_more":false}"#
+            return self.ok(request, json: json)
+        }
+        let service = ProviderModelListService(session: session)
+
+        let models = try await service.fetchModels(provider: .anthropic, apiKey: "sk-ant")
+
+        XCTAssertEqual(models.count, 2)
+        XCTAssertEqual(models.first?.displayName, "Claude Sonnet 4.6", "display_name moet gebruikt worden.")
+        XCTAssertEqual(captured?.value(forHTTPHeaderField: "x-api-key"), "sk-ant")
+        XCTAssertEqual(captured?.value(forHTTPHeaderField: "anthropic-version"), "2023-06-01")
+    }
+
+    func testFetchModels_Mistral_FiltersOnChatCapability() async throws {
+        let session = makeSession { request in
+            let json = #"{"data":[{"id":"mistral-large-latest","capabilities":{"completion_chat":true}},{"id":"mistral-embed","capabilities":{"completion_chat":false}}]}"#
+            return self.ok(request, json: json)
+        }
+        let service = ProviderModelListService(session: session)
+
+        let ids = try await service.fetchModels(provider: .mistral, apiKey: "k").map(\.id)
+        XCTAssertEqual(ids, ["mistral-large-latest"])
+    }
+
+    func testFetchModels_NoChatModels_ThrowsEmptyResponse() async {
+        let session = makeSession { request in
+            self.ok(request, json: #"{"data":[{"id":"text-embedding-3-large"}]}"#)
+        }
+        let service = ProviderModelListService(session: session)
+        do {
+            _ = try await service.fetchModels(provider: .openAI, apiKey: "k")
+            XCTFail("Verwachtte emptyResponse na filteren.")
+        } catch let error as AIProviderError {
+            XCTAssertEqual(error, .emptyResponse)
+        } catch {
+            XCTFail("Verwachtte AIProviderError.emptyResponse, kreeg \(error)")
+        }
+    }
+
+    func testFetchModels_HTTP401_ThrowsAuthenticationFailed() async {
+        let session = makeSession { self.status($0, 401) }
+        let service = ProviderModelListService(session: session)
+        do {
+            _ = try await service.fetchModels(provider: .openAI, apiKey: "bad")
+            XCTFail("Verwachtte authenticationFailed.")
+        } catch let error as AIProviderError {
+            XCTAssertEqual(error, .authenticationFailed)
+        } catch {
+            XCTFail("Verwachtte AIProviderError.authenticationFailed, kreeg \(error)")
+        }
+    }
+
+    func testIsChatModel_OpenAIHeuristics() {
+        func item(_ id: String) -> ModelListResponse.Item {
+            ModelListResponse.Item(id: id, display_name: nil, name: nil, capabilities: nil)
+        }
+        XCTAssertTrue(ProviderModelListService.isChatModel(provider: .openAI, item: item("gpt-5.4-mini")))
+        XCTAssertTrue(ProviderModelListService.isChatModel(provider: .openAI, item: item("o3")))
+        XCTAssertFalse(ProviderModelListService.isChatModel(provider: .openAI, item: item("text-embedding-3-small")))
+        XCTAssertFalse(ProviderModelListService.isChatModel(provider: .openAI, item: item("gpt-4o-transcribe")))
+        XCTAssertFalse(ProviderModelListService.isChatModel(provider: .openAI, item: item("gpt-image-1")))
+    }
+
+    func testFetchModels_Gemini_ReturnsBuiltInWithoutNetwork() async throws {
+        // Gemini loopt via de Worker; deze service geeft de statische lijst terug.
+        let service = ProviderModelListService(session: makeSession { request in
+            XCTFail("Gemini hoort geen netwerk-call te doen via deze service.")
+            return self.ok(request, json: "{}")
+        })
+        let models = try await service.fetchModels(provider: .gemini, apiKey: "k")
+        XCTAssertEqual(models, AIModelCatalog.builtIn(for: .gemini).models)
+    }
+
     // MARK: - Assert-helper
 
     private func assertThrows(_ client: GenerativeModelProtocol, expected: AIProviderError, file: StaticString = #filePath, line: UInt = #line) async {
