@@ -1,17 +1,17 @@
 import Foundation
 
-/// Houdt bij of de SwiftData-migratie tijdens de laatste app-launch is gefaald
-/// en de defensieve fresh-DB-fallback uit `AIFitnessCoachApp.makeModelContainer()`
-/// is geactiveerd (CLAUDE.md §12).
+/// Tracks whether the SwiftData migration failed during the last app launch
+/// and the defensive fresh-DB fallback from `AIFitnessCoachApp.makeModelContainer()`
+/// was activated (CLAUDE.md §12).
 ///
-/// De flag wordt gezet door de container-init en uitgelezen door
-/// `MigrationFallbackBanner` op het Dashboard zodat de gebruiker weet dat
-/// lokaal-only data (`FitnessGoal`, `UserPreference`, `Symptom`) is verloren.
-/// Workouts uit HealthKit en Strava zijn niet beïnvloed — die syncen vanzelf
-/// terug.
+/// The flag is set by the container init and read by
+/// `MigrationFallbackBanner` on the Dashboard so the user knows that
+/// local-only data (`FitnessGoal`, `UserPreference`, `Symptom`) was lost.
+/// Workouts from HealthKit and Strava are unaffected — those sync back
+/// automatically.
 ///
-/// Pure-Swift, geen AppStorage — UserDefaults is via de init injecteerbaar
-/// zodat unit-tests met een fresh `UserDefaults(suiteName:)` werken (CLAUDE.md §6).
+/// Pure-Swift, no AppStorage — UserDefaults is injectable via the init
+/// so unit tests work with a fresh `UserDefaults(suiteName:)` (CLAUDE.md §6).
 struct MigrationFallbackStore {
     static let key = "vibecoach_migrationFallbackAt"
 
@@ -21,18 +21,18 @@ struct MigrationFallbackStore {
         self.defaults = defaults
     }
 
-    /// Datum waarop de fresh-DB-fallback voor het laatst is geactiveerd,
-    /// of `nil` als er geen actieve melding hangt.
+    /// Date the fresh-DB fallback was last activated,
+    /// or `nil` if there is no active message.
     var fallbackDate: Date? {
         defaults.object(forKey: Self.key) as? Date
     }
 
-    /// Aangeroepen door de container-init bij een succesvolle fresh-DB-fallback.
+    /// Called by the container init on a successful fresh-DB fallback.
     func recordFallback(at date: Date = Date()) {
         defaults.set(date, forKey: Self.key)
     }
 
-    /// Wist de flag — wordt aangeroepen wanneer de gebruiker de banner sluit.
+    /// Clears the flag — called when the user dismisses the banner.
     func clear() {
         defaults.removeObject(forKey: Self.key)
     }

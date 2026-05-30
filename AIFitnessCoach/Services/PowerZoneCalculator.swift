@@ -2,20 +2,20 @@ import Foundation
 
 // MARK: - Epic 44 Story 44.1: PowerZoneCalculator
 //
-// Pure-Swift afleiding van 7 vermogen-zones uit FTP volgens Andy Coggan's
-// klassieke 7-zone model (TrainingPeaks-norm). FTP = Functional Threshold
-// Power, het hoogste vermogen dat een rijder ~1 uur kan volhouden.
+// Pure-Swift derivation of 7 power zones from FTP per Andy Coggan's
+// classic 7-zone model (TrainingPeaks norm). FTP = Functional Threshold
+// Power, the highest power a rider can sustain for ~1 hour.
 //
-// Model gebruikt door bijna alle moderne fietstraining-apps (Zwift, TrainerRoad,
-// Strava). Onze `WorkoutPatternDetector` (44.5) gaat dit gebruiken om
-// power-streams in zones te classificeren — analoog aan de HR-zones.
+// The model used by nearly all modern cycling-training apps (Zwift, TrainerRoad,
+// Strava). Our `WorkoutPatternDetector` (44.5) uses this to classify
+// power streams into zones — analogous to the HR zones.
 
 struct PowerZone: Equatable {
     /// 1-based index, 1 = active recovery, 7 = neuromuscular.
     let index: Int
-    /// Korte Engels naam — UI mag in Nederlandstalige labels renderen.
+    /// Short English name — the UI may render localised labels.
     let name: String
-    /// Onder- en bovengrens in watt. Z7 heeft geen bovengrens (sprintvermogen is open-ended).
+    /// Lower and upper bound in watts. Z7 has no upper bound (sprint power is open-ended).
     let lowerWatts: Int
     let upperWatts: Int?
 }
@@ -29,13 +29,13 @@ enum PowerZoneCalculator {
     ///   Z4 Lactate Threshold   91–105% FTP
     ///   Z5 VO2max              106–120% FTP
     ///   Z6 Anaerobic Capacity  121–150% FTP
-    ///   Z7 Neuromuscular Power 151%+ FTP (geen bovengrens)
-    /// - Parameter ftp: Functional Threshold Power in watt.
-    /// - Returns: Zeven zones. Lege array bij ongeldige FTP (≤ 0).
+    ///   Z7 Neuromuscular Power 151%+ FTP (no upper bound)
+    /// - Parameter ftp: Functional Threshold Power in watts.
+    /// - Returns: Seven zones. Empty array for invalid FTP (≤ 0).
     static func coggan(ftp: Double) -> [PowerZone] {
         guard ftp > 0 else { return [] }
-        // Coggan's percentages — onder- en bovengrens per zone. Onder Z1 mag 0 W vallen
-        // (coasting/freewheel telt als active recovery / pure rust).
+        // Coggan's percentages — lower and upper bound per zone. Below Z1 may fall to 0 W
+        // (coasting/freewheel counts as active recovery / pure rest).
         let definitions: [(name: String, low: Double, high: Double?)] = [
             ("Active Recovery", 0.00, 0.55),
             ("Endurance", 0.56, 0.75),
@@ -57,9 +57,9 @@ enum PowerZoneCalculator {
         }
     }
 
-    /// Geeft de zone (1-7) terug waarin een gegeven watt-waarde valt op basis
-    /// van een al-berekende zone-set. Onder Z1 returnt 0. Z7 is altijd het maximum
-    /// omdat het geen bovengrens heeft.
+    /// Returns the zone (1-7) a given watt value falls into based on
+    /// an already-computed zone set. Below Z1 returns 0. Z7 is always the maximum
+    /// because it has no upper bound.
     static func zoneIndex(for watts: Double, in zones: [PowerZone]) -> Int {
         guard !zones.isEmpty else { return 0 }
         if watts < Double(zones[0].lowerWatts) { return 0 }
@@ -68,7 +68,7 @@ enum PowerZoneCalculator {
                 return zone.index
             }
             if zone.upperWatts == nil {
-                // Top-zone (Z7) — alles boven `lowerWatts` valt hier.
+                // Top zone (Z7) — everything above `lowerWatts` falls here.
                 return zone.index
             }
         }

@@ -4,17 +4,17 @@ import Combine
 
 // MARK: - Epic #51-F5: Network Reachability Monitor
 //
-// Lichte wrapper rond `NWPathMonitor` zodat de UI-laag via `@StateObject` /
-// `@EnvironmentObject` op de online-status kan reageren. Eén singleton om te
-// voorkomen dat parallel actieve monitors duplicate-callbacks geven en de
-// path-monitor-thread onnodig belasten.
+// Lightweight wrapper around `NWPathMonitor` so the UI layer can react to the
+// online status via `@StateObject` / `@EnvironmentObject`. One singleton to
+// prevent parallel active monitors from giving duplicate callbacks and
+// needlessly loading the path-monitor thread.
 //
-// Schrijft ook een mirror naar `UserDefaults` (`vibecoach_isOffline`) zodat
-// niet-View-laag-callers (bv. de toekomstige `SyncStatusStore`-snapshot) een
-// synchrone lees-pad hebben zonder dependency op deze ObservableObject.
+// Also writes a mirror to `UserDefaults` (`vibecoach_isOffline`) so
+// non-View-layer callers (e.g. the future `SyncStatusStore` snapshot) have a
+// synchronous read path without a dependency on this ObservableObject.
 //
-// Privacy: `NWPathMonitor` rapporteert alleen reachability — geen IP-adressen,
-// SSIDs of identifiers. Veilig om in release-builds te draaien.
+// Privacy: `NWPathMonitor` only reports reachability — no IP addresses,
+// SSIDs or identifiers. Safe to run in release builds.
 
 @MainActor
 final class NetworkReachabilityMonitor: ObservableObject {
@@ -31,9 +31,9 @@ final class NetworkReachabilityMonitor: ObservableObject {
 
     init() {}
 
-    /// Idempotent — kan veilig vanuit meerdere lifecycle-hooks worden
-    /// aangeroepen. Tweede en latere calls zijn no-ops zodat we niet meerdere
-    /// path-update-handlers stapelen.
+    /// Idempotent — can safely be called from multiple lifecycle hooks.
+    /// The second and later calls are no-ops so we don't stack multiple
+    /// path-update handlers.
     func start() {
         guard !hasStarted else { return }
         hasStarted = true
