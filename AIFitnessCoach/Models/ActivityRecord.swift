@@ -1,67 +1,67 @@
 import Foundation
 import SwiftData
 
-/// Een historisch verslag van een activiteit (gesynchroniseerd met externe bronnen zoals Strava of HealthKit).
-/// Dit wordt lokaal opgeslagen met SwiftData voor snelle toegang en offline analyses,
-/// zoals het berekenen van het atletisch profiel.
+/// A historical record of an activity (synced with external sources like Strava or HealthKit).
+/// This is stored locally with SwiftData for fast access and offline analyses,
+/// such as computing the athletic profile.
 @Model
 final class ActivityRecord {
-    /// De unieke identificatie van de activiteit, vaak afkomstig van de externe provider (zoals Strava ID of HealthKit UUID).
+    /// The unique identifier of the activity, often from the external provider (such as a Strava ID or HealthKit UUID).
     @Attribute(.unique)
     var id: String
 
     var name: String
-    var distance: Double // Afstand in meters
-    var movingTime: Int // Tijd in seconden
+    var distance: Double // Distance in metres
+    var movingTime: Int // Time in seconds
     var averageHeartrate: Double?
-    var sportCategory: SportCategory // Epic 12 Refactor: Gebruik van type-veilige enum
+    var sportCategory: SportCategory // Epic 12 refactor: use of a type-safe enum
     var startDate: Date
 
-    /// Berekende Trainingsbelasting (TRIMP) voor deze specifieke activiteit.
+    /// Computed Training Load (TRIMP) for this specific activity.
     var trimp: Double?
 
-    // Epic 18: Subjectieve Feedback — Rate of Perceived Exertion (1-10) en stemming
-    var rpe: Int?    // 1 = heel makkelijk, 10 = maximale inspanning
-    var mood: String? // Bijv. "😌", "🟢", "🚀", "🤕", "🥵"
+    // Epic 18: subjective feedback — Rate of Perceived Exertion (1-10) and mood
+    var rpe: Int?    // 1 = very easy, 10 = maximal effort
+    var mood: String? // e.g. "😌", "🟢", "🚀", "🤕", "🥵"
 
-    // Epic 33 Story 33.1: Sessie-Type Taxonomie. Optioneel zodat bestaande records zonder
-    // type valide blijven (lightweight migration). Wordt door `SessionClassifier` voorgesteld
-    // bij ingest en kan door de gebruiker handmatig worden overruled vanuit `WorkoutAnalysisView`.
+    // Epic 33 Story 33.1: session-type taxonomy. Optional so existing records without
+    // a type stay valid (lightweight migration). Proposed by `SessionClassifier`
+    // at ingest and can be manually overridden by the user from `WorkoutAnalysisView`.
     var sessionType: SessionType?
 
-    // Epic 41: True wanneer de bron-activity met een powermeter is gemeten. Voor Strava-records
-    // gevuld via `StravaActivity.device_watts`; voor HealthKit-records meestal nil (HK heeft
-    // geen device-meta-info). Gebruikt door `ActivityDeduplicator` als sterk signal — een
-    // record met power-meter wint van eenzelfde rit zonder.
+    // Epic 41: true when the source activity was measured with a power meter. For Strava records
+    // filled via `StravaActivity.device_watts`; for HealthKit records usually nil (HK has
+    // no device meta-info). Used by `ActivityDeduplicator` as a strong signal — a
+    // record with a power meter beats the same ride without one.
     var deviceWatts: Bool?
 
-    // Epic 40 Story 40.4: True zodra de gebruiker via `WorkoutAnalysisView` zelf een
-    // sessionType heeft gekozen. Beschermt deze keuze tegen `SessionReclassifier`, die
-    // anders na een latere stream-backfill (Strava 40.3 / HK DeepSync 32.1) het type
-    // automatisch zou herclassificeren op basis van zone-distributie.
+    // Epic 40 Story 40.4: true once the user has chosen a sessionType themselves via
+    // `WorkoutAnalysisView`. Protects this choice from `SessionReclassifier`, which
+    // would otherwise reclassify the type automatically based on zone distribution
+    // after a later stream backfill (Strava 40.3 / HK DeepSync 32.1).
     var manualSessionTypeOverride: Bool?
 
-    // Epic 49: omgevings-temperatuur en luchtvochtigheid op moment van de workout.
-    // Gevuld vanuit `HKMetadataKeyWeatherTemperature` / `HKMetadataKeyWeatherHumidity`
-    // als HealthKit ze heeft (iPhone tijdens workout aanwezig). Nil voor records zonder
-    // metadata of voor Strava-only ritten. Wordt door `WorkoutInsightService` als
-    // context aan de coach meegegeven zodat hitte/luchtvochtigheid hitte-gerelateerde
-    // patronen (drift, decoupling) verklaart zonder dat de coach erom hoeft te vragen.
+    // Epic 49: ambient temperature and humidity at the time of the workout.
+    // Filled from `HKMetadataKeyWeatherTemperature` / `HKMetadataKeyWeatherHumidity`
+    // if HealthKit has them (iPhone present during the workout). Nil for records without
+    // metadata or for Strava-only rides. Passed by `WorkoutInsightService` as
+    // context to the coach so heat/humidity explains heat-related
+    // patterns (drift, decoupling) without the coach having to ask.
     var temperatureCelsius: Double?
     var humidityPercent: Double?
 
-    // Epic #52: GPS-start-coördinaten. Gevuld vanuit `StravaActivity.start_latlng`
-    // bij ingest (zie `HistoricalWeatherService.enrichRecord`); voor HK-only ritten
-    // momenteel nil — de Coach-analyse valt dan terug op de single-point snapshot
-    // hierboven. Nodig om bij latere Coach-calls hourly weer-range te kunnen
-    // ophalen (peak/avg over [start, end]) zonder de Strava-API opnieuw te bevragen.
-    // Pure-additie schema V3 → V4 (lightweight migration).
+    // Epic #52: GPS start coordinates. Filled from `StravaActivity.start_latlng`
+    // at ingest (see `HistoricalWeatherService.enrichRecord`); for HK-only rides
+    // currently nil — the Coach analysis then falls back to the single-point snapshot
+    // above. Needed to be able to fetch the hourly weather range at later Coach calls
+    // (peak/avg over [start, end]) without querying the Strava API again.
+    // Pure addition schema V3 → V4 (lightweight migration).
     var startLatitude: Double?
     var startLongitude: Double?
 
-    /// Menselijke naam voor UI en AI-context.
-    /// Legacy HealthKit-records bevatten soms 'HealthKit <rawValue>' (bijv. 'HealthKit 52') —
-    /// deze property vervangt dat altijd door de leesbare naam van de SportCategory.
+    /// Human-readable name for UI and AI context.
+    /// Legacy HealthKit records sometimes contain 'HealthKit <rawValue>' (e.g. 'HealthKit 52') —
+    /// this property always replaces that with the readable name of the SportCategory.
     var displayName: String {
         if name.hasPrefix("HealthKit") {
             return sportCategory.workoutName.prefix(1).uppercased() + sportCategory.workoutName.dropFirst()
@@ -90,13 +90,13 @@ final class ActivityRecord {
     }
 }
 
-/// Een meting van de hartslag op een specifiek tijdstip
+/// A measurement of heart rate at a specific moment.
 struct HeartRateSample: Codable, Equatable {
     let timestamp: Date
     let bpm: Double
 }
 
-/// Details van een voltooide workout inclusief fysiologische data
+/// Details of a completed workout including physiological data.
 struct WorkoutDetails: Codable, Equatable {
     let name: String
     let startDate: Date

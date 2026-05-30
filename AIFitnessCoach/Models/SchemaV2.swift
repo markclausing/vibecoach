@@ -1,20 +1,20 @@
 import Foundation
 import SwiftData
 
-// MARK: - SchemaV2: snapshot vóór Epic #49 (mei 2026)
+// MARK: - SchemaV2: snapshot before Epic #49 (May 2026)
 //
-// Voorheen refereerde dit schema direct de live runtime-types. Dat werkte zolang
-// er na V2 geen verdere wijzigingen kwamen. Bij Epic #49 (weather-metadata op
-// `ActivityRecord`) bleek die kortere weg een data-loss-risico: zodra de live
-// class verandert, verandert ook de V2-checksum, en SwiftData kan dan niet
-// onderscheiden of de store écht V2 of een latere versie is. Resultaat: init-
-// failure → fallback wist DB.
+// Previously this schema referenced the live runtime types directly. That worked as long
+// as no further changes came after V2. With Epic #49 (weather metadata on
+// `ActivityRecord`) that shortcut turned out to be a data-loss risk: as soon as the live
+// class changes, the V2 checksum changes too, and SwiftData can then no longer
+// distinguish whether the store is really V2 or a later version. Result: init
+// failure → fallback wipes the DB.
 //
-// Sinds Epic #49 heeft V2 daarom een eigen `ActivityRecord`-snapshot (5 velden,
-// vóór de weather-additie). De andere V2-types verwijzen nog naar live — die
-// zijn sinds V2 niet gewijzigd. Conventie volgt SchemaV1: nested types houden
-// dezelfde unqualified naam als de live versie zodat de SwiftData entity-naam
-// matcht ("ActivityRecord", niet "V2ActivityRecord").
+// Since Epic #49, V2 therefore has its own `ActivityRecord` snapshot (5 fields,
+// before the weather addition). The other V2 types still reference the live ones — those
+// have not changed since V2. The convention follows SchemaV1: nested types keep
+// the same unqualified name as the live version so the SwiftData entity name
+// matches ("ActivityRecord", not "V2ActivityRecord").
 
 enum SchemaV2: VersionedSchema {
     static let versionIdentifier = Schema.Version(2, 0, 0)
@@ -29,10 +29,10 @@ enum SchemaV2: VersionedSchema {
          UserConfiguration.self]
     }
 
-    /// V2-snapshot van `ActivityRecord` zonder de Epic-#49-weather-velden.
-    /// Wordt door SwiftData gelezen om te bepalen wat er in een V2-store staat
-    /// vóór de lightweight V2 → V3 migratie (die `temperatureCelsius` +
-    /// `humidityPercent` als nieuwe optionele kolommen toevoegt).
+    /// V2 snapshot of `ActivityRecord` without the Epic #49 weather fields.
+    /// Read by SwiftData to determine what is in a V2 store
+    /// before the lightweight V2 → V3 migration (which adds `temperatureCelsius` +
+    /// `humidityPercent` as new optional columns).
     @Model
     final class ActivityRecord {
         @Attribute(.unique)

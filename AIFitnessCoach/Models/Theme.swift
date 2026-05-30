@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Beschikbare visuele thema's voor de VibeCoach app.
-/// Elk thema heeft een eigen sfeer, kleurenpalet en iconografie.
+/// Available visual themes for the VibeCoach app.
+/// Each theme has its own mood, colour palette and iconography.
 enum Theme: String, Codable, CaseIterable {
     case moss
     case stone
@@ -23,7 +23,7 @@ enum Theme: String, Codable, CaseIterable {
         }
     }
 
-    /// Vaste previewkleur voor de thema-picker (niet light/dark adaptief).
+    /// Fixed preview colour for the theme picker (not light/dark adaptive).
     var previewColor: Color {
         switch self {
         case .moss:   return Color(red: 0.30, green: 0.50, blue: 0.30)

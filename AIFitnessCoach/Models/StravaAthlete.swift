@@ -2,18 +2,18 @@ import Foundation
 
 // MARK: - Epic 44 Story 44.3: StravaAthlete
 //
-// Minimale DTO voor de geauthenticeerde Strava-atleet. We hebben alleen FTP
-// nodig om in `UserPhysicalProfile.ftp` te zetten — andere velden van het
-// athlete-profiel (naam, locatie, profielfoto) laten we expres weg om geen
-// extra PII binnen te halen die we niet gebruiken.
+// Minimal DTO for the authenticated Strava athlete. We only need FTP
+// to set in `UserPhysicalProfile.ftp` — other fields of the
+// athlete profile (name, location, profile photo) are deliberately left out so we don't
+// pull in extra PII we don't use.
 //
-// Strava-API: `GET /api/v3/athlete` returnt een `DetailedAthlete` met optioneel
-// `ftp: Int?`. Het veld kan ontbreken als de gebruiker 'm niet heeft ingevuld,
-// vandaar `decodeIfPresent` + optionele property.
+// Strava API: `GET /api/v3/athlete` returns a `DetailedAthlete` with optional
+// `ftp: Int?`. The field may be missing if the user has not set it,
+// hence `decodeIfPresent` + an optional property.
 
 struct StravaAthlete: Codable, Equatable {
-    /// Functional Threshold Power in watt. `nil` wanneer de gebruiker geen FTP
-    /// in z'n Strava-profiel heeft ingevoerd.
+    /// Functional Threshold Power in watts. `nil` when the user has not entered
+    /// an FTP in their Strava profile.
     let ftp: Int?
 
     enum CodingKeys: String, CodingKey {

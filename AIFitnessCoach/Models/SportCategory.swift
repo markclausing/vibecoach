@@ -1,6 +1,6 @@
 import Foundation
 
-/// Gestandaardiseerde sportcategorieën voor de applicatie (Epic 12 Refactor).
+/// Standardised sport categories for the application (Epic 12 refactor).
 enum SportCategory: String, Codable, CaseIterable, Identifiable {
     case running = "running"
     case cycling = "cycling"
@@ -24,8 +24,8 @@ enum SportCategory: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    /// Menselijke naam voor gebruik in coach-context en banners (bijv. "hardloopsessie", "fietstocht").
-    /// Zorgt dat de AI nooit technische termen zoals 'HealthKit 52' gebruikt.
+    /// Human-readable name for use in coach context and banners (e.g. "hardloopsessie", "fietstocht").
+    /// Ensures the AI never uses technical terms like 'HealthKit 52'.
     var workoutName: String {
         switch self {
         case .running:   return "hardloopsessie"
@@ -38,9 +38,9 @@ enum SportCategory: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    /// Mapt direct vanaf een HealthKit type voor robuustheid in plaats van string beschrijvingen
+    /// Maps directly from a HealthKit type for robustness instead of string descriptions.
     static func from(hkType: UInt) -> SportCategory {
-        // We gebruiken UInt omdat we HealthKit hier wellicht niet expliciet willen importeren op elke plek
+        // We use UInt because we may not want to import HealthKit explicitly everywhere.
         // 13 = cycling, 37 = running, 52 = walking, 16 = elliptical, 50 = traditionalStrengthTraining, 82 = swimming
         switch hkType {
         case 13: return .cycling
@@ -53,8 +53,8 @@ enum SportCategory: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    /// Factory methode om ruwe externe API strings (zoals "Ride")
-    /// robuust te mappen naar de gestandaardiseerde `SportCategory`.
+    /// Factory method to robustly map raw external API strings (such as "Ride")
+    /// to the standardised `SportCategory`.
     static func from(rawString: String?) -> SportCategory {
         guard let raw = rawString?.lowercased().trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
             return .other

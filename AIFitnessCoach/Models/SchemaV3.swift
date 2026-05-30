@@ -1,31 +1,31 @@
 import Foundation
 import SwiftData
 
-// MARK: - SchemaV3: huidige (live) staat — Epic #49 weather-metadata
+// MARK: - SchemaV3: current (live) state — Epic #49 weather metadata
 //
-// Verschil met SchemaV2: `ActivityRecord` heeft twee nieuwe optionele velden,
-// `temperatureCelsius: Double?` en `humidityPercent: Double?` (gevuld vanuit
-// `HKMetadataKeyWeatherTemperature` / `HKMetadataKeyWeatherHumidity`). Pure
-// addition, dus de migratie-stage is `.lightweight` (V2 → V3).
+// Difference from SchemaV2: `ActivityRecord` has two new optional fields,
+// `temperatureCelsius: Double?` and `humidityPercent: Double?` (filled from
+// `HKMetadataKeyWeatherTemperature` / `HKMetadataKeyWeatherHumidity`). A pure
+// addition, so the migration stage is `.lightweight` (V2 → V3).
 //
-// **Waarom toch een schema-versie-bump voor pure additions?** Onze app geeft
-// een explicit `migrationPlan: AppMigrationPlan.self` mee aan `ModelContainer`
-// en niet `nil`. SwiftData's lightweight inference werkt anders bij een
-// explicit plan: zodra de schema-hash van de live `@Model`-class verandert
-// zonder bijbehorende `VersionedSchema` om naar te migreren, faalt de init.
-// In `AIFitnessCoachApp.makeModelContainer()` valt dat in de fallback-tak
-// die de SQLite-store wist — `FitnessGoal` + `UserPreference` + `Symptom`
-// zijn dan kwijt. Mei 2026 incident: Epic #49-build wiste lokale doelen
-// omdat we de schema-bump oversloegen. Sindsdien: élke `@Model`-wijziging
-// vereist een schema-versie-bump (zie CLAUDE.md §2.1).
+// **Why a schema version bump for pure additions anyway?** Our app passes an
+// explicit `migrationPlan: AppMigrationPlan.self` to `ModelContainer`
+// rather than `nil`. SwiftData's lightweight inference behaves differently with an
+// explicit plan: as soon as the schema hash of the live `@Model` class changes
+// without a corresponding `VersionedSchema` to migrate to, the init fails.
+// In `AIFitnessCoachApp.makeModelContainer()` that lands in the fallback branch
+// that wipes the SQLite store — `FitnessGoal` + `UserPreference` + `Symptom`
+// are then lost. May 2026 incident: the Epic #49 build wiped local goals
+// because we skipped the schema bump. Since then: every `@Model` change
+// requires a schema version bump (see CLAUDE.md §2.1).
 //
-// **Epic #52 update (V4-introductie):** voorheen refereerde SchemaV3 direct de
-// live `ActivityRecord`-class. Dat werkte zolang er na V3 geen verdere wijziging
-// kwam. Bij Epic #52 (GPS-coords) krijgt de live class twee nieuwe velden — als
-// SchemaV3 nog naar de live class blijft wijzen, krijgt V3 een V4-checksum en
-// gaat de migratie-keten stuk. Daarom heeft V3 sinds Epic #52 een eigen
-// `ActivityRecord`-snapshot (V3-shape, mét weather-velden maar zonder coords).
-// Andere V3-types zijn sinds V3 niet gewijzigd en verwijzen nog naar live.
+// **Epic #52 update (V4 introduction):** previously SchemaV3 referenced the
+// live `ActivityRecord` class directly. That worked as long as no further change
+// came after V3. With Epic #52 (GPS coords) the live class gets two new fields — if
+// SchemaV3 keeps pointing at the live class, V3 gets a V4 checksum and
+// the migration chain breaks. That is why, since Epic #52, V3 has its own
+// `ActivityRecord` snapshot (V3 shape, with weather fields but without coords).
+// Other V3 types have not changed since V3 and still reference the live types.
 
 enum SchemaV3: VersionedSchema {
     static let versionIdentifier = Schema.Version(3, 0, 0)
@@ -40,10 +40,10 @@ enum SchemaV3: VersionedSchema {
          UserConfiguration.self]
     }
 
-    /// V3-snapshot van `ActivityRecord` — bevat de Epic-#49-weather-velden maar
-    /// nog géén Epic-#52-coords. Wordt door SwiftData gelezen om te bepalen wat
-    /// er in een V3-store staat vóór de lightweight V3 → V4 migratie (die
-    /// `startLatitude` + `startLongitude` als nieuwe optionele kolommen toevoegt).
+    /// V3 snapshot of `ActivityRecord` — contains the Epic #49 weather fields but
+    /// not yet the Epic #52 coords. Read by SwiftData to determine what
+    /// is in a V3 store before the lightweight V3 → V4 migration (which
+    /// adds `startLatitude` + `startLongitude` as new optional columns).
     @Model
     final class ActivityRecord {
         @Attribute(.unique)

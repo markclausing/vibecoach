@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// Representeert een opgeslagen langetermijnvoorkeur of 'harde regel' van de gebruiker.
+/// Represents a stored long-term preference or 'hard rule' of the user.
 @Model
 final class UserPreference {
     @Attribute(.unique) var id: UUID

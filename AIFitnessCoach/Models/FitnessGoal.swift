@@ -1,9 +1,9 @@
 import Foundation
 import SwiftData
 
-// MARK: - Epic Doel-Intenties: Enums
+// MARK: - Epic Goal Intents: Enums
 
-/// Het formaat van het evenement waarvoor de gebruiker traint.
+/// The format of the event the user is training for.
 enum EventFormat: String, Codable, CaseIterable {
     case singleDayRace  = "single_day_race"
     case singleDayTour  = "single_day_tour"
@@ -18,7 +18,7 @@ enum EventFormat: String, Codable, CaseIterable {
     }
 }
 
-/// De primaire intentie van de gebruiker voor het evenement.
+/// The user's primary intent for the event.
 enum PrimaryIntent: String, Codable, CaseIterable {
     case completion      = "completion"
     case peakPerformance = "peak_performance"
@@ -32,7 +32,7 @@ enum PrimaryIntent: String, Codable, CaseIterable {
 }
 
 /// Represents a user's fitness goal.
-/// Dit model wordt opgeslagen in SwiftData om lokale doelen bij te houden.
+/// This model is stored in SwiftData to track local goals.
 @Model
 final class FitnessGoal {
     @Attribute(.unique) var id: UUID
@@ -42,17 +42,17 @@ final class FitnessGoal {
     var createdAt: Date
     var isCompleted: Bool
     var sportCategory: SportCategory?
-    var targetTRIMP: Double? // Sprint 12.1: Benodigde belasting om dit doel te halen.
+    var targetTRIMP: Double? // Sprint 12.1: load required to reach this goal.
 
-    // Epic Doel-Intenties — Optionals zodat SwiftData oude records veilig als nil inlaadt
+    // Epic Goal Intents — optionals so SwiftData safely loads old records as nil
     var format: EventFormat?
     var intent: PrimaryIntent?
     var stretchGoalTime: TimeInterval?
 
-    /// Veilige fallback: geeft altijd een geldige EventFormat terug, ook voor records zonder waarde.
+    /// Safe fallback: always returns a valid EventFormat, even for records without a value.
     var resolvedFormat: EventFormat { format ?? .singleDayRace }
 
-    /// Veilige fallback: geeft altijd een geldige PrimaryIntent terug, ook voor records zonder waarde.
+    /// Safe fallback: always returns a valid PrimaryIntent, even for records without a value.
     var resolvedIntent: PrimaryIntent { intent ?? .peakPerformance }
 
     init(id: UUID = UUID(),
@@ -79,14 +79,14 @@ final class FitnessGoal {
         self.stretchGoalTime = stretchGoalTime
     }
 
-    /// Huidige trainingsfase van dit doel op basis van weken resterend (Epic 16).
-    /// Retourneert nil als het doel is afgerond of al verlopen.
+    /// Current training phase of this goal based on weeks remaining (Epic 16).
+    /// Returns nil if the goal is completed or already expired.
     var currentPhase: TrainingPhase? {
         guard !isCompleted, Date() < targetDate else { return nil }
         return TrainingPhase.calculate(weeksRemaining: weeksRemaining)
     }
 
-    /// Berekent of retourneert de Target TRIMP veilig, inclusief fail-safe fallback formule
+    /// Safely computes or returns the Target TRIMP, including a fail-safe fallback formula.
     var computedTargetTRIMP: Double {
         if let trimp = targetTRIMP, trimp > 0 {
             return trimp
@@ -95,28 +95,28 @@ final class FitnessGoal {
         return (days / 7.0) * 350.0
     }
 
-    // MARK: - DST-veilige tijdberekeningen (CLAUDE.md §3)
+    // MARK: - DST-safe time calculations (CLAUDE.md §3)
 
-    /// Aantal weken tot `targetDate` op het opgegeven moment — DST-veilig.
-    /// Negatief als het doel al verlopen is. Standaard t.o.v. `Date()`.
+    /// Number of weeks until `targetDate` at the given moment — DST-safe.
+    /// Negative if the goal has already expired. Defaults to relative to `Date()`.
     func weeksRemaining(from now: Date = Date()) -> Double {
         Calendar.current.fractionalWeeks(from: now, to: targetDate)
     }
 
-    /// Aantal weken tot `targetDate` t.o.v. nu (computed-property accessor voor `weeksRemaining(from:)`).
+    /// Number of weeks until `targetDate` relative to now (computed-property accessor for `weeksRemaining(from:)`).
     var weeksRemaining: Double { weeksRemaining() }
 
-    /// Aantal dagen tot `targetDate` op het opgegeven moment — DST-veilig.
-    /// Negatief als het doel al verlopen is.
+    /// Number of days until `targetDate` at the given moment — DST-safe.
+    /// Negative if the goal has already expired.
     func daysRemaining(from now: Date = Date()) -> Double {
         Calendar.current.fractionalDays(from: now, to: targetDate)
     }
 
-    /// Aantal dagen tot `targetDate` t.o.v. nu (fractioneel, DST-veilig).
+    /// Number of days until `targetDate` relative to now (fractional, DST-safe).
     var daysRemaining: Double { daysRemaining() }
 
-    /// Totaal aantal dagen tussen `createdAt` en `targetDate` — DST-veilig.
-    /// Gebruikt voor totaal-trainingsperiode-berekeningen (zoals fallback Target TRIMP).
+    /// Total number of days between `createdAt` and `targetDate` — DST-safe.
+    /// Used for total-training-period calculations (such as the fallback Target TRIMP).
     var totalDays: Double {
         Calendar.current.fractionalDays(from: createdAt, to: targetDate)
     }

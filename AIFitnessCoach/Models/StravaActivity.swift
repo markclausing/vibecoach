@@ -1,29 +1,29 @@
 import Foundation
 
-/// Representatie van een Strava activiteit (enkel de benodigde velden voor de AI coach).
-/// Decodeert direct vanuit de Strava API JSON response.
+/// Representation of a Strava activity (only the fields needed for the AI coach).
+/// Decodes directly from the Strava API JSON response.
 struct StravaActivity: Codable, Equatable {
     let id: Int64
     let name: String
-    let distance: Double // Afstand in meters
-    let moving_time: Int // Tijd in seconden
+    let distance: Double // Distance in metres
+    let moving_time: Int // Time in seconds
     let average_heartrate: Double?
 
-    // Optioneel: voeg enum toe voor activity type (Run, Ride, etc.)
+    // Optional: add an enum for activity type (Run, Ride, etc.)
     let type: String
 
-    // ISO8601 string, b.v. "2023-10-12T10:00:00Z"
+    // ISO8601 string, e.g. "2023-10-12T10:00:00Z"
     let start_date: String
 
-    /// Epic 40: Strava-vlag die aangeeft of de activity met een powermeter gemeten is.
-    /// Optioneel + decodeIfPresent → backwards-compat met bestaande caches/fixtures.
-    /// Filter voor `fetchActivityStreams`-trigger: alleen ritten met `device_watts == true`.
+    /// Epic 40: Strava flag indicating whether the activity was measured with a power meter.
+    /// Optional + decodeIfPresent → backwards-compat with existing caches/fixtures.
+    /// Filter for the `fetchActivityStreams` trigger: only rides with `device_watts == true`.
     let device_watts: Bool?
 
-    /// Epic #50: GPS-startcoördinaten als `[lat, lng]`. Strava levert dit veld voor
-    /// alle outdoor-activiteiten met GPS — leeg array of nil bij indoor/manual.
-    /// Wordt gebruikt om historische weerdata op te vragen via Open-Meteo archive-API
-    /// voor ritten zonder iPhone-aanwezigheid (Garmin/fietscomputer-only).
+    /// Epic #50: GPS start coordinates as `[lat, lng]`. Strava provides this field for
+    /// all outdoor activities with GPS — empty array or nil for indoor/manual.
+    /// Used to fetch historical weather data via the Open-Meteo archive API
+    /// for rides without iPhone presence (Garmin/bike-computer-only).
     let start_latlng: [Double]?
 
     enum CodingKeys: String, CodingKey {
@@ -68,8 +68,8 @@ struct StravaActivity: Codable, Equatable {
         type              = try c.decode(String.self, forKey: .type)
         start_date        = try c.decode(String.self, forKey: .start_date)
         device_watts      = try c.decodeIfPresent(Bool.self, forKey: .device_watts)
-        // Strava levert lege array `[]` voor indoor — normaliseer naar nil zodat
-        // callers één coherent "geen locatie"-signaal hebben.
+        // Strava returns an empty array `[]` for indoor — normalise to nil so
+        // callers have one coherent "no location" signal.
         let raw = try c.decodeIfPresent([Double].self, forKey: .start_latlng)
         start_latlng = (raw?.count == 2) ? raw : nil
     }
@@ -78,11 +78,11 @@ struct StravaActivity: Codable, Equatable {
 // MARK: - Epic 40: Strava Streams API
 //
 // `/activities/{id}/streams?keys=watts,cadence,heartrate,velocity_smooth,time&key_by_type=true`
-// retourneert een dictionary van stream-naam naar `StravaStream`. Niet alle streams zijn
-// altijd aanwezig — bv. `watts` ontbreekt als de rit niet met een powermeter gemeten is.
+// returns a dictionary of stream name to `StravaStream`. Not all streams are
+// always present — e.g. `watts` is missing if the ride was not measured with a power meter.
 
-/// Eén stream uit de Strava Streams API. Bevat een lineaire `data`-array waarvan de
-/// index aansluit op de `time`-stream.
+/// One stream from the Strava Streams API. Contains a linear `data` array whose
+/// index aligns with the `time` stream.
 struct StravaStream: Codable, Equatable {
     let data: [Double]
     let series_type: String?
@@ -109,8 +109,8 @@ struct StravaStream: Codable, Equatable {
     }
 }
 
-/// Volledige stream-set voor één Strava-activity. `time` is altijd nodig voor
-/// timestamp-mapping; de andere streams zijn optioneel.
+/// Full stream set for one Strava activity. `time` is always needed for
+/// timestamp mapping; the other streams are optional.
 struct StravaStreamSet: Codable, Equatable {
     let time: StravaStream?
     let watts: StravaStream?

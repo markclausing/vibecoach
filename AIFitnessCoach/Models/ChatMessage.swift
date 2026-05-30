@@ -1,43 +1,43 @@
 import Foundation
 import SwiftUI
 
-/// Representeert de afzender van het chatbericht in de applicatie.
+/// Represents the sender of a chat message in the application.
 enum SenderRole: String, Codable {
-    case user // De eindgebruiker
-    case ai   // De virtuele AI coach
+    case user // The end user
+    case ai   // The virtual AI coach
 }
 
-/// Representeert een individueel chatbericht (zowel inkomend als uitgaand).
-/// Bevat optionele ondersteuning voor beelddata (bijv. grafieken/foto's).
+/// Represents an individual chat message (both incoming and outgoing).
+/// Includes optional support for image data (e.g. charts/photos).
 struct ChatMessage: Identifiable, Equatable {
-    /// De unieke identificatiecode van dit bericht, cruciaal voor SwiftUI iteratie.
+    /// The unique identifier of this message, crucial for SwiftUI iteration.
     let id: UUID
-    /// De afzender: AI of gebruiker.
+    /// The sender: AI or user.
     let role: SenderRole
-    /// De tekstuele inhoud van het bericht.
+    /// The textual content of the message.
     let text: String
-    /// Het tijdstip waarop het bericht is aangemaakt.
+    /// The moment the message was created.
     let timestamp: Date
-    /// Optionele ruwe JPEG data van een bijgevoegde afbeelding.
+    /// Optional raw JPEG data of an attached image.
     let attachedImageData: Data?
 
-    /// Sprint 8.2: Een optioneel voorgesteld trainingsplan dat uit de gestructureerde JSON komt.
+    /// Sprint 8.2: an optional suggested training plan that comes from the structured JSON.
     let suggestedPlan: SuggestedTrainingPlan?
 
-    /// Geeft aan of dit bericht een herstelbare foutmelding is (bijv. server-timeout).
-    /// Als true, toont de MessageBubble een 'Probeer opnieuw' knop.
+    /// Indicates whether this message is a recoverable error (e.g. a server timeout).
+    /// If true, the MessageBubble shows a 'Try again' button.
     let isError: Bool
 
-    /// Creëert een nieuw `ChatMessage` object.
+    /// Creates a new `ChatMessage` object.
     ///
     /// - Parameters:
-    ///   - id: Unieke identifier, standaard gegenereerd met `UUID()`.
-    ///   - role: Bepaalt of dit een `.user` of `.ai` bericht is.
-    ///   - text: De tekst van het bericht.
-    ///   - timestamp: Het verzendmoment.
-    ///   - attachedImageData: Optionele bytes van een gecomprimeerde JPEG afbeelding.
-    ///   - suggestedPlan: Een dynamisch gegenereerde kalender in JSON.
-    ///   - isError: Of dit een herstelbare foutmelding is. Standaard false.
+    ///   - id: Unique identifier, generated with `UUID()` by default.
+    ///   - role: Determines whether this is a `.user` or `.ai` message.
+    ///   - text: The text of the message.
+    ///   - timestamp: The moment it was sent.
+    ///   - attachedImageData: Optional bytes of a compressed JPEG image.
+    ///   - suggestedPlan: A dynamically generated calendar in JSON.
+    ///   - isError: Whether this is a recoverable error. Defaults to false.
     init(id: UUID = UUID(), role: SenderRole, text: String, timestamp: Date = Date(), attachedImageData: Data? = nil, suggestedPlan: SuggestedTrainingPlan? = nil, isError: Bool = false) {
         self.id = id
         self.role = role

@@ -1,28 +1,28 @@
 import Foundation
 import SwiftData
 
-// MARK: - SchemaV1: Pre-tech-debt-audit baseline (mei 2026)
+// MARK: - SchemaV1: pre-tech-debt-audit baseline (May 2026)
 //
-// Dit is een SNAPSHOT van het oude schema. De nested types `Symptom`,
-// `DailyReadiness` en `WorkoutSample` heten doelbewust hetzelfde als de
-// live (V2) global types — SwiftData gebruikt de UNQUALIFIED type-naam
-// als entity-naam. Twee `@Model class Symptom` in verschillende
-// namespaces zijn voor Swift zelf prima (eigen namespace) en voor
-// SwiftData blijft het entity-naam "Symptom" — onderscheiden via
+// This is a SNAPSHOT of the old schema. The nested types `Symptom`,
+// `DailyReadiness` and `WorkoutSample` are deliberately named the same as the
+// live (V2) global types — SwiftData uses the UNQUALIFIED type name
+// as the entity name. Two `@Model class Symptom` in different
+// namespaces are fine for Swift itself (own namespace) and for
+// SwiftData the entity name stays "Symptom" — distinguished via
 // `versionIdentifier`.
 //
-// De live types staan in `Models/Symptom.swift` etc. (V2-vorm).
-// SchemaV1 wordt alleen door `AppMigrationPlan.migrateV1toV2` gelezen
-// om bestaande V1-stores te kunnen inlezen tijdens de migratie.
+// The live types live in `Models/Symptom.swift` etc. (V2 shape).
+// SchemaV1 is only read by `AppMigrationPlan.migrateV1toV2`
+// to be able to read existing V1 stores during the migration.
 //
-// V1 → V2 wijzigingen die deze migratie afdekt:
-//   1. `Symptom.bodyAreaRaw: String` → `Symptom.bodyArea: BodyArea` (rename + type-veiliger;
-//      `@Attribute(originalName:)` op de live class koppelt de oude kolom).
-//   2. `DailyReadiness.date` krijgt `@Attribute(.unique)`. Bestaande duplicates worden in
-//      `willMigrate` gededupeerd op de hoogste `readinessScore`.
-//   3. `WorkoutSample` krijgt `#Unique<>([\.workoutUUID, \.timestamp])` en `#Index` op
-//      `workoutUUID`. Bestaande duplicates worden in `willMigrate` gededupeerd op behoud
-//      van het record met de meeste niet-nil velden (rijkste record wint).
+// V1 → V2 changes this migration covers:
+//   1. `Symptom.bodyAreaRaw: String` → `Symptom.bodyArea: BodyArea` (rename + more type-safe;
+//      `@Attribute(originalName:)` on the live class links the old column).
+//   2. `DailyReadiness.date` gets `@Attribute(.unique)`. Existing duplicates are deduped in
+//      `willMigrate` on the highest `readinessScore`.
+//   3. `WorkoutSample` gets `#Unique<>([\.workoutUUID, \.timestamp])` and `#Index` on
+//      `workoutUUID`. Existing duplicates are deduped in `willMigrate`, keeping
+//      the record with the most non-nil fields (richest record wins).
 
 enum SchemaV1: VersionedSchema {
     static let versionIdentifier = Schema.Version(1, 0, 0)
@@ -37,7 +37,7 @@ enum SchemaV1: VersionedSchema {
          UserConfiguration.self]
     }
 
-    /// V1: `bodyAreaRaw: String` (geen enum-mapping op DB-niveau).
+    /// V1: `bodyAreaRaw: String` (no enum mapping at the DB level).
     @Model
     final class Symptom {
         @Attribute(.unique) var id: UUID
@@ -53,8 +53,8 @@ enum SchemaV1: VersionedSchema {
         }
     }
 
-    /// V1: `date` zonder `@Attribute(.unique)`. Race-conditions tussen Engine A en B konden
-    /// dubbele records aanmaken; de `willMigrate`-stap dedupeert op `startOfDay(date)`.
+    /// V1: `date` without `@Attribute(.unique)`. Race conditions between Engine A and B could
+    /// create duplicate records; the `willMigrate` step dedupes on `startOfDay(date)`.
     @Model
     final class DailyReadiness {
         var date: Date
@@ -81,8 +81,8 @@ enum SchemaV1: VersionedSchema {
         }
     }
 
-    /// V1: geen `#Unique`, geen `#Index`. Idempotente upsert was service-zijdig (Epic 32),
-    /// maar zonder DB-zijdige garantie konden parallelle ingest-paden duplicates creëren.
+    /// V1: no `#Unique`, no `#Index`. The idempotent upsert was service-side (Epic 32),
+    /// but without a DB-side guarantee parallel ingest paths could create duplicates.
     @Model
     final class WorkoutSample {
         var workoutUUID: UUID

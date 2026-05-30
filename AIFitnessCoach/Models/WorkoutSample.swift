@@ -3,34 +3,34 @@ import SwiftData
 
 // MARK: - Epic 32: Time-Series Workout Samples
 
-/// Eén tijdpunt van fysiologische data tijdens een workout, op een vaste 5s-resolutie.
-/// Workouts zelf worden niet in SwiftData gepersisteerd — `workoutUUID` koppelt deze sample
-/// aan de bron-`HKWorkout.uuid` (Route A: foreign key, geen redundant Workout-model).
+/// One point in time of physiological data during a workout, at a fixed 5s resolution.
+/// Workouts themselves are not persisted in SwiftData — `workoutUUID` links this sample
+/// to the source `HKWorkout.uuid` (Route A: foreign key, no redundant Workout model).
 ///
-/// **Schema V2 wijzigingen:**
-/// - `#Unique<>([\.workoutUUID, \.timestamp])` toegevoegd — voorheen vertrouwde de
-///   `WorkoutSampleService` op idempotente upsert via die combo zonder DB-zijdige garantie.
-/// - `@Attribute(.indexed)` op `workoutUUID` voor snellere `@Predicate`-filters per workout.
-/// Bestaande duplicates worden gededupeerd in `AppMigrationPlan.willMigrateV1toV2`.
+/// **Schema V2 changes:**
+/// - `#Unique<>([\.workoutUUID, \.timestamp])` added — previously the
+///   `WorkoutSampleService` relied on an idempotent upsert via that combo without a DB-side guarantee.
+/// - `@Attribute(.indexed)` on `workoutUUID` for faster `@Predicate` filters per workout.
+/// Existing duplicates are deduped in `AppMigrationPlan.willMigrateV1toV2`.
 @Model
 final class WorkoutSample {
     #Unique<WorkoutSample>([\.workoutUUID, \.timestamp])
     #Index<WorkoutSample>([\.workoutUUID])
 
-    /// Verwijzing naar `HKWorkout.uuid`. Snelle lookup per workout via `@Predicate`-filter.
+    /// Reference to `HKWorkout.uuid`. Fast lookup per workout via a `@Predicate` filter.
     var workoutUUID: UUID
-    /// Begin van het 5s-bucket waarvoor deze sample geldt.
+    /// Start of the 5s bucket this sample applies to.
     var timestamp: Date
 
-    /// Hartslag in slagen per minuut (gemiddelde over het bucket).
+    /// Heart rate in beats per minute (average over the bucket).
     var heartRate: Double?
-    /// Snelheid in m/s (lineair geïnterpoleerd op het bucket-grenspunt).
+    /// Speed in m/s (linearly interpolated at the bucket boundary).
     var speed: Double?
-    /// Vermogen in watt (gemiddelde over het bucket).
+    /// Power in watts (average over the bucket).
     var power: Double?
-    /// Cadans in stappen of omwentelingen per minuut (gemiddelde over het bucket).
+    /// Cadence in steps or revolutions per minute (average over the bucket).
     var cadence: Double?
-    /// Cumulatieve afstand-delta over het bucket in meters.
+    /// Cumulative distance delta over the bucket in metres.
     var distance: Double?
 
     init(workoutUUID: UUID,

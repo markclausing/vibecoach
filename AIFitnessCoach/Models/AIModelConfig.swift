@@ -1,12 +1,12 @@
 import Foundation
 
-/// Epic #35 — Dynamische Gemini model-selectie.
+/// Epic #35 — Dynamic Gemini model selection.
 ///
-/// Deze types mappen 1-op-1 op het JSON-schema dat de Cloudflare Worker
-/// `/ai/models` retourneert. De Worker haalt de lijst live op bij de Google
-/// Generative Language API, filtert op `generateContent`-support en strippet
-/// de `models/`-prefix zodat de `id` direct als `GenerativeModel(name:)` in de
-/// Swift-SDK gebruikt kan worden.
+/// These types map 1-to-1 onto the JSON schema the Cloudflare Worker
+/// `/ai/models` returns. The Worker fetches the list live from the Google
+/// Generative Language API, filters on `generateContent` support and strips
+/// the `models/` prefix so the `id` can be used directly as `GenerativeModel(name:)`
+/// in the Swift SDK.
 struct AIModelDescriptor: Codable, Identifiable, Equatable, Hashable {
     let id: String
     let displayName: String
@@ -18,9 +18,9 @@ struct AIModelCatalog: Codable, Equatable {
     let defaultFallback: String
 }
 
-/// Fallback-catalogus wanneer de Worker (nog) niet bereikbaar is of de
-/// eerste fetch faalt. Reflecteert de modelnamen die vóór Epic #35 hardcoded
-/// in `ChatViewModel` stonden, zodat een offline start niet stuk gaat.
+/// Fallback catalog for when the Worker is (not yet) reachable or the
+/// first fetch fails. Reflects the model names that were hardcoded in
+/// `ChatViewModel` before Epic #35, so an offline start does not break.
 extension AIModelCatalog {
     static let builtInFallback = AIModelCatalog(
         models: [
@@ -31,12 +31,12 @@ extension AIModelCatalog {
         defaultFallback: "gemini-flash-lite-latest"
     )
 
-    /// Epic #53 — gecureerde statische catalogus per provider. Gemini gebruikt de
-    /// dynamische Worker-catalogus (`AIModelCatalogService`) met `builtInFallback`
-    /// als offline-vangnet; OpenAI/Claude/Mistral wijzigen hun modellijst traag
-    /// genoeg dat een hardcoded, door ons gevalideerde lijst volstaat — geen
-    /// extra netwerk-roundtrip nodig. `defaultPrimary` is het capabele model,
-    /// `defaultFallback` het goedkopere model voor de 503/429-waterfall.
+    /// Epic #53 — curated static catalog per provider. Gemini uses the
+    /// dynamic Worker catalog (`AIModelCatalogService`) with `builtInFallback`
+    /// as the offline safety net; OpenAI/Claude/Mistral change their model list
+    /// slowly enough that a hardcoded, validated list suffices — no extra
+    /// network round-trip needed. `defaultPrimary` is the capable model,
+    /// `defaultFallback` the cheaper model for the 503/429 waterfall.
     static func builtIn(for provider: AIProvider) -> AIModelCatalog {
         switch provider {
         case .gemini:
@@ -72,12 +72,12 @@ extension AIModelCatalog {
     }
 }
 
-/// Centrale plek voor de Epic #35 AppStorage-sleutels. Zo voorkomen we
-/// stringtypfouten tussen `SettingsView` en `ChatViewModel`.
+/// Central place for the Epic #35 AppStorage keys. This prevents
+/// string typos between `SettingsView` and `ChatViewModel`.
 enum AIModelAppStorageKey {
-    /// Gemini behoudt de oorspronkelijke Epic #35-keys zodat de bestaande
-    /// modelkeuze van gebruikers intact blijft. Andere providers krijgen een
-    /// eigen, provider-gesuffixte key (zie `primaryKey(for:)`).
+    /// Gemini keeps the original Epic #35 keys so the existing model choice
+    /// of users stays intact. Other providers get their own
+    /// provider-suffixed key (see `primaryKey(for:)`).
     static let primary = "vibecoach_primaryGeminiModel"
     static let fallback = "vibecoach_fallbackGeminiModel"
 
@@ -86,37 +86,37 @@ enum AIModelAppStorageKey {
 
     // MARK: - Per-provider keys (Epic #53)
 
-    /// AppStorage-key voor het primaire model van een provider. Gemini → de
-    /// legacy-key (backward-compat); overige providers → `vibecoach_primaryModel_<raw>`.
+    /// AppStorage key for a provider's primary model. Gemini → the
+    /// legacy key (backward-compat); other providers → `vibecoach_primaryModel_<raw>`.
     static func primaryKey(for provider: AIProvider) -> String {
         provider == .gemini ? primary : "vibecoach_primaryModel_\(provider.rawValue)"
     }
 
-    /// Zie `primaryKey(for:)` — idem voor het fallback-model.
+    /// See `primaryKey(for:)` — same for the fallback model.
     static func fallbackKey(for provider: AIProvider) -> String {
         provider == .gemini ? fallback : "vibecoach_fallbackModel_\(provider.rawValue)"
     }
 
-    /// Provider-aware resolutie van het primaire model, met fallback naar de
-    /// gecureerde provider-default (`AIModelCatalog.builtIn(for:)`).
+    /// Provider-aware resolution of the primary model, with a fallback to the
+    /// curated provider default (`AIModelCatalog.builtIn(for:)`).
     static func resolvedPrimary(for provider: AIProvider, in defaults: UserDefaults = .standard) -> String {
         defaults.string(forKey: primaryKey(for: provider)) ?? AIModelCatalog.builtIn(for: provider).defaultPrimary
     }
 
-    /// Zie `resolvedPrimary(for:)` — idem voor het fallback-model.
+    /// See `resolvedPrimary(for:)` — same for the fallback model.
     static func resolvedFallback(for provider: AIProvider, in defaults: UserDefaults = .standard) -> String {
         defaults.string(forKey: fallbackKey(for: provider)) ?? AIModelCatalog.builtIn(for: provider).defaultFallback
     }
 
     // MARK: - Backward-compat (Gemini)
 
-    /// Leest de door de gebruiker gekozen primaire modelnaam. Behouden no-arg
-    /// variant = Gemini, zodat bestaande call-sites en tests ongewijzigd werken.
+    /// Reads the user's chosen primary model name. The retained no-arg
+    /// variant = Gemini, so existing call sites and tests keep working.
     static func resolvedPrimary(in defaults: UserDefaults = .standard) -> String {
         resolvedPrimary(for: .gemini, in: defaults)
     }
 
-    /// Zie `resolvedPrimary` — idem voor het fallback-model.
+    /// See `resolvedPrimary` — same for the fallback model.
     static func resolvedFallback(in defaults: UserDefaults = .standard) -> String {
         resolvedFallback(for: .gemini, in: defaults)
     }
