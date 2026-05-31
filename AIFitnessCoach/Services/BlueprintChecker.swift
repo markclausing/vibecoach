@@ -2,17 +2,17 @@ import Foundation
 
 // MARK: - Epic 17: BlueprintChecker
 
-/// Vergelijkt de trainingshistorie van de gebruiker met sportwetenschappelijke harde regels
-/// per doeltype. Retourneert een lijst van voldane en openstaande kritieke eisen (milestones).
+/// Compares the user's training history with sports-science hard rules
+/// per goal type. Returns a list of satisfied and outstanding critical requirements (milestones).
 struct BlueprintChecker {
 
     // MARK: - Hardcoded Blueprints
 
-    /// Marathon Blueprint — sportwetenschappelijke regels voor 42.195 km race-voorbereiding.
-    /// Bron: Daniels' Running Formula / Pfitzinger & Douglas periodiseringsmodel.
+    /// Marathon Blueprint — sports-science rules for 42.195 km race preparation.
+    /// Source: Daniels' Running Formula / Pfitzinger & Douglas periodisation model.
     static let marathonBlueprint = GoalBlueprint(
         goalType: .marathon,
-        minLongRunDistance: 32_000,  // 32 km minimale piekduurloop
+        minLongRunDistance: 32_000,  // 32 km minimum peak long run
         taperPeriodWeeks: 3,
         weeklyTrimpTarget: 500,
         essentialWorkouts: [
@@ -33,10 +33,10 @@ struct BlueprintChecker {
         ]
     )
 
-    /// Halve Marathon Blueprint — sportwetenschappelijke regels voor 21.1 km race-voorbereiding.
+    /// Half Marathon Blueprint — sports-science rules for 21.1 km race preparation.
     static let halfMarathonBlueprint = GoalBlueprint(
         goalType: .halfMarathon,
-        minLongRunDistance: 18_000,  // 18 km minimale piekduurloop
+        minLongRunDistance: 18_000,  // 18 km minimum peak long run
         taperPeriodWeeks: 2,
         weeklyTrimpTarget: 350,
         essentialWorkouts: [
@@ -57,11 +57,11 @@ struct BlueprintChecker {
         ]
     )
 
-    /// Fietsdoel Blueprint — sportwetenschappelijke regels voor een meerdaagse fietstocht
-    /// (bijv. Arnhem–Karlsruhe ±400 km over 4 dagen, ~100 km/dag gemiddeld).
+    /// Cycling-goal Blueprint — sports-science rules for a multi-day cycling tour
+    /// (e.g. Arnhem–Karlsruhe ±400 km over 4 days, ~100 km/day average).
     static let cyclingTourBlueprint = GoalBlueprint(
         goalType: .cyclingTour,
-        minLongRunDistance: 100_000,  // 100 km minimale lange duurrit
+        minLongRunDistance: 100_000,  // 100 km minimum long ride
         taperPeriodWeeks: 2,
         weeklyTrimpTarget: 400,
         essentialWorkouts: [
@@ -82,20 +82,20 @@ struct BlueprintChecker {
         ]
     )
 
-    // MARK: - Blueprint detectie
+    // MARK: - Blueprint detection
 
-    /// Detecteert het blueprint-type op basis van sleutelwoorden in de doeltitel.
-    /// Valt terug op de SportCategory als er geen titelmatch is.
+    /// Detects the blueprint type based on keywords in the goal title.
+    /// Falls back to the SportCategory if there is no title match.
     static func detectBlueprintType(for goal: FitnessGoal) -> GoalBlueprintType? {
         let title = goal.title.lowercased()
 
-        // Halve marathon vóór marathon checken — "marathon" zit ook in "halve marathon"
+        // Check half marathon before marathon — "marathon" is also contained in "halve marathon"
         for type in [GoalBlueprintType.halfMarathon, .marathon, .cyclingTour]
             where type.detectionKeywords.contains(where: { title.contains($0) }) {
             return type
         }
 
-        // Fallback op SportCategory
+        // Fall back to SportCategory
         switch goal.sportCategory {
         case .running:  return .marathon
         case .cycling:  return .cyclingTour
@@ -113,21 +113,21 @@ struct BlueprintChecker {
 
     // MARK: - Milestone Check
 
-    /// Vergelijkt de activiteitenhistorie met de kritieke eisen van het blueprint voor één doel.
-    /// - Returns: BlueprintCheckResult met alle milestones, of nil als er geen blueprint van toepassing is.
+    /// Compares the activity history with the blueprint's critical requirements for one goal.
+    /// - Returns: A BlueprintCheckResult with all milestones, or nil if no blueprint applies.
     static func check(goal: FitnessGoal, activities: [ActivityRecord]) -> BlueprintCheckResult? {
         guard let blueprintType = detectBlueprintType(for: goal) else { return nil }
         let bp = blueprint(for: blueprintType)
 
         let milestones: [MilestoneStatus] = bp.essentialWorkouts.map { workout in
-            // Deadline = targetDate minus N weken
+            // Deadline = targetDate minus N weeks
             let deadline = Calendar.current.date(
                 byAdding: .weekOfYear,
                 value: -workout.mustCompleteByWeeksBefore,
                 to: goal.targetDate
             ) ?? goal.targetDate
 
-            // Zoek de vroegste activiteit die aan alle eisen voldoet (sport + afstand + vóór deadline)
+            // Find the earliest activity that meets all requirements (sport + distance + before deadline)
             let satisfyingActivity = activities.first { record in
                 guard record.sportCategory == workout.requiredSportCategory else { return false }
                 guard record.startDate <= deadline else { return false }
@@ -150,8 +150,8 @@ struct BlueprintChecker {
         return BlueprintCheckResult(blueprint: bp, goal: goal, milestones: milestones)
     }
 
-    /// Controleert alle actieve doelen en retourneert resultaten gesorteerd op urgentie
-    /// (doelen met openstaande milestones eerst).
+    /// Checks all active goals and returns results sorted by urgency
+    /// (goals with outstanding milestones first).
     static func checkAllGoals(_ goals: [FitnessGoal], activities: [ActivityRecord]) -> [BlueprintCheckResult] {
         let now = Date()
         return goals

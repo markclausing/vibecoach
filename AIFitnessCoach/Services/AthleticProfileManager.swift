@@ -1,29 +1,29 @@
 import Foundation
 import SwiftData
 
-/// Samenvatting van het berekende profiel
+/// Summary of the computed profile.
 struct AthleticProfile {
     var peakDistanceInMeters: Double
     var peakDurationInSeconds: Int
     var averageWeeklyVolumeInSeconds: Int
     var daysSinceLastTraining: Int
-    var isRecoveryNeeded: Bool // SPRINT 6.3 - Proactieve Waarschuwing status
-    var recoveryReason: String? // Reden voor het hersteladvies (welke regel heeft getriggerd)
-    var averagePacePerKmInSeconds: Int? // SPRINT 9.3 - Gemiddeld hardlooptempo
+    var isRecoveryNeeded: Bool // SPRINT 6.3 — proactive warning status
+    var recoveryReason: String? // Reason for the recovery advice (which rule triggered)
+    var averagePacePerKmInSeconds: Int? // SPRINT 9.3 — average running pace
 }
 
-/// Verantwoordelijk voor het berekenen van het atleetprofiel op basis van historische gegevens in SwiftData.
+/// Responsible for computing the athletic profile from historical data in SwiftData.
 @MainActor
 class AthleticProfileManager {
 
-    // Epic 39 Story 39.1: logger leeft nu in `AppLoggers` — main-actor-isolation
-    // op een `static let` veroorzaakte 70 Swift 6-warnings vanuit @Sendable
-    // HealthKit-callbacks.
+    // Epic 39 Story 39.1: the logger now lives in `AppLoggers` — main-actor isolation
+    // on a `static let` caused 70 Swift 6 warnings from @Sendable
+    // HealthKit callbacks.
 
-    /// Berekent het profiel op basis van de aanwezige `ActivityRecord` elementen.
-    /// Inclusief de Overtraining logica (Sprint 6.3).
-    /// - Parameter context: De `ModelContext` van de app om gegevens uit te lezen.
-    /// - Returns: Een berekend `AthleticProfile` of nil als er onvoldoende data is.
+    /// Computes the profile from the available `ActivityRecord` elements.
+    /// Includes the overtraining logic (Sprint 6.3).
+    /// - Parameter context: The app's `ModelContext` to read data from.
+    /// - Returns: A computed `AthleticProfile`, or nil if there is insufficient data.
     func calculateProfile(context: ModelContext) throws -> AthleticProfile? {
         let fetchDescriptor = FetchDescriptor<ActivityRecord>()
         let allActivities = try context.fetch(fetchDescriptor)
@@ -32,11 +32,11 @@ class AthleticProfileManager {
             return nil
         }
 
-        // 1. Piekprestatie
+        // 1. Peak performance
         let peakDistance = allActivities.max(by: { $0.distance < $1.distance })?.distance ?? 0.0
         let peakDuration = allActivities.max(by: { $0.movingTime < $1.movingTime })?.movingTime ?? 0
 
-        // 2. Dagen sinds de laatste training
+        // 2. Days since the last training
         let mostRecentActivity = allActivities.max(by: { $0.startDate < $1.startDate })
         let daysSinceLast: Int
         if let recentActivity = mostRecentActivity {
@@ -46,7 +46,7 @@ class AthleticProfileManager {
             daysSinceLast = 0
         }
 
-        // 3. Wekelijks gemiddeld volume van de afgelopen 4 weken
+        // 3. Weekly average volume over the past 4 weeks
         let now = Date()
         guard let fourWeeksAgo = Calendar.current.date(byAdding: .weekOfYear, value: -4, to: now) else {
             return AthleticProfile(peakDistanceInMeters: peakDistance,
@@ -62,11 +62,11 @@ class AthleticProfileManager {
         let totalVolumeRecent = recentActivities.reduce(0) { $0 + $1.movingTime }
         let averageWeeklyVolume = totalVolumeRecent / 4
 
-        // 4. SPRINT 6.3: Overtrainingslogica
+        // 4. SPRINT 6.3: overtraining logic
         var needsRecovery = false
         var recoveryReason: String?
 
-        // Bereken volume van *alleen* de afgelopen week
+        // Compute the volume of *only* the past week
         guard let oneWeekAgo = Calendar.current.date(byAdding: .day, value: -7, to: now) else {
             return AthleticProfile(peakDistanceInMeters: peakDistance,
                                    peakDurationInSeconds: peakDuration,
@@ -79,7 +79,7 @@ class AthleticProfileManager {
         let thisWeekActivities = recentActivities.filter { $0.startDate >= oneWeekAgo }
         let thisWeekVolume = thisWeekActivities.reduce(0) { $0 + $1.movingTime }
 
-        // Regel 1: Volume deze week is > 50% hoger dan het gemiddelde
+        // Rule 1: this week's volume is > 50% higher than the average
         if averageWeeklyVolume > 7200 {
             let ratio = Double(thisWeekVolume) / Double(averageWeeklyVolume)
             if ratio > 1.5 {
@@ -89,7 +89,7 @@ class AthleticProfileManager {
             }
         }
 
-        // Regel 2: Traint al 4 of meer dagen op rij
+        // Rule 2: trained 4 or more days in a row
         guard let fourDaysAgo = Calendar.current.date(byAdding: .day, value: -4, to: now) else {
             return AthleticProfile(peakDistanceInMeters: peakDistance, peakDurationInSeconds: peakDuration, averageWeeklyVolumeInSeconds: averageWeeklyVolume, daysSinceLastTraining: max(0, daysSinceLast), isRecoveryNeeded: needsRecovery, recoveryReason: recoveryReason, averagePacePerKmInSeconds: nil)
         }
@@ -100,7 +100,7 @@ class AthleticProfileManager {
             recoveryReason = "\(daysTrainedInLast4Days) dagen op rij getraind. Neem vandaag rust."
         }
 
-        // 5. SPRINT 9.3: Gemiddeld tempo berekenen (baseline pace)
+        // 5. SPRINT 9.3: compute average pace (baseline pace)
         var averagePace: Int?
         if let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: now) {
             let runningActivities = allActivities.filter {
@@ -110,9 +110,9 @@ class AthleticProfileManager {
             let totalRunningDistance = runningActivities.reduce(0.0) { $0 + $1.distance }
             let totalRunningTime = runningActivities.reduce(0) { $0 + $1.movingTime }
 
-            // Controleer op division by zero en zorg voor betrouwbare data (minimaal 1km gelopen)
+            // Guard against division by zero and ensure reliable data (at least 1km run)
             if totalRunningDistance > 1000.0 && totalRunningTime > 0 {
-                // Pace = (tijd in seconden / afstand in meters) * 1000 = seconden per kilometer
+                // Pace = (time in seconds / distance in metres) * 1000 = seconds per kilometre
                 averagePace = Int((Double(totalRunningTime) / totalRunningDistance) * 1000.0)
             }
         }

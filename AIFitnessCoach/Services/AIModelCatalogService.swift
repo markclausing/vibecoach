@@ -1,10 +1,10 @@
 import Foundation
 
-/// Epic #35 — Haalt de catalogus van ondersteunde Gemini-modellen op bij de
-/// Cloudflare Worker (`/ai/models`). Bewust via de Worker en niet direct naar
-/// `generativelanguage.googleapis.com` zodat:
-///  - we alleen door ons gevalideerde modellen tonen in de UI;
-///  - de BYOK-sleutel van de gebruiker niet via een catalogus-call hoeft te reizen.
+/// Epic #35 — Fetches the catalog of supported Gemini models from the
+/// Cloudflare Worker (`/ai/models`). Deliberately via the Worker and not directly to
+/// `generativelanguage.googleapis.com` so that:
+///  - we only show models we have validated in the UI;
+///  - the user's BYOK key does not have to travel via a catalog call.
 enum AIModelCatalogError: LocalizedError {
     case invalidURL
     case transport(Error)
@@ -40,8 +40,8 @@ final class AIModelCatalogService {
         self.clientToken = clientToken
     }
 
-    /// Haalt de catalogus op. Laat de caller zelf beslissen over caching/fallback
-    /// (zie `AIModelCatalog.builtInFallback`).
+    /// Fetches the catalog. Lets the caller decide on caching/fallback
+    /// (see `AIModelCatalog.builtInFallback`).
     func fetchCatalog() async throws -> AIModelCatalog {
         guard let url = URL(string: "\(baseURL)/ai/models") else {
             throw AIModelCatalogError.invalidURL
