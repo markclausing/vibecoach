@@ -3,24 +3,24 @@ import SwiftData
 
 // MARK: - Epic 40 Story 40.4: SessionReclassifier
 //
-// Na een stream-backfill (Strava 40.3 of HK DeepSync 32.1) heeft een record dat eerder
-// alleen avg-HR (of niets) had ineens fijngranulaire samples. De zone-distributie-
-// strategie van `SessionClassifier` (story 33.1a) levert dan een nauwkeuriger sessieType
-// dan de avg-HR-fallback. Deze helper zoekt dergelijke records op en herclassificeert ze.
+// After a stream backfill (Strava 40.3 or HK DeepSync 32.1) a record that earlier
+// only had avg HR (or nothing) suddenly has fine-grained samples. The zone-distribution
+// strategy of `SessionClassifier` (story 33.1a) then yields a more accurate sessionType
+// than the avg-HR fallback. This helper finds such records and reclassifies them.
 //
-// Beschermd:
-//   • `manualSessionTypeOverride == true` — gebruiker heeft zelf gekozen (zie
-//     `WorkoutAnalysisView.setSessionType`); een rerun mag dat nooit overschrijven.
-//   • Records zonder samples — niets te upgraden, dus geen werk te doen.
-//   • Idempotent: als de classifier hetzelfde type teruggeeft als al staat, geen save.
+// Protected:
+//   • `manualSessionTypeOverride == true` — the user chose themselves (see
+//     `WorkoutAnalysisView.setSessionType`); a rerun must never override it.
+//   • Records without samples — nothing to upgrade, so no work to do.
+//   • Idempotent: if the classifier returns the same type as already set, no save.
 //
-// Pure-Swift `decide`-laag is volledig testbaar zonder SwiftData; `rerun` is de
-// SwiftData-action wrapper, identiek patroon aan `ActivityDeduplicator.runDedupe`.
+// The pure-Swift `decide` layer is fully testable without SwiftData; `rerun` is the
+// SwiftData action wrapper, the same pattern as `ActivityDeduplicator.runDedupe`.
 
 enum SessionReclassifier {
 
-    /// Voorgestelde wijziging voor één record. `decide` produceert een lijst hiervan;
-    /// `rerun` past ze toe.
+    /// Proposed change for one record. `decide` produces a list of these;
+    /// `rerun` applies them.
     struct Change {
         let record: ActivityRecord
         let newType: SessionType
@@ -28,33 +28,33 @@ enum SessionReclassifier {
 
     // MARK: Decide
 
-    /// Pure-Swift kern. Loopt door records, vraagt samples op via de geïnjecteerde
-    /// lookup, draait de classifier en levert alleen écht veranderende voorstellen op.
+    /// Pure-Swift core. Loops through records, requests samples via the injected
+    /// lookup, runs the classifier and yields only genuinely changing proposals.
     /// - Parameters:
-    ///   - records: Te overwegen records (typisch alles uit de DB).
-    ///   - maxHeartRate: HRmax voor zone-berekening (Tanaka of fallback).
-    ///   - samplesProvider: Lookup-functie die per record de samples teruggeeft.
-    ///     Lege array = geen samples beschikbaar → record wordt overgeslagen.
-    /// - Returns: Lijst voorgestelde wijzigingen. Records waarvan de classifier
-    ///   `nil` of het bestaande type retourneert, zitten er niet in.
+    ///   - records: Records to consider (typically everything from the DB).
+    ///   - maxHeartRate: HRmax for zone calculation (Tanaka or fallback).
+    ///   - samplesProvider: Lookup function that returns the samples per record.
+    ///     Empty array = no samples available → the record is skipped.
+    /// - Returns: List of proposed changes. Records for which the classifier
+    ///   returns `nil` or the existing type are not included.
     static func decide(records: [ActivityRecord],
                        maxHeartRate: Double,
                        samplesProvider: (ActivityRecord) -> [WorkoutSample]) -> [Change] {
-        // Epic #44 story 44.5: gebruik LTHR uit het profiel als die er is
-        // — Friel-zones zijn preciezer voor atletische gebruikers met afwijkende
-        // LTHR/max-ratio.
+        // Epic #44 story 44.5: use the LTHR from the profile if present
+        // — Friel zones are more precise for athletic users with a deviating
+        // LTHR/max ratio.
         let cachedLTHR = UserProfileService.cachedThreshold(forKey: UserProfileService.lactateThresholdHRKey)?.value
         let classifier = SessionClassifier(maxHeartRate: maxHeartRate, lactateThresholdHR: cachedLTHR)
         var changes: [Change] = []
 
         for record in records {
-            // Manual override: gebruiker heeft het laatste woord — nooit overschrijven.
+            // Manual override: the user has the last word — never override.
             if record.manualSessionTypeOverride == true { continue }
 
             let samples = samplesProvider(record)
-            // Zonder samples valt de classifier terug op avg-HR — die had bij ingest al
-            // gedraaid, dus rerun voegt niets toe. Skip om te voorkomen dat we records
-            // zonder upgrade-potentieel telkens opnieuw verwerken.
+            // Without samples the classifier falls back to avg HR — which already
+            // ran at ingest, so a rerun adds nothing. Skip to avoid reprocessing
+            // records without upgrade potential every time.
             guard !samples.isEmpty else { continue }
 
             let suggested = classifier.classify(
@@ -72,14 +72,14 @@ enum SessionReclassifier {
 
     // MARK: Rerun (SwiftData)
 
-    /// Voert de reclassificatie uit op een ModelContext: schrijft `sessionType` voor
-    /// elke voorgestelde wijziging en saved één keer aan het einde. Idempotent —
-    /// een tweede call op een al-geclassificeerde DB doet niets.
+    /// Performs the reclassification on a ModelContext: writes `sessionType` for
+    /// every proposed change and saves once at the end. Idempotent —
+    /// a second call on an already-classified DB does nothing.
     /// - Parameters:
-    ///   - context: ModelContext om uit te lezen + naar te schrijven.
-    ///   - store: WorkoutSampleStore voor de samples-lookup per record.
-    ///   - maxHeartRate: HRmax voor zone-berekening (Tanaka of fallback).
-    /// - Returns: Aantal geherclassificeerde records.
+    ///   - context: ModelContext to read from and write to.
+    ///   - store: WorkoutSampleStore for the samples lookup per record.
+    ///   - maxHeartRate: HRmax for zone calculation (Tanaka or fallback).
+    /// - Returns: Number of reclassified records.
     @MainActor
     static func rerun(in context: ModelContext,
                       store: WorkoutSampleStore,
@@ -87,8 +87,8 @@ enum SessionReclassifier {
         let descriptor = FetchDescriptor<ActivityRecord>(sortBy: [SortDescriptor(\.startDate, order: .forward)])
         let allRecords = try context.fetch(descriptor)
 
-        // Pre-fetch samples per record. Voor 100-tal records acceptabel; bij 1000+
-        // kunnen we naar een batched-fetch toe.
+        // Pre-fetch samples per record. Acceptable for ~100 records; at 1000+
+        // we can move to a batched fetch.
         var samplesByID: [String: [WorkoutSample]] = [:]
         for record in allRecords {
             if record.manualSessionTypeOverride == true { continue }

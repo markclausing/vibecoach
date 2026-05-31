@@ -2,42 +2,42 @@ import Foundation
 
 // MARK: - Epic #47: PauseDetector
 //
-// Pure-Swift detectie van rust-windows binnen een workout — momenten waar de
-// gebruiker écht stilstaat (verkeerslicht-langer-dan-verkeerslicht, koffiestop,
-// cool-down). Een rust-window is het enige fysiologisch zinnige meet-punt voor
-// HR-recovery: zonder externe load kunnen we de parasympatische HR-drop
-// vergelijken met richtwaardes uit de literatuur.
+// Pure-Swift detection of rest windows within a workout — moments where the
+// user is genuinely still (a traffic light longer than a traffic light, a coffee stop,
+// a cool-down). A rest window is the only physiologically meaningful measurement point for
+// HR recovery: without external load we can compare the parasympathetic HR drop
+// with reference values from the literature.
 //
-// Vervangt de oude globale-piek-+-60s-window-aanpak van `WorkoutPatternDetector`
-// die op continue rides een non-event mat (HR-spike → korte dip → weer trappen).
-// Zie Epic #47 in ROADMAP.md voor de aanleiding.
+// Replaces the old global-peak-+-60s-window approach of `WorkoutPatternDetector`
+// that measured a non-event on continuous rides (HR spike → short dip → pedalling again).
+// See Epic #47 in ROADMAP.md for the rationale.
 //
-// AppStorage-vrij en zonder framework-afhankelijkheden — caller geeft samples in,
-// detector geeft events terug. Volledig unit-testbaar.
+// AppStorage-free and without framework dependencies — the caller passes samples in,
+// the detector returns events. Fully unit-testable.
 
-/// Eén gedetecteerde pauze plus de HR-recovery die erin gemeten is. De caller
-/// (`WorkoutPatternDetector` voor de pin, `WorkoutInsightService` voor de
-/// coach-prompt) kiest zelf wat hij ermee doet.
+/// One detected pause plus the HR recovery measured in it. The caller
+/// (`WorkoutPatternDetector` for the pin, `WorkoutInsightService` for the
+/// coach prompt) decides what to do with it.
 struct PauseRecoveryEvent: Equatable {
-    /// Volledige tijdspanne van de pauze (start van eerste stille sample t/m eind van laatste).
+    /// Full time span of the pause (start of the first still sample to the end of the last).
     let pauseRange: ClosedRange<Date>
-    /// Window waarin we de HR-min hebben gemeten: van de piek-HR-binnen-de-pauze
-    /// tot het pauze-eind. Niet vanaf pauze-start (bij een abrupte stop piekt HR
-    /// vaak nog 5-15s) en niet beperkt tot een vagaal-tijdvenster (bij langere
-    /// pauzes komt de daling vaak pas na 90s op gang).
+    /// The window in which we measured the HR min: from the peak HR within the pause
+    /// to the pause end. Not from the pause start (on an abrupt stop the HR
+    /// often still peaks for 5-15s) and not limited to a vagal time window (on longer
+    /// pauses the drop often only gets going after 90s).
     let measurementWindow: ClosedRange<Date>
-    /// Hoogste HR binnen de pauze — ankerpunt voor de drop-berekening.
+    /// Highest HR within the pause — anchor point for the drop calculation.
     let peakHRInPause: Double
-    /// Laagste HR die in `measurementWindow` (vanaf piek) is gezien.
+    /// Lowest HR seen in `measurementWindow` (from the peak).
     let minHRInWindow: Double
 
-    /// Duur van de pauze in seconden.
+    /// Duration of the pause in seconds.
     var durationSeconds: TimeInterval {
         pauseRange.upperBound.timeIntervalSince(pauseRange.lowerBound)
     }
 
-    /// HR-drop = piek-binnen-pauze − minimum-na-piek. 0 als HR juist steeg na de
-    /// "piek" (HR plateau of opliep tijdens pauze — zelf al een slecht-herstel-signaal).
+    /// HR drop = peak-within-pause − minimum-after-peak. 0 if HR rose after the
+    /// "peak" (HR plateau or climbed during the pause — itself a poor-recovery signal).
     var drop: Double {
         max(0, peakHRInPause - minHRInWindow)
     }
@@ -45,37 +45,38 @@ struct PauseRecoveryEvent: Equatable {
 
 enum PauseDetector {
 
-    /// Minimum-duur voor een "echte" pauze. Bewust boven 30s (verkeerslicht-stops
-    /// waar je meteen weer wegtrapt) en onder 60s (een 50s-pauze geeft al een
-    /// volwaardig signaal). Zie Epic #47 ontwerp-discussie.
+    /// Minimum duration for a "real" pause. Deliberately above 30s (traffic-light stops
+    /// where you pedal off again immediately) and below 60s (a 50s pause already gives
+    /// a full signal). See the Epic #47 design discussion.
     static let minimumPauseSeconds: TimeInterval = 45
 
-    // (Voorheen: `recoveryWindowSeconds = 90` cap vanaf piek. Verwijderd in
-    // Epic #47-followup omdat een 10min-pauze met visueel 40 BPM drop dan als
-    // "3 BPM" werd gerapporteerd — het cool-down-venster kapte af voor de
-    // werkelijke daling op gang kwam. Window loopt nu door tot pauze-eind;
-    // drempels (% van LTHR) regelen welke drops pin-waardig zijn.)
+    // (Previously: `recoveryWindowSeconds = 90` cap from the peak. Removed in
+    // the Epic #47 follow-up because a 10-min pause with a visual 40 BPM drop was then
+    // reported as "3 BPM" — the cool-down window cut off before the
+    // actual drop got going. The window now runs to the pause end;
+    // thresholds (% of LTHR) decide which drops are pin-worthy.)
 
-    /// "Stil"-drempel voor power en cadence. Kleine drift rond 0 (sensor-ruis,
-    /// freewheelen) niet als activiteit interpreteren.
+    /// "Still" threshold for power and cadence. Small drift around 0 (sensor noise,
+    /// freewheeling) should not be interpreted as activity.
     static let stillnessThreshold: Double = 5
 
-    /// Pre-check: een workout moet minimaal dit aantal samples met daadwerkelijke
-    /// activiteit (power>5 OF cadence>5) hebben voordat we überhaupt naar pauzes
-    /// zoeken. Anders zou een sport zonder cadence-sensor (zwemmen) of een rit
-    /// zonder powermeter waar de cadence-data ontbreekt als één lange pauze worden
-    /// geïnterpreteerd, en zou elk HR-zigzag als "pauze-recovery" rapporteren.
+    /// Pre-check: a workout must have at least this many samples with actual
+    /// activity (power>5 OR cadence>5) before we look for pauses
+    /// at all. Otherwise a sport without a cadence sensor (swimming) or a ride
+    /// without a power meter where the cadence data is missing would be
+    /// interpreted as one long pause, and every HR zigzag would be reported as
+    /// "pause recovery".
     static let minimumActivitySamples: Int = 10
 
-    /// Hoofd-detectie. Geeft alle gevonden pauzes met hun gemeten HR-recovery terug,
-    /// gesorteerd op `pauseRange.lowerBound`. Lege array als de workout geen
-    /// detecteerbare activiteit heeft of geen pauzes ≥`minimumPauseSeconds`.
+    /// Main detection. Returns all found pauses with their measured HR recovery,
+    /// sorted by `pauseRange.lowerBound`. Empty array if the workout has no
+    /// detectable activity or no pauses ≥`minimumPauseSeconds`.
     static func detect(in samples: [WorkoutSample]) -> [PauseRecoveryEvent] {
         guard !samples.isEmpty else { return [] }
         let sorted = samples.sorted { $0.timestamp < $1.timestamp }
 
-        // Pre-check: zonder voldoende activiteits-samples is "pauze" een leeg
-        // begrip. Filter sporten zonder bruikbare power/cadence-stream uit.
+        // Pre-check: without enough activity samples "pause" is an empty
+        // concept. Filter out sports without a usable power/cadence stream.
         let activitySamples = sorted.filter { isActive($0) }
         guard activitySamples.count >= minimumActivitySamples else { return [] }
 
@@ -92,7 +93,7 @@ enum PauseDetector {
                 runStart = nil
             }
         }
-        // Pauze tot het einde van de workout (cool-down die in 'still'-state eindigt).
+        // Pause to the end of the workout (a cool-down that ends in the 'still' state).
         if let start = runStart,
            let event = makeEvent(from: sorted, runStart: start, runEnd: sorted.count - 1) {
             events.append(event)
@@ -100,46 +101,46 @@ enum PauseDetector {
         return events
     }
 
-    // MARK: - Sample-classificatie
+    // MARK: - Sample classification
 
-    /// Een sample is "stil" als beide aanwezige intensiteits-signalen onder de
-    /// drempel zitten. `nil`-waarden tellen als "niet bezig" — sport zonder
-    /// powermeter (cadence-only) of zonder cadence-sensor (power-only) wordt zo
-    /// alsnog correct geclassificeerd zolang er ergens in de workout activiteit is.
+    /// A sample is "still" if both present intensity signals are below the
+    /// threshold. `nil` values count as "not active" — a sport without a
+    /// power meter (cadence-only) or without a cadence sensor (power-only) is thus
+    /// still classified correctly as long as there is activity somewhere in the workout.
     private static func isStill(_ sample: WorkoutSample) -> Bool {
         let powerStill = (sample.power ?? 0) < stillnessThreshold
         let cadenceStill = (sample.cadence ?? 0) < stillnessThreshold
         return powerStill && cadenceStill
     }
 
-    /// Sample met daadwerkelijke activiteit — gebruikt voor de pre-check.
+    /// Sample with actual activity — used for the pre-check.
     private static func isActive(_ sample: WorkoutSample) -> Bool {
         if let p = sample.power, p > stillnessThreshold { return true }
         if let c = sample.cadence, c > stillnessThreshold { return true }
         return false
     }
 
-    // MARK: - Event-bouw
+    // MARK: - Event building
 
-    /// Bouwt een `PauseRecoveryEvent` uit een aaneengesloten run van stille samples.
-    /// Returnt nil als de pauze te kort is of geen HR-data bevat.
+    /// Builds a `PauseRecoveryEvent` from a contiguous run of still samples.
+    /// Returns nil if the pause is too short or contains no HR data.
     ///
-    /// Meet-strategie: vind de piek-HR binnen de pauze, meet `peak − min` over
-    /// `[peakTime, pauze.end]`. Reden voor peak-anchoring: bij een abrupte stop
-    /// piekt de HR vaak nog kort vóór 'ie begint te dalen — vanaf het eerste
-    /// pauze-sample meten pakt de plateau-fase, niet de daling. Reden om over de
-    /// hele pauze te meten (i.p.v. een vagaal-tijdvenster van 60-90s): bij een
-    /// langere koffie-/foto-stop komt de werkelijke daling vaak pas na de eerste
-    /// 90s op gang. Een 10-min pauze met visueel 40 BPM drop werd voorheen als
-    /// "3 BPM" gerapporteerd omdat het venster afkapte. Drempels (% van LTHR in
-    /// `WorkoutPatternDetector`) regelen welke drops pin-waardig zijn.
+    /// Measurement strategy: find the peak HR within the pause, measure `peak − min` over
+    /// `[peakTime, pause.end]`. Reason for peak-anchoring: on an abrupt stop
+    /// the HR often still peaks briefly before it starts to drop — measuring from the first
+    /// pause sample captures the plateau phase, not the drop. Reason to measure over
+    /// the whole pause (instead of a vagal time window of 60-90s): on a
+    /// longer coffee/photo stop the actual drop often only gets going after the first
+    /// 90s. A 10-min pause with a visual 40 BPM drop was previously reported as
+    /// "3 BPM" because the window cut off. Thresholds (% of LTHR in
+    /// `WorkoutPatternDetector`) decide which drops are pin-worthy.
     private static func makeEvent(from samples: [WorkoutSample], runStart: Int, runEnd: Int) -> PauseRecoveryEvent? {
         let startSample = samples[runStart]
         let endSample = samples[runEnd]
         let duration = endSample.timestamp.timeIntervalSince(startSample.timestamp)
         guard duration >= minimumPauseSeconds else { return nil }
 
-        // Stap 1: vind de piek-HR-binnen-de-pauze.
+        // Step 1: find the peak-HR-within-the-pause.
         var peakHR: Double = 0
         var peakIndex: Int?
         for i in runStart...runEnd {
@@ -152,8 +153,8 @@ enum PauseDetector {
         guard let pkIdx = peakIndex else { return nil }
         let peakSample = samples[pkIdx]
 
-        // Stap 2: minimum-HR binnen [peakTime, pauze.end] — over de hele rest van
-        // de pauze, niet beperkt tot 60-90s.
+        // Step 2: minimum HR within [peakTime, pause.end] — over the whole rest of
+        // the pause, not limited to 60-90s.
         var minHR: Double = peakHR
         for i in pkIdx...runEnd {
             guard let hr = samples[i].heartRate, hr > 0 else { continue }
