@@ -1,27 +1,27 @@
 import Foundation
 
-// MARK: - Epic 23: TRIMPTranslator — van abstract getal naar concrete activiteit
+// MARK: - Epic 23: TRIMPTranslator — from abstract number to concrete activity
 
-/// Vertaalt een TRIMP-hoeveelheid naar een begrijpelijke tijds- of afstandsindicatie.
+/// Translates a TRIMP amount into an understandable time or distance indication.
 ///
-/// Achtergrond: de Banister TRIMP-formule levert waarden die afhangen van hartslagzone.
-/// Vuistregel op basis van gemiddelde atleet (rusthartslag 60, max 190):
-///   Zone 2 (65–75% HRmax, ~145 bpm) ≈ 2,0 TRIMP/min
-///   Zone 3 (75–85% HRmax, ~160 bpm) ≈ 3,0 TRIMP/min
-///   Zone 4 (85–95% HRmax, ~170 bpm) ≈ 4,0 TRIMP/min
+/// Background: the Banister TRIMP formula yields values that depend on heart-rate zone.
+/// Rule of thumb based on an average athlete (resting HR 60, max 190):
+///   Zone 2 (65–75% HRmax, ~145 bpm) ≈ 2.0 TRIMP/min
+///   Zone 3 (75–85% HRmax, ~160 bpm) ≈ 3.0 TRIMP/min
+///   Zone 4 (85–95% HRmax, ~170 bpm) ≈ 4.0 TRIMP/min
 enum TRIMPTranslator {
 
-    /// TRIMP per minuut per zone (gemiddelde Banister-benadering).
+    /// TRIMP per minute per zone (average Banister approximation).
     static let zone2PerMin: Double = 2.0
     static let zone4PerMin: Double = 4.0
 
-    // MARK: - Publieke API
+    // MARK: - Public API
 
-    /// Geeft een korte, leesbare vertaling van een TRIMP-waarde naar praktische duur.
+    /// Returns a short, readable translation of a TRIMP value into a practical duration.
     /// - Parameters:
-    ///   - trimp: De te vertalen TRIMP-hoeveelheid (bijv. een weekelijks tekort).
-    ///   - blueprintType: Bepaalt de sportspecifieke labels (fiets vs. hardloop).
-    /// - Returns: bijv. "+5 min rustige rit of +3 min tempo-rit"
+    ///   - trimp: The TRIMP amount to translate (e.g. a weekly deficit).
+    ///   - blueprintType: Determines the sport-specific labels (cycling vs. running).
+    /// - Returns: e.g. "+5 min rustige rit of +3 min tempo-rit"
     static func translate(_ trimp: Double, for blueprintType: GoalBlueprintType) -> String {
         let zone2Min = Int((trimp / zone2PerMin).rounded(.up))
         let zone4Min = Int((trimp / zone4PerMin).rounded(.up))
@@ -36,14 +36,14 @@ enum TRIMPTranslator {
             hardLabel  = "intervaltraining (Z4)"
         }
 
-        // Toon alleen de zone2-versie als beide gelijk zijn (bij kleine TRIMP-waarden)
+        // Show only the zone2 version when both are equal (for small TRIMP values)
         if zone2Min == zone4Min {
             return "+\(zone2Min) min \(lightLabel)"
         }
         return "+\(zone2Min) min \(lightLabel) of +\(zone4Min) min \(hardLabel)"
     }
 
-    /// Volledige zin voor gebruik in de UI-banner:
+    /// Full sentence for use in the UI banner:
     /// "Circa 8 TRIMP/week nodig (bijv. +4 min rustige rit of +2 min tempo-rit)."
     static func bannerText(_ trimp: Double, for blueprintType: GoalBlueprintType) -> String {
         let trimpStr = Int(trimp.rounded())
@@ -51,7 +51,7 @@ enum TRIMPTranslator {
         return "Circa \(trimpStr) extra TRIMP/week (bijv. \(hint))."
     }
 
-    /// Compacte hint voor in de coach-prompt:
+    /// Compact hint for the coach prompt:
     /// "8 TRIMP ≈ +4 min rustige rit of +2 min tempo-rit"
     static func coachHint(_ trimp: Double, for blueprintType: GoalBlueprintType) -> String {
         let trimpStr = Int(trimp.rounded())
@@ -62,134 +62,134 @@ enum TRIMPTranslator {
 
 // MARK: - Epic 23: Blueprint Analysis & Future Projections — Sprint 1: Gap Analysis
 
-/// Uitbreiding van GoalBlueprint met sportwetenschappelijke wekelijkse km-target.
+/// Extension of GoalBlueprint with a sports-science weekly km target.
 extension GoalBlueprint {
-    /// Wekelijkse km-target in de opbouwfase (niet gecorrigeerd voor periodiseringsfase).
+    /// Weekly km target in the build phase (not corrected for the periodization phase).
     var weeklyKmTarget: Double {
         switch goalType {
         case .marathon:     return 55.0   // Pfitzinger 18/55
         case .halfMarathon: return 40.0
-        case .cyclingTour:  return 180.0  // Arnhem–Karlsruhe ~400 km / 4 dagen
+        case .cyclingTour:  return 180.0  // Arnhem–Karlsruhe ~400 km / 4 days
         }
     }
 }
 
-/// De cumulatieve trainingsachterstand (of voorsprong) binnen de huidige trainingsfase.
+/// The cumulative training deficit (or surplus) within the current training phase.
 ///
-/// De berekening kijkt NIET naar de wekelijkse reset, maar accumuleert het totale tekort
-/// vanaf het begin van de huidige fase (bijv. Build Phase week 1) tot vandaag.
-/// Als je vorige week 20 km te weinig deed, begint week 2 al 20 km in de min.
+/// The calculation does NOT look at the weekly reset, but accumulates the total deficit
+/// from the start of the current phase (e.g. Build Phase week 1) up to today.
+/// If you did 20 km too little last week, week 2 already starts 20 km in the red.
 struct BlueprintGap {
     let goal: FitnessGoal
     let blueprintType: GoalBlueprintType
     let blueprint: GoalBlueprint
 
-    // MARK: - Fase context
+    // MARK: - Phase context
 
-    /// De huidige trainingsfase (Base / Build / Peak / Taper).
+    /// The current training phase (Base / Build / Peak / Taper).
     let currentPhase: TrainingPhase
 
-    /// Datum waarop de huidige fase begon (max van fasestart en goal.createdAt).
+    /// Date on which the current phase started (max of phase start and goal.createdAt).
     let phaseStartDate: Date
 
-    /// Datum waarop de huidige fase eindigt (overgang naar volgende fase).
+    /// Date on which the current phase ends (transition to the next phase).
     let phaseEndDate: Date
 
-    /// Huidig weeknummer binnen de fase (1-gebaseerd).
+    /// Current week number within the phase (1-based).
     let phaseWeekNumber: Int
 
-    /// Totaal aantal weken in de huidige fase.
+    /// Total number of weeks in the current phase.
     let phaseTotalWeeks: Int
 
-    // MARK: - TRIMP (cumulatief binnen fase)
+    // MARK: - TRIMP (cumulative within the phase)
 
-    /// Verwacht cumulatief TRIMP vanaf fasestart tot vandaag (lineair geïnterpoleerd).
+    /// Expected cumulative TRIMP from phase start until today (linearly interpolated).
     let requiredTRIMPToDate: Double
 
-    /// Werkelijk behaald cumulatief TRIMP vanaf fasestart tot vandaag.
+    /// Actually achieved cumulative TRIMP from phase start until today.
     let actualTRIMPToDate: Double
 
-    /// Totale TRIMP-target voor de gehele fase (= referentie voor de volle balk).
+    /// Total TRIMP target for the entire phase (= reference for the full bar).
     let totalPhaseTRIMPTarget: Double
 
-    // MARK: - Km (cumulatief binnen fase)
+    // MARK: - Km (cumulative within the phase)
 
-    /// Verwachte cumulatieve km vanaf fasestart tot vandaag (lineair geïnterpoleerd).
+    /// Expected cumulative km from phase start until today (linearly interpolated).
     let requiredKmToDate: Double
 
-    /// Werkelijke cumulatieve km vanaf fasestart tot vandaag.
+    /// Actual cumulative km from phase start until today.
     let actualKmToDate: Double
 
-    /// Totale km-target voor de gehele fase.
+    /// Total km target for the entire phase.
     let totalPhaseKmTarget: Double
 
-    // MARK: - Afgeleide waarden
+    // MARK: - Derived values
 
-    /// Verschil TRIMP: positief = achterstand, negatief = voorsprong.
+    /// TRIMP difference: positive = behind, negative = ahead.
     var trimpGap: Double { requiredTRIMPToDate - actualTRIMPToDate }
 
-    /// Verschil km: positief = achterstand, negatief = voorsprong.
+    /// Km difference: positive = behind, negative = ahead.
     var kmGap: Double { requiredKmToDate - actualKmToDate }
 
-    /// Weken resterend tot de doeldatum (DST-veilig).
+    /// Weeks remaining until the target date (DST-safe).
     var weeksRemaining: Double { goal.weeksRemaining }
 
-    // MARK: - Voortgangspercentages (t.o.v. VOLLEDIGE fase, niet dagdoel)
-    // Zo staat de balk op 0% aan het begin van de fase en op 100% aan het einde,
-    // ongeacht hoeveel tijd er al verstreken is.
+    // MARK: - Progress percentages (relative to the FULL phase, not the daily goal)
+    // This way the bar sits at 0% at the start of the phase and at 100% at the end,
+    // regardless of how much time has already elapsed.
 
-    /// Hoeveel van het totale fase-TRIMP je al hebt behaald (0.0 – 1.0).
+    /// How much of the total phase TRIMP you've already achieved (0.0 – 1.0).
     var trimpProgressPct: Double {
         guard totalPhaseTRIMPTarget > 0 else { return 0 }
         return min(1.0, actualTRIMPToDate / totalPhaseTRIMPTarget)
     }
 
-    /// Waar je vandaag op de balk zou moeten staan — de "ghost" positie (0.0 – 1.0).
+    /// Where you should be on the bar today — the "ghost" position (0.0 – 1.0).
     var trimpReferencePct: Double {
         guard totalPhaseTRIMPTarget > 0 else { return 0 }
         return min(1.0, requiredTRIMPToDate / totalPhaseTRIMPTarget)
     }
 
-    /// Hoeveel van de totale fase-km je al hebt behaald (0.0 – 1.0).
+    /// How much of the total phase km you've already achieved (0.0 – 1.0).
     var kmProgressPct: Double {
         guard totalPhaseKmTarget > 0 else { return 0 }
         return min(1.0, actualKmToDate / totalPhaseKmTarget)
     }
 
-    /// Waar je vandaag op de km-balk zou moeten staan — de "ghost" positie (0.0 – 1.0).
+    /// Where you should be on the km bar today — the "ghost" position (0.0 – 1.0).
     var kmReferencePct: Double {
         guard totalPhaseKmTarget > 0 else { return 0 }
         return min(1.0, requiredKmToDate / totalPhaseKmTarget)
     }
 
-    // MARK: - Drempelwaarden
+    // MARK: - Thresholds
 
     var isBehindOnTRIMP: Bool { trimpGap > requiredTRIMPToDate * 0.10 }
     var isBehindOnKm: Bool { kmGap > requiredKmToDate * 0.10 }
 
-    // MARK: - TRIMPTranslator: bijsturingshints
+    // MARK: - TRIMPTranslator: catch-up hints
 
-    /// Extra TRIMP/week nodig om het fase-tekort in te halen (0 als niet achter).
+    /// Extra TRIMP/week needed to make up the phase deficit (0 if not behind).
     var extraTRIMPPerWeek: Double {
         guard isBehindOnTRIMP, weeksRemaining > 0 else { return 0 }
         return trimpGap / weeksRemaining
     }
 
-    /// Leesbare bijsturingtekst voor de UI-banner, inclusief praktische tijdsindicatie.
-    /// Voorbeeld: "Circa 8 extra TRIMP/week (bijv. +4 min rustige rit of +2 min tempo-rit)."
+    /// Readable catch-up text for the UI banner, including a practical time indication.
+    /// Example: "Circa 8 extra TRIMP/week (bijv. +4 min rustige rit of +2 min tempo-rit)."
     var catchUpHint: String? {
         guard isBehindOnTRIMP, extraTRIMPPerWeek > 0.5 else { return nil }
         return TRIMPTranslator.bannerText(extraTRIMPPerWeek, for: blueprintType)
     }
 
-    // MARK: - UI-teksten
+    // MARK: - UI texts
 
-    /// Label boven de voortgangsbalk: "Voortgang Build Phase (Week 3/8)"
+    /// Label above the progress bar: "Voortgang Build Phase (Week 3/8)"
     var phaseProgressLabel: String {
         "\(currentPhase.displayName) (Week \(phaseWeekNumber)/\(phaseTotalWeeks))"
     }
 
-    /// Status tekst TRIMP — cumulatief in de fase.
+    /// Status text TRIMP — cumulative in the phase.
     var trimpStatusLine: String {
         let gapStr = String(format: "%.0f", abs(trimpGap))
         if trimpGap > 5 {
@@ -201,7 +201,7 @@ struct BlueprintGap {
         }
     }
 
-    /// Status tekst km — cumulatief in de fase.
+    /// Status text km — cumulative in the phase.
     var kmStatusLine: String? {
         guard totalPhaseKmTarget > 0 else { return nil }
         let gapKm = String(format: "%.0f", abs(kmGap))
@@ -214,7 +214,7 @@ struct BlueprintGap {
         }
     }
 
-    // MARK: - Coach context (AI-prompt injectie)
+    // MARK: - Coach context (AI-prompt injection)
 
     var coachContext: String {
         let weeksLeftStr = String(format: "%.1f", weeksRemaining)
@@ -229,8 +229,8 @@ struct BlueprintGap {
             lines.append(kmLine)
         }
         if isBehindOnTRIMP, extraTRIMPPerWeek > 0.5 {
-            // Vertaal het abstracte TRIMP-getal naar een concrete tijdsindicatie voor de coach.
-            // De coach MOET de vertaling gebruiken — nooit een los TRIMP-getal zonder uitleg.
+            // Translate the abstract TRIMP number into a concrete time indication for the coach.
+            // The coach MUST use the translation — never a bare TRIMP number without explanation.
             let hint = TRIMPTranslator.coachHint(extraTRIMPPerWeek, for: blueprintType)
             lines.append("📈 VOLUME-BIJSTURING: Om het fase-tekort in te halen is \(hint) extra per week nodig. Vertaal dit altijd naar een concrete aanpassing van een bestaande training: bijv. 'verleng je zaterdag-rit met X minuten' of 'voeg een extra duurloop toe op dinsdag'.")
         }
@@ -254,7 +254,7 @@ struct ProgressService {
             .sorted { $0.trimpGap > $1.trimpGap }
     }
 
-    // MARK: - Interne berekening
+    // MARK: - Internal calculation
 
     private static func analyzeGap(for goal: FitnessGoal, activities: [ActivityRecord]) -> BlueprintGap? {
         guard let blueprintType = BlueprintChecker.detectBlueprintType(for: goal) else { return nil }
@@ -264,19 +264,19 @@ struct ProgressService {
         let weeksRemaining = goal.weeksRemaining(from: now)
         let phase = TrainingPhase.calculate(weeksRemaining: weeksRemaining)
 
-        // Sport-type voor afstandsberekening
+        // Sport type for the distance calculation
         let targetSport: SportCategory
         switch blueprintType {
         case .marathon, .halfMarathon: targetSport = .running
         case .cyclingTour:             targetSport = .cycling
         }
 
-        // Bereken de begin- en einddatum van de huidige fase
-        // De faseovergangen zijn gedefinieerd in TrainingPhase.calculate:
-        //   tapering    < 2 weken
-        //   peakPhase   2–4 weken
-        //   buildPhase  4–12 weken
-        //   baseBuilding ≥ 12 weken
+        // Compute the start and end date of the current phase.
+        // The phase transitions are defined in TrainingPhase.calculate:
+        //   tapering    < 2 weeks
+        //   peakPhase   2–4 weeks
+        //   buildPhase  4–12 weeks
+        //   baseBuilding ≥ 12 weeks
         let calendar = Calendar.current
         let (phaseStartDate, phaseEndDate) = phaseDateRange(
             phase: phase,
@@ -291,26 +291,26 @@ struct ProgressService {
         let phaseTotalWeeks   = phaseDurationDays / 7.0
         let elapsedWeeksInPhase = elapsedDaysInPhase / 7.0
 
-        // Weeknummer binnen de fase (1-gebaseerd, max is phaseTotalWeeks)
+        // Week number within the phase (1-based, max is phaseTotalWeeks)
         let phaseWeekNumber   = max(1, Int(ceil(elapsedWeeksInPhase)))
         let phaseTotalWeeksInt = max(1, Int(ceil(phaseTotalWeeks)))
 
-        // Fase-gecorrigeerde wekelijkse TRIMP-target (blueprint × fase-multiplier)
+        // Phase-corrected weekly TRIMP target (blueprint × phase multiplier)
         let adjustedWeeklyTRIMP = blueprint.weeklyTrimpTarget * phase.multiplier
 
-        // Totale TRIMP-target voor de hele fase
+        // Total TRIMP target for the whole phase
         let totalPhaseTRIMP = adjustedWeeklyTRIMP * phaseTotalWeeks
 
-        // Verwacht cumulatief TRIMP vandaag = lineair geïnterpoleerd
+        // Expected cumulative TRIMP today = linearly interpolated
         let requiredTRIMP = adjustedWeeklyTRIMP * elapsedWeeksInPhase
 
-        // Werkelijk verdiend TRIMP in deze fase
+        // Actually earned TRIMP in this phase
         let phaseActivities = activities.filter {
             $0.startDate >= phaseStartDate && $0.startDate <= now
         }
         let actualTRIMP = phaseActivities.compactMap { $0.trimp }.reduce(0, +)
 
-        // Km-berekening (fase-gewogen: km-target × fase-multiplier voor fietsen/lopen)
+        // Km calculation (phase-weighted: km target × phase multiplier for cycling/running)
         let adjustedWeeklyKm = blueprint.weeklyKmTarget * phase.multiplier
         let totalPhaseKm     = adjustedWeeklyKm * phaseTotalWeeks
         let requiredKm       = adjustedWeeklyKm * elapsedWeeksInPhase
@@ -337,12 +337,12 @@ struct ProgressService {
         )
     }
 
-    /// Berekent de startdatum en einddatum van een trainingsfase op basis van de doeldatum.
-    /// De faseovergangen zijn gesynchroniseerd met TrainingPhase.calculate:
-    ///   baseBuilding  → eindigt 12 weken voor de race
-    ///   buildPhase    → eindigt 4 weken voor de race
-    ///   peakPhase     → eindigt 2 weken voor de race
-    ///   tapering      → eindigt op de racedag
+    /// Computes the start and end date of a training phase based on the target date.
+    /// The phase transitions are synchronized with TrainingPhase.calculate:
+    ///   baseBuilding  → ends 12 weeks before the race
+    ///   buildPhase    → ends 4 weeks before the race
+    ///   peakPhase     → ends 2 weeks before the race
+    ///   tapering      → ends on race day
     private static func phaseDateRange(
         phase: TrainingPhase,
         targetDate: Date,
@@ -355,7 +355,7 @@ struct ProgressService {
         switch phase {
         case .baseBuilding:
             end          = calendar.date(byAdding: .weekOfYear, value: -12, to: targetDate) ?? targetDate
-            nominalStart = goalCreatedAt  // Base begint bij aanmaken doel
+            nominalStart = goalCreatedAt  // Base starts when the goal is created
         case .buildPhase:
             end          = calendar.date(byAdding: .weekOfYear, value: -4, to: targetDate) ?? targetDate
             nominalStart = calendar.date(byAdding: .weekOfYear, value: -12, to: targetDate) ?? targetDate
@@ -367,8 +367,8 @@ struct ProgressService {
             nominalStart = calendar.date(byAdding: .weekOfYear, value: -2, to: targetDate) ?? targetDate
         }
 
-        // Als het doel aangemaakt werd ná de nominale fasestart, gebruik createdAt als start.
-        // Dit voorkomt dat activiteiten van vóór het doel meegeteld worden.
+        // If the goal was created after the nominal phase start, use createdAt as the start.
+        // This prevents activities from before the goal being counted.
         let start = max(nominalStart, goalCreatedAt)
         return (start, end)
     }
