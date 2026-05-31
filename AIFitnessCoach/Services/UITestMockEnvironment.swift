@@ -3,52 +3,52 @@ import Foundation
 
 // MARK: - Sprint 26.1: UI Test Mock Environment
 
-/// Centrale mock-omgeving voor XCUITest E2E-tests.
+/// Central mock environment for XCUITest E2E tests.
 ///
-/// Wordt actief als de app gestart is met het `-UITesting` launch argument.
-/// Injecteert reproduceerbare testdata in UserDefaults zodat alle views
-/// deterministisch gedrag vertonen — zonder live HealthKit-, Strava- of Gemini-calls.
+/// Active when the app is started with the `-UITesting` launch argument.
+/// Injects reproducible test data into UserDefaults so all views
+/// behave deterministically — without live HealthKit, Strava or Gemini calls.
 enum UITestMockEnvironment {
 
     // MARK: - Setup
 
-    /// Hoofdingang: zet de volledige mock-omgeving op.
-    /// Aangeroepen vanuit AIFitnessCoachApp.init() als `-UITesting` actief is.
+    /// Main entry point: sets up the full mock environment.
+    /// Called from AIFitnessCoachApp.init() when `-UITesting` is active.
     static func setup() {
         let defaults = UserDefaults.standard
 
-        // Als -ResetState meegegeven is: wis alle state zodat de onboarding opnieuw
-        // vanaf nul begint (voor de Full Onboarding Flow test).
-        // Epic #31 Sprint 31.1: poortwachter gemigreerd naar `hasCompletedOnboarding`.
+        // If -ResetState is passed: clear all state so onboarding starts
+        // from scratch again (for the Full Onboarding Flow test).
+        // Epic #31 Sprint 31.1: gatekeeper migrated to `hasCompletedOnboarding`.
         if ProcessInfo.processInfo.arguments.contains("-ResetState") {
             resetAllState(defaults: defaults)
-            // hasCompletedOnboarding blijft na reset op false → OnboardingView wordt getoond.
+            // hasCompletedOnboarding stays false after reset → OnboardingView is shown.
         } else {
-            // Geen reset: sla de onboarding over zodat de TabView direct zichtbaar is.
+            // No reset: skip onboarding so the TabView is immediately visible.
             defaults.set(true, forKey: "hasCompletedOnboarding")
         }
 
-        // Zet de Vibe Score vast op 82 (Optimaal Hersteld) — Epic 14.4 cache.
+        // Pin the Vibe Score to 82 (Optimally Recovered) — Epic 14.4 cache.
         defaults.set(
             "Vibe Score vandaag: 82/100 (Optimaal Hersteld). Slaap: 7u 45m. HRV: 62.5 ms.",
             forKey: "vibecoach_todayVibeScoreContext"
         )
 
-        // Forceer het weer naar zonnig 20°C — Open-Meteo bypass via cache.
+        // Force the weather to sunny 20°C — Open-Meteo bypass via cache.
         defaults.set(
             "• Vandaag: Helder, 18–20°C, neerslag 0%, wind 8 km/u\n• Morgen: Helder, 17–20°C, neerslag 0%, wind 10 km/u",
             forKey: "vibecoach_weatherContext"
         )
 
-        // Zet een dummy API-sleutel zodat de Coach tab de chatinterface toont
-        // in plaats van de 'NoAPIKeyView'.
-        // C-02: de sleutel staat in de Keychain, niet meer in UserDefaults.
-        // Epic #53: UI-tests draaien op de default-provider (Gemini).
+        // Set a dummy API key so the Coach tab shows the chat interface
+        // instead of the 'NoAPIKeyView'.
+        // C-02: the key lives in the Keychain, no longer in UserDefaults.
+        // Epic #53: UI tests run on the default provider (Gemini).
         if UserAPIKeyStore.read(for: .gemini).isEmpty {
             UserAPIKeyStore.write("test-ui-mock-key-do-not-call-api", for: .gemini)
         }
 
-        // Periodisatiecontext (voor Dashboard verificatie in Test 4).
+        // Periodisation context (for Dashboard verification in Test 4).
         defaults.set(
             "• Doel 'Marathon Amsterdam' — Fase: Build Phase · 12 weken resterend",
             forKey: "vibecoach_periodizationContext"
@@ -59,14 +59,14 @@ enum UITestMockEnvironment {
 
     // MARK: - Reset
 
-    /// Wist alle app-specifieke UserDefaults-sleutels zodat de app als nieuw start.
+    /// Clears all app-specific UserDefaults keys so the app starts fresh.
     static func resetAllState(defaults: UserDefaults) {
         let keysToReset = [
             "hasCompletedOnboarding",
             "vibecoach_todayVibeScoreContext",
             "vibecoach_weatherContext",
-            // C-02: legacy sleutel — blijft in de reset-lijst zodat een mogelijke
-            // niet-gemigreerde restwaarde ook tijdens tests weggepoetst wordt.
+            // C-02: legacy key — stays in the reset list so a possible
+            // non-migrated leftover value is also wiped during tests.
             UserAPIKeyStore.legacyUserDefaultsKey,
             "vibecoach_aiProvider",
             "vibecoach_periodizationContext",
@@ -84,8 +84,8 @@ enum UITestMockEnvironment {
             "selectedDataSource"
         ]
         keysToReset.forEach { defaults.removeObject(forKey: $0) }
-        // C-02: wis ook de Keychain-entries zodat een -ResetState run écht blanco
-        // start. Epic #53: per provider + de legacy single-key.
+        // C-02: also clear the Keychain entries so a -ResetState run truly starts
+        // blank. Epic #53: per provider + the legacy single key.
         UserAPIKeyStore.delete()
         AIProvider.allCases.forEach { UserAPIKeyStore.delete(for: $0) }
         AppLoggers.uiTestMock.info("State gereset — \(keysToReset.count, privacy: .public) sleutels gewist (+ Keychain)")
@@ -94,18 +94,18 @@ enum UITestMockEnvironment {
 
 // MARK: - Mock LLM Model
 
-/// Mock implementatie van GenerativeModelProtocol voor XCUITest E2E-tests.
+/// Mock implementation of GenerativeModelProtocol for XCUITest E2E tests.
 ///
-/// Retourneert na 1 seconde een hardcoded JSON-response in plaats van de Gemini API
-/// aan te roepen. Dit bespaart kosten en maakt tests netwerk-onafhankelijk.
+/// Returns a hardcoded JSON response after 1 second instead of calling the Gemini API.
+/// This saves cost and makes tests network-independent.
 ///
-/// De response bevat de sleutelzinnen die de E2E-tests op verifiëren:
-/// - "voorkeur opgeslagen" → Coach Memory test (maandag-bericht)
-/// - "kuit" → Coach Memory test (kuit-blessure bericht)
+/// The response contains the key phrases the E2E tests verify on:
+/// - "voorkeur opgeslagen" → Coach Memory test (Monday message)
+/// - "kuit" → Coach Memory test (calf-injury message)
 class UITestMockGenerativeModel: GenerativeModelProtocol {
 
-    /// Hardcoded JSON-response die de coach teruggeeft in test-modus.
-    /// Bevat bewust de verificatiezinnen voor Coach Memory tests.
+    /// Hardcoded JSON response the coach returns in test mode.
+    /// Deliberately contains the verification phrases for the Coach Memory tests.
     static let hardcodedResponse = """
     {
         "motivation": "Begrepen! Ik heb je voorkeur opgeslagen: je kunt niet op maandag trainen. Je kuit-klacht is gelogd en ik houd rekening met herstel. Je Vibe Score van 82 geeft aan dat je optimaal hersteld bent voor training.",
@@ -131,7 +131,7 @@ class UITestMockGenerativeModel: GenerativeModelProtocol {
     """
 
     func generateContent(_ parts: [AIPromptPart]) async throws -> String? {
-        // Simuleer 1 seconde netwerklatentie — realistisch en snel genoeg voor tests.
+        // Simulate 1 second of network latency — realistic and fast enough for tests.
         try await Task.sleep(nanoseconds: 1_000_000_000)
         return Self.hardcodedResponse
     }

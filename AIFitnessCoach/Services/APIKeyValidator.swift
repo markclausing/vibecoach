@@ -1,46 +1,46 @@
 import Foundation
 import GoogleGenerativeAI
 
-/// Resultaat van een minimale validatie-ping op een door de gebruiker ingevoerde
-/// Gemini API-sleutel. We onderscheiden de scenario's waar de UI verschillend op
-/// moet reageren: echt ongeldig (gebruiker corrigeren), rate-limited (later nog
-/// eens), netwerkfout (offline), of onbekend (fallback-bericht).
+/// Result of a minimal validation ping on a user-entered
+/// Gemini API key. We distinguish the scenarios the UI must react to differently:
+/// genuinely invalid (have the user correct it), rate-limited (try later),
+/// network error (offline), or unknown (fallback message).
 enum APIKeyValidationResult: Equatable {
-    /// De sleutel werkt — het model accepteerde hem.
+    /// The key works — the model accepted it.
     case valid
-    /// Google gaf een `invalidAPIKey`-fout terug.
+    /// Google returned an `invalidAPIKey` error.
     case invalidKey
-    /// Geen netwerk of timeout — we kunnen geen uitspraak doen.
+    /// No network or timeout — we can't make a judgement.
     case network
-    /// Model is overbelast (503/429). Sleutel kan prima geldig zijn —
-    /// de gebruiker moet het later opnieuw proberen.
+    /// The model is overloaded (503/429). The key may well be valid —
+    /// the user should try again later.
     case rateLimited
-    /// Alle andere foutpaden — we tonen de originele foutmelding verkort.
+    /// All other error paths — we show the original error message, shortened.
     case unknown(String)
 }
 
-/// Epic #31 / Sprint 31.7: Valideert BYOK API-sleutels met een minimale ping.
+/// Epic #31 / Sprint 31.7: validates BYOK API keys with a minimal ping.
 ///
-/// We gebruiken uitsluitend `gemini-flash-latest` — exact hetzelfde model als
-/// `ChatViewModel.buildGenerativeModel` in productie. Google's `-latest` alias
-/// wijst altijd naar de meest recente stabiele flash-versie en kent in praktijk
-/// geen overload-pieken, waardoor een waterfall met een tweede model overbodig is.
+/// We use only `gemini-flash-latest` — the exact same model as
+/// `ChatViewModel.buildGenerativeModel` in production. Google's `-latest` alias
+/// always points to the most recent stable flash version and in practice knows
+/// no overload spikes, making a waterfall with a second model unnecessary.
 struct APIKeyValidator {
 
-    /// Minimale tekst om verbruik te beperken (1–2 tokens is voldoende voor
-    /// een auth-check — de provider valideert de sleutel vóór de inferentie).
+    /// Minimal text to limit usage (1–2 tokens is enough for
+    /// an auth check — the provider validates the key before inference).
     private static let pingPrompt = "ok"
 
-    /// Back-compat: valideert een Gemini-sleutel. Delegeert naar de provider-aware
-    /// variant zodat call-sites die nog `validateGeminiKey` aanroepen blijven werken.
+    /// Back-compat: validates a Gemini key. Delegates to the provider-aware
+    /// variant so call sites that still call `validateGeminiKey` keep working.
     static func validateGeminiKey(_ key: String) async -> APIKeyValidationResult {
         await validate(key, provider: .gemini)
     }
 
-    /// Epic #53: valideert een BYOK-sleutel voor een willekeurige provider met een
-    /// minimale ping via de `AIModelFactory`. Gebruikt het goedkoopste model
-    /// (provider-default fallback) om verbruik te beperken. Altijd op een Task-hop
-    /// zodat de UI niet blokkeert.
+    /// Epic #53: validates a BYOK key for any provider with a
+    /// minimal ping via the `AIModelFactory`. Uses the cheapest model
+    /// (provider-default fallback) to limit usage. Always on a Task hop
+    /// so the UI doesn't block.
     static func validate(_ key: String, provider: AIProvider) async -> APIKeyValidationResult {
         let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return .invalidKey }
@@ -62,12 +62,12 @@ struct APIKeyValidator {
         }
     }
 
-    /// Mapt een willekeurige Swift `Error` naar een `APIKeyValidationResult`.
-    /// Apart blootgesteld zodat unit-tests de foutclassificatie kunnen valideren
-    /// zonder een echte Gemini-call te hoeven doen — `ping(...)` zelf is door
-    /// zijn directe `GenerativeModel`-init niet zonder netwerk te testen.
+    /// Maps an arbitrary Swift `Error` to an `APIKeyValidationResult`.
+    /// Exposed separately so unit tests can validate the error classification
+    /// without making a real Gemini call — `ping(...)` itself cannot be
+    /// tested without a network due to its direct `GenerativeModel` init.
     static func classify(_ error: Error) -> APIKeyValidationResult {
-        // Epic #53: onze eigen provider-fout van de OpenAI/Claude/Mistral REST-clients.
+        // Epic #53: our own provider error from the OpenAI/Claude/Mistral REST clients.
         if let providerError = error as? AIProviderError {
             switch providerError {
             case .authenticationFailed:
@@ -94,7 +94,7 @@ struct APIKeyValidator {
         }
 
         if let urlError = error as? URLError {
-            // Netwerk-fouten: offline, timeout, DNS-issue — sleutel-oordeel kan niet.
+            // Network errors: offline, timeout, DNS issue — no key judgement possible.
             switch urlError.code {
             case .notConnectedToInternet, .timedOut, .networkConnectionLost, .dnsLookupFailed:
                 return .network

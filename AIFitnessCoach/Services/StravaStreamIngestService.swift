@@ -2,19 +2,19 @@ import Foundation
 
 // MARK: - Epic 40 Story 40.3: StravaStreamIngestService
 //
-// Spiegelt de architectuur van `WorkoutSampleIngestService` (HealthKit) maar voor
-// Strava-streams. Hergebruikt `SampleResampler` (story 32.1) voor de 5s-bucket-conversie
-// en `WorkoutSampleStore` (`@ModelActor`) voor idempotente opslag.
+// Mirrors the architecture of `WorkoutSampleIngestService` (HealthKit) but for
+// Strava streams. Reuses `SampleResampler` (story 32.1) for the 5s-bucket conversion
+// and `WorkoutSampleStore` (`@ModelActor`) for idempotent storage.
 //
-// Ontwerp:
-//   • Pure-Swift parsing van `StravaStreamSet` → `[TimedValue]` per signaal
-//   • Resampler-strategieën identiek aan WorkoutSampleIngestService:
-//       - average voor HR / power / cadence
-//       - linear interpolation voor speed (velocity_smooth)
-//   • Opslag via `replaceSamples(forWorkoutUUID:)` — idempotent, zelfde UUID
-//     herschrijft de set
-//   • UUID-koppeling via `UUID.deterministic(fromStravaID:)` — zelfde Strava-ID
-//     levert altijd dezelfde foreign key
+// Design:
+//   • Pure-Swift parsing of `StravaStreamSet` → `[TimedValue]` per signal
+//   • Resampler strategies identical to WorkoutSampleIngestService:
+//       - average for HR / power / cadence
+//       - linear interpolation for speed (velocity_smooth)
+//   • Storage via `replaceSamples(forWorkoutUUID:)` — idempotent, the same UUID
+//     rewrites the set
+//   • UUID linking via `UUID.deterministic(fromStravaID:)` — the same Strava ID
+//     always yields the same foreign key
 
 final class StravaStreamIngestService {
 
@@ -24,13 +24,13 @@ final class StravaStreamIngestService {
         self.resampler = resampler
     }
 
-    /// Eén Strava-activity volledig ingesten: API-response converteren, resamplen en opslaan.
+    /// Fully ingest one Strava activity: convert the API response, resample and store.
     /// - Parameters:
-    ///   - streams: De StravaStreamSet zoals teruggegeven door `FitnessDataService.fetchActivityStreams`.
-    ///   - activityID: Strava-activity-ID (string, zoals opgeslagen in `ActivityRecord.id`).
-    ///   - startDate: Workout-startdatum, basis voor absolute timestamps (Strava `time`-stream is offset in seconden vanaf start).
-    ///   - durationSeconds: Geplande duur — bepaalt het bucket-window-eind.
-    ///   - store: De `WorkoutSampleStore` (`@ModelActor`) waar samples in landen.
+    ///   - streams: The StravaStreamSet as returned by `FitnessDataService.fetchActivityStreams`.
+    ///   - activityID: Strava activity ID (string, as stored in `ActivityRecord.id`).
+    ///   - startDate: Workout start date, the basis for absolute timestamps (the Strava `time` stream is an offset in seconds from the start).
+    ///   - durationSeconds: Planned duration — determines the bucket-window end.
+    ///   - store: The `WorkoutSampleStore` (`@ModelActor`) where samples land.
     func ingestStreams(_ streams: StravaStreamSet,
                        activityID: String,
                        startDate: Date,
@@ -40,10 +40,10 @@ final class StravaStreamIngestService {
         let workoutUUID = UUID.deterministic(fromStravaID: activityID)
         let endDate = startDate.addingTimeInterval(TimeInterval(durationSeconds))
 
-        // Strava's time-stream is een lineaire offset-array (seconden vanaf start).
-        // Zonder time-stream kunnen we de andere data niet aan absolute tijdstippen koppelen.
+        // Strava's time stream is a linear offset array (seconds from the start).
+        // Without the time stream we can't link the other data to absolute timestamps.
         guard let timeStream = streams.time, !timeStream.data.isEmpty else {
-            // Niets te ingesten — gracefully skip, geen error.
+            // Nothing to ingest — skip gracefully, no error.
             return
         }
 
@@ -61,9 +61,9 @@ final class StravaStreamIngestService {
         let cadenceBuckets = resampler.resample(samples: cadenceSamples, from: startDate, to: endDate, strategy: .average)
         let speedBuckets   = resampler.resample(samples: speedSamples, from: startDate, to: endDate, strategy: .linearInterpolation)
 
-        // De HR-grid dient als kanonieke tijdas — alle resamplers produceren dezelfde
-        // bucket-tijdstempels (zelfde start/end/bucketSize) dus indices matchen 1-op-1.
-        // Bij ontbrekende HR-stream pakken we de eerste beschikbare grid.
+        // The HR grid serves as the canonical time axis — all resamplers produce the same
+        // bucket timestamps (same start/end/bucketSize) so indices match 1-to-1.
+        // On a missing HR stream we take the first available grid.
         let canonicalGrid: [(timestamp: Date, value: Double?)] = !hrBuckets.isEmpty ? hrBuckets
             : !powerBuckets.isEmpty ? powerBuckets
             : !cadenceBuckets.isEmpty ? cadenceBuckets
@@ -76,9 +76,9 @@ final class StravaStreamIngestService {
             let cdValue   = cadenceBuckets.indices.contains(i) ? cadenceBuckets[i].value : nil
             let spValue   = speedBuckets.indices.contains(i)   ? speedBuckets[i].value   : nil
 
-            // Distance-stream is niet meegevraagd uit Strava (kan later via /streams als
-            // distance-key). Voor nu: nil. WorkoutSampleService doet hetzelfde voor non-
-            // running HK-records, dus consistent.
+            // The distance stream is not requested from Strava (could later be added via /streams as a
+            // distance key). For now: nil. WorkoutSampleService does the same for non-
+            // running HK records, so it's consistent.
             if hrValue == nil && pwValue == nil && cdValue == nil && spValue == nil {
                 return nil
             }
@@ -96,8 +96,8 @@ final class StravaStreamIngestService {
         try await store.replaceSamples(combined, forWorkoutUUID: workoutUUID)
     }
 
-    /// Pure-Swift mapping van een Strava-stream + bijbehorende timestamps naar
-    /// `[TimedValue]`. Internal voor unit-tests.
+    /// Pure-Swift mapping of a Strava stream + corresponding timestamps to
+    /// `[TimedValue]`. Internal for unit tests.
     static func zip(stream: StravaStream?, with timestamps: [Date]) -> [TimedValue] {
         guard let stream, !stream.data.isEmpty else { return [] }
         let count = min(stream.data.count, timestamps.count)

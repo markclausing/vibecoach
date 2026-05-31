@@ -1,55 +1,55 @@
 import Foundation
 
-/// Centrale toegang tot de door de gebruiker ingevoerde AI-provider API-sleutel
-/// (BYOK — Epic 20). De sleutel wordt opgeslagen in de iOS Keychain en nooit
-/// meer in `UserDefaults` — zie `C-02` in de security-audit.
+/// Central access to the user-entered AI provider API key
+/// (BYOK — Epic 20). The key is stored in the iOS Keychain and never
+/// again in `UserDefaults` — see `C-02` in the security audit.
 ///
-/// Gebruik `KeychainService.shared` in productie; tests kunnen een eigen
-/// `TokenStore` injecteren via de `read/write/delete`-helpers.
+/// Use `KeychainService.shared` in production; tests can inject their own
+/// `TokenStore` via the `read/write/delete` helpers.
 enum UserAPIKeyStore {
 
-    /// Keychain-service-naam voor de user-provided AI API key.
-    /// Bewust gescheiden van andere keychain-items (Strava tokens etc).
+    /// Keychain service name for the user-provided AI API key.
+    /// Deliberately separate from other keychain items (Strava tokens etc).
     ///
-    /// **Legacy** sinds Epic #53: dit was de enige slot toen alleen Gemini bestond.
-    /// De per-provider slots leven onder `serviceName(for:)`; de eenmalige
-    /// `migrateToPerProviderKeysIfNeeded` verplaatst deze legacy-entry naar de
-    /// Gemini-slot. De no-arg `read/write/delete` blijven op deze naam werken voor
-    /// de bestaande migratie-tests.
+    /// **Legacy** since Epic #53: this was the only slot when only Gemini existed.
+    /// The per-provider slots live under `serviceName(for:)`; the one-time
+    /// `migrateToPerProviderKeysIfNeeded` moves this legacy entry to the
+    /// Gemini slot. The no-arg `read/write/delete` keep working on this name for
+    /// the existing migration tests.
     static let serviceName = "VibeCoach_UserAIKey"
 
-    /// Per-provider Keychain-service-naam (Epic #53). Zo verliest de gebruiker zijn
-    /// OpenAI-sleutel niet wanneer hij tijdelijk naar Claude wisselt en terug.
+    /// Per-provider Keychain service name (Epic #53). This way the user doesn't lose their
+    /// OpenAI key when temporarily switching to Claude and back.
     static func serviceName(for provider: AIProvider) -> String {
         "\(serviceName)_\(provider.rawValue)"
     }
 
-    /// Legacy `UserDefaults`-key die tot Epic 20 werd gebruikt voor de AI-sleutel.
-    /// Na migratie wordt deze entry gewist; de constant leeft hier zodat
-    /// migratie-logica en UI-testhulp dezelfde bron-van-waarheid delen.
+    /// Legacy `UserDefaults` key used for the AI key until Epic 20.
+    /// After migration this entry is cleared; the constant lives here so
+    /// migration logic and the UI test helper share the same source of truth.
     static let legacyUserDefaultsKey = "vibecoach_userAPIKey"
 
-    // MARK: - Productie helpers (KeychainService.shared)
+    // MARK: - Production helpers (KeychainService.shared)
 
-    /// Leest de opgeslagen sleutel uit de Keychain. Retourneert een lege string
-    /// wanneer er geen sleutel is — dit sluit aan op de oude `@AppStorage`-default
-    /// zodat call-sites niet hoeven te checken op `nil`.
+    /// Reads the stored key from the Keychain. Returns an empty string
+    /// when there is no key — this matches the old `@AppStorage` default
+    /// so call sites don't have to check for `nil`.
     static func read() -> String {
         read(using: KeychainService.shared)
     }
 
-    /// Slaat een sleutel op in de Keychain. Een lege string wist de entry
-    /// (anders zou een ongewenste lege string blijven staan).
+    /// Stores a key in the Keychain. An empty string clears the entry
+    /// (otherwise an unwanted empty string would remain).
     static func write(_ key: String) {
         write(key, using: KeychainService.shared)
     }
 
-    /// Verwijdert de sleutel uit de Keychain.
+    /// Removes the key from the Keychain.
     static func delete() {
         delete(using: KeychainService.shared)
     }
 
-    // MARK: - Dependency injection (voor unit tests)
+    // MARK: - Dependency injection (for unit tests)
 
     static func read(using store: TokenStore) -> String {
         (try? store.getToken(forService: serviceName)) ?? ""
@@ -116,15 +116,15 @@ enum UserAPIKeyStore {
         }
     }
 
-    // MARK: - Migratie (C-02)
+    // MARK: - Migration (C-02)
 
-    /// Eenmalige migratie: als er nog een sleutel in `UserDefaults` staat
-    /// (vanuit een eerdere installatie vóór deze security-fix) verplaats die
-    /// naar de Keychain en wis de `UserDefaults`-entry.
+    /// One-time migration: if a key still lives in `UserDefaults`
+    /// (from an earlier installation before this security fix), move it
+    /// to the Keychain and clear the `UserDefaults` entry.
     ///
-    /// Idempotent: als er niks te migreren is doet deze functie niks. Wordt
-    /// aangeroepen in `AIFitnessCoachApp.init()` bij elke coldstart — de check
-    /// is goedkoop en zelf-terminerend.
+    /// Idempotent: if there is nothing to migrate this function does nothing. Called
+    /// in `AIFitnessCoachApp.init()` on every cold start — the check
+    /// is cheap and self-terminating.
     static func migrateFromUserDefaultsIfNeeded(
         store: TokenStore = KeychainService.shared,
         defaults: UserDefaults = .standard
@@ -136,8 +136,8 @@ enum UserAPIKeyStore {
 
         do {
             try store.saveToken(legacy, forService: serviceName)
-            // Pas wissen nádat de Keychain-write slaagde — anders raakt de
-            // sleutel bij een fout volledig kwijt.
+            // Only clear after the Keychain write succeeded — otherwise the
+            // key would be lost entirely on an error.
             defaults.removeObject(forKey: legacyUserDefaultsKey)
             AppLoggers.userAPIKey.info("user API key gemigreerd van UserDefaults naar Keychain")
         } catch {
@@ -145,12 +145,12 @@ enum UserAPIKeyStore {
         }
     }
 
-    /// Eenmalige migratie (Epic #53): verplaatst de legacy single-key (`serviceName`)
-    /// naar de per-provider Gemini-slot. Bestaande Gemini-gebruikers behouden hun
-    /// sleutel zonder opnieuw in te voeren.
+    /// One-time migration (Epic #53): moves the legacy single key (`serviceName`)
+    /// to the per-provider Gemini slot. Existing Gemini users keep their
+    /// key without re-entering it.
     ///
-    /// Idempotent: doet niets wanneer de Gemini-slot al gevuld is óf de legacy-slot
-    /// leeg is. Wordt na `migrateFromUserDefaultsIfNeeded` aangeroepen in
+    /// Idempotent: does nothing when the Gemini slot is already filled or the legacy slot
+    /// is empty. Called after `migrateFromUserDefaultsIfNeeded` in
     /// `AIFitnessCoachApp.init()`.
     static func migrateToPerProviderKeysIfNeeded(store: TokenStore = KeychainService.shared) {
         let geminiService = serviceName(for: .gemini)
@@ -162,7 +162,7 @@ enum UserAPIKeyStore {
 
         do {
             try store.saveToken(legacy, forService: geminiService)
-            // Pas de legacy-entry wissen nádat de write naar de Gemini-slot slaagde.
+            // Only clear the legacy entry after the write to the Gemini slot succeeded.
             try store.deleteToken(forService: serviceName)
             AppLoggers.userAPIKey.info("user API key gemigreerd naar per-provider Gemini-slot")
         } catch {
