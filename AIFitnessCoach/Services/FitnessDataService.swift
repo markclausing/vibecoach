@@ -1,19 +1,19 @@
 import Foundation
 import os
 
-/// Verantwoordelijk voor het ophalen van sport- en activiteitsdata van externe API's (bijv. Strava of Intervals.icu).
+/// Responsible for fetching sport and activity data from external APIs (e.g. Strava or Intervals.icu).
 actor FitnessDataService {
 
-    // Logger leeft centraal in `AppLoggers.fitnessDataService` — gebruik `.private`
-    // voor user-tokens en sample-waardes (HRV, TRIMP) zodat sysdiagnose-logs in
-    // release-builds geen identificerende data lekken.
+    // The logger lives centrally in `AppLoggers.fitnessDataService` — use `.private`
+    // for user tokens and sample values (HRV, TRIMP) so sysdiagnose logs in release
+    // builds don't leak identifying data.
 
     private let tokenStore: TokenStore
     private let session: NetworkSession
     private let rateLimitStore: StravaRateLimitStore
 
-    // Dependency Injection voor de opslag van tokens, netwerksessies en het
-    // rate-limit-cooldown-window (Epic #51-F2).
+    // Dependency injection for token storage, network sessions and the
+    // rate-limit cooldown window (Epic #51-F2).
     init(tokenStore: TokenStore = KeychainService.shared,
          session: NetworkSession = URLSession.shared,
          rateLimitStore: StravaRateLimitStore = StravaRateLimitStore()) {
@@ -22,16 +22,14 @@ actor FitnessDataService {
         self.rateLimitStore = rateLimitStore
     }
 
-    /// Epic 41.3: zorgt dat de caller een geldig Strava access-token in handen krijgt.
-    /// Roept eerst `refreshTokenIfNeeded()` aan zodat een (bijna) verlopen token nog
-    /// vóór de API-call ververst wordt, en throwt `.missingToken` als er geen geldig
-    /// token uit de store komt — dat geeft elke API-call één centrale guard tegen
-    /// silent 401's.
+    /// Epic 41.3: ensures the caller gets a valid Strava access token.
+    /// Calls `refreshTokenIfNeeded()` first so a (near-)expired token is refreshed
+    /// before the API call, and throws `.missingToken` if no valid token comes from
+    /// the store — this gives every API call one central guard against silent 401s.
     ///
-    /// Epic #51-F2: vóór alles wordt de Strava-rate-limit-cooldown gecheckt.
-    /// Tijdens een actieve cooldown gaat geen enkel request de deur uit; zo
-    /// voorkomen we een retry-storm vlak na launch terwijl de banner nog
-    /// aangeeft *"hervat om HH:MM"*.
+    /// Epic #51-F2: before anything, the Strava rate-limit cooldown is checked.
+    /// During an active cooldown no request goes out; this prevents a retry storm
+    /// right after launch while the banner still says *"resumes at HH:MM"*.
     @discardableResult
     func ensureValidToken() async throws -> String {
         if let until = rateLimitStore.currentCooldown() {
@@ -44,27 +42,27 @@ actor FitnessDataService {
         return token
     }
 
-    /// Controleert of het Strava token is verlopen (of binnen 5 minuten verloopt) en ververst deze via de OAuth2 API.
+    /// Checks whether the Strava token has expired (or expires within 5 minutes) and refreshes it via the OAuth2 API.
     func refreshTokenIfNeeded() async throws {
-        // Haal huidige gegevens op
+        // Fetch current data
         guard let expiresAtStr = try tokenStore.getToken(forService: "StravaTokenExpiresAt"),
               let expiresAtUnix = Double(expiresAtStr),
               let currentRefreshToken = try tokenStore.getToken(forService: "StravaRefreshToken"), !currentRefreshToken.isEmpty else {
-            // Als er geen refresh token of expiresAt is, kunnen we niet refreshen. We doen niets en laten de request eventueel falen op auth.
+            // If there's no refresh token or expiresAt, we can't refresh. We do nothing and let the request possibly fail on auth.
             return
         }
 
         let expirationDate = Date(timeIntervalSince1970: expiresAtUnix)
 
-        // Controleer of de token binnen nu en 5 minuten verloopt
+        // Check whether the token expires within the next 5 minutes
         let fiveMinutesFromNow = Date().addingTimeInterval(5 * 60)
 
         if expirationDate < fiveMinutesFromNow {
-            // Token is (bijna) verlopen, refresh!
+            // Token is (near-)expired, refresh!
             AppLoggers.fitnessDataService.info("Strava-token is verlopen of verloopt binnenkort — vernieuwen via proxy")
 
-            // C-01: refresh loopt via de server-side proxy. Het `client_secret`
-            // is niet meer in de app aanwezig.
+            // C-01: refresh goes through the server-side proxy. The `client_secret`
+            // is no longer present in the app.
             guard let url = URL(string: "\(Secrets.stravaProxyBaseURL)/oauth/strava/refresh") else {
                 throw FitnessDataError.networkError("Ongeldige proxy URL")
             }
@@ -94,7 +92,7 @@ actor FitnessDataService {
             do {
                 let tokenResponse = try JSONDecoder().decode(StravaTokenResponse.self, from: data)
 
-                // Sla nieuwe tokens op in de Keychain
+                // Store the new tokens in the Keychain
                 try tokenStore.saveToken(tokenResponse.access_token, forService: "StravaToken")
                 try tokenStore.saveToken(tokenResponse.refresh_token, forService: "StravaRefreshToken")
                 try tokenStore.saveToken(String(tokenResponse.expires_at), forService: "StravaTokenExpiresAt")
@@ -106,9 +104,9 @@ actor FitnessDataService {
         }
     }
 
-    /// Haalt de meest recente activiteit van de gebruiker op via de Strava API.
-    /// - Returns: Het laatst voltooide `StravaActivity` object.
-    /// - Throws: `FitnessDataError` als er iets misgaat (bijv. geen token, 401, of network issue).
+    /// Fetches the user's most recent activity via the Strava API.
+    /// - Returns: The most recently completed `StravaActivity` object.
+    /// - Throws: `FitnessDataError` if something goes wrong (e.g. no token, 401, or network issue).
     func fetchLatestActivity() async throws -> StravaActivity? {
         let stravaToken = try await ensureValidToken()
 
@@ -138,11 +136,11 @@ actor FitnessDataService {
         }
     }
 
-    /// Haalt een specifieke activiteit op via de Strava API op basis van het Activity ID.
-    /// Dit wordt voornamelijk gebruikt wanneer een notificatie binnenkomt met een specifiek ID.
-    /// - Parameter id: Het Strava Activity ID.
-    /// - Returns: Het bijbehorende `StravaActivity` object.
-    /// - Throws: `FitnessDataError` als er iets misgaat.
+    /// Fetches a specific activity via the Strava API based on the Activity ID.
+    /// This is mainly used when a notification comes in with a specific ID.
+    /// - Parameter id: The Strava Activity ID.
+    /// - Returns: The corresponding `StravaActivity` object.
+    /// - Throws: `FitnessDataError` if something goes wrong.
     func fetchActivity(byId id: Int64) async throws -> StravaActivity {
         let stravaToken = try await ensureValidToken()
 
@@ -174,13 +172,13 @@ actor FitnessDataService {
         }
     }
 
-    /// Epic 44 Story 44.3: haalt de FTP van de geauthenticeerde Strava-atleet op
-    /// via `/api/v3/athlete`. Strava onderhoudt FTP als onderdeel van het athlete-
-    /// profiel; gebruikers die hun FTP daar al kalibreren krijgen 'm via deze
-    /// endpoint terug zonder dat we 'm zelf hoeven te schatten.
-    /// - Returns: FTP in watt, of `nil` als de gebruiker geen FTP in z'n profiel
-    ///   heeft ingevuld (Strava returnt dan ofwel `null` ofwel het ontbrekende veld).
-    /// - Throws: `FitnessDataError` bij netwerk-, auth- of decode-fout.
+    /// Epic 44 Story 44.3: fetches the FTP of the authenticated Strava athlete
+    /// via `/api/v3/athlete`. Strava maintains FTP as part of the athlete profile;
+    /// users who already calibrate their FTP there get it back via this endpoint
+    /// without us having to estimate it ourselves.
+    /// - Returns: FTP in watts, or `nil` if the user hasn't filled in an FTP in
+    ///   their profile (Strava then returns either `null` or the missing field).
+    /// - Throws: `FitnessDataError` on network, auth or decode error.
     func fetchAthleteFTP() async throws -> Int? {
         let stravaToken = try await ensureValidToken()
 
@@ -209,14 +207,14 @@ actor FitnessDataService {
         }
     }
 
-    /// Epic 40: Haalt de fijngranulaire stream-data op voor één Strava-activity.
-    /// Vraagt de stromen `time`, `watts`, `cadence`, `heartrate` en `velocity_smooth`
-    /// op als `key_by_type=true`-dictionary. Niet alle streams zijn altijd aanwezig
-    /// (bv. `watts` ontbreekt zonder powermeter) — caller moet optionals correct
-    /// behandelen via `StravaStreamSet`.
-    /// - Parameter activityId: De Strava-activity-ID.
-    /// - Returns: Volledige `StravaStreamSet` met de beschikbare streams.
-    /// - Throws: `FitnessDataError` bij netwerkfout, ongeldige token of decode-failure.
+    /// Epic 40: Fetches the fine-grained stream data for one Strava activity.
+    /// Requests the streams `time`, `watts`, `cadence`, `heartrate` and `velocity_smooth`
+    /// as a `key_by_type=true` dictionary. Not all streams are always present
+    /// (e.g. `watts` is missing without a power meter) — the caller must handle
+    /// optionals correctly via `StravaStreamSet`.
+    /// - Parameter activityId: The Strava activity ID.
+    /// - Returns: Full `StravaStreamSet` with the available streams.
+    /// - Throws: `FitnessDataError` on network error, invalid token or decode failure.
     func fetchActivityStreams(for activityId: Int64) async throws -> StravaStreamSet {
         let stravaToken = try await ensureValidToken()
 
@@ -248,11 +246,11 @@ actor FitnessDataService {
         }
     }
 
-    /// Haalt historische activiteiten op via de Strava API, met ondersteuning voor paginatie.
-    /// Dit wordt gebruikt voor het berekenen van het langetermijn atletisch profiel.
-    /// - Parameter monthsBack: Hoeveel maanden we terug willen kijken (bijv. 6).
-    /// - Returns: Een lijst van `StravaActivity` objecten voor de afgelopen dagen.
-    /// - Throws: `FitnessDataError` als de auth of het netwerk faalt.
+    /// Fetches historical activities via the Strava API, with pagination support.
+    /// This is used for computing the long-term athletic profile.
+    /// - Parameter monthsBack: How many months we want to look back (e.g. 6).
+    /// - Returns: A list of `StravaActivity` objects for the past days.
+    /// - Throws: `FitnessDataError` if auth or the network fails.
     func fetchRecentActivities(days: Int) async throws -> [StravaActivity] {
         let stravaToken = try await ensureValidToken()
 
@@ -304,12 +302,12 @@ actor FitnessDataService {
         return allActivities
     }
 
-    /// - Returns: Een lijst van `StravaActivity` objecten.
-    /// - Throws: `FitnessDataError` als de auth of het netwerk faalt.
+    /// - Returns: A list of `StravaActivity` objects.
+    /// - Throws: `FitnessDataError` if auth or the network fails.
     func fetchHistoricalActivities(monthsBack: Int) async throws -> [StravaActivity] {
         let stravaToken = try await ensureValidToken()
 
-        // Bereken de UNIX timestamps
+        // Compute the UNIX timestamps
         let now = Date()
         let beforeTime = Int(now.timeIntervalSince1970)
 
@@ -325,7 +323,7 @@ actor FitnessDataService {
 
         let decoder = JSONDecoder()
 
-        // Paginatie loop (blijf doorgaan tot er een lege pagina terugkomt)
+        // Pagination loop (keep going until an empty page comes back)
         while true {
             guard let url = URL(string: "https://www.strava.com/api/v3/athlete/activities?before=\(beforeTime)&after=\(afterTime)&page=\(page)&per_page=\(perPage)") else {
                 throw FitnessDataError.networkError("Ongeldige URL voor history fetch")
@@ -348,7 +346,7 @@ actor FitnessDataService {
                 let pageActivities = try decoder.decode([StravaActivity].self, from: data)
 
                 if pageActivities.isEmpty {
-                    // Er zijn geen resultaten meer, we zijn klaar
+                    // No more results, we're done
                     break
                 }
 
@@ -362,19 +360,19 @@ actor FitnessDataService {
         return allActivities
     }
 
-    // MARK: - HTTP-validatie
+    // MARK: - HTTP validation
 
-    /// Centrale HTTP-response-validatie voor alle Strava-endpoints.
-    /// - Detecteert 401 → `.unauthorized`
-    /// - Detecteert 429 → `.rateLimited(retryAfter:)` + persisteert cooldown
-    ///   in `StravaRateLimitStore` zodat opvolgende calls (ook na app-restart)
-    ///   meteen via `ensureValidToken()` worden afgevangen (Epic #51-F2)
-    /// - `statusOverrides` mappen specifieke statuscodes naar een eigen
-    ///   `FitnessDataError` (bv. 404 → `.networkError("...niet gevonden")`)
-    /// - Bij een succesvolle 2xx response wist `rateLimitStore` zichzelf —
-    ///   in combinatie met `currentCooldown()` blijft de banner exact zo
-    ///   lang als de server zegt actief
-    /// - Returns: De `HTTPURLResponse` (voor toekomstige header-inspectie)
+    /// Central HTTP response validation for all Strava endpoints.
+    /// - Detects 401 → `.unauthorized`
+    /// - Detects 429 → `.rateLimited(retryAfter:)` + persists the cooldown
+    ///   in `StravaRateLimitStore` so subsequent calls (also after app restart)
+    ///   are caught immediately via `ensureValidToken()` (Epic #51-F2)
+    /// - `statusOverrides` map specific status codes to a custom
+    ///   `FitnessDataError` (e.g. 404 → `.networkError("...niet gevonden")`)
+    /// - On a successful 2xx response `rateLimitStore` clears itself —
+    ///   in combination with `currentCooldown()` the banner stays active exactly
+    ///   as long as the server says
+    /// - Returns: The `HTTPURLResponse` (for future header inspection)
     private func validateHTTPResponse(
         _ response: URLResponse,
         statusOverrides: [Int: FitnessDataError] = [:]
@@ -403,7 +401,7 @@ actor FitnessDataService {
             throw FitnessDataError.networkError("Onverwachte HTTP status code: \(http.statusCode)")
         }
 
-        // Succesvolle response — eventuele eerdere cooldown is voorbij.
+        // Successful response — any earlier cooldown is over.
         rateLimitStore.clear()
         return http
     }
