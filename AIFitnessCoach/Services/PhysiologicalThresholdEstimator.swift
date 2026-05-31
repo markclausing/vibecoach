@@ -2,58 +2,59 @@ import Foundation
 
 // MARK: - Epic 44 Story 44.2: PhysiologicalThresholdEstimator
 //
-// Pure-Swift afleiding van fysiologische drempels (max-HR, rust-HR, LTHR) uit
-// een verzameling HK-samples. Bewust géén HK-query in deze laag — caller doet
-// de fetch en geeft de samples mee. Dat houdt de schatting volledig unit-testbaar
-// en compatibel met zowel HK als toekomstige bronnen (bv. ingest van CSV).
+// Pure-Swift derivation of physiological thresholds (max HR, resting HR, LTHR)
+// from a collection of HK samples. Deliberately no HK query in this layer — the
+// caller does the fetch and passes the samples in. That keeps the estimation
+// fully unit-testable and compatible with both HK and future sources (e.g. CSV
+// ingest).
 //
-// Uitgangspunt: zes maanden aan workout-HR-samples + dagelijkse `restingHeartRate`-
-// samples geven samen genoeg signaal voor een betrouwbare eerste schatting. We
-// zijn conservatief — losse outliers door sensorfouten worden gefilterd, en we
-// vereisen een minimum-aantal samples voordat we überhaupt iets durven te claimen.
+// Premise: six months of workout-HR samples + daily `restingHeartRate` samples
+// together give enough signal for a reliable first estimate. We are conservative
+// — stray outliers from sensor errors are filtered, and we require a minimum
+// number of samples before we dare to claim anything at all.
 
 enum PhysiologicalThresholdEstimator {
 
-    // MARK: Drempels & filters
+    // MARK: Thresholds & filters
 
-    /// Workouts korter dan 20 minuten zijn onbetrouwbaar voor max-HR-detectie:
-    /// een korte sprint kan tot een echte max leiden, maar de meeste korte
-    /// HK-records zijn loop-walks of cooldowns met spikes door sensor-dropout.
+    /// Workouts shorter than 20 minutes are unreliable for max-HR detection:
+    /// a short sprint can reach a true max, but most short HK records are
+    /// run-walks or cooldowns with spikes from sensor dropout.
     static let minimumWorkoutDurationForMaxHR: TimeInterval = 20 * 60
 
-    /// Sample-counts: minder dan 30 datapunten in een workout = onbetrouwbaar.
+    /// Sample counts: fewer than 30 data points in a workout = unreliable.
     static let minimumSamplesPerWorkout: Int = 30
 
-    /// HR-samples buiten dit absolute bereik zijn sensorfouten of jitter.
-    /// 200+ kan, maar zonder context (bv. plotse 220 BPM) klopt het zelden.
+    /// HR samples outside this absolute range are sensor errors or jitter.
+    /// 200+ is possible, but without context (e.g. a sudden 220 BPM) it's rarely right.
     static let plausibleMaxHRRange: ClosedRange<Double> = 80...220
 
-    /// Voor rust-HR vereisen we minstens 14 dagelijkse samples; minder = nog te
-    /// vroeg om een baseline te claimen.
+    /// For resting HR we require at least 14 daily samples; fewer = still too
+    /// early to claim a baseline.
     static let minimumRestingHRSamples: Int = 14
 
-    /// LTHR-detectie vereist een hoge-intensiteit-workout — we kijken naar het
-    /// hoogste 30-minuten-rolling-average HR. Onder dit drempel is de schatting
-    /// alleen maar de gemiddelde HR van een rustige workout, niet LTHR.
+    /// LTHR detection requires a high-intensity workout — we look at the highest
+    /// 30-minute rolling-average HR. Below this threshold the estimate is just
+    /// the average HR of an easy workout, not LTHR.
     static let minimumLTHRWindowSamples: Int = 30
-    static let lthrWindowSize: Int = 30  // 30 buckets van 60s = 30 min met 1-minuut-resolutie
+    static let lthrWindowSize: Int = 30  // 30 buckets of 60s = 30 min at 1-minute resolution
 
     // MARK: Input types
 
-    /// Eén workout-sessie geabstraheerd voor de estimator. Caller mapt HK-data
-    /// of testdata naar deze struct.
+    /// One workout session abstracted for the estimator. The caller maps HK data
+    /// or test data to this struct.
     struct WorkoutHRSample {
-        /// Begin van de workout.
+        /// Start of the workout.
         let startDate: Date
-        /// Duur in seconden.
+        /// Duration in seconds.
         let durationSeconds: TimeInterval
-        /// HR-samples in BPM, in chronologische volgorde.
+        /// HR samples in BPM, in chronological order.
         let heartRates: [Double]
     }
 
-    /// Resultaat van een schatting. Eén van de waardes mag nil zijn als er
-    /// onvoldoende data was. UI laat dit zien als "Wij hebben nog te weinig
-    /// data — log nog X workouts en probeer opnieuw."
+    /// Result of an estimation. Any of the values may be nil if there was
+    /// insufficient data. The UI shows this as "We still have too little
+    /// data — log X more workouts and try again."
     struct Result: Equatable {
         let maxHeartRate: Double?
         let restingHeartRate: Double?
@@ -62,10 +63,10 @@ enum PhysiologicalThresholdEstimator {
 
     // MARK: Estimators
 
-    /// Schat alle drie de drempels uit de meegegeven datasets. Pure functie.
+    /// Estimates all three thresholds from the given datasets. Pure function.
     /// - Parameters:
-    ///   - workouts: Workout-records van de afgelopen ~6 maanden, in willekeurige volgorde.
-    ///   - dailyRestingHR: Dagelijkse resting-HR-samples uit HK (gemiddelde rust per dag).
+    ///   - workouts: Workout records from the past ~6 months, in arbitrary order.
+    ///   - dailyRestingHR: Daily resting-HR samples from HK (average rest per day).
     static func estimate(workouts: [WorkoutHRSample],
                          dailyRestingHR: [Double]) -> Result {
         Result(
@@ -75,10 +76,9 @@ enum PhysiologicalThresholdEstimator {
         )
     }
 
-    /// Hoogste plausibele HR-piek uit alle eligible workouts. We pakken niet
-    /// blindelings de absolute max — eerst filteren we per workout op duur en
-    /// sample-count, daarna kijken we naar het 95e percentiel om losse spikes
-    /// uit te sluiten.
+    /// Highest plausible HR peak across all eligible workouts. We don't blindly
+    /// take the absolute max — first we filter per workout on duration and
+    /// sample count, then we look at the 95th percentile to exclude stray spikes.
     static func estimateMaxHeartRate(workouts: [WorkoutHRSample]) -> Double? {
         var topPercentilePerWorkout: [Double] = []
         for workout in workouts {
@@ -86,21 +86,21 @@ enum PhysiologicalThresholdEstimator {
                   workout.heartRates.count >= minimumSamplesPerWorkout else { continue }
             let plausible = workout.heartRates.filter { plausibleMaxHRRange.contains($0) }
             guard !plausible.isEmpty else { continue }
-            // 95e percentiel binnen de workout sluit losse jitter-spikes uit.
+            // The 95th percentile within the workout excludes stray jitter spikes.
             let sorted = plausible.sorted()
             let idx = min(sorted.count - 1, Int(Double(sorted.count) * 0.95))
             topPercentilePerWorkout.append(sorted[idx])
         }
         guard !topPercentilePerWorkout.isEmpty else { return nil }
-        // Op workout-niveau pakken we wél het echte max — dit is een atleet die
-        // sporadisch tot z'n top gaat, en het hoogste "stabiele" piek uit alle
-        // workouts is dan de beste schatting van zijn werkelijke max-HR.
+        // At the workout level we do take the true max — this is an athlete who
+        // sporadically goes to their peak, so the highest "stable" peak across all
+        // workouts is the best estimate of their actual max HR.
         return topPercentilePerWorkout.max()
     }
 
-    /// Mediane rust-HR uit de dagelijkse samples van de afgelopen periode.
-    /// Mediaan is robuuster dan gemiddelde — één dag met sensorfout door
-    /// een Apple Watch op het nachtkastje weerhoudt geen normale baseline.
+    /// Median resting HR from the daily samples of the recent period.
+    /// Median is more robust than mean — one day with a sensor error from an
+    /// Apple Watch on the nightstand doesn't derail a normal baseline.
     static func estimateRestingHeartRate(samples: [Double]) -> Double? {
         let plausible = samples.filter { $0 >= 30 && $0 <= 100 }
         guard plausible.count >= minimumRestingHRSamples else { return nil }
@@ -112,18 +112,18 @@ enum PhysiologicalThresholdEstimator {
         return sorted[mid]
     }
 
-    /// LTHR via Friel's protocol-equivalent: hoogste 30-min rolling avg HR
-    /// uit de zwaarste workout. Niet exact lab-LTHR (dat vereist een 30-min-
-    /// time-trial), maar voor gebruik in zone-kalibratie ruim voldoende.
-    /// Caller resamplet bij voorkeur naar 60s-buckets vóór ze de samples meegeven —
-    /// 30 buckets dekt dan netjes het 30-min window.
+    /// LTHR via Friel's protocol equivalent: highest 30-min rolling avg HR from
+    /// the hardest workout. Not exact lab LTHR (that requires a 30-min time
+    /// trial), but more than sufficient for use in zone calibration.
+    /// The caller preferably resamples to 60s buckets before passing the samples —
+    /// 30 buckets then neatly covers the 30-min window.
     static func estimateLactateThresholdHR(workouts: [WorkoutHRSample]) -> Double? {
         var perWorkoutHighest: [Double] = []
         for workout in workouts {
             guard workout.heartRates.count >= minimumLTHRWindowSamples else { continue }
             let filtered = workout.heartRates.filter { plausibleMaxHRRange.contains($0) }
             guard filtered.count >= lthrWindowSize else { continue }
-            // Rolling 30-window gemiddelde — pak het hoogste.
+            // Rolling 30-window average — take the highest.
             var highest: Double = 0
             for start in 0...(filtered.count - lthrWindowSize) {
                 let window = filtered[start..<(start + lthrWindowSize)]
@@ -133,8 +133,8 @@ enum PhysiologicalThresholdEstimator {
             if highest > 0 { perWorkoutHighest.append(highest) }
         }
         guard !perWorkoutHighest.isEmpty else { return nil }
-        // Hoogste over alle workouts — corresponderend met de zwaarste 30-min-blok
-        // van de afgelopen 6 maanden, een redelijke proxy voor LTHR.
+        // Highest across all workouts — corresponding to the hardest 30-min block
+        // of the past 6 months, a reasonable proxy for LTHR.
         return perWorkoutHighest.max()
     }
 }

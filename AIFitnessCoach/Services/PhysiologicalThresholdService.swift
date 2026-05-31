@@ -4,26 +4,26 @@ import os
 
 // MARK: - Epic 44 Story 44.4: PhysiologicalThresholdService
 //
-// HK-adapter rond `PhysiologicalThresholdEstimator`. Vraagt 6 maanden aan
-// workouts + dagelijkse rust-HR-samples op uit HealthKit, mapt ze naar de
-// `WorkoutHRSample`-input van de pure-Swift estimator, en kickt vervolgens
-// `UserProfileService.storeAutoDetectedThresholds` af zodat de drempels in
-// UserDefaults landen (handmatige waarden blijven beschermd).
+// HK adapter around `PhysiologicalThresholdEstimator`. Fetches 6 months of
+// workouts + daily resting-HR samples from HealthKit, maps them to the
+// `WorkoutHRSample` input of the pure-Swift estimator, and then kicks off
+// `UserProfileService.storeAutoDetectedThresholds` so the thresholds land in
+// UserDefaults (manual values stay protected).
 //
-// Caller (`Settings`-detect-knop) hoeft alleen `runAutoDetect()` aan te roepen
-// en het `Result` weer te geven. Geen UI-state, geen MainActor — service is
-// AppStorage-vrij en injecteerbaar voor toekomstige tests.
+// The caller (`Settings` detect button) only has to call `runAutoDetect()`
+// and render the `Result`. No UI state, no MainActor — the service is
+// AppStorage-free and injectable for future tests.
 
 @MainActor
 final class PhysiologicalThresholdService {
 
-    // Logger leeft centraal in `AppLoggers.physiologicalThreshold`.
+    // The logger lives centrally in `AppLoggers.physiologicalThreshold`.
 
-    /// Periode waarover we HK-data ophalen voor de detectie.
+    /// Period over which we fetch HK data for the detection.
     private static let lookbackDays: Int = 180
 
-    /// 60s-bucket-grootte voor LTHR-rolling-window. Past bij de 30-sample-window
-    /// (= 30 minuten) in `PhysiologicalThresholdEstimator`.
+    /// 60s bucket size for the LTHR rolling window. Matches the 30-sample window
+    /// (= 30 minutes) in `PhysiologicalThresholdEstimator`.
     private static let lthrBucketSeconds: TimeInterval = 60
 
     private let healthStore: HKHealthStore
@@ -32,21 +32,21 @@ final class PhysiologicalThresholdService {
         self.healthStore = healthStore
     }
 
-    /// Resultaat van een detection-run: de afgeleide drempels + hoeveel data
-    /// erachter zat zodat de UI kan tonen "we hebben N workouts en M dagen
-    /// rust-HR gebruikt".
+    /// Result of a detection run: the derived thresholds + how much data
+    /// backed them so the UI can show "we used N workouts and M days of
+    /// resting HR".
     struct DetectionRun: Equatable {
         let result: PhysiologicalThresholdEstimator.Result
         let workoutsAnalyzed: Int
         let restingDaysAnalyzed: Int
     }
 
-    /// Voert een volledige auto-detectie uit en bewaart de gevonden waardes via
-    /// `UserProfileService.storeAutoDetectedThresholds` (respecteert standaard
-    /// handmatige invoer). Returnt het ruwe resultaat zodat de UI direct kan
-    /// reflecteren wat er gedetecteerd werd.
-    /// - Parameter persist: Bewaar het resultaat ook direct (default true). Tests
-    ///   zetten dit op false zodat ze de persistence-flow apart kunnen valideren.
+    /// Runs a full auto-detection and stores the found values via
+    /// `UserProfileService.storeAutoDetectedThresholds` (respects manual input
+    /// by default). Returns the raw result so the UI can immediately reflect
+    /// what was detected.
+    /// - Parameter persist: Also store the result right away (default true). Tests
+    ///   set this to false so they can validate the persistence flow separately.
     @discardableResult
     func runAutoDetect(persist: Bool = true) async -> DetectionRun {
         guard HKHealthStore.isHealthDataAvailable() else {
@@ -84,17 +84,17 @@ final class PhysiologicalThresholdService {
 
     // MARK: - HK fetches
 
-    /// Haalt alle workouts in het venster op en mapt ze naar `WorkoutHRSample`.
-    /// Per workout wordt een eigen HR-query gedaan om de samples te krijgen;
-    /// deze kunnen ~720 samples per workout zijn maar over 6 maanden valt het
-    /// totaal ruim binnen wat HK ons in één run kan teruggeven.
+    /// Fetches all workouts in the window and maps them to `WorkoutHRSample`.
+    /// A separate HR query is done per workout to get the samples; these can be
+    /// ~720 samples per workout, but over 6 months the total stays well within
+    /// what HK can return to us in a single run.
     private func fetchWorkoutHRSamples(from start: Date, to end: Date) async -> [PhysiologicalThresholdEstimator.WorkoutHRSample] {
         let workouts = await fetchWorkouts(from: start, to: end)
         var results: [PhysiologicalThresholdEstimator.WorkoutHRSample] = []
         for workout in workouts {
             let hrSamples = await fetchHeartRateSamples(for: workout)
-            // Resampling naar 60s-buckets voor LTHR; bucket-gemiddeldes dempen
-            // sensorruis en houden de input voor de estimator klein.
+            // Resample to 60s buckets for LTHR; bucket averages dampen sensor
+            // noise and keep the estimator input small.
             let bucketed = bucketAverages(samples: hrSamples,
                                            start: workout.startDate,
                                            end: workout.endDate,
@@ -143,9 +143,9 @@ final class PhysiologicalThresholdService {
         }
     }
 
-    /// HK levert dagelijks een `restingHeartRate`-sample. We gebruiken die als
-    /// directe input voor de mediaan-berekening — geen filter nodig op duur of
-    /// activiteit, want HK heeft dat zelf al gedaan.
+    /// HK provides a daily `restingHeartRate` sample. We use it directly as
+    /// input for the median calculation — no filter on duration or activity
+    /// needed, since HK has already done that itself.
     private func fetchDailyRestingHR(from start: Date, to end: Date) async -> [Double] {
         guard let restType = HKQuantityType.quantityType(forIdentifier: .restingHeartRate) else { return [] }
         let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictEndDate)
@@ -169,10 +169,10 @@ final class PhysiologicalThresholdService {
 
     // MARK: - Resampling
 
-    /// Bucket-gemiddelde resampler: deelt het tijdsvenster in fixed-size buckets
-    /// en levert per bucket het gemiddelde van de samples die in dat bucket
-    /// vallen. Lege buckets worden als 0 weggelaten — de estimator filtert die
-    /// alsnog via z'n plausibility-range. Conservatief en pure-Swift.
+    /// Bucket-average resampler: splits the time window into fixed-size buckets
+    /// and returns, per bucket, the average of the samples that fall in it.
+    /// Empty buckets are dropped (not emitted as 0) — the estimator filters
+    /// those out anyway via its plausibility range. Conservative and pure-Swift.
     private func bucketAverages(samples: [HKQuantitySample],
                                 start: Date,
                                 end: Date,
