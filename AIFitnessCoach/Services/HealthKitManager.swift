@@ -1,39 +1,38 @@
 import Foundation
 import HealthKit
 
-/// Beheert de Apple HealthKit integratie en permissies
+/// Manages the Apple HealthKit integration and permissions
 final class HealthKitManager: @unchecked Sendable {
 
-    /// Epic #31 Sprint 31.2: Gedeelde singleton zodat de onboarding-flow en
-    /// achtergrond-services dezelfde instantie delen. Bestaande call-sites die
-    /// `HealthKitManager()` gebruiken blijven werken (de init is nog beschikbaar).
+    /// Epic #31 Sprint 31.2: Shared singleton so the onboarding flow and
+    /// background services share the same instance. Existing call sites that use
+    /// `HealthKitManager()` keep working (the init is still available).
     static let shared = HealthKitManager()
 
-    // Lazy: HKHealthStore wordt pas aangemaakt bij het eerste echte gebruik,
-    // niet al bij app-start. Dit verkort de opstarttijd significant.
+    // Lazy: HKHealthStore is created only on first real use, not at app start.
+    // This shortens the launch time significantly.
     lazy var healthStore: HKHealthStore = HKHealthStore()
 
-    /// Epic #31 Sprint 31.2 + Epic #38 Story 38.1: Permissie-aanvraag voor de
-    /// onboarding-flow. Vraagt nu de **complete** set HK-types die de coach
-    /// gebruikt (zie `HealthKitPermissionTypes.readTypes`) zodat een gebruiker
-    /// niet per ongeluk een sub-set vergeet — iOS toont één toestemmings-sheet
-    /// met álle categorieën. Voor 38.1 vóór deze wijziging vroeg onboarding
-    /// alleen 4 types; de rest werd pas later via `requestAuthorization`
-    /// achterhaald, wat tot stille fails leidde wanneer iOS na een reinstall
-    /// de toestemmingen gedeeltelijk had gereset.
+    /// Epic #31 Sprint 31.2 + Epic #38 Story 38.1: Permission request for the
+    /// onboarding flow. Now requests the **complete** set of HK types the coach
+    /// uses (see `HealthKitPermissionTypes.readTypes`) so a user doesn't
+    /// accidentally forget a subset — iOS shows one permission sheet with all
+    /// categories. Before this change, 38.1 onboarding requested only 4 types;
+    /// the rest was retrieved later via `requestAuthorization`, which led to
+    /// silent failures when iOS had partially reset permissions after a reinstall.
     ///
-    /// - Returns: `true` als de HealthKit-dialog succesvol is gepresenteerd én
-    ///   iOS een antwoord heeft geregistreerd. Let op: dit zegt niets over per-type
-    ///   toestemming — HealthKit onthult lees-rechten niet.
-    /// - Throws: `FitnessDataError.networkError` wanneer HealthKit niet beschikbaar
-    ///   is op het apparaat.
+    /// - Returns: `true` if the HealthKit dialog was presented successfully and
+    ///   iOS registered an answer. Note: this says nothing about per-type
+    ///   permission — HealthKit doesn't reveal read access.
+    /// - Throws: `FitnessDataError.networkError` when HealthKit isn't available
+    ///   on the device.
     @discardableResult
     func requestOnboardingPermissions() async throws -> Bool {
         guard HKHealthStore.isHealthDataAvailable() else {
             throw FitnessDataError.networkError("HealthKit is niet beschikbaar op dit apparaat.")
         }
 
-        // Epic #38 Story 38.1: complete set in één toestemmings-sheet (single
+        // Epic #38 Story 38.1: complete set in one permission sheet (single
         // source of truth in `HealthKitPermissionTypes.readTypes`).
         return try await withCheckedThrowingContinuation { continuation in
             healthStore.requestAuthorization(toShare: HealthKitPermissionTypes.writeTypes,
@@ -47,11 +46,11 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Epic #38 Story 38.1: foreground-return-retrigger. Vraagt toestemming
-    /// alleen voor de **critical** types waarvan de status `.notDetermined` is.
-    /// Bestaande gebruikers met `.sharingAuthorized`/`.sharingDenied` zien geen
-    /// onverwachte prompt — iOS toont alleen een dialog wanneer er écht iets
-    /// te beslissen valt. Lege set → no-op (geen prompt, geen exception).
+    /// Epic #38 Story 38.1: foreground-return retrigger. Requests permission
+    /// only for the **critical** types whose status is `.notDetermined`.
+    /// Existing users with `.sharingAuthorized`/`.sharingDenied` see no
+    /// unexpected prompt — iOS only shows a dialog when there's actually
+    /// something to decide. Empty set → no-op (no prompt, no exception).
     @discardableResult
     func requestPermissionsForCriticalNotDetermined() async throws -> Bool {
         guard HKHealthStore.isHealthDataAvailable() else { return false }
@@ -69,10 +68,10 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Vraagt toestemming aan de gebruiker om benodigde gezondheidsdata te lezen.
-    /// Epic #38 Story 38.1: types komen nu uit `HealthKitPermissionTypes` zodat
-    /// onboarding en deze "expand later"-call dezelfde set vragen — geen drift
-    /// meer tussen "wat we vragen" en "wat we checken op `.notDetermined`".
+    /// Requests permission from the user to read the required health data.
+    /// Epic #38 Story 38.1: types now come from `HealthKitPermissionTypes` so
+    /// onboarding and this "expand later" call request the same set — no more
+    /// drift between "what we ask" and "what we check on `.notDetermined`".
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
         guard HKHealthStore.isHealthDataAvailable() else {
             completion(false, FitnessDataError.networkError("HealthKit is niet beschikbaar op dit apparaat."))
@@ -85,8 +84,8 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Berekent het gemiddeld wekelijks trainingsvolume (in seconden) direct vanuit HealthKit.
-    /// Vraagt geen SwiftData aan — altijd actuele data.
+    /// Computes the average weekly training volume (in seconds) directly from HealthKit.
+    /// Doesn't query SwiftData — always current data.
     func fetchAverageWeeklyDurationSeconds(weeks: Int = 4) async -> Int {
         guard HKHealthStore.isHealthDataAvailable() else { return 0 }
         let now = Date()
@@ -109,17 +108,17 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Haalt de meest recente workout op uit HealthKit (ongeacht het type)
-    /// Inclusief de duur, hartslagstatistieken en ruwe hartslagsamples.
+    /// Fetches the most recent workout from HealthKit (regardless of type)
+    /// Including duration, heart-rate statistics and raw heart-rate samples.
     func fetchLatestWorkoutDetails() async throws -> WorkoutDetails? {
         let workoutType = HKObjectType.workoutType()
         let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)!
         let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
 
-        // Geen specifiek predicaat meer, we willen de laatste workout van willekeurig welk type
+        // No specific predicate anymore, we want the latest workout of any type
         let predicate: NSPredicate? = nil
 
-        // Sorteer op einddatum om daadwerkelijk de laatst afrondde activiteit te pakken
+        // Sort on end date to actually take the most recently finished activity
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -141,15 +140,15 @@ final class HealthKitManager: @unchecked Sendable {
 
                 Task {
                     do {
-                        // Haal de ruwe hartslagsamples op voor deze workout
+                        // Fetch the raw heart-rate samples for this workout
                         let hrSamples = try await self.fetchHeartRateSamples(for: workout, quantityType: heartRateType)
                         let heartRateData = hrSamples.map { HeartRateSample(timestamp: $0.startDate, bpm: $0.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))) }
 
-                        // Bereken gem en max uit de ruwe samples
+                        // Compute avg and max from the raw samples
                         let avgHR = heartRateData.isEmpty ? 0 : heartRateData.reduce(0) { $0 + $1.bpm } / Double(heartRateData.count)
                         let maxHR = heartRateData.max(by: { $0.bpm < $1.bpm })?.bpm ?? 0
 
-                        // Haal laatste rusthartslag op
+                        // Fetch the latest resting heart rate
                         let restingHR = try await self.fetchLatestRestingHeartRate(quantityType: restingHeartRateType)
 
                         let sport = SportCategory.from(hkType: workout.workoutActivityType.rawValue)
@@ -173,7 +172,7 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Haalt workouts op van de afgelopen specifieke hoeveelheid dagen
+    /// Fetches workouts from the past specific number of days
     func fetchRecentWorkouts(days: Int) async throws -> [WorkoutDetails] {
         let workoutType = HKObjectType.workoutType()
         let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)!
@@ -239,7 +238,7 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Hulpfunctie om ruwe hartslagsamples op te halen behorend bij een specifieke workout.
+    /// Helper to fetch the raw heart-rate samples belonging to a specific workout.
     private func fetchHeartRateSamples(for workout: HKWorkout, quantityType: HKQuantityType) async throws -> [HKQuantitySample] {
         let predicate = HKQuery.predicateForSamples(withStart: workout.startDate, end: workout.endDate, options: .strictStartDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
@@ -260,19 +259,19 @@ final class HealthKitManager: @unchecked Sendable {
 
     // MARK: - Epic 14: Readiness Score Data
 
-    /// Haalt de gemiddelde HRV (SDNN, in milliseconden) op van de afgelopen nacht.
-    /// Wanneer `sleepStart`/`sleepEnd` worden meegegeven, wordt uitsluitend de HRV
-    /// binnen die exacte slaapsessie gebruikt — post-workout drops worden zo definitief
-    /// uitgesloten. Zonder slaapvenster valt de query terug op het vaste nachtvenster
-    /// (gisteren 18:00 → vandaag 14:00).
-    /// - Returns: Gemiddelde HRV in ms, of nil als er geen meting beschikbaar is.
+    /// Fetches the average HRV (SDNN, in milliseconds) of the past night.
+    /// When `sleepStart`/`sleepEnd` are provided, only the HRV within that exact
+    /// sleep session is used — post-workout drops are thus definitively excluded.
+    /// Without a sleep window the query falls back to the fixed night window
+    /// (yesterday 18:00 → today 14:00).
+    /// - Returns: Average HRV in ms, or nil if no measurement is available.
     func fetchRecentHRV(sleepStart: Date? = nil, sleepEnd: Date? = nil) async throws -> Double? {
         guard let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else {
             AppLoggers.athleticProfileManager.error("[HRV] HKQuantityType voor heartRateVariabilitySDNN niet beschikbaar")
             return nil
         }
 
-        // Gebruik het exacte slaapvenster als dat bekend is; anders het vaste nachtvenster.
+        // Use the exact sleep window if known; otherwise the fixed night window.
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let defaultEnd   = calendar.date(byAdding: .hour, value: 14, to: today)!
@@ -305,12 +304,12 @@ final class HealthKitManager: @unchecked Sendable {
                     return
                 }
 
-                // Bereken het gemiddelde van alle beschikbare metingen in het tijdvenster
+                // Compute the average of all available measurements in the time window
                 let unit = HKUnit.secondUnit(with: .milli)
                 let totalHRV = hrvSamples.reduce(0.0) { $0 + $1.quantity.doubleValue(for: unit) }
                 let averageHRV = totalHRV / Double(hrvSamples.count)
 
-                // HRV-waarde is user-specifieke fysiologische data → private.
+                // HRV value is user-specific physiological data → private.
                 AppLoggers.athleticProfileManager.info("[HRV] Data ontvangen: \(String(format: "%.1f", averageHRV), privacy: .private) ms (\(hrvSamples.count, privacy: .public) meting(en))")
                 continuation.resume(returning: averageHRV)
             }
@@ -318,9 +317,9 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Haalt de gemiddelde HRV op over de afgelopen `days` dagen als persoonlijke baseline.
-    /// Wordt gebruikt door ReadinessCalculator om de HRV van vannacht te contextualiseren.
-    /// - Returns: Gemiddelde HRV in ms over het opgegeven venster, of nil als er geen data is.
+    /// Fetches the average HRV over the past `days` days as a personal baseline.
+    /// Used by ReadinessCalculator to contextualize tonight's HRV.
+    /// - Returns: Average HRV in ms over the given window, or nil if there's no data.
     func fetchHRVBaseline(days: Int = 7) async throws -> Double? {
         guard let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else {
             AppLoggers.athleticProfileManager.error("[HRV-Baseline] HKQuantityType niet beschikbaar")
@@ -352,7 +351,7 @@ final class HealthKitManager: @unchecked Sendable {
                 let total = hrvSamples.reduce(0.0) { $0 + $1.quantity.doubleValue(for: unit) }
                 let average = total / Double(hrvSamples.count)
 
-                // HRV-baseline is user-specifieke fysiologische data → private.
+                // HRV baseline is user-specific physiological data → private.
                 AppLoggers.athleticProfileManager.info("[HRV-Baseline] Data ontvangen: \(String(format: "%.1f", average), privacy: .private) ms (\(days, privacy: .public) dagen, \(hrvSamples.count, privacy: .public) meting(en))")
                 continuation.resume(returning: average)
             }
@@ -360,20 +359,20 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Berekent het aantal daadwerkelijk geslapen uren van de afgelopen nacht.
-    /// Telt uitsluitend `.asleepCore`, `.asleepDeep` en `.asleepREM` op (iOS 16+ / watchOS 9+).
-    /// Dit voorkomt dubbeltelling: op moderne hardware schrijft Apple Watch de stage-specifieke
-    /// samples, maar sommige third-party bronnen schrijven ook een generiek `.asleep`-aggregate.
-    /// Door alleen de drie fases te tellen sluiten we zowel inBed als dubbeltellingen uit.
-    /// Fallback naar `.asleep` (legacy) als er geen stage-data aanwezig is.
-    /// - Returns: Totale slaaptijd in uren (bijv. 7.5), of nil als geen data beschikbaar.
+    /// Computes the number of actually slept hours of the past night.
+    /// Sums only `.asleepCore`, `.asleepDeep` and `.asleepREM` (iOS 16+ / watchOS 9+).
+    /// This prevents double counting: on modern hardware Apple Watch writes the
+    /// stage-specific samples, but some third-party sources also write a generic
+    /// `.asleep` aggregate. By counting only the three stages we exclude both inBed
+    /// and double counting. Falls back to `.asleep` (legacy) if no stage data is present.
+    /// - Returns: Total sleep time in hours (e.g. 7.5), or nil if no data available.
     func fetchLastNightSleep() async throws -> Double? {
         guard let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) else {
             AppLoggers.athleticProfileManager.error("[Slaap] HKCategoryType voor sleepAnalysis niet beschikbaar")
             return nil
         }
 
-        // Vast nachtvenster: gisteren 18:00 tot vandaag 14:00.
+        // Fixed night window: yesterday 18:00 to today 14:00.
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let windowEnd = calendar.date(byAdding: .hour, value: 14, to: today)!
@@ -399,8 +398,8 @@ final class HealthKitManager: @unchecked Sendable {
                     return
                 }
 
-                // Fase 1: probeer stage-specifieke waarden (watchOS 9+ / iOS 16+).
-                // Door ALLEEN deze drie te tellen vermijden we dubbeltelling met legacy .asleep.
+                // Phase 1: try stage-specific values (watchOS 9+ / iOS 16+).
+                // By counting ONLY these three we avoid double counting with legacy .asleep.
                 let stageValues: Set<Int> = [
                     HKCategoryValueSleepAnalysis.asleepCore.rawValue,
                     HKCategoryValueSleepAnalysis.asleepDeep.rawValue,
@@ -410,7 +409,7 @@ final class HealthKitManager: @unchecked Sendable {
 
                 let totalSleepSeconds: Double
                 if stageSamples.isEmpty {
-                    // Fase 2 (fallback): ouder Apple Watch-model — gebruik generieke .asleep waarde.
+                    // Phase 2 (fallback): older Apple Watch model — use the generic .asleep value.
                     let asleepValue: Int
                     if #available(iOS 16.0, *) {
                         asleepValue = HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue
@@ -422,7 +421,7 @@ final class HealthKitManager: @unchecked Sendable {
                         .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
                     AppLoggers.athleticProfileManager.debug("[Slaap] Geen stage-data — fallback naar generieke slaapwaarde")
                 } else {
-                    // Moderne Apple Watch: som Core + Deep + REM
+                    // Modern Apple Watch: sum Core + Deep + REM
                     totalSleepSeconds = stageSamples
                         .reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
                 }
@@ -436,7 +435,7 @@ final class HealthKitManager: @unchecked Sendable {
                 let hours = Int(totalSleepHours)
                 let minutes = Int((totalSleepHours - Double(hours)) * 60)
 
-                // Slaapuren zijn user-specifieke data → private.
+                // Sleep hours are user-specific data → private.
                 AppLoggers.athleticProfileManager.info("[Slaap] Afgelopen nacht: \(hours, privacy: .private)u \(minutes, privacy: .private)m (Core+Deep+REM = \(String(format: "%.2f", totalSleepHours), privacy: .private) uur)")
                 continuation.resume(returning: totalSleepHours)
             }
@@ -444,18 +443,18 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Epic 21 Sprint 2: Haalt de slaapfases op van de afgelopen nacht.
-    /// Retourneert nil als HealthKit niet beschikbaar is of als er geen stage-specifieke data is
-    /// (bijv. ouder Apple Watch-model dat alleen de generieke `.asleep` waarde registreert).
-    /// De teruggegeven `SleepStages` bevat ook `sessionStart`/`sessionEnd` — de exacte grenzen
-    /// van de slaapsessie — zodat de HRV-query daar naadloos op kan aansluiten.
+    /// Epic 21 Sprint 2: Fetches the sleep stages of the past night.
+    /// Returns nil if HealthKit isn't available or if there's no stage-specific data
+    /// (e.g. an older Apple Watch model that only records the generic `.asleep` value).
+    /// The returned `SleepStages` also contains `sessionStart`/`sessionEnd` — the exact
+    /// boundaries of the sleep session — so the HRV query can hook into it seamlessly.
     func fetchSleepStages() async throws -> SleepStages? {
         guard let sleepType = HKCategoryType.categoryType(forIdentifier: .sleepAnalysis) else {
             AppLoggers.athleticProfileManager.error("[Slaapfases] HKCategoryType niet beschikbaar")
             return nil
         }
 
-        // Zelfde vaste nachtvenster als fetchLastNightSleep(): gisteren 18:00 → vandaag 14:00.
+        // Same fixed night window as fetchLastNightSleep(): yesterday 18:00 → today 14:00.
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let windowEnd = calendar.date(byAdding: .hour, value: 14, to: today)!
@@ -481,7 +480,7 @@ final class HealthKitManager: @unchecked Sendable {
                     return
                 }
 
-                // Filter op de drie stage-specifieke waarden (watchOS 9+ / iOS 16+).
+                // Filter on the three stage-specific values (watchOS 9+ / iOS 16+).
                 let deepSamples = sleepSamples.filter { $0.value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue }
                 let remSamples  = sleepSamples.filter { $0.value == HKCategoryValueSleepAnalysis.asleepREM.rawValue  }
                 let coreSamples = sleepSamples.filter { $0.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue }
@@ -490,15 +489,15 @@ final class HealthKitManager: @unchecked Sendable {
                 let remSec  = remSamples.reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
                 let coreSec = coreSamples.reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
 
-                // Als alle stage-specifieke waarden nul zijn is dit een ouder apparaat.
+                // If all stage-specific values are zero this is an older device.
                 guard deepSec + remSec + coreSec > 0 else {
                     AppLoggers.athleticProfileManager.debug("[Slaapfases] Geen stage-specifieke data — ouder device")
                     continuation.resume(returning: nil)
                     return
                 }
 
-                // Slaapvenster: vroegste start en laatste eind van de echte slaapfases.
-                // Dit venster wordt doorgegeven aan fetchRecentHRV() om post-workout HRV uit te sluiten.
+                // Sleep window: earliest start and latest end of the real sleep stages.
+                // This window is passed to fetchRecentHRV() to exclude post-workout HRV.
                 let allStageSamples = deepSamples + remSamples + coreSamples
                 let sessionStart = allStageSamples.map { $0.startDate }.min()
                 let sessionEnd   = allStageSamples.map { $0.endDate   }.max()
@@ -513,7 +512,7 @@ final class HealthKitManager: @unchecked Sendable {
                     sessionEnd: sessionEnd
                 )
 
-                // Slaapminuten zijn user-specifieke fysiologische data → private.
+                // Sleep minutes are user-specific physiological data → private.
                 AppLoggers.athleticProfileManager.info("[Slaapfases] Diep: \(stages.deepMinutes, privacy: .private)m · REM: \(stages.remMinutes, privacy: .private)m · Kern: \(stages.coreMinutes, privacy: .private)m · Ratio diep: \(String(format: "%.0f%%", stages.deepRatio * 100), privacy: .private)")
                 continuation.resume(returning: stages)
             }
@@ -521,7 +520,7 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Haalt de meest recente VO2max schatting op uit HealthKit (ml/kg/min). Geeft nil als geen data.
+    /// Fetches the most recent VO2max estimate from HealthKit (ml/kg/min). Returns nil if no data.
     func fetchVO2Max() async -> Double? {
         guard HKHealthStore.isHealthDataAvailable(),
               let type = HKQuantityType.quantityType(forIdentifier: .vo2Max) else { return nil }
@@ -543,7 +542,7 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Haalt de meest recente rusthartslag op uit HealthKit. Geeft nil terug als er geen meting is.
+    /// Fetches the most recent resting heart rate from HealthKit. Returns nil if there's no measurement.
     func fetchRestingHeartRate() async -> Double? {
         guard HKHealthStore.isHealthDataAvailable() else { return nil }
         let type = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
@@ -565,7 +564,7 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 
-    /// Hulpfunctie om de meest recente rusthartslag op te halen.
+    /// Helper to fetch the most recent resting heart rate.
     private func fetchLatestRestingHeartRate(quantityType: HKQuantityType) async throws -> Double {
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
         let now = Date()
@@ -580,7 +579,7 @@ final class HealthKitManager: @unchecked Sendable {
                 }
 
                 guard let latestSample = samples?.first as? HKQuantitySample else {
-                    // Fallback naar een standaardwaarde als er geen is gemeten in de afgelopen maand
+                    // Fall back to a default value if none was measured in the past month
                     continuation.resume(returning: 60.0)
                     return
                 }

@@ -3,28 +3,28 @@ import HealthKit
 import SwiftData
 import os.log
 
-// MARK: - Epic 32 Story 32.1: 30-daagse Deep Sync Orchestrator
+// MARK: - Epic 32 Story 32.1: 30-day Deep Sync Orchestrator
 //
-// Doorlopende historische sync: alle HKWorkouts uit de afgelopen 30 dagen worden door de
-// `WorkoutSampleIngestService` gehaald zodat de `WorkoutSample`-store gevuld is voor
-// fysiologische analyses (Story 32.2 + 32.3).
+// Continuous historical sync: all HKWorkouts from the past 30 days are run through the
+// `WorkoutSampleIngestService` so the `WorkoutSample` store is populated for
+// physiological analyses (Story 32.2 + 32.3).
 //
-// Idempotentie & hervatting:
-//   • `processedWorkoutUUIDs` (UserDefaults, JSON-encoded UUID-set) is permanent — per
-//     succesvol verwerkte workout direct weggeschreven, en blijft over runs heen zodat
-//     reeds-binnen-gehaalde samples niet opnieuw gefetched worden.
-//   • Faalt één workout? Loggen en doorgaan met de rest. Niet-gemarkeerde UUIDs worden
-//     bij de volgende run vanzelf opnieuw geprobeerd.
-//   • Geen one-shot guard meer: `runIfNeeded()` draait bij élke trigger door. Een
-//     nieuwe workout vanuit auto-sync wordt zo binnen één view-refresh opgepakt
-//     i.p.v. eeuwig op de "Deep Sync loopt"-placeholder te blijven hangen
-//     (#fix-workout-samples-loading — voorheen blokkeerde de legacy completion-flag
-//     elke run na de eerste backfill).
+// Idempotency & resumption:
+//   • `processedWorkoutUUIDs` (UserDefaults, JSON-encoded UUID set) is permanent —
+//     written immediately per successfully processed workout, and persists across runs
+//     so already-fetched samples aren't fetched again.
+//   • A workout fails? Log it and continue with the rest. Unmarked UUIDs are
+//     automatically retried on the next run.
+//   • No more one-shot guard: `runIfNeeded()` runs on every trigger. A new workout
+//     from auto-sync is thus picked up within one view refresh instead of forever
+//     hanging on the "Deep Sync running" placeholder
+//     (#fix-workout-samples-loading — previously the legacy completion flag blocked
+//     every run after the first backfill).
 
 private let log = Logger(subsystem: "com.markclausing.aifitnesscoach", category: "DeepSync")
 
-/// Abstractie boven `WorkoutSampleIngestService` zodat de orchestrator unit-testbaar is
-/// zonder een echte HealthKit te raken.
+/// Abstraction over `WorkoutSampleIngestService` so the orchestrator is unit-testable
+/// without touching a real HealthKit.
 protocol WorkoutSampleIngesting {
     func ingestSamples(for workout: HKWorkout, into store: WorkoutSampleStore) async throws
 }
@@ -34,7 +34,7 @@ extension WorkoutSampleIngestService: WorkoutSampleIngesting {}
 @MainActor
 final class DeepSyncService: ObservableObject {
 
-    /// Status voor toekomstige UI-binding (Story 32.2). Voor nu fire-and-forget.
+    /// Status for future UI binding (Story 32.2). For now fire-and-forget.
     enum Status: Equatable {
         case idle
         case syncing(processed: Int, total: Int)
@@ -56,20 +56,20 @@ final class DeepSyncService: ObservableObject {
 
     static let completedFlagKey   = "DeepSync.hasCompletedInitialDeepSync"
     static let processedUUIDsKey  = "DeepSync.processedWorkoutUUIDs"
-    /// Epic #52: ingest-revisie — bumpen zodra `WorkoutSampleService.ingestSamples`
-    /// een nieuw signaal gaat fetchen waardoor bestaande samples op de store
-    /// onvolledig zijn. Bij launch met een lagere of ontbrekende revisie clear
-    /// `runIfNeeded()` de processed-set zodat álle workouts in het 30-daagse
-    /// venster opnieuw worden geïngestred — éénmalig, in achtergrond.
+    /// Epic #52: ingest revision — bump it as soon as `WorkoutSampleService.ingestSamples`
+    /// starts fetching a new signal that makes existing samples in the store
+    /// incomplete. At launch with a lower or missing revision, `runIfNeeded()` clears
+    /// the processed set so all workouts in the 30-day window are re-ingested —
+    /// once, in the background.
     static let ingestRevisionKey  = "DeepSync.ingestRevision"
 
-    /// Huidige ingest-revisie. Bump dit bij élke wijziging in `WorkoutSampleService`
-    /// die nieuwe samples ophaalt voor bestaande workouts.
-    /// - 1 (impliciet voor nil): Epic #32 — HR, power, cadence (cycling), speed, distance
+    /// Current ingest revision. Bump this on every change in `WorkoutSampleService`
+    /// that fetches new samples for existing workouts.
+    /// - 1 (implicit for nil): Epic #32 — HR, power, cadence (cycling), speed, distance
     /// - 2: Epic #52 — running cadence via `stepCount`
     static let currentIngestRevision = 2
 
-    /// Productie-init — gebruikt `HKHealthStore` voor het workout-fetchen.
+    /// Production init — uses `HKHealthStore` for fetching workouts.
     convenience init(ingestService: WorkoutSampleIngesting,
                      store: WorkoutSampleStore,
                      userDefaults: UserDefaults = .standard,
@@ -86,7 +86,7 @@ final class DeepSyncService: ObservableObject {
         )
     }
 
-    /// Test-init — laat de caller een synthetische workout-lijst injecteren.
+    /// Test init — lets the caller inject a synthetic workout list.
     init(ingestService: WorkoutSampleIngesting,
          store: WorkoutSampleStore,
          userDefaults: UserDefaults,
@@ -101,25 +101,25 @@ final class DeepSyncService: ObservableObject {
 
     // MARK: Public API
 
-    /// Legacy-flag uit het oorspronkelijke "eenmalige backfill"-ontwerp. Wordt niet
-    /// meer geschreven; alleen behouden zodat oude installaties hem niet als stale
-    /// data laten staan en bestaande tests/migraties hem kunnen blijven lezen.
-    /// Gebruik voor productiebeslissingen: kijk naar `status` of de processed-set.
+    /// Legacy flag from the original "one-time backfill" design. No longer written;
+    /// kept only so old installs don't leave it as stale data and existing
+    /// tests/migrations can keep reading it.
+    /// For production decisions: look at `status` or the processed set.
     var hasCompletedInitialDeepSync: Bool {
         userDefaults.bool(forKey: Self.completedFlagKey)
     }
 
-    /// Idempotent — kan vrij vaak getriggerd worden (bij elke DashboardView.task en
-    /// vanuit auto-sync na nieuwe HK-imports). De `processed`-UUID-set zorgt dat
-    /// reeds-binnen-gehaalde samples niet opnieuw worden gefetched.
+    /// Idempotent — can be triggered fairly often (on every DashboardView.task and
+    /// from auto-sync after new HK imports). The `processed` UUID set ensures
+    /// already-fetched samples aren't fetched again.
     func runIfNeeded() async {
-        // Voorkom dubbel-trigger als de view meerdere keren onAppear schiet of
-        // auto-sync en .task tegelijk firen.
+        // Prevent a double trigger if the view fires onAppear multiple times or
+        // auto-sync and .task fire at the same time.
         if case .syncing = status { return }
 
-        // Epic #52: ingest-revisie-bump triggert eenmalige re-ingest van alle
-        // workouts in het venster, zodat nieuwe signalen (running cadence uit
-        // stepCount) ook voor reeds-bestaande HK-workouts beschikbaar komen.
+        // Epic #52: an ingest-revision bump triggers a one-time re-ingest of all
+        // workouts in the window, so new signals (running cadence from stepCount)
+        // also become available for already-existing HK workouts.
         applyIngestRevisionMigrationIfNeeded()
 
         let calendar = Calendar.current
@@ -142,15 +142,15 @@ final class DeepSyncService: ObservableObject {
             status = .syncing(processed: 0, total: pending.count)
             log.info("Starting deep sync — \(pending.count, privacy: .public) pending workout(s) of \(allWorkouts.count, privacy: .public) total")
 
-            // Serieel verwerken — parallel zou HealthKit overbelasten (5 quantity types × N workouts).
+            // Process serially — parallel would overload HealthKit (5 quantity types × N workouts).
             for (i, workout) in pending.enumerated() {
                 do {
                     try await ingestService.ingestSamples(for: workout, into: store)
                     processed.insert(workout.uuid)
                     saveProcessedUUIDs(processed)
                 } catch {
-                    // Eén falende workout mag de rest niet blokkeren — niet-gemarkeerde
-                    // UUIDs worden bij de volgende run vanzelf opnieuw geprobeerd.
+                    // One failing workout must not block the rest — unmarked
+                    // UUIDs are automatically retried on the next run.
                     log.error("Skipping workout \(workout.uuid, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 }
                 status = .syncing(processed: i + 1, total: pending.count)
@@ -166,10 +166,10 @@ final class DeepSyncService: ObservableObject {
     // MARK: Private
 
     private func finalizeIfComplete(processed: Set<UUID>, allWorkoutUUIDs: Set<UUID>) {
-        // De processed-set wordt nooit meer gewist: hij is single-source-of-truth voor
-        // dedupe over runs heen. Nieuwe workouts uit auto-sync krijgen samples
-        // doordat hun UUID niet in de set staat — runIfNeeded() pikt ze op bij de
-        // eerstvolgende trigger zonder dat een legacy completion-flag de boel blokkeert.
+        // The processed set is never cleared again: it's the single source of truth for
+        // dedupe across runs. New workouts from auto-sync get samples because their
+        // UUID isn't in the set — runIfNeeded() picks them up on the next trigger
+        // without a legacy completion flag blocking everything.
         if processed.isSuperset(of: allWorkoutUUIDs) {
             status = .completed
             log.info("Deep sync round done — alle \(allWorkoutUUIDs.count, privacy: .public) workout(s) in venster hebben samples")
@@ -192,12 +192,12 @@ final class DeepSyncService: ObservableObject {
         }
     }
 
-    /// Epic #52: éénmalige migratie bij ingest-revisie-bump. Wist de processed-set
-    /// zodat álle workouts in het 30-daagse venster opnieuw worden geïngestred.
-    /// `replaceSamples` in `WorkoutSampleStore` is idempotent — bestaande samples
-    /// per workout-UUID worden gewist en vervangen door de nieuwe rijkere reeks
-    /// (inclusief running cadence). Geen data-verlies; alleen tijdelijke extra
-    /// HK-quantity-fetches bij eerstvolgende run.
+    /// Epic #52: one-time migration on an ingest-revision bump. Clears the processed
+    /// set so all workouts in the 30-day window are re-ingested.
+    /// `replaceSamples` in `WorkoutSampleStore` is idempotent — existing samples per
+    /// workout UUID are wiped and replaced by the new richer series (including
+    /// running cadence). No data loss; only temporary extra HK quantity fetches on
+    /// the next run.
     private func applyIngestRevisionMigrationIfNeeded() {
         let stored = userDefaults.integer(forKey: Self.ingestRevisionKey)
         guard stored < Self.currentIngestRevision else { return }
@@ -208,7 +208,7 @@ final class DeepSyncService: ObservableObject {
         userDefaults.set(Self.currentIngestRevision, forKey: Self.ingestRevisionKey)
     }
 
-    // MARK: HealthKit fetch (productie)
+    // MARK: HealthKit fetch (production)
 
     private static func fetchWorkouts(healthStore: HKHealthStore, start: Date, end: Date) async throws -> [HKWorkout] {
         let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
