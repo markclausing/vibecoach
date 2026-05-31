@@ -1,50 +1,50 @@
 import Foundation
 import HealthKit
 
-// MARK: - Epic 24 Sprint 1 & 2: Fysiologisch Profiel + Two-Way Sync
+// MARK: - Epic 24 Sprint 1 & 2: Physiological Profile + Two-Way Sync
 
-/// Beschrijft het biologische geslacht van de gebruiker, nodig voor de BMR-formule.
+/// Describes the user's biological sex, needed for the BMR formula.
 enum BiologicalSex: String, Codable {
     case male, female, other, unknown
 }
 
 // MARK: - Epic 44 Story 44.1: ThresholdValue
 
-/// Eén fysiologische drempel met source-tracking. Source bepaalt UI-badging
-/// ("auto · 14 dagen" / "Strava" / "handmatig") en speelt in 44.2 ook de rol
-/// van prioriteit: handmatige overrides winnen altijd van automatische detectie.
+/// One physiological threshold with source tracking. The source determines UI
+/// badging ("auto · 14 dagen" / "Strava" / "handmatig") and in 44.2 also plays
+/// the role of priority: manual overrides always beat automatic detection.
 struct ThresholdValue: Equatable, Codable {
     let value: Double
     let source: ThresholdSource
 }
 
 enum ThresholdSource: String, Codable, Equatable {
-    /// Gedetecteerd uit HealthKit-historie via `PhysiologicalThresholdEstimator`.
+    /// Detected from HealthKit history via `PhysiologicalThresholdEstimator`.
     case automatic
-    /// Door gebruiker handmatig ingevoerd in Settings — wint altijd van automatic.
+    /// Entered manually by the user in Settings — always beats automatic.
     case manual
-    /// Geïmporteerd vanuit Strava `Athlete`-endpoint (alleen FTP).
+    /// Imported from the Strava `Athlete` endpoint (FTP only).
     case strava
 }
 
-/// Fysiologisch profiel van de gebruiker — opgehaald via HealthKit met fallbacks.
-/// Dit profiel is de basis voor alle voedingsberekeningen in `NutritionService`
-/// en — sinds Epic #44 — ook voor de zone-kalibratie van `WorkoutPatternDetector`
-/// en `SessionClassifier`.
+/// The user's physiological profile — fetched via HealthKit with fallbacks.
+/// This profile is the basis for all nutrition calculations in `NutritionService`
+/// and — since Epic #44 — also for the zone calibration of `WorkoutPatternDetector`
+/// and `SessionClassifier`.
 struct UserPhysicalProfile {
-    let weightKg: Double        // lichaamsgewicht in kilogram
-    let heightCm: Double        // lichaamslengte in centimeter
-    let ageYears: Int           // leeftijd in jaren
-    let sex: BiologicalSex      // biologisch geslacht voor BMR-formule
+    let weightKg: Double        // body weight in kilograms
+    let heightCm: Double        // body height in centimeters
+    let ageYears: Int           // age in years
+    let sex: BiologicalSex      // biological sex for the BMR formula
 
-    /// Geeft aan of dit profiel van HealthKit komt of van de lokale fallback.
+    /// Indicates whether this profile comes from HealthKit or the local fallback.
     let weightSource: DataSource
     let heightSource: DataSource
 
-    // Epic #44 Story 44.1: persoonlijke trainingsdrempels. Optioneel — een nieuwe
-    // installatie zonder HK-historie en zonder handmatige invoer heeft hier nil.
-    // Gebruikers van vóór Epic #44 zien nil totdat ze hun eerste HK-detectie
-    // draaien of waardes invoeren in Settings.
+    // Epic #44 Story 44.1: personal training thresholds. Optional — a fresh
+    // install without HK history and without manual input has nil here.
+    // Users from before Epic #44 see nil until they run their first HK detection
+    // or enter values in Settings.
     let maxHeartRate: ThresholdValue?
     let restingHeartRate: ThresholdValue?
     let lactateThresholdHR: ThresholdValue?
@@ -52,9 +52,9 @@ struct UserPhysicalProfile {
 
     enum DataSource { case healthKit, local, defaultValue }
 
-    /// Expliciete init met defaults voor de 44.1-velden. Bestaande callers
-    /// (vóór deze Epic) compileren ongewijzigd door — de nieuwe optionele
-    /// drempels krijgen automatisch nil.
+    /// Explicit init with defaults for the 44.1 fields. Existing callers
+    /// (from before this Epic) keep compiling unchanged — the new optional
+    /// thresholds automatically get nil.
     init(weightKg: Double,
          heightCm: Double,
          ageYears: Int,
@@ -77,12 +77,12 @@ struct UserPhysicalProfile {
         self.ftp = ftp
     }
 
-    /// True als het profiel volledig is (geen defaults gebruikt).
+    /// True if the profile is complete (no defaults used).
     var isComplete: Bool {
         weightKg > 0 && heightCm > 0 && ageYears > 0 && sex != .unknown
     }
 
-    /// Leesbare samenvatting voor de coach-prompt.
+    /// Readable summary for the coach prompt.
     var coachSummary: String {
         let sexLabel: String
         switch sex {
@@ -94,54 +94,54 @@ struct UserPhysicalProfile {
         return "\(Int(weightKg)) kg, \(Int(heightCm)) cm, \(ageYears) jaar, \(sexLabel)"
     }
 
-    // MARK: - Epic 44: effectieve drempels met fallbacks
+    // MARK: - Epic 44: effective thresholds with fallbacks
 
-    /// Effectieve max-HR voor zone-berekeningen. Valt terug op Tanaka(`ageYears`)
-    /// wanneer geen handmatige of auto-gedetecteerde waarde beschikbaar is.
+    /// Effective max HR for zone calculations. Falls back to Tanaka(`ageYears`)
+    /// when no manual or auto-detected value is available.
     var effectiveMaxHeartRate: Double {
         if let stored = maxHeartRate?.value, stored > 0 { return stored }
         guard ageYears > 0, ageYears < 120 else { return HeartRateZones.defaultMaxHeartRate }
         return 208.0 - 0.7 * Double(ageYears)
     }
 
-    /// Effectieve rust-HR. Default 60 BPM (gemiddelde gezonde volwassene) als fallback.
+    /// Effective resting HR. Default 60 BPM (average healthy adult) as fallback.
     var effectiveRestingHeartRate: Double {
         if let stored = restingHeartRate?.value, stored > 0 { return stored }
         return 60.0
     }
 }
 
-/// Beheert het fysiologische profiel van de gebruiker.
+/// Manages the user's physiological profile.
 ///
-/// **Resolutie-hiërarchie (van hoog naar laag):**
-/// 1. Recente HealthKit data (single source of truth)
-/// 2. Lokale UserDefaults fallback (door gebruiker zelf ingevoerd)
-/// 3. Generieke standaardwaarden ("Average Joe")
+/// **Resolution hierarchy (high to low):**
+/// 1. Recent HealthKit data (single source of truth)
+/// 2. Local UserDefaults fallback (entered by the user)
+/// 3. Generic default values ("Average Joe")
 ///
-/// **Two-Way Sync:** wijzigingen worden zowel naar UserDefaults als HealthKit geschreven
-/// zodat het gehele iOS-ecosysteem up-to-date blijft.
+/// **Two-Way Sync:** changes are written to both UserDefaults and HealthKit so
+/// the whole iOS ecosystem stays up to date.
 final class UserProfileService: @unchecked Sendable {
 
-    // MARK: - Constanten
+    // MARK: - Constants
 
-    /// UserDefaults-sleutels voor de lokale fallback en leeftijdscache.
+    /// UserDefaults keys for the local fallback and the age cache.
     static let weightKey    = "vibecoach_userWeightKg"
     static let heightKey    = "vibecoach_userHeightCm"
-    /// Gecachte leeftijd — om te detecteren of HealthKit een gewijzigde waarde teruggeeft.
+    /// Cached age — to detect whether HealthKit returns a changed value.
     static let cachedAgeKey = "vibecoach_cachedAgeYears"
 
-    // MARK: - Epic 44 Story 44.1: drempels in UserDefaults
+    // MARK: - Epic 44 Story 44.1: thresholds in UserDefaults
     //
-    // Per drempel slaan we een JSON-blob op met `value` + `source`. Eén key per
-    // drempel houdt de migratie eenvoudig: nieuwe veldjes voegen we toe aan de
-    // `ThresholdValue`-Codable zonder alle keys te moeten herschrijven.
+    // Per threshold we store a JSON blob with `value` + `source`. One key per
+    // threshold keeps the migration simple: new fields go into the
+    // `ThresholdValue` Codable without having to rewrite all keys.
     static let maxHeartRateKey       = "vibecoach_maxHeartRate.v1"
     static let restingHeartRateKey   = "vibecoach_restingHeartRate.v1"
     static let lactateThresholdHRKey = "vibecoach_lactateThresholdHR.v1"
     static let ftpKey                = "vibecoach_ftp.v1"
 
-    /// Standaard-fallbacks als zowel HealthKit als UserDefaults leeg zijn.
-    /// Gebaseerd op gemiddelde Nederlandse recreatieve atleet (man, 35j, 75 kg, 178 cm).
+    /// Default fallbacks when both HealthKit and UserDefaults are empty.
+    /// Based on an average Dutch recreational athlete (male, 35y, 75 kg, 178 cm).
     static let defaultWeightKg: Double   = 75.0
     static let defaultHeightCm: Double   = 178.0
     static let defaultAgeYears: Int      = 35
@@ -153,11 +153,11 @@ final class UserProfileService: @unchecked Sendable {
         self.healthStore = healthStore
     }
 
-    // MARK: - Synchrone cache-toegang
+    // MARK: - Synchronous cache access
 
-    /// Bouwt een profiel uitsluitend op basis van UserDefaults-cache — geen HealthKit-aanroep nodig.
-    /// Geschikt voor synchrone gebruik in SwiftUI-views (bijv. WorkoutCardView).
-    /// Volgorde: UserDefaults-waarden → generieke standaard.
+    /// Builds a profile purely from the UserDefaults cache — no HealthKit call needed.
+    /// Suitable for synchronous use in SwiftUI views (e.g. WorkoutCardView).
+    /// Order: UserDefaults values → generic default.
     static func cachedProfile() -> UserPhysicalProfile {
         let weightKg = UserDefaults.standard.object(forKey: weightKey)    as? Double ?? defaultWeightKg
         let heightCm = UserDefaults.standard.object(forKey: heightKey)    as? Double ?? defaultHeightCm
@@ -166,7 +166,7 @@ final class UserProfileService: @unchecked Sendable {
             weightKg: weightKg,
             heightCm: heightCm,
             ageYears: ageYears,
-            sex: defaultSex,       // geslacht is niet gecacht; effect op BMR ≈ 5%
+            sex: defaultSex,       // sex isn't cached; effect on BMR ≈ 5%
             weightSource: .local,
             heightSource: .local,
             maxHeartRate: cachedThreshold(forKey: maxHeartRateKey),
@@ -178,17 +178,17 @@ final class UserProfileService: @unchecked Sendable {
 
     // MARK: - Epic 44: Threshold persistence
 
-    /// Leest één `ThresholdValue` uit UserDefaults via JSON-decode. Returnt nil als
-    /// de key leeg is of de blob corrupt — caller valt dan terug op formule-default
-    /// (Tanaka-maxHR, 60 BPM rust, etc.).
+    /// Reads one `ThresholdValue` from UserDefaults via JSON decode. Returns nil if
+    /// the key is empty or the blob is corrupt — the caller then falls back to the
+    /// formula default (Tanaka maxHR, 60 BPM rest, etc.).
     static func cachedThreshold(forKey key: String,
                                 defaults: UserDefaults = .standard) -> ThresholdValue? {
         guard let data = defaults.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(ThresholdValue.self, from: data)
     }
 
-    /// Slaat één `ThresholdValue` op in UserDefaults. Synchroon — caller kan dit
-    /// direct na een UI-actie aanroepen zonder await.
+    /// Stores one `ThresholdValue` in UserDefaults. Synchronous — the caller can
+    /// call this directly after a UI action without await.
     static func saveThreshold(_ value: ThresholdValue?,
                               forKey key: String,
                               defaults: UserDefaults = .standard) {
@@ -201,11 +201,11 @@ final class UserProfileService: @unchecked Sendable {
         }
     }
 
-    /// Convenience: bewaar elke drempel die in `Result` aanwezig is met source
-    /// `.automatic`. Bestaande `.manual`-waarden worden behouden — handmatige
-    /// invoer wint altijd van automatische detectie. Caller (bv. settings-flow)
-    /// moet dus zelf checken op `.manual` voordat hij overschrijft, of expliciet
-    /// `force: true` doorgeven om die guard te omzeilen.
+    /// Convenience: store every threshold present in `Result` with source
+    /// `.automatic`. Existing `.manual` values are preserved — manual input always
+    /// beats automatic detection. The caller (e.g. settings flow) must therefore
+    /// check for `.manual` itself before overwriting, or explicitly pass
+    /// `force: true` to bypass that guard.
     static func storeAutoDetectedThresholds(_ result: PhysiologicalThresholdEstimator.Result,
                                             force: Bool = false,
                                             defaults: UserDefaults = .standard) {
@@ -220,23 +220,23 @@ final class UserProfileService: @unchecked Sendable {
                               defaults: UserDefaults) {
         guard let newValue else { return }
         if !force, let existing = cachedThreshold(forKey: key, defaults: defaults), existing.source == .manual {
-            return // Niet overschrijven; handmatige invoer is leidend.
+            return // Don't overwrite; manual input is authoritative.
         }
         saveThreshold(ThresholdValue(value: newValue, source: .automatic), forKey: key, defaults: defaults)
     }
 
-    // MARK: - Autorisatie
+    // MARK: - Authorization
 
-    /// Vraagt leesrechten voor het volledige fysiologische profiel op.
+    /// Requests read access for the full physiological profile.
     ///
-    /// Dit is een apart pad van de hoofd-HealthKit-autorisatie in `HealthKitManager`.
-    /// Gebruikers die vóór Epic 24 HealthKit koppelden, hebben nooit toestemming gegeven
-    /// voor `dateOfBirth`, `biologicalSex`, `bodyMass` of `height`. iOS toont de popup
-    /// **opnieuw** voor types die nog niet gevraagd zijn — maar pas als we ze expliciet
-    /// meegeven in een `requestAuthorization`-aanroep.
+    /// This is a separate path from the main HealthKit authorization in `HealthKitManager`.
+    /// Users who linked HealthKit before Epic 24 never granted permission for
+    /// `dateOfBirth`, `biologicalSex`, `bodyMass` or `height`. iOS shows the popup
+    /// **again** for types not yet requested — but only once we explicitly include
+    /// them in a `requestAuthorization` call.
     ///
-    /// Karakteristieke types (dateOfBirth, biologicalSex) zijn read-only in HealthKit
-    /// en mogen NIET in `toShare` zitten — alleen in `read`.
+    /// Characteristic types (dateOfBirth, biologicalSex) are read-only in HealthKit
+    /// and must NOT be in `toShare` — only in `read`.
     func requestProfileReadAuthorization() async {
         guard HKHealthStore.isHealthDataAvailable() else { return }
 
@@ -259,9 +259,9 @@ final class UserProfileService: @unchecked Sendable {
         AppLoggers.userProfile.info("requestProfileReadAuthorization voltooid")
     }
 
-    // MARK: - Profiel ophalen
+    // MARK: - Fetch profile
 
-    /// Haalt het volledige profiel op via de 3-tier resolutie-hiërarchie.
+    /// Fetches the full profile via the 3-tier resolution hierarchy.
     func fetchProfile() async -> UserPhysicalProfile {
         async let hkWeight = fetchLatestQuantity(identifier: .bodyMass, unit: .gramUnit(with: .kilo))
         async let hkHeight = fetchLatestQuantity(identifier: .height, unit: .meterUnit(with: .centi))
@@ -270,7 +270,7 @@ final class UserProfileService: @unchecked Sendable {
         let ageYears = fetchAge() ?? Self.defaultAgeYears
         let sex      = fetchSex() ?? Self.defaultSex
 
-        // Gewicht: HealthKit → UserDefaults → Default
+        // Weight: HealthKit → UserDefaults → Default
         let (weightKg, weightSource): (Double, UserPhysicalProfile.DataSource)
         if let hk = hkWeightResult {
             (weightKg, weightSource) = (hk, .healthKit)
@@ -280,7 +280,7 @@ final class UserProfileService: @unchecked Sendable {
             (weightKg, weightSource) = (Self.defaultWeightKg, .defaultValue)
         }
 
-        // Lengte: HealthKit → UserDefaults → Default
+        // Height: HealthKit → UserDefaults → Default
         let (heightCm, heightSource): (Double, UserPhysicalProfile.DataSource)
         if let hk = hkHeightResult {
             (heightCm, heightSource) = (hk, .healthKit)
@@ -304,18 +304,18 @@ final class UserProfileService: @unchecked Sendable {
         )
     }
 
-    // MARK: - Two-Way Sync: opslaan
+    // MARK: - Two-Way Sync: saving
 
-    /// Het resultaat van een save-actie.
-    /// Ongeacht het resultaat is de waarde altijd al lokaal opgeslagen in UserDefaults.
+    /// The result of a save action.
+    /// Regardless of the result, the value has always already been saved locally in UserDefaults.
     enum SaveResult {
-        case savedToHealthKit               // Zowel UserDefaults als HealthKit bijgewerkt
-        case savedLocallyOnly(String)       // Alleen UserDefaults; HealthKit geweigerd of niet beschikbaar
+        case savedToHealthKit               // Both UserDefaults and HealthKit updated
+        case savedLocallyOnly(String)       // UserDefaults only; HealthKit denied or unavailable
     }
 
-    /// Slaat een nieuw gewicht op.
-    /// UserDefaults wordt altijd direct bijgewerkt.
-    /// HealthKit-autorisatie wordt gevraagd vóór de schrijfactie (pop-up als nog niet bepaald).
+    /// Saves a new weight.
+    /// UserDefaults is always updated immediately.
+    /// HealthKit authorization is requested before the write action (pop-up if not yet determined).
     func saveWeight(kg: Double) async -> SaveResult {
         guard kg > 0 else { return .savedLocallyOnly("Ongeldig gewicht.") }
         UserDefaults.standard.set(kg, forKey: Self.weightKey)
@@ -326,7 +326,7 @@ final class UserProfileService: @unchecked Sendable {
         )
     }
 
-    /// Slaat een nieuwe lengte op.
+    /// Saves a new height.
     func saveHeight(cm: Double) async -> SaveResult {
         guard cm > 0 else { return .savedLocallyOnly("Ongeldige lengte.") }
         UserDefaults.standard.set(cm, forKey: Self.heightKey)
@@ -339,9 +339,9 @@ final class UserProfileService: @unchecked Sendable {
 
     // MARK: - Private helpers
 
-    /// Leest geboortedatum synchronous en berekent de leeftijd in jaren.
-    /// Ruwe geboortedatum wordt bewust NIET gelogd (PII/PHI — CodeQL: cleartext logging of sensitive information).
-    /// Alleen de afgeleide leeftijd en foutmeldingen zijn zichtbaar voor sync-debug.
+    /// Reads the date of birth synchronously and computes the age in years.
+    /// The raw date of birth is deliberately NOT logged (PII/PHI — CodeQL: cleartext logging of sensitive information).
+    /// Only the derived age and error messages are visible for sync debugging.
     private func fetchAge() -> Int? {
         do {
             let dob = try healthStore.dateOfBirthComponents()
@@ -358,13 +358,13 @@ final class UserProfileService: @unchecked Sendable {
         }
     }
 
-    /// Vergelijkt de nieuw opgehaalde leeftijd met de gecachte waarde.
-    /// Retourneert `true` als de leeftijd is gewijzigd ten opzichte van de vorige fetch.
-    /// Slaat de nieuwe leeftijd altijd op als nieuwe cache-baseline.
+    /// Compares the newly fetched age with the cached value.
+    /// Returns `true` if the age changed relative to the previous fetch.
+    /// Always stores the new age as the new cache baseline.
     func checkAndUpdateAgeCache(newAge: Int) -> Bool {
         let previous = UserDefaults.standard.object(forKey: Self.cachedAgeKey) as? Int
         UserDefaults.standard.set(newAge, forKey: Self.cachedAgeKey)
-        guard let prev = previous else { return false }   // eerste keer — geen wijziging te melden
+        guard let prev = previous else { return false }   // first time — no change to report
         let changed = prev != newAge
         if changed {
             AppLoggers.userProfile.info("Leeftijd gewijzigd: \(prev, privacy: .private) → \(newAge, privacy: .private) jaar")
@@ -372,7 +372,7 @@ final class UserProfileService: @unchecked Sendable {
         return changed
     }
 
-    /// Leest biologisch geslacht synchronous.
+    /// Reads biological sex synchronously.
     private func fetchSex() -> BiologicalSex? {
         guard let hkSex = try? healthStore.biologicalSex() else { return nil }
         switch hkSex.biologicalSex {
@@ -384,7 +384,7 @@ final class UserProfileService: @unchecked Sendable {
         }
     }
 
-    /// Haalt de meest recente waarde op voor een kwantitatief HealthKit-type.
+    /// Fetches the most recent value for a quantitative HealthKit type.
     private func fetchLatestQuantity(identifier: HKQuantityTypeIdentifier, unit: HKUnit) async -> Double? {
         guard let type = HKQuantityType.quantityType(forIdentifier: identifier) else { return nil }
 
@@ -401,10 +401,10 @@ final class UserProfileService: @unchecked Sendable {
         }
     }
 
-    /// Vraagt schrijftoestemming voor het gegeven type op (als nog niet bepaald),
-    /// en schrijft daarna pas het sample naar HealthKit.
-    /// Geeft altijd een `SaveResult` terug — gooit nooit — zodat de UI altijd een
-    /// bruikbare toestand bereikt, ook bij weigering.
+    /// Requests write permission for the given type (if not yet determined), and
+    /// only then writes the sample to HealthKit.
+    /// Always returns a `SaveResult` — never throws — so the UI always reaches a
+    /// usable state, even on denial.
     private func saveQuantityIfAuthorized(
         value: Double,
         identifier: HKQuantityTypeIdentifier,
@@ -414,24 +414,24 @@ final class UserProfileService: @unchecked Sendable {
             return .savedLocallyOnly("HealthKit type niet beschikbaar op dit apparaat.")
         }
 
-        // Stap 1: Vraag autorisatie op als deze nog niet is bepaald.
-        // requestAuthorization toont de iOS pop-up bij .notDetermined.
-        // Bij .sharingAuthorized of .sharingDenied slaat iOS de aanvraag over.
+        // Step 1: Request authorization if not yet determined.
+        // requestAuthorization shows the iOS pop-up on .notDetermined.
+        // On .sharingAuthorized or .sharingDenied iOS skips the request.
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             healthStore.requestAuthorization(toShare: [type], read: [type]) { _, _ in
-                // success geeft alleen aan of de aanvraag kon worden gedaan,
-                // niet of de gebruiker 'ja' heeft gezegd. Controleer de status apart.
+                // success only indicates whether the request could be made,
+                // not whether the user said 'yes'. Check the status separately.
                 continuation.resume()
             }
         }
 
-        // Stap 2: Controleer de daadwerkelijke schrijfstatus na de aanvraag.
+        // Step 2: Check the actual write status after the request.
         let status = healthStore.authorizationStatus(for: type)
         guard status == .sharingAuthorized else {
             return .savedLocallyOnly("Geen schrijftoegang tot HealthKit. Pas dit aan via Instellingen → Gezondheid.")
         }
 
-        // Stap 3: Schrijf het sample naar HealthKit.
+        // Step 3: Write the sample to HealthKit.
         let quantity = HKQuantity(unit: unit, doubleValue: value)
         let sample   = HKQuantitySample(type: type, quantity: quantity, start: Date(), end: Date())
 
