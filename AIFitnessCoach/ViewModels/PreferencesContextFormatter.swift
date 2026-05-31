@@ -2,25 +2,25 @@ import Foundation
 
 // MARK: - PreferencesContextFormatter
 //
-// Bouwt het preferences-blok in de Gemini system context. Splitst tijdelijke voorkeuren
-// (met `expirationDate`) van vastgepinde voorkeuren (zonder `expirationDate`) en geeft
-// de coach een expliciete prioriteit-regel: tijdelijke voorkeuren overrulen vastgepinde
-// regels gedurende hun looptijd.
+// Builds the preferences block in the Gemini system context. Separates temporary
+// preferences (with `expirationDate`) from pinned preferences (without `expirationDate`)
+// and gives the coach an explicit priority rule: temporary preferences override pinned
+// rules during their lifetime.
 //
-// Aanleiding: een gebruiker meldde dat de coach na een vakantie-mention ("Rome, alleen
-// wandelen") in eerste instantie correct het schema aanpaste, maar bij een schema-refresh
-// de vastgepinde "krachttraining elke di/do"-regel weer naar binnen liet sluipen — geen
-// onderscheid tussen tijdelijk en permanent in de oude prompt-injectie.
+// Background: a user reported that after a vacation mention ("Rome, walking only") the
+// coach initially adjusted the schedule correctly, but on a schedule refresh let the
+// pinned "strength training every Tue/Thu" rule sneak back in — no distinction between
+// temporary and permanent in the old prompt injection.
 
 enum PreferencesContextFormatter {
 
-    /// Bouwt het preferences-blok voor de coach-context. Retourneert een lege string als
-    /// er geen actieve voorkeuren zijn (zodat de prompt schoon blijft).
+    /// Builds the preferences block for the coach context. Returns an empty string if
+    /// there are no active preferences (so the prompt stays clean).
     /// - Parameters:
-    ///   - activePreferences: alle preferences met `isActive == true` uit SwiftData.
-    ///   - now: huidige tijd (injecteerbaar voor tests).
+    ///   - activePreferences: all preferences with `isActive == true` from SwiftData.
+    ///   - now: current time (injectable for tests).
     static func format(activePreferences: [UserPreference], now: Date = Date()) -> String {
-        // Filter verlopen tijdelijke voorkeuren — `expirationDate <= now` betekent verstreken.
+        // Filter expired temporary preferences — `expirationDate <= now` means elapsed.
         let valid = activePreferences.filter { pref in
             if let exp = pref.expirationDate { return exp > now }
             return true

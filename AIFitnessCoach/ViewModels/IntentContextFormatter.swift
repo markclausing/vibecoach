@@ -1,29 +1,29 @@
 import Foundation
 
-/// Pure-Swift formatter voor het Doel-Intenties-blok dat in de coach-prompt geïnjecteerd wordt.
+/// Pure-Swift formatter for the Goal-Intents block injected into the coach prompt.
 ///
-/// Wordt aangeroepen door `ChatViewModel.cacheIntentContext` en in tests direct testbaar
-/// zonder `@AppStorage` of `UserDefaults`-fixture.
+/// Called by `ChatViewModel.cacheIntentContext` and directly testable in tests
+/// without an `@AppStorage` or `UserDefaults` fixture.
 enum IntentContextFormatter {
 
-    /// Formatteert per-doel coaching-instructies naar een context-string. Voegt expliciete
-    /// toertocht-context toe bij `multiDayStage`/`singleDayTour`-formaten en — indien
-    /// aanwezig — een leesbaar weergegeven `stretchGoalTime`.
-    /// - Parameter results: PeriodizationResults per actief doel.
-    /// - Returns: De geformatteerde context-string. Lege string als alle instructies leeg zijn.
+    /// Formats per-goal coaching instructions into a context string. Adds explicit
+    /// tour context for `multiDayStage`/`singleDayTour` formats and — when present —
+    /// a human-readable `stretchGoalTime`.
+    /// - Parameter results: PeriodizationResults per active goal.
+    /// - Returns: The formatted context string. Empty string if all instructions are empty.
     static func format(results: [PeriodizationResult]) -> String {
         let instructions = results
             .filter { !$0.intentModifier.coachingInstruction.isEmpty }
             .map { result -> String in
                 var text = "• \(result.goal.title):\n\(result.intentModifier.coachingInstruction)"
 
-                // Expliciete toertocht-context: de coach mag NIET redeneren als bij een wedstrijd
+                // Explicit tour context: the coach must NOT reason as for a race
                 let format = result.goal.resolvedFormat
                 if format == .multiDayStage || format == .singleDayTour {
                     text += "\n⚠️ LET OP: Dit is een TOERTOCHT, geen race. Beoordeel de voortgang op basis van rustig touren, comfort en meerdaags duurvermogen, NIET op race-snelheid."
                 }
 
-                // Expliciete stretch goal doeltijd in leesbaar formaat
+                // Explicit stretch-goal target time in readable format
                 if let stretchTime = result.goal.stretchGoalTime {
                     let totalSec = Int(stretchTime)
                     let hours    = totalSec / 3600

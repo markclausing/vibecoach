@@ -2,58 +2,58 @@ import Foundation
 import SwiftUI
 import Combine
 
-/// De viewmodel die de status van de chat bijhoudt en acties afhandelt.
+/// The viewmodel that tracks the chat state and handles actions.
 @MainActor
 class ChatViewModel: ObservableObject {
-    /// Lijst van opgeslagen chatberichten.
+    /// List of stored chat messages.
     @Published var messages: [ChatMessage] = []
-    /// De huidige tekstinput van de gebruiker.
+    /// The current text input from the user.
     @Published var inputText: String = ""
-    /// Een eventuele geselecteerde afbeelding uit de galerij.
+    /// An optionally selected image from the gallery.
     @Published var selectedImage: UIImage?
-    /// True als de applicatie wacht op een reactie van de AI.
+    /// True if the application is waiting for a response from the AI.
     @Published var isTyping: Bool = false
 
-    /// Statusbericht tijdens een retry-poging, bijv. "Opnieuw proberen (1/3)...". Leeg als er geen retry loopt.
+    /// Status message during a retry attempt, e.g. "Opnieuw proberen (1/3)...". Empty if no retry is running.
     @Published var retryStatusMessage: String = ""
 
-    /// True als we op dit moment Strava data aan het ophalen zijn via de expliciete knop.
+    /// True if we are currently fetching Strava data via the explicit button.
     @Published var isFetchingWorkout: Bool = false
 
-    /// Gebruiksvriendelijke foutmelding van de laatste AI-call. `nil` zodra er een
-    /// nieuwe call start of succesvol afrondt. Screens die geen chat tonen
-    /// (zoals het Dashboard bij pull-to-refresh) gebruiken deze om een banner te
-    /// laten zien — anders zou een timeout stil sneuvelen omdat de chat-bubble
-    /// niet zichtbaar is.
+    /// User-friendly error message from the last AI call. `nil` as soon as a
+    /// new call starts or completes successfully. Screens that do not show a chat
+    /// (such as the Dashboard on pull-to-refresh) use this to show a banner —
+    /// otherwise a timeout would fail silently because the chat bubble
+    /// is not visible.
     @Published var lastAIErrorMessage: String?
 
-    /// Het protocol waartegen we de AI-verzoeken uitvoeren.
-    /// Lazy: wordt pas aangemaakt bij het eerste AI-verzoek, niet bij app-start.
-    /// Tests kunnen een mock injecteren via de init-parameter.
+    /// The protocol against which we run the AI requests.
+    /// Lazy: only created on the first AI request, not at app start.
+    /// Tests can inject a mock via the init parameter.
     private var _model: GenerativeModelProtocol?
-    /// Epic #51-A2: de modelnaam waarvoor `_model` opgebouwd is. Wordt
-    /// vergeleken met de huidige AppStorage-keuze om automatisch te rebuilden
-    /// als de gebruiker in Settings van Gemini-model wisselt. Zonder deze check
-    /// bleef het lazy-gebouwde model hangen op de oude naam tot een
-    /// `rebuildRealModel()`-trigger (alleen key-flow), waardoor de eerstvolgende
-    /// vraag na een model-switch nog steeds via het oude model ging.
+    /// Epic #51-A2: the model name for which `_model` was built. Gets
+    /// compared with the current AppStorage choice to automatically rebuild
+    /// when the user switches Gemini model in Settings. Without this check
+    /// the lazily-built model stayed stuck on the old name until a
+    /// `rebuildRealModel()` trigger (key-flow only), so the next
+    /// question after a model switch still went through the old model.
     private var _modelBuiltForName: String?
 
-    /// Epic #53: de op dit moment actieve provider (uit AppStorage). Eén bron zodat
-    /// de rebuild-check, de model-snapshot en `buildGenerativeModel` consistent
-    /// dezelfde provider-aware modelnaam resolven — anders ontstaat een rebuild-loop
-    /// (built-naam ≠ vergeleken naam) bij een niet-Gemini provider.
+    /// Epic #53: the currently active provider (from AppStorage). One source so
+    /// the rebuild check, the model snapshot and `buildGenerativeModel` consistently
+    /// resolve the same provider-aware model name — otherwise a rebuild loop arises
+    /// (built name ≠ compared name) with a non-Gemini provider.
     private var currentProvider: AIProvider { AIProvider.current() }
 
     private var model: GenerativeModelProtocol {
         if let existing = _model {
-            // Door tests of `-UITesting` geïnjecteerde mocks hebben geen
-            // `_modelBuiltForName`. Die laten we onaangeroerd — anders zou de
-            // getter de mock overschrijven met een live `RealGenerativeModel`
-            // die op de `hasAPIKey`-gate stuit.
+            // Mocks injected by tests or `-UITesting` have no
+            // `_modelBuiltForName`. We leave those untouched — otherwise the
+            // getter would overwrite the mock with a live `RealGenerativeModel`
+            // that hits the `hasAPIKey` gate.
             if let builtName = _modelBuiltForName,
                builtName != AIModelAppStorageKey.resolvedPrimary(for: currentProvider) {
-                // Wel zelf gebouwd én de geconfigureerde modelnaam is gewijzigd → rebuild.
+                // Built ourselves AND the configured model name has changed → rebuild.
             } else {
                 return existing
             }
@@ -65,143 +65,143 @@ class ChatViewModel: ObservableObject {
         return built
     }
 
-    /// Epic #51-A2: snapshot van de primaire/fallback modelnamen die in gebruik
-    /// zijn voor de huidige `fetchAIResponse`-call. Wordt door de UI vergeleken
-    /// met de actuele AppStorage-keuze om een banner te tonen als de gebruiker
-    /// tijdens `isTyping` van model wisselt.
+    /// Epic #51-A2: snapshot of the primary/fallback model names that are in use
+    /// for the current `fetchAIResponse` call. Gets compared by the UI
+    /// with the current AppStorage choice to show a banner if the user
+    /// switches model during `isTyping`.
     @Published private(set) var activeRequestPrimaryModel: String = ""
     @Published private(set) var activeRequestFallbackModel: String = ""
 
-    /// Epic #51-A6: handle naar de lopende AI-Task zodat `cancelOngoingRequest()`
-    /// hem kan annuleren wanneer de gebruiker de Coach-tab verlaat (of een
-    /// nieuw bericht stuurt voordat het vorige terug is). Zonder deze referentie
-    /// bleef de Gemini-call doorlopen tot natural completion en kon er een
-    /// "ghost"-antwoord verschijnen bij terugkeer in de tab.
+    /// Epic #51-A6: handle to the running AI Task so `cancelOngoingRequest()`
+    /// can cancel it when the user leaves the Coach tab (or sends a
+    /// new message before the previous one is back). Without this reference
+    /// the Gemini call kept running until natural completion and a
+    /// "ghost" answer could appear when returning to the tab.
     private var currentRequestTask: Task<Void, Never>?
 
-    /// Service voor externe API calls (Sprint 4.2).
+    /// Service for external API calls (Sprint 4.2).
     private let fitnessDataService: FitnessDataService
 
-    /// Service voor HealthKit (Sprint 7.2).
+    /// Service for HealthKit (Sprint 7.2).
     private let healthKitManager: HealthKitManager
     private let fitnessCalculator: PhysiologicalCalculatorProtocol
 
-    // Lees de voorkeur van de gebruiker m.b.t. primaire databron (Sprint 7.4)
+    // Read the user's preference regarding the primary data source (Sprint 7.4)
     @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
 
-    // Epic 20: BYOK — gebruiker-geconfigureerde AI provider.
-    // C-02: de API-sleutel zelf staat NIET meer in @AppStorage maar in de
-    // Keychain (zie `UserAPIKeyStore`). Uitlezen gebeurt via `effectiveAPIKey()`.
+    // Epic 20: BYOK — user-configured AI provider.
+    // C-02: the API key itself is NO longer in @AppStorage but in the
+    // Keychain (see `UserAPIKeyStore`). Reading happens via `effectiveAPIKey()`.
     @AppStorage("vibecoach_aiProvider") private var storedProviderRaw: String = AIProvider.gemini.rawValue
 
-    /// De API-sleutel waarmee het huidige model is opgebouwd.
-    /// Wordt bijgehouden om te detecteren wanneer een rebuild nodig is.
+    /// The API key with which the current model was built.
+    /// Kept track of to detect when a rebuild is needed.
     private var activeAPIKey: String = ""
 
-    /// True als er een bruikbare API-sleutel geconfigureerd is.
+    /// True if a usable API key is configured.
     var hasAPIKey: Bool {
         !effectiveAPIKey().isEmpty
     }
 
-    /// De gedeelde state manager voor het actuele trainingsschema.
+    /// The shared state manager for the current training plan.
     private var trainingPlanManager: TrainingPlanManager?
 
-    /// Opgeslagen Data van het meest recente gegenereerde schema (Voor fallback referentie)
+    /// Stored Data of the most recently generated plan (for fallback reference)
     @AppStorage("latestSuggestedPlanData") private var latestSuggestedPlanData: Data = Data()
 
-    /// Opgeslagen inzichten/motivatie van de coach om uit te lichten op het dashboard
+    /// Stored insights/motivation from the coach to highlight on the dashboard
     @AppStorage("latestCoachInsight") private var latestCoachInsight: String = ""
 
-    /// Epic 14.4: Cache van de Vibe Score van vandaag voor injectie in AI-prompts.
-    /// Wordt gevuld vanuit DashboardView (bij onAppear) zodat de AI altijd de actuele
-    /// herstelstatus kent — ook zonder directe SwiftData-toegang in ChatViewModel.
+    /// Epic 14.4: Cache of today's Vibe Score for injection into AI prompts.
+    /// Gets filled from DashboardView (on onAppear) so the AI always knows the current
+    /// recovery status — even without direct SwiftData access in ChatViewModel.
     @AppStorage("vibecoach_todayVibeScoreContext") private var todayVibeScoreContext: String = ""
 
-    /// Epic 18.1: Cache van de subjectieve feedback (RPE + stemming) van de laatste workout.
-    /// Wordt gevuld vanuit DashboardView zodra een ActivityRecord een beoordeling heeft.
+    /// Epic 18.1: Cache of the subjective feedback (RPE + mood) of the last workout.
+    /// Gets filled from DashboardView as soon as an ActivityRecord has a rating.
     @AppStorage("vibecoach_lastWorkoutFeedbackContext") private var lastWorkoutFeedbackContext: String = ""
 
-    /// Epic 17: Cache van de actieve blueprint-status per doel voor injectie in AI-prompts.
-    /// Bevat openstaande en voldane kritieke trainingen zodat de coach hierop kan bijsturen.
+    /// Epic 17: Cache of the active blueprint status per goal for injection into AI prompts.
+    /// Contains open and satisfied critical workouts so the coach can adjust accordingly.
     @AppStorage("vibecoach_blueprintContext") private var blueprintContext: String = ""
 
-    /// Epic 17.1: Cache van de PeriodizationEngine-status per doel.
-    /// Bevat de huidige trainingsfase + succescriteria + voortgang voor gerichte fase-coaching.
+    /// Epic 17.1: Cache of the PeriodizationEngine status per goal.
+    /// Contains the current training phase + success criteria + progress for targeted phase coaching.
     @AppStorage("vibecoach_periodizationContext") private var periodizationContext: String = ""
 
-    /// Tijdstip van de laatste geslaagde coach-analyse (Unix timestamp).
-    /// Wordt gebruikt om automatisch te vernieuwen bij een nieuwe dag.
+    /// Timestamp of the last successful coach analysis (Unix timestamp).
+    /// Used to automatically refresh on a new day.
     @AppStorage("vibecoach_lastAnalysisTimestamp") var lastAnalysisTimestamp: Double = 0
 
-    /// Epic 18: Cache van de dagelijkse symptoomscores — pijncijfers per lichaamsdeel.
+    /// Epic 18: Cache of the daily symptom scores — pain figures per body area.
     @AppStorage("vibecoach_symptomContext") private var symptomContext: String = ""
 
-    /// Epic 21: Cache van de 7-daagse weersverwachting — wordt gevuld door WeatherManager.
-    /// Wordt geïnjecteerd in de AI-prompt zodat de coach rekening houdt met buitenactiviteiten.
+    /// Epic 21: Cache of the 7-day weather forecast — gets filled by WeatherManager.
+    /// Gets injected into the AI prompt so the coach takes outdoor activities into account.
     @AppStorage("vibecoach_weatherContext") var weatherContext: String = ""
 
-    /// Epic 32 Story 32.3c: cache van significante fysiologische patronen in recente
-    /// workouts (decoupling, drift, cadence-fade, trage HR-recovery). Wordt gevuld
-    /// vanuit `DashboardView.refreshWorkoutPatternsContext()` op basis van de
-    /// `WorkoutSample`-data van de afgelopen 7 dagen, zodat de coach er proactief
-    /// over kan praten in een chat-turn.
+    /// Epic 32 Story 32.3c: cache of significant physiological patterns in recent
+    /// workouts (decoupling, drift, cadence-fade, slow HR recovery). Gets filled
+    /// from `DashboardView.refreshWorkoutPatternsContext()` based on the
+    /// `WorkoutSample` data of the past 7 days, so the coach can proactively
+    /// talk about it in a chat turn.
     @AppStorage("vibecoach_workoutPatternsContext") var workoutPatternsContext: String = ""
 
-    /// Epic 45 Story 45.3: rijkere per-workout-context over de afgelopen 14 dagen
-    /// (datum, sport, sessieType, duur, TRIMP, gem-HR, eventueel power, en
-    /// detector-output per workout). Aanvulling op `workoutPatternsContext` (1-regel
-    /// pulse over 7 dagen): de pulse signaleert dát er iets is, dit blok geeft de
-    /// coach de specifieke onderbouwing per workout zodat plan-aanpassingen verwijzen
-    /// naar concrete sessies ("op 28 april reed je een tempo-rit met decoupling…").
-    /// Wordt gevuld vanuit `DashboardView.refreshChatContextCaches()`.
+    /// Epic 45 Story 45.3: richer per-workout context over the past 14 days
+    /// (date, sport, sessionType, duration, TRIMP, avg HR, optionally power, and
+    /// detector output per workout). Complement to `workoutPatternsContext` (1-line
+    /// pulse over 7 days): the pulse signals THAT something is up, this block gives the
+    /// coach the specific evidence per workout so plan adjustments refer
+    /// to concrete sessions ("op 28 april reed je een tempo-rit met decoupling…").
+    /// Gets filled from `DashboardView.refreshChatContextCaches()`.
     @AppStorage("vibecoach_workoutHistoryContext") var workoutHistoryContext: String = ""
 
-    /// Epic 23 Sprint 1: Cache van de gap-analyse per actief doel.
-    /// Bevat het verschil tussen verwacht en werkelijk TRIMP/km op dit moment in de voorbereiding.
+    /// Epic 23 Sprint 1: Cache of the gap analysis per active goal.
+    /// Contains the difference between expected and actual TRIMP/km at this moment in the preparation.
     @AppStorage("vibecoach_gapAnalysisContext") private var gapAnalysisContext: String = ""
 
-    /// Epic Doel-Intenties: Cache van de intent-instructies per actief doel.
-    /// Bevat de gegenereerde coachingInstruction per doel (formaat, intentie, VibeScore-aanpassing).
+    /// Epic Doel-Intenties: Cache of the intent instructions per active goal.
+    /// Contains the generated coachingInstruction per goal (format, intent, VibeScore adjustment).
     @AppStorage("vibecoach_intentContext") private var intentContext: String = ""
 
-    /// Epic 23 Sprint 2: Cache van de toekomstprognose per doel (Future Projection Engine).
-    /// Beantwoordt de vraag: "Wanneer bereikt de atleet de Peak Phase op basis van zijn groeitempo?"
-    /// Wordt gevuld via `cacheProjections(_:)` vanuit GoalsListView en geïnjecteerd in de AI-prompt.
+    /// Epic 23 Sprint 2: Cache of the future projection per goal (Future Projection Engine).
+    /// Answers the question: "When does the athlete reach the Peak Phase based on his growth rate?"
+    /// Gets filled via `cacheProjections(_:)` from GoalsListView and injected into the AI prompt.
     @AppStorage("vibecoach_projectionContext") private var projectionContext: String = ""
 
-    /// Epic 24 Sprint 1: Cache van het fysiologische profiel + voedingsplan voor vandaag/morgen.
-    /// Wordt gevuld via `refreshNutritionContext()` en geïnjecteerd in elke AI-prompt.
+    /// Epic 24 Sprint 1: Cache of the physiological profile + nutrition plan for today/tomorrow.
+    /// Gets filled via `refreshNutritionContext()` and injected into every AI prompt.
     @AppStorage("vibecoach_nutritionContext") private var nutritionContext: String = ""
 
-    /// Story 33.2a: cache van handmatig verplaatste workouts (`isSwapped == true`)
-    /// zodat de coach in elke prompt weet welke sessies de gebruiker bewust heeft
-    /// verschoven en die niet bij volgende suggesties terug-forceert.
+    /// Story 33.2a: cache of manually moved workouts (`isSwapped == true`)
+    /// so the coach knows in every prompt which sessions the user deliberately
+    /// shifted and does not force them back in subsequent suggestions.
     @AppStorage("vibecoach_userOverrideContext") private var userOverrideContext: String = ""
 
-    /// Story 33.4: cache van de Intent-vs-Execution-analyse voor de meest recente workout.
-    /// Empty string = geen recent vergelijkbare workout (geen plan match, of insufficient data).
+    /// Story 33.4: cache of the Intent-vs-Execution analysis for the most recent workout.
+    /// Empty string = no recent comparable workout (no plan match, or insufficient data).
     @AppStorage("vibecoach_intentExecutionContext") private var intentExecutionContext: String = ""
 
-    /// Epic 24 Sprint 3: Eenmalige coach-melding bij een gedetecteerde profielwijziging (bijv. leeftijd).
-    /// Wordt geschreven door `PhysicalProfileSection` en geïnjecteerd in de eerstvolgende AI-prompt.
-    /// Wordt geleegd nadat de prompt is opgebouwd zodat de melding slechts éénmaal verschijnt.
+    /// Epic 24 Sprint 3: One-time coach notice on a detected profile change (e.g. age).
+    /// Gets written by `PhysicalProfileSection` and injected into the next AI prompt.
+    /// Gets cleared after the prompt is built so the notice appears only once.
     @AppStorage("vibecoach_profileUpdateNote") var profileUpdateNote: String = ""
 
-    /// Callback om nieuwe voorkeuren naar de View te sturen zodat ze in SwiftData opgeslagen worden.
+    /// Callback to send new preferences to the View so they get stored in SwiftData.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
 
-    /// Stelt de TrainingPlanManager in
+    /// Sets the TrainingPlanManager
     func setTrainingPlanManager(_ manager: TrainingPlanManager) {
         self.trainingPlanManager = manager
     }
 
-    /// Epic 14.4: Schrijft de Vibe Score van vandaag naar de AppStorage cache.
-    /// Wordt aangeroepen vanuit DashboardView bij onAppear zodat de AI-prompts
-    /// altijd de actuele herstelstatus bevatten.
-    /// Sentinel-waarde die aangeeft dat er vandaag geen Watch-data beschikbaar was.
-    /// Wordt herkend in buildContextPrefix om de AI de juiste instructie te geven.
-    /// Markeert in de AI-cache dat de Vibe Score ontbreekt omdat de Watch niet gedragen werd.
-    /// De coach krijgt dan expliciet de instructie om op symptoomscores en eigen gevoel te vertrouwen.
+    /// Epic 14.4: Writes today's Vibe Score to the AppStorage cache.
+    /// Gets called from DashboardView on onAppear so the AI prompts
+    /// always contain the current recovery status.
+    /// Sentinel value indicating that no Watch data was available today.
+    /// Gets recognized in buildContextPrefix to give the AI the correct instruction.
+    /// Marks in the AI cache that the Vibe Score is missing because the Watch was not worn.
+    /// The coach then explicitly gets the instruction to rely on symptom scores and own feeling.
     func cacheVibeScoreUnavailable() {
         todayVibeScoreContext = VibeScoreContextFormatter.noVibeDataSentinel
     }
@@ -213,69 +213,69 @@ class ChatViewModel: ObservableObject {
         )
     }
 
-    /// Epic 20 / M-04: Retourneert de door de gebruiker geconfigureerde Gemini API-sleutel.
-    /// Er is geen Secrets-fallback meer — BYOK is verplicht, de onboarding zorgt dat
-    /// er altijd een sleutel is ingevuld voordat AI-functionaliteit aangeroepen wordt.
-    /// C-02: sleutel wordt gelezen uit de Keychain via `UserAPIKeyStore`.
+    /// Epic 20 / M-04: Returns the user-configured Gemini API key.
+    /// There is no Secrets fallback anymore — BYOK is mandatory, the onboarding ensures
+    /// a key is always filled in before AI functionality gets called.
+    /// C-02: key gets read from the Keychain via `UserAPIKeyStore`.
     func effectiveAPIKey() -> String {
         return UserAPIKeyStore.read(for: currentProvider)
     }
 
-    /// Bouwt een nieuw Gemini model op basis van de huidige API-sleutel.
-    /// Wordt aangeroepen als de gebruiker een nieuwe sleutel heeft opgeslagen.
-    /// Epic 20: Placeholder voor Sprint 20.2 — slaat de aktieve key op zodat toekomstige
-    /// code kan detecteren of de sleutel gewijzigd is en het model opnieuw moet bouwen.
+    /// Builds a new Gemini model based on the current API key.
+    /// Gets called when the user has stored a new key.
+    /// Epic 20: Placeholder for Sprint 20.2 — stores the active key so future
+    /// code can detect whether the key has changed and the model must be rebuilt.
     private func rebuildRealModel() {
         let key = effectiveAPIKey()
         guard !key.isEmpty else { return }
         activeAPIKey = key
-        // Wis de gecachte instantie zodat buildGenerativeModel() opnieuw gebouwd wordt
-        // met de nieuwe sleutel bij het eerstvolgende AI-verzoek.
+        // Clear the cached instance so buildGenerativeModel() rebuilds it
+        // with the new key on the next AI request.
         _model = nil
     }
 
-    /// Epic 18.1: Schrijft de subjectieve feedback van de laatste workout naar de AppStorage cache.
-    /// Wordt aangeroepen vanuit DashboardView zodra er een ActivityRecord is met rpe en mood.
-    /// De AI gebruikt dit om discrepanties te detecteren (bijv. laag TRIMP maar hoge RPE = overtraining signaal).
-    /// Epic 33 Story 33.1b: optioneel `sessionType` — als aanwezig wordt het type + fysiologische
-    /// intent meegegeven zodat de coach z'n toon kalibreert (geen "te langzaam" bij Recovery).
-    /// Format-logica zit in `LastWorkoutContextFormatter` (testbaar zonder ChatViewModel-state).
-    /// Story 33.2a: schrijft het USER_OVERRIDE-blok naar de cache. Aangeroepen vanuit
-    /// `DashboardView.onAppear` zodat het blok bij elke schema-context-build aanwezig is.
+    /// Epic 18.1: Writes the subjective feedback of the last workout to the AppStorage cache.
+    /// Gets called from DashboardView as soon as there is an ActivityRecord with rpe and mood.
+    /// The AI uses this to detect discrepancies (e.g. low TRIMP but high RPE = overtraining signal).
+    /// Epic 33 Story 33.1b: optional `sessionType` — if present, the type + physiological
+    /// intent is passed along so the coach calibrates his tone (no "too slow" with Recovery).
+    /// Format logic lives in `LastWorkoutContextFormatter` (testable without ChatViewModel state).
+    /// Story 33.2a: writes the USER_OVERRIDE block to the cache. Called from
+    /// `DashboardView.onAppear` so the block is present on every plan-context build.
     func cacheUserOverrides(_ workouts: [SuggestedWorkout]) {
         userOverrideContext = UserOverrideContextFormatter.format(workouts: workouts)
     }
 
-    /// Story 33.4: schrijft de Intent-vs-Execution-analyse naar de cache. Aangeroepen
-    /// vanuit DashboardView wanneer er een recente match is tussen een SuggestedWorkout
-    /// en een ActivityRecord op dezelfde kalenderdag. Pass `""` om de cache te legen.
+    /// Story 33.4: writes the Intent-vs-Execution analysis to the cache. Called
+    /// from DashboardView when there is a recent match between a SuggestedWorkout
+    /// and an ActivityRecord on the same calendar day. Pass `""` to clear the cache.
     func cacheIntentExecution(_ formatted: String) {
         intentExecutionContext = formatted
     }
 
     // MARK: - Story 33.2b: Reset Schema
 
-    /// Bepaalt of `trainingPlanManager?.updatePlan` of `mergeReplannedPlan` wordt
-    /// gebruikt zodra er een nieuw plan uit Gemini terugkomt. Default `.replace`
-    /// behoudt het bestaande gedrag van requestRecoveryPlan / skipWorkout etc.
+    /// Determines whether `trainingPlanManager?.updatePlan` or `mergeReplannedPlan` is
+    /// used as soon as a new plan comes back from Gemini. Default `.replace`
+    /// preserves the existing behaviour of requestRecoveryPlan / skipWorkout etc.
     private enum PlanUpdateMode {
         case replace
         case mergePreservingSwaps
     }
     private var pendingPlanUpdateMode: PlanUpdateMode = .replace
 
-    /// Story 33.2b: vraagt Gemini om de rest van de week opnieuw te plannen rondom
-    /// de handmatig verplaatste sessies. Het response-plan wordt door
-    /// `TrainingPlanManager.mergeReplannedPlan(_:)` ge-merget zodat overrides
-    /// gegarandeerd blijven, zelfs bij AI-hallucinaties op heilige dagen.
-    /// - Parameter swappedWorkouts: De workouts met `isSwapped == true` uit het
-    ///   huidige plan. Caller (`WeekTimelineView`) levert die aan.
+    /// Story 33.2b: asks Gemini to re-plan the rest of the week around
+    /// the manually moved sessions. The response plan gets merged by
+    /// `TrainingPlanManager.mergeReplannedPlan(_:)` so overrides
+    /// are guaranteed to remain, even with AI hallucinations on sacred days.
+    /// - Parameter swappedWorkouts: The workouts with `isSwapped == true` from the
+    ///   current plan. Caller (`WeekTimelineView`) supplies these.
     func requestPlanReset(swappedWorkouts: [SuggestedWorkout],
                           contextProfile: AthleticProfile? = nil,
                           activeGoals: [FitnessGoal] = [],
                           activePreferences: [UserPreference] = []) {
-        // Voorkom parallelle resets — isTyping vangt de meeste cases af, maar de
-        // mode-flag moet ook beschermd zijn.
+        // Prevent parallel resets — isTyping catches most cases, but the
+        // mode flag must be protected too.
         guard !isTyping else { return }
 
         let (systemText, userText) = PlanResetPromptBuilder.build(swappedWorkouts: swappedWorkouts)
@@ -306,16 +306,16 @@ class ChatViewModel: ObservableObject {
         )
     }
 
-    /// Epic 17: Schrijft de blueprint-status van alle actieve doelen naar de AppStorage cache.
-    /// Wordt aangeroepen vanuit DashboardView zodat de AI weet welke kritieke trainingen
-    /// al behaald zijn en welke nog open staan — voor gerichtere coaching.
+    /// Epic 17: Writes the blueprint status of all active goals to the AppStorage cache.
+    /// Gets called from DashboardView so the AI knows which critical workouts
+    /// have already been achieved and which are still open — for more targeted coaching.
     func cacheActiveBlueprints(_ results: [BlueprintCheckResult]) {
         blueprintContext = BlueprintContextFormatter.format(results: results)
     }
 
-    /// Epic 17.1: Schrijft de PeriodizationEngine-status naar de AppStorage cache.
-    /// Wordt aangeroepen vanuit DashboardView zodat de AI per doel weet in welke trainingsfase
-    /// de gebruiker zit en of hij aan de fase-specifieke succescriteria voldoet.
+    /// Epic 17.1: Writes the PeriodizationEngine status to the AppStorage cache.
+    /// Gets called from DashboardView so the AI knows per goal which training phase
+    /// the user is in and whether he meets the phase-specific success criteria.
     func cachePeriodizationStatus(_ results: [PeriodizationResult]) {
         guard !results.isEmpty else {
             periodizationContext = ""
@@ -326,15 +326,15 @@ class ChatViewModel: ObservableObject {
             .joined(separator: "\n\n")
     }
 
-    /// Epic Doel-Intenties: Schrijft de intent-instructies per doel naar de AppStorage cache.
-    /// Wordt aangeroepen vanuit ContentView (na cachePeriodizationStatus) zodat de AI een aparte
-    /// [DOEL INTENTIES EN BENADERING] sectie ontvangt met format-, intentie- en VibeScore-instructies.
+    /// Epic Doel-Intenties: Writes the intent instructions per goal to the AppStorage cache.
+    /// Gets called from ContentView (after cachePeriodizationStatus) so the AI receives a separate
+    /// [DOEL INTENTIES EN BENADERING] section with format, intent and VibeScore instructions.
     func cacheIntentContext(_ results: [PeriodizationResult]) {
         intentContext = IntentContextFormatter.format(results: results)
     }
 
-    /// Epic 23 Sprint 1: Schrijft de gap-analyse (verschil gepland vs. gerealiseerd) naar de AppStorage cache.
-    /// De coach gebruikt dit om concrete bijsturingsadviezen te geven:
+    /// Epic 23 Sprint 1: Writes the gap analysis (difference planned vs. realized) to the AppStorage cache.
+    /// The coach uses this to give concrete adjustment advice:
     /// "Je ligt X km achter op schema — deze week 15% meer volume om dat in te halen."
     func cacheGapAnalysis(_ gaps: [BlueprintGap]) {
         guard !gaps.isEmpty else {
@@ -346,22 +346,22 @@ class ChatViewModel: ObservableObject {
             .joined(separator: "\n\n")
     }
 
-    /// Epic 23 Sprint 2: Schrijft de toekomstprognose per doel naar de AppStorage cache.
-    /// De coach gebruikt dit om proactief te waarschuwen als een doel "At Risk" of "Unreachable" is:
+    /// Epic 23 Sprint 2: Writes the future projection per goal to the AppStorage cache.
+    /// The coach uses this to proactively warn if a goal is "At Risk" or "Unreachable":
     /// "Op basis van je huidige tempo ben je pas in juli klaar voor de marathon."
     func cacheProjections(_ projections: [GoalProjection]) {
         projectionContext = FutureProjectionService.buildCoachContext(from: projections)
     }
 
-    /// Epic 24 Sprint 1: Haalt het fysiologisch profiel op via HealthKit en berekent het voedingsplan
-    /// voor de workouts van vandaag en morgen op basis van het actieve trainingsschema.
-    /// Resultaat wordt gecached in AppStorage en geïnjecteerd in elke AI-prompt.
+    /// Epic 24 Sprint 1: Fetches the physiological profile via HealthKit and computes the nutrition plan
+    /// for today's and tomorrow's workouts based on the active training plan.
+    /// Result gets cached in AppStorage and injected into every AI prompt.
     func refreshNutritionContext() async {
         let profileService = UserProfileService(healthStore: healthKitManager.healthStore)
         let profile = await profileService.fetchProfile()
 
-        // Haal de geplande workouts op uit het actieve trainingsschema (TrainingPlanManager).
-        // We extraheren duur en zone per workout voor vandaag en morgen.
+        // Fetch the planned workouts from the active training plan (TrainingPlanManager).
+        // We extract duration and zone per workout for today and tomorrow.
         let todayWorkouts   = extractPlannedWorkouts(for: 0)
         let tomorrowWorkouts = extractPlannedWorkouts(for: 1)
 
@@ -373,8 +373,8 @@ class ChatViewModel: ObservableObject {
         print("🥗 [Nutrition] Context bijgewerkt: \(profile.coachSummary)")
     }
 
-    /// Extraheert geplande workouts (duur + zone) uit het actieve schema voor een relatieve dag.
-    /// `dayOffset` 0 = vandaag, 1 = morgen.
+    /// Extracts planned workouts (duration + zone) from the active plan for a relative day.
+    /// `dayOffset` 0 = today, 1 = tomorrow.
     private func extractPlannedWorkouts(for dayOffset: Int) -> [(durationMinutes: Int, zone: TrainingZone)] {
         guard let plan = trainingPlanManager?.activePlan else { return [] }
         let targetDate = Calendar.current.date(byAdding: .day, value: dayOffset, to: Date()) ?? Date()
@@ -383,10 +383,10 @@ class ChatViewModel: ObservableObject {
         return plan.workouts.compactMap { workout -> (Int, TrainingZone)? in
             let workoutDay = Calendar.current.startOfDay(for: workout.resolvedDate)
             guard workoutDay == targetDay else { return nil }
-            // Geen voedingsplan voor rustdagen
+            // No nutrition plan for rest days
             guard workout.activityType.lowercased() != "rust" else { return nil }
 
-            // Schat de zone op basis van hartslag-zone of beschrijving in het schema.
+            // Estimate the zone based on heart-rate zone or description in the plan.
             let zoneText = (workout.heartRateZone ?? workout.description).lowercased()
             let isHighIntensity = zoneText.contains("interval")
                 || zoneText.contains("tempo")
@@ -395,44 +395,44 @@ class ChatViewModel: ObservableObject {
                 || zoneText.contains("z4")
             let zone: TrainingZone = isHighIntensity ? .zone4 : .zone2
 
-            // Gebruik de geplande duur; standaard 45 min als onbekend.
+            // Use the planned duration; default 45 min if unknown.
             let duration = workout.suggestedDurationMinutes > 0 ? workout.suggestedDurationMinutes : 45
             return (duration, zone)
         }
     }
 
-    /// Epic 18 Sprint 2: Schrijft de dagelijkse symptoomscores + hard constraints naar de AppStorage cache.
-    /// De SymptomTracker is de 'Single Source of Truth' voor blessure-status:
-    /// - Score > 0 → actieve klacht, met constraint-regels op basis van ernst
-    /// - Score == 0 → hersteld, vervangt elke nog actieve UserPreference-tekst
-    /// - Geen score ingevuld + actieve UserPreference → toon als 'onbekend, score nog niet ingevuld'
+    /// Epic 18 Sprint 2: Writes the daily symptom scores + hard constraints to the AppStorage cache.
+    /// The SymptomTracker is the 'Single Source of Truth' for injury status:
+    /// - Score > 0 → active complaint, with constraint rules based on severity
+    /// - Score == 0 → recovered, replaces any still-active UserPreference text
+    /// - No score filled in + active UserPreference → show as 'onbekend, score nog niet ingevuld'
     func cacheSymptomContext(_ symptoms: [Symptom], preferences: [UserPreference] = []) {
         symptomContext = SymptomContextFormatter.format(symptoms: symptoms, preferences: preferences)
 
-        // Debug: print volledige injury-sectie die naar Gemini gaat
+        // Debug: print the full injury section that goes to Gemini
         print("━━━ 🩺 [Injury Section → Gemini] ━━━")
         print(symptomContext)
         print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     }
 
-    /// SPRINT 13.4: Geeft het meest recent opgeslagen coach-inzicht terug (uit AppStorage).
-    /// Wordt door ChatView gebruikt om een welkomstbericht te tonen als de chat leeg is.
+    /// SPRINT 13.4: Returns the most recently stored coach insight (from AppStorage).
+    /// Gets used by ChatView to show a welcome message if the chat is empty.
     var latestStoredInsight: String {
         return latestCoachInsight
     }
 
-    /// SPRINT 13.4: Voegt het meest recente coach-inzicht toe als welkomstbericht.
-    /// Wordt alleen aangeroepen als `messages` leeg is, zodat bestaande conversaties niet verstoord worden.
+    /// SPRINT 13.4: Adds the most recent coach insight as a welcome message.
+    /// Gets called only if `messages` is empty, so existing conversations are not disturbed.
     func injectWelcomeMessage(_ text: String) {
         guard messages.isEmpty, !text.isEmpty else { return }
         messages.append(ChatMessage(role: .ai, text: text))
     }
 
-    /// Initialiseert de `ChatViewModel`.
+    /// Initializes the `ChatViewModel`.
     ///
-    /// - Parameter aiModel: De AI-dienst die gebruikt moet worden.
-    ///             Wanneer niets wordt meegegeven, wordt standaard de
-    ///             `RealGenerativeModel` (die met Google API praat) gebruikt.
+    /// - Parameter aiModel: The AI service to be used.
+    ///             When nothing is passed, the
+    ///             `RealGenerativeModel` (the one that talks to the Google API) is used by default.
     init(aiModel: GenerativeModelProtocol? = nil,
          fitnessDataService: FitnessDataService = FitnessDataService(),
          healthKitManager: HealthKitManager = HealthKitManager(),
@@ -440,20 +440,20 @@ class ChatViewModel: ObservableObject {
         self.fitnessDataService = fitnessDataService
         self.healthKitManager = healthKitManager
         self.fitnessCalculator = fitnessCalculator
-        // Injecteer een test-mock als die meegegeven is; anders lazy bouwen bij eerste gebruik.
+        // Inject a test mock if one is passed; otherwise build lazily on first use.
         self._model = aiModel
     }
 
-    /// Bouwt het Gemini model met de huidige API-sleutel en system instruction.
-    /// Wordt pas aangeroepen bij het eerste echte AI-verzoek (.onAppear of gebruikerstap),
-    /// niet al tijdens app-start.
+    /// Builds the Gemini model with the current API key and system instruction.
+    /// Only gets called on the first real AI request (.onAppear or user action),
+    /// not already during app start.
     ///
-    /// Sprint 26.1: Als `-UITesting` actief is, wordt een mock-model teruggegeven
-    /// zodat de Gemini API niet aangeroepen wordt tijdens E2E-tests.
+    /// Sprint 26.1: If `-UITesting` is active, a mock model is returned
+    /// so the Gemini API is not called during E2E tests.
     ///
-    /// Epic #35: als `modelName` nil is, leest deze functie de door de gebruiker
-    /// gekozen primaire modelnaam uit `AppStorage`. Zo blijft het mogelijk om
-    /// vanuit de fallback-pad expliciet een ander model op te geven.
+    /// Epic #35: if `modelName` is nil, this function reads the user-chosen
+    /// primary model name from `AppStorage`. This keeps it possible to
+    /// explicitly specify a different model from the fallback path.
     private func buildGenerativeModel(modelName: String? = nil) -> GenerativeModelProtocol {
         let provider = currentProvider
         let resolvedModelName = modelName ?? AIModelAppStorageKey.resolvedPrimary(for: provider)
@@ -462,9 +462,9 @@ class ChatViewModel: ObservableObject {
             return UITestMockGenerativeModel()
         }
         #endif
-        // Epic #51-A1: scope-instructie staat als eerste blok zodat het model
-        // off-topic-vragen weigert vóór hij überhaupt aan de andere coaching-regels
-        // toekomt. Tekst leeft in ChatScopeInstruction zodat hij los testbaar is.
+        // Epic #51-A1: the scope instruction is the first block so the model
+        // refuses off-topic questions before it even gets to the other coaching rules.
+        // Text lives in ChatScopeInstruction so it is separately testable.
         let systemInstruction = ChatScopeInstruction.text + """
             Jij bent een samenwerkende, meedenkende en proactieve AI fitness-coach.
             Je analyseert niet alleen vermoeidheid, maar je helpt de gebruiker actief om de eerstvolgende stap te plannen richting hun gestelde doelen.
@@ -568,12 +568,12 @@ class ChatViewModel: ObservableObject {
             Extra instructie voor `newPreferences`: Als je opmerkt dat de gebruiker een vaste regel, langetermijnvoorkeur, of tijdelijke kwaal/blessure doorgeeft in hun LAATSTE bericht, vul dit array dan aan. Schat in of dit feit permanent is (zoals een vaste sportdag) of tijdelijk (zoals spierpijn, een lichte blessure of kramp). Als het tijdelijk is, bereken dan een logische verloopdatum (bijv. 1 of 2 weken vanaf vandaag) en retourneer deze in de JSON onder `expirationDate` als een "YYYY-MM-DD" string. Laat `expirationDate` leeg (null) bij permanente regels. Herhaal geen regels die je al kent.
             """
 
-            // Epic #53: provider-agnostische constructie via de `AIModelFactory`.
-            // Provider, modelnaam én sleutel zijn provider-aware (sprint B). JSON-
-            // mode aan: de coach-respons moet altijd het plan-JSON bevatten.
-            // Timeout 45s: genoeg voor een complex JSON-schema-antwoord, maar snel
-            // genoeg om bij overbelasting naar de lite-fallback te schakelen.
-            // Epic 20 / M-04: BYOK-only; C-02: sleutel komt uit de Keychain.
+            // Epic #53: provider-agnostic construction via the `AIModelFactory`.
+            // Provider, model name AND key are provider-aware (sprint B). JSON
+            // mode on: the coach response must always contain the plan JSON.
+            // Timeout 45s: enough for a complex JSON-schema answer, but fast
+            // enough to switch to the lite fallback on overload.
+            // Epic 20 / M-04: BYOK-only; C-02: key comes from the Keychain.
             return AIModelFactory.makeModel(
                 provider: provider,
                 modelName: resolvedModelName,
@@ -584,24 +584,24 @@ class ChatViewModel: ObservableObject {
             )
     }
 
-    /// Bouwt een lichter fallback-model met dezelfde system instruction en
-    /// timeout. Wordt onzichtbaar gebruikt zodra het primaire model een
-    /// `internalError` retourneert (503/429 — piekbelasting).
+    /// Builds a lighter fallback model with the same system instruction and
+    /// timeout. Gets used invisibly as soon as the primary model returns an
+    /// `internalError` (503/429 — peak load).
     ///
-    /// Epic #35: de fallback-modelnaam wordt gelezen uit `AppStorage`; de
-    /// built-in default blijft `gemini-flash-lite-latest` — dezelfde waarde
-    /// als vóór Epic #35, dus geen regressie voor bestaande installaties.
+    /// Epic #35: the fallback model name is read from `AppStorage`; the
+    /// built-in default remains `gemini-flash-lite-latest` — the same value
+    /// as before Epic #35, so no regression for existing installations.
     private func buildFallbackGenerativeModel() -> GenerativeModelProtocol {
         return buildGenerativeModel(modelName: AIModelAppStorageKey.resolvedFallback(for: currentProvider))
     }
 
-    /// Verwijdert de geselecteerde afbeelding uit de invoer.
+    /// Removes the selected image from the input.
     func clearImage() {
         self.selectedImage = nil
     }
 
-    /// Haalt het huidig opgeslagen schema op en formatteert dit als een string,
-    /// zodat de AI dit als referentiemateriaal kan gebruiken voor post-workout evaluaties.
+    /// Fetches the currently stored plan and formats it as a string,
+    /// so the AI can use it as reference material for post-workout evaluations.
     private func getStoredPlanString() -> String {
         guard let decodedPlan = try? JSONDecoder().decode(SuggestedTrainingPlan.self, from: latestSuggestedPlanData) else {
             return "Geen actueel gepland schema bekend."
@@ -621,12 +621,12 @@ class ChatViewModel: ObservableObject {
         return planString
     }
 
-    /// Genereert een context-prefix string op basis van het meegegeven atletisch profiel.
-    /// Epic #44 story 44.6: bouwt het `[TRAININGSDREMPELS]`-blok op basis van het
-    /// gecachte fysiologische profiel. Returnt lege string als geen drempels gezet
-    /// zijn — dan blijft de coach z'n eigen populatie-aannames hanteren. Bij
-    /// gestelde LTHR rapporteren we Friel-zones (preciezer voor atletisch profiel),
-    /// anders Karvonen op max+rest.
+    /// Generates a context-prefix string based on the given athletic profile.
+    /// Epic #44 story 44.6: builds the `[TRAININGSDREMPELS]` block based on the
+    /// cached physiological profile. Returns an empty string if no thresholds are set
+    /// — then the coach keeps using its own population assumptions. With a
+    /// set LTHR we report Friel zones (more precise for an athletic profile),
+    /// otherwise Karvonen on max+rest.
     private func buildTrainingThresholdsBlock() -> String {
         let profile = UserProfileService.cachedProfile()
         var lines: [String] = []
@@ -644,9 +644,9 @@ class ChatViewModel: ObservableObject {
         }
         guard !lines.isEmpty else { return "" }
 
-        // Voeg expliciete Z2/Z3-grenzen toe zodat de coach een 'rustige' rit niet
-        // verkeerd interpreteert. Z2 endurance + Z3 tempo zijn de twee zones waar
-        // gebruikers het vaakst over reflecteren.
+        // Add explicit Z2/Z3 boundaries so the coach does not
+        // misinterpret a 'quiet' ride. Z2 endurance + Z3 tempo are the two zones
+        // users reflect on most often.
         var zonesLine: String?
         if let zones = WorkoutPatternDetector.heartRateZones(from: profile),
            zones.count >= 3 {
@@ -686,30 +686,30 @@ class ChatViewModel: ObservableObject {
         dateFormatter.dateFormat = "yyyy-MM-dd"
         prefix += "[HUIDIGE DATUM: Vandaag is het \(dateFormatter.string(from: now)). Gebruik dit voor je berekeningen rondom 'expirationDate'.]\n\n"
 
-        // Epic 14.4: Injecteer de Vibe Score als harde context — de AI MOET dit volgen (zie systeeminstructie)
+        // Epic 14.4: Inject the Vibe Score as hard context — the AI MUST follow this (see system instruction)
         if todayVibeScoreContext == VibeScoreContextFormatter.noVibeDataSentinel {
-            // Geen Watch-data beschikbaar — geef de coach expliciete instructie om dit correct te communiceren
+            // No Watch data available — give the coach an explicit instruction to communicate this correctly
             prefix += "[HERSTELSTATUS VANDAAG: Er is geen objectieve biometrische data beschikbaar (gebruiker droeg de Apple Watch waarschijnlijk niet 's nachts). Vertrouw volledig op de Symptom Tracker scores en de geplande doelen. Gebruik NOOIT zinnen als 'Ik zie aan je HRV dat...' of 'Je biometrie geeft aan...'. Zeg in plaats daarvan: 'Omdat we vandaag geen Watch-data hebben, gaan we uit van je eigen gevoel en de ingevoerde scores.']\n\n"
         } else if !todayVibeScoreContext.isEmpty {
             prefix += "[HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Volg de kritieke regel over de Vibe Score autoriteit strikt.]\n\n"
         }
 
-        // Epic 18.1: Injecteer de subjectieve feedback (RPE + stemming) van de laatste workout
+        // Epic 18.1: Inject the subjective feedback (RPE + mood) of the last workout
         if !lastWorkoutFeedbackContext.isEmpty {
             prefix += "[SUBJECTIEVE FEEDBACK LAATSTE WORKOUT: \(lastWorkoutFeedbackContext) Let op discrepanties: als TRIMP laag is maar RPE ≥8, is dit een vroeg signaal van overtraining of naderende ziekte.]\n\n"
         }
 
-        // Story 33.2a: handmatig verplaatste workouts — coach moet dit respecteren.
+        // Story 33.2a: manually moved workouts — coach must respect this.
         if !userOverrideContext.isEmpty {
             prefix += userOverrideContext
         }
 
-        // Story 33.4: intent-vs-execution-analyse voor de meest recente workout.
+        // Story 33.4: intent-vs-execution analysis for the most recent workout.
         if !intentExecutionContext.isEmpty {
             prefix += intentExecutionContext
         }
 
-        // Epic 18: Injecteer de actuele pijnscores per lichaamsdeel (dagelijks bijgewerkt)
+        // Epic 18: Inject the current pain scores per body area (updated daily)
         if !symptomContext.isEmpty {
             let symptomBlock = """
             [ACTUELE KLACHTEN — SINGLE SOURCE OF TRUTH (dagelijks bijgewerkt door de gebruiker):
@@ -723,20 +723,20 @@ class ChatViewModel: ObservableObject {
             prefix += symptomBlock + "\n\n"
         }
 
-        // Epic #44 story 44.6: persoonlijke trainingsdrempels naar de coach. De
-        // coach moet weten dat 146 BPM voor déze gebruiker zone 2 is, niet zone 3.
-        // We voegen alleen het blok toe als er minstens één drempel is gezet —
-        // anders is er niks meer te zeggen dan populatie-defaults en houdt de
-        // coach gewoon zijn eigen aannames.
+        // Epic #44 story 44.6: personal training thresholds to the coach. The
+        // coach must know that 146 BPM is zone 2 for THIS user, not zone 3.
+        // We only add the block if at least one threshold is set —
+        // otherwise there is nothing more to say than population defaults and the
+        // coach just keeps its own assumptions.
         let thresholdsBlock = buildTrainingThresholdsBlock()
         if !thresholdsBlock.isEmpty {
             prefix += thresholdsBlock + "\n\n"
         }
 
-        // Epic 32 Story 32.3c: injecteer significante fysiologische patronen uit
-        // recente workouts. Alleen mediumweg/significant patronen landen in deze
-        // cache (zie `WorkoutPatternFormatter.chatContextLine`); milde patronen
-        // zouden de prompt te druk maken.
+        // Epic 32 Story 32.3c: inject significant physiological patterns from
+        // recent workouts. Only medium/significant patterns land in this
+        // cache (see `WorkoutPatternFormatter.chatContextLine`); mild patterns
+        // would make the prompt too busy.
         if !workoutPatternsContext.isEmpty {
             let patternsBlock = """
             [FYSIOLOGISCHE PATRONEN IN RECENTE WORKOUTS:
@@ -750,11 +750,11 @@ class ChatViewModel: ObservableObject {
             prefix += patternsBlock + "\n\n"
         }
 
-        // Epic 45 Story 45.2: rijkere per-workout-context over de afgelopen 14 dagen.
-        // Aanvulling op de 1-regel-pulse hierboven — die geeft een aggregaat-signaal,
-        // dit blok geeft de specifieke onderbouwing per workout zodat plan-aanpassingen
-        // kunnen verwijzen naar concrete sessies. Bewust direct ná het patronen-blok
-        // geplaatst zodat de coach eerst het signaal leest en daarna de details.
+        // Epic 45 Story 45.2: richer per-workout context over the past 14 days.
+        // Complement to the 1-line pulse above — that gives an aggregate signal,
+        // this block gives the specific evidence per workout so plan adjustments
+        // can refer to concrete sessions. Deliberately placed right after the patterns block
+        // so the coach first reads the signal and then the details.
         if !workoutHistoryContext.isEmpty {
             let historyBlock = """
             [RECENTE TRAINING — 14 DAGEN (nieuwste eerst):
@@ -769,7 +769,7 @@ class ChatViewModel: ObservableObject {
             prefix += historyBlock + "\n\n"
         }
 
-        // Epic 21: Injecteer de 7-daagse weersverwachting voor buitenactiviteiten-coaching
+        // Epic 21: Inject the 7-day weather forecast for outdoor-activities coaching
         if !weatherContext.isEmpty {
             let weatherBlock = """
             [WEERSOMSTANDIGHEDEN KOMENDE 7 DAGEN (locatie gebruiker):
@@ -785,8 +785,8 @@ class ChatViewModel: ObservableObject {
             prefix += weatherBlock + "\n\n"
         }
 
-        // Epic 17 / Sprint 17.2: Injecteer de blueprint + periodization context
-        // en druk de volledige inhoud af in de console voor debugging.
+        // Epic 17 / Sprint 17.2: Inject the blueprint + periodization context
+        // and print the full content to the console for debugging.
         let hasBlueprintData  = !blueprintContext.isEmpty
         let hasPeriodization  = !periodizationContext.isEmpty
 
@@ -798,9 +798,9 @@ class ChatViewModel: ObservableObject {
             prefix += "[PERIODISERING — FASE, SUCCESCRITERIA & COACH-GEDRAG:\n\(periodizationContext)\n\nCoach-gedragsregels voor deze context:\n1. COMPLIMENTEN (🎉): Als een COMPLIMENT TRIGGER aanwezig is, open je antwoord dan hiermee. Noem de behaalde prestatie bij naam.\n2. URGENTIE (🚨): Als een KRITIEKE MIJLPAAL ACHTERSTAND aanwezig is, wees dan direct en motiverend. Noem de exacte afstand of TRIMP die nog ontbreekt, en plan dit als eerste prioriteit in het schema.\n3. SCHEMA-AANPASSING: Als je het schema aanpast, verklaar dan altijd hoe de fase-eisen ondanks de aanpassing nog steeds haalbaar zijn (SCHEMA-VERANTWOORDINGSPLICHT).]\n\n"
         }
 
-        // Epic Doel-Intenties: injecteer de intent- en formaat-instructies als aparte sectie.
-        // Dit vertelt de coach HOE te trainen (uitlopen vs. presteren, etapperit vs. eendaags)
-        // en of stretch-pace trainingen veilig zijn op basis van de actuele VibeScore.
+        // Epic Doel-Intenties: inject the intent and format instructions as a separate section.
+        // This tells the coach HOW to train (cruising vs. performing, stage ride vs. one-day)
+        // and whether stretch-pace trainings are safe based on the current VibeScore.
         if !intentContext.isEmpty {
             let intentBlock = """
             [DOEL INTENTIES EN BENADERING — LEES DIT VÓÓR JE HET SCHEMA OPSTELT:
@@ -815,7 +815,7 @@ class ChatViewModel: ObservableObject {
             prefix += intentBlock + "\n\n"
         }
 
-        // Epic 23 Sprint 1: Injecteer de gap-analyse met TRIMPTranslator-hints
+        // Epic 23 Sprint 1: Inject the gap analysis with TRIMPTranslator hints
         if !gapAnalysisContext.isEmpty {
             let gapBlock = """
             [GAP ANALYSE — BLUEPRINT VS. WERKELIJKHEID (Epic 23):
@@ -830,24 +830,24 @@ class ChatViewModel: ObservableObject {
             prefix += gapBlock + "\n\n"
         }
 
-        // Epic 23 Sprint 2: Injecteer de toekomstprognose (Future Projection Engine)
+        // Epic 23 Sprint 2: Inject the future projection (Future Projection Engine)
         if !projectionContext.isEmpty {
             prefix += "\(projectionContext)\n\n"
         }
 
-        // Epic 24 Sprint 1: Injecteer het fysiologisch profiel + voedingsplan in de prompt
+        // Epic 24 Sprint 1: Inject the physiological profile + nutrition plan into the prompt
         if !nutritionContext.isEmpty {
             prefix += "\(nutritionContext)\n\n"
         }
 
-        // Epic 24 Sprint 3: Eenmalige profielwijziging-melding — slechts één keer injecteren,
-        // daarna wissen zodat de coach het niet elke keer herhaalt.
+        // Epic 24 Sprint 3: One-time profile-change notice — inject only once,
+        // then clear so the coach does not repeat it every time.
         if !profileUpdateNote.isEmpty {
             prefix += "\(profileUpdateNote)\n\n"
             profileUpdateNote = ""
         }
 
-        // Debug: print de volledige blueprint- en periodization-context die naar Gemini gaat
+        // Debug: print the full blueprint and periodization context that goes to Gemini
         if hasBlueprintData || hasPeriodization {
             print("━━━ 🧠 [Blueprint Context → Gemini] ━━━")
             if hasBlueprintData { print("[BLUEPRINT]\n\(blueprintContext)") }
@@ -855,7 +855,7 @@ class ChatViewModel: ObservableObject {
             print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         }
 
-        // Epic 16: Injecteer de trainingsfase per actief doel — de AI MOET de fase-instructies strikt volgen
+        // Epic 16: Inject the training phase per active goal — the AI MUST follow the phase instructions strictly
         let activeGoalsWithPhase = activeGoals.compactMap { goal -> (FitnessGoal, TrainingPhase)? in
             guard let phase = goal.currentPhase else { return nil }
             return (goal, phase)
@@ -865,7 +865,7 @@ class ChatViewModel: ObservableObject {
             for (goal, phase) in activeGoalsWithPhase {
                 let weeksLeft = goal.weeksRemaining(from: now)
                 let weeksLeftStr = String(format: "%.1f", weeksLeft)
-                // Bereken de fase-gecorrigeerde wekelijkse target (lineaire baseline × multiplier)
+                // Compute the phase-corrected weekly target (linear baseline × multiplier)
                 let linearRate = goal.computedTargetTRIMP / max(0.1, weeksLeft)
                 let adjustedTarget = Int((linearRate * phase.multiplier).rounded())
                 prefix += "• Doel '\(goal.title)' (\(weeksLeftStr) weken resterend): \(phase.aiInstruction)\n"
@@ -874,15 +874,15 @@ class ChatViewModel: ObservableObject {
             prefix += "]\n\n"
         }
 
-        // Splits voorkeuren in vastgepind (zonder einddatum) vs. tijdelijk (met einddatum) en
-        // injecteer ze als twee aparte blokken — een tijdelijke voorkeur moet expliciet boven
-        // een conflicterende vastgepinde regel gaan tijdens haar looptijd. Filteren van
-        // verlopen items + format-logica zit in `PreferencesContextFormatter` (testbaar).
+        // Split preferences into pinned (without end date) vs. temporary (with end date) and
+        // inject them as two separate blocks — a temporary preference must explicitly take precedence over
+        // a conflicting pinned rule during its lifetime. Filtering of
+        // expired items + format logic lives in `PreferencesContextFormatter` (testable).
         prefix += PreferencesContextFormatter.format(activePreferences: activePreferences, now: now)
 
-        // Epic 18: Blessure-context wordt volledig afgehandeld via symptomContext (zie bovenaan buildContextPrefix).
-        // Het oude statische blok op basis van UserPreference-teksten is vervangen door de dynamische
-        // pijnscores + HARD CONSTRAINTS gegenereerd in cacheSymptomContext(_:preferences:).
+        // Epic 18: Injury context is fully handled via symptomContext (see top of buildContextPrefix).
+        // The old static block based on UserPreference texts has been replaced by the dynamic
+        // pain scores + HARD CONSTRAINTS generated in cacheSymptomContext(_:preferences:).
 
         if let p = profile {
             let peakDistanceKm = String(format: "%.1f", p.peakDistanceInMeters / 1000)
@@ -891,12 +891,12 @@ class ChatViewModel: ObservableObject {
 
             prefix += "[CONTEXT ATLEET: Heeft een piekprestatie van \(peakDistanceKm) km in \(peakDurationMin) minuten. Traint gemiddeld \(weeklyVolumeMin) minuten per week (gem. laatste 4 weken), en heeft \(p.daysSinceLastTraining) dagen geleden voor het laatst getraind."
 
-            // SPRINT 6.3: Overtrainings waarschuwing
+            // SPRINT 6.3: Overtraining warning
             if p.isRecoveryNeeded {
                 prefix += " URGENT: De atleet vertoont tekenen van overtraining op basis van recent volume. Wees streng, adviseer actief om rust te nemen en analyseer deze training puur op herstel."
             }
 
-            // SPRINT 9.3: Pace Baseline Injectie
+            // SPRINT 9.3: Pace Baseline Injection
             if let avgPaceInSeconds = p.averagePacePerKmInSeconds {
                 let minutes = avgPaceInSeconds / 60
                 let seconds = avgPaceInSeconds % 60
@@ -912,10 +912,10 @@ class ChatViewModel: ObservableObject {
         return prefix
     }
 
-    // MARK: - Sprint 13.3: Proactieve Interventie
+    // MARK: - Sprint 13.3: Proactive Intervention
 
-    /// Struct met de risicodata per doel, los van DashboardView zodat ChatViewModel
-    /// geen afhankelijkheid heeft van de view-laag.
+    /// Struct with the risk data per goal, separate from DashboardView so ChatViewModel
+    /// has no dependency on the view layer.
     struct GoalRiskInfo {
         let title: String
         let currentWeeklyRate: Double
@@ -923,19 +923,19 @@ class ChatViewModel: ObservableObject {
         let weeksRemaining: Double
     }
 
-    /// Vraagt de AI om een concreet herstelplan voor doelen die achterlopen.
-    /// Injecteert automatisch de recovery context (doel, actuele rate, tekort, weken resterend)
-    /// zodat de coach direct een bijgestuurd schema kan produceren.
+    /// Asks the AI for a concrete recovery plan for goals that are behind.
+    /// Automatically injects the recovery context (goal, current rate, deficit, weeks remaining)
+    /// so the coach can directly produce an adjusted plan.
     func requestRecoveryPlan(atRiskGoals: [GoalRiskInfo], contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
         guard !atRiskGoals.isEmpty else { return }
 
-        // Bouw de technische context op (onzichtbaar voor de gebruiker)
+        // Build the technical context (invisible to the user)
         var systemLines = [
             "RECOVERY CONTEXT — Mijn doel(en) lopen achter op schema. Maak een geleidelijk herstelplan:",
             ""
         ]
 
-        // Epic 14.4: Injecteer de Vibe Score zodat het herstelplan de actuele herstelstatus respecteert
+        // Epic 14.4: Inject the Vibe Score so the recovery plan respects the current recovery status
         if todayVibeScoreContext == VibeScoreContextFormatter.noVibeDataSentinel {
             systemLines.append("HERSTELSTATUS VANDAAG: Geen Watch-data beschikbaar. Baseer het herstelplan op de Symptom Tracker scores en eigen gevoel van de gebruiker.")
             systemLines.append("")
@@ -948,10 +948,10 @@ class ChatViewModel: ObservableObject {
             let weeksText = String(format: "%.1f", risk.weeksRemaining)
             let currentRate = Int(risk.currentWeeklyRate)
 
-            // Bepaal de horizon-strategie op basis van weken resterend
+            // Determine the horizon strategy based on weeks remaining
             let horizonAdvice: String
             if risk.weeksRemaining > 8 {
-                // Veel tijd over: geef Base Building-advies, spreid het tekort geleidelijk uit
+                // Plenty of time left: give Base Building advice, spread the deficit gradually
                 let gradualWeeklyIncrease = Int(Double(deficit) / max(risk.weeksRemaining * 0.5, 1))
                 horizonAdvice = "Het evenement is \(weeksText) weken weg. PRIORITEIT: Base Building. Verhoog het wekelijkse volume heel geleidelijk — streef naar +\(gradualWeeklyIncrease) TRIMP/week over de komende maanden. Geen paniektrainingen."
             } else if risk.weeksRemaining > 4 {
@@ -968,8 +968,8 @@ class ChatViewModel: ObservableObject {
             systemLines.append("  - Horizon advies: \(horizonAdvice)")
             systemLines.append("")
 
-            // Bereken het maximaal toegestane wekelijkse volume (10-15% regel)
-            let maxAllowedRate = Int(Double(currentRate) * 1.12) // 12% = midden van 10-15%
+            // Compute the maximum allowed weekly volume (10-15% rule)
+            let maxAllowedRate = Int(Double(currentRate) * 1.12) // 12% = middle of 10-15%
             systemLines.append("  ⛔️ HARDE FYSIOLOGISCHE GRENS: De totale wekelijkse TRIMP voor de komende week mag NOOIT meer zijn dan \(maxAllowedRate) TRIMP (\(currentRate) × 1.12). Dit is de 10-15% progressieregel om overtraining te voorkomen. Dit is niet onderhandelbaar.")
             systemLines.append("")
         }
@@ -988,7 +988,7 @@ class ChatViewModel: ObservableObject {
 
         let systemPrompt = systemLines.joined(separator: "\n")
 
-        // De tekst die de gebruiker ziet in de chat (beknopt en begrijpelijk)
+        // The text the user sees in the chat (concise and understandable)
         let goalTitles = atRiskGoals.map { "'\($0.title)'" }.joined(separator: " en ")
         let userFacingText = "Los de achterstand op voor \(goalTitles) en geef me een bijgestuurd schema."
 
@@ -1002,23 +1002,23 @@ class ChatViewModel: ObservableObject {
         )
     }
 
-    /// Handelt het afwijzen (overslaan) van een specifieke voorgestelde workout af (Rest Day).
+    /// Handles rejecting (skipping) a specific suggested workout (Rest Day).
     func skipWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
         let systemPrompt = "Ik sla de training '\(workout.activityType)' op \(workout.dateOrDay) over. Herbereken de week en schuif de belasting door. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."
         let userFacingText = "Ik sla de geplande \(workout.activityType) op \(workout.dateOrDay) over."
         sendHiddenSystemMessage(systemText: systemPrompt, userText: userFacingText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
     }
 
-    /// Handelt de aanvraag voor een alternatieve workout af.
+    /// Handles the request for an alternative workout.
     func requestAlternativeWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
         let systemPrompt = "Ik vind de geplande training '\(workout.activityType)' op \(workout.dateOrDay) niet leuk. Geef me een alternatief voor \(workout.dateOrDay) dat een vergelijkbare trainingsprikkel geeft. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."
         let userFacingText = "Geef me een alternatief voor de \(workout.activityType) op \(workout.dateOrDay)."
         sendHiddenSystemMessage(systemText: systemPrompt, userText: userFacingText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
     }
 
-    /// Verstuurt een bericht waarbij de UI een simpele tekst toont, maar de payload de technische prompt bevat.
-    /// Als JSON-parsing mislukt, wordt `fallbackMessage` getoond in plaats van de ruwe AI-tekst —
-    /// zodat bij recovery plan / skip-workout calls nooit ruwe JSON in de chat verschijnt.
+    /// Sends a message where the UI shows a simple text, but the payload contains the technical prompt.
+    /// If JSON parsing fails, `fallbackMessage` is shown instead of the raw AI text —
+    /// so that on recovery plan / skip-workout calls raw JSON never appears in the chat.
     private func sendHiddenSystemMessage(
         systemText: String,
         userText: String,
@@ -1036,17 +1036,17 @@ class ChatViewModel: ObservableObject {
         fetchAIResponse(for: payloadText, image: nil, fallbackMessage: fallbackMessage)
     }
 
-    /// Verstuurt het huidige tekstveld (of de meegegeven tekst) en/of de geselecteerde afbeelding.
+    /// Sends the current text field (or the given text) and/or the selected image.
     func sendMessage(_ explicitText: String? = nil, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
         let textToUse = explicitText ?? inputText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let imageToSend = selectedImage?.downsample(to: 2048.0)
 
         guard !textToUse.isEmpty || imageToSend != nil else { return }
-        // Voorkom dat de gebruiker een nieuw bericht stuurt terwijl de coach nog aan het typen is.
+        // Prevent the user from sending a new message while the coach is still typing.
         guard !isTyping else { return }
 
-        // 1. Maak bericht aan van gebruiker voor de UI (ZONDER de onzichtbare context prefix)
+        // 1. Create message from user for the UI (WITHOUT the invisible context prefix)
         let imageData = imageToSend?.jpegData(compressionQuality: 0.8)
         let uiMessage = ChatMessage(role: .user, text: textToUse, attachedImageData: imageData)
         messages.append(uiMessage)
@@ -1055,7 +1055,7 @@ class ChatViewModel: ObservableObject {
         inputText = ""
         clearImage()
 
-        // 2. Bouw de uiteindelijke payload prompt op
+        // 2. Build the final payload prompt
         let contextPrefix = buildContextPrefix(from: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
 
         // Combine explicitly injected goals into user text if applicable for plain chat
@@ -1073,31 +1073,31 @@ class ChatViewModel: ObservableObject {
 
         let payloadText = finalUserText.isEmpty ? contextPrefix : "\(contextPrefix)\(finalUserText)"
 
-        // 3. Haal AI reactie op met de verrijkte payload
+        // 3. Fetch AI response with the enriched payload
         fetchAIResponse(for: payloadText, image: imageToSend)
     }
 
-    /// Verwijdert de laatste foutmelding en stuurt het laatste gebruikersbericht opnieuw.
-    /// Wordt aangeroepen via de 'Probeer opnieuw' knop in de MessageBubble.
+    /// Removes the last error message and resends the last user message.
+    /// Gets called via the 'Probeer opnieuw' button in the MessageBubble.
     func retryLastMessage(contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
-        // Verwijder het laatste foutbericht uit de chat
+        // Remove the last error message from the chat
         if let lastErrorIndex = messages.indices.last(where: { messages[$0].isError }) {
             messages.remove(at: lastErrorIndex)
         }
 
-        // Zoek het laatste gebruikersbericht om opnieuw te versturen
+        // Find the last user message to resend
         guard let lastUserMessage = messages.last(where: { $0.role == .user }) else { return }
 
-        // Verwijder ook het gebruikersbericht zelf zodat sendMessage() het netjes opnieuw toevoegt
+        // Also remove the user message itself so sendMessage() re-adds it cleanly
         if let lastUserIndex = messages.indices.last(where: { messages[$0].role == .user }) {
             messages.remove(at: lastUserIndex)
         }
 
-        // Stuur opnieuw — sendMessage voegt het bericht weer toe en roept de AI aan
+        // Resend — sendMessage re-adds the message and calls the AI
         sendMessage(lastUserMessage.text, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
     }
 
-    /// Genereert een tekstprompt voor de Gemini AI op basis van de fysiologische data uit HealthKit.
+    /// Generates a text prompt for the Gemini AI based on the physiological data from HealthKit.
     struct DailyWorkout {
         let date: Date
         let name: String
@@ -1198,14 +1198,14 @@ class ChatViewModel: ObservableObject {
         return lines.joined(separator: "\n")
     }
 
-    /// Haalt de status op via de geselecteerde bron voor de afgelopen X dagen.
-    /// Valt terug op de andere bron bij gebrek aan data of permissies.
+    /// Fetches the status via the selected source for the past X days.
+    /// Falls back to the other source on lack of data or permissions.
     func analyzeCurrentStatus(days: Int = 7, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
         guard !isFetchingWorkout else { return }
         isFetchingWorkout = true
 
         Task {
-            // SPRINT 7.4 - Check geselecteerde databron
+            // SPRINT 7.4 - Check selected data source
             if selectedDataSource == .healthKit {
                 do {
                     let workouts = try await healthKitManager.fetchRecentWorkouts(days: days)
@@ -1228,23 +1228,23 @@ class ChatViewModel: ObservableObject {
                     print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
                 }
 
-                // Fallback naar Strava
+                // Fallback to Strava
                 await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
 
             } else {
-                // Strava geselecteerd
+                // Strava selected
                 await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
             }
         }
     }
 
-    /// Hulpfunctie voor de AI prompt injectie (Zonder de payload in de UI te tonen).
+    /// Helper function for the AI prompt injection (without showing the payload in the UI).
     private func sendPromptToAI(uiPrompt: String, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) async {
         await MainActor.run {
-            // Let op: We voegen uiPrompt (de ruwe JSON context) NIET toe aan messages.
-            // Voeg eventueel een vriendelijke systeem-indicatie toe voor de UI als het een handmatige refresh was,
-            // of laat de UI leeg en toon alleen het laden (isTyping).
-            // Voor nu houden we het simpel en onzichtbaar.
+            // Note: We do NOT add uiPrompt (the raw JSON context) to messages.
+            // Optionally add a friendly system indication for the UI if it was a manual refresh,
+            // or leave the UI empty and only show the loading (isTyping).
+            // For now we keep it simple and invisible.
             isTyping = true
             isFetchingWorkout = false
 
@@ -1254,7 +1254,7 @@ class ChatViewModel: ObservableObject {
         }
     }
 
-    /// Hulpfunctie voor het ophalen via HealthKit, met optionele fallback.
+    /// Helper function for fetching via HealthKit, with optional fallback.
     private func fetchHealthKitRecentWorkouts(days: Int, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = [], isFallback: Bool = false) async {
         do {
             let workouts = try await healthKitManager.fetchRecentWorkouts(days: days)
@@ -1295,14 +1295,14 @@ class ChatViewModel: ObservableObject {
         }
     }
 
-    /// Hulpfunctie voor het ophalen via Strava, inclusief fallback naar HealthKit.
+    /// Helper function for fetching via Strava, including fallback to HealthKit.
     private func fetchStravaRecentActivities(days: Int, contextProfile: AthleticProfile?, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = [], isFallback: Bool = false) async {
         do {
             let activities = try await fitnessDataService.fetchRecentActivities(days: days)
 
             if activities.isEmpty {
                 if !isFallback && selectedDataSource == .strava {
-                    // Reverse Fallback: Als Strava faalt of leeg is en Strava was de bron, probeer HealthKit
+                    // Reverse Fallback: If Strava fails or is empty and Strava was the source, try HealthKit
                     print("⚠️ Geen recente Strava activiteit gevonden. Reverse fallback naar HealthKit.")
                     await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
                     return
@@ -1322,9 +1322,9 @@ class ChatViewModel: ObservableObject {
                 let date = formatter.date(from: activity.start_date) ?? Date()
                 let durationMinutes = activity.moving_time / 60
 
-                // Schatting resting heart rate en max heart rate als deze niet via Strava beschikbaar is,
-                // of we kunnen een simpele fallback gebruiken.
-                // In een echte app zouden we dit uit het profiel halen of een default nemen.
+                // Estimate resting heart rate and max heart rate if these are not available via Strava,
+                // or we can use a simple fallback.
+                // In a real app we would get this from the profile or take a default.
                 let avgHR = activity.average_heartrate ?? 140.0
                 let calculatedTSS = fitnessCalculator.calculateTSS(durationInSeconds: Double(activity.moving_time), averageHeartRate: avgHR, maxHeartRate: 190.0, restingHeartRate: 60.0)
 
@@ -1372,34 +1372,34 @@ class ChatViewModel: ObservableObject {
         }
     }
 
-    // MARK: - JSON Parsing Hulpfuncties
+    // MARK: - JSON Parsing Helpers
 
-    /// Haalt een schone JSON-string op uit een AI-response die mogelijk markdown-opmaak bevat.
+    /// Fetches a clean JSON string from an AI response that may contain markdown formatting.
     ///
-    /// Strategie (in volgorde):
-    /// 1. Strip markdown code block tags (```json, ```JSON, ```) aan het begin en einde.
-    /// 2. Als de string daarna nog steeds niet begint met `{`, zoek dan de eerste `{`
-    ///    en de laatste `}` en extraheer alleen dat gedeelte.
-    /// 3. Trim witruimte.
+    /// Strategy (in order):
+    /// 1. Strip markdown code block tags (```json, ```JSON, ```) at the beginning and end.
+    /// 2. If the string still does not start with `{` afterwards, find the first `{`
+    ///    and the last `}` and extract only that part.
+    /// 3. Trim whitespace.
     private func extractCleanJSON(from rawText: String) -> String {
         var text = rawText
 
-        // Stap 1: Strip markdown code block opening tag (```json of ```)
-        // Gebruik case-insensitive zoek zodat ook ```JSON werkt
+        // Step 1: Strip markdown code block opening tag (```json or ```)
+        // Use case-insensitive search so ```JSON also works
         if let startRange = text.range(of: "```json", options: .caseInsensitive) {
             text = String(text[startRange.upperBound...])
         } else if let startRange = text.range(of: "```") {
             text = String(text[startRange.upperBound...])
         }
 
-        // Strip sluitende ``` (zoek van achteren naar voren)
+        // Strip closing ``` (search from back to front)
         if let endRange = text.range(of: "```", options: .backwards) {
             text = String(text[..<endRange.lowerBound])
         }
 
         text = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Stap 2: Als er nog steeds proza vóór de JSON staat, extraheer het { ... } blok direct
+        // Step 2: If there is still prose before the JSON, extract the { ... } block directly
         if !text.hasPrefix("{") {
             if let startIndex = text.firstIndex(of: "{"),
                let endIndex = text.lastIndex(of: "}") {
@@ -1410,21 +1410,21 @@ class ChatViewModel: ObservableObject {
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Stuurt asynchroon het verzoek naar het AI-model met de juiste content payload.
+    /// Sends the request asynchronously to the AI model with the correct content payload.
     ///
     /// - Parameters:
-    ///   - text: De ingevoerde tekst door de gebruiker.
-    ///   - image: Een optionele UIImage.
-    ///   - fallbackMessage: Optioneel. Als JSON-parsing mislukt (bijv. bij hidden system calls),
-    ///     wordt dit bericht getoond in plaats van de ruwe AI-tekst. Gebruik dit voor
-    ///     recovery plan requests, skip workout, etc. om te voorkomen dat JSON in de chat zichtbaar wordt.
+    ///   - text: The text entered by the user.
+    ///   - image: An optional UIImage.
+    ///   - fallbackMessage: Optional. If JSON parsing fails (e.g. on hidden system calls),
+    ///     this message is shown instead of the raw AI text. Use this for
+    ///     recovery plan requests, skip workout, etc. to prevent JSON from becoming visible in the chat.
     func fetchAIResponse(for text: String, image: UIImage?, fallbackMessage: String? = nil) {
-        // Om te zorgen dat de unit tests (die het protocol mocken) niet falen op de check
-        // van de ontbrekende API sleutel (omdat de statische Secrets placeholder vaak actief is in CI),
-        // negeren we de check als een custom model is geïnjecteerd voor testing, of loggen de waarschuwing.
-        // Epic 20: BYOK — blokkeer als er geen geldige API-sleutel is geconfigureerd.
-        // Uitzondering: als een custom model (bijv. een mock voor unit tests) is geïnjecteerd,
-        // slaan we de key-check over zodat tests niet falen op een ontbrekende sleutel.
+        // To ensure the unit tests (which mock the protocol) do not fail on the check
+        // of the missing API key (because the static Secrets placeholder is often active in CI),
+        // we ignore the check if a custom model is injected for testing, or log the warning.
+        // Epic 20: BYOK — block if no valid API key is configured.
+        // Exception: if a custom model (e.g. a mock for unit tests) is injected,
+        // we skip the key check so tests do not fail on a missing key.
         if model is RealAIProviderClient {
             guard hasAPIKey else {
                 let noKeyMessage = "Je AI Coach slaapt. Voer een API-sleutel in via de Instellingen om hem wakker te maken."
@@ -1434,54 +1434,54 @@ class ChatViewModel: ObservableObject {
             }
         }
 
-        // Wis een eventuele vorige foutbanner zodra er een nieuwe call start.
+        // Clear any previous error banner as soon as a new call starts.
         lastAIErrorMessage = nil
 
-        // Epic #51-A2: snapshot de modelnamen die we voor déze call gaan
-        // gebruiken zodat de UI de banner kan tonen als de gebruiker tijdens
-        // isTyping van model wisselt. We lezen de keys hier — niet via een
-        // @AppStorage-property — om expliciet één keer per call te snapshotten.
+        // Epic #51-A2: snapshot the model names we are going to use for THIS
+        // call so the UI can show the banner if the user switches model during
+        // isTyping. We read the keys here — not via a
+        // @AppStorage property — to explicitly snapshot once per call.
         activeRequestPrimaryModel = AIModelAppStorageKey.resolvedPrimary(for: currentProvider)
         activeRequestFallbackModel = AIModelAppStorageKey.resolvedFallback(for: currentProvider)
 
-        // Epic #51-A6: vorige Task netjes opruimen mocht de gebruiker een
-        // nieuwe vraag sturen voordat de vorige terug is (defensief — UI
-        // disablet de send-knop tijdens isTyping, maar deze guard voorkomt
-        // dat een race-conditie tot dubbele responses leidt).
+        // Epic #51-A6: clean up the previous Task neatly should the user send a
+        // new question before the previous one is back (defensive — the UI
+        // disables the send button during isTyping, but this guard prevents
+        // a race condition from leading to duplicate responses).
         currentRequestTask?.cancel()
 
         currentRequestTask = Task { [weak self] in
             guard let self = self else { return }
-            // Maak een dynamische array van ModelContent.Part objects
+            // Create a dynamic array of ModelContent.Part objects
             var promptParts: [AIPromptPart] = []
 
             if !text.isEmpty {
                 promptParts.append(.text(text))
             }
 
-            // Zet de UIImage om naar JPEG data en wrap het in een provider-neutrale part
+            // Convert the UIImage to JPEG data and wrap it in a provider-neutral part
             if let image = image, let imageData = image.jpegData(compressionQuality: 0.8) {
                 promptParts.append(.imageData(imageData, mimeType: "image/jpeg"))
             }
 
             print("DEBUG PROMPT: \(text)")
 
-            // Waterfall: primair model eerst. Bij 503/429 (overbelasting) schakelen
-            // we stil over op het fallback-model — standaard lichter, vaker beschikbaar
-            // tijdens pieken. Beide modelnamen zijn vanaf Epic #35 configureerbaar in
-            // Settings → AI Coach Configuratie. Andere fouten (invalid key, prompt
-            // blocked, netwerk) vallen direct naar de UI door.
+            // Waterfall: primary model first. On 503/429 (overload) we silently
+            // switch to the fallback model — lighter by default, more often available
+            // during peaks. Both model names are configurable in
+            // Settings → AI Coach Configuratie from Epic #35. Other errors (invalid key, prompt
+            // blocked, network) fall straight through to the UI.
             var responseText: String?
             var finalError: Error?
 
             do {
                 responseText = try await model.generateContent(promptParts)
             } catch {
-                // Epic #53: provider-agnostische overload-detectie (Gemini
-                // `internalError` én onze eigen `AIProviderError.overloaded`). Bij
-                // een tijdelijke 503/429 schakelen we stil over op het fallback-
-                // model; andere fouten (invalid key, blocked, netwerk) vallen
-                // direct door naar de UI.
+                // Epic #53: provider-agnostic overload detection (Gemini
+                // `internalError` AND our own `AIProviderError.overloaded`). On
+                // a temporary 503/429 we silently switch to the fallback
+                // model; other errors (invalid key, blocked, network) fall
+                // straight through to the UI.
                 if AIProviderError.isOverload(error) {
                     retryStatusMessage = "Model tijdelijk overbelast — overschakelen naar lichtere variant..."
                     let fallbackModel = buildFallbackGenerativeModel()
@@ -1495,13 +1495,13 @@ class ChatViewModel: ObservableObject {
                 }
             }
 
-            // Reset retry-statusbericht
+            // Reset retry status message
             retryStatusMessage = ""
 
-            // Epic #51-A6: als de Task ondertussen geannuleerd is (gebruiker
-            // verliet de Coach-tab of stuurde een nieuwe vraag voordat deze
-            // terug was), willen we géén foutbubble tonen en geen banner. We
-            // resetten alleen de typing-state en laten de chat schoon.
+            // Epic #51-A6: if the Task has been cancelled in the meantime (user
+            // left the Coach tab or sent a new question before this one was
+            // back), we do NOT want to show an error bubble or banner. We
+            // only reset the typing state and leave the chat clean.
             if Task.isCancelled || finalError is CancellationError {
                 self.isTyping = false
                 self.currentRequestTask = nil
@@ -1510,18 +1510,18 @@ class ChatViewModel: ObservableObject {
                 return
             }
 
-            // Verwerk fout als alle pogingen zijn mislukt.
-            // Epic #51-A5: specifieke meldingen per fout-categorie (offline /
-            // timeout / DNS / safety-block / invalid key / overbelast / generiek)
-            // via de pure-Swift `ChatErrorMessageMapper`. De oude case-statement
-            // herkende alleen Gemini-SDK-types en vertaalde de rest in één
-            // generieke "tijdelijk probleem", waardoor offline-situaties en
-            // ingetrokken sleutels niet uit elkaar te houden waren.
+            // Handle error if all attempts have failed.
+            // Epic #51-A5: specific messages per error category (offline /
+            // timeout / DNS / safety-block / invalid key / overloaded / generic)
+            // via the pure-Swift `ChatErrorMessageMapper`. The old case statement
+            // only recognized Gemini SDK types and translated the rest into one
+            // generic "tijdelijk probleem", so offline situations and
+            // revoked keys could not be told apart.
             if let error = finalError {
                 let userFacingMessage = ChatErrorMessageMapper.userFacingMessage(for: error)
                 messages.append(ChatMessage(role: .ai, text: userFacingMessage, isError: true))
-                // Spiegel de foutmelding in de banner-state zodat screens zonder
-                // zichtbare chat (zoals Dashboard tijdens pull-to-refresh) óók feedback tonen.
+                // Mirror the error message in the banner state so screens without
+                // a visible chat (such as Dashboard during pull-to-refresh) ALSO show feedback.
                 lastAIErrorMessage = userFacingMessage
                 isTyping = false
                 self.currentRequestTask = nil
@@ -1530,10 +1530,10 @@ class ChatViewModel: ObservableObject {
                 return
             }
 
-            // Verwerk het succesvolle antwoord
+            // Handle the successful response
             print("DEBUG RAW RESPONSE: \(responseText ?? "nil")")
 
-            // Gebruik de robuuste JSON-extractor: strip markdown en haal het JSON-object eruit
+            // Use the robust JSON extractor: strip markdown and pull out the JSON object
             let cleanedJSON = extractCleanJSON(from: responseText ?? "{}")
 
             var parsedPlan: SuggestedTrainingPlan?
@@ -1544,46 +1544,46 @@ class ChatViewModel: ObservableObject {
                     let plan = try JSONDecoder().decode(SuggestedTrainingPlan.self, from: data)
                     parsedPlan = plan
 
-                    // SPRINT 13.4: motivation altijd zichtbaar in de chat.
-                    // Als de AI een leeg veld teruggeeft, toon de fallbackMessage zodat
-                    // er altijd een menselijke bevestiging in de chat staat.
+                    // SPRINT 13.4: motivation always visible in the chat.
+                    // If the AI returns an empty field, show the fallbackMessage so
+                    // there is always a human confirmation in the chat.
                     let trimmedMotivation = plan.motivation.trimmingCharacters(in: .whitespacesAndNewlines)
                     motivationText = trimmedMotivation.isEmpty
                         ? (fallbackMessage ?? "Ik heb je schema bijgewerkt! Bekijk je overzicht.")
                         : trimmedMotivation
 
-                    // Trigger callback als er nieuwe voorkeuren zijn gevonden
+                    // Trigger callback if new preferences were found
                     if let prefs = plan.newPreferences, !prefs.isEmpty {
                         onNewPreferencesDetected?(prefs)
                     }
 
-                    // Update het centrale schema (ook opgeslagen in AppStorage).
-                    // Story 33.2b: bij een reset gaat het via mergeReplannedPlan zodat
-                    // verplaatste sessies (`isSwapped`) leidend blijven over AI-output.
+                    // Update the central plan (also stored in AppStorage).
+                    // Story 33.2b: on a reset it goes via mergeReplannedPlan so
+                    // moved sessions (`isSwapped`) remain leading over AI output.
                     switch pendingPlanUpdateMode {
                     case .replace:
                         trainingPlanManager?.updatePlan(plan)
                     case .mergePreservingSwaps:
                         trainingPlanManager?.mergeReplannedPlan(plan)
                     }
-                    // Reset altijd na één gebruik — voorkomt dat een latere chat-message
-                    // per ongeluk nog in merge-mode komt.
+                    // Always reset after one use — prevents a later chat message
+                    // from accidentally still being in merge mode.
                     pendingPlanUpdateMode = .replace
 
-                    // Sla de motivatie op voor het dashboard insight block
+                    // Store the motivation for the dashboard insight block
                     if !motivationText.isEmpty {
                         latestCoachInsight = motivationText
                         lastAnalysisTimestamp = Date().timeIntervalSince1970
                     }
                 } catch {
-                    // JSON-parsing mislukt: gebruik de fallbackMessage als die is meegegeven
-                    // (bijv. bij recovery plan of skip-workout calls), zodat nooit ruwe JSON in de chat zichtbaar is.
-                    // Voor gewone chat-berichten tonen we de opgeschoonde tekst (proza zonder JSON-blokken).
+                    // JSON parsing failed: use the fallbackMessage if it was provided
+                    // (e.g. on recovery plan or skip-workout calls), so raw JSON is never visible in the chat.
+                    // For regular chat messages we show the cleaned text (prose without JSON blocks).
                     print("⚠️ JSON-parsing mislukt: \(error.localizedDescription)")
                     if let fallback = fallbackMessage {
                         motivationText = fallback
                     } else {
-                        // Gewone chat: toon de opgeschoonde response (zonder markdown-tags) als tekst
+                        // Regular chat: show the cleaned response (without markdown tags) as text
                         motivationText = cleanedJSON.hasPrefix("{") ? "Ik kon het schema niet correct verwerken. Probeer het opnieuw." : cleanedJSON
                     }
                 }
@@ -1593,26 +1593,26 @@ class ChatViewModel: ObservableObject {
 
             messages.append(ChatMessage(role: .ai, text: motivationText, suggestedPlan: parsedPlan))
             isTyping = false
-            // Epic #51-A2/A6: housekeeping na succesvolle voltooiing — Task-handle
-            // vrijgeven en active-model-snapshot wissen zodat de banner verdwijnt
-            // en de volgende cancel() niet per ongeluk op een afgeronde Task hapt.
+            // Epic #51-A2/A6: housekeeping after successful completion — release the
+            // Task handle and clear the active-model snapshot so the banner disappears
+            // and the next cancel() does not accidentally hit a finished Task.
             self.currentRequestTask = nil
             self.activeRequestPrimaryModel = ""
             self.activeRequestFallbackModel = ""
         }
     }
 
-    /// Epic #51-A6: annuleert een lopende AI-call (bijv. wanneer de gebruiker
-    /// de Coach-tab verlaat tijdens de spinner). De catch in de Task vangt de
-    /// `CancellationError` op, ruimt de typing-state op en laat geen
-    /// foutbubble in de chat verschijnen — een geannuleerd verzoek mag niet
-    /// als een mislukte call voelen.
+    /// Epic #51-A6: cancels a running AI call (e.g. when the user
+    /// leaves the Coach tab during the spinner). The catch in the Task catches
+    /// the `CancellationError`, cleans up the typing state and lets no
+    /// error bubble appear in the chat — a cancelled request must not
+    /// feel like a failed call.
     func cancelOngoingRequest() {
         guard let task = currentRequestTask else { return }
         task.cancel()
-        // Defensief: ook synchroon de UI-state resetten zodat een direct
-        // her-renderende ChatView niet kort nog "Coach is aan het typen..."
-        // toont voordat de Task zelf bij de cleanup-branch komt.
+        // Defensive: also reset the UI state synchronously so a directly
+        // re-rendering ChatView does not briefly still show "Coach is aan het typen..."
+        // before the Task itself reaches the cleanup branch.
         isTyping = false
         retryStatusMessage = ""
         currentRequestTask = nil
@@ -1620,11 +1620,11 @@ class ChatViewModel: ObservableObject {
         activeRequestFallbackModel = ""
     }
 
-    /// Epic #51-A2: banner-tekst die ChatView toont wanneer de gebruiker tijdens
-    /// een actief antwoord in Settings van Gemini-model wisselt. Retourneert
-    /// `nil` zolang er geen wijziging is — dan rendert ChatView geen banner.
-    /// Bewust een computed property zodat de waarde altijd verse AppStorage-
-    /// waarden leest (de snapshot leeft op `activeRequestPrimary/FallbackModel`).
+    /// Epic #51-A2: banner text that ChatView shows when the user switches Gemini
+    /// model in Settings during an active answer. Returns
+    /// `nil` as long as there is no change — then ChatView renders no banner.
+    /// Deliberately a computed property so the value always reads fresh AppStorage
+    /// values (the snapshot lives on `activeRequestPrimary/FallbackModel`).
     var modelSwitchNotice: String? {
         guard isTyping else { return nil }
         return ChatModelSwitchNotice.message(

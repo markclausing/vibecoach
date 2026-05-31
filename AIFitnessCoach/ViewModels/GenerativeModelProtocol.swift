@@ -1,49 +1,49 @@
 import Foundation
 
-// MARK: - Epic #53: Provider-neutrale abstractie
+// MARK: - Epic #53: Provider-neutral abstraction
 
-/// Een SDK-onafhankelijke representatie van één onderdeel van een AI-prompt.
-/// Vóór Epic #53 leunde het protocol direct op `GoogleGenerativeAI.ModelContent.Part`,
-/// waardoor de hele inferentie-laag aan Gemini vastzat. Dit value-type ontkoppelt
-/// de call-sites van de SDK zodat OpenAI/Claude/Mistral-clients hetzelfde protocol
-/// kunnen implementeren. Iedere provider-client mapt deze parts naar zijn eigen
-/// wire-formaat (zie `AIModelFactory`).
+/// An SDK-independent representation of one part of an AI prompt.
+/// Before Epic #53 the protocol leaned directly on `GoogleGenerativeAI.ModelContent.Part`,
+/// which tied the entire inference layer to Gemini. This value type decouples the
+/// call sites from the SDK so OpenAI/Claude/Mistral clients can implement the same
+/// protocol. Each provider client maps these parts to its own wire format
+/// (see `AIModelFactory`).
 public enum AIPromptPart {
-    /// Platte tekst (de gebruikersvraag + geïnjecteerde context-prefix).
+    /// Plain text (the user question + injected context prefix).
     case text(String)
-    /// Binaire afbeeldingsdata met bijbehorende MIME-type (bijv. `image/jpeg`).
+    /// Binary image data with its associated MIME type (e.g. `image/jpeg`).
     case imageData(Data, mimeType: String)
 }
 
-/// Provider-agnostische fout die de REST-clients (OpenAI/Claude/Mistral) gooien.
-/// `ChatViewModel`, `WorkoutInsightService` en `ChatErrorMessageMapper` mappen deze
-/// naar de juiste fallback-/UI-afhandeling, zodat de 503/429-waterfall en de
-/// auth-foutdetectie niet langer Gemini-SDK-specifiek zijn.
+/// Provider-agnostic error thrown by the REST clients (OpenAI/Claude/Mistral).
+/// `ChatViewModel`, `WorkoutInsightService` and `ChatErrorMessageMapper` map these
+/// to the right fallback/UI handling, so the 503/429 waterfall and the auth-error
+/// detection are no longer Gemini-SDK-specific.
 ///
-/// Transport-fouten (offline, timeout, DNS) worden bewust **niet** in dit type
-/// gevangen — die laten we als `URLError` doorbubbelen zodat de bestaande
-/// `ChatErrorMessageMapper`-URLError-mapping ze afhandelt.
+/// Transport errors (offline, timeout, DNS) are deliberately **not** captured in
+/// this type — we let those bubble up as `URLError` so the existing
+/// `ChatErrorMessageMapper` URLError mapping handles them.
 public enum AIProviderError: Error, Equatable {
-    /// HTTP 429/503/529 — provider tijdelijk overbelast. Triggert de fallback-waterfall.
+    /// HTTP 429/503/529 — provider temporarily overloaded. Triggers the fallback waterfall.
     case overloaded
-    /// HTTP 401/403 of een ongeldige/ingetrokken sleutel.
+    /// HTTP 401/403 or an invalid/revoked key.
     case authenticationFailed
-    /// De respons werd door een veiligheidsfilter geblokkeerd.
+    /// The response was blocked by a safety filter.
     case contentBlocked
-    /// Een andere niet-2xx-statuscode. `message` bevat (een ingekorte) provider-
-    /// foutbody zodat de gebruiker/diagnose ziet wáárom (bv. een gedeprecieerd model).
+    /// Another non-2xx status code. `message` contains (a truncated) provider error
+    /// body so the user/diagnostics see why (e.g. a deprecated model).
     case http(status: Int, message: String?)
-    /// 2xx, maar geen bruikbare tekst in de respons-body.
+    /// 2xx, but no usable text in the response body.
     case emptyResponse
-    /// De respons-body kon niet ontleed worden naar het verwachte JSON-schema.
+    /// The response body couldn't be parsed into the expected JSON schema.
     case decodingFailed
 }
 
 extension AIProviderError {
-    /// True als een fout een tijdelijke overbelasting is en het zin heeft om het
-    /// fallback-model te proberen. Herkent zowel onze eigen `.overloaded` als de
-    /// Gemini-SDK `GenerateContentError.internalError` (via stringrepresentatie,
-    /// zodat dit module geen `import GoogleGenerativeAI` nodig heeft).
+    /// True if an error is a temporary overload and it makes sense to try the
+    /// fallback model. Recognizes both our own `.overloaded` and the Gemini-SDK
+    /// `GenerateContentError.internalError` (via string representation, so this
+    /// module doesn't need `import GoogleGenerativeAI`).
     public static func isOverload(_ error: Error) -> Bool {
         if let providerError = error as? AIProviderError, providerError == .overloaded {
             return true
@@ -56,20 +56,20 @@ extension AIProviderError {
     }
 }
 
-/// Een protocol dat de benodigde functionaliteiten van een Generatief AI-model
-/// abstraheert. Dit stelt ons in staat om de implementatie te vervangen door een
-/// mock voor Unit Testing, én om per provider (Gemini/OpenAI/Claude/Mistral) een
-/// eigen client achter hetzelfde contract te zetten.
+/// A protocol that abstracts the required capabilities of a generative AI model.
+/// This lets us replace the implementation with a mock for unit testing, and put a
+/// dedicated client per provider (Gemini/OpenAI/Claude/Mistral) behind the same
+/// contract.
 public protocol GenerativeModelProtocol {
-    /// Genereert content op basis van de meegeleverde, SDK-onafhankelijke parts.
+    /// Generates content based on the given, SDK-independent parts.
     ///
-    /// - Parameter parts: Een array van `AIPromptPart` (tekst en/of afbeeldingen).
-    /// - Returns: Een tekstuele reactie gegenereerd door het AI-model.
+    /// - Parameter parts: An array of `AIPromptPart` (text and/or images).
+    /// - Returns: A textual response generated by the AI model.
     func generateContent(_ parts: [AIPromptPart]) async throws -> String?
 }
 
-/// Marker-protocol voor een échte provider-client (geen test-mock). `ChatViewModel`
-/// gebruikt dit om de API-sleutel-gate (`hasAPIKey`) uitsluitend op live clients toe
-/// te passen — geïnjecteerde mocks (`MockGenerativeModel`, `UITestMockGenerativeModel`)
-/// conformeren bewust niet, zodat tests niet op een ontbrekende sleutel struikelen.
+/// Marker protocol for a real provider client (not a test mock). `ChatViewModel`
+/// uses this to apply the API-key gate (`hasAPIKey`) only to live clients —
+/// injected mocks (`MockGenerativeModel`, `UITestMockGenerativeModel`)
+/// deliberately don't conform, so tests don't trip over a missing key.
 public protocol RealAIProviderClient {}

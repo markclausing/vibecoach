@@ -1,31 +1,31 @@
 import Foundation
 
-/// Pure-Swift formatter voor het symptomen-/blessure-context-blok (Epic 18 Sprint 2).
+/// Pure-Swift formatter for the symptom/injury context block (Epic 18 Sprint 2).
 ///
-/// `SymptomTracker` is de 'Single Source of Truth' voor blessure-status:
-/// - Score > 0 → actieve klacht, met hard-constraints op basis van ernst
-/// - Score == 0 → hersteld, vervangt elke nog actieve `UserPreference`-tekst
-/// - Geen score ingevuld + actieve `UserPreference` → toon als 'onbekend, score nog niet ingevuld'
+/// `SymptomTracker` is the 'Single Source of Truth' for injury status:
+/// - Score > 0 → active complaint, with hard constraints based on severity
+/// - Score == 0 → recovered, replaces any still-active `UserPreference` text
+/// - No score entered + active `UserPreference` → show as 'unknown, score not yet entered'
 ///
-/// Wordt aangeroepen door `ChatViewModel.cacheSymptomContext` en in tests direct testbaar
-/// zonder `@AppStorage` of `UserDefaults`-fixture.
+/// Called by `ChatViewModel.cacheSymptomContext` and directly testable in tests
+/// without an `@AppStorage` or `UserDefaults` fixture.
 enum SymptomContextFormatter {
 
-    /// Formatteert symptomen + blessure-voorkeuren naar een context-string voor de AI-coach.
+    /// Formats symptoms + injury preferences into a context string for the AI coach.
     /// - Parameters:
-    ///   - symptoms: Alle `Symptom`-records (de formatter filtert zelf op vandaag).
-    ///   - preferences: Actieve `UserPreference`-records (verlopen prefs worden uitgefilterd).
-    ///   - now: Datum voor het bepalen van "vandaag" en "actieve" prefs (default `Date()`).
-    /// - Returns: De geformatteerde context-string. Lege string als er niets te rapporteren is.
+    ///   - symptoms: All `Symptom` records (the formatter filters for today itself).
+    ///   - preferences: Active `UserPreference` records (expired prefs are filtered out).
+    ///   - now: Date for determining "today" and "active" prefs (default `Date()`).
+    /// - Returns: The formatted context string. Empty string if there's nothing to report.
     static func format(symptoms: [Symptom],
                        preferences: [UserPreference] = [],
                        now: Date = Date()) -> String {
         let todayStart = Calendar.current.startOfDay(for: now)
-        // Haal ALLE records van vandaag op — inclusief score 0 (= hersteld)
+        // Fetch ALL records of today — including score 0 (= recovered)
         let todayAll    = symptoms.filter { $0.date >= todayStart }
         let todayActive = todayAll.filter { $0.severity > 0 }
 
-        // Bepaal actieve blessure-voorkeuren (niet verlopen)
+        // Determine active injury preferences (not expired)
         let injuryKeywords = ["kuit", "scheen", "shin", "rug", "rugpijn", "knie", "enkel",
                               "blessure", "pijn", "klacht", "hand", "pols", "schouder"]
         let activeInjuryPrefs = preferences.filter { pref in
@@ -34,10 +34,10 @@ enum SymptomContextFormatter {
             return injuryKeywords.contains(where: { text.contains($0) })
         }
 
-        // Alle gebieden die VANDAAG gemeten zijn (score 0 én > 0) tellen als 'tracked'
+        // All areas measured TODAY (score 0 and > 0) count as 'tracked'
         let allTrackedAreas = Set(todayAll.map { $0.bodyArea.rawValue.lowercased() })
 
-        // Niets te rapporteren: geen meting van vandaag en geen actieve klacht-voorkeur
+        // Nothing to report: no measurement today and no active complaint preference
         guard !todayAll.isEmpty || !activeInjuryPrefs.isEmpty else {
             return ""
         }
@@ -46,7 +46,7 @@ enum SymptomContextFormatter {
         var constraintLines: [String] = []
         var recoveryLines: [String] = []
 
-        // 1. Actieve klachten (score > 0) — met hard constraints op basis van ernst
+        // 1. Active complaints (score > 0) — with hard constraints based on severity
         for s in todayActive {
             let label = BodyArea.severityLabel(s.severity)
             scoreLines.append("• \(s.bodyArea.rawValue): \(s.severity)/10 (\(label))")
@@ -73,8 +73,8 @@ enum SymptomContextFormatter {
             }
         }
 
-        // 2. Herstelde gebieden (score == 0 vandaag) — alleen als er een matchende blessure-voorkeur
-        //    bestaat. Zo voorkomt we valse herstelberichten voor lichaamsdelen die nooit geblesseerd waren.
+        // 2. Recovered areas (score == 0 today) — only if a matching injury preference
+        //    exists. This prevents false recovery messages for body parts that were never injured.
         for s in todayAll where s.severity == 0 {
             let matchesPref = activeInjuryPrefs.contains { pref in
                 s.bodyArea.injuryKeywords.contains(where: { pref.preferenceText.lowercased().contains($0) })
@@ -88,8 +88,8 @@ enum SymptomContextFormatter {
             )
         }
 
-        // 3. Blessure-voorkeuren zonder score van vandaag — alleen tonen als het gebied NIET al
-        //    gemeten is (voorkomt duplicaten met scoreLines of recoveryLines)
+        // 3. Injury preferences without a score today — only show if the area is NOT already
+        //    measured (prevents duplicates with scoreLines or recoveryLines)
         for pref in activeInjuryPrefs {
             let alreadyTracked = BodyArea.allCases.contains { area in
                 allTrackedAreas.contains(area.rawValue.lowercased()) &&
@@ -100,7 +100,7 @@ enum SymptomContextFormatter {
             }
         }
 
-        // Combineer in vaste volgorde: scores → hard constraints → herstelberichten
+        // Combine in fixed order: scores → hard constraints → recovery messages
         var combined = scoreLines
         if !constraintLines.isEmpty {
             combined += ["", "ACTIEVE BEPERKINGEN:"] + constraintLines
@@ -109,8 +109,8 @@ enum SymptomContextFormatter {
             combined += ["", "HERSTEL MELDINGEN:"] + recoveryLines
         }
 
-        // Lege context als er uitsluitend score-0 records zijn zonder matchende preference
-        // (bijv. een willekeurig lichaamsdeel op 0 ingevuld zonder eerdere klacht)
+        // Empty context if there are only score-0 records without a matching preference
+        // (e.g. a random body part entered at 0 without an earlier complaint)
         if combined.isEmpty {
             return ""
         }

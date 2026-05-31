@@ -2,23 +2,23 @@ import Foundation
 
 // MARK: - IntentExecutionContextFormatter
 //
-// Bouwt het `[ANALYSIS — INTENT vs UITVOERING]`-blok in de coach-prompt op basis
-// van een `IntentExecutionVerdict`. Pure Swift, testbaar zonder ChatViewModel-state.
-// De coach krijgt zo één compact regel-blok dat hem in staat stelt om proactief te
-// reageren ("ik zie dat je tempo-sessie van dinsdag een endurance is geworden — alles
-// in orde?") in plaats van pas te reageren als de gebruiker er expliciet om vraagt.
+// Builds the `[ANALYSIS — INTENT vs UITVOERING]` block in the coach prompt based on
+// an `IntentExecutionVerdict`. Pure Swift, testable without ChatViewModel state.
+// This gives the coach one compact line block that lets it react proactively
+// ("I see your Tuesday tempo session became an endurance — everything ok?")
+// instead of only reacting when the user explicitly asks.
 
 enum IntentExecutionContextFormatter {
 
-    /// Format voor één-shot injectie. Retourneert lege string bij `.insufficientData`
-    /// — anders zou de prompt vol staan met loze "kon niet bepalen"-blokken die de
-    /// coach zelf zou moeten ignoreren.
+    /// Format for one-shot injection. Returns an empty string on `.insufficientData`
+    /// — otherwise the prompt would be full of empty "couldn't determine" blocks the
+    /// coach would have to ignore itself.
     /// - Parameters:
-    ///   - verdict: Resultaat uit `IntentExecutionAnalyzer.analyze(...)`.
-    ///   - plannedActivity: Gepland-activiteit-naam (bv. "Tempo run") voor humane labels.
-    ///   - actualActivityName: Werkelijke activiteit-naam voor humane labels.
-    ///   - plannedTRIMP: Optioneel, voor exacte TRIMP-rapportage.
-    ///   - actualTRIMP: Optioneel, voor exacte TRIMP-rapportage.
+    ///   - verdict: Result from `IntentExecutionAnalyzer.analyze(...)`.
+    ///   - plannedActivity: Planned activity name (e.g. "Tempo run") for human labels.
+    ///   - actualActivityName: Actual activity name for human labels.
+    ///   - plannedTRIMP: Optional, for exact TRIMP reporting.
+    ///   - actualTRIMP: Optional, for exact TRIMP reporting.
     static func format(verdict: IntentExecutionVerdict,
                        plannedActivity: String,
                        actualActivityName: String,
@@ -26,7 +26,7 @@ enum IntentExecutionContextFormatter {
                        actualTRIMP: Double?) -> String {
         switch verdict {
         case .insufficientData:
-            // Geen blok — coach zou anders met onbruikbare lege state moeten dealen.
+            // No block — otherwise the coach would have to deal with unusable empty state.
             return ""
 
         case .match:

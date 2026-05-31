@@ -1,15 +1,15 @@
 import Foundation
 
-/// Pure-Swift formatter voor de blueprint-status-context (Epic 17) die in de coach-prompt geïnjecteerd wordt.
+/// Pure-Swift formatter for the blueprint-status context (Epic 17) injected into the coach prompt.
 ///
-/// Wordt aangeroepen door `ChatViewModel.cacheActiveBlueprints` en in tests direct testbaar
-/// zonder `@AppStorage` of `UserDefaults`-fixture.
+/// Called by `ChatViewModel.cacheActiveBlueprints` and directly testable in tests
+/// without an `@AppStorage` or `UserDefaults` fixture.
 enum BlueprintContextFormatter {
 
-    /// Formatteert blueprint-resultaten naar een meerregelige context-string voor de AI-coach.
-    /// Per actief doel: titel + weken-resterend + on-schema-status + per-milestone status met deadlines.
-    /// - Parameter results: De blueprint-checks per actief doel.
-    /// - Returns: De geformatteerde context-string. Lege string als `results` leeg is.
+    /// Formats blueprint results into a multi-line context string for the AI coach.
+    /// Per active goal: title + weeks remaining + on-schedule status + per-milestone status with deadlines.
+    /// - Parameter results: The blueprint checks per active goal.
+    /// - Returns: The formatted context string. Empty string if `results` is empty.
     static func format(results: [BlueprintCheckResult]) -> String {
         guard !results.isEmpty else { return "" }
 
