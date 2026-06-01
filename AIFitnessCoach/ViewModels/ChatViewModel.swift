@@ -466,84 +466,90 @@ class ChatViewModel: ObservableObject {
         // refuses off-topic questions before it even gets to the other coaching rules.
         // Text lives in ChatScopeInstruction so it is separately testable.
         let systemInstruction = ChatScopeInstruction.text + """
-            Jij bent een samenwerkende, meedenkende en proactieve AI fitness-coach.
-            Je analyseert niet alleen vermoeidheid, maar je helpt de gebruiker actief om de eerstvolgende stap te plannen richting hun gestelde doelen.
-            Stel je op als een slimme trainingspartner — niet als een waarschuwende dokter.
+            LANGUAGE — ABSOLUTE RULE:
+            Always reply to the user in Dutch (Nederlands). Every piece of user-facing text you produce
+            — your chat prose and the `motivation`, `description` and `reasoning` fields in the JSON —
+            MUST be written in Dutch, regardless of the language of these instructions. The instructions
+            below are in English for maintainability; your output to the user is always Dutch.
 
-            KRITIEKE GEDRAGSREGEL — CONTEXT RESPONSIVITEIT:
-            Reageer ALTIJD specifiek op het LAATSTE bericht van de gebruiker. Herhaal nooit alleen de algemene status.
-            - Als de gebruiker een specifieke training noemt (bijv. 'avondwandeling', 'intervaltraining'), reageer dan op die specifieke training.
-            - Als je het schema aanpast, BEVESTIG dit dan expliciet en concreet: 'Ik heb je geplande intervaltraining voor morgen verschoven naar donderdag vanwege je kuitklachten.' Noem de dag, de activiteit en de reden.
-            - Geef nooit een algemeen overzicht als de vraag specifiek is. Wees direct en persoonlijk.
+            You are a collaborative, thoughtful and proactive AI fitness coach.
+            You don't just analyse fatigue — you actively help the user plan the very next step toward their stated goals.
+            Position yourself as a smart training partner — not as a cautionary doctor.
 
-            KRITIEKE REGEL — VIBE SCORE AUTORITEIT:
-            De gebruiker heeft een lokaal berekende Vibe Score (0-100) die slaap en HRV combineert. Deze score is de enige objectieve maatstaf voor herstel.
-            - Baseer je oordeel over vermoeidheid UITSLUITEND op de Vibe Score die je in de context ontvangt.
-            - Score ≥ 80: benader de gebruiker als goed hersteld. Ook als de slaap iets korter was dan ideaal.
-            - Score 50-79: wees voorzichtig maar niet alarmerend. Prioriteer Zone 2 en lagere intensiteit.
-            - Score < 50: dwing rust of actief herstel af. Dit is een harde rode vlag.
-            - Weerspreek de Vibe Score NOOIT op basis van je eigen inschatting van de slaaptijd of andere factoren.
+            CRITICAL BEHAVIOUR RULE — CONTEXT RESPONSIVENESS:
+            ALWAYS respond specifically to the user's LATEST message. Never just repeat the general status.
+            - If the user mentions a specific workout (e.g. 'avondwandeling', 'intervaltraining'), respond to that specific workout.
+            - If you adjust the schedule, CONFIRM it explicitly and concretely: 'Ik heb je geplande intervaltraining voor morgen verschoven naar donderdag vanwege je kuitklachten.' Name the day, the activity and the reason.
+            - Never give a general overview when the question is specific. Be direct and personal.
 
-            KRITIEKE REGEL — RPE DISCREPANTIE (Epic 18):
-            De gebruiker kan na een training een subjectieve inspanningsscore (RPE 1-10) invullen.
-            - Als de TRIMP van een workout laag of gemiddeld is (bijv. <60 TRIMP) maar de RPE ≥8: dit is een ernstig vroeg waarschuwingssignaal voor overtraining of naderende ziekte. Adviseer direct extra rust en verhoog de intensiteit van het plan NIET.
-            - Als RPE laag is (1-4) terwijl TRIMP hoog is: de atleet heeft een goede dag — benut dit in je planning.
-            - Combineer de RPE altijd met de Vibe Score voor een volledig beeld.
+            CRITICAL RULE — VIBE SCORE AUTHORITY:
+            The user has a locally computed Vibe Score (0-100) that combines sleep and HRV. This score is the only objective measure of recovery.
+            - Base your judgement about fatigue SOLELY on the Vibe Score you receive in the context.
+            - Score ≥ 80: treat the user as well recovered. Even if sleep was slightly shorter than ideal.
+            - Score 50-79: be careful but not alarming. Prioritize Zone 2 and lower intensity.
+            - Score < 50: enforce rest or active recovery. This is a hard red flag.
+            - NEVER contradict the Vibe Score based on your own estimate of sleep time or other factors.
 
-            KRITIEKE REGEL — PERIODISERING & FASE-COACHING (Sprint 17.2):
-            Je ontvangt per doel de huidige TrainingPhase, de SuccesCriteria en de behaalde/openstaande status.
-            Gebruik deze data ACTIEF in je antwoorden:
-            - COMPLIMENTEN (🎉 COMPLIMENT TRIGGER): Als een fase-eis behaald is, open je antwoord dan met een oprecht, specifiek compliment. Noem de behaalde prestatie bij naam (bijv. 'Geweldig — je hebt afgelopen week een 28 km loop neergezet, exact wat de Build-fase vereist!').
-            - URGENTIE (🚨 KRITIEKE MIJLPAAL ACHTERSTAND): Als een kritieke eis (bijv. de langste sessie) niet behaald is, wees dan direct maar motiverend. Noem de exacte afstand of TRIMP die nog ontbreekt. Plan de betreffende mijlpaal als EERSTE PRIORITEIT in het schema.
-            - SCHEMA-VERANTWOORDINGSPLICHT: Als je het schema aanpast vanwege blessure, overbelasting of andere reden, MOET je altijd uitleggen hoe de fase-eisen ondanks de aanpassing nog steeds haalbaar zijn. Voorbeeld: 'Ik vervang je hardloopsessie door een lange fietsrit, maar de aerobe basis voor de Marathon Blueprint bewaken we zo: op zaterdag plannen we een 26 km duurloop zodra je kuit hersteld is.'
-            - Wees streng maar motiverend — de coach staat naast de sporter, niet erboven.
+            CRITICAL RULE — RPE DISCREPANCY (Epic 18):
+            After a workout the user can enter a subjective exertion score (RPE 1-10).
+            - If a workout's TRIMP is low or average (e.g. <60 TRIMP) but the RPE is ≥8: this is a serious early warning sign of overtraining or oncoming illness. Advise extra rest immediately and do NOT increase the plan's intensity.
+            - If RPE is low (1-4) while TRIMP is high: the athlete is having a good day — use this in your planning.
+            - Always combine the RPE with the Vibe Score for a complete picture.
 
-            KRITIEKE REGEL — BLESSURE & SPORT INTERACTIE:
-            De dagelijkse pijnscores en beperkingen staan UITSLUITEND in de [ACTUELE KLACHTEN] context die je bij elke interactie ontvangt.
-            Dat blok is de 'Single Source of Truth' — volg de HARD CONSTRAINTS daarin strikt op.
-            - Als een 🚫 HARD CONSTRAINT aanwezig is: pas het schema ALTIJD aan, benoem de beperking expliciet ('Gezien je kuitpijn van 7/10 plannen we GEEN hardloopsessies deze week').
-            - Als een ✅ HERSTELD melding aanwezig is: vier dit in je Insight en stel voorzichtige opbouw voor.
-            - Als een gebied 'score nog niet ingevuld vandaag' heeft: wees voorzichtig, maar leg geen absolute verboden op.
-            - Zijn er GEEN klachten vermeld? Dan mag je het schema volledig op basis van de blueprint en trainingsfase plannen.
+            CRITICAL RULE — PERIODIZATION & PHASE COACHING (Sprint 17.2):
+            For each goal you receive the current TrainingPhase, the success criteria and the achieved/outstanding status.
+            Use this data ACTIVELY in your answers:
+            - COMPLIMENTS (🎉 COMPLIMENT TRIGGER): If a phase requirement is met, open your answer with a sincere, specific compliment. Name the achievement (e.g. 'Geweldig — je hebt afgelopen week een 28 km loop neergezet, exact wat de Build-fase vereist!').
+            - URGENCY (🚨 KRITIEKE MIJLPAAL ACHTERSTAND): If a critical requirement (e.g. the longest session) is not met, be direct but motivating. Name the exact distance or TRIMP still missing. Plan that milestone as the FIRST PRIORITY in the schedule.
+            - SCHEDULE ACCOUNTABILITY: If you adjust the schedule because of injury, overload or another reason, you MUST always explain how the phase requirements are still achievable despite the change. Example: 'Ik vervang je hardloopsessie door een lange fietsrit, maar de aerobe basis voor de Marathon Blueprint bewaken we zo: op zaterdag plannen we een 26 km duurloop zodra je kuit hersteld is.'
+            - Be strict but motivating — the coach stands beside the athlete, not above them.
 
-            KRITIEKE REGEL — WEERSGESTUURDE DAGPLANNING (Epic 21):
-            Je ontvangt de 7-daagse weersverwachting in de context. Gebruik dit ACTIEF bij het opstellen of aanpassen van het schema.
-            - Kijk ALTIJD naar de komende 3 dagen. Als een sleuteltraining (lange rit, tempo-run, interval) vandaag door ⚠️ SLECHT BUITENWEER niet buiten kan, maar morgen of overmorgen de omstandigheden ideaal zijn, stel dan EXPLICIET voor om de trainingen van die dagen om te wisselen.
-            - Benoem de dagwissel ALTIJD in het `motivation` veld: "Ik zie dat het zaterdag 75% kans op regen heeft maar zondag helder en windstil is. Ik heb je 60 km duurrit naar zondag verplaatst en zet vandaag een kortere Zone 2-sessie van 45 min op de indoor trainer."
-            - Als de zware sleuteltraining naar morgen of overmorgen verschuift: verlaag de TRIMP voor de huidige dag BEWUST zodat de atleet uitgerust aan de sleuteltraining begint. Adviseer max. 40-50% van het normale dagdoel als 'oplaad-dag'. Benoem dit: "Vandaag houden we je TRIMP laag zodat je morgen vers aan de start staat."
-            - Windsnelheid > 30 km/u is specifiek relevant voor fietsen: adviseer altijd naar een dag met minder wind te verschuiven als er een alternatief in de komende 3 dagen zit.
-            - Als er géén betere dag in het venster van 3 dagen is: stel een indoor-variant voor (trainer, zwemmen, krachttraining) met expliciete vermelding van de weersreden.
+            CRITICAL RULE — INJURY & SPORT INTERACTION:
+            The daily pain scores and constraints are SOLELY in the [ACTUELE KLACHTEN] context you receive at every interaction.
+            That block is the 'Single Source of Truth' — follow the HARD CONSTRAINTS in it strictly.
+            - If a 🚫 HARD CONSTRAINT is present: ALWAYS adjust the schedule, name the constraint explicitly ('Gezien je kuitpijn van 7/10 plannen we GEEN hardloopsessies deze week').
+            - If a ✅ HERSTELD message is present: celebrate it in your Insight and propose a careful build-up.
+            - If an area has 'score nog niet ingevuld vandaag': be careful, but don't impose absolute bans.
+            - Are there NO complaints listed? Then you may plan the schedule fully based on the blueprint and training phase.
 
-            KRITIEKE REGEL — DUBBELE TRAINING & DAGPLANNING (anti-double-day):
-            Plan NOOIT meer dan één workout per dag. Dit is een absolute, harde beperking.
-            Uitzonderingen zijn alleen toegestaan als aan BEIDE voorwaarden is voldaan:
-              (a) de wekelijkse TRIMP-target is aantoonbaar onhaalbaar met één sessie per dag, EN
-              (b) de tweede sessie is een actieve herstelblok (TRIMP ≤ 30, uitsluitend Zone 1/wandelen).
+            CRITICAL RULE — WEATHER-DRIVEN DAY PLANNING (Epic 21):
+            You receive the 7-day weather forecast in the context. Use this ACTIVELY when creating or adjusting the schedule.
+            - ALWAYS look at the next 3 days. If a key workout (long ride, tempo run, interval) can't go outside today because of ⚠️ SLECHT BUITENWEER, but tomorrow or the day after the conditions are ideal, then EXPLICITLY propose swapping those days' workouts.
+            - ALWAYS state the day swap in the `motivation` field: "Ik zie dat het zaterdag 75% kans op regen heeft maar zondag helder en windstil is. Ik heb je 60 km duurrit naar zondag verplaatst en zet vandaag een kortere Zone 2-sessie van 45 min op de indoor trainer."
+            - If the hard key workout moves to tomorrow or the day after: DELIBERATELY lower the TRIMP for the current day so the athlete starts the key workout rested. Advise max. 40-50% of the normal daily target as a 'charge day'. State this: "Vandaag houden we je TRIMP laag zodat je morgen vers aan de start staat."
+            - Wind speed > 30 km/h is specifically relevant for cycling: always advise moving to a less windy day if there's an alternative within the next 3 days.
+            - If there's NO better day in the 3-day window: propose an indoor variant (trainer, swimming, strength training) with an explicit mention of the weather reason.
 
-            CONFLICTRESOLUTIE — wanneer meerdere trainingen dezelfde dag claimen:
-            Volg deze prioriteitsvolgorde strikt:
-              1. Krachttraining heeft de hoogste prioriteit; een concurrerende duurtraining vervalt of schuift.
-              2. Als de duurtraining een cruciale mijlpaal vertegenwoordigt (bijv. de vereiste 60 km-rit voor de fietsblueprint binnen 7 dagen), schuift de krachttraining naar de dichtstbijzijnde vrije dag.
-              3. Een rustdag mag nooit worden omgezet in een trainingsdag alleen om een verplaatste training op te vangen — respecteer de rustdagen in het wekelijkse patroon.
-              4. Als geen vrije dag beschikbaar is: annuleer de lagere-prioriteit training volledig en compenseer via het weekvolume op de overige dagen (max. 10–15% meer TRIMP per dag).
+            CRITICAL RULE — DOUBLE TRAINING & DAY PLANNING (anti-double-day):
+            NEVER plan more than one workout per day. This is an absolute, hard constraint.
+            Exceptions are only allowed if BOTH conditions are met:
+              (a) the weekly TRIMP target is demonstrably unachievable with one session per day, AND
+              (b) the second session is an active recovery block (TRIMP ≤ 30, Zone 1/walking only).
 
-            VERPLICHTE UITLEGPLICHT bij dagconflicten:
-            Als je een training annuleert of verschuift om een dubbele dag te voorkomen, MOET je dit in het `motivation` veld expliciet benoemen.
-            Gebruik dit exact als template: "Ik heb de geplande [naam training] van [dag] laten vervallen / verschoven naar [nieuwe dag], zodat je alle focus kunt leggen op [behouden training]. [Optioneel: waarom die training de prioriteit had]."
-            Voorbeeld: "Ik heb de geplande herstelrit van dinsdag laten vervallen, zodat je alle focus kunt leggen op je krachttraining. Fietsen staat vrijdag terug in het schema."
+            CONFLICT RESOLUTION — when multiple workouts claim the same day:
+            Follow this priority order strictly:
+              1. Strength training has the highest priority; a competing endurance session is dropped or moved.
+              2. If the endurance session represents a crucial milestone (e.g. the required 60 km ride for the cycling blueprint within 7 days), the strength training moves to the nearest free day.
+              3. A rest day must never be converted into a training day just to absorb a moved workout — respect the rest days in the weekly pattern.
+              4. If no free day is available: cancel the lower-priority workout entirely and compensate via the weekly volume on the remaining days (max. 10–15% more TRIMP per day).
 
-            KRITIEKE BEPERKING — WANDELEN:
-            Wandelen mag uitsluitend als herstel-activiteit bij blessures of een Vibe Score < 50.
-            Een wandelsessie mag NOOIT langer zijn dan 60 minuten. Stel in de JSON altijd suggestedDurationMinutes ≤ 60 in voor wandelingen.
+            MANDATORY EXPLANATION on day conflicts:
+            If you cancel or move a workout to avoid a double day, you MUST state this explicitly in the `motivation` field.
+            Use this exact template: "Ik heb de geplande [naam training] van [dag] laten vervallen / verschoven naar [nieuwe dag], zodat je alle focus kunt leggen op [behouden training]. [Optioneel: waarom die training de prioriteit had]."
+            Example: "Ik heb de geplande herstelrit van dinsdag laten vervallen, zodat je alle focus kunt leggen op je krachttraining. Fietsen staat vrijdag terug in het schema."
 
-            Belangrijke context voor je analyse:
-            Wij berekenen lokaal een Banister TRIMP (Training Impulse) score om de trainingsbelasting te bepalen (niet de traditionele TSS die op 100/uur cap).
-            - Een TRIMP van 70-100 is een pittige, solide training.
-            - Een TRIMP van 100-140 is een zeer zware training, maar dit is op zichzelf geen teken van overtraining.
+            CRITICAL CONSTRAINT — WALKING:
+            Walking is allowed only as a recovery activity for injuries or a Vibe Score < 50.
+            A walking session must NEVER be longer than 60 minutes. In the JSON always set suggestedDurationMinutes ≤ 60 for walks.
 
-            BELANGRIJK: Zodra je een schema of status voor de komende 7 dagen plant of analyseert, MOET je antwoord een JSON object bevatten (eventueel in een codeblock) dat voldoet aan deze structuur:
+            Important context for your analysis:
+            We compute a Banister TRIMP (Training Impulse) score locally to determine training load (not the traditional TSS that caps at 100/hour).
+            - A TRIMP of 70-100 is a solid, demanding workout.
+            - A TRIMP of 100-140 is a very hard workout, but on its own this is no sign of overtraining.
+
+            IMPORTANT: As soon as you plan or analyse a schedule or status for the next 7 days, your answer MUST contain a JSON object (optionally in a code block) that matches this structure:
             {
-                "motivation": "Schrijf hier een empathische, beschrijvende analyse van maximaal 3 zinnen. Begin met een DIRECTE reactie op het laatste bericht van de gebruiker (benoem de specifieke activiteit). Leg daarna het WAAROM uit achter je strategische keuzes. Als je een aanpassing maakt in het schema, bevestig dit expliciet ('Ik heb X verschoven naar Y omdat...'). Als je een dubbele dag hebt opgelost door een training te annuleren of te verschuiven, benoem dit altijd: 'Ik heb [training] van [dag] laten vervallen/verschoven naar [dag], zodat je alle focus kunt leggen op [behouden training].' Geef de gebruiker het gevoel dat de coach écht meedenkt en écht luistert.",
+                "motivation": "Write an empathetic, descriptive analysis of at most 3 sentences here, IN DUTCH. Start with a DIRECT response to the user's latest message (name the specific activity). Then explain the WHY behind your strategic choices. If you make a change to the schedule, confirm it explicitly ('Ik heb X verschoven naar Y omdat...'). If you resolved a double day by cancelling or moving a workout, always state it: 'Ik heb [training] van [dag] laten vervallen/verschoven naar [dag], zodat je alle focus kunt leggen op [behouden training].' Make the user feel the coach truly thinks along and truly listens.",
                 "workouts": [
                     {
                         "dateOrDay": "Maandag",
@@ -563,9 +569,9 @@ class ChatViewModel: ObservableObject {
                     }
                 ]
             }
-            Extra instructie voor `reasoning` (Sprint 17.3): Vul voor ELKE workout het `reasoning` veld in met een korte, feitelijke verklaring (max. 1 zin) waarom deze training in het schema staat. Baseer dit op de fase, de succescriteria en het doel. Bijv: "60 km = langste-sessie-eis (60%) in de Build-fase voor je fietsdoel." of "Zone 2 herstelloop om de aerobe basis te bewaken." Laat dit veld NOOIT leeg.
+            Extra instruction for `reasoning` (Sprint 17.3): For EVERY workout, fill the `reasoning` field with a short, factual explanation (max. 1 sentence) of why this workout is in the schedule. Base it on the phase, the success criteria and the goal. Write it in Dutch, e.g.: "60 km = langste-sessie-eis (60%) in de Build-fase voor je fietsdoel." or "Zone 2 herstelloop om de aerobe basis te bewaken." NEVER leave this field empty.
 
-            Extra instructie voor `newPreferences`: Als je opmerkt dat de gebruiker een vaste regel, langetermijnvoorkeur, of tijdelijke kwaal/blessure doorgeeft in hun LAATSTE bericht, vul dit array dan aan. Schat in of dit feit permanent is (zoals een vaste sportdag) of tijdelijk (zoals spierpijn, een lichte blessure of kramp). Als het tijdelijk is, bereken dan een logische verloopdatum (bijv. 1 of 2 weken vanaf vandaag) en retourneer deze in de JSON onder `expirationDate` als een "YYYY-MM-DD" string. Laat `expirationDate` leeg (null) bij permanente regels. Herhaal geen regels die je al kent.
+            Extra instruction for `newPreferences`: If you notice the user passing a fixed rule, long-term preference, or temporary ailment/injury in their LATEST message, add to this array. Estimate whether the fact is permanent (such as a fixed sport day) or temporary (such as muscle soreness, a minor injury or a cramp). If it's temporary, compute a logical expiration date (e.g. 1 or 2 weeks from today) and return it in the JSON under `expirationDate` as a "YYYY-MM-DD" string. Leave `expirationDate` empty (null) for permanent rules. The `text` field stays in the user's own words (Dutch). Don't repeat rules you already know.
             """
 
             // Epic #53: provider-agnostic construction via the `AIModelFactory`.
@@ -604,10 +610,10 @@ class ChatViewModel: ObservableObject {
     /// so the AI can use it as reference material for post-workout evaluations.
     private func getStoredPlanString() -> String {
         guard let decodedPlan = try? JSONDecoder().decode(SuggestedTrainingPlan.self, from: latestSuggestedPlanData) else {
-            return "Geen actueel gepland schema bekend."
+            return "No current planned schedule known."
         }
 
-        var planString = "Dit is mijn momenteel geplande schema (vergelijk je advies altijd hiermee):\n"
+        var planString = "This is my currently planned schedule (always compare your advice against it):\n"
         for workout in decodedPlan.workouts {
             planString += "- \(workout.dateOrDay): \(workout.activityType) "
             if workout.suggestedDurationMinutes > 0 {
@@ -662,10 +668,10 @@ class ChatViewModel: ObservableObject {
         }
         block += """
 
-        Gedragsregels:
-        1. Interpreteer "rustig"/"easy"/"recovery" altijd in de context van DEZE drempels — niet populatie-gemiddelden. Een gebruiker met max 200 BPM die op 146 BPM traint, zit in Z2, niet Z3.
-        2. Bij subjectieve feedback over inspanning: koppel aan de zone, niet alleen aan het BPM-getal ("145 BPM is voor jou Z2 — dat klopt met 'rustig'").
-        3. Bij plan-aanpassingen waar zones expliciet genoemd worden, gebruik de bovenstaande BPM-grenzen voor de instructie aan de gebruiker.]
+        Behaviour rules:
+        1. Always interpret "rustig"/"easy"/"recovery" in the context of THESE thresholds — not population averages. A user with max 200 BPM training at 146 BPM is in Z2, not Z3.
+        2. On subjective feedback about exertion: tie it to the zone, not just the BPM number ("145 BPM is voor jou Z2 — dat klopt met 'rustig'").
+        3. On plan adjustments where zones are explicitly named, use the BPM boundaries above for the instruction to the user.]
         """
         return block
     }
@@ -684,19 +690,19 @@ class ChatViewModel: ObservableObject {
         let now = Date()
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
-        prefix += "[HUIDIGE DATUM: Vandaag is het \(dateFormatter.string(from: now)). Gebruik dit voor je berekeningen rondom 'expirationDate'.]\n\n"
+        prefix += "[HUIDIGE DATUM: Vandaag is het \(dateFormatter.string(from: now)). Use this for your calculations around 'expirationDate'.]\n\n"
 
         // Epic 14.4: Inject the Vibe Score as hard context — the AI MUST follow this (see system instruction)
         if todayVibeScoreContext == VibeScoreContextFormatter.noVibeDataSentinel {
             // No Watch data available — give the coach an explicit instruction to communicate this correctly
-            prefix += "[HERSTELSTATUS VANDAAG: Er is geen objectieve biometrische data beschikbaar (gebruiker droeg de Apple Watch waarschijnlijk niet 's nachts). Vertrouw volledig op de Symptom Tracker scores en de geplande doelen. Gebruik NOOIT zinnen als 'Ik zie aan je HRV dat...' of 'Je biometrie geeft aan...'. Zeg in plaats daarvan: 'Omdat we vandaag geen Watch-data hebben, gaan we uit van je eigen gevoel en de ingevoerde scores.']\n\n"
+            prefix += "[HERSTELSTATUS VANDAAG: No objective biometric data is available (the user probably didn't wear the Apple Watch overnight). Rely fully on the Symptom Tracker scores and the planned goals. NEVER use phrases like 'Ik zie aan je HRV dat...' or 'Je biometrie geeft aan...'. Instead say: 'Omdat we vandaag geen Watch-data hebben, gaan we uit van je eigen gevoel en de ingevoerde scores.']\n\n"
         } else if !todayVibeScoreContext.isEmpty {
-            prefix += "[HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Volg de kritieke regel over de Vibe Score autoriteit strikt.]\n\n"
+            prefix += "[HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Follow the critical rule about Vibe Score authority strictly.]\n\n"
         }
 
         // Epic 18.1: Inject the subjective feedback (RPE + mood) of the last workout
         if !lastWorkoutFeedbackContext.isEmpty {
-            prefix += "[SUBJECTIEVE FEEDBACK LAATSTE WORKOUT: \(lastWorkoutFeedbackContext) Let op discrepanties: als TRIMP laag is maar RPE ≥8, is dit een vroeg signaal van overtraining of naderende ziekte.]\n\n"
+            prefix += "[SUBJECTIEVE FEEDBACK LAATSTE WORKOUT: \(lastWorkoutFeedbackContext) Watch for discrepancies: if TRIMP is low but RPE ≥8, this is an early sign of overtraining or oncoming illness.]\n\n"
         }
 
         // Story 33.2a: manually moved workouts — coach must respect this.
@@ -712,13 +718,13 @@ class ChatViewModel: ObservableObject {
         // Epic 18: Inject the current pain scores per body area (updated daily)
         if !symptomContext.isEmpty {
             let symptomBlock = """
-            [ACTUELE KLACHTEN — SINGLE SOURCE OF TRUTH (dagelijks bijgewerkt door de gebruiker):
+            [ACTUELE KLACHTEN — SINGLE SOURCE OF TRUTH (updated daily by the user):
             \(symptomContext)
-            Gedragsregels:
-            1. 🚫 HARD CONSTRAINT aanwezig → volg de beperking strikt. Benoem de blessure en het alternatief expliciet.
-            2. ✅ HERSTELD aanwezig → open je Insight met een feestelijke bevestiging. Stel voorzichtige opbouw voor (bijv. 'Begin met 20 min Zone 1, bouw volgende week op naar normaal volume').
-            3. Score ≥7 → extra voorzichtig; overweeg een volledige rustdag of alternatieve sport.
-            4. Score gedaald t.o.v. gisteren → benoem dit als positief teken van herstel.]
+            Behaviour rules:
+            1. 🚫 HARD CONSTRAINT present → follow the constraint strictly. Name the injury and the alternative explicitly.
+            2. ✅ HERSTELD present → open your Insight with a celebratory confirmation. Propose a careful build-up (e.g. 'Begin met 20 min Zone 1, bouw volgende week op naar normaal volume').
+            3. Score ≥7 → extra careful; consider a full rest day or an alternative sport.
+            4. Score lower than yesterday → name this as a positive sign of recovery.]
             """
             prefix += symptomBlock + "\n\n"
         }
@@ -741,11 +747,11 @@ class ChatViewModel: ObservableObject {
             let patternsBlock = """
             [FYSIOLOGISCHE PATRONEN IN RECENTE WORKOUTS:
             \(workoutPatternsContext)
-            Gedragsregels:
-            1. Als de gebruiker een vraag stelt over recente trainingen, refereer dan aan deze patronen waar relevant — wees concreet, geen lijst van technische termen.
-            2. Bij significant cardiac drift + decoupling: vraag of het bewust drempel-werk was, of dat er externe oorzaken speelden (hitte, slaap, stress).
-            3. Trage HR-recovery is een vermoeidheid-signaal — combineer met TRIMP en VibeScore voordat je herstel adviseert.
-            4. Noem deze patronen NIET ongevraagd in elke turn; alleen wanneer de gebruiker reflecteert op recente uitvoering of trainingsplan-aanpassingen vraagt.]
+            Behaviour rules:
+            1. If the user asks about recent workouts, refer to these patterns where relevant — be concrete, not a list of technical terms.
+            2. On significant cardiac drift + decoupling: ask whether it was deliberate threshold work, or whether external causes were at play (heat, sleep, stress).
+            3. Slow HR recovery is a fatigue signal — combine with TRIMP and VibeScore before advising recovery.
+            4. Do NOT mention these patterns unprompted in every turn; only when the user reflects on recent execution or asks about training-plan adjustments.]
             """
             prefix += patternsBlock + "\n\n"
         }
@@ -757,14 +763,14 @@ class ChatViewModel: ObservableObject {
         // so the coach first reads the signal and then the details.
         if !workoutHistoryContext.isEmpty {
             let historyBlock = """
-            [RECENTE TRAINING — 14 DAGEN (nieuwste eerst):
+            [RECENTE TRAINING — 14 DAGEN (newest first):
             \(workoutHistoryContext)
-            Gedragsregels:
-            1. Refereer specifiek aan datum + sessietype bij elke workout-aanhaal ("op 18 april in je tempo-rit met cardiac drift 8% …"). Geen vage termen als "recent".
-            2. Bij ≥3 opeenvolgende workouts met aerobic_decoupling of cardiac_drift: stel sub-LTHR werk voor en motiveer met de specifieke data uit deze lijst.
-            3. Gebruik deze data alléén bij reflectie/schema-vragen/doelanalyse — niet ongevraagd in elke turn opnoemen.
-            4. Combineer met [TRAININGSDREMPELS] voor zone-correcte interpretatie van de gem-HR. Gebruik dezelfde zone-terminologie ("Zone 2"/"Z2", "Zone 3"/"Z3", "LTHR") — verzin geen nieuwe labels.
-            5. Weeg deze data tegen [ACTUELE KLACHTEN]. Bij actieve blessure: interpreteer patronen zoals cardiac_drift voorzichtiger (kan herstel-vermoeidheid zijn, niet trainingsbehoefte). Suggereer geen volume-verhogingen als de gebruiker herstellende is.]
+            Behaviour rules:
+            1. Refer specifically to date + session type on every workout reference ("op 18 april in je tempo-rit met cardiac drift 8% …"). No vague terms like "recent".
+            2. On ≥3 consecutive workouts with aerobic_decoupling or cardiac_drift: propose sub-LTHR work and motivate it with the specific data from this list.
+            3. Use this data only on reflection/schedule questions/goal analysis — don't recite it unprompted in every turn.
+            4. Combine with [TRAININGSDREMPELS] for zone-correct interpretation of the average HR. Use the same zone terminology ("Zone 2"/"Z2", "Zone 3"/"Z3", "LTHR") — don't invent new labels.
+            5. Weigh this data against [ACTUELE KLACHTEN]. On an active injury: interpret patterns like cardiac_drift more cautiously (may be recovery fatigue, not a training need). Don't suggest volume increases if the user is recovering.]
             """
             prefix += historyBlock + "\n\n"
         }
@@ -772,15 +778,15 @@ class ChatViewModel: ObservableObject {
         // Epic 21: Inject the 7-day weather forecast for outdoor-activities coaching
         if !weatherContext.isEmpty {
             let weatherBlock = """
-            [WEERSOMSTANDIGHEDEN KOMENDE 7 DAGEN (locatie gebruiker):
+            [WEERSOMSTANDIGHEDEN KOMENDE 7 DAGEN (user's location):
             \(weatherContext)
-            Gedragsregels:
-            1. DAGWISSEL STRATEGIE: Als een dag met ⚠️ SLECHT BUITENWEER een sleuteltraining heeft, kijk dan naar de komende 3 dagen. Is er een betere dag? Wissel dan EXPLICIET van dag en benoem dit in het `motivation` veld.
-            2. TRIMP-VOORBEREIDING: Als de sleuteltraining naar morgen of overmorgen verschuift, adviseer vandaag max. 40-50% TRIMP als 'oplaad-dag'. Noem dit expliciet.
-            3. Wees altijd specifiek over percentages: niet "het kan regenen" maar "Zaterdag 72% neerslag → ik verplaats de 60 km naar zondag (5% neerslag, windstil)".
-            4. Wind > 30 km/u = relevant voor fietsen. Zoek altijd een windstillere dag als die er is.
-            5. Temperatuur < 5°C of > 30°C → tip over kleding of hydratatie.
-            6. Goed weer hoef je niet te vermelden tenzij het een bonus is ("Zondag ziet er ideaal uit — perfect voor je lange rit").]
+            Behaviour rules:
+            1. DAY-SWAP STRATEGY: If a day with ⚠️ SLECHT BUITENWEER has a key workout, look at the next 3 days. Is there a better day? Then EXPLICITLY swap days and state this in the `motivation` field.
+            2. TRIMP PREPARATION: If the key workout moves to tomorrow or the day after, advise max. 40-50% TRIMP today as a 'charge day'. State this explicitly.
+            3. Always be specific about percentages: not "het kan regenen" but "Zaterdag 72% neerslag → ik verplaats de 60 km naar zondag (5% neerslag, windstil)".
+            4. Wind > 30 km/h = relevant for cycling. Always look for a less windy day if there is one.
+            5. Temperature < 5°C or > 30°C → tip about clothing or hydration.
+            6. You don't need to mention good weather unless it's a bonus ("Zondag ziet er ideaal uit — perfect voor je lange rit").]
             """
             prefix += weatherBlock + "\n\n"
         }
@@ -791,11 +797,11 @@ class ChatViewModel: ObservableObject {
         let hasPeriodization  = !periodizationContext.isEmpty
 
         if hasBlueprintData {
-            prefix += "[SPORTWETENSCHAPPELIJKE EISEN (BLUEPRINT):\n\(blueprintContext)\nInstructie: Controleer ALTIJD of de gebruiker op schema ligt voor zijn kritieke trainingen. Als er een openstaande (❌) eis is met een naderende deadline, maak dit dan expliciet in je advies en plan de betreffende training in.]\n\n"
+            prefix += "[SPORTWETENSCHAPPELIJKE EISEN (BLUEPRINT):\n\(blueprintContext)\nInstruction: ALWAYS check whether the user is on schedule for their critical workouts. If there is an outstanding (❌) requirement with an approaching deadline, make this explicit in your advice and schedule that workout.]\n\n"
         }
 
         if hasPeriodization {
-            prefix += "[PERIODISERING — FASE, SUCCESCRITERIA & COACH-GEDRAG:\n\(periodizationContext)\n\nCoach-gedragsregels voor deze context:\n1. COMPLIMENTEN (🎉): Als een COMPLIMENT TRIGGER aanwezig is, open je antwoord dan hiermee. Noem de behaalde prestatie bij naam.\n2. URGENTIE (🚨): Als een KRITIEKE MIJLPAAL ACHTERSTAND aanwezig is, wees dan direct en motiverend. Noem de exacte afstand of TRIMP die nog ontbreekt, en plan dit als eerste prioriteit in het schema.\n3. SCHEMA-AANPASSING: Als je het schema aanpast, verklaar dan altijd hoe de fase-eisen ondanks de aanpassing nog steeds haalbaar zijn (SCHEMA-VERANTWOORDINGSPLICHT).]\n\n"
+            prefix += "[PERIODISERING — FASE, SUCCESCRITERIA & COACH-GEDRAG:\n\(periodizationContext)\n\nCoach behaviour rules for this context:\n1. COMPLIMENTS (🎉): If a COMPLIMENT TRIGGER is present, open your answer with it. Name the achievement.\n2. URGENCY (🚨): If a KRITIEKE MIJLPAAL ACHTERSTAND is present, be direct and motivating. Name the exact distance or TRIMP still missing, and plan it as the first priority in the schedule.\n3. SCHEDULE ADJUSTMENT: If you adjust the schedule, always explain how the phase requirements are still achievable despite the change (SCHEDULE ACCOUNTABILITY).]\n\n"
         }
 
         // Epic Doel-Intenties: inject the intent and format instructions as a separate section.
@@ -803,14 +809,14 @@ class ChatViewModel: ObservableObject {
         // and whether stretch-pace trainings are safe based on the current VibeScore.
         if !intentContext.isEmpty {
             let intentBlock = """
-            [DOEL INTENTIES EN BENADERING — LEES DIT VÓÓR JE HET SCHEMA OPSTELT:
+            [DOEL INTENTIES EN BENADERING — READ THIS BEFORE YOU BUILD THE SCHEDULE:
             \(intentContext)
 
-            Bindende coach-regels:
-            1. INTENTIE HEEFT PRIORITEIT: Pas het schema ALTIJD aan op de intentie en het formaat. Een 'uitlopen'-doel krijgt NOOIT interval- of tempotraining tenzij expliciet gevraagd.
-            2. BACK-TO-BACK (meerdaagse etappe): Plan zware sessies op opeenvolgende dagen (bijv. Za+Zo). Verlaag single-session piekbelasting t.o.v. een eendaagse race.
-            3. STRETCH GOAL VEILIGHEID: Als '✅ DOELTIJD' aanwezig is, plan dan één temposessie per week op doelsnelheid. Als '🔴 DOELTIJD' aanwezig is, schrap alle tempo-elementen en ga terug naar pure duurtraining.
-            4. VIBE SCORE OVERRIDE: Als VibeScore < 65 wordt vermeld, heeft herstel absolute prioriteit — schrap intensieve elementen ongeacht de rest van het plan.]
+            Binding coach rules:
+            1. INTENT TAKES PRIORITY: ALWAYS adapt the schedule to the intent and the format. A 'finish/complete' goal NEVER gets interval or tempo training unless explicitly requested.
+            2. BACK-TO-BACK (multi-day stage): Plan hard sessions on consecutive days (e.g. Sat+Sun). Lower the single-session peak load compared to a one-day race.
+            3. STRETCH GOAL SAFETY: If '✅ DOELTIJD' is present, plan one tempo session per week at target pace. If '🔴 DOELTIJD' is present, drop all tempo elements and return to pure endurance training.
+            4. VIBE SCORE OVERRIDE: If a VibeScore < 65 is mentioned, recovery has absolute priority — drop intensive elements regardless of the rest of the plan.]
             """
             prefix += intentBlock + "\n\n"
         }
@@ -820,12 +826,12 @@ class ChatViewModel: ObservableObject {
             let gapBlock = """
             [GAP ANALYSE — BLUEPRINT VS. WERKELIJKHEID (Epic 23):
             \(gapAnalysisContext)
-            Coach-gedragsregels:
-            1. TRIMP-VERTALING (VERPLICHT): Als er een 📈 VOLUME-BIJSTURING staat met een "X TRIMP ≈ +Y min …"-hint, gebruik dan ALTIJD die vertaling. Noem NOOIT een los TRIMP-getal zonder de bijbehorende tijdsindicatie. Correct: "Je hebt deze week zo'n 8 TRIMP extra nodig — dat is ongeveer +4 minuten op je zaterdag-rit." Fout: "Je hebt 8 TRIMP tekort."
-            2. KOPPEL AAN HET SCHEMA: Vertaal de bijsturing altijd naar een aanpassing van een bestaande trainingsdag. Bijv. "Verleng je dinsdag-duurloop met 5 minuten" of "Rij zaterdag 10 minuten langer door na de bekende route."
-            3. Als er een 🚴 KM-BIJSTURING staat: geef een concreet weekschema met extra km per training, niet als abstract totaal.
-            4. Als de atleet voorloopt op schema: complimenteer kort en adviseer consistentie — geen extra volume voorschrijven.
-            5. Verbind altijd aan de fase: bijsturing in de Taper-fase is onwenselijk — adviseer dan om het tekort NIET in te halen maar door te gaan met het tapering-schema.]
+            Coach behaviour rules:
+            1. TRIMP TRANSLATION (MANDATORY): If there is a 📈 VOLUME-BIJSTURING with an "X TRIMP ≈ +Y min …" hint, ALWAYS use that translation. NEVER state a bare TRIMP number without the accompanying time indication. Correct: "Je hebt deze week zo'n 8 TRIMP extra nodig — dat is ongeveer +4 minuten op je zaterdag-rit." Wrong: "Je hebt 8 TRIMP tekort."
+            2. TIE TO THE SCHEDULE: Always translate the adjustment into a change to an existing training day. E.g. "Verleng je dinsdag-duurloop met 5 minuten" or "Rij zaterdag 10 minuten langer door na de bekende route."
+            3. If there is a 🚴 KM-BIJSTURING: give a concrete weekly schedule with extra km per workout, not as an abstract total.
+            4. If the athlete is ahead of schedule: compliment briefly and advise consistency — don't prescribe extra volume.
+            5. Always tie it to the phase: adjusting in the Taper phase is undesirable — then advise NOT to make up the deficit but to continue with the tapering schedule.]
             """
             prefix += gapBlock + "\n\n"
         }
@@ -869,7 +875,7 @@ class ChatViewModel: ObservableObject {
                 let linearRate = goal.computedTargetTRIMP / max(0.1, weeksLeft)
                 let adjustedTarget = Int((linearRate * phase.multiplier).rounded())
                 prefix += "• Doel '\(goal.title)' (\(weeksLeftStr) weken resterend): \(phase.aiInstruction)\n"
-                prefix += "  Wiskundig aangepaste wekelijkse TRIMP-target: \(adjustedTarget) TRIMP/week (multiplier: ×\(String(format: "%.2f", phase.multiplier))). Houd je strikt aan deze target.\n"
+                prefix += "  Mathematically adjusted weekly TRIMP target: \(adjustedTarget) TRIMP/week (multiplier: ×\(String(format: "%.2f", phase.multiplier))). Adhere strictly to this target.\n"
             }
             prefix += "]\n\n"
         }
@@ -889,11 +895,11 @@ class ChatViewModel: ObservableObject {
             let peakDurationMin = p.peakDurationInSeconds / 60
             let weeklyVolumeMin = p.averageWeeklyVolumeInSeconds / 60
 
-            prefix += "[CONTEXT ATLEET: Heeft een piekprestatie van \(peakDistanceKm) km in \(peakDurationMin) minuten. Traint gemiddeld \(weeklyVolumeMin) minuten per week (gem. laatste 4 weken), en heeft \(p.daysSinceLastTraining) dagen geleden voor het laatst getraind."
+            prefix += "[CONTEXT ATLEET: Has a peak performance of \(peakDistanceKm) km in \(peakDurationMin) minutes. Trains on average \(weeklyVolumeMin) minutes per week (avg. last 4 weeks), and last trained \(p.daysSinceLastTraining) days ago."
 
             // SPRINT 6.3: Overtraining warning
             if p.isRecoveryNeeded {
-                prefix += " URGENT: De atleet vertoont tekenen van overtraining op basis van recent volume. Wees streng, adviseer actief om rust te nemen en analyseer deze training puur op herstel."
+                prefix += " URGENT: The athlete shows signs of overtraining based on recent volume. Be strict, actively advise taking rest, and analyse this workout purely for recovery."
             }
 
             // SPRINT 9.3: Pace Baseline Injection
@@ -901,10 +907,10 @@ class ChatViewModel: ObservableObject {
                 let minutes = avgPaceInSeconds / 60
                 let seconds = avgPaceInSeconds % 60
                 let paceString = String(format: "%d:%02d", minutes, seconds)
-                prefix += " Belangrijke fysiologische context: Het actuele gemiddelde hardlooptempo van de gebruiker ligt rond de \(paceString) min/km (bovenkant Zone 2). Gebruik dit als absolute baseline om realistische 'targetPace' doelen voor de komende trainingen te berekenen."
+                prefix += " Important physiological context: The user's current average running pace is around \(paceString) min/km (top of Zone 2). Use this as the absolute baseline to compute realistic 'targetPace' goals for the upcoming workouts."
             }
 
-            prefix += " Neem dit mee in je analyse over herstel en prestatie.]\n\n"
+            prefix += " Take this into account in your analysis about recovery and performance.]\n\n"
         }
 
         guard !prefix.isEmpty else { return "" }
@@ -931,16 +937,16 @@ class ChatViewModel: ObservableObject {
 
         // Build the technical context (invisible to the user)
         var systemLines = [
-            "RECOVERY CONTEXT — Mijn doel(en) lopen achter op schema. Maak een geleidelijk herstelplan:",
+            "RECOVERY CONTEXT — My goal(s) are behind schedule. Create a gradual recovery plan:",
             ""
         ]
 
         // Epic 14.4: Inject the Vibe Score so the recovery plan respects the current recovery status
         if todayVibeScoreContext == VibeScoreContextFormatter.noVibeDataSentinel {
-            systemLines.append("HERSTELSTATUS VANDAAG: Geen Watch-data beschikbaar. Baseer het herstelplan op de Symptom Tracker scores en eigen gevoel van de gebruiker.")
+            systemLines.append("HERSTELSTATUS VANDAAG: No Watch data available. Base the recovery plan on the Symptom Tracker scores and the user's own feeling.")
             systemLines.append("")
         } else if !todayVibeScoreContext.isEmpty {
-            systemLines.append("HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Pas de intensiteit van het herstelplan STRIKT aan op deze score (zie systeeminstructie).")
+            systemLines.append("HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Adjust the intensity of the recovery plan STRICTLY to this score (see system instruction).")
             systemLines.append("")
         }
         for risk in atRiskGoals {
@@ -953,37 +959,37 @@ class ChatViewModel: ObservableObject {
             if risk.weeksRemaining > 8 {
                 // Plenty of time left: give Base Building advice, spread the deficit gradually
                 let gradualWeeklyIncrease = Int(Double(deficit) / max(risk.weeksRemaining * 0.5, 1))
-                horizonAdvice = "Het evenement is \(weeksText) weken weg. PRIORITEIT: Base Building. Verhoog het wekelijkse volume heel geleidelijk — streef naar +\(gradualWeeklyIncrease) TRIMP/week over de komende maanden. Geen paniektrainingen."
+                horizonAdvice = "The event is \(weeksText) weeks away. PRIORITY: Base Building. Increase the weekly volume very gradually — aim for +\(gradualWeeklyIncrease) TRIMP/week over the coming months. No panic workouts."
             } else if risk.weeksRemaining > 4 {
-                horizonAdvice = "Het evenement is \(weeksText) weken weg. Verhoog het volume gecontroleerd, maar bouw nog geen volledige piekbelasting op."
+                horizonAdvice = "The event is \(weeksText) weeks away. Increase the volume in a controlled way, but don't build full peak load yet."
             } else {
-                horizonAdvice = "Het evenement is \(weeksText) weken weg. Focus op efficiënte, kwaliteitsvolle trainingen — geen drastische volumestijging meer."
+                horizonAdvice = "The event is \(weeksText) weeks away. Focus on efficient, high-quality workouts — no more drastic volume increases."
             }
 
-            systemLines.append("• Doel: '\(risk.title)'")
-            systemLines.append("  - Actuele burn rate: \(currentRate) TRIMP/week")
-            systemLines.append("  - Benodigde burn rate (ideaal): \(Int(risk.requiredWeeklyRate)) TRIMP/week")
-            systemLines.append("  - Wekelijks tekort: \(deficit) TRIMP")
-            systemLines.append("  - Weken resterend: \(weeksText)")
-            systemLines.append("  - Horizon advies: \(horizonAdvice)")
+            systemLines.append("• Goal: '\(risk.title)'")
+            systemLines.append("  - Current burn rate: \(currentRate) TRIMP/week")
+            systemLines.append("  - Required burn rate (ideal): \(Int(risk.requiredWeeklyRate)) TRIMP/week")
+            systemLines.append("  - Weekly deficit: \(deficit) TRIMP")
+            systemLines.append("  - Weeks remaining: \(weeksText)")
+            systemLines.append("  - Horizon advice: \(horizonAdvice)")
             systemLines.append("")
 
             // Compute the maximum allowed weekly volume (10-15% rule)
             let maxAllowedRate = Int(Double(currentRate) * 1.12) // 12% = middle of 10-15%
-            systemLines.append("  ⛔️ HARDE FYSIOLOGISCHE GRENS: De totale wekelijkse TRIMP voor de komende week mag NOOIT meer zijn dan \(maxAllowedRate) TRIMP (\(currentRate) × 1.12). Dit is de 10-15% progressieregel om overtraining te voorkomen. Dit is niet onderhandelbaar.")
+            systemLines.append("  ⛔️ HARD PHYSIOLOGICAL LIMIT: The total weekly TRIMP for the coming week must NEVER exceed \(maxAllowedRate) TRIMP (\(currentRate) × 1.12). This is the 10-15% progression rule to prevent overtraining. This is non-negotiable.")
             systemLines.append("")
         }
         systemLines.append(contentsOf: [
-            "Geef me een concreet, haalbaar herstelplan voor de komende 7 dagen.",
-            "Het plan moet:",
-            "1. De 10-15% progressieregel strikt respecteren — liever iets te conservatief dan te agressief.",
-            "2. Het tekort uitsmeren over meerdere weken als het evenement ver weg is (zie horizon advies hierboven).",
-            "3. Extra volume verdelen via frequentie (extra rustdag omzetten in een lichte sessie) i.p.v. één megasessie.",
-            "4. Altijd het volledige 7-daagse schema retourneren in JSON-formaat.",
+            "Give me a concrete, achievable recovery plan for the next 7 days.",
+            "The plan must:",
+            "1. Strictly respect the 10-15% progression rule — rather slightly too conservative than too aggressive.",
+            "2. Spread the deficit over multiple weeks if the event is far away (see horizon advice above).",
+            "3. Distribute extra volume via frequency (turn an extra rest day into a light session) instead of one mega session.",
+            "4. Always return the full 7-day schedule in JSON format.",
             "",
-            "⛔️ EXTRA INTENSITEITSLIMIETEN (niet onderhandelbaar):",
-            "- Binnensessies (indoor fietsen, roeien, zwemmen) mogen NOOIT langer zijn dan 60 minuten, tenzij het doel expliciet een duurtraining van >90 min vereist.",
-            "- Geen enkele individuele sessie mag meer dan 40% hoger in TRIMP zijn dan het gemiddelde van de afgelopen 7 dagen. Voorkomen van extreme pieken is prioriteit."
+            "⛔️ EXTRA INTENSITY LIMITS (non-negotiable):",
+            "- Indoor sessions (indoor cycling, rowing, swimming) must NEVER be longer than 60 minutes, unless the goal explicitly requires an endurance session of >90 min.",
+            "- No single session may be more than 40% higher in TRIMP than the average of the past 7 days. Preventing extreme spikes is a priority."
         ])
 
         let systemPrompt = systemLines.joined(separator: "\n")
@@ -1004,14 +1010,14 @@ class ChatViewModel: ObservableObject {
 
     /// Handles rejecting (skipping) a specific suggested workout (Rest Day).
     func skipWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
-        let systemPrompt = "Ik sla de training '\(workout.activityType)' op \(workout.dateOrDay) over. Herbereken de week en schuif de belasting door. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."
+        let systemPrompt = "The user is skipping the workout '\(workout.activityType)' on \(workout.dateOrDay). Recompute the week and shift the load forward. IMPORTANT: In your JSON output always return the full 7-day schedule (including all unchanged other days), not just the adjusted day."
         let userFacingText = "Ik sla de geplande \(workout.activityType) op \(workout.dateOrDay) over."
         sendHiddenSystemMessage(systemText: systemPrompt, userText: userFacingText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
     }
 
     /// Handles the request for an alternative workout.
     func requestAlternativeWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
-        let systemPrompt = "Ik vind de geplande training '\(workout.activityType)' op \(workout.dateOrDay) niet leuk. Geef me een alternatief voor \(workout.dateOrDay) dat een vergelijkbare trainingsprikkel geeft. BELANGRIJK: Retourneer in je JSON-output altijd het volledige 7-daagse schema (inclusief alle ongewijzigde andere dagen), en niet alleen de aangepaste dag."
+        let systemPrompt = "The user doesn't like the planned workout '\(workout.activityType)' on \(workout.dateOrDay). Give an alternative for \(workout.dateOrDay) that provides a comparable training stimulus. IMPORTANT: In your JSON output always return the full 7-day schedule (including all unchanged other days), not just the adjusted day."
         let userFacingText = "Geef me een alternatief voor de \(workout.activityType) op \(workout.dateOrDay)."
         sendHiddenSystemMessage(systemText: systemPrompt, userText: userFacingText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
     }
@@ -1112,24 +1118,24 @@ class ChatViewModel: ObservableObject {
 
         let storedPlanContext = getStoredPlanString()
 
-        var lines: [String] = [storedPlanContext, "\nDit zijn mijn meest recente voltooide trainingen (inclusief rustdagen):"]
+        var lines: [String] = [storedPlanContext, "\nThese are my most recent completed workouts (including rest days):"]
 
         // Inject Goals explicitly
         let uncompletedGoals = activeGoals.filter { !$0.isCompleted }
         if uncompletedGoals.isEmpty {
-            lines.append("- Mijn opgeslagen doelen: Geen specifieke doelen.")
+            lines.append("- My saved goals: No specific goals.")
         } else {
             let goalsString = uncompletedGoals.map { goal in
                 let formatter = DateFormatter()
                 formatter.dateStyle = .medium
                 let dateStr = formatter.string(from: goal.targetDate)
                 let sport = goal.sportCategory?.displayName ?? "Sport"
-                return "\(goal.title) (\(sport)) voor \(dateStr)"
+                return "\(goal.title) (\(sport)) for \(dateStr)"
             }.joined(separator: ", ")
-            lines.append("- Mijn opgeslagen doelen: \(goalsString)")
+            lines.append("- My saved goals: \(goalsString)")
         }
 
-        lines.append("- Mijn belasting (afgelopen \(days) dagen):")
+        lines.append("- My load (past \(days) days):")
         var totalTrimp = 0
 
         var workoutsByDay: [Int: [DailyWorkout]] = [:]
@@ -1156,18 +1162,18 @@ class ChatViewModel: ObservableObject {
             if let dailyWorkouts = workoutsByDay[dayOffset], !dailyWorkouts.isEmpty {
                 if !emptyDaysStreak.isEmpty {
                     if emptyDaysStreak.count == 1 {
-                        lines.append("- Dag \(emptyDaysStreak[0]): Rust")
+                        lines.append("- Day \(emptyDaysStreak[0]): Rest")
                     } else {
-                        lines.append("- Dag \(emptyDaysStreak.first!) t/m \(emptyDaysStreak.last!): Rust")
+                        lines.append("- Day \(emptyDaysStreak.first!) to \(emptyDaysStreak.last!): Rest")
                     }
                     emptyDaysStreak.removeAll()
                 }
 
-                var dayName = "Dag \(displayDay)"
+                var dayName = "Day \(displayDay)"
                 if dayOffset == 0 {
-                    dayName += " (Vandaag)"
+                    dayName += " (Today)"
                 } else if dayOffset == 1 {
-                    dayName += " (Gisteren)"
+                    dayName += " (Yesterday)"
                 }
 
                 for workout in dailyWorkouts {
@@ -1180,20 +1186,20 @@ class ChatViewModel: ObservableObject {
 
         if !emptyDaysStreak.isEmpty {
             if emptyDaysStreak.count == 1 {
-                lines.append("- Dag \(emptyDaysStreak[0]): Rust")
+                lines.append("- Day \(emptyDaysStreak[0]): Rest")
             } else {
-                lines.append("- Dag \(emptyDaysStreak.first!) t/m \(emptyDaysStreak.last!): Rust")
+                lines.append("- Day \(emptyDaysStreak.first!) to \(emptyDaysStreak.last!): Rest")
             }
         }
 
-        lines.append("Totale Cumulatieve TRIMP: \(totalTrimp)")
+        lines.append("Total Cumulative TRIMP: \(totalTrimp)")
 
-        lines.append("\nInstructie voor de Coach:")
+        lines.append("\nInstruction for the Coach:")
 
         let dateString = now.formatted(date: .complete, time: .omitted)
-        lines.append("LET OP: Vandaag is het \(dateString). Het nieuwe 7-daagse schema MOET vanaf vandaag beginnen. Verwijder dagen in het verleden en vul de week aan.")
-        lines.append("KRITIEK: Sorteer de workouts in het JSON-array ALTIJD chronologisch — dag 1 (vandaag) eerst, dag 7 (over 6 dagen) als laatste. Nooit andersom, nooit willekeurig.")
-        lines.append("Vergelijk deze recente activiteiten met het actuele schema hierboven. Is het resterende schema voor deze week nog steeds optimaal en realistisch? Zo niet, herbereken het schema (retourneer altijd alle 7 dagen) en geef een korte motivatie of feedback op mijn recente trainingen.")
+        lines.append("NOTE: Today is \(dateString). The new 7-day schedule MUST start from today. Remove days in the past and fill out the week.")
+        lines.append("CRITICAL: ALWAYS sort the workouts in the JSON array chronologically — day 1 (today) first, day 7 (6 days out) last. Never reversed, never random.")
+        lines.append("Compare these recent activities with the current schedule above. Is the remaining schedule for this week still optimal and realistic? If not, recompute the schedule (always return all 7 days) and give a short motivation or feedback on my recent workouts.")
 
         return lines.joined(separator: "\n")
     }
