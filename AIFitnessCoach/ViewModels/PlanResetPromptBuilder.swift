@@ -2,20 +2,20 @@ import Foundation
 
 // MARK: - PlanResetPromptBuilder
 //
-// Bouwt de Gemini-systeem-instructie voor Story 33.2b "Reset Schema". Pure Swift,
-// testbaar zonder ChatViewModel-state.
+// Builds the Gemini system instruction for Story 33.2b "Reset Schedule". Pure Swift,
+// testable without ChatViewModel state.
 //
-// De prompt vraagt de coach om de overige dagen te plannen ROND de verplaatste
-// sessies — die zijn heilig. App-side filtert `TrainingPlanManager.mergeReplannedPlan`
-// alsnog AI-output uit die toch op gereserveerde dagen valt (defense in depth).
+// The prompt asks the coach to plan the remaining days AROUND the moved sessions —
+// those are sacred. App-side, `TrainingPlanManager.mergeReplannedPlan` still filters
+// out AI output that lands on reserved days (defense in depth).
 
 enum PlanResetPromptBuilder {
 
-    /// Bouwt de system-prompt + bijbehorende user-facing tekst voor de plan-reset.
+    /// Builds the system prompt + associated user-facing text for the plan reset.
     /// - Parameters:
-    ///   - swappedWorkouts: De handmatig verplaatste workouts uit het huidige plan.
-    ///   - now: Referentiedatum voor "vanaf vandaag"-formulering (injecteerbaar voor tests).
-    /// - Returns: Tuple van `systemText` (verborgen voor gebruiker) en `userText` (in chat zichtbaar).
+    ///   - swappedWorkouts: The manually moved workouts from the current plan.
+    ///   - now: Reference date for the "from today" phrasing (injectable for tests).
+    /// - Returns: Tuple of `systemText` (hidden from the user) and `userText` (visible in chat).
     static func build(swappedWorkouts: [SuggestedWorkout], now: Date = Date()) -> (systemText: String, userText: String) {
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "nl_NL")
@@ -33,7 +33,7 @@ enum PlanResetPromptBuilder {
         ]
 
         if swappedWorkouts.isEmpty {
-            // Edge case: geen swaps → toch reset; we vragen een schoon 7-daags plan.
+            // Edge case: no swaps → reset anyway; we ask for a clean 7-day plan.
             lines.append("Er zijn geen handmatig verplaatste sessies. Bouw een schoon 7-daags plan vanaf \(todayLabel) (\(todayIso)).")
         } else {
             lines.append("Heilige verplaatste sessies (NIET aanraken — exact deze dag, exact deze sessie behouden):")

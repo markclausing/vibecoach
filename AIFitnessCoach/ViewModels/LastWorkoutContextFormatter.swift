@@ -2,24 +2,24 @@ import Foundation
 
 // MARK: - LastWorkoutContextFormatter
 //
-// Bouwt de prompt-string voor het 'laatste workout'-blok in de coach-context. Pure
-// Swift, geen ChatViewModel-state — daardoor unit-testbaar zonder een echt model.
-// Bij een aanwezig `sessionType` voegt de helper de fysiologische intentie toe zodat
-// de coach feedback kan kalibreren ("goed hersteld" bij een Recovery-sessie met lage
-// HR i.p.v. "je was te langzaam"). Dat is precies wat Epic 33 Story 33.1b oplost.
+// Builds the prompt string for the 'last workout' block in the coach context. Pure
+// Swift, no ChatViewModel state — so it's unit-testable without a real model.
+// When a `sessionType` is present the helper adds the physiological intent so the
+// coach can calibrate feedback ("well recovered" for a Recovery session with low HR
+// instead of "you were too slow"). That's exactly what Epic 33 Story 33.1b solves.
 
 enum LastWorkoutContextFormatter {
 
-    /// Formatteert het feedback-blok voor injectie in de Gemini system context.
-    /// Retourneert een lege string als er onvoldoende data is (geen rpe of mood) —
-    /// caller hoort die lege string te interpreteren als "geen blok in de prompt".
+    /// Formats the feedback block for injection into the Gemini system context.
+    /// Returns an empty string if there's insufficient data (no rpe or mood) —
+    /// the caller should interpret that empty string as "no block in the prompt".
     /// - Parameters:
-    ///   - rpe: RPE-score (1-10), optioneel.
-    ///   - mood: Stemming-emoji of -woord, optioneel.
-    ///   - workoutName: Naam van de workout, fallback "Training".
-    ///   - trimp: TRIMP-score, optioneel ("onbekend" als nil).
-    ///   - startDate: Datum van de workout, voor "[Type] van [Datum]"-format.
-    ///   - sessionType: Optioneel — als aanwezig wordt het label + intent toegevoegd.
+    ///   - rpe: RPE score (1-10), optional.
+    ///   - mood: Mood emoji or word, optional.
+    ///   - workoutName: Name of the workout, fallback "Training".
+    ///   - trimp: TRIMP score, optional ("onbekend" if nil).
+    ///   - startDate: Date of the workout, for the "[Type] van [Datum]" format.
+    ///   - sessionType: Optional — when present the label + intent is added.
     static func format(rpe: Int?,
                        mood: String?,
                        workoutName: String?,
@@ -51,10 +51,10 @@ enum LastWorkoutContextFormatter {
 
         var line = "Laatste workout: '\(nameStr)', TRIMP: \(trimpStr), RPE: \(rpe)/10 (\(rpeLabel)), Stemming: \(mood)."
 
-        // Story 33.1b: voeg sessie-type + intent toe zodat de coach zijn toon kan
-        // afstemmen. We geven de tekstuele intent mee — niet alleen het label —
-        // omdat 'recovery' op zichzelf minder context biedt dan "actief herstel,
-        // <65% HRmax". De architect-notitie hierop was expliciet.
+        // Story 33.1b: add session type + intent so the coach can tune its tone.
+        // We pass the textual intent — not just the label — because 'recovery' on
+        // its own offers less context than "active recovery, <65% HRmax". The
+        // architect note on this was explicit.
         if let sessionType {
             let intent = sessionType.intent
             line += " Sessie-type: \(sessionType.displayName) — \(intent.coachingSummary)"

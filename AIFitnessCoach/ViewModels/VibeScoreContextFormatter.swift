@@ -1,27 +1,27 @@
 import Foundation
 
-/// Pure-Swift formatter voor de Vibe Score-context die in de coach-prompt geïnjecteerd wordt.
+/// Pure-Swift formatter for the Vibe Score context injected into the coach prompt.
 ///
-/// Wordt aangeroepen door `ChatViewModel.cacheVibeScore` en in tests direct testbaar zonder
-/// `@AppStorage` of `UserDefaults`-fixture. Returnt de geformatteerde context-string die in
-/// `vibecoach_todayVibeScoreContext` opgeslagen wordt.
+/// Called by `ChatViewModel.cacheVibeScore` and directly testable in tests without
+/// an `@AppStorage` or `UserDefaults` fixture. Returns the formatted context string
+/// stored in `vibecoach_todayVibeScoreContext`.
 enum VibeScoreContextFormatter {
 
-    /// Sentinel-waarde die aangeeft dat er vandaag geen Watch-data beschikbaar was.
-    /// Wordt herkend in `buildContextPrefix` om de coach de juiste instructie te geven.
+    /// Sentinel value indicating no Watch data was available today.
+    /// Recognized in `buildContextPrefix` to give the coach the right instruction.
     static let noVibeDataSentinel = "GEEN_BIOMETRISCHE_DATA"
 
-    /// Formatteert een `DailyReadiness` naar een context-string voor de AI-coach.
-    /// Bevat readinessScore + label, slaapuren, HRV, en — indien beschikbaar — slaapfase-
-    /// kwaliteit met een coaching-instructie bij slechte diepe slaap.
-    /// - Parameter readiness: De readiness-record van vandaag, of nil als er geen data is.
-    /// - Parameter previousValue: De huidige cache-waarde. Wordt gebruikt om te voorkomen
-    ///   dat een al-aanwezige `noVibeDataSentinel` per ongeluk overschreven wordt met "".
-    /// - Returns: De nieuw te schrijven cache-waarde.
+    /// Formats a `DailyReadiness` into a context string for the AI coach.
+    /// Contains readinessScore + label, sleep hours, HRV, and — when available — sleep-stage
+    /// quality with a coaching instruction on poor deep sleep.
+    /// - Parameter readiness: Today's readiness record, or nil if there's no data.
+    /// - Parameter previousValue: The current cache value. Used to prevent an
+    ///   already-present `noVibeDataSentinel` from being accidentally overwritten with "".
+    /// - Returns: The new cache value to write.
     static func format(readiness: DailyReadiness?, previousValue: String) -> String {
         guard let r = readiness else {
-            // Niet overschrijven als er al een 'unavailable' sentinel staat —
-            // die is waardevoller dan gewoon leeg.
+            // Don't overwrite if an 'unavailable' sentinel is already present —
+            // it's more valuable than just empty.
             if previousValue == noVibeDataSentinel { return previousValue }
             return ""
         }
@@ -32,7 +32,7 @@ enum VibeScoreContextFormatter {
         let sleepH = Int(r.sleepHours)
         let sleepM = Int((r.sleepHours - Double(sleepH)) * 60)
 
-        // Epic 21 Sprint 2: voeg slaapfase-kwaliteit toe als stage-data beschikbaar is
+        // Epic 21 Sprint 2: add sleep-stage quality if stage data is available
         var sleepQualityNote = ""
         let totalStageMins = r.deepSleepMinutes + r.remSleepMinutes + r.coreSleepMinutes
         if totalStageMins > 0 {
@@ -45,7 +45,7 @@ enum VibeScoreContextFormatter {
             }()
             sleepQualityNote = " Slaapfases: diep \(r.deepSleepMinutes)m · REM \(r.remSleepMinutes)m · kern \(r.coreSleepMinutes)m (kwaliteit: \(qualLabel), \(String(format: "%.0f%%", deepRatio * 100)) diepe slaap)."
 
-            // Geef de coach een expliciete instructie bij slechte diepe slaap
+            // Give the coach an explicit instruction on poor deep sleep
             if deepRatio < 0.15 {
                 sleepQualityNote += " INSTRUCTIE: Benoem de slaapkwaliteit expliciet in je Insight ('Je hebt \(sleepH)u \(sleepM)m geslapen maar de diepe slaap was maar \(String(format: "%.0f%%", deepRatio * 100)) — herstel is daardoor minder effectief'). Houd de intensiteit dienovereenkomstig lager."
             }

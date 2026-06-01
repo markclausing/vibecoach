@@ -1,21 +1,20 @@
 import Foundation
 
-/// Epic #51-A1: scope-restrictie die expliciet bovenaan de system-instructie
-/// staat zodat de coach off-topic-vragen consistent weigert.
+/// Epic #51-A1: scope restriction placed explicitly at the top of the system
+/// instruction so the coach consistently refuses off-topic questions.
 ///
-/// Gemini's safety-filters vangen extreme content af, maar dagelijkse
-/// off-topic-vragen ("wat is de hoofdstad van Frankrijk", "schrijf code voor X",
-/// "geef medisch advies over X-medicijn") werden voorheen gewoon beantwoord —
-/// in conflict met de coach-positionering en met aansprakelijkheidsrisico bij
-/// medisch advies buiten sport.
+/// Gemini's safety filters catch extreme content, but everyday off-topic
+/// questions ("what is the capital of France", "write code for X", "give medical
+/// advice about drug X") were previously just answered — conflicting with the
+/// coach positioning and with liability risk for medical advice outside sport.
 ///
-/// Pure-Swift constant zodat de tekst los testbaar is van `ChatViewModel`
-/// (geen MainActor-afhankelijkheden, geen Gemini-SDK-types in scope).
+/// Pure-Swift constant so the text is testable independently of `ChatViewModel`
+/// (no MainActor dependencies, no Gemini-SDK types in scope).
 enum ChatScopeInstruction {
 
-    /// De scope-instructie wordt door `ChatViewModel.buildGenerativeModel()`
-    /// boven aan de bestaande `systemInstruction`-string geplakt zodat hij
-    /// vóór alle andere KRITIEKE REGEL-secties wordt geëvalueerd door het model.
+    /// The scope instruction is prepended by `ChatViewModel.buildGenerativeModel()`
+    /// to the existing `systemInstruction` string so it's evaluated by the model
+    /// before all other KRITIEKE REGEL sections.
     static let text: String = """
         KRITIEKE REGEL — SCOPE (Epic #51-A1):
         Je bent uitsluitend een fitness-coach. Behandel ALLEEN onderwerpen die direct raken aan:

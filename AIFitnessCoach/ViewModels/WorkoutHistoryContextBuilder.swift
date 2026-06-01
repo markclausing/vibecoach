@@ -2,38 +2,39 @@ import Foundation
 
 // MARK: - Epic 45 Story 45.1: WorkoutHistoryContextBuilder
 //
-// Pure-Swift helper die een lijst pre-fetched workout-entries omzet in een
-// 1-regel-per-workout prompt-blok voor de coach (`[RECENTE TRAINING — 14 DAGEN]`).
-// Zoals `LastWorkoutContextFormatter` en `WorkoutPatternFormatter`: geen AppStorage,
-// geen SwiftData, geen HealthKit. Caller (DashboardView) doet de async sample-fetch
-// en geeft `WorkoutEntry`-DTO's mee — de builder zelf is synchroon en testbaar.
+// Pure-Swift helper that turns a list of pre-fetched workout entries into a
+// 1-line-per-workout prompt block for the coach (`[RECENTE TRAINING — 14 DAGEN]`).
+// Like `LastWorkoutContextFormatter` and `WorkoutPatternFormatter`: no AppStorage,
+// no SwiftData, no HealthKit. The caller (DashboardView) does the async sample fetch
+// and passes `WorkoutEntry` DTOs — the builder itself is synchronous and testable.
 //
-// De builder produceert alleen de data-regels. De [RECENTE TRAINING — 14 DAGEN…]-
-// header en gedragsregels worden in `ChatViewModel.buildContextPrefix` om de output
-// heen gewikkeld — zelfde split als bij `WorkoutPatternFormatter.chatContextLine`,
-// zodat prompt-engineering-keuzes centraal in `ChatViewModel` blijven.
+// The builder produces only the data lines. The [RECENTE TRAINING — 14 DAGEN…]
+// header and behaviour rules are wrapped around the output in
+// `ChatViewModel.buildContextPrefix` — same split as with
+// `WorkoutPatternFormatter.chatContextLine`, so prompt-engineering choices stay
+// centralized in `ChatViewModel`.
 
 enum WorkoutHistoryContextBuilder {
 
-    /// Eén workout-rij met al zijn pre-fetched data. Caller bouwt deze structs
-    /// op nadat samples per workout-UUID zijn opgehaald — de builder doet geen I/O.
+    /// One workout row with all its pre-fetched data. The caller builds these structs
+    /// after samples per workout UUID have been fetched — the builder does no I/O.
     struct WorkoutEntry {
         let startDate: Date
         let displayName: String
         let sportCategory: SportCategory
         let sessionType: SessionType?
-        let movingTime: Int            // seconden
+        let movingTime: Int            // seconds
         let trimp: Double?
         let averageHeartrate: Double?
-        let averagePower: Double?      // Watts, optioneel — caller geeft nu nil door;
-                                       // aansluiting op Strava-power uit Epic #40 is
-                                       // een 1-regel-aanvulling zonder API-wijziging.
-        let patterns: [WorkoutPattern] // detector-output, kan leeg zijn
+        let averagePower: Double?      // Watts, optional — the caller passes nil for now;
+                                       // hooking up Strava power from Epic #40 is a
+                                       // 1-line addition without an API change.
+        let patterns: [WorkoutPattern] // detector output, can be empty
     }
 
-    /// Bouwt de body van het [RECENTE TRAINING — 14 DAGEN]-blok. Eén regel per
-    /// workout, sortering nieuwste→oudste (chat-leesvolgorde: "wat nu" → "trend").
-    /// Lege array → `""` zodat de caller het hele blok kan skippen.
+    /// Builds the body of the [RECENTE TRAINING — 14 DAGEN] block. One line per
+    /// workout, sorted newest→oldest (chat reading order: "what now" → "trend").
+    /// Empty array → `""` so the caller can skip the whole block.
     static func build(entries: [WorkoutEntry]) -> String {
         guard !entries.isEmpty else { return "" }
 
@@ -44,10 +45,10 @@ enum WorkoutHistoryContextBuilder {
 
     // MARK: - Private
 
-    /// Bouwt één compacte regel volgens het in §2 van de Epic-45-plan vastgelegde format:
+    /// Builds one compact line per the format defined in §2 of the Epic-45 plan:
     /// `- 30 apr · Hardlopen · Drempel · 52 min · TRIMP 78 · gem-HR 162 · gem-W 215 — [SIGNIFICANT] cardiac_drift: 8.2% …`
-    /// Optionele segmenten (sessieType, TRIMP, HR, power, patronen) worden volledig weggelaten
-    /// als de bron-waarde nil/leeg is — geen "Onbepaald" of "TRIMP onbekend".
+    /// Optional segments (sessionType, TRIMP, HR, power, patterns) are fully omitted
+    /// when the source value is nil/empty — no "Onbepaald" or "TRIMP onbekend".
     private static func line(for entry: WorkoutEntry) -> String {
         var segments: [String] = []
         segments.append(dateLabel(for: entry.startDate))
@@ -81,8 +82,8 @@ enum WorkoutHistoryContextBuilder {
         return line
     }
 
-    /// NL-locale korte datum-label (bijv. "30 apr"). `dd MMM` houdt de regel kort
-    /// en is ondubbelzinnig binnen een 14-daagse window.
+    /// NL-locale short date label (e.g. "30 apr"). `dd MMM` keeps the line short
+    /// and is unambiguous within a 14-day window.
     private static func dateLabel(for date: Date) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "nl_NL")
