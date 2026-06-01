@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Root-container van de app. Routeert tussen de onboarding-flow en de hoofd-app,
-/// en start de proactieve coaching-engines (Epic 13) zodra de gebruiker de onboarding afrondt.
+/// Root container of the app. Routes between the onboarding flow and the main app,
+/// and starts the proactive coaching engines (Epic 13) once the user completes onboarding.
 ///
-/// De daadwerkelijke TabView-navigatie staat in `AppTabHostView`; de dashboard-UI in `DashboardView`.
+/// The actual TabView navigation lives in `AppTabHostView`; the dashboard UI in `DashboardView`.
 struct ContentView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
@@ -16,9 +16,9 @@ struct ContentView: View {
             }
         }
         .onChange(of: hasCompletedOnboarding) { _, isOnboarded in
-            // Sprint 20.2 / Epic #31: Zodra de onboarding is afgerond starten we de
-            // achtergrond-engines. Dit is het eerste moment dat de gebruiker permissies
-            // heeft gegeven voor HealthKit en notificaties.
+            // Sprint 20.2 / Epic #31: Once onboarding is complete we start the
+            // background engines. This is the first moment the user has granted
+            // permissions for HealthKit and notifications.
             if isOnboarded {
                 ProactiveNotificationService.shared.setupEngineA()
                 ProactiveNotificationService.shared.scheduleEngineB()
