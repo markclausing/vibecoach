@@ -1,21 +1,21 @@
 import SwiftUI
 
-// MARK: - Epic #51-F1/F2/F5: Sync-status-banner
+// MARK: - Epic #51-F1/F2/F5: Sync status banner
 //
-// Eén centrale banner op het Dashboard die — afhankelijk van de huidige
-// `SyncStatusSnapshot` — een offline-, rate-limit- of error-melding toont.
-// Pure UI-wrapper rond `SyncBannerStateBuilder`; alle logica zit daarin,
-// deze view kiest enkel het juiste icoon, kleur en de tekst.
+// One central banner on the Dashboard that — depending on the current
+// `SyncStatusSnapshot` — shows an offline, rate-limit or error message.
+// Pure UI wrapper around `SyncBannerStateBuilder`; all logic lives there,
+// this view only picks the correct icon, color and text.
 //
-// Reactiviteit:
-//   • Offline-state via `@StateObject NetworkReachabilityMonitor` (NWPath).
-//   • Cooldown- en error-state via `@AppStorage`-keys op
-//     `UserDefaults.standard`; de store schrijft daar achter de schermen
-//     naartoe. Bij elke verandering re-rendert SwiftUI vanzelf.
+// Reactivity:
+//   • Offline state via `@StateObject NetworkReachabilityMonitor` (NWPath).
+//   • Cooldown and error state via `@AppStorage` keys on
+//     `UserDefaults.standard`; the store writes there behind the scenes.
+//     On every change SwiftUI re-renders automatically.
 //
-// Cooldown- en offline-banners zijn niet dismissable — die corrigeren
-// zichzelf wanneer de status wijzigt. Error-banners hebben een sluitknop
-// die de error-velden in de store wist.
+// Cooldown and offline banners are not dismissable — they correct
+// themselves when the status changes. Error banners have a close button
+// that clears the error fields in the store.
 
 struct SyncStatusBanner: View {
     @ObservedObject private var reachability = NetworkReachabilityMonitor.shared
@@ -62,9 +62,9 @@ struct SyncStatusBanner: View {
     }
 
     private func timestampOrNil(_ value: Double) -> Date? {
-        // `@AppStorage<Date>` werkt niet stabiel; de store schrijft Unix-
-        // timestamps zodat de view via een primitieve `Double`-binding kan
-        // observeren. `0` is onze sentinel voor "leeg".
+        // `@AppStorage<Date>` does not work reliably; the store writes Unix
+        // timestamps so the view can observe via a primitive `Double` binding.
+        // `0` is our sentinel for "empty".
         guard value > 0 else { return nil }
         return Date(timeIntervalSince1970: value)
     }
@@ -142,7 +142,7 @@ struct SyncStatusBanner: View {
         case .authentication:
             return "Aanmelden bij \(source) is nodig — controleer de koppeling in Instellingen."
         case .rateLimit:
-            // Defensieve fallback; rateLimit hoort via de aparte banner te lopen.
+            // Defensive fallback; rateLimit should go through the separate banner.
             return "\(source)-limiet bereikt. Probeer het later opnieuw."
         case .decoding:
             return "\(source) gaf een onleesbaar antwoord. Probeer opnieuw vanuit Instellingen."

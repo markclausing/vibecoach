@@ -1,9 +1,9 @@
 import SwiftUI
 import Charts
 
-// MARK: - Epic 23 Sprint 3: Visual Progress Hub — Blueprint Tijdlijn
+// MARK: - Epic 23 Sprint 3: Visual Progress Hub — Blueprint Timeline
 
-/// Metriek die de gebruiker kan weergeven in de tijdlijn.
+/// Metric the user can display in the timeline.
 enum TimelineMetric: String, CaseIterable {
     case trimp  = "TRIMP"
     case km     = "km"
@@ -17,11 +17,11 @@ enum TimelineMetric: String, CaseIterable {
     }
 }
 
-/// Eén datapunt in de tijdlijn — stelt het wekelijkse volume voor op een bepaald moment.
+/// One data point in the timeline — represents the weekly volume at a given moment.
 struct TimelinePoint: Identifiable {
     let id = UUID()
     let weekStart: Date
-    let volume: Double       // TRIMP of km, afhankelijk van de geselecteerde metriek
+    let volume: Double       // TRIMP or km, depending on the selected metric
     let series: SeriesType
 
     enum SeriesType: String, Plottable {
@@ -31,7 +31,7 @@ struct TimelinePoint: Identifiable {
     }
 }
 
-/// Markeert een fase-overgang (Base → Build → Peak → Taper) in de tijdlijn.
+/// Marks a phase transition (Base → Build → Peak → Taper) in the timeline.
 struct PhaseMarker: Identifiable {
     let id = UUID()
     let date: Date
@@ -41,18 +41,18 @@ struct PhaseMarker: Identifiable {
 
 // MARK: - BlueprintTimelineView
 
-/// De "Glazen Bol" tijdlijn — toont de volledige voorbereiding van start tot racedag
-/// in één overzichtelijke gecombineerde lijngrafiek.
+/// The "Crystal Ball" timeline — shows the full preparation from start to race day
+/// in one clear combined line chart.
 ///
-/// **Drie lijnen:**
-/// - 🩶 Ideaal (gestippeld): Fase-gecorrigeerde blauwdruk per week
-/// - 🔵 Actueel (vol): Werkelijk behaald wekelijks volume tot vandaag
-/// - 🟠 Prognose (gestreept): Extrapolatie vanuit FutureProjectionService
+/// **Three lines:**
+/// - 🩶 Ideal (dotted): Phase-corrected blueprint per week
+/// - 🔵 Actual (solid): Actually achieved weekly volume up to today
+/// - 🟠 Projection (dashed): Extrapolation from FutureProjectionService
 ///
-/// **Interactiviteit:**
-/// - Toggle TRIMP / km bovenaan de grafiek
-/// - Scrollbaar via `chartScrollableAxes` — geschikt voor doelen ver in de toekomst
-/// - RuleMark 'Vandaag' en fase-grens annotaties
+/// **Interactivity:**
+/// - Toggle TRIMP / km at the top of the chart
+/// - Scrollable via `chartScrollableAxes` — suitable for goals far in the future
+/// - RuleMark 'Today' and phase-boundary annotations
 struct BlueprintTimelineView: View {
 
     let goal: FitnessGoal
@@ -64,9 +64,9 @@ struct BlueprintTimelineView: View {
 
     private let calendar = Calendar.current
 
-    // MARK: - Data berekening
+    // MARK: - Data computation
 
-    /// Genereert alle weekelijkse datapunten voor de drie lijnen.
+    /// Generates all weekly data points for the three lines.
     private var timelineData: [TimelinePoint] {
         guard let blueprintType = BlueprintChecker.detectBlueprintType(for: goal) else { return [] }
         let blueprint = BlueprintChecker.blueprint(for: blueprintType)
@@ -75,7 +75,7 @@ struct BlueprintTimelineView: View {
         let startDate  = min(goal.createdAt, now)
         let endDate    = goal.targetDate
 
-        // Bepaal de sport-categorie voor km-filtering
+        // Determine the sport category for km filtering
         let targetSport: SportCategory
         switch blueprintType {
         case .marathon, .halfMarathon: targetSport = .running
@@ -84,7 +84,7 @@ struct BlueprintTimelineView: View {
 
         var points: [TimelinePoint] = []
 
-        // MARK: Wekelijks begin-array genereren (alle weken van start tot targetDate)
+        // MARK: Generate weekly start array (all weeks from start to targetDate)
         var weekStarts: [Date] = []
         var cursor = calendar.startOfWeek(for: startDate)
         while cursor <= endDate {
@@ -92,7 +92,7 @@ struct BlueprintTimelineView: View {
             cursor = calendar.date(byAdding: .weekOfYear, value: 1, to: cursor) ?? endDate.addingTimeInterval(1)
         }
 
-        // MARK: 1. Ideale Lijn — fase-gecorrigeerde blauwdruk per week
+        // MARK: 1. Ideal Line — phase-corrected blueprint per week
         for weekStart in weekStarts {
             let weekMid       = calendar.date(byAdding: .day, value: 3, to: weekStart) ?? weekStart
             let weeksLeft     = calendar.fractionalWeeks(from: weekMid, to: endDate)
@@ -107,8 +107,8 @@ struct BlueprintTimelineView: View {
             points.append(TimelinePoint(weekStart: weekStart, volume: idealVolume, series: .ideal))
         }
 
-        // MARK: 2. Actuele Lijn — werkelijk wekelijks volume t/m vandaag
-        // Groepeer activiteiten per maandag-start ISO-week
+        // MARK: 2. Actual Line — actual weekly volume up to today
+        // Group activities per Monday-start ISO week
         let pastWeeks = weekStarts.filter { $0 <= now }
         for weekStart in pastWeeks {
             let weekEnd = calendar.date(byAdding: .weekOfYear, value: 1, to: weekStart) ?? weekStart
@@ -127,15 +127,15 @@ struct BlueprintTimelineView: View {
             points.append(TimelinePoint(weekStart: weekStart, volume: actualVolume, series: .actual))
         }
 
-        // MARK: 3. Prognose Lijn — extrapolatie vanuit FutureProjectionService (bottleneck-bewust)
-        // TRIMP-modus: gebruik effectiveGrowthRate op currentWeeklyTRIMP
-        // KM-modus:    gebruik effectiveKmGrowthRate op currentWeeklyKm (sport-gefilterd)
-        // Dit voorkomt dat fietsen-TRIMP een hardloop-km-achterstand maskeert in de grafiek.
+        // MARK: 3. Projection Line — extrapolation from FutureProjectionService (bottleneck-aware)
+        // TRIMP mode: use effectiveGrowthRate on currentWeeklyTRIMP
+        // KM mode:    use effectiveKmGrowthRate on currentWeeklyKm (sport-filtered)
+        // This prevents cycling-TRIMP from masking a running-km shortfall in the chart.
         if let proj = projection, proj.status != .alreadyPeaking {
             let todayWeekStart = calendar.startOfWeek(for: now)
             let futureWeeks    = weekStarts.filter { $0 >= todayWeekStart && $0 <= endDate }
 
-            // Startvolume en groeisnelheid hangen af van de geselecteerde metriek
+            // Starting volume and growth rate depend on the selected metric
             var projectedVolume: Double
             let growthRate: Double
             let peakStopDate: Date?
@@ -163,7 +163,7 @@ struct BlueprintTimelineView: View {
         return points
     }
 
-    /// Fase-grenzen als annotatie-markeringen in de grafiek.
+    /// Phase boundaries as annotation markers in the chart.
     private var phaseMarkers: [PhaseMarker] {
         let target = goal.targetDate
         return [
@@ -185,7 +185,7 @@ struct BlueprintTimelineView: View {
         ]
     }
 
-    /// Gradiëntkleur voor de schaduw onder de actuele lijn.
+    /// Gradient color for the shadow under the actual line.
     private var areaGradient: LinearGradient {
         LinearGradient(
             colors: [Color.blue.opacity(0.20), Color.blue.opacity(0.02)],
@@ -194,22 +194,22 @@ struct BlueprintTimelineView: View {
         )
     }
 
-    /// Maximale Y-waarde voor het schalen van de grafiek.
+    /// Maximum Y value for scaling the chart.
     private var yMax: Double {
         let maxData = timelineData.map { $0.volume }.max() ?? 100
-        return maxData * 1.15   // 15% marge boven de hoogste waarde
+        return maxData * 1.15   // 15% margin above the highest value
     }
 
-    // MARK: - Zichtbaar domein
+    // MARK: - Visible domain
 
-    /// Initieel zichtbaar X-domein: 8 weken voor vandaag tot 8 weken erna (16 weken venster).
+    /// Initial visible X domain: 8 weeks before today to 8 weeks after (16-week window).
     private var initialVisibleStart: Date {
         calendar.date(byAdding: .weekOfYear, value: -8, to: Date()) ?? Date()
     }
 
-    private let visibleWeeks: Int = 16  // Zichtbaar venster in weken
+    private let visibleWeeks: Int = 16  // Visible window in weeks
 
-    /// Zichtbaar X-domein in seconden (voor chartXVisibleDomain).
+    /// Visible X domain in seconds (for chartXVisibleDomain).
     private var visibleDomainLength: TimeInterval {
         TimeInterval(visibleWeeks) * 7.0 * 24.0 * 3600.0
     }
@@ -222,15 +222,15 @@ struct BlueprintTimelineView: View {
             // Header + Toggle
             headerRow
 
-            // De grafiek
+            // The chart
             chart
                 .frame(height: 220)
                 .padding(.horizontal, 4)
 
-            // Legenda
+            // Legend
             legendRow
 
-            // Fase-labels footer
+            // Phase-labels footer
             phaseFooter
         }
         .padding()
@@ -266,7 +266,7 @@ struct BlueprintTimelineView: View {
     private var chart: some View {
         let data = timelineData
         Chart {
-            // MARK: Fase-grenzen (subtiele verticale lijnen)
+            // MARK: Phase boundaries (subtle vertical lines)
             ForEach(phaseMarkers) { marker in
                 RuleMark(x: .value("Fase", marker.date))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
@@ -278,7 +278,7 @@ struct BlueprintTimelineView: View {
                     }
             }
 
-            // MARK: Race dag marker
+            // MARK: Race day marker
             RuleMark(x: .value("Race", goal.targetDate))
                 .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [2, 3]))
                 .foregroundStyle(Color.gray.opacity(0.5))
@@ -287,7 +287,7 @@ struct BlueprintTimelineView: View {
                         .font(.system(size: 10))
                 }
 
-            // MARK: Vandaag marker
+            // MARK: Today marker
             RuleMark(x: .value("Vandaag", Date()))
                 .lineStyle(StrokeStyle(lineWidth: 1.5))
                 .foregroundStyle(Color.white.opacity(0.6))
@@ -297,7 +297,7 @@ struct BlueprintTimelineView: View {
                         .foregroundStyle(.white.opacity(0.6))
                 }
 
-            // MARK: Ideale Lijn (grijs, gestippeld)
+            // MARK: Ideal Line (gray, dotted)
             ForEach(data.filter { $0.series == .ideal }) { point in
                 LineMark(
                     x: .value("Week", point.weekStart),
@@ -309,7 +309,7 @@ struct BlueprintTimelineView: View {
                 .interpolationMethod(.monotone)
             }
 
-            // MARK: Actuele Lijn (blauw, vol)
+            // MARK: Actual Line (blue, solid)
             ForEach(data.filter { $0.series == .actual }) { point in
                 LineMark(
                     x: .value("Week", point.weekStart),
@@ -320,7 +320,7 @@ struct BlueprintTimelineView: View {
                 .lineStyle(StrokeStyle(lineWidth: 2.5))
                 .interpolationMethod(.monotone)
 
-                // Gebiedsschaduw onder de actuele lijn voor dieptegevoel
+                // Area shadow under the actual line for a sense of depth
                 AreaMark(
                     x: .value("Week", point.weekStart),
                     yStart: .value("Min", 0),
@@ -330,7 +330,7 @@ struct BlueprintTimelineView: View {
                 .interpolationMethod(.monotone)
             }
 
-            // MARK: Prognose Lijn (oranje, gestreept)
+            // MARK: Projection Line (orange, dashed)
             ForEach(data.filter { $0.series == .projection }) { point in
                 LineMark(
                     x: .value("Week", point.weekStart),
@@ -361,7 +361,7 @@ struct BlueprintTimelineView: View {
         .chartXVisibleDomain(length: visibleDomainLength)
         .chartScrollPosition(x: $scrollPosition)
         .onAppear {
-            // Initialiseer scroll-positie zodat 'vandaag' net rechts van het midden staat
+            // Initialize scroll position so 'today' sits just to the right of center
             scrollPosition = initialVisibleStart
         }
     }
@@ -377,7 +377,7 @@ struct BlueprintTimelineView: View {
 
     private func legendItem(color: Color, dash: [CGFloat], label: String) -> some View {
         HStack(spacing: 5) {
-            // Kleine lijntje als legenda-icoon
+            // Small line as legend icon
             Canvas { context, size in
                 var path = Path()
                 path.move(to: CGPoint(x: 0, y: size.height / 2))
@@ -435,15 +435,15 @@ struct BlueprintTimelineView: View {
     }
 }
 
-// MARK: - Sectieweergave voor de Doelen-tab
+// MARK: - Section view for the Goals tab
 
-/// Toont BlueprintTimelineView voor elk actief doel met een blueprint — als carrousel.
+/// Shows BlueprintTimelineView for each active goal with a blueprint — as a carousel.
 struct BlueprintTimelineSectionView: View {
     let goals: [FitnessGoal]
     let activities: [ActivityRecord]
     let projections: [GoalProjection]
 
-    /// Alleen doelen mét een herkende blueprint
+    /// Only goals with a recognized blueprint
     private var eligibleGoals: [FitnessGoal] {
         goals.filter { BlueprintChecker.detectBlueprintType(for: $0) != nil && !$0.isCompleted && Date() < $0.targetDate }
     }
@@ -465,7 +465,7 @@ struct BlueprintTimelineSectionView: View {
                     BlueprintTimelineView(goal: goal, activities: activities, projection: proj)
                         .padding(.horizontal)
                 } else {
-                    // Meerdere doelen: carrousel met pager
+                    // Multiple goals: carousel with pager
                     TabView {
                         ForEach(eligibleGoals) { goal in
                             let proj = projections.first { $0.goal.id == goal.id }
@@ -483,10 +483,10 @@ struct BlueprintTimelineSectionView: View {
     }
 }
 
-// MARK: - Calendar extensie: begin van de ISO-week (maandag)
+// MARK: - Calendar extension: start of the ISO week (Monday)
 
 private extension Calendar {
-    /// Geeft de maandag van de week terug die `date` bevat.
+    /// Returns the Monday of the week that contains `date`.
     func startOfWeek(for date: Date) -> Date {
         let components = dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
         return self.date(from: components) ?? date

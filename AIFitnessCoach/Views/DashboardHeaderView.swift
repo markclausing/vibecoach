@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// V2.0 Sprint 1: Aangepaste header voor het dashboard.
-/// Vervangt de standaard navigationTitle met een contextuele begroeting + dag/fase-indicator.
+/// V2.0 Sprint 1: Custom header for the dashboard.
+/// Replaces the standard navigationTitle with a contextual greeting + day/phase indicator.
 struct DashboardHeaderView: View {
     let periodizationResults: [PeriodizationResult]
     let goals: [FitnessGoal]
@@ -17,7 +17,7 @@ struct DashboardHeaderView: View {
         return "Goedenavond\(suffix)"
     }
 
-    /// Bouwt de contextregel: "DONDERDAG 17 APR · BUILD PHASE · WK 2/5"
+    /// Builds the context line: "DONDERDAG 17 APR · BUILD PHASE · WK 2/5"
     private var contextLine: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "nl_NL")
@@ -55,20 +55,20 @@ struct DashboardHeaderView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
-        // Epic 43 Story 43.2: top-padding consistent met SettingsView, GoalsListView,
-        // ChatView en PreferencesListView — anders glijdt de "Goedenavond"-titel onder
-        // de iPhone-statusbar door (klok overlapt met de tekst).
+        // Epic 43 Story 43.2: top-padding consistent with SettingsView, GoalsListView,
+        // ChatView and PreferencesListView — otherwise the "Goedenavond" title slides
+        // under the iPhone status bar (the clock overlaps with the text).
         .padding(.top, 56)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("DashboardHeaderView")
     }
 }
 
-// MARK: - Epic 34.1: Scroll-aware material overlay voor de statusbalk
+// MARK: - Epic 34.1: Scroll-aware material overlay for the status bar
 
-/// ViewModifier die een `regularMaterial` strip in de top safe area plaatst,
-/// zichtbaar zodra de onderliggende ScrollView voorbij de bovenkant is gescrold.
-/// Voorkomt dat content visueel onder de statusbalk door glijdt.
+/// ViewModifier that places a `regularMaterial` strip in the top safe area,
+/// visible as soon as the underlying ScrollView has scrolled past the top.
+/// Prevents content from visually sliding under the status bar.
 private struct ScrollEdgeMaterialModifier: ViewModifier {
     let isActive: Bool
 
@@ -89,7 +89,7 @@ private struct ScrollEdgeMaterialModifier: ViewModifier {
 }
 
 extension View {
-    /// Toont een `regularMaterial` achtergrond in de top safe area zodra `isActive` true is.
+    /// Shows a `regularMaterial` background in the top safe area as soon as `isActive` is true.
     func scrollEdgeMaterial(isActive: Bool) -> some View {
         modifier(ScrollEdgeMaterialModifier(isActive: isActive))
     }

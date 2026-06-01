@@ -2,46 +2,46 @@ import SwiftUI
 import UserNotifications
 import SwiftData
 
-/// Beheer van externe API koppelingen en andere voorkeuren.
-/// Deze view is toegankelijk via het instellingen-icoon en schrijft gegevens
-/// veilig weg naar de KeychainService.
+/// Management of external API connections and other preferences.
+/// This view is accessible via the settings icon and writes data
+/// securely to the KeychainService.
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var themeManager: ThemeManager
 
-    // Authenticatie service voor Strava OAuth web flow
+    // Authentication service for Strava OAuth web flow
     @StateObject private var stravaAuthService = StravaAuthService()
     private let fitnessDataService = FitnessDataService()
     private let profileManager = AthleticProfileManager()
 
-    // UI State variabelen, gehaald uit en geschreven naar Keychain
+    // UI state variables, read from and written to Keychain
     @State private var feedbackMessage: String?
     @State private var notificationsEnabled: Bool = false
-    // Epic 34 Sprint 2: materiaal-overlay onder statusbalk zodra gescrold.
+    // Epic 34 Sprint 2: material overlay below the status bar once scrolled.
     @State private var isSettingsScrolled: Bool = false
     @AppStorage("isHealthKitLinked") private var isHealthKitLinked: Bool = false
 
     @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
 
-    // Historische sync state
+    // Historical sync state
     @State private var isSyncingHistory: Bool = false
     @State private var athleticProfile: AthleticProfile?
 
     // V2.0 extra state
     @AppStorage("vibecoach_userName")        private var userName: String = ""
-    // C-02: API-sleutel leeft in de Keychain, niet in AppStorage.
-    // `loadTokens()` laadt de waarde bij elke onAppear opnieuw uit de Keychain.
+    // C-02: API key lives in the Keychain, not in AppStorage.
+    // `loadTokens()` reloads the value from the Keychain on every onAppear.
     @State                                   private var apiKey: String = ""
     @AppStorage("vibecoach_aiProvider")      private var providerRaw: String = AIProvider.gemini.rawValue
-    // Epic 43 Story 43.1: lees het door de gebruiker gekozen Gemini-model voor de
-    // dynamische AI-Coach-card-subtitle. Dezelfde key als `AIProviderSettingsView`
-    // gebruikt — SwiftUI synct automatisch over alle @AppStorage-bindings.
+    // Epic 43 Story 43.1: read the user-chosen Gemini model for the
+    // dynamic AI Coach card subtitle. The same key that `AIProviderSettingsView`
+    // uses — SwiftUI syncs automatically across all @AppStorage bindings.
     @AppStorage(AIModelAppStorageKey.primary)
     private var primaryModelId: String = AIModelAppStorageKey.defaultPrimary
-    // Epic 34 Sprint 2: toggles zonder backend-logica verwijderd.
-    // Notificatie-schakelaars en achtergrond-sync komen terug zodra de
-    // `ProactiveNotificationService` per-kanaal kan worden geconfigureerd.
+    // Epic 34 Sprint 2: toggles without backend logic removed.
+    // Notification switches and background sync return once the
+    // `ProactiveNotificationService` can be configured per channel.
     @AppStorage("vibecoach_colorScheme")     private var colorSchemeRaw: String = "auto"
     @State private var physicalProfile: UserPhysicalProfile?
 
@@ -53,15 +53,15 @@ struct SettingsView: View {
         UserProfileService(healthStore: settingsHKManager.healthStore)
     }
 
-    // Dependency injection (voor tests of preview)
+    // Dependency injection (for tests or preview)
     var tokenStore: TokenStore = KeychainService.shared
 
-    // MARK: - Verbindingen-card subtitels (Epic 43 Story 43.1)
+    // MARK: - Connection card subtitles (Epic 43 Story 43.1)
     //
-    // Reflecteren de werkelijke connection-state: gekoppeld? bron-voorkeur of
-    // aanvullend volgens `selectedDataSource`? welk AI-model? Sinds Epic #42
-    // syncen beide bronnen altijd, dus de toggle is een voorkeur — geen
-    // exclusieve "wat sync ik"-keuze meer.
+    // Reflect the actual connection state: connected? source preference or
+    // supplementary according to `selectedDataSource`? which AI model? Since Epic #42
+    // both sources always sync, so the toggle is a preference — no longer an
+    // exclusive "what do I sync" choice.
 
     private var healthKitConnectionSubtitle: String {
         guard isHealthKitLinked else { return "Niet gekoppeld" }
@@ -73,9 +73,9 @@ struct SettingsView: View {
         return selectedDataSource == .strava ? "Voorkeur" : "Aanvullend"
     }
 
-    /// Epic 44 Story 44.4: korte samenvatting van de gestelde drempels voor de
-    /// "TRAININGSDREMPELS"-rij. Toont alleen de drempels die daadwerkelijk een
-    /// waarde hebben — leegmaken als nog niets is ingesteld.
+    /// Epic 44 Story 44.4: brief summary of the configured thresholds for the
+    /// "TRAININGSDREMPELS" row. Shows only the thresholds that actually have a
+    /// value — empty if nothing has been set yet.
     private var trainingThresholdsSubtitle: String {
         let cached = UserProfileService.cachedProfile()
         var parts: [String] = []
@@ -91,8 +91,8 @@ struct SettingsView: View {
             return "Geen sleutel"
         }
         let shortName = provider.shortName
-        // Voor Gemini tonen we ook het gekozen model (Epic #35) — bv. "Gemini · flash-latest".
-        // De "gemini-"-prefix strippen we om de card-subtitle compact te houden.
+        // For Gemini we also show the chosen model (Epic #35) — e.g. "Gemini · flash-latest".
+        // We strip the "gemini-" prefix to keep the card subtitle compact.
         guard provider == .gemini else { return shortName }
         let modelShort = primaryModelId.hasPrefix("gemini-")
             ? String(primaryModelId.dropFirst("gemini-".count))
@@ -100,15 +100,15 @@ struct SettingsView: View {
         return "\(shortName) · \(modelShort)"
     }
 
-    // Laden van opgeslagen waarden en rechten
+    // Loading stored values and permissions
     private func loadTokens() {
         stravaAuthService.checkAuthStatus()
         checkNotificationStatus()
         refreshProfile()
-        // C-02: lees de user API-sleutel uit de Keychain. Wordt elke .onAppear
-        // opnieuw uitgevoerd zodat een wijziging in de AI-provider-subview direct
-        // zichtbaar is in de hoofd-SettingsView (connectie-indicator + laatste 4 chars).
-        // Epic #53: de sleutel van de actieve provider.
+        // C-02: read the user API key from the Keychain. Runs again on every
+        // .onAppear so that a change in the AI provider subview is immediately
+        // visible in the main SettingsView (connection indicator + last 4 chars).
+        // Epic #53: the key of the active provider.
         apiKey = UserAPIKeyStore.read(for: AIProvider(rawValue: providerRaw) ?? .gemini)
         Task {
             await settingsProfileService.requestProfileReadAuthorization()
@@ -124,7 +124,7 @@ struct SettingsView: View {
         }
     }
 
-    // Herbereken het lokale atletisch profiel op basis van SwiftData
+    // Recalculate the local athletic profile based on SwiftData
     private func refreshProfile() {
         do {
             self.athleticProfile = try profileManager.calculateProfile(context: modelContext)
@@ -133,10 +133,10 @@ struct SettingsView: View {
         }
     }
 
-    // Activeert het ophalen van historische workouts.
-    // Epic #42 Story 42.1: HK + Strava lopen onafhankelijk; de dedupe-laag uit
-    // Epic #41 dekt cross-source af. `selectedDataSource` bepaalt niet meer
-    // welke bron we ophalen — alleen welke als "primair" gelabeld wordt.
+    // Triggers fetching historical workouts.
+    // Epic #42 Story 42.1: HK + Strava run independently; the dedupe layer from
+    // Epic #41 covers cross-source. `selectedDataSource` no longer determines
+    // which source we fetch — only which one is labelled as "primary".
     private func syncHistoricalData() {
         guard !isSyncingHistory else { return }
         isSyncingHistory = true
@@ -158,7 +158,7 @@ struct SettingsView: View {
     @MainActor
     private func runHealthKitHistoricalSync() async -> String {
         do {
-            // Epic #38 Story 38.2: cache count voor de Dashboard-banner-evaluator.
+            // Epic #38 Story 38.2: cache count for the Dashboard banner evaluator.
             let count = try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
             UserDefaults.standard.set(count, forKey: "vibecoach_lastHKWorkoutsCount")
             return "HealthKit (1 jaar) gesynchroniseerd — \(count) workouts"
@@ -171,7 +171,7 @@ struct SettingsView: View {
     @MainActor
     private func runStravaHistoricalSync() async -> String {
         do {
-            // SPRINT 6.1 & 7.4: max 12 maanden Strava-historie ophalen.
+            // SPRINT 6.1 & 7.4: fetch at most 12 months of Strava history.
             let activities = try await fitnessDataService.fetchHistoricalActivities(monthsBack: 12)
 
             let formatter = ISO8601DateFormatter()
@@ -182,7 +182,7 @@ struct SettingsView: View {
             for activity in activities {
                 let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
 
-                // SPRINT 12.4: basic TRIMP fallback bij sync.
+                // SPRINT 12.4: basic TRIMP fallback during sync.
                 let basicTRIMPFallback: Double? = {
                     if let hr = activity.average_heartrate, hr > 100 {
                         let durationMins = Double(activity.moving_time) / 60.0
@@ -204,10 +204,10 @@ struct SettingsView: View {
                     trimp: basicTRIMPFallback,
                     deviceWatts: activity.device_watts
                 )
-                // Epic #50: historische weerdata via Open-Meteo voor Strava-only
-                // ritten (Garmin/fietscomputer). Sequentieel — voor 12 maanden ≈
-                // 100 calls, ~10s extra op de "Sync historische data"-knop. Faal-
-                // tolerant: API-fout = doorlopend zonder weer.
+                // Epic #50: historical weather data via Open-Meteo for Strava-only
+                // rides (Garmin/bike computer). Sequential — for 12 months ≈
+                // 100 calls, ~10s extra on the "Sync historische data" button. Fault-
+                // tolerant: API error = continue without weather.
                 await HistoricalWeatherService.enrichRecord(record, from: activity, startDate: date)
                 if let result = try? ActivityDeduplicator.smartInsert(record, into: modelContext),
                    result == .inserted || result == .replaced {
@@ -223,7 +223,7 @@ struct SettingsView: View {
         }
     }
 
-    // Controleer de huidige status van Push Notifications toestemming
+    // Check the current status of Push Notifications permission
     private func checkNotificationStatus() {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             DispatchQueue.main.async {
@@ -232,9 +232,9 @@ struct SettingsView: View {
         }
     }
 
-    // Vraag expliciet toestemming aan de gebruiker voor lokale notificaties.
-    // De proactieve engines (A & B) gebruiken uitsluitend `UNUserNotificationCenter`
-    // scheduling — er is geen APNs-ontvanger meer sinds de Node.js-backend is verdwenen.
+    // Explicitly request permission from the user for local notifications.
+    // The proactive engines (A & B) use only `UNUserNotificationCenter`
+    // scheduling — there is no APNs receiver anymore since the Node.js backend disappeared.
     private func requestNotificationPermission() {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
@@ -251,7 +251,7 @@ struct SettingsView: View {
         }
     }
 
-    // Functie om Apple Health te koppelen
+    // Function to connect Apple Health
     private func koppelAppleHealth() {
         let healthKitManager = HealthKitManager()
         healthKitManager.requestAuthorization { success, error in
@@ -266,11 +266,11 @@ struct SettingsView: View {
         }
     }
 
-    // Opslaan van ingevoerde waarden naar native Keychain
+    // Save entered values to the native Keychain
     private func saveTokens() {
         feedbackMessage = "Instellingen veilig opgeslagen"
 
-        // Simuleer een feedback animatie, sluit daarna (of optioneel)
+        // Simulate a feedback animation, then dismiss (or optional)
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             dismiss()
         }
@@ -577,8 +577,8 @@ struct SettingsView: View {
                         .padding(.horizontal).padding(.top, 6)
                     Spacer(minLength: 24)
 
-                    // Epic 34 Sprint 2: Notificatie-toggles verwijderd tot de per-kanaal
-                    // backend-logica bestaat. Systeempermissies zijn hieronder toegankelijk.
+                    // Epic 34 Sprint 2: notification toggles removed until the per-channel
+                    // backend logic exists. System permissions are accessible below.
                     settingsSectionLabel("NOTIFICATIES")
                     settingsCard {
                         Button {
@@ -619,8 +619,8 @@ struct SettingsView: View {
                         }.buttonStyle(.plain)
                         settingsDivider
                         Button {
-                            // Wis een eerdere fout zodat een retry niet meteen
-                            // de oude melding toont.
+                            // Clear a previous error so that a retry doesn't immediately
+                            // show the old message.
                             stravaAuthService.authError = nil
                             if stravaAuthService.isAuthenticated {
                                 stravaAuthService.logout()
@@ -648,7 +648,7 @@ struct SettingsView: View {
                     }
                     .padding(.bottom, 24)
 
-                    // ── Developer Tools (behouden voor debug)
+                    // ── Developer Tools (kept for debug)
                     #if targetEnvironment(simulator)
                     settingsSectionLabel("DEVELOPER (SIMULATOR)")
                     settingsCard {
@@ -683,9 +683,9 @@ struct SettingsView: View {
                             .padding(.bottom, 12)
                     }
 
-                    // Epic #51-H2: app-versie + build-nummer onderaan zodat de
-                    // gebruiker bij support-vragen meteen kan zien op welke
-                    // versie hij draait. Niet-interactief, niet selecteerbaar.
+                    // Epic #51-H2: app version + build number at the bottom so the
+                    // user can immediately see which version they're running when
+                    // raising support questions. Non-interactive, not selectable.
                     Text(AppVersionInfo.displayString)
                         .font(.caption2)
                         .foregroundColor(.secondary.opacity(0.7))
@@ -766,9 +766,9 @@ struct SettingsView: View {
             let calendar = Calendar.current
             let now = Date()
 
-            // 1. Voeg een dummy FitnessGoal toe (Marathon)
-            let targetDate = calendar.date(byAdding: .day, value: 60, to: now)! // Over 2 maanden
-            let createdDate = calendar.date(byAdding: .day, value: -30, to: now)! // 1 maand geleden gestart
+            // 1. Add a dummy FitnessGoal (Marathon)
+            let targetDate = calendar.date(byAdding: .day, value: 60, to: now)! // In 2 months
+            let createdDate = calendar.date(byAdding: .day, value: -30, to: now)! // Started 1 month ago
 
             let goal = FitnessGoal(
                 title: "Amsterdam Marathon (Test)",
@@ -780,9 +780,9 @@ struct SettingsView: View {
             )
             modelContext.insert(goal)
 
-            // 2. Voeg 5 realistische activiteiten toe in de afgelopen 45 dagen
+            // 2. Add 5 realistic activities in the past 45 days
             let workoutDates = [
-                calendar.date(byAdding: .day, value: -35, to: now)!, // Time Travel: Voor de createdAt!
+                calendar.date(byAdding: .day, value: -35, to: now)!, // Time Travel: Before the createdAt!
                 calendar.date(byAdding: .day, value: -20, to: now)!,
                 calendar.date(byAdding: .day, value: -12, to: now)!,
                 calendar.date(byAdding: .day, value: -7, to: now)!,
@@ -797,7 +797,7 @@ struct SettingsView: View {
                 let record = ActivityRecord(
                     id: "dummy_\(index)_\(Int(date.timeIntervalSince1970))",
                     name: names[index],
-                    distance: Double(durations[index]) * 2.5, // Ruwe schatting
+                    distance: Double(durations[index]) * 2.5, // Rough estimate
                     movingTime: durations[index],
                     averageHeartrate: 145.0 + Double(index * 2),
                     sportCategory: .running,
@@ -815,7 +815,7 @@ struct SettingsView: View {
     #endif
 }
 
-// MARK: - V2.0 Componenten
+// MARK: - V2.0 Components
 
 struct SettingsConnectionCard: View {
     let icon: String
@@ -923,7 +923,7 @@ struct PhysicalProfileEditView: View {
     }
 }
 
-// MARK: - Epic 29 Sprint 2 & 3: Thema Picker Sectie
+// MARK: - Epic 29 Sprint 2 & 3: Theme Picker Section
 
 struct ThemePickerSection: View {
     @ObservedObject var themeManager: ThemeManager
@@ -1013,20 +1013,20 @@ private struct ThemeCircleButton: View {
     }
 }
 
-// MARK: - Epic 24 Sprint 2: Fysiologisch Profiel Sectie
+// MARK: - Epic 24 Sprint 2: Physiological Profile Section
 
-/// Toont en beheert het fysiologische profiel van de gebruiker.
-/// Leeftijd en geslacht zijn read-only (komen uit HealthKit Gezondheid-app).
-/// Gewicht en lengte zijn bewerkbaar en worden gesynchroniseerd met HealthKit.
+/// Shows and manages the user's physiological profile.
+/// Age and sex are read-only (come from the HealthKit Health app).
+/// Weight and height are editable and are synchronised with HealthKit.
 struct PhysicalProfileSection: View {
-    // De manager wordt als property gehouden zodat healthStore niet direct-deallocated wordt.
+    // The manager is held as a property so healthStore is not deallocated immediately.
     private let hkManager = HealthKitManager()
     private var profileService: UserProfileService { UserProfileService(healthStore: hkManager.healthStore) }
 
-    // Huidig geladen profiel
+    // Currently loaded profile
     @State private var profile: UserPhysicalProfile?
 
-    // Bewerkbare velden (als String voor TextField)
+    // Editable fields (as String for TextField)
     @State private var weightInput: String = ""
     @State private var heightInput: String = ""
 
@@ -1034,15 +1034,15 @@ struct PhysicalProfileSection: View {
     @State private var isLoading     = true
     @State private var isSaving      = false
     @State private var saveMessage: String?
-    /// .savedToHealthKit → groen, .savedLocallyOnly → oranje
+    /// .savedToHealthKit → green, .savedLocallyOnly → orange
     @State private var saveResult: UserProfileService.SaveResult?
-    /// Tijdstip van de laatste succesvolle HealthKit-refresh — voor de sync-indicator.
+    /// Timestamp of the last successful HealthKit refresh — for the sync indicator.
     @State private var lastRefreshed: Date?
 
-    /// Coach-melding bij profielwijziging — wordt éénmalig in de eerstvolgende AI-prompt gezet.
+    /// Coach notice on profile change — set once into the very next AI prompt.
     @AppStorage("vibecoach_profileUpdateNote") private var profileUpdateNote: String = ""
 
-    // Detecteer of de gebruiker iets heeft gewijzigd ten opzichte van het geladen profiel
+    // Detect whether the user changed anything compared to the loaded profile
     private var hasChanges: Bool {
         guard let p = profile else { return false }
         return weightInput != String(format: "%.1f", p.weightKg)
@@ -1063,7 +1063,7 @@ struct PhysicalProfileSection: View {
                         .font(.subheadline)
                 }
             } else {
-                // Sync-indicator — toont tijdstip van laatste HealthKit-refresh
+                // Sync indicator — shows the timestamp of the last HealthKit refresh
                 if let ts = lastRefreshed {
                     HStack(spacing: 6) {
                         Image(systemName: "checkmark.circle.fill")
@@ -1087,7 +1087,7 @@ struct PhysicalProfileSection: View {
                     }
                 }
 
-                // Leeftijd — read-only via HealthKit
+                // Age — read-only via HealthKit
                 profileRow(
                     icon: "person.circle",
                     iconColor: .blue,
@@ -1096,7 +1096,7 @@ struct PhysicalProfileSection: View {
                     isReadOnly: true
                 )
 
-                // Geslacht — read-only via HealthKit
+                // Sex — read-only via HealthKit
                 profileRow(
                     icon: "figure.stand",
                     iconColor: .indigo,
@@ -1105,7 +1105,7 @@ struct PhysicalProfileSection: View {
                     isReadOnly: true
                 )
 
-                // Gewicht — bewerkbaar
+                // Weight — editable
                 editableRow(
                     icon: "scalemass",
                     iconColor: .orange,
@@ -1115,7 +1115,7 @@ struct PhysicalProfileSection: View {
                     source: profile?.weightSource
                 )
 
-                // Lengte — bewerkbaar
+                // Height — editable
                 editableRow(
                     icon: "ruler",
                     iconColor: .teal,
@@ -1125,7 +1125,7 @@ struct PhysicalProfileSection: View {
                     source: profile?.heightSource
                 )
 
-                // Opslaan-knop (alleen zichtbaar bij wijzigingen)
+                // Save button (only visible when there are changes)
                 if hasChanges {
                     Button {
                         saveProfile()
@@ -1145,7 +1145,7 @@ struct PhysicalProfileSection: View {
                     .disabled(isSaving)
                 }
 
-                // Feedback na opslaan
+                // Feedback after saving
                 if let msg = saveMessage {
                     let (icon, color): (String, Color) = {
                         switch saveResult {
@@ -1160,15 +1160,15 @@ struct PhysicalProfileSection: View {
                 }
             }
         }
-        // onAppear garandeert een verse HealthKit-fetch bij elke keer dat de sectie zichtbaar wordt,
-        // ook als de SettingsView in memory blijft (tabs). .task wordt enkel bij de eerste render
-        // uitgevoerd in statische forms — vandaar de overstap naar onAppear.
+        // onAppear guarantees a fresh HealthKit fetch every time the section becomes visible,
+        // even when the SettingsView stays in memory (tabs). .task only runs on the first render
+        // in static forms — hence the switch to onAppear.
         .onAppear { Task { await loadProfile() } }
     }
 
     // MARK: - Sub-views
 
-    /// Rij voor een read-only waarde (leeftijd, geslacht — komen uit HealthKit).
+    /// Row for a read-only value (age, sex — come from HealthKit).
     private func profileRow(icon: String, iconColor: Color, label: String, value: String, isReadOnly: Bool) -> some View {
         HStack {
             Image(systemName: icon)
@@ -1186,7 +1186,7 @@ struct PhysicalProfileSection: View {
         }
     }
 
-    /// Rij voor een bewerkbare waarde (gewicht, lengte).
+    /// Row for an editable value (weight, height).
     private func editableRow(
         icon: String,
         iconColor: Color,
@@ -1208,14 +1208,14 @@ struct PhysicalProfileSection: View {
             Text(unit)
                 .foregroundStyle(.secondary)
                 .frame(width: 28, alignment: .leading)
-            // Bronbadge
+            // Source badge
             if let src = source {
                 sourceBadge(src)
             }
         }
     }
 
-    /// Klein badge dat aangeeft waar de waarde vandaan komt.
+    /// Small badge indicating where the value comes from.
     @ViewBuilder
     private func sourceBadge(_ source: UserPhysicalProfile.DataSource) -> some View {
         switch source {
@@ -1242,22 +1242,22 @@ struct PhysicalProfileSection: View {
         .font(.caption)
     }
 
-    // MARK: - Logica
+    // MARK: - Logic
 
     private func loadProfile() async {
         isLoading = true
 
-        // Vraag eerst expliciet leesrechten voor de profieltypen.
-        // Voor gebruikers die HealthKit koppelden vóór Epic 24 zijn dateOfBirth,
-        // biologicalSex, bodyMass en height nog nooit gevraagd — iOS toont de popup
-        // pas als we ze hier uitdrukkelijk opnemen in requestAuthorization.
+        // First explicitly request read access for the profile types.
+        // For users who connected HealthKit before Epic 24, dateOfBirth,
+        // biologicalSex, bodyMass and height have never been requested — iOS only shows
+        // the popup once we explicitly include them in requestAuthorization here.
         await profileService.requestProfileReadAuthorization()
 
         let loaded = await profileService.fetchProfile()
 
-        // Detecteer of de leeftijd is gewijzigd ten opzichte van de vorige fetch.
-        // Als dat zo is, schrijven we een eenmalige coach-melding die bij de
-        // eerstvolgende AI-vraag wordt geïnjecteerd (via vibecoach_profileUpdateNote).
+        // Detect whether the age has changed compared to the previous fetch.
+        // If so, we write a one-time coach notice that gets injected into the
+        // very next AI query (via vibecoach_profileUpdateNote).
         let ageChanged = profileService.checkAndUpdateAgeCache(newAge: loaded.ageYears)
         if ageChanged {
             let bmr = Int(NutritionService.calculateBMR(profile: loaded).rounded())
@@ -1291,16 +1291,16 @@ struct PhysicalProfileSection: View {
         saveResult  = nil
 
         Task {
-            // Sla elke gewijzigde waarde op en verzamel de resultaten.
-            // UserDefaults wordt altijd bijgewerkt; HealthKit alleen bij toestemming.
+            // Save each changed value and collect the results.
+            // UserDefaults is always updated; HealthKit only with permission.
             var results: [UserProfileService.SaveResult] = []
             if newWeight != p.weightKg { results.append(await profileService.saveWeight(kg: newWeight)) }
             if newHeight != p.heightCm { results.append(await profileService.saveHeight(cm: newHeight)) }
 
-            // Herlaad het profiel zodat bronbadges bijgewerkt worden
+            // Reload the profile so the source badges are updated
             await loadProfile()
 
-            // Samenvoegen: als minstens één waarde naar HealthKit ging → groen, anders → oranje
+            // Combine: if at least one value went to HealthKit → green, otherwise → orange
             let combinedResult: UserProfileService.SaveResult
             let allHealthKit = results.allSatisfy {
                 if case .savedToHealthKit = $0 { return true }
@@ -1340,53 +1340,53 @@ struct PhysicalProfileSection: View {
     }
 }
 
-// MARK: - Epic 20: AI Coach Configuratie (BYOK)
+// MARK: - Epic 20: AI Coach Configuration (BYOK)
 
-/// Instellingenscherm waar de gebruiker zijn eigen AI-provider en API-sleutel configureert.
-/// De sleutel wordt opgeslagen in AppStorage (lokaal op het apparaat, niet gedeeld).
+/// Settings screen where the user configures their own AI provider and API key.
+/// The key is stored in AppStorage (locally on the device, not shared).
 struct AIProviderSettingsView: View {
     @AppStorage("vibecoach_aiProvider")  private var providerRaw: String = AIProvider.gemini.rawValue
-    // Epic #35: gekozen primaire & fallback Gemini-modellen. Worden gelezen door
-    // `ChatViewModel.buildGenerativeModel`. Defaults matchen de waarden die vóór
-    // Epic #35 hardcoded waren zodat een bestaande installatie zonder expliciete
-    // keuze exact dezelfde modellen blijft gebruiken.
+    // Epic #35: chosen primary & fallback Gemini models. Read by
+    // `ChatViewModel.buildGenerativeModel`. Defaults match the values that were
+    // hardcoded before Epic #35 so that an existing installation without an explicit
+    // choice keeps using exactly the same models.
     @AppStorage(AIModelAppStorageKey.primary)
     private var primaryModelId: String = AIModelAppStorageKey.defaultPrimary
     @AppStorage(AIModelAppStorageKey.fallback)
     private var fallbackModelId: String = AIModelAppStorageKey.defaultFallback
-    // C-02: de API-sleutel wordt gelezen uit / geschreven naar de Keychain
-    // (zie `UserAPIKeyStore`). `@State` houdt de live-binding met de SecureField;
-    // `.onAppear` laadt, `.onChange` persisteert.
+    // C-02: the API key is read from / written to the Keychain
+    // (see `UserAPIKeyStore`). `@State` holds the live binding with the SecureField;
+    // `.onAppear` loads, `.onChange` persists.
     @State                               private var apiKey: String = ""
     @EnvironmentObject private var themeManager: ThemeManager
 
-    /// Sprint 31.7: state-machine voor de minimale validatie-ping.
-    /// Laatst geteste sleutel wordt bijgehouden zodat we het feedbackblok
-    /// automatisch resetten wanneer de gebruiker zijn sleutel aanpast.
+    /// Sprint 31.7: state machine for the minimal validation ping.
+    /// The last tested key is tracked so we automatically reset the feedback block
+    /// when the user changes their key.
     @State private var testState: APIKeyTestState = .idle
     @State private var testedKey: String = ""
 
-    /// Epic #35 — model-catalogus (via Cloudflare Worker) + ophaal-status.
-    /// `hasAttemptedInitialLoad` onderscheidt "nog nooit geprobeerd" (toon
-    /// alleen ProgressView) van "geprobeerd, nu live of fallback" (toon
-    /// pickers). Zo voorkomen we dat de gebruiker een picker ziet gevuld met
-    /// de tweeëlf-entry `builtInFallback` terwijl de echte lijst nog onderweg is.
+    /// Epic #35 — model catalogue (via Cloudflare Worker) + fetch status.
+    /// `hasAttemptedInitialLoad` distinguishes "never attempted" (show
+    /// only a ProgressView) from "attempted, now live or fallback" (show
+    /// pickers). This prevents the user from seeing a picker filled with
+    /// the twelve-entry `builtInFallback` while the real list is still on its way.
     @State private var modelCatalog: AIModelCatalog = .builtInFallback
     @State private var isLoadingCatalog: Bool = false
     @State private var hasAttemptedInitialLoad: Bool = false
     @State private var catalogError: String?
     private let catalogService = AIModelCatalogService()
 
-    /// Epic #53 (53.6): model-keuze voor niet-Gemini providers, uit de statische
-    /// `AIModelCatalog.builtIn(for:)`. Gemini gebruikt de dynamische Worker-
-    /// catalogus hierboven; deze twee @State-velden worden per provider geladen/
-    /// gepersisteerd via de provider-gesuffixte `AIModelAppStorageKey`-keys.
+    /// Epic #53 (53.6): model choice for non-Gemini providers, from the static
+    /// `AIModelCatalog.builtIn(for:)`. Gemini uses the dynamic Worker
+    /// catalogue above; these two @State fields are loaded/persisted per provider
+    /// via the provider-suffixed `AIModelAppStorageKey` keys.
     @State private var customPrimaryModel: String = ""
     @State private var customFallbackModel: String = ""
 
-    /// Epic #54: live model-catalogus per niet-Gemini provider, direct opgehaald
-    /// met de user-key. Begint als de statische `builtIn`-lijst en wordt vervangen
-    /// zodra de live `/v1/models`-fetch klaar is (valt stil terug bij fout/lege key).
+    /// Epic #54: live model catalogue per non-Gemini provider, fetched directly
+    /// with the user key. Starts as the static `builtIn` list and is replaced
+    /// once the live `/v1/models` fetch completes (falls back silently on error/empty key).
     @State private var providerModelCatalog: [AIModelDescriptor] = []
     @State private var isLoadingProviderModels: Bool = false
     @State private var providerModelsError: String?
@@ -1397,8 +1397,8 @@ struct AIProviderSettingsView: View {
         AIProvider(rawValue: providerRaw) ?? .gemini
     }
 
-    /// Het feedback-blok is alleen geldig voor de sleutel die op het moment
-    /// van de test werd ingevoerd. Na typen vervalt het oordeel.
+    /// The feedback block is only valid for the key that was entered at the moment
+    /// of the test. After typing, the verdict expires.
     private var showTestResult: Bool {
         testState != .idle && testedKey == apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -1416,7 +1416,7 @@ struct AIProviderSettingsView: View {
                 .labelsHidden()
             }
 
-            // API sleutel invoer
+            // API key input
             Section(
                 header: Text("API Sleutel"),
                 footer: VStack(alignment: .leading, spacing: 6) {
@@ -1454,19 +1454,19 @@ struct AIProviderSettingsView: View {
                 }
             }
 
-            // Epic #35 — Model-selectie. Alleen voor Gemini (dynamische Worker-
-            // catalogus). De provider-specifieke model-pickers voor OpenAI/Claude/
-            // Mistral volgen in Epic #53 story 53.6; tot dan gebruiken die providers
-            // hun gecureerde default-model (`AIModelCatalog.builtIn(for:)`).
+            // Epic #35 — Model selection. Only for Gemini (dynamic Worker
+            // catalogue). The provider-specific model pickers for OpenAI/Claude/
+            // Mistral follow in Epic #53 story 53.6; until then those providers use
+            // their curated default model (`AIModelCatalog.builtIn(for:)`).
             if selectedProvider == .gemini {
                 Section(
                     header: Text("Gemini Modellen"),
                     footer: modelPickerFooter
                 ) {
                     if !hasAttemptedInitialLoad {
-                        // Initiële load: toon alleen een ProgressView zodat de
-                        // gebruiker niet voor de builtInFallback hoeft te kiezen
-                        // terwijl de echte lijst nog onderweg is.
+                        // Initial load: show only a ProgressView so the
+                        // user doesn't have to choose from the builtInFallback
+                        // while the real list is still on its way.
                         HStack(spacing: 10) {
                             ProgressView().controlSize(.small)
                             Text("Modellen ophalen…")
@@ -1491,10 +1491,10 @@ struct AIProviderSettingsView: View {
                     }
                 }
             } else {
-                // Epic #54: dynamische model-picker per niet-Gemini provider. De lijst
-                // wordt live opgehaald met de user-key (`loadProviderModels`); zolang
-                // dat loopt — of bij een fout/lege key — toont 'ie de statische
-                // `AIModelCatalog.builtIn(for:)` als vangnet zodat de picker nooit leeg is.
+                // Epic #54: dynamic model picker per non-Gemini provider. The list
+                // is fetched live with the user key (`loadProviderModels`); as long
+                // as that runs — or on an error/empty key — it shows the static
+                // `AIModelCatalog.builtIn(for:)` as a safety net so the picker is never empty.
                 let models = providerModelCatalog.isEmpty
                     ? AIModelCatalog.builtIn(for: selectedProvider).models
                     : providerModelCatalog
@@ -1516,10 +1516,10 @@ struct AIProviderSettingsView: View {
                 }
             }
 
-            // Sprint 31.7: Test-ping — valideert de sleutel met een minimale
-            // auth-call tegen Gemini. De waterfall (primair → fallback op 503/429)
-            // staat in `APIKeyValidator` zodat een geldige sleutel tijdens een
-            // Google-overload niet onterecht als ongeldig wordt gemarkeerd.
+            // Sprint 31.7: Test ping — validates the key with a minimal
+            // auth call against Gemini. The waterfall (primary → fallback on 503/429)
+            // lives in `APIKeyValidator` so that a valid key isn't wrongly marked
+            // as invalid during a Google overload.
             if !apiKey.isEmpty {
                 Section(footer: testFeedbackFooter) {
                     Button {
@@ -1548,7 +1548,7 @@ struct AIProviderSettingsView: View {
             SafariView(url: item.url)
                 .ignoresSafeArea()
         }
-        // C-02: Keychain-gekoppelde load/save rond de SecureField.
+        // C-02: Keychain-linked load/save around the SecureField.
         .onAppear {
             apiKey = UserAPIKeyStore.read(for: selectedProvider)
             loadCustomModels()
@@ -1559,21 +1559,21 @@ struct AIProviderSettingsView: View {
             UserAPIKeyStore.write(newValue, for: selectedProvider)
         }
         .onChange(of: providerRaw) { _, _ in
-            // Epic #53: bij providerwissel de sleutel + model-keuze uit de nieuwe
-            // provider-slot tonen + de test-status resetten (oude uitslag vervalt).
+            // Epic #53: on a provider switch, show the key + model choice from the new
+            // provider slot + reset the test status (old result expires).
             apiKey = UserAPIKeyStore.read(for: selectedProvider)
             loadCustomModels()
             testState = .idle
-            // Epic #54: live model-lijst van de nieuwe provider ophalen.
+            // Epic #54: fetch the live model list of the new provider.
             loadProviderModels()
         }
         .onChange(of: testState) { _, newState in
-            // Epic #54: een net-gevalideerde sleutel ontsluit de live model-lijst —
-            // ververs zodat de gebruiker direct zijn echte modellen ziet.
+            // Epic #54: a just-validated key unlocks the live model list —
+            // refresh so the user immediately sees their real models.
             if newState == .valid { loadProviderModels() }
         }
-        // Epic #53 (53.6): persisteer de niet-Gemini model-keuze provider-gescheiden.
-        // Gemini loopt via de @AppStorage-bindingen hierboven, dus die slaan we over.
+        // Epic #53 (53.6): persist the non-Gemini model choice separated per provider.
+        // Gemini runs via the @AppStorage bindings above, so we skip those.
         .onChange(of: customPrimaryModel) { _, newValue in
             guard !newValue.isEmpty, selectedProvider != .gemini else { return }
             UserDefaults.standard.set(newValue, forKey: AIModelAppStorageKey.primaryKey(for: selectedProvider))
@@ -1584,18 +1584,18 @@ struct AIProviderSettingsView: View {
         }
     }
 
-    /// Laadt de opgeslagen (of default) model-keuze voor de actieve niet-Gemini
-    /// provider in de picker-bindingen. Voor Gemini is dit een no-op die door de
-    /// `selectedProvider != .gemini`-guard in de persist-handlers wordt genegeerd.
+    /// Loads the stored (or default) model choice for the active non-Gemini
+    /// provider into the picker bindings. For Gemini this is a no-op that is ignored
+    /// by the `selectedProvider != .gemini` guard in the persist handlers.
     private func loadCustomModels() {
         customPrimaryModel = AIModelAppStorageKey.resolvedPrimary(for: selectedProvider)
         customFallbackModel = AIModelAppStorageKey.resolvedFallback(for: selectedProvider)
     }
 
-    /// Epic #54: haalt de live model-lijst van de actieve niet-Gemini provider op
-    /// met de user-key. Begint met de statische lijst (picker nooit leeg) en
-    /// vervangt die zodra de fetch slaagt. Reset de opgeslagen keuze naar een
-    /// geldige als die niet (meer) in de live lijst voorkomt (bv. gedeprecieerd).
+    /// Epic #54: fetches the live model list of the active non-Gemini provider
+    /// with the user key. Starts with the static list (picker never empty) and
+    /// replaces it once the fetch succeeds. Resets the stored choice to a valid
+    /// one if it no longer appears in the live list (e.g. deprecated).
     private func loadProviderModels() {
         guard selectedProvider != .gemini else { return }
         let provider = selectedProvider
@@ -1611,7 +1611,7 @@ struct AIProviderSettingsView: View {
                 let models = try await providerModelListService.fetchModels(provider: provider, apiKey: key)
                 await MainActor.run {
                     isLoadingProviderModels = false
-                    // Provider kan tijdens de fetch gewisseld zijn — negeer stale resultaat.
+                    // Provider may have switched during the fetch — ignore stale result.
                     guard selectedProvider == provider, !models.isEmpty else { return }
                     providerModelCatalog = models
 
@@ -1628,16 +1628,16 @@ struct AIProviderSettingsView: View {
                 await MainActor.run {
                     isLoadingProviderModels = false
                     guard selectedProvider == provider else { return }
-                    // Epic #54: faalreden tonen i.p.v. stil terugvallen, zodat een
-                    // scope-/auth-probleem (bv. OpenAI-key zonder Models-leesrecht)
-                    // zichtbaar is. De picker blijft de statische fallback tonen.
+                    // Epic #54: show the failure reason instead of silently falling back, so a
+                    // scope/auth problem (e.g. an OpenAI key without Models read access)
+                    // is visible. The picker keeps showing the static fallback.
                     providerModelsError = Self.describeModelListError(error)
                 }
             }
         }
     }
 
-    /// Korte, gebruiker-leesbare reden waarom de live model-lijst niet kon laden.
+    /// Short, user-readable reason why the live model list could not load.
     private static func describeModelListError(_ error: Error) -> String {
         if let providerError = error as? AIProviderError {
             switch providerError {
@@ -1668,7 +1668,7 @@ struct AIProviderSettingsView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
         } else if apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            // Epic #54: zonder sleutel kunnen we /v1/models niet bevragen → ingebouwde lijst.
+            // Epic #54: without a key we can't query /v1/models → built-in list.
             Text("Voer je \(selectedProvider.displayName)-sleutel in (en test 'm) om je beschikbare modellen live te laden. Tot dan tonen we een ingebouwde lijst.")
                 .font(.caption)
                 .foregroundColor(.secondary)
@@ -1683,11 +1683,11 @@ struct AIProviderSettingsView: View {
         }
     }
 
-    // MARK: - Epic #35 — Model catalogus
+    // MARK: - Epic #35 — Model catalogue
 
-    /// Ophalen van de model-lijst bij de Cloudflare Worker. Faalt stil naar de
-    /// built-in fallback zodat de picker nooit leeg staat; een eventuele fout
-    /// komt wel als subtiele melding onder de pickers te hangen.
+    /// Fetches the model list from the Cloudflare Worker. Fails silently to the
+    /// built-in fallback so the picker is never empty; any error does appear
+    /// as a subtle message below the pickers.
     private func loadModelCatalog() {
         guard !isLoadingCatalog else { return }
         isLoadingCatalog = true
@@ -1700,10 +1700,10 @@ struct AIProviderSettingsView: View {
                     self.modelCatalog = catalog
                     self.isLoadingCatalog = false
                     self.hasAttemptedInitialLoad = true
-                    // Als de opgeslagen keuze niet (meer) in de catalogus staat
-                    // — model is gedepreciëerd of typfout — val stil terug op de
-                    // door de server aanbevolen default. Voorkomt dat de app
-                    // een onbestaand model naar Gemini stuurt.
+                    // If the stored choice is no longer in the catalogue
+                    // — model is deprecated or a typo — silently fall back on the
+                    // server-recommended default. Prevents the app from
+                    // sending a non-existent model to Gemini.
                     let ids = Set(catalog.models.map(\.id))
                     if !ids.contains(self.primaryModelId) {
                         self.primaryModelId = catalog.defaultPrimary
@@ -1789,7 +1789,7 @@ struct AIProviderSettingsView: View {
         }
     }
 
-    // MARK: - Test-actie
+    // MARK: - Test action
 
     func testAPIKey() {
         let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1813,8 +1813,8 @@ struct AIProviderSettingsView: View {
     }
 }
 
-/// Interne UI-state voor het testen van de sleutel. Gescheiden van
-/// `APIKeyValidationResult` zodat we `.idle` en `.testing` ook kunnen tonen.
+/// Internal UI state for testing the key. Separate from
+/// `APIKeyValidationResult` so we can also show `.idle` and `.testing`.
 private enum APIKeyTestState: Equatable {
     case idle
     case testing
@@ -1825,7 +1825,7 @@ private enum APIKeyTestState: Equatable {
     case unknown(String)
 }
 
-// MARK: - V2.0 Geheugen / Memory View
+// MARK: - V2.0 Memory View
 
 struct PreferencesListView: View {
     @Environment(\.modelContext) private var modelContext
@@ -1836,7 +1836,7 @@ struct PreferencesListView: View {
 
     @State private var selectedSegment: MemorySegment = .pins
     @State private var selectedFilter: MemoryTypeFilter = .all
-    // Epic 34 Sprint 2: materiaal-overlay onder statusbalk zodra gescrold.
+    // Epic 34 Sprint 2: material overlay below the status bar once scrolled.
     @State private var isMemoryScrolled: Bool = false
 
     enum MemorySegment { case pins, history }
@@ -1876,7 +1876,7 @@ struct PreferencesListView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
 
-                    // ── Header (Epic 34 Sprint 2: avatar-icoon zonder functionaliteit verwijderd)
+                    // ── Header (Epic 34 Sprint 2: avatar icon without functionality removed)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("WAT IK ONTHOU · \(activePreferences.count) ACTIEVE · \(historicPreferences.count) VERLOPEN")
                             .font(.caption).fontWeight(.semibold)
@@ -1964,7 +1964,7 @@ struct PreferencesListView: View {
                         }
 
                     } else {
-                        // ── Historie tab
+                        // ── History tab
                         if historicPreferences.isEmpty {
                             Text("Geen verlopen herinneringen.")
                                 .font(.subheadline).foregroundColor(.secondary)
@@ -2019,7 +2019,7 @@ struct PreferencesListView: View {
     }
 }
 
-// MARK: - Memory type classificatie (keyword-gebaseerd)
+// MARK: - Memory type classification (keyword-based)
 
 private enum MemoryType: Equatable { case injury, preference, context }
 
@@ -2108,7 +2108,7 @@ struct MemoryPreferenceCard: View {
                 }
             }
 
-            // Hoofdtekst
+            // Main text
             Text(preference.preferenceText)
                 .font(.headline)
                 .foregroundColor(.primary)
@@ -2137,12 +2137,12 @@ private let memoryDateFormatter: DateFormatter = {
 // MARK: - Bundle helpers
 
 private extension Bundle {
-    /// Marketing-versie uit Info.plist (CFBundleShortVersionString).
-    /// Fallback blijft gelijk aan de huidige V2.0-release.
+    /// Marketing version from Info.plist (CFBundleShortVersionString).
+    /// Fallback stays equal to the current V2.0 release.
     var appVersion: String {
         infoDictionary?["CFBundleShortVersionString"] as? String ?? "2.0.0"
     }
-    /// Build-nummer uit Info.plist (CFBundleVersion).
+    /// Build number from Info.plist (CFBundleVersion).
     var buildNumber: String {
         infoDictionary?["CFBundleVersion"] as? String ?? "1"
     }

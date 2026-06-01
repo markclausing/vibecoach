@@ -3,21 +3,21 @@ import SwiftData
 
 // MARK: - Epic 23 Sprint 1 & 2: Gap Analysis + Future Projection UI
 
-/// Kaart die de cumulatieve achterstand/voorsprong binnen de huidige trainingsfase toont.
+/// Card that shows the cumulative deficit/surplus within the current training phase.
 ///
-/// - `isEmbedded`: gebruik `true` als de kaart binnen een `GoalDetailContainer` staat —
-///   verbergt dan de doeltitel-header en de eigen achtergrond (container heeft die al).
+/// - `isEmbedded`: use `true` when the card sits inside a `GoalDetailContainer` —
+///   this hides the goal-title header and its own background (the container already has those).
 struct GapAnalysisCardView: View {
     let gap: BlueprintGap
-    /// Optionele prognose — alleen getoond als `isEmbedded == false` (standalone gebruik).
+    /// Optional projection — only shown when `isEmbedded == false` (standalone use).
     var projection: GoalProjection?
-    /// True = geen eigen header/achtergrond; de container levert de context.
+    /// True = no own header/background; the container provides the context.
     var isEmbedded: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
 
-            // Header: alleen tonen buiten een GoalDetailContainer
+            // Header: only show outside a GoalDetailContainer
             if !isEmbedded {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
@@ -34,12 +34,12 @@ struct GapAnalysisCardView: View {
                 Divider()
             }
 
-            // Fase-context label (altijd zichtbaar — ook embedded)
+            // Phase-context label (always visible — also when embedded)
             Text(gap.phaseProgressLabel)
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            // TRIMP voortgangsrij met ghost marker
+            // TRIMP progress row with ghost marker
             phaseProgressRow(
                 icon: "bolt.fill",
                 label: "Trainingsbelasting (TRIMP)",
@@ -48,7 +48,7 @@ struct GapAnalysisCardView: View {
                 statusLine: gap.trimpStatusLine
             )
 
-            // Km voortgangsrij met ghost marker (alleen als er een km-target is)
+            // Km progress row with ghost marker (only if there is a km target)
             if gap.totalPhaseKmTarget > 0 {
                 phaseProgressRow(
                     icon: distanceIcon,
@@ -59,12 +59,12 @@ struct GapAnalysisCardView: View {
                 )
             }
 
-            // Bijsturingsbanner
+            // Corrective banner
             if gap.isBehindOnTRIMP || gap.isBehindOnKm {
                 catchUpBanner
             }
 
-            // Prognose-sectie alleen buiten de container (embedded toont dit al apart)
+            // Projection section only outside the container (embedded shows this separately already)
             if !isEmbedded, let projection {
                 Divider()
                 projectionSection(projection)
@@ -88,10 +88,10 @@ struct GapAnalysisCardView: View {
             .clipShape(Capsule())
     }
 
-    /// Voortgangsrij met gekleurde balk + ghost marker op de verwachte positie.
+    /// Progress row with a colored bar + ghost marker at the expected position.
     ///
-    /// - `actualPct`:    hoeveel van het fase-totaal je hebt behaald (0.0–1.0)
-    /// - `referencePct`: waar je vandaag volgens de Blueprint zou moeten staan (0.0–1.0)
+    /// - `actualPct`:    how much of the phase total you have achieved (0.0–1.0)
+    /// - `referencePct`: where you should be today according to the Blueprint (0.0–1.0)
     private func phaseProgressRow(
         icon: String,
         label: String,
@@ -114,48 +114,48 @@ struct GapAnalysisCardView: View {
                     .foregroundStyle(barColor)
             }
 
-            // Voortgangsbalk + ghost marker
+            // Progress bar + ghost marker
             GeometryReader { geo in
                 let width = geo.size.width
                 ZStack(alignment: .leading) {
 
-                    // Achtergrond
+                    // Background
                     RoundedRectangle(cornerRadius: 4)
                         .fill(Color(.systemFill))
                         .frame(height: 10)
 
-                    // Gekleurde voortgangsbalk
+                    // Colored progress bar
                     RoundedRectangle(cornerRadius: 4)
                         .fill(barColor.gradient)
                         .frame(width: width * min(1.0, actualPct), height: 10)
                         .animation(.easeOut(duration: 0.6), value: actualPct)
 
-                    // Ghost marker — de "Reference" streep
-                    // Een dun wit lijntje + driehoekje boven de balk
+                    // Ghost marker — the "Reference" line
+                    // A thin white line + small triangle above the bar
                     let ghostX = width * min(1.0, referencePct)
                     ghostMarker(at: ghostX)
                         .animation(.easeOut(duration: 0.6), value: referencePct)
                 }
             }
-            .frame(height: 18) // Iets hoger voor de driehoek
+            .frame(height: 18) // Slightly taller to fit the triangle
 
-            // Status tekst
+            // Status text
             Text(statusLine)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
     }
 
-    /// Bouwt de ghost marker: een smal wit lijntje + klein driehoekje erboven.
+    /// Builds the ghost marker: a narrow white line + small triangle above it.
     @ViewBuilder
     private func ghostMarker(at x: CGFloat) -> some View {
-        // Verticale streep
+        // Vertical line
         Rectangle()
             .fill(Color.white.opacity(0.9))
             .frame(width: 2, height: 10)
             .offset(x: x - 1)
 
-        // Driehoekje boven de balk
+        // Small triangle above the bar
         Image(systemName: "arrowtriangle.down.fill")
             .font(.system(size: 7, weight: .bold))
             .foregroundStyle(Color.white.opacity(0.9))
@@ -172,14 +172,14 @@ struct GapAnalysisCardView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.orange)
 
-                // TRIMP-bijsturing: vertaald naar concrete duur via TRIMPTranslator
+                // TRIMP correction: translated to a concrete duration via TRIMPTranslator
                 if let hint = gap.catchUpHint {
                     Text(hint)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                // Km-bijsturing
+                // Km correction
                 if gap.isBehindOnKm, gap.totalPhaseKmTarget > 0, gap.weeksRemaining > 0 {
                     let extra = String(format: "%.0f", gap.kmGap / gap.weeksRemaining)
                     Text("Circa \(extra) extra km/week voor het afstandsschema.")
@@ -193,13 +193,13 @@ struct GapAnalysisCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
-    // MARK: - Prognose sectie (Sprint 23.2 — Glazen Bol)
+    // MARK: - Projection section (Sprint 23.2 — Crystal Ball)
 
     @ViewBuilder
     private func projectionSection(_ projection: GoalProjection) -> some View {
         VStack(alignment: .leading, spacing: 10) {
 
-            // Sectietitel
+            // Section title
             HStack(spacing: 6) {
                 Image(systemName: "crystal.ball.fill")
                     .font(.subheadline)
@@ -208,7 +208,7 @@ struct GapAnalysisCardView: View {
                     .font(.subheadline.weight(.semibold))
             }
 
-            // Datum-vergelijking: gepland vs. verwacht
+            // Date comparison: planned vs. expected
             HStack(spacing: 0) {
                 dateColumn(
                     label: "Gepland",
@@ -225,7 +225,7 @@ struct GapAnalysisCardView: View {
                 )
             }
 
-            // Uitlegzin
+            // Explanatory sentence
             Text(projectionCaption(projection))
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -259,7 +259,7 @@ struct GapAnalysisCardView: View {
         }
     }
 
-    /// Vertaalt de ProjectionStatus naar een SwiftUI Color.
+    /// Translates the ProjectionStatus to a SwiftUI Color.
     private func statusSwiftColor(_ status: ProjectionStatus) -> Color {
         switch status {
         case .alreadyPeaking, .onTrack:    return .green
@@ -268,7 +268,7 @@ struct GapAnalysisCardView: View {
         }
     }
 
-    /// Leesbare uitlegzin onder de datum-rij.
+    /// Readable explanatory sentence below the date row.
     private func projectionCaption(_ projection: GoalProjection) -> String {
         let pct = Int((projection.observedGrowthRate * 100).rounded())
         switch projection.status {
@@ -294,13 +294,13 @@ struct GapAnalysisCardView: View {
         }
     }
 
-    // MARK: - Kleurlogica
+    // MARK: - Color logic
 
-    /// Kleur op basis van hoe dicht je bij de ghost marker zit.
-    /// Groen = boven/op target, oranje = licht achter, rood = significant achter.
+    /// Color based on how close you are to the ghost marker.
+    /// Green = at/above target, orange = slightly behind, red = significantly behind.
     private func progressColor(for actual: Double, reference: Double) -> Color {
         guard reference > 0 else { return .green }
-        let ratio = actual / reference  // 1.0 = precies op schema
+        let ratio = actual / reference  // 1.0 = exactly on schedule
         switch ratio {
         case 0.9...:   return .green
         case 0.7..<0.9: return .orange
@@ -313,11 +313,11 @@ struct GapAnalysisCardView: View {
     }
 }
 
-// MARK: - Sectie in de Doelen-tab
+// MARK: - Section in the Goals tab
 
 struct GapAnalysisSectionView: View {
     let gaps: [BlueprintGap]
-    /// Projecties gematcht op goal.id. Wordt doorgegeven vanuit GoalsListView.
+    /// Projections matched on goal.id. Passed in from GoalsListView.
     var projections: [GoalProjection] = []
 
     var body: some View {

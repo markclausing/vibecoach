@@ -2,32 +2,32 @@ import SwiftUI
 import SwiftData
 import UserNotifications
 
-/// Epic #31 — Sprint 31.6: V2.0 Onboarding-flow, uitgelijnd op het definitieve
-/// UX-prototype.
+/// Epic #31 — Sprint 31.6: V2.0 Onboarding flow, aligned with the final
+/// UX prototype.
 ///
-/// Vijf stappen met elk hun eigen sfeer:
-/// 1. Welkom — merk + belofte
-/// 2. Hoe het werkt — Vibe Score (herstel) + TRIMP (belasting) preview
-/// 3. Jouw AI — BYOK provider-keuze (sleutel komt later in Instellingen)
-/// 4. Apple Health — HRV + Slaap permissie (Permissie 1 van 2)
-/// 5. Notificaties — Coach-signalen permissie (Permissie 2 van 2)
+/// Five steps, each with its own mood:
+/// 1. Welcome — brand + promise
+/// 2. How it works — Vibe Score (recovery) + TRIMP (load) preview
+/// 3. Your AI — BYOK provider choice (the key comes later in Settings)
+/// 4. Apple Health — HRV + Sleep permission (Permission 1 of 2)
+/// 5. Notifications — Coach-signals permission (Permission 2 of 2)
 ///
-/// Alle schermen delen `OnboardingTemplateView` zodat typografie, voortgangsbalk
-/// en knoppen-layout consistent blijven. De visuele stijl (kaarten met
-/// `cornerRadius 16`, zachte schaduw) matcht de hoofd-Dashboard.
+/// All screens share `OnboardingTemplateView` so that typography, progress bar
+/// and button layout stay consistent. The visual style (cards with
+/// `cornerRadius 16`, soft shadow) matches the main Dashboard.
 struct OnboardingView: View {
 
-    // MARK: - Persistente state
+    // MARK: - Persistent state
 
-    /// Wordt op true gezet zodra de gebruiker de onboarding afrondt (stap 5).
+    /// Set to true once the user finishes onboarding (step 5).
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
-    /// Sprint 31.6: gekozen AI-provider — gedeelde sleutel met `AIProviderSettingsView`
-    /// zodat `ChatViewModel` hem direct oppakt. De daadwerkelijke API-sleutel
-    /// wordt later in Instellingen ingevoerd (prototype toont enkel provider-keuze).
+    /// Sprint 31.6: chosen AI provider — shared key with `AIProviderSettingsView`
+    /// so that `ChatViewModel` picks it up directly. The actual API key
+    /// is entered later in Settings (the prototype only shows the provider choice).
     @AppStorage("vibecoach_aiProvider") private var providerRaw: String = AIProvider.gemini.rawValue
 
-    // MARK: - Transient UI-state
+    // MARK: - Transient UI state
 
     @State private var currentStep: Int = 1
     @State private var healthKitState: PermissionState = .idle
@@ -53,7 +53,7 @@ struct OnboardingView: View {
         .animation(.easeInOut(duration: 0.25), value: currentStep)
     }
 
-    // MARK: - Stap 1: Welkom
+    // MARK: - Step 1: Welcome
 
     private var stepOne: some View {
         OnboardingTemplateView(
@@ -70,7 +70,7 @@ struct OnboardingView: View {
         )
     }
 
-    // MARK: - Stap 2: Hoe het werkt
+    // MARK: - Step 2: How it works
 
     private var stepTwo: some View {
         OnboardingTemplateView(
@@ -88,7 +88,7 @@ struct OnboardingView: View {
         )
     }
 
-    // MARK: - Stap 3: Jouw AI
+    // MARK: - Step 3: Your AI
 
     private var stepThree: some View {
         OnboardingTemplateView(
@@ -106,7 +106,7 @@ struct OnboardingView: View {
         )
     }
 
-    // MARK: - Stap 4: Apple Health
+    // MARK: - Step 4: Apple Health
 
     private var stepFour: some View {
         OnboardingTemplateView(
@@ -124,7 +124,7 @@ struct OnboardingView: View {
         )
     }
 
-    // MARK: - Stap 5: Notificaties
+    // MARK: - Step 5: Notifications
 
     private var stepFive: some View {
         OnboardingTemplateView(
@@ -142,7 +142,7 @@ struct OnboardingView: View {
         )
     }
 
-    // MARK: - Button-titel per permissie-state
+    // MARK: - Button title per permission state
 
     private func primaryTitle(for state: PermissionState, grantLabel: String) -> String {
         switch state {
@@ -153,7 +153,7 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Stap 4 logica (HealthKit)
+    // MARK: - Step 4 logic (HealthKit)
 
     private func handleHealthKitAction() {
         switch healthKitState {
@@ -192,15 +192,15 @@ struct OnboardingView: View {
         }
     }
 
-    /// Sprint 31.2 (§4 Dual Engine): Start Engine A zodra HealthKit-toestemming is verleend.
-    /// Kalender-gebaseerde check op `Calendar.current.startOfDay(for:)` (Rule §3).
+    /// Sprint 31.2 (§4 Dual Engine): Start Engine A once HealthKit permission is granted.
+    /// Calendar-based check on `Calendar.current.startOfDay(for:)` (Rule §3).
     private func startEngineA() {
         ProactiveNotificationService.shared.setupEngineA()
         let startOfToday = Calendar.current.startOfDay(for: Date())
         UserDefaults.standard.set(startOfToday, forKey: "vibecoach_engineAStartedAt")
     }
 
-    // MARK: - Stap 5 logica (Notificaties)
+    // MARK: - Step 5 logic (Notifications)
 
     private func handleNotificationAction() {
         switch notificationsState {
@@ -235,7 +235,7 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Navigatie
+    // MARK: - Navigation
 
     private func advance() {
         guard currentStep < totalSteps else {
@@ -245,11 +245,11 @@ struct OnboardingView: View {
         withAnimation { currentStep += 1 }
     }
 
-    /// Sprint 31.6: Persisteer onboarding-keuzes en schakel de app door.
+    /// Sprint 31.6: Persist onboarding choices and move the app forward.
     ///
-    /// V2.0-flow bewaart géén fitnessdoel — de API-sleutel wordt later in
-    /// Instellingen ingesteld (BYOK). We schrijven enkel de onboarding-datum
-    /// naar SwiftData zodat andere features een ankerdatum hebben.
+    /// The V2.0 flow does not store a fitness goal — the API key is set later in
+    /// Settings (BYOK). We only write the onboarding date
+    /// to SwiftData so other features have an anchor date.
     private func completeOnboarding() {
         persistUserConfiguration()
         Haptics.impact(.medium)
@@ -257,7 +257,7 @@ struct OnboardingView: View {
     }
 
     private func persistUserConfiguration() {
-        // Vervang een eventuele bestaande configuratie — we onboarden altijd maar één profiel.
+        // Replace any existing configuration — we always onboard a single profile only.
         let descriptor = FetchDescriptor<UserConfiguration>()
         if let existing = try? modelContext.fetch(descriptor) {
             for record in existing {
@@ -275,16 +275,16 @@ struct OnboardingView: View {
     }
 }
 
-// MARK: - Permissie-state
+// MARK: - Permission state
 
 private enum PermissionState {
     case idle, requesting, granted, failed
 }
 
-// MARK: - Stap 1: Welkom visual
+// MARK: - Step 1: Welcome visual
 
-/// Grote afgeronde 'brand mark' met een waveform-icoon in moss-groen, gevolgd
-/// door het uppercase merkwoord "VIBECOACH". Matcht het prototype.
+/// Large rounded 'brand mark' with a waveform icon in moss green, followed
+/// by the uppercase brand word "VIBECOACH". Matches the prototype.
 private struct WelcomeBrandMark: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
@@ -312,10 +312,10 @@ private struct WelcomeBrandMark: View {
     }
 }
 
-// MARK: - Stap 2: Twee lagen preview
+// MARK: - Step 2: Two layers preview
 
-/// Twee preview-kaarten naast elkaar: links de Vibe Score (ring), rechts de
-/// TRIMP-trend (bars). Dezelfde kaart-stijl als het Dashboard.
+/// Two preview cards side by side: on the left the Vibe Score (ring), on the right the
+/// TRIMP trend (bars). Same card style as the Dashboard.
 private struct TwoLayersPreview: View {
     @EnvironmentObject private var themeManager: ThemeManager
 
@@ -376,7 +376,7 @@ private struct VibeScorePreviewCard: View {
 private struct TRIMPPreviewCard: View {
     let accent: Color
 
-    /// Veertien placeholder-datapunten voor de preview-bars (genormaliseerd 0…1).
+    /// Fourteen placeholder data points for the preview bars (normalized 0…1).
     private let bars: [CGFloat] = [0.35, 0.48, 0.30, 0.62, 0.55, 0.70, 0.40,
                                    0.58, 0.72, 0.45, 0.65, 0.80, 0.55, 0.68]
 
@@ -419,11 +419,11 @@ private struct TRIMPPreviewCard: View {
     }
 }
 
-// MARK: - Stap 3: AI-provider privacy content
+// MARK: - Step 3: AI-provider privacy content
 
-/// Info-blok met "Waarom je eigen sleutel?" (blauw getint) gevolgd door een
-/// segmented picker voor de provider. De daadwerkelijke API-sleutel komt later
-/// in Instellingen — dat matcht het prototype.
+/// Info block with "Waarom je eigen sleutel?" (blue tinted) followed by a
+/// segmented picker for the provider. The actual API key comes later
+/// in Settings — that matches the prototype.
 private struct AIProviderPrivacyContent: View {
     @Binding var providerRaw: String
     @State private var keyHelpURL: IdentifiableURL?
@@ -431,7 +431,7 @@ private struct AIProviderPrivacyContent: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                // Info-kaart, blauw getint.
+                // Info card, blue tinted.
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         Image(systemName: "lock.shield.fill")
@@ -452,7 +452,7 @@ private struct AIProviderPrivacyContent: View {
                 .background(Color.blue.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
 
-                // Provider-picker.
+                // Provider picker.
                 VStack(alignment: .leading, spacing: 8) {
                     Text("AI PROVIDER")
                         .font(.caption2)
@@ -491,7 +491,7 @@ private struct AIProviderPrivacyContent: View {
     }
 }
 
-// MARK: - Stap 4: Apple Health permissie content
+// MARK: - Step 4: Apple Health permission content
 
 private struct AppleHealthPermissionContent: View {
     let state: PermissionState
@@ -516,7 +516,7 @@ private struct AppleHealthPermissionContent: View {
                     isGranted: state == .granted
                 )
 
-                // Verwachtings-bubbel — matcht prototype.
+                // Expectation bubble — matches prototype.
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "info.circle.fill")
                         .foregroundColor(.blue)
@@ -592,17 +592,17 @@ private struct HealthDataCard: View {
     }
 }
 
-// MARK: - Stap 5: Notificatie permissie content
+// MARK: - Step 5: Notification permission content
 
-/// Preview-chat bubble + frequentie-note. Bewust géén live permissie-state
-/// visual — de Apple-popup geeft daar zelf feedback op.
+/// Preview chat bubble + frequency note. Deliberately no live permission-state
+/// visual — the Apple popup gives feedback on that itself.
 private struct NotificationPermissionContent: View {
     let accentColor: Color
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                // Preview van een coach-notificatie.
+                // Preview of a coach notification.
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         ZStack {
@@ -638,7 +638,7 @@ private struct NotificationPermissionContent: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .shadow(color: Color(.label).opacity(0.07), radius: 10, x: 0, y: 3)
 
-                // Frequentie-note, rustig en uitleggend.
+                // Frequency note, calm and explanatory.
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "bell.badge.fill")
                         .foregroundColor(.secondary)

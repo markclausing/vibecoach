@@ -89,7 +89,7 @@ struct AddGoalView: View {
         }
     }
 
-    /// Sla het nieuwe doel op in SwiftData
+    /// Save the new goal in SwiftData
     private func saveGoal() {
         isSaving = true
         let finalDetails = details.isEmpty ? nil : details
@@ -105,10 +105,10 @@ struct AddGoalView: View {
             stretchGoalTime: stretchTime
         )
 
-        // Bepaal via AI of fallback de Target TRIMP asynchroon
+        // Determine the Target TRIMP asynchronously via AI or fallback
         Task {
-            // Sprint 26.1: sla de Gemini-netwerkaanroep over in UI-test modus
-            // zodat het doel direct opgeslagen wordt zonder netwerklatentie.
+            // Sprint 26.1: skip the Gemini network call in UI-test mode
+            // so the goal is saved immediately without network latency.
             if ProcessInfo.processInfo.arguments.contains("-UITesting") {
                 newGoal.targetTRIMP = fallbackTRIMP(for: targetDate)
             } else {
@@ -117,7 +117,7 @@ struct AddGoalView: View {
                     let trimp = await fetchAITargetTRIMP(goal: newGoal, profile: currentProfile)
                     newGoal.targetTRIMP = trimp
                 } catch {
-                    // Fallback: ruwe schatting als we geen profiel kunnen inladen
+                    // Fallback: rough estimate if we can't load a profile
                     let days = max(1.0, Calendar.current.fractionalDays(from: Date(), to: targetDate))
                     newGoal.targetTRIMP = (days / 7.0) * 350.0
                 }
@@ -133,10 +133,10 @@ struct AddGoalView: View {
         }
     }
 
-    /// Vraag de Gemini AI om een logische TRIMP belasting
+    /// Ask the Gemini AI for a logical TRIMP load
     private func fetchAITargetTRIMP(goal: FitnessGoal, profile: AthleticProfile?) async -> Double {
-        // Epic 20 / M-04: BYOK — uitsluitend de door de gebruiker geconfigureerde sleutel.
-        // C-02: sleutel komt uit de Keychain i.p.v. UserDefaults. Epic #53: per-provider.
+        // Epic 20 / M-04: BYOK — only the key configured by the user.
+        // C-02: the key comes from the Keychain instead of UserDefaults. Epic #53: per-provider.
         let provider = AIProvider.current()
         let activeKey = UserAPIKeyStore.read(for: provider)
         guard !activeKey.isEmpty else {
@@ -157,9 +157,9 @@ struct AddGoalView: View {
         Retourneer UITSLUITEND een logisch, kaal getal (Double of Integer) zonder verdere tekst, leestekens of eenheden. Bijv: 4500.
         """
 
-        // Epic #53: provider-agnostisch via de `AIModelFactory`. Geen system-
-        // instructie en geen JSON-mode — we vragen één kaal getal terug. De
-        // modelnaam volgt de model-keuze van de gebruiker voor deze provider.
+        // Epic #53: provider-agnostic via the `AIModelFactory`. No system
+        // instruction and no JSON mode — we ask for a single bare number back. The
+        // model name follows the user's model choice for this provider.
         func requestTRIMP(modelName: String) async throws -> Double? {
             let model = AIModelFactory.makeModel(
                 provider: provider,
@@ -181,7 +181,7 @@ struct AddGoalView: View {
                 return trimp
             }
         } catch {
-            // Bij tijdelijke overbelasting (503/429) stil proberen met het lichtere fallback-model.
+            // On temporary overload (503/429) silently retry with the lighter fallback model.
             if AIProviderError.isOverload(error),
                let trimp = try? await requestTRIMP(modelName: AIModelAppStorageKey.resolvedFallback(for: provider)) {
                 return trimp
@@ -191,7 +191,7 @@ struct AddGoalView: View {
         return fallbackTRIMP(for: goal.targetDate)
     }
 
-    /// Converteert de uur:minuut-waarde van een Date naar een TimeInterval (seconden).
+    /// Converts the hour:minute value of a Date to a TimeInterval (seconds).
     private func stretchTimeInterval(from date: Date) -> TimeInterval {
         let cal = Calendar.current
         let h = cal.component(.hour, from: date)

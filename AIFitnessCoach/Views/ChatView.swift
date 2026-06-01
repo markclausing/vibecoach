@@ -2,56 +2,56 @@ import SwiftUI
 import PhotosUI
 import SwiftData
 
-/// De hoofd SwiftUI view die de chat interface toont.
+/// The main SwiftUI view that displays the chat interface.
 struct ChatView: View {
-    /// De viewmodel die de chat status en netwerklogica beheert.
+    /// The viewmodel that manages the chat state and network logic.
     @ObservedObject var viewModel: ChatViewModel
 
-    /// Huidige item geselecteerd vanuit de iOS Photos library.
+    /// Current item selected from the iOS Photos library.
     @State private var selectedItem: PhotosPickerItem?
 
-    /// De globale app status om notificatie-tap acties af te vangen.
+    /// The global app state to intercept notification-tap actions.
     @EnvironmentObject var appState: AppNavigationState
     @EnvironmentObject var themeManager: ThemeManager
 
-    /// SwiftData Context voor het berekenen van het atletisch profiel.
+    /// SwiftData Context for computing the athletic profile.
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
     @State private var currentProfile: AthleticProfile?
 
-    /// Actieve gebruikersvoorkeuren uit SwiftData
+    /// Active user preferences from SwiftData
     @Query(filter: #Predicate<UserPreference> { $0.isActive == true }, sort: \UserPreference.createdAt, order: .forward) private var activePreferences: [UserPreference]
 
-    /// Epic 34 Sprint 2: recente activiteiten en readiness voor de data-gedreven coach-kaarten.
+    /// Epic 34 Sprint 2: recent activities and readiness for the data-driven coach cards.
     @Query(sort: \ActivityRecord.startDate, order: .reverse) private var recentActivities: [ActivityRecord]
     @Query(sort: \DailyReadiness.date, order: .reverse) private var recentReadiness: [DailyReadiness]
 
-    /// Bijhouden of de gebruiker de overtraining-waarschuwingsbanner heeft weggedrukt.
+    /// Tracks whether the user has dismissed the overtraining warning banner.
     @State private var warningDismissed = false
 
     private let profileManager = AthleticProfileManager()
 
-    // Epic 34.1: V2.0 Fit & Finish — scroll-state voor materiaal-overlay in de top safe area.
+    // Epic 34.1: V2.0 Fit & Finish — scroll state for the material overlay in the top safe area.
     @State private var isChatScrolled: Bool = false
 
-    // Epic #51-A2: AppStorage-snapshot van de model-keuze. We hebben de waarden
-    // hier (i.p.v. enkel in ChatViewModel) nodig zodat SwiftUI de
-    // `modelSwitchNotice`-banner her-rendert zodra de gebruiker in Settings
-    // wisselt — een computed property op het viewmodel alleen triggert geen
-    // view-update.
+    // Epic #51-A2: AppStorage snapshot of the model choice. We need the values
+    // here (instead of only in ChatViewModel) so SwiftUI re-renders the
+    // `modelSwitchNotice` banner as soon as the user switches in Settings —
+    // a computed property on the viewmodel alone does not trigger a
+    // view update.
     @AppStorage(AIModelAppStorageKey.primary) private var configuredPrimaryModel: String = AIModelAppStorageKey.defaultPrimary
     @AppStorage(AIModelAppStorageKey.fallback) private var configuredFallbackModel: String = AIModelAppStorageKey.defaultFallback
 
-    // Epic #51-A3: of de gebruiker het archief van oudere berichten heeft
-    // uitgeklapt. Default `false` houdt lange gesprekken kort op het scherm;
-    // tap op de "Toon eerdere X berichten"-rij toggled het hele archief.
+    // Epic #51-A3: whether the user has expanded the archive of older messages.
+    // Default `false` keeps long conversations short on screen;
+    // tapping the "Toon eerdere X berichten" row toggles the whole archive.
     @State private var showArchivedMessages: Bool = false
 
-    // Epic #51-A4: korte toast-tekst wanneer een paste de char-limit overschreed
-    // en automatisch is afgekapt. `nil` als er niets te melden is.
+    // Epic #51-A4: short toast text when a paste exceeded the char limit
+    // and was trimmed automatically. `nil` when there is nothing to report.
     @State private var inputTrimNotice: String?
 
-    /// Werkt het actuele profiel bij vanuit SwiftData.
+    /// Updates the current profile from SwiftData.
     private func refreshProfileContext() {
         do {
             self.currentProfile = try profileManager.calculateProfile(context: modelContext)
@@ -60,21 +60,21 @@ struct ChatView: View {
         }
     }
 
-    // MARK: - Epic 34 Sprint 2: Data-gedreven KORT + WAT IK ZIE
+    // MARK: - Epic 34 Sprint 2: Data-driven KORT + WAT IK ZIE
     //
-    // TODO(Epic 34.3): Vervang deze afleidingen door een echte LLM-call
-    // (CoachAnalysisService) zodra die endpoint live is. Tot die tijd combineren
-    // we de laatst opgeslagen coach-insight met de meest recente SwiftData-records
-    // (ActivityRecord, DailyReadiness, AthleticProfile) zodat de UI nooit meer
-    // verzonnen cijfers toont.
+    // TODO(Epic 34.3): Replace these derivations with a real LLM call
+    // (CoachAnalysisService) once that endpoint is live. Until then we combine
+    // the last stored coach insight with the most recent SwiftData records
+    // (ActivityRecord, DailyReadiness, AthleticProfile) so the UI never shows
+    // made-up numbers again.
 
-    /// Korte coach-samenvatting — valt terug op de laatst door de LLM opgeslagen insight.
+    /// Short coach summary — falls back to the last insight stored by the LLM.
     private var coachSummaryText: String? {
         let stored = viewModel.latestStoredInsight.trimmingCharacters(in: .whitespacesAndNewlines)
         return stored.isEmpty ? nil : stored
     }
 
-    /// Actieve blessure-zones afgeleid uit actieve UserPreferences (InjuryMemory).
+    /// Active injury zones derived from active UserPreferences (InjuryMemory).
     private var activeInjuries: [BodyArea] {
         BodyArea.allCases.filter { area in
             activePreferences.contains { pref in
@@ -84,12 +84,12 @@ struct ChatView: View {
         }
     }
 
-    /// Observaties afgeleid uit de meest recente SwiftData-records.
-    /// Leeg → we tonen een motiverende fallback zodat de kaart nooit kaal is.
+    /// Observations derived from the most recent SwiftData records.
+    /// Empty → we show a motivating fallback so the card is never bare.
     private var coachInsightLines: [String] {
         var lines: [String] = []
 
-        // Vibe Score → batterij-tier
+        // Vibe Score → battery tier
         if let readiness = recentReadiness.first {
             let hrv = Int(readiness.hrv.rounded())
             if readiness.readinessScore < 50 {
@@ -101,7 +101,7 @@ struct ChatView: View {
             }
         }
 
-        // Actieve blessures uit InjuryMemory
+        // Active injuries from InjuryMemory
         let injuries = activeInjuries
         if !injuries.isEmpty {
             let names = injuries.map { $0.rawValue.lowercased() }.joined(separator: ", ")
@@ -119,7 +119,7 @@ struct ChatView: View {
             lines.append("Herstelsignaal: \(reason)")
         }
 
-        // Motiverende fallback wanneer er nog geen data is
+        // Motivating fallback when there is no data yet
         if lines.isEmpty {
             lines.append("Luister naar je lichaam. Elke stap telt — ook de rustdagen.")
         }
@@ -134,7 +134,7 @@ private let suggestionChips = [
         "Verklaar mijn HRV"
     ]
 
-    // MARK: - Fase-label uit doelen
+    // MARK: - Phase label from goals
 
     private var coachPhaseLabel: String {
         let goal = goals.first(where: { !$0.isCompleted })
@@ -180,18 +180,18 @@ private let suggestionChips = [
                 .padding(.bottom, 12)
                 .background(Color(.secondarySystemBackground))
 
-                // Onder XCUITest wordt de Keychain-write van `UITestMockEnvironment.setup()`
-                // niet altijd betrouwbaar ge-honoured op de GitHub-runner — bypass de
-                // gate dan zodat de Coach-UI rendert en de mock-LLM (`UITestMockGenerativeModel`)
-                // het werk doet. Productie blijft volledig afhankelijk van `hasAPIKey`.
+                // Under XCUITest the Keychain write from `UITestMockEnvironment.setup()`
+                // is not always reliably honoured on the GitHub runner — bypass the
+                // gate then so the Coach UI renders and the mock LLM (`UITestMockGenerativeModel`)
+                // does the work. Production remains fully dependent on `hasAPIKey`.
                 let isUITesting = ProcessInfo.processInfo.arguments.contains("-UITesting")
                 if !viewModel.hasAPIKey && !isUITesting {
                     NoAPIKeyView()
                 } else {
 
-                    // Epic #51-A2: model-switch banner — verschijnt alleen tijdens
-                    // isTyping als de gebruiker in Settings van Gemini-model wisselt.
-                    // Tekst leeft in `ChatModelSwitchNotice` (pure-Swift, los testbaar).
+                    // Epic #51-A2: model-switch banner — only appears during
+                    // isTyping when the user switches Gemini model in Settings.
+                    // Text lives in `ChatModelSwitchNotice` (pure-Swift, separately testable).
                     if let switchNotice = ChatModelSwitchNotice.message(
                         activePrimary: viewModel.activeRequestPrimaryModel,
                         activeFallback: viewModel.activeRequestFallbackModel,
@@ -213,7 +213,7 @@ private let suggestionChips = [
                         .accessibilityIdentifier("ChatModelSwitchBanner")
                     }
 
-                    // Waarschuwingsbanner (behouden)
+                    // Warning banner (retained)
                     if currentProfile?.isRecoveryNeeded == true && !warningDismissed {
                         HStack(spacing: 8) {
                             Image(systemName: "exclamationmark.triangle.fill").font(.caption)
@@ -238,9 +238,9 @@ private let suggestionChips = [
                         ScrollView {
                             VStack(spacing: 12) {
 
-                                // ── Epic 34 Sprint 2: data-gedreven KORT + WAT IK ZIE
-                                // De kaarten tonen alleen echte SwiftData/coach-output.
-                                // Zijn beide leeg → geen placeholder ruis.
+                                // ── Epic 34 Sprint 2: data-driven KORT + WAT IK ZIE
+                                // The cards only show real SwiftData/coach output.
+                                // If both are empty → no placeholder noise.
                                 if let summary = coachSummaryText {
                                     CoachTextCard(
                                         text: summary,
@@ -255,7 +255,7 @@ private let suggestionChips = [
                                     )
                                 }
 
-                                // ── Bestaande chatberichten (onder scheidingslijn)
+                                // ── Existing chat messages (below the separator line)
                                 if !viewModel.messages.isEmpty {
                                     HStack {
                                         Rectangle()
@@ -271,9 +271,9 @@ private let suggestionChips = [
                                     }
                                     .padding(.vertical, 8)
 
-                                    // Epic #51-A3: split lange gesprekken in een ingeklapt archief
-                                    // (oudste berichten) + zichtbare staart. ConversationTrimmer
-                                    // is een pure-Swift split-helper zonder ChatMessage-deps.
+                                    // Epic #51-A3: split long conversations into a collapsed archive
+                                    // (oldest messages) + a visible tail. ConversationTrimmer
+                                    // is a pure-Swift split helper without ChatMessage deps.
                                     let trim = ChatConversationTrimmer.split(messages: viewModel.messages)
 
                                     if !trim.archived.isEmpty {
@@ -341,7 +341,7 @@ private let suggestionChips = [
                                     }
                                 }
 
-                                // Laadindicator
+                                // Loading indicator
                                 if viewModel.isTyping {
                                     HStack {
                                         ProgressView().padding(.trailing, 8)
@@ -380,7 +380,7 @@ private let suggestionChips = [
                         }
                     }
 
-                    // Afbeelding preview
+                    // Image preview
                     if let image = viewModel.selectedImage {
                         HStack {
                             Image(uiImage: image)
@@ -402,10 +402,10 @@ private let suggestionChips = [
 
                     Divider()
 
-                    // Epic #51-A4: char-counter + trim-toast. Counter verschijnt
-                    // pas vanaf 80% van de limiet zodat de UI bij normaal typen
-                    // rustig blijft; toast wordt geset door de clamp-`onChange`
-                    // hieronder zodra een paste werd afgekapt.
+                    // Epic #51-A4: char counter + trim toast. The counter only
+                    // appears from 80% of the limit so the UI stays calm during
+                    // normal typing; the toast is set by the clamp `onChange`
+                    // below as soon as a paste was trimmed.
                     if ChatInputValidator.shouldShowCounter(viewModel.inputText) {
                         HStack {
                             Spacer()
@@ -427,11 +427,11 @@ private let suggestionChips = [
                         .accessibilityIdentifier("ChatInputTrimNotice")
                     }
 
-                    // ── Invoerbalk
+                    // ── Input bar
                     HStack(alignment: .bottom, spacing: 12) {
-                        // Epic 39 Story 39.2: PhotosPicker's label-closure is @Sendable;
-                        // main-actor-properties direct refereren triggert een warning.
-                        // Lees de kleur in een lokale `let` zodat de closure 'm captured.
+                        // Epic 39 Story 39.2: PhotosPicker's label closure is @Sendable;
+                        // referencing main-actor properties directly triggers a warning.
+                        // Read the color into a local `let` so the closure captures it.
                         let accentColor = themeManager.primaryAccentColor
                         PhotosPicker(selection: $selectedItem, matching: .images, photoLibrary: .shared()) {
                             Image(systemName: "plus")
@@ -456,11 +456,11 @@ private let suggestionChips = [
                             .cornerRadius(20)
                             .lineLimit(1...5)
                             .accessibilityIdentifier("ChatInputField")
-                            // Epic #51-A4: clamp inputText op `maxLength`. Een
-                            // paste die de limiet overschrijdt wordt afgekapt en
-                            // de toast verschijnt eenmalig. We schrijven alleen
-                            // terug wanneer de waarde daadwerkelijk verandert
-                            // om een feedback-loop te voorkomen.
+                            // Epic #51-A4: clamp inputText to `maxLength`. A
+                            // paste that exceeds the limit gets trimmed and
+                            // the toast appears once. We only write back
+                            // when the value actually changes
+                            // to avoid a feedback loop.
                             .onChange(of: viewModel.inputText) { _, newValue in
                                 let result = ChatInputValidator.clamp(newValue)
                                 if result.didClamp {
@@ -498,18 +498,18 @@ private let suggestionChips = [
                 setupPreferenceCallback()
                 showWelcomeInsightIfNeeded()
             }
-            // Epic #51-A6: bij tab-switch of view-dismiss annuleren we een
-            // lopende AI-call zodat er bij terugkeer geen "ghost"-response
-            // verschijnt en de spinner niet eeuwig blijft draaien.
+            // Epic #51-A6: on tab switch or view dismiss we cancel an
+            // ongoing AI call so no "ghost" response appears on return
+            // and the spinner does not keep spinning forever.
             .onDisappear {
                 viewModel.cancelOngoingRequest()
             }
         }
     }
 
-    /// SPRINT 13.4: Toont het opgeslagen coach-inzicht als welkomstbericht als de chat leeg is.
-    /// Zo ziet de gebruiker direct de uitleg van de coach nadat ze naar de Coach-tab navigeren,
-    /// ook als de AI al klaar was voordat ze de tab openden.
+    /// SPRINT 13.4: Shows the stored coach insight as a welcome message when the chat is empty.
+    /// This way the user sees the coach's explanation right after navigating to the Coach tab,
+    /// even if the AI already finished before they opened the tab.
     private func showWelcomeInsightIfNeeded() {
         guard viewModel.messages.isEmpty else { return }
         let insight = viewModel.latestStoredInsight
@@ -517,12 +517,12 @@ private let suggestionChips = [
         viewModel.injectWelcomeMessage(insight)
     }
 
-    /// Setup de callback in ViewModel om gedetecteerde voorkeuren op te slaan in SwiftData
+    /// Sets up the callback in the ViewModel to store detected preferences in SwiftData
     private func setupPreferenceCallback() {
         viewModel.onNewPreferencesDetected = { detectedPrefs in
             let context = modelContext
             Task { @MainActor in
-                // Omdat activePreferences al ge-fetched is via @Query, kunnen we die gebruiken voor een check.
+                // Because activePreferences is already fetched via @Query, we can use it for a check.
                 let existingTexts = activePreferences.map { $0.preferenceText.lowercased() }
 
                 let dateFormatter = DateFormatter()
@@ -532,7 +532,7 @@ private let suggestionChips = [
                 for pref in detectedPrefs {
                     let lowerText = pref.text.lowercased()
 
-                    // Alleen toevoegen als er nog niet (exact of bijna exact) dezelfde tekst in de lijst staat
+                    // Only add if the same (exact or near-exact) text is not already in the list
                     if !existingTexts.contains(where: { existing in
                         existing.contains(lowerText) || lowerText.contains(existing)
                     }) {
@@ -555,8 +555,8 @@ private let suggestionChips = [
     }
 }
 
-/// Epic 20: Lege staat die getoond wordt als er geen API-sleutel is geconfigureerd.
-/// Stuurt de gebruiker rechtstreeks naar de AI Coach Configuratie in de Instellingen.
+/// Epic 20: Empty state shown when no API key is configured.
+/// Sends the user directly to the AI Coach Configuration in Settings.
 struct NoAPIKeyView: View {
     @EnvironmentObject var themeManager: ThemeManager
 
@@ -593,20 +593,20 @@ struct NoAPIKeyView: View {
     }
 }
 
-/// Een herbruikbare view component die een enkel chatbericht tekent.
+/// A reusable view component that draws a single chat message.
 struct MessageBubble: View {
-    /// Het bericht dat getoond moet worden.
+    /// The message to display.
     let message: ChatMessage
     @EnvironmentObject var themeManager: ThemeManager
 
-    // Callbacks voor de workout kaartjes
+    // Callbacks for the workout cards
     var onSkipWorkout: ((SuggestedWorkout) -> Void)?
     var onAlternativeWorkout: ((SuggestedWorkout) -> Void)?
 
-    /// Callback voor de 'Probeer opnieuw' knop bij foutberichten.
+    /// Callback for the 'Probeer opnieuw' button on error messages.
     var onRetry: (() -> Void)?
 
-    /// Bepaalt of de afzender de gebruiker is (rechts uitgelijnd en blauw).
+    /// Determines whether the sender is the user (right-aligned and blue).
     var isUser: Bool {
         message.role == .user
     }
@@ -641,7 +641,7 @@ struct MessageBubble: View {
                             : (message.isError ? Color.orange : Color.primary))
                 }
 
-                // Retry-knop — alleen zichtbaar bij herstelbare foutberichten
+                // Retry button — only visible on recoverable error messages
                 if message.isError, let onRetry {
                     Button(action: onRetry) {
                         HStack(spacing: 6) {
@@ -823,7 +823,7 @@ struct PlanAdjustmentCard: View {
 
             Divider().padding(.horizontal, 14)
 
-            // Aanpassingsrijen
+            // Adjustment rows
             VStack(spacing: 14) {
                 ForEach(adjustments) { adj in
                     HStack(alignment: .top, spacing: 14) {
@@ -859,7 +859,7 @@ struct PlanAdjustmentCard: View {
 
             Divider().padding(.horizontal, 14)
 
-            // Actieknoppen
+            // Action buttons
             HStack(spacing: 10) {
                 Button(action: onApply) {
                     Text("Toepassen")
@@ -924,7 +924,7 @@ struct SuggestionChipsView: View {
     }
 }
 
-// MARK: Gedeelde coach avatar helper
+// MARK: Shared coach avatar helper
 
 private func coachAvatar(_ accentColor: Color) -> some View {
     ZStack {
@@ -943,28 +943,28 @@ private func coachAvatar(_ accentColor: Color) -> some View {
         .environmentObject(AppNavigationState())
 }
 
-/// Een visuele component om een trainingsschema voor 7 dagen te tonen op basis van Gemini JSON output.
+/// A visual component to show a 7-day training schedule based on Gemini JSON output.
 struct TrainingCalendarView: View {
     let plan: SuggestedTrainingPlan
 
     var onSkipWorkout: ((SuggestedWorkout) -> Void)?
     var onAlternativeWorkout: ((SuggestedWorkout) -> Void)?
 
-    // Optie om de weergave te bepalen (horizontaal voor chat, verticaal voor dashboard)
+    // Option to determine the layout (horizontal for chat, vertical for dashboard)
     var isHorizontal: Bool = false
 
-    // Epic 21: Optionele weersverwachting voor weers-badges op trainingskaarten
+    // Epic 21: Optional weather forecast for weather badges on training cards
     var weeklyForecast: [DayForecast] = []
 
     @State private var selectedWorkoutForDetail: SuggestedWorkout?
 
-    /// Filtert trainingen uit het verleden — het schema start altijd bij vandaag.
+    /// Filters out workouts from the past — the schedule always starts at today.
     private var upcomingWorkouts: [SuggestedWorkout] {
         let today = Calendar.current.startOfDay(for: Date())
         return plan.workouts.filter { $0.resolvedDate >= today }
     }
 
-    /// Zoekt de passende DayForecast op voor de datum van een workout.
+    /// Looks up the matching DayForecast for a workout's date.
     private func forecast(for workout: SuggestedWorkout) -> DayForecast? {
         let cal = Calendar.current
         return weeklyForecast.first {
@@ -1018,7 +1018,7 @@ struct TrainingCalendarView: View {
 
 struct WorkoutCardView: View {
     let workout: SuggestedWorkout
-    /// Epic 21: Optionele weersverwachting voor de dag van deze training.
+    /// Epic 21: Optional weather forecast for the day of this workout.
     var weatherForecast: DayForecast?
     var onSkip: (() -> Void)?
     var onAlternative: (() -> Void)?
@@ -1038,7 +1038,7 @@ struct WorkoutCardView: View {
                     .fontWeight(.bold)
                     .foregroundStyle(themeManager.primaryAccentColor.opacity(0.75))
 
-                // Epic 21: Weers-badge — alleen tonen als er voorspellingsdata is
+                // Epic 21: Weather badge — only show if there is forecast data
                 if let forecast = weatherForecast {
                     Spacer()
                     WeatherBadgeView(forecast: forecast)
@@ -1076,7 +1076,7 @@ struct WorkoutCardView: View {
             Text(workout.activityType)
                 .font(.headline)
 
-            // Sprint 17.3: Coach reasoning — waarom staat deze training in het schema?
+            // Sprint 17.3: Coach reasoning — why is this workout in the schedule?
             if let reasoning = workout.reasoning, !reasoning.isEmpty {
                 Label(reasoning, systemImage: "info.circle")
                     .font(.caption2)
@@ -1092,7 +1092,7 @@ struct WorkoutCardView: View {
 
             Spacer()
 
-                // Statistieken-rij: duur | TRIMP | 💧 vocht | 🍌 koolhydraten
+                // Statistics row: duration | TRIMP | 💧 fluid | 🍌 carbs
             WorkoutStatsRow(workout: workout)
             }
             .padding()
@@ -1106,7 +1106,7 @@ struct WorkoutCardView: View {
     }
 }
 
-/// Gedetailleerde view voor een enkele workout, bedoeld om als bottom sheet getoond te worden.
+/// Detailed view for a single workout, intended to be shown as a bottom sheet.
 struct WorkoutDetailView: View {
     let workout: SuggestedWorkout
     @Environment(\.dismiss) private var dismiss
@@ -1119,16 +1119,16 @@ struct WorkoutDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
 
-                    // Header sectie
+                    // Header section
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 8) {
                             Text(workout.displayDayLabel)
                                 .font(.headline)
                                 .foregroundStyle(themeManager.primaryAccentColor.opacity(0.75))
                             if workout.isSwapped {
-                                // Story 33.2a: visuele bevestiging dat de gebruiker deze sessie
-                                // zelf heeft verplaatst — voorkomt verwarring als de dag afwijkt
-                                // van de oorspronkelijke AI-suggestie.
+                                // Story 33.2a: visual confirmation that the user moved this
+                                // session themselves — prevents confusion when the day differs
+                                // from the original AI suggestion.
                                 Label("Verplaatst", systemImage: "arrow.triangle.swap")
                                     .font(.caption2).fontWeight(.medium)
                                     .padding(.vertical, 3).padding(.horizontal, 8)
@@ -1144,7 +1144,7 @@ struct WorkoutDetailView: View {
                     }
                     .padding(.top)
 
-                    // Story 33.2a: actie-knop om de sessie naar een andere dag te verplaatsen.
+                    // Story 33.2a: action button to move the session to another day.
                     Button {
                         showingMoveSheet = true
                     } label: {
@@ -1156,7 +1156,7 @@ struct WorkoutDetailView: View {
                     .buttonStyle(.bordered)
                     .tint(themeManager.primaryAccentColor)
 
-                    // Info sectie met icoontjes
+                    // Info section with icons
                     VStack(spacing: 16) {
                         InfoRowView(icon: "clock", title: "Duur", value: "\(workout.suggestedDurationMinutes) minuten")
 
@@ -1176,13 +1176,13 @@ struct WorkoutDetailView: View {
                     .background(.ultraThinMaterial)
                     .cornerRadius(12)
 
-                    // Voeding & Hydratatie sectie (Epic 24)
+                    // Nutrition & Hydration section (Epic 24)
                     let profile = UserProfileService.cachedProfile()
                     if let plan = NutritionService.fuelingPlan(for: workout, profile: profile) {
                         WorkoutFuelingSectionView(plan: plan)
                     }
 
-                    // Omschrijving sectie
+                    // Description section
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Omschrijving")
                             .font(.headline)
@@ -1209,7 +1209,7 @@ struct WorkoutDetailView: View {
                 MoveWorkoutSheet(workout: workout) { newDate in
                     planManager.moveWorkout(workout, to: newDate)
                     showingMoveSheet = false
-                    dismiss() // sluit ook detail — UI moet de bijgewerkte volgorde tonen
+                    dismiss() // also close detail — UI must show the updated order
                 }
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
@@ -1218,11 +1218,11 @@ struct WorkoutDetailView: View {
     }
 }
 
-// MARK: - Story 33.2a: Verplaats-sheet met dag-chips
+// MARK: - Story 33.2a: Move sheet with day chips
 
-/// Compacte sheet die zeven dag-chips voor de huidige week toont (ma → zo).
-/// Tap op een chip → callback met de gekozen `Date`. Past bij Serene-stijl: zachte
-/// kleuren, capsule-vorm, één primaire interactie. Geen DatePicker (te druk).
+/// Compact sheet that shows seven day chips for the current week (Mon → Sun).
+/// Tap on a chip → callback with the chosen `Date`. Fits the Serene style: soft
+/// colors, capsule shape, one primary interaction. No DatePicker (too busy).
 struct MoveWorkoutSheet: View {
     let workout: SuggestedWorkout
     let onSelect: (Date) -> Void
@@ -1230,9 +1230,9 @@ struct MoveWorkoutSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var themeManager: ThemeManager
 
-    /// Genereert maandag t/m zondag van de huidige week.
+    /// Generates Monday through Sunday of the current week.
     private var weekDays: [Date] {
-        let calendar = Calendar(identifier: .iso8601) // ma als eerste dag
+        let calendar = Calendar(identifier: .iso8601) // Monday as first day
         let today = calendar.startOfDay(for: Date())
         guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: today) else {
             return [today]
@@ -1301,7 +1301,7 @@ struct MoveWorkoutSheet: View {
     }
 }
 
-/// Herbruikbare regel voor informatie in de WorkoutDetailView
+/// Reusable row for information in the WorkoutDetailView
 struct InfoRowView: View {
     let icon: String
     let title: String
@@ -1322,10 +1322,10 @@ struct InfoRowView: View {
     }
 }
 
-// MARK: - Epic 24 Sprint 4: Voedings UI-componenten
+// MARK: - Epic 24 Sprint 4: Nutrition UI components
 
-/// Compacte rij met trainingsstatistieken onderaan een WorkoutCardView.
-/// Toont: ⏱ duur | ⚡ TRIMP | 💧 vocht | 🍌 koolhydraten
+/// Compact row with training statistics at the bottom of a WorkoutCardView.
+/// Shows: ⏱ duration | ⚡ TRIMP | 💧 fluid | 🍌 carbs
 struct WorkoutStatsRow: View {
     let workout: SuggestedWorkout
 
@@ -1356,7 +1356,7 @@ struct WorkoutStatsRow: View {
     }
 }
 
-/// Sectie in `WorkoutDetailView` met gestructureerde voedings- en hydratatie-informatie.
+/// Section in `WorkoutDetailView` with structured nutrition and hydration information.
 struct WorkoutFuelingSectionView: View {
     let plan: WorkoutFuelingPlan
 
@@ -1369,7 +1369,7 @@ struct WorkoutFuelingSectionView: View {
             Text("Voeding & Hydratatie")
                 .font(.headline)
 
-            // Totaaloverzicht
+            // Total overview
             VStack(spacing: 12) {
                 InfoRowView(icon: "flame.fill",
                             title: "Verbranding",
@@ -1387,7 +1387,7 @@ struct WorkoutFuelingSectionView: View {
             .background(.ultraThinMaterial)
             .cornerRadius(12)
 
-            // Interval-breakdown
+            // Interval breakdown
             VStack(alignment: .leading, spacing: 8) {
                 Label("Per \(interval.intervalMinutes) minuten", systemImage: "timer")
                     .font(.subheadline.weight(.semibold))
@@ -1449,8 +1449,8 @@ struct WorkoutFuelingSectionView: View {
 
 // MARK: - WeatherBadgeView
 
-/// Epic 21: Compacte weers-badge die op een WorkoutCardView wordt getoond.
-/// Toont een weericon + neerslagkans. Oranje/rood bij slecht buitenweer.
+/// Epic 21: Compact weather badge shown on a WorkoutCardView.
+/// Shows a weather icon + precipitation probability. Orange/red for bad outdoor weather.
 struct WeatherBadgeView: View {
     let forecast: DayForecast
 

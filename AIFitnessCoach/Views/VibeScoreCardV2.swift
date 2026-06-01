@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// V2.0 Sprint 1: Vernieuwde Vibe Score kaart met geïntegreerde metrics-grid en coach-hint balk.
-/// Vervangt de oude VibeScoreCardView met een card-first layout:
+/// V2.0 Sprint 1: Redesigned Vibe Score card with an integrated metrics grid and coach-hint bar.
+/// Replaces the old VibeScoreCardView with a card-first layout:
 ///   Top → tinted score + status
-///   Midden → HRV / SLAAP / RUST-HR rij
-///   Onderin → coach-hint met actie-link (optioneel)
+///   Middle → HRV / SLAAP / RUST-HR row
+///   Bottom → coach hint with action link (optional)
 struct VibeScoreCardV2: View {
     let readiness: DailyReadiness?
     var isLoading: Bool = false
@@ -12,9 +12,9 @@ struct VibeScoreCardV2: View {
     var injuryRiskLevel: DashboardView.InjuryRiskLevel = .safe
     var todayWorkoutName: String?
     var onAskWhy: (() -> Void)?
-    /// Live rusthartslag direct vanuit HealthKit — overschrijft de opgeslagen waarde in readiness.
+    /// Live resting heart rate straight from HealthKit — overrides the stored value in readiness.
     var liveRestingHeartRate: Double?
-    /// Live VO₂max direct vanuit HealthKit.
+    /// Live VO₂max straight from HealthKit.
     var liveVO2Max: Double?
 
     @EnvironmentObject var themeManager: ThemeManager
@@ -79,7 +79,7 @@ struct VibeScoreCardV2: View {
         .accessibilityIdentifier("VibeScoreCard")
     }
 
-    // MARK: - Subsecties
+    // MARK: - Subsections
 
     private var topSection: some View {
         HStack(spacing: 16) {
@@ -189,7 +189,7 @@ struct VibeScoreCardV2: View {
     }
 }
 
-// MARK: - Metric kolom
+// MARK: - Metric column
 
 private struct MetricColumnV2: View {
     let label: String

@@ -3,12 +3,11 @@ import HealthKit
 
 // MARK: - Epic 44 Story 44.4: TrainingThresholdsSettingsView
 //
-// Detail-view in Settings voor de vier persoonlijke drempels (max-HR, rust-HR,
-// LTHR, FTP). Vier rij-cards met source-badges, edit-sheet voor handmatig
-// invoeren, een knop voor automatische detectie uit HK-historie, en een
-// Strava-import-knop voor FTP. Onder de cards: een live zone-preview (Karvonen
-// of Friel voor HR, Coggan voor power) zodat de gebruiker direct ziet wat
-// het effect is van een wijziging.
+// Detail view in Settings for the four personal thresholds (max HR, resting HR,
+// LTHR, FTP). Four row cards with source badges, an edit sheet for manual entry,
+// a button for automatic detection from HK history, and a Strava import button
+// for FTP. Below the cards: a live zone preview (Karvonen or Friel for HR, Coggan
+// for power) so the user immediately sees the effect of a change.
 
 struct TrainingThresholdsSettingsView: View {
 
@@ -207,14 +206,14 @@ struct TrainingThresholdsSettingsView: View {
                 .padding(.horizontal, 14)
                 .padding(.top, 14)
 
-            // Hartslagzones: Friel-LTHR heeft voorkeur als die er is, anders Karvonen.
+            // Heart-rate zones: Friel-LTHR is preferred if present, otherwise Karvonen.
             if let zones = heartRateZones, !zones.isEmpty {
                 zoneList(title: heartRateMethodLabel, items: zones.map {
                     "Z\($0.index) \($0.name) · \($0.lowerBPM)-\($0.upperBPM) BPM"
                 })
             } else {
-                // Epic #51-C4: uitleg op basis van wát er ontbreekt of fysiologisch
-                // niet klopt, i.p.v. één generieke "stel drempels in"-melding.
+                // Epic #51-C4: explanation based on what is missing or physiologically
+                // inconsistent, instead of one generic "set thresholds" message.
                 Text(PhysiologicalThresholdValidator.emptyHRZonesExplanation(for: validatorInput))
                     .font(.caption).foregroundStyle(.tertiary)
                     .padding(.horizontal, 14)
@@ -255,8 +254,8 @@ struct TrainingThresholdsSettingsView: View {
 
     // MARK: Computed
 
-    /// Mapping van het UI-profiel naar de validator-input. Wordt gebruikt door
-    /// de zone-card-uitleg en (via ThresholdEditSheet) door de live-validatie.
+    /// Maps the UI profile to the validator input. Used by the zone-card
+    /// explanation and (via ThresholdEditSheet) by the live validation.
     private var validatorInput: PhysiologicalThresholdValidator.ProfileInput {
         PhysiologicalThresholdValidator.ProfileInput(
             maxHR: profile.maxHeartRate?.value,
@@ -319,10 +318,10 @@ struct TrainingThresholdsSettingsView: View {
         UserProfileService.saveThreshold(intent, forKey: kind.storageKey)
         profile = UserProfileService.cachedProfile()
 
-        // Epic #51-C3: round-trip-check. JSONEncoder() faalt zelden voor een
-        // simpele ThresholdValue, maar de oude `try?` slokte fouten stilletjes
-        // op — de gebruiker zag dan "bijgewerkt" terwijl er niets persisted was.
-        // Door direct na de save terug te lezen detecteren we de mismatch.
+        // Epic #51-C3: round-trip check. JSONEncoder() rarely fails for a simple
+        // ThresholdValue, but the old `try?` swallowed errors silently — the user
+        // then saw "updated" while nothing was persisted. By reading back right
+        // after the save we detect the mismatch.
         let persisted = UserProfileService.cachedThreshold(forKey: kind.storageKey)
         if persisted?.value != intent?.value {
             feedbackMessage = "\(kind.label) opslaan mislukt — probeer opnieuw."
@@ -405,9 +404,9 @@ private struct ThresholdEditSheet: View {
         }
     }
 
-    /// Live-validatie: combineert per-veld range-check met cross-validatie tegen
-    /// de andere drempels in het profiel. Returnt de meest ernstige issue zodat
-    /// de UI één duidelijke melding kan tonen i.p.v. een lijst.
+    /// Live validation: combines a per-field range check with cross-validation
+    /// against the other thresholds in the profile. Returns the most severe issue
+    /// so the UI can show one clear message instead of a list.
     private var liveIssue: PhysiologicalThresholdValidator.Issue? {
         let parsed = Double(rawValue)
         let fieldIssue = PhysiologicalThresholdValidator.validateField(validatorKind, value: parsed)
@@ -421,7 +420,7 @@ private struct ThresholdEditSheet: View {
     }
 
     private var canSave: Bool {
-        // Lege string = wissen, altijd toegestaan. Anders moet er geen error-issue zijn.
+        // Empty string = clear, always allowed. Otherwise there must be no error issue.
         guard !rawValue.isEmpty else { return true }
         return (liveIssue?.severity ?? .ok) != .error
     }
@@ -472,8 +471,8 @@ private struct ThresholdEditSheet: View {
         }
     }
 
-    /// Mapt de view-lokale `ThresholdKind` naar de validator-enum zodat we niet
-    /// twee parallel-enums hoeven te onderhouden.
+    /// Maps the view-local `ThresholdKind` to the validator enum so we don't
+    /// have to maintain two parallel enums.
     private var validatorKind: PhysiologicalThresholdValidator.Kind {
         switch kind {
         case .maxHR:     return .maxHR
@@ -483,10 +482,10 @@ private struct ThresholdEditSheet: View {
         }
     }
 
-    /// Bouwt een hypothetisch profiel met de raw input als nieuwe waarde voor
-    /// `kind`; de andere drempels komen uit het opgeslagen profiel. Voedt de
-    /// cross-validatie zodat "Max HR > Rust HR" ook checkt wanneer je nu de
-    /// Rust HR aan het bewerken bent.
+    /// Builds a hypothetical profile with the raw input as the new value for
+    /// `kind`; the other thresholds come from the stored profile. Feeds the
+    /// cross-validation so "Max HR > Resting HR" also checks when you're currently
+    /// editing the Resting HR.
     private func simulatedProfile(parsed: Double?) -> PhysiologicalThresholdValidator.ProfileInput {
         var input = PhysiologicalThresholdValidator.ProfileInput(
             maxHR: profile.maxHeartRate?.value,

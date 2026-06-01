@@ -5,12 +5,12 @@ import HealthKit
 
 // MARK: - SPRINT 12.2: TRIMP Explainer Card
 struct TRIMPExplainerCard: View {
-    /// Standaard dichtgeklapt — gebruiker opent hem als hij de details wil lezen.
+    /// Collapsed by default — the user opens it when they want to read the details.
     @State private var isExpanded: Bool = false
     @State private var durationMinutes: Double = 60
-    @State private var intensityZone: Double = 2.0 // 1 tot 5
+    @State private var intensityZone: Double = 2.0 // 1 to 5
 
-    // Simpele Banister mapping op basis van Zone (Zone 2 = lichte hartslag stijging, Zone 5 = max)
+    // Simple Banister mapping based on Zone (Zone 2 = slight heart rate increase, Zone 5 = max)
     // Z1 ~ 60%, Z2 ~ 70%, Z3 ~ 80%, Z4 ~ 90%, Z5 ~ 95% deltaHR
     private var simulatedDeltaHR: Double {
         switch Int(intensityZone) {
@@ -48,7 +48,7 @@ struct TRIMPExplainerCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header — altijd zichtbaar, tikt om in/uit te klappen
+            // Header — always visible, tap to expand/collapse
             Button(action: { withAnimation(.easeInOut(duration: 0.25)) { isExpanded.toggle() } }) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
@@ -71,7 +71,7 @@ struct TRIMPExplainerCard: View {
             if isExpanded {
             Divider()
             VStack(alignment: .leading, spacing: 16) {
-            // Interactieve Sliders
+            // Interactive sliders
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading) {
                     Text("Duur: \(Int(durationMinutes)) min")
@@ -91,7 +91,7 @@ struct TRIMPExplainerCard: View {
             }
             .padding(.vertical, 8)
 
-            // Dynamische Score & Chart
+            // Dynamic score & chart
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading) {
                     Text("TRIMP Score")
@@ -126,7 +126,7 @@ struct TRIMPExplainerCard: View {
 
             Divider()
 
-            // Vaste uitleg tekst
+            // Fixed explanation text
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top) {
                     Image(systemName: "clock.fill").foregroundColor(.blue).frame(width: 24)
@@ -151,18 +151,18 @@ struct TRIMPExplainerCard: View {
     }
 }
 
-// MARK: - EPIC 14.3: Vibe Score Kaart (Dashboard)
+// MARK: - EPIC 14.3: Vibe Score Card (Dashboard)
 
-/// Compacte kaart die de dagelijkse Readiness Score toont met kleurcodering.
-/// Wordt bovenaan het dashboard geplaatst zodat de gebruiker direct richting krijgt.
+/// Compact card that shows the daily Readiness Score with colour coding.
+/// Placed at the top of the dashboard so the user immediately gets direction.
 struct VibeScoreCardView: View {
     let readiness: DailyReadiness?
     var isLoading: Bool = false
     var isUnavailable: Bool = false
-    /// Epic 18: Override de statuslabel als er een actief blessurerisico is.
+    /// Epic 18: Override the status label when there is an active injury risk.
     var injuryRiskLevel: DashboardView.InjuryRiskLevel = .safe
 
-    // Kleur op basis van score (groen / oranje / rood), lichtblauw bij geen Watch-data
+    // Colour based on score (green / orange / red), light blue when there is no Watch data
     private var scoreColor: Color {
         if isUnavailable { return Color(red: 0.3, green: 0.6, blue: 0.9) }
         guard let r = readiness else { return .gray }
@@ -171,7 +171,7 @@ struct VibeScoreCardView: View {
         return .red
     }
 
-    // SF Symbol op basis van score (batterij-metafoor)
+    // SF Symbol based on score (battery metaphor)
     private var scoreIcon: String {
         if isUnavailable { return "applewatch.slash" }
         guard let r = readiness else { return "applewatch.slash" }
@@ -180,7 +180,7 @@ struct VibeScoreCardView: View {
         return "battery.0"
     }
 
-    // Slaap opmaken als "Xu Ym"
+    // Format sleep as "Xu Ym"
     private func formatSleep(_ hours: Double) -> String {
         let h = Int(hours)
         let m = Int((hours - Double(h)) * 60)
@@ -189,7 +189,7 @@ struct VibeScoreCardView: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            // Score-getal + icoon
+            // Score number + icon
             VStack(spacing: 2) {
                 if isLoading {
                     ProgressView()
@@ -210,7 +210,7 @@ struct VibeScoreCardView: View {
             }
             .frame(width: 64)
 
-            // Label + onderliggende data
+            // Label + underlying data
             VStack(alignment: .leading, spacing: 4) {
                 Text("Vibe Score")
                     .font(.caption)
@@ -234,7 +234,7 @@ struct VibeScoreCardView: View {
                         .padding(.top, 2)
                 } else if let r = readiness {
                     let label: String = {
-                        // Epic 18: blessurerisico overschrijft de herstelstatus
+                        // Epic 18: injury risk overrides the recovery status
                         switch injuryRiskLevel {
                         case .risk:    return "Voorzichtig — Blessurerisico"
                         case .caution: return "Let op — Actieve Klachten"
@@ -255,7 +255,7 @@ struct VibeScoreCardView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
-                    // Epic 21 Sprint 2: Slaapfases — alleen tonen als stage-data beschikbaar is
+                    // Epic 21 Sprint 2: Sleep stages — only show if stage data is available
                     let totalStageMins = r.deepSleepMinutes + r.remSleepMinutes + r.coreSleepMinutes
                     if totalStageMins > 0 {
                         SleepStagesBarView(
@@ -283,8 +283,8 @@ struct VibeScoreCardView: View {
 
 // MARK: - Epic 21 Sprint 2: SleepStagesBarView
 
-/// Horizontale gestapelde balk + labels voor diepe slaap, REM en kernslaap.
-/// Wordt getoond in de VibeScoreCard als stage-data beschikbaar is.
+/// Horizontal stacked bar + labels for deep sleep, REM and core sleep.
+/// Shown in the VibeScoreCard when stage data is available.
 private struct SleepStagesBarView: View {
     let deepMinutes: Int
     let remMinutes: Int
@@ -307,22 +307,22 @@ private struct SleepStagesBarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // Gestapelde balk
+            // Stacked bar
             GeometryReader { geo in
                 HStack(spacing: 2) {
-                    // Diepe slaap — donkerblauw/indigo
+                    // Deep sleep — dark blue/indigo
                     if deepMinutes > 0 {
                         RoundedRectangle(cornerRadius: 3)
                             .fill(Color.indigo)
                             .frame(width: max(4, geo.size.width * ratio(deepMinutes)))
                     }
-                    // REM — paars
+                    // REM — purple
                     if remMinutes > 0 {
                         RoundedRectangle(cornerRadius: 3)
                             .fill(Color.purple.opacity(0.7))
                             .frame(width: max(4, geo.size.width * ratio(remMinutes)))
                     }
-                    // Kernslaap — blauw
+                    // Core sleep — blue
                     if coreMinutes > 0 {
                         RoundedRectangle(cornerRadius: 3)
                             .fill(Color.blue.opacity(0.5))
@@ -332,7 +332,7 @@ private struct SleepStagesBarView: View {
             }
             .frame(height: 8)
 
-            // Labels onder de balk
+            // Labels below the bar
             HStack(spacing: 10) {
                 Label(SleepStages.formatMinutes(deepMinutes), systemImage: "moon.stars.fill")
                     .font(.caption2)
@@ -346,8 +346,8 @@ private struct SleepStagesBarView: View {
 
                 Spacer()
 
-                // Kwaliteitslabel rechts — alleen tonen bij matige of onvoldoende diepe slaap
-                // (Management by Exception: geen label bij goed/uitstekend)
+                // Quality label on the right — only show with moderate or insufficient deep sleep
+                // (Management by Exception: no label when good/excellent)
                 let deepR = ratio(deepMinutes)
                 if deepR < 0.15 {
                     let qualLabel = deepR >= 0.10 ? "Diep: Matig" : "Diep: Onvoldoende"
@@ -361,7 +361,7 @@ private struct SleepStagesBarView: View {
     }
 }
 
-/// Educatieve infokaart die uitlegt wat de Vibe Score is en hoe hij berekend wordt.
+/// Educational info card that explains what the Vibe Score is and how it is calculated.
 struct VibeScoreExplainerCard: View {
     @State private var isExpanded: Bool = false
 
@@ -417,32 +417,32 @@ struct VibeScoreExplainerCard: View {
     }
 }
 
-// MARK: - EPIC 18: Post-Workout Check-in Configuratie
+// MARK: - EPIC 18: Post-Workout Check-in Configuration
 
-/// Sprint 19: Centrale drempelwaarden voor de RPE check-in.
-/// Gebruik altijd deze constanten i.p.v. losse magic numbers in de codebase.
+/// Sprint 19: Central threshold values for the RPE check-in.
+/// Always use these constants instead of loose magic numbers across the codebase.
 enum WorkoutCheckinConfig {
-    /// Minimale duur (seconden) om een workout als 'echte training' te beschouwen — 15 minuten.
+    /// Minimum duration (seconds) to consider a workout a 'real training' — 15 minutes.
     static let minimumDurationSeconds = 900
-    /// Minimale TRIMP voor een 'echte training'; filtert commutes en wandelingetjes eruit.
+    /// Minimum TRIMP for a 'real training'; filters out commutes and short walks.
     static let minimumTRIMP: Double = 15
-    /// Sentinel-waarde voor 'genegeerd': valt buiten de geldige RPE-schaal (1–10) en markeert
-    /// dat de gebruiker de activiteit bewust als geen training heeft bestempeld.
+    /// Sentinel value for 'ignored': falls outside the valid RPE scale (1–10) and marks
+    /// that the user deliberately labelled the activity as not a training.
     static let ignoredRPESentinel = 0
 }
 
-// MARK: - EPIC 18: Post-Workout Check-in Kaart
+// MARK: - EPIC 18: Post-Workout Check-in Card
 
-/// Kaart die verschijnt als de meest recente echte workout (≤48u, ≥15 min, TRIMP ≥15) nog geen RPE heeft.
-/// De gebruiker geeft een RPE (1-10) en een stemmings-emoji op. Na opslaan verdwijnt de kaart direct.
-/// rpe == 0 wordt gebruikt als sentinel voor 'Genegeerd' (geen training) — kaart verdwijnt ook dan.
+/// Card that appears when the most recent real workout (≤48h, ≥15 min, TRIMP ≥15) still has no RPE.
+/// The user provides an RPE (1-10) and a mood emoji. After saving the card disappears immediately.
+/// rpe == 0 is used as a sentinel for 'Ignored' (not a training) — the card disappears then too.
 struct PostWorkoutCheckinCard: View {
     @Bindable var activity: ActivityRecord
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var themeManager: ThemeManager
 
-    /// Callback zodat DashboardView de AI-cache direct kan bijwerken na opslaan.
-    /// rpe == 0 betekent genegeerd — de caller slaat dit niet op als echte feedback.
+    /// Callback so DashboardView can update the AI cache immediately after saving.
+    /// rpe == 0 means ignored — the caller does not store this as real feedback.
     var onSaved: ((Int, String) -> Void)?
 
     @State private var rpe: Double = 5
@@ -456,7 +456,7 @@ struct PostWorkoutCheckinCard: View {
         ("zzz", "Uitgeput")
     ]
 
-    // Kleur van de RPE-waarde op basis van het getal
+    // Colour of the RPE value based on the number
     private var rpeColor: Color {
         switch Int(rpe) {
         case 1...3: return .green
@@ -465,7 +465,7 @@ struct PostWorkoutCheckinCard: View {
         }
     }
 
-    /// Opmaken van de subtitle: '[Sportnaam] • [Duur] min • [Vandaag/Gisteren]'
+    /// Format the subtitle: '[Sport name] • [Duration] min • [Today/Yesterday]'
     private var subtitle: String {
         let sport = activity.sportCategory.displayName
         let durationMin = activity.movingTime / 60
@@ -486,7 +486,7 @@ struct PostWorkoutCheckinCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // Header met negeer-knop rechtsboven
+            // Header with ignore button at the top right
             HStack(alignment: .top) {
                 Image(systemName: "checkmark.bubble.fill")
                     .foregroundStyle(themeManager.primaryAccentColor)
@@ -530,7 +530,7 @@ struct PostWorkoutCheckinCard: View {
                 }
             }
 
-            // Stemming knoppen
+            // Mood buttons
             VStack(alignment: .leading, spacing: 8) {
                 Text("Hoe voel je je?")
                     .font(.subheadline)
@@ -562,7 +562,7 @@ struct PostWorkoutCheckinCard: View {
                 }
             }
 
-            // Opslaan knop
+            // Save button
             Button(action: saveFeedback) {
                 Text("Opslaan")
                     .font(.subheadline)
@@ -594,15 +594,15 @@ struct PostWorkoutCheckinCard: View {
         onSaved?(rpeValue, mood)
     }
 
-    /// Markeert de activiteit als 'geen training' via de sentinel-waarde uit WorkoutCheckinConfig.
-    /// De kaart verdwijnt direct; onSaved wordt niet aangeroepen zodat de AI-cache ongewijzigd blijft.
+    /// Marks the activity as 'not a training' via the sentinel value from WorkoutCheckinConfig.
+    /// The card disappears immediately; onSaved is not called so the AI cache stays unchanged.
     private func ignoreActivity() {
         activity.rpe = WorkoutCheckinConfig.ignoredRPESentinel
         try? modelContext.save()
     }
 }
 
-// MARK: - SPRINT 12.1 & 12.3: Burndown Chart View met Paging & Predictive Analytics
+// MARK: - SPRINT 12.1 & 12.3: Burndown Chart View with Paging & Predictive Analytics
 struct BurndownChartView: View {
     let goals: [FitnessGoal]
     let activities: [ActivityRecord]
@@ -621,7 +621,7 @@ struct BurndownChartView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
             .indexViewStyle(.page(backgroundDisplayMode: .always))
-            .frame(height: 420) // Ruimte voor chart + padding + text + pager
+            .frame(height: 420) // Room for chart + padding + text + pager
         }
         .padding(.vertical)
         .background(.ultraThinMaterial)
@@ -629,7 +629,7 @@ struct BurndownChartView: View {
     }
 }
 
-/// De weergave voor één individueel Fitness Doel met Ideale, Actuele én Prognose lijn.
+/// The view for one individual Fitness Goal with Ideal, Actual and Forecast line.
 struct SingleGoalBurndownView: View {
     let goal: FitnessGoal
     let activities: [ActivityRecord]
@@ -651,7 +651,7 @@ struct SingleGoalBurndownView: View {
 
     @State private var scrollPosition: Date = Calendar.current.date(byAdding: .day, value: -21, to: Date()) ?? Date()
 
-    // Zuivere berekening voor de UI state status (zonder state mutation in body)
+    // Pure computation for the UI state status (without state mutation in body)
     struct BurnMetrics {
         var currentWeeklyBurnRate: Double = 0
         var requiredWeeklyBurnRate: Double = 0
@@ -665,24 +665,24 @@ struct SingleGoalBurndownView: View {
         let now = Date()
         let targetTRIMP = goal.computedTargetTRIMP
 
-        // SPRINT 12.4 DEBUG: Print alle raw database records vóór we filteren
+        // SPRINT 12.4 DEBUG: Print all raw database records before we filter
         print("🔍 RAW DB DUMP VOOR DOEL: \(goal.title)")
         for record in activities {
             print("   Raw DB Record: \(record.name) - Category: '\(record.sportCategory.rawValue)' - Date: \(record.startDate)")
         }
 
-        // SPRINT 12.5 & 12.6 & 12.7: Waterdichte Training Block Constraint (16 weken macroyclus) met Calendar
-        // Ankerpunt is *vandaag*, zodat we de actuele fysiologische basis (base-building) altijd meenemen
-        // ook als het doel nog ver in de toekomst ligt.
+        // SPRINT 12.5 & 12.6 & 12.7: Watertight Training Block Constraint (16-week macrocycle) using Calendar
+        // Anchor point is *today*, so we always include the actual physiological base (base-building)
+        // even when the goal still lies far in the future.
         let calendar = Calendar.current
         let trainingBlockStartDate = calendar.date(byAdding: .weekOfYear, value: -16, to: Date()) ?? Date()
 
         let relevantActivities = activities.filter { record in
-            // 1. Harde Datum Check
+            // 1. Hard date check
             guard record.startDate >= trainingBlockStartDate && record.startDate <= goal.targetDate else { return false }
 
-            // 2. Sport Categorie Check
-            guard let goalCategory = goal.sportCategory else { return true } // Geen categorie == alles telt mee
+            // 2. Sport category check
+            guard let goalCategory = goal.sportCategory else { return true } // No category == everything counts
 
             if goalCategory == .triathlon {
                 return (record.sportCategory == .running || record.sportCategory == .cycling || record.sportCategory == .swimming || record.sportCategory == .triathlon)
@@ -696,10 +696,10 @@ struct SingleGoalBurndownView: View {
              print("   -> \(record.name) (\(record.sportCategory.displayName)) on \(record.startDate)")
         }
 
-        // SPRINT 12.4: Bepaal het effectieve startpunt van de grafiek (mag in het verleden liggen)
-        // Definieer effectiveStartDate opnieuw: Kijk naar de lijst met gefilterde relevantActivities.
-        // Pak de datum van de alleroudste activiteit in die lijst.
-        // De effectiveStartDate wordt de vroegste van de twee: óf de goal.createdAt, óf de datum van die oudste activiteit.
+        // SPRINT 12.4: Determine the effective start point of the chart (may lie in the past)
+        // Redefine effectiveStartDate: look at the list of filtered relevantActivities.
+        // Take the date of the very oldest activity in that list.
+        // The effectiveStartDate becomes the earliest of the two: either goal.createdAt, or the date of that oldest activity.
         let effectiveStartDate: Date
         if let firstRelevantDate = relevantActivities.first?.startDate {
             effectiveStartDate = min(firstRelevantDate, goal.createdAt)
@@ -707,15 +707,15 @@ struct SingleGoalBurndownView: View {
             effectiveStartDate = goal.createdAt
         }
 
-        // 1. Ideale Lijn start vanaf het effectieve startpunt
+        // 1. Ideal line starts from the effective start point
         dataPoints.append(ChartDataPoint(date: effectiveStartDate, remainingTRIMP: targetTRIMP, type: .ideal))
         dataPoints.append(ChartDataPoint(date: goal.targetDate, remainingTRIMP: 0.0, type: .ideal))
 
-        // 2. Actuele Lijn
+        // 2. Actual line
         var currentRemaining = targetTRIMP
         dataPoints.append(ChartDataPoint(date: effectiveStartDate, remainingTRIMP: currentRemaining, type: .actual))
 
-        // Houd ook TRIMP bij voor de afgelopen 14 dagen voor de Burn Rate
+        // Also track TRIMP for the last 14 days for the Burn Rate
         var recent14DaysTRIMP = 0.0
         let fourteenDaysAgo = calendar.date(byAdding: .day, value: -14, to: now)!
 
@@ -732,22 +732,22 @@ struct SingleGoalBurndownView: View {
             }
         }
 
-        // Voeg vandaag toe aan de actuele lijn
+        // Add today to the actual line
         if now >= goal.createdAt && now <= goal.targetDate {
             if let last = dataPoints.filter({ $0.type == .actual }).last, last.date < now {
                 dataPoints.append(ChartDataPoint(date: now, remainingTRIMP: currentRemaining, type: .actual))
             }
         } else if now > goal.targetDate {
-            // Als doel verstreken is, teken tot doel datum
+            // If the goal has passed, draw up to the target date
              dataPoints.append(ChartDataPoint(date: goal.targetDate, remainingTRIMP: currentRemaining, type: .actual))
         }
 
-        // SPRINT 12.3: Bepaal Planned Burn Rate vs Historical Burn Rate
+        // SPRINT 12.3: Determine Planned Burn Rate vs Historical Burn Rate
         let historicalBurnRate = recent14DaysTRIMP / 2.0
         var activeBurnRate = historicalBurnRate
 
         if let plannedWorkouts = planManager.activePlan?.workouts {
-            // Bereken wat er in het huidige schema aan TRIMP gepland staat voor dit type
+            // Calculate the TRIMP planned in the current schedule for this type
             var plannedWeeklyTRIMP = 0.0
             for workout in plannedWorkouts {
                 var workoutSportMatch = true
@@ -787,30 +787,30 @@ struct SingleGoalBurndownView: View {
             }
         }
 
-        // Zuivere toewijzing (geen state mutation in de View)
+        // Pure assignment (no state mutation in the View)
         metrics.currentRemainingTRIMP = currentRemaining
         metrics.currentWeeklyBurnRate = activeBurnRate
 
         let weeksToTarget = max(0.1, goal.weeksRemaining(from: now))
-        // Sprint 16.2: Fase-multiplier toepassen op de benodigde wekelijkse burn rate
+        // Sprint 16.2: Apply the phase multiplier to the required weekly burn rate
         let linearRequired = currentRemaining / weeksToTarget
         let phaseMultiplier = goal.currentPhase?.multiplier ?? 1.0
         metrics.requiredWeeklyBurnRate = linearRequired * phaseMultiplier
 
-        // 3. Prognose Lijn (Alleen zinvol als we in het heden of verleden van de doeldatum zitten)
+        // 3. Forecast line (only meaningful when we are in the present or past of the target date)
         if now < goal.targetDate {
             let startForecast = ChartDataPoint(date: now, remainingTRIMP: currentRemaining, type: .forecast)
             dataPoints.append(startForecast)
 
             if activeBurnRate > 0 && currentRemaining > 0 {
-                // Hoeveel weken duurt het om op 0 te komen met dit geplande/historische tempo?
+                // How many weeks does it take to reach 0 at this planned/historical pace?
                 let weeksToZero = currentRemaining / activeBurnRate
                 let zeroDate = calendar.date(byAdding: .day, value: Int(weeksToZero * 7), to: now)!
 
-                // Teken de lijn
+                // Draw the line
                 dataPoints.append(ChartDataPoint(date: zeroDate, remainingTRIMP: 0.0, type: .forecast))
             } else {
-                // Geen progressie (0 burn rate) of doel al behaald, teken een platte lijn naar (en voorbij) targetDate
+                // No progress (0 burn rate) or goal already achieved, draw a flat line to (and beyond) targetDate
                 let futureDate = calendar.date(byAdding: .day, value: 14, to: goal.targetDate)!
                 dataPoints.append(ChartDataPoint(date: futureDate, remainingTRIMP: currentRemaining, type: .forecast))
             }
@@ -846,7 +846,7 @@ struct SingleGoalBurndownView: View {
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     } else {
-                        // Sprint 16.2: Fase-bewuste statuslogica
+                        // Sprint 16.2: Phase-aware status logic
                         let phase = goal.currentPhase ?? .baseBuilding
                         let isTaperingOverload = phase == .tapering && currentWeeklyBurnRate > requiredWeeklyBurnRate * 1.10
                         let isGreen = !isTaperingOverload && currentWeeklyBurnRate >= requiredWeeklyBurnRate * 0.95
@@ -855,7 +855,7 @@ struct SingleGoalBurndownView: View {
                         HStack {
                             Text(isTaperingOverload ? "🔴" : (isGreen ? "🟢" : (isOrange ? "🟠" : "🔴")))
                             let rateTypeLabel = analysis.metrics.rateSourceLabel
-                            // Toon de fase-naam naast de target voor duidelijkheid
+                            // Show the phase name next to the target for clarity
                             Text("\(rateTypeLabel): \(Int(currentWeeklyBurnRate)) /wk | Nodig: \(Int(requiredWeeklyBurnRate)) /wk (\(phase.displayName))")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
@@ -878,7 +878,7 @@ struct SingleGoalBurndownView: View {
             }
             .padding(.bottom, 8)
 
-            // De Grafiek
+            // The chart
             Chart {
                 ForEach(analysis.data) { point in
                     LineMark(
@@ -893,7 +893,7 @@ struct SingleGoalBurndownView: View {
                     .opacity(point.type == .actual ? 1.0 : (point.type == .ideal ? 0.4 : 0.8))
                 }
 
-                // Verticale referentielijn voor "Vandaag"
+                // Vertical reference line for "Today"
                 RuleMark(x: .value("Vandaag", Date()))
                     .foregroundStyle(.red)
                     .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [4, 4]))
@@ -906,7 +906,7 @@ struct SingleGoalBurndownView: View {
                             .cornerRadius(4)
                     }
             }
-            // Handmatige kleurtoewijzing
+            // Manual colour assignment
             .chartForegroundStyleScale([
                 LineType.actual.rawValue: .blue,
                 LineType.ideal.rawValue: .gray,
@@ -914,7 +914,7 @@ struct SingleGoalBurndownView: View {
             ])
             .frame(height: 250)
             .chartScrollableAxes(.horizontal)
-            .chartXVisibleDomain(length: 3600 * 24 * 42) // 42 dagen zichtbaar
+            .chartXVisibleDomain(length: 3600 * 24 * 42) // 42 days visible
             .chartScrollPosition(x: $scrollPosition)
             .chartXAxis {
                 AxisMarks(values: .stride(by: .day, count: 7)) { _ in
@@ -924,7 +924,7 @@ struct SingleGoalBurndownView: View {
                 }
             }
 
-            // Legenda
+            // Legend
             HStack(spacing: 16) {
                 Label("Actueel", systemImage: "line.diagonal")
                     .font(.caption)
@@ -938,7 +938,7 @@ struct SingleGoalBurndownView: View {
                     .foregroundColor(.orange)
             }
             .padding(.top, 4)
-            .padding(.bottom, 24) // Extra ruimte voor de page indicator
+            .padding(.bottom, 24) // Extra room for the page indicator
         }
         .onAppear {
             scrollPosition = Calendar.current.date(byAdding: .day, value: -21, to: Date()) ?? Date()
@@ -946,20 +946,20 @@ struct SingleGoalBurndownView: View {
     }
 }
 
-// MARK: - SPRINT 13.1 & 13.3: Proactieve Waarschuwingsbanner
+// MARK: - SPRINT 13.1 & 13.3: Proactive Warning Banner
 
-/// Toont een prominente rode banner op het Dashboard als een of meerdere doelen
-/// significant achterlopen op de ideale burndown-lijn (< 75% van de benodigde burn rate).
-/// Sprint 13.3: bevat een 'Los dit op'-knop die direct een AI-herstelplan aanvraagt.
+/// Shows a prominent red banner on the Dashboard if one or more goals
+/// fall significantly behind the ideal burndown line (< 75% of the required burn rate).
+/// Sprint 13.3: contains a 'Los dit op' button that immediately requests an AI recovery plan.
 struct ProactiveWarningBannerView: View {
     let atRiskGoals: [DashboardView.GoalRiskStatus]
     let onCoachTapped: () -> Void
-    /// Sprint 13.3: callback voor het aanvragen van een concreet herstelplan.
+    /// Sprint 13.3: callback for requesting a concrete recovery plan.
     let onRecoveryPlanTapped: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Kop
+            // Heading
             HStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundColor(.orange)
@@ -971,7 +971,7 @@ struct ProactiveWarningBannerView: View {
                 Spacer()
             }
 
-            // Lijst van doelen in gevaar (max 2 tonen)
+            // List of at-risk goals (show max 2)
             ForEach(atRiskGoals.prefix(2), id: \.goal.id) { status in
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
@@ -979,7 +979,7 @@ struct ProactiveWarningBannerView: View {
                             .font(.subheadline)
                             .foregroundColor(.primary)
                             .lineLimit(1)
-                        // Sprint 16.2: Toon tapering-specifieke waarschuwing
+                        // Sprint 16.2: Show tapering-specific warning
                         if status.isTaperingOverload {
                             Text("⚠️ Te hard in taper-fase! Neem rust.")
                                 .font(.caption2)
@@ -996,9 +996,9 @@ struct ProactiveWarningBannerView: View {
                 }
             }
 
-            // SPRINT 13.3: Twee knoppen naast elkaar
+            // SPRINT 13.3: Two buttons side by side
             HStack(spacing: 10) {
-                // 'Los dit op' — stuurt recovery context naar de AI en opent de chat
+                // 'Los dit op' — sends recovery context to the AI and opens the chat
                 Button(action: onRecoveryPlanTapped) {
                     HStack(spacing: 6) {
                         Image(systemName: "wand.and.stars")
@@ -1013,7 +1013,7 @@ struct ProactiveWarningBannerView: View {
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.orange.opacity(0.4), lineWidth: 1))
                 }
 
-                // 'Vraag Coach' — opent de chat zonder specifieke context
+                // 'Vraag Coach' — opens the chat without specific context
                 Button(action: onCoachTapped) {
                     HStack(spacing: 6) {
                         Image(systemName: "message")
@@ -1036,11 +1036,11 @@ struct ProactiveWarningBannerView: View {
     }
 }
 
-// MARK: - SPRINT 13.3: Herstelplan Actief Banner
+// MARK: - SPRINT 13.3: Recovery Plan Active Banner
 
-/// Toont een blauwe/groene bevestigingsbanner als de gebruiker recent 'Los dit op'
-/// heeft gedrukt en de AI een herstelplan heeft gegenereerd.
-/// Verdwijnt automatisch na 3 dagen.
+/// Shows a blue/green confirmation banner if the user recently pressed 'Los dit op'
+/// and the AI generated a recovery plan.
+/// Disappears automatically after 3 days.
 struct RecoveryPlanActiveBannerView: View {
     let onCoachTapped: () -> Void
     @EnvironmentObject var themeManager: ThemeManager
@@ -1107,27 +1107,27 @@ struct DashboardView: View {
 
     @AppStorage("latestCoachInsight") private var latestCoachInsight: String = ""
 
-    // Epic 14.3: Haal alle DailyReadiness records op (weinig records — max 1 per dag)
+    // Epic 14.3: Fetch all DailyReadiness records (few records — max 1 per day)
     @Query(sort: \DailyReadiness.date, order: .reverse) private var readinessRecords: [DailyReadiness]
 
-    // Epic 18: Dagelijkse symptoomscores
+    // Epic 18: Daily symptom scores
     @Query(sort: \Symptom.date, order: .reverse) private var symptoms: [Symptom]
 
-    // Epic 14.3: Loading state voor de Vibe Score kaart
+    // Epic 14.3: Loading state for the Vibe Score card
     @State private var isVibeScoreLoading: Bool = false
     @State private var isVibeScoreUnavailable: Bool = false
     @State private var dashboardRestingHR: Double?
     @State private var dashboardVO2Max: Double?
 
-    // Epic 17: BlueprintChecker resultaten voor alle actieve doelen
-    /// Wordt op de achtergrond gebruikt voor coaching-context; volledige UI volgt in Sprint 17.3.
+    // Epic 17: BlueprintChecker results for all active goals
+    /// Used in the background for coaching context; full UI follows in Sprint 17.3.
     private var blueprintResults: [BlueprintCheckResult] {
         BlueprintChecker.checkAllGoals(Array(goals), activities: Array(activities))
     }
 
-    // Epic 17.1: PeriodizationEngine resultaten — fase + succescriteria per actief doel
-    // Epic Doel-Intenties: geef de actuele VibeScore mee zodat de IntentModifier
-    // de VibeScore-drempel (> 65) correct kan evalueren voor stretch-pace en intensiteit.
+    // Epic 17.1: PeriodizationEngine results — phase + success criteria per active goal
+    // Epic Doel-Intenties: pass the current VibeScore so the IntentModifier
+    // can correctly evaluate the VibeScore threshold (> 65) for stretch-pace and intensity.
     private var periodizationResults: [PeriodizationResult] {
         PeriodizationEngine.evaluateAllGoals(
             Array(goals),
@@ -1136,19 +1136,19 @@ struct DashboardView: View {
         )
     }
 
-    /// Geeft het DailyReadiness record van vandaag terug, of nil als er nog geen is.
+    /// Returns today's DailyReadiness record, or nil if there is none yet.
     private var todayReadiness: DailyReadiness? {
         let todayStart = Calendar.current.startOfDay(for: Date())
         return readinessRecords.first { $0.date >= todayStart }
     }
 
-    /// Epic 18: Pijnscores van vandaag.
+    /// Epic 18: Today's pain scores.
     private var todaySymptoms: [Symptom] {
         let todayStart = Calendar.current.startOfDay(for: Date())
         return symptoms.filter { $0.date >= todayStart }
     }
 
-    /// Epic 18: Blessurerisiconiveau op basis van de hoogste pijnscore van vandaag.
+    /// Epic 18: Injury risk level based on the highest pain score of today.
     enum InjuryRiskLevel { case safe, caution, risk }
     private var injuryRiskLevel: InjuryRiskLevel {
         let maxSeverity = todaySymptoms.map { $0.severity }.max() ?? 0
@@ -1157,7 +1157,7 @@ struct DashboardView: View {
         return .safe
     }
 
-    /// Epic 18: Detecteer welke lichaamsdelen actief zijn op basis van UserPreference-teksten.
+    /// Epic 18: Detect which body areas are active based on UserPreference texts.
     private var activeInjuryAreas: [BodyArea] {
         let now = Date()
         let validPrefs = activePreferences.filter {
@@ -1171,9 +1171,9 @@ struct DashboardView: View {
         }
     }
 
-    /// Epic 18.2: Geeft de meest recente ActivityRecord terug die om een check-in vraagt.
-    /// Drempelwaarden komen uit WorkoutCheckinConfig (Sprint 19 — geen magic numbers).
-    /// rpe == nil → onbeoordeeld. rpe == ignoredRPESentinel → bewust genegeerd. Beide uitgesloten.
+    /// Epic 18.2: Returns the most recent ActivityRecord that asks for a check-in.
+    /// Threshold values come from WorkoutCheckinConfig (Sprint 19 — no magic numbers).
+    /// rpe == nil → unrated. rpe == ignoredRPESentinel → deliberately ignored. Both excluded.
     private var recentUncheckedActivity: ActivityRecord? {
         let fortyEightHoursAgo = Calendar.current.date(byAdding: .hour, value: -48, to: Date()) ?? Date()
         return activities
@@ -1187,18 +1187,18 @@ struct DashboardView: View {
             .max(by: { $0.startDate < $1.startDate })
     }
 
-    /// Tijdstip van de laatste geslaagde coach-analyse — gespiegeld vanuit ChatViewModel.
+    /// Timestamp of the last successful coach analysis — mirrored from ChatViewModel.
     @AppStorage("vibecoach_lastAnalysisTimestamp") private var lastAnalysisTimestamp: Double = 0
 
-    // Epic 34.1: V2.0 Fit & Finish — materiaal-overlay op de statusbalk zodra de
-    // gebruiker scrolt, zodat content niet zichtbaar onder de clock/batterij glijdt.
+    // Epic 34.1: V2.0 Fit & Finish — material overlay on the status bar once the
+    // user scrolls, so content does not slide visibly under the clock/battery.
     @State private var isDashboardScrolled: Bool = false
 
-    /// Epic 18: Wordt true zodra de gebruiker een symptoomscore aanpast na de laatste analyse.
-    /// Geeft aan dat de CoachInsight verouderd is en een nieuwe analyse nodig heeft.
+    /// Epic 18: Becomes true once the user adjusts a symptom score after the last analysis.
+    /// Indicates that the CoachInsight is stale and needs a new analysis.
     @State private var symptomChangedSinceAnalysis: Bool = false
 
-    /// Geeft een leesbare tijdstempelstring terug, bijv. "Laatste update: vandaag om 17:15".
+    /// Returns a readable timestamp string, e.g. "Laatste update: vandaag om 17:15".
     private var lastAnalysisText: String {
         guard lastAnalysisTimestamp > 0 else { return "" }
         let date = Date(timeIntervalSince1970: lastAnalysisTimestamp)
@@ -1214,9 +1214,9 @@ struct DashboardView: View {
         return "Laatste update: \(formatter.string(from: date))"
     }
 
-    // MARK: - Contextuele TRIMP-bannerstatus (ACWR-gebaseerd)
+    // MARK: - Contextual TRIMP banner status (ACWR-based)
 
-    /// De meest recente workout (afgelopen 48u) met een TRIMP-waarde.
+    /// The most recent workout (last 48h) with a TRIMP value.
     private var lastWorkout: ActivityRecord? {
         let cutoff = Calendar.current.date(byAdding: .hour, value: -48, to: Date()) ?? Date()
         return activities
@@ -1224,8 +1224,8 @@ struct DashboardView: View {
             .max(by: { $0.startDate < $1.startDate })
     }
 
-    /// Gemiddelde TRIMP per sessie over de afgelopen 14 dagen (chronische belasting).
-    /// Vereist minimaal 3 sessies voor een betrouwbare baseline; anders nil.
+    /// Average TRIMP per session over the last 14 days (chronic load).
+    /// Requires at least 3 sessions for a reliable baseline; otherwise nil.
     private var chronicTRIMPPerSession: Double? {
         guard let cutoff = Calendar.current.date(byAdding: .day, value: -14, to: Date()) else { return nil }
         let recentSessions = activities.filter {
@@ -1236,7 +1236,7 @@ struct DashboardView: View {
         return totalTRIMP / Double(recentSessions.count)
     }
 
-    /// Wekelijks TRIMP-doel op basis van het actieve doel met de hoogste vereiste weekrate.
+    /// Weekly TRIMP target based on the active goal with the highest required weekly rate.
     private var weeklyTRIMPTarget: Double {
         let now = Date()
         let activeGoals = goals.filter { !$0.isCompleted && now < $0.targetDate }
@@ -1249,7 +1249,7 @@ struct DashboardView: View {
         }.max() ?? 0
     }
 
-    /// Som van TRIMP over de afgelopen 7 dagen.
+    /// Sum of TRIMP over the last 7 days.
     private var currentWeekTRIMP: Double {
         guard let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) else { return 0 }
         return activities
@@ -1259,21 +1259,21 @@ struct DashboardView: View {
     }
 
     enum BannerState {
-        /// Acute:Chronic ratio > 1.5 — piek te groot t.o.v. chronische belasting.
-        /// percentageAbove = hoeveel % boven de chronische norm (bijv. 73 = +73%).
-        /// injuryContext = optionele blessure-omschrijving (bijv. "kuitklachten") als de sport extra belastend is.
+        /// Acute:Chronic ratio > 1.5 — peak too large relative to chronic load.
+        /// percentageAbove = how many % above the chronic norm (e.g. 73 = +73%).
+        /// injuryContext = optional injury description (e.g. "kuitklachten") if the sport is extra straining.
         case overreached(workoutName: String, actualTRIMP: Int, chronicTRIMP: Int, percentageAbove: Int, injuryContext: String?)
-        /// Lage Vibe Score + zware training — fysiologisch dubbele stress.
+        /// Low Vibe Score + heavy training — physiologically double stress.
         case lowVibeHighLoad(workoutName: String, vibeScore: Int, actualTRIMP: Int)
-        /// Cumulatieve week-TRIMP is <50% van het weekdoel.
+        /// Cumulative weekly TRIMP is <50% of the weekly target.
         case behindOnPlan(currentTRIMP: Int, targetTRIMP: Int)
         case none
     }
 
     private var bannerState: BannerState {
-        // Trigger 1: ACWR > 1.5 — acute belasting significant hoger dan chronisch gemiddelde.
-        // Vergelijkt de LAATSTE workout met de gemiddelde sessie-TRIMP van afgelopen 14 dagen.
-        // Blessure-penalty via InjuryImpactMatrix: bij kuitklachten telt een looptraining 1.4× zwaarder.
+        // Trigger 1: ACWR > 1.5 — acute load significantly higher than chronic average.
+        // Compares the LAST workout with the average session TRIMP of the last 14 days.
+        // Injury penalty via InjuryImpactMatrix: with calf complaints a running session counts 1.4× heavier.
         if let last = lastWorkout, let acuteTRIMP = last.trimp,
            let chronic = chronicTRIMPPerSession, chronic > 0 {
             let injuryPenalty = InjuryImpactMatrix.penaltyMultiplier(for: last.sportCategory, given: Array(activePreferences))
@@ -1291,8 +1291,8 @@ struct DashboardView: View {
                 )
             }
 
-            // Trigger 2: Lage Vibe Score (<40) gecombineerd met zware training (>chronisch gemiddelde).
-            // Zelfs een normale training is te veel als het lichaam al uitgeput is.
+            // Trigger 2: Low Vibe Score (<40) combined with heavy training (>chronic average).
+            // Even a normal training is too much when the body is already exhausted.
             if let vibe = todayReadiness?.readinessScore, vibe < 40, acuteTRIMP > chronic {
                 return .lowVibeHighLoad(
                     workoutName: last.displayName,
@@ -1302,11 +1302,11 @@ struct DashboardView: View {
             }
         }
 
-        // Trigger 3: Blauw — achter op weekplan (pas halverwege de week of later).
+        // Trigger 3: Blue — behind on the weekly plan (only halfway through the week or later).
         let target = weeklyTRIMPTarget
         if target > 0 {
             let dayOfWeek = Calendar.current.component(.weekday, from: Date())
-            let isHalfwayThrough = dayOfWeek >= 4 // woensdag of later
+            let isHalfwayThrough = dayOfWeek >= 4 // Wednesday or later
             if isHalfwayThrough && currentWeekTRIMP < target * 0.5 {
                 return .behindOnPlan(currentTRIMP: Int(currentWeekTRIMP), targetTRIMP: Int(target))
             }
@@ -1323,20 +1323,20 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Sprint 13.1: Risicobeoordeling per doel
+    // MARK: - Sprint 13.1: Risk assessment per goal
 
-    /// Lichtgewicht status-struct per doel dat achteroploopt op de burndown.
+    /// Lightweight status struct per goal that falls behind on the burndown.
     struct GoalRiskStatus {
         let goal: FitnessGoal
-        let currentWeeklyRate: Double       // Actuele burn rate (TRIMP/week)
-        let requiredWeeklyRate: Double      // Fase-gecorrigeerde benodigde burn rate
-        /// Sprint 16.2: True als de gebruiker in Tapering te hard traint (>110% van verlaagde target)
+        let currentWeeklyRate: Double       // Actual burn rate (TRIMP/week)
+        let requiredWeeklyRate: Double      // Phase-corrected required burn rate
+        /// Sprint 16.2: True if the user trains too hard in Tapering (>110% of the lowered target)
         let isTaperingOverload: Bool
     }
 
-    /// Sprint 16.2: Retourneert actieve doelen met een fase-bewuste risicostatus.
-    /// - Onderprestatie: actuele burn rate < 75% van fase-gecorrigeerde target → Rood
-    /// - Tapering overbelasting: actuele burn rate > 110% van tapering target → Rood (andere reden)
+    /// Sprint 16.2: Returns active goals with a phase-aware risk status.
+    /// - Underperformance: actual burn rate < 75% of phase-corrected target → Red
+    /// - Tapering overload: actual burn rate > 110% of tapering target → Red (different reason)
     private var atRiskGoals: [GoalRiskStatus] {
         let now = Date()
         let calendar = Calendar.current
@@ -1350,7 +1350,7 @@ struct DashboardView: View {
             let weeksRemaining = max(0.1, goal.weeksRemaining(from: now))
             let phase = goal.currentPhase ?? .baseBuilding
 
-            // Filter relevante activiteiten (zelfde logica als SingleGoalBurndownView)
+            // Filter relevant activities (same logic as SingleGoalBurndownView)
             let relevantActivities = activities.filter { record in
                 guard record.startDate >= trainingBlockStart && record.startDate <= now else { return false }
                 guard let goalCategory = goal.sportCategory else { return true }
@@ -1360,35 +1360,35 @@ struct DashboardView: View {
                 return record.sportCategory == goalCategory
             }
 
-            // Bereken hoeveel TRIMP er nog overblijft
+            // Calculate how much TRIMP remains
             let achievedTRIMP = relevantActivities.compactMap { $0.trimp }.reduce(0, +)
             let currentRemaining = max(0, targetTRIMP - achievedTRIMP)
             guard currentRemaining > 0 else { return nil }
 
-            // Burn rate op basis van de laatste 2 weken
+            // Burn rate based on the last 2 weeks
             let recentTRIMP = relevantActivities
                 .filter { $0.startDate >= twoWeeksAgo }
                 .compactMap { $0.trimp }
                 .reduce(0, +)
             let currentBurnRate = recentTRIMP / 2.0
 
-            // Sprint 16.2: Fase-gecorrigeerde target
+            // Sprint 16.2: Phase-corrected target
             let linearRate = currentRemaining / weeksRemaining
             let adjustedRequired = linearRate * phase.multiplier
 
-            // Tapering: te hard trainen is gevaarlijker dan te weinig
+            // Tapering: training too hard is more dangerous than too little
             if phase == .tapering && currentBurnRate > adjustedRequired * 1.10 {
                 return GoalRiskStatus(goal: goal, currentWeeklyRate: currentBurnRate, requiredWeeklyRate: adjustedRequired, isTaperingOverload: true)
             }
 
-            // Normale onderprestatie: actuele rate < 75% van fase-target
+            // Normal underperformance: actual rate < 75% of phase target
             guard currentBurnRate < adjustedRequired * 0.75 else { return nil }
             return GoalRiskStatus(goal: goal, currentWeeklyRate: currentBurnRate, requiredWeeklyRate: adjustedRequired, isTaperingOverload: false)
         }
         .sorted { ($0.requiredWeeklyRate - $0.currentWeeklyRate) > ($1.requiredWeeklyRate - $1.currentWeeklyRate) }
     }
 
-    /// Controleert en vult ontbrekende `targetTRIMP` aan voor legacy doelen (Epic 12 Data Migratie)
+    /// Checks and backfills missing `targetTRIMP` for legacy goals (Epic 12 Data Migration)
     private func backfillLegacyGoals() {
         var hasChanges = false
         for goal in goals {
@@ -1404,7 +1404,7 @@ struct DashboardView: View {
         }
     }
 
-    /// V2.0: Naam van de training van vandaag voor de coach-hint in de Vibe Score kaart.
+    /// V2.0: Name of today's training for the coach hint in the Vibe Score card.
     private var todayPlanWorkoutName: String? {
         planManager.activePlan?.workouts
             .first {
@@ -1420,13 +1420,13 @@ struct DashboardView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
 
-                    // V2.0: Contextuele header (dag · fase · week)
+                    // V2.0: Contextual header (day · phase · week)
                     DashboardHeaderView(
                         periodizationResults: periodizationResults,
                         goals: Array(goals)
                     )
 
-                    // V2.0: Geïntegreerde Vibe Score kaart met metrics-grid
+                    // V2.0: Integrated Vibe Score card with metrics grid
                     VibeScoreCardV2(
                         readiness: todayReadiness,
                         isLoading: isVibeScoreLoading,
@@ -1439,7 +1439,7 @@ struct DashboardView: View {
                     )
                     .padding(.horizontal)
 
-                    // Epic 18: Symptoom check-in — alleen zichtbaar bij actieve blessures
+                    // Epic 18: Symptom check-in — only visible with active injuries
                     if !activeInjuryAreas.isEmpty {
                         SymptomCheckinCard(
                             areas: activeInjuryAreas,
@@ -1466,26 +1466,26 @@ struct DashboardView: View {
                         .padding(.horizontal)
                     }
 
-                    // Epic #51-H: migratie-fallback-banner. Verschijnt enkel als
-                    // de SwiftData-migratie tijdens de laatste app-launch faalde
-                    // en de fresh-DB-fallback (CLAUDE.md §12) lokaal-only data
-                    // (FitnessGoal/UserPreference/Symptom) heeft gewist.
+                    // Epic #51-H: migration fallback banner. Only appears if
+                    // the SwiftData migration failed during the last app launch
+                    // and the fresh-DB fallback (CLAUDE.md §12) wiped local-only data
+                    // (FitnessGoal/UserPreference/Symptom).
                     MigrationFallbackBanner()
 
-                    // Epic #51-F1/F2/F5: één centrale banner voor sync-fouten,
-                    // Strava-rate-limits en offline-detectie. Prioriteit:
-                    // offline > rate-limited > error > nil (zie
-                    // `SyncBannerStateBuilder`). Renderd niets als de status
-                    // gezond is.
+                    // Epic #51-F1/F2/F5: one central banner for sync errors,
+                    // Strava rate limits and offline detection. Priority:
+                    // offline > rate-limited > error > nil (see
+                    // `SyncBannerStateBuilder`). Renders nothing if the status
+                    // is healthy.
                     SyncStatusBanner()
 
-                    // Epic #38 Story 38.2: stille-sync-detectie. Toont alleen
-                    // wanneer de laatste HK-sync 0 workouts opleverde én
-                    // workout-auth-status níet `sharingAuthorized` is. Stille
-                    // no-op anders — geen extra spacing/divider.
+                    // Epic #38 Story 38.2: silent-sync detection. Only shows
+                    // when the last HK sync yielded 0 workouts and the
+                    // workout auth status is not `sharingAuthorized`. Silent
+                    // no-op otherwise — no extra spacing/divider.
                     HealthKitPermissionWarningBanner()
 
-                    // ACWR-banners — gebaseerd op Acute:Chronic Workload Ratio
+                    // ACWR banners — based on Acute:Chronic Workload Ratio
                     switch bannerState {
                     case .overreached(let name, _, let chronic, let pct, let injury):
                         DashboardBannerView(icon: "exclamationmark.triangle.fill", color: .orange) {
@@ -1515,7 +1515,7 @@ struct DashboardView: View {
                         EmptyView()
                     }
 
-                    // AI-analyse laadindicator
+                    // AI analysis loading indicator
                     if viewModel.isFetchingWorkout || viewModel.isTyping {
                         HStack(spacing: 8) {
                             ProgressView().controlSize(.small)
@@ -1530,8 +1530,8 @@ struct DashboardView: View {
                         .padding(.vertical, 4)
                     }
 
-                    // Foutbanner voor mislukte AI-analyse (pull-to-refresh timeout etc).
-                    // De foutmelding wordt anders alleen in de onzichtbare chat-bubble getoond.
+                    // Error banner for failed AI analysis (pull-to-refresh timeout etc).
+                    // Otherwise the error message is only shown in the invisible chat bubble.
                     if let aiError = viewModel.lastAIErrorMessage, !viewModel.isFetchingWorkout, !viewModel.isTyping {
                         DashboardBannerView(icon: "exclamationmark.triangle.fill", color: .orange) {
                             VStack(alignment: .leading, spacing: 4) {
@@ -1552,7 +1552,7 @@ struct DashboardView: View {
                         }
                     }
 
-                    // Coach Insight kaart — V2.0 stijl
+                    // Coach Insight card — V2.0 style
                     if !latestCoachInsight.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
@@ -1587,7 +1587,7 @@ struct DashboardView: View {
                         .padding(.horizontal)
                     }
 
-                    // V2.0: Week tijdlijn + dagelijks workout-overzicht
+                    // V2.0: Week timeline + daily workout overview
                     WeekTimelineView(
                         plan: planManager.activePlan,
                         activities: Array(activities),
@@ -1605,8 +1605,8 @@ struct DashboardView: View {
                             appState.showingChatSheet = true
                         },
                         onResetSchema: {
-                            // Story 33.2b: vraag de coach om de week opnieuw te plannen
-                            // rondom de verplaatste sessies. Merge gebeurt app-side.
+                            // Story 33.2b: ask the coach to replan the week
+                            // around the moved sessions. The merge happens app-side.
                             let swapped = planManager.activePlan?.workouts.filter { $0.isSwapped } ?? []
                             refreshProfileContext()
                             viewModel.requestPlanReset(
@@ -1620,17 +1620,17 @@ struct DashboardView: View {
                         isResettingSchema: viewModel.isTyping
                     )
 
-                    // V2.0: 14-daagse trend-widget
+                    // V2.0: 14-day trend widget
                     TrendWidgetView(
                         readinessRecords: Array(readinessRecords),
                         activities: Array(activities)
                     )
 
-                    // Epic 32 Story 32.2: lijst met recente workouts. HealthKit-records zijn
-                    // klikbaar en navigeren naar de WorkoutAnalysisView met de granulaire 5s-charts.
+                    // Epic 32 Story 32.2: list of recent workouts. HealthKit records are
+                    // tappable and navigate to the WorkoutAnalysisView with the granular 5s charts.
                     RecentWorkoutsSection()
 
-                    // TRIMP & Vibe Score educatiekaarten
+                    // TRIMP & Vibe Score educational cards
                     TRIMPExplainerCard()
                         .padding(.horizontal)
                     VibeScoreExplainerCard()
@@ -1650,7 +1650,7 @@ struct DashboardView: View {
                 )
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
             }
-            // Epic 34.1: detecteer scroll om materiaal onder de statusbalk te laten verschijnen.
+            // Epic 34.1: detect scroll to make material appear under the status bar.
             .onScrollGeometryChange(for: Bool.self) { geometry in
                 geometry.contentOffset.y > 4
             } action: { _, newValue in
@@ -1660,62 +1660,62 @@ struct DashboardView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .background(Color(.secondarySystemBackground).ignoresSafeArea())
-            // Epic 34.1: materiaalband in de top safe area — alleen zichtbaar bij scroll.
+            // Epic 34.1: material band in the top safe area — only visible when scrolling.
             .scrollEdgeMaterial(isActive: isDashboardScrolled)
-            // Epic 18: Reset de staleness-badge zodra er een nieuwe analyse is afgerond.
+            // Epic 18: Reset the staleness badge once a new analysis has finished.
             .onChange(of: lastAnalysisTimestamp) { _, _ in
                 symptomChangedSinceAnalysis = false
             }
             .onAppear {
                 backfillLegacyGoals()
                 refreshProfileContext()
-                // SPRINT 13.2: Werk de risicocache bij bij elk app-open zodat
-                // de achtergrond-engines altijd actuele data hebben
+                // SPRINT 13.2: Update the risk cache on every app open so
+                // the background engines always have current data
                 ProactiveNotificationService.shared.updateRiskCache(
                     atRiskGoalTitles: atRiskGoals.map { $0.goal.title }
                 )
-                // Sprint 20.2: HealthKit-toestemming wordt uitsluitend gevraagd via de
-                // OnboardingView (eerste gebruik) of via Instellingen (achteraf).
-                // EPIC 14.3: Bereken de Vibe Score automatisch als er nog geen record voor vandaag is.
+                // Sprint 20.2: HealthKit permission is requested exclusively via the
+                // OnboardingView (first use) or via Settings (afterwards).
+                // EPIC 14.3: Calculate the Vibe Score automatically if there is no record for today yet.
                 if todayReadiness == nil {
                     Task { await calculateAndSaveVibeScore() }
                 }
-                // Haal rusthartslag live op zodat de kaart altijd actueel is,
-                // ook als het DailyReadiness-record van vóór onze wijziging stamt.
+                // Fetch resting heart rate live so the card is always current,
+                // even if the DailyReadiness record predates our change.
                 Task {
                     let hk = HealthKitManager()
                     dashboardRestingHR = await hk.fetchRestingHeartRate()
                     dashboardVO2Max = await hk.fetchVO2Max()
                 }
-                // Auto-refresh: als de laatste analyse van een vorige dag is, vraag direct een nieuwe aan.
-                // Zo start de dag altijd met een actueel schema — ook na middernacht.
+                // Auto-refresh: if the last analysis is from a previous day, request a new one immediately.
+                // This way the day always starts with a current schedule — even after midnight.
                 let lastAnalysisDate = Date(timeIntervalSince1970: lastAnalysisTimestamp)
                 if lastAnalysisTimestamp == 0 || !Calendar.current.isDateInToday(lastAnalysisDate) {
                     viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                 }
-                // EPIC 14.4: Schrijf de Vibe Score van vandaag naar de AI-prompt cache
-                // zodat elke coach-interactie de actuele herstelstatus kent.
+                // EPIC 14.4: Write today's Vibe Score to the AI prompt cache
+                // so every coach interaction knows the current recovery status.
                 viewModel.cacheVibeScore(todayReadiness)
-                // Epic 17: Schrijf de blueprint-status naar de AI-prompt cache
-                // zodat de coach weet welke kritieke trainingen open staan per doel.
+                // Epic 17: Write the blueprint status to the AI prompt cache
+                // so the coach knows which critical trainings are open per goal.
                 viewModel.cacheSymptomContext(Array(symptoms), preferences: Array(activePreferences))
                 viewModel.cacheActiveBlueprints(blueprintResults)
-                // Epic 17.1: Schrijf de periodization-status naar de AI-prompt cache
-                // zodat de coach de actuele trainingsfase en succescriteria kent.
+                // Epic 17.1: Write the periodization status to the AI prompt cache
+                // so the coach knows the current training phase and success criteria.
                 viewModel.cachePeriodizationStatus(periodizationResults)
-                // Epic Doel-Intenties: schrijf de intent-instructies naar de aparte cache
-                // zodat de coach een gerichte [DOEL INTENTIES EN BENADERING] sectie ontvangt.
+                // Epic Doel-Intenties: write the intent instructions to the separate cache
+                // so the coach receives a targeted [DOEL INTENTIES EN BENADERING] section.
                 viewModel.cacheIntentContext(periodizationResults)
-                // Epic 23 Sprint 1: Schrijf de gap-analyse naar de AI-prompt cache
-                // zodat de coach weet hoeveel TRIMP/km de atleet achterloopt op het lineaire schema.
+                // Epic 23 Sprint 1: Write the gap analysis to the AI prompt cache
+                // so the coach knows how much TRIMP/km the athlete is behind on the linear schedule.
                 let gapResults = ProgressService.analyzeGaps(for: Array(goals), activities: Array(activities))
                 viewModel.cacheGapAnalysis(gapResults)
-                // Epic 23 Sprint 2: Schrijf de toekomstprognose naar de AI-prompt cache
-                // zodat de coach proactief kan waarschuwen als een doel "At Risk" of "Unreachable" is.
+                // Epic 23 Sprint 2: Write the future projection to the AI prompt cache
+                // so the coach can proactively warn if a goal is "At Risk" or "Unreachable".
                 let projectionResults = FutureProjectionService.calculateProjections(for: Array(goals), activities: Array(activities))
                 viewModel.cacheProjections(projectionResults)
-                // EPIC 18: Schrijf de meest recente echte workout-beoordeling naar de AI-prompt cache.
-                // rpe == WorkoutCheckinConfig.ignoredRPESentinel (0) telt niet als echte feedback.
+                // EPIC 18: Write the most recent real workout rating to the AI prompt cache.
+                // rpe == WorkoutCheckinConfig.ignoredRPESentinel (0) does not count as real feedback.
                 let lastRatedActivity = activities
                     .filter { ($0.rpe ?? WorkoutCheckinConfig.ignoredRPESentinel) > WorkoutCheckinConfig.ignoredRPESentinel }
                     .max(by: { $0.startDate < $1.startDate })
@@ -1727,18 +1727,18 @@ struct DashboardView: View {
                     startDate: lastRatedActivity?.startDate,
                     sessionType: lastRatedActivity?.sessionType
                 )
-                // Story 33.2a: schrijf de USER_OVERRIDE-cache zodat de coach handmatig
-                // verplaatste sessies respecteert in elke prompt-bouw.
+                // Story 33.2a: write the USER_OVERRIDE cache so the coach respects manually
+                // moved sessions in every prompt build.
                 viewModel.cacheUserOverrides(planManager.activePlan?.workouts ?? [])
 
-                // Story 33.4: zoek de meest recente ActivityRecord die matcht met een
-                // SuggestedWorkout op dezelfde kalenderdag, run de analyzer en cache het
-                // resultaat zodat de coach de [ANALYSIS — INTENT vs UITVOERING] krijgt.
+                // Story 33.4: find the most recent ActivityRecord that matches a
+                // SuggestedWorkout on the same calendar day, run the analyzer and cache the
+                // result so the coach gets the [ANALYSIS — INTENT vs UITVOERING].
                 let plannedWorkouts = planManager.activePlan?.workouts ?? []
                 if let mostRecent = activities.max(by: { $0.startDate < $1.startDate }),
                    let plannedMatch = plannedWorkouts.first(matching: mostRecent) {
-                    // 33.4 gebruikt de classifier alleen voor `classifyByKeywords` —
-                    // die negeert maxHeartRate. Default volstaat dus zonder dateOfBirth-fetch.
+                    // 33.4 uses the classifier only for `classifyByKeywords` —
+                    // which ignores maxHeartRate. So the default suffices without a dateOfBirth fetch.
                     let verdict = IntentExecutionAnalyzer.analyze(
                         planned: plannedMatch,
                         actual: mostRecent,
@@ -1756,34 +1756,34 @@ struct DashboardView: View {
                     viewModel.cacheIntentExecution("")
                 }
 
-                // Epic 24 Sprint 1: Haal het fysiologisch profiel op en bereken het voedingsplan
-                // voor de workouts van vandaag en morgen. Gecached in AppStorage voor de AI-prompt.
+                // Epic 24 Sprint 1: Fetch the physiological profile and calculate the nutrition plan
+                // for today's and tomorrow's workouts. Cached in AppStorage for the AI prompt.
                 Task { await viewModel.refreshNutritionContext() }
-                // Epic 21: Vraag weerdata op via de singleton (vraagt locatie-toestemming als dat nog niet is gedaan).
-                // WeatherManager.shared is een singleton — geen property-doorgave nodig vanuit ContentView.
+                // Epic 21: Request weather data via the singleton (asks for location permission if not done yet).
+                // WeatherManager.shared is a singleton — no property passing needed from ContentView.
                 WeatherManager.shared.onWeatherUpdated = { context in
                     viewModel.weatherContext = context
                 }
                 WeatherManager.shared.requestWeatherIfNeeded()
             }
-            // Epic 32 Story 32.1: 30-daagse Deep Sync van workout-samples.
-            // Sinds fix/workout-samples-loading: geen one-shot completion-flag meer —
-            // de service draait door zodra Dashboard opnieuw verschijnt, idempotent via
-            // de processed-UUID-set. Nieuwe workouts uit auto-sync krijgen samen daarmee
-            // hun grafiek-data zonder dat de gebruiker eindeloos op de placeholder
-            // "Deep Sync loopt op de achtergrond" blijft hangen.
+            // Epic 32 Story 32.1: 30-day Deep Sync of workout samples.
+            // Since fix/workout-samples-loading: no more one-shot completion flag —
+            // the service keeps running once the Dashboard reappears, idempotent via
+            // the processed-UUID set. New workouts from auto-sync get their chart data
+            // along with it without the user being stuck endlessly on the placeholder
+            // "Deep Sync loopt op de achtergrond".
             .task {
                 let store = WorkoutSampleStore(modelContainer: modelContext.container)
                 let ingest = WorkoutSampleIngestService()
                 let service = DeepSyncService(ingestService: ingest, store: store)
                 await service.runIfNeeded()
             }
-            // Epic 40 Story 40.3: backfill van Strava-streams voor de laatste 10
-            // Strava-records zonder samples. 100ms throttle tussen calls om Strava's
-            // rate-limit comfortabel te respecteren (100 req/15min). Per-record fout
-            // blokkeert de batch niet — gewoon verder met de volgende.
-            // Direct daarna: Epic 41 auto-dedupe — ruimt eventuele duplicaten op
-            // (HK + Strava van dezelfde rit) zodat de gebruiker geen dubbele lijst krijgt.
+            // Epic 40 Story 40.3: backfill of Strava streams for the last 10
+            // Strava records without samples. 100ms throttle between calls to
+            // comfortably respect Strava's rate limit (100 req/15min). A per-record error
+            // does not block the batch — just continue with the next.
+            // Right after that: Epic 41 auto-dedupe — cleans up any duplicates
+            // (HK + Strava of the same ride) so the user does not get a double list.
             .task {
                 await backfillStravaStreams()
                 await runAutoDedupe()
@@ -1796,20 +1796,20 @@ struct DashboardView: View {
         }
     }
 
-    /// Epic 45 Story 45.3: vult zowel de 7-daagse pulse-cache (Story 32.3c) als
-    /// het 14-daagse rijke per-workout-blok in één gedeelde loop. Per workout wordt
-    /// `WorkoutPatternDetector.detectAll` exact één keer aangeroepen — beide caches
-    /// eten uit dezelfde `[WorkoutEntry]`-array. Dat halveert de SwiftData-fetch-I/O
-    /// en voorkomt dubbele detector-calls t.o.v. twee aparte refresh-functies.
-    /// Stille no-op als er geen workouts in het venster zijn — caches worden dan
-    /// leeggemaakt zodat een stabiele week ook de cache opschoont.
+    /// Epic 45 Story 45.3: fills both the 7-day pulse cache (Story 32.3c) and
+    /// the 14-day rich per-workout block in one shared loop. Per workout
+    /// `WorkoutPatternDetector.detectAll` is called exactly once — both caches
+    /// eat from the same `[WorkoutEntry]` array. That halves the SwiftData fetch I/O
+    /// and prevents duplicate detector calls compared to two separate refresh functions.
+    /// Silent no-op if there are no workouts in the window — caches are then
+    /// emptied so a stable week also cleans up the cache.
     private func refreshChatContextCaches() async {
         let store = WorkoutSampleStore(modelContainer: modelContext.container)
         let now = Date()
         let cutoff14 = Calendar.current.date(byAdding: .day, value: -14, to: now) ?? now
         let cutoff7  = Calendar.current.date(byAdding: .day, value: -7, to: now) ?? now
-        // Epic #44 story 44.5: profiel hier één keer ophalen en doorgeven aan
-        // detectAll zodat de zone-gates per workout consistent dezelfde drempels gebruiken.
+        // Epic #44 story 44.5: fetch the profile here once and pass it to
+        // detectAll so the zone gates per workout consistently use the same thresholds.
         let profile = UserProfileService.cachedProfile()
 
         var entries: [WorkoutHistoryContextBuilder.WorkoutEntry] = []
@@ -1830,7 +1830,7 @@ struct DashboardView: View {
                 movingTime: activity.movingTime,
                 trimp: activity.trimp,
                 averageHeartrate: activity.averageHeartrate,
-                averagePower: nil,                  // Epic #40-aansluiting later
+                averagePower: nil,                  // Epic #40 hookup later
                 patterns: detected
             ))
 
@@ -1844,10 +1844,10 @@ struct DashboardView: View {
     }
 
     #if DEBUG
-    /// Story 32.3a empirische validatie: runt `WorkoutPatternDetector.detectAll`
-    /// over alle workouts met opgeslagen samples en print de gevonden patronen.
-    /// Bedoeld om vóór 32.3b (UI-pins) te controleren of de drempels überhaupt
-    /// triggeren op echte data — geen UI-effect, alleen console-output.
+    /// Story 32.3a empirical validation: runs `WorkoutPatternDetector.detectAll`
+    /// over all workouts with stored samples and prints the found patterns.
+    /// Intended to check before 32.3b (UI pins) whether the thresholds trigger
+    /// at all on real data — no UI effect, only console output.
     private func runPatternDebugReport() async {
         let store = WorkoutSampleStore(modelContainer: modelContext.container)
         let profile = UserProfileService.cachedProfile()
@@ -1879,9 +1879,9 @@ struct DashboardView: View {
     }
     #endif
 
-    /// Epic 41: auto-dedupe via `ActivityDeduplicator`. Idempotent — schone DB blijft
-    /// schoon. Runt na de Strava-backfill zodat sample-counts kloppen voor de
-    /// rijkdom-heuristiek (Strava-records met net-binnengekomen power winnen).
+    /// Epic 41: auto-dedupe via `ActivityDeduplicator`. Idempotent — a clean DB stays
+    /// clean. Runs after the Strava backfill so sample counts are correct for the
+    /// richness heuristic (Strava records with just-arrived power win).
     private func runAutoDedupe() async {
         let store = WorkoutSampleStore(modelContainer: modelContext.container)
         do {
@@ -1894,10 +1894,10 @@ struct DashboardView: View {
         }
     }
 
-    /// Epic 40 Story 40.4: na de stream-backfill (en de daaropvolgende dedupe) hebben
-    /// records die eerst alleen avg-HR hadden ineens fijngranulaire samples. We laten
-    /// `SessionReclassifier` de zone-distributie-strategie opnieuw uitvoeren — handmatig
-    /// gekozen sessieTypes blijven beschermd via `manualSessionTypeOverride`.
+    /// Epic 40 Story 40.4: after the stream backfill (and the subsequent dedupe),
+    /// records that previously only had avg-HR suddenly have fine-grained samples. We let
+    /// `SessionReclassifier` rerun the zone-distribution strategy — manually
+    /// chosen sessionTypes stay protected via `manualSessionTypeOverride`.
     private func runSessionReclassification() async {
         let store = WorkoutSampleStore(modelContainer: modelContext.container)
         let birthDate: Date? = {
@@ -1923,15 +1923,15 @@ struct DashboardView: View {
         }
     }
 
-    /// Epic 40: filter de laatste 10 Strava-records (id niet UUID-parseerbaar) zonder
-    /// 5s-samples in DB en haal hun streams op. Async, scenePhase-getriggerd.
+    /// Epic 40: filter the last 10 Strava records (id not UUID-parseable) without
+    /// 5s samples in DB and fetch their streams. Async, scenePhase-triggered.
     private func backfillStravaStreams() async {
         let store = WorkoutSampleStore(modelContainer: modelContext.container)
         let ingest = StravaStreamIngestService()
         let api = FitnessDataService()
 
         let candidates = activities
-            .filter { UUID(uuidString: $0.id) == nil }       // alleen Strava
+            .filter { UUID(uuidString: $0.id) == nil }       // Strava only
             .sorted { $0.startDate > $1.startDate }
             .prefix(10)
 
@@ -1951,33 +1951,33 @@ struct DashboardView: View {
                     into: store
                 )
             } catch {
-                // Eén fout (404, 429 rate-limit, decode-failure) blokkeert de batch niet.
+                // One error (404, 429 rate-limit, decode failure) does not block the batch.
                 print("⚠️ Strava-stream backfill faalde voor \(activity.id): \(error.localizedDescription)")
             }
-            // 100ms throttle — Strava's rate-limit is 100 req/15min; voor 10 calls
-            // hebben we ruim tijd, throttle is bewust voorzichtig + cooperatieve cancel.
+            // 100ms throttle — Strava's rate limit is 100 req/15min; for 10 calls
+            // we have ample time, the throttle is deliberately cautious + cooperative cancel.
             try? await Task.sleep(nanoseconds: 100_000_000)
         }
     }
 
-    /// Epic 18: Sla een symptoomscore op voor vandaag (upsert per lichaamsdeel per dag).
+    /// Epic 18: Save a symptom score for today (upsert per body area per day).
     private func saveOrUpdateSymptom(area: BodyArea, severity: Int) {
         let todayStart = Calendar.current.startOfDay(for: Date())
-        // Zoek bestaand record voor vandaag en dit lichaamsdeel
+        // Find existing record for today and this body area
         if let existing = symptoms.first(where: { $0.bodyArea == area && $0.date >= todayStart }) {
             existing.severity = severity
         } else {
             modelContext.insert(Symptom(bodyArea: area, severity: severity))
         }
         try? modelContext.save()
-        // Werk de AI-cache direct bij met de nieuwste scores én actieve voorkeuren
+        // Update the AI cache immediately with the latest scores and active preferences
         viewModel.cacheSymptomContext(Array(symptoms), preferences: Array(activePreferences))
-        // Markeer de CoachInsight als verouderd — de scores zijn veranderd na de laatste analyse
+        // Mark the CoachInsight as stale — the scores changed after the last analysis
         symptomChangedSinceAnalysis = true
     }
 
-    /// Haalt HealthKit-data op en slaat een DailyReadiness record op voor vandaag.
-    /// Gebruikt een 5 seconden time-out; bij geen data wordt de kaart op 'niet beschikbaar' gezet.
+    /// Fetches HealthKit data and saves a DailyReadiness record for today.
+    /// Uses a 5 second time-out; if there is no data the card is set to 'unavailable'.
     @MainActor
     private func calculateAndSaveVibeScore() async {
         isVibeScoreLoading = true
@@ -1988,8 +1988,8 @@ struct DashboardView: View {
 
         let hkManager = HealthKitManager()
 
-        // Stap 1 (parallel + 5s timeout): slaap, fases en HRV-baseline tegelijk ophalen.
-        // HRV loopt pas in stap 2 zodat het exacte slaapvenster als filter kan worden gebruikt.
+        // Step 1 (parallel + 5s timeout): fetch sleep, stages and HRV baseline simultaneously.
+        // HRV only runs in step 2 so the exact sleep window can be used as a filter.
         let step1 = await withTaskGroup(of: (Double?, Double?, SleepStages?)?.self) { group in
             group.addTask {
                 async let sleepTask    = try? hkManager.fetchLastNightSleep()
@@ -2015,7 +2015,7 @@ struct DashboardView: View {
             return
         }
 
-        // Stap 2: HRV en rusthartslag parallel ophalen.
+        // Step 2: fetch HRV and resting heart rate in parallel.
         async let hrvTask = hkManager.fetchRecentHRV(sleepStart: stages?.sessionStart, sleepEnd: stages?.sessionEnd)
         async let restingHRTask = hkManager.fetchRestingHeartRate()
         let currentHRV: Double? = try? await hrvTask
@@ -2038,7 +2038,7 @@ struct DashboardView: View {
         let stagesLog = stages.map { "diep: \($0.deepMinutes)m, REM: \($0.remMinutes)m, kern: \($0.coreMinutes)m, ratio: \(String(format: "%.0f%%", $0.deepRatio * 100))" } ?? "geen stage-data"
         print("✅ [VibeScore] Score berekend: \(score)/100 (slaap: \(String(format: "%.1f", sleepHours))u, HRV: \(String(format: "%.1f", currentHRV))ms, \(stagesLog))")
 
-        // Upsert: overschrijf een bestaand record voor vandaag of maak een nieuw aan
+        // Upsert: overwrite an existing record for today or create a new one
         let todayStart   = Calendar.current.startOfDay(for: Date())
         let tomorrowStart = Calendar.current.date(byAdding: .day, value: 1, to: todayStart)!
         let descriptor   = FetchDescriptor<DailyReadiness>(
@@ -2066,14 +2066,14 @@ struct DashboardView: View {
         }
         try? modelContext.save()
 
-        // Werk de AI-cache bij met de nieuw berekende score
+        // Update the AI cache with the newly calculated score
         viewModel.cacheVibeScore(todayReadiness)
     }
 }
 
-// MARK: - Sprint 17.3: Fase Status Badge
+// MARK: - Sprint 17.3: Phase Status Badge
 
-/// Subtiele badge boven het schema die de actieve trainingsfase en focus toont.
+/// Subtle badge above the schedule that shows the active training phase and focus.
 struct PhaseBadgeView: View {
     let results: [PeriodizationResult]
 
@@ -2124,16 +2124,16 @@ struct PhaseBadgeView: View {
 
 // MARK: - Epic 38 Story 38.2: HealthKitPermissionWarningBanner
 
-/// "Stille sync"-banner: verschijnt wanneer de laatste HK-sync 0 workouts
-/// opleverde én de workout-toestemming niet expliciet `.sharingAuthorized` is.
-/// Voorkomt dat de gebruiker dagen rondloopt met een leeg dashboard zonder
-/// te weten dat het aan HealthKit-toestemmingen ligt. Pure-Swift logic-call
-/// naar `HealthKitSyncStatusEvaluator` houdt de beslissing testbaar zonder
-/// `HKHealthStore`-mock.
+/// "Silent sync" banner: appears when the last HK sync yielded 0 workouts
+/// and the workout permission is not explicitly `.sharingAuthorized`.
+/// Prevents the user from walking around for days with an empty dashboard without
+/// knowing it is due to HealthKit permissions. A pure-Swift logic call
+/// to `HealthKitSyncStatusEvaluator` keeps the decision testable without an
+/// `HKHealthStore` mock.
 struct HealthKitPermissionWarningBanner: View {
-    /// Cache uit `AppTabHostView.runHealthKitAutoSync` / `SettingsView`-historical-sync.
-    /// `-1` = sentinel "nog nooit gesynced" → geen banner (false-positive vermijden bij
-    /// allereerste app-launch vóór de eerste auto-sync-cyclus).
+    /// Cache from `AppTabHostView.runHealthKitAutoSync` / `SettingsView` historical sync.
+    /// `-1` = sentinel "never synced yet" → no banner (avoids a false positive on the
+    /// very first app launch before the first auto-sync cycle).
     @AppStorage("vibecoach_lastHKWorkoutsCount") private var lastHKWorkoutsCount: Int = -1
     @State private var workoutAuthStatus: HKAuthorizationStatus = .notDetermined
 
@@ -2178,7 +2178,7 @@ struct HealthKitPermissionWarningBanner: View {
 
 // MARK: - V2.0: DashboardBannerView
 
-/// Herbruikbare kaartbanner voor ACWR-waarschuwingen en informatieve meldingen.
+/// Reusable card banner for ACWR warnings and informational messages.
 struct DashboardBannerView<Content: View>: View {
     let icon: String
     let color: Color
@@ -2205,8 +2205,8 @@ struct DashboardBannerView<Content: View>: View {
 
 // MARK: - Sprint 17.3: Milestone Progress Card
 
-/// Kaart die de succescriteria van de PeriodizationEngine visueel weergeeft
-/// met voortgangsbalken per doel. Maakt het 'waarom' achter het schema inzichtelijk.
+/// Card that visually displays the success criteria of the PeriodizationEngine
+/// with progress bars per goal. Makes the 'why' behind the schedule clear.
 struct MilestoneProgressCard: View {
     let results: [PeriodizationResult]
 
@@ -2308,10 +2308,10 @@ private struct MilestoneProgressRow: View {
     }
 }
 
-// MARK: - Epic 18: Symptoom Check-in Kaart
+// MARK: - Epic 18: Symptom Check-in Card
 
-/// Dagelijkse pijnscore-kaart. Verschijnt alleen als de gebruiker actieve blessures heeft
-/// (gedetecteerd via UserPreference-teksten). Beheert één score (0-10) per lichaamsdeel.
+/// Daily pain score card. Only appears if the user has active injuries
+/// (detected via UserPreference texts). Manages one score (0-10) per body area.
 struct SymptomCheckinCard: View {
     let areas: [BodyArea]
     let todaySymptoms: [Symptom]
@@ -2381,7 +2381,7 @@ private struct SymptomAreaRow: View {
                     .foregroundColor(severityColor)
                     .monospacedDigit()
             }
-            // Compacte +/- knoppen (0-10, stap 1)
+            // Compact +/- buttons (0-10, step 1)
             HStack(spacing: 8) {
                 Button {
                     if severity > 0 {
@@ -2395,7 +2395,7 @@ private struct SymptomAreaRow: View {
                 }
                 .disabled(severity == 0)
 
-                // Visuele pijnbalk
+                // Visual pain bar
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 4)
@@ -2423,7 +2423,7 @@ private struct SymptomAreaRow: View {
             }
         }
         .onChange(of: currentSeverity) { _, newValue in
-            // Synchroniseer als de waarde extern verandert (bijv. SwiftData refresh)
+            // Synchronize if the value changes externally (e.g. SwiftData refresh)
             if severity != newValue { severity = newValue }
         }
     }

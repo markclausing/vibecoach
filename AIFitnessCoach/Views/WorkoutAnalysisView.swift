@@ -4,12 +4,12 @@ import Charts
 
 // MARK: - Epic 32 Story 32.2: Annotated Charts UI
 //
-// Detail-view voor één historische workout: gestapelde Swift Charts met gedeelde scrubber.
-// Boven: hartslag (LineMark, BPM op y). Onder: snelheid of vermogen (AreaMark).
-// Een floating header toont de exacte waardes onder de scrubber-positie.
+// Detail view for one historical workout: stacked Swift Charts with a shared scrubber.
+// Top: heart rate (LineMark, BPM on y). Bottom: speed or power (AreaMark).
+// A floating header shows the exact values under the scrubber position.
 //
-// Filosofie: 'Serene' — zachte kleuren via ThemeManager, subtiele schaduwen, één primaire
-// interactie (scrubben). Geen tooltips, geen popovers — alle info zit in de header.
+// Philosophy: 'Serene' — soft colours via ThemeManager, subtle shadows, one primary
+// interaction (scrubbing). No tooltips, no popovers — all info lives in the header.
 
 struct WorkoutAnalysisView: View {
 
@@ -21,8 +21,8 @@ struct WorkoutAnalysisView: View {
     @EnvironmentObject var planManager: TrainingPlanManager
 
     @Query private var samples: [WorkoutSample]
-    /// Epic #48: actieve doelen + alle activities + readiness voor blueprint- en
-    /// periodisatie-context die de Coach-analyse meekrijgt.
+    /// Epic #48: active goals + all activities + readiness for the blueprint and
+    /// periodization context that the Coach analysis receives.
     @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
     @Query(sort: \ActivityRecord.startDate, order: .forward) private var allActivitiesForContext: [ActivityRecord]
     @Query(sort: \DailyReadiness.date, order: .reverse) private var readinessRecords: [DailyReadiness]
@@ -34,26 +34,26 @@ struct WorkoutAnalysisView: View {
     @State private var patterns: [WorkoutPattern] = []
     @State private var insightState: InsightState = .idle
     @State private var selectedPatternKind: WorkoutPatternKind?
-    /// Onafhankelijke task voor de detect-/AI-flow. Bewust unstructured zodat
-    /// een pull-to-refresh-gesture die SwiftUI's `refreshable`-task vroegtijdig
-    /// cancelt (bekende UX-glitch wanneer de gesture eindigt vóór de Gemini-call
-    /// klaar is) niet de werker meeneemt — anders verdwijnt de coach-tekst zonder
-    /// vervanging in `.idle`.
+    /// Independent task for the detect/AI flow. Deliberately unstructured so that
+    /// a pull-to-refresh gesture that cancels SwiftUI's `refreshable` task
+    /// prematurely (known UX glitch when the gesture ends before the Gemini call
+    /// is done) does not take the worker down with it — otherwise the coach text
+    /// disappears without replacement into `.idle`.
     @State private var insightTask: Task<Void, Never>?
 
     private enum InsightState: Equatable {
-        case idle                 // Nog geen patronen of geen API-key
-        case loading              // AI-call in flight
-        case loaded(String)       // Coach-narrative klaar
-        case unavailable(String)  // Patronen aanwezig, maar geen AI-call mogelijk (key/fout)
+        case idle                 // No patterns yet or no API key
+        case loading              // AI call in flight
+        case loaded(String)       // Coach narrative ready
+        case unavailable(String)  // Patterns present, but no AI call possible (key/error)
     }
 
     init(activity: ActivityRecord) {
         self.activity = activity
-        // Story 32.1 (HK) + Epic 40 (Strava): unified UUID-mapping.
-        // - HealthKit-records: id is een UUID-string → wordt geparsed.
-        // - Strava-records: id is numerieke string → deterministische UUID via SHA-256.
-        // Dit houdt @Query type-veilig en vermijdt schema-wijziging op WorkoutSample.
+        // Story 32.1 (HK) + Epic 40 (Strava): unified UUID mapping.
+        // - HealthKit records: id is a UUID string → gets parsed.
+        // - Strava records: id is a numeric string → deterministic UUID via SHA-256.
+        // This keeps @Query type-safe and avoids a schema change on WorkoutSample.
         let uuid = UUID.forActivityRecordID(activity.id)
         _samples = Query(
             filter: #Predicate<WorkoutSample> { $0.workoutUUID == uuid },
@@ -69,17 +69,17 @@ struct WorkoutAnalysisView: View {
     private var hasSpeed: Bool { samples.contains { $0.speed != nil } }
     private var hasPower: Bool { samples.contains { $0.power != nil } }
 
-    /// Epic #52 cross-source fix: HK-`stepCount`-afgeleide cadens, los opgehaald
-    /// wanneer de opgeslagen samples geen cadens bevatten. Dit gebeurt wanneer de
-    /// getoonde `ActivityRecord` een Strava-record is dat van een HK-tegenhanger
-    /// "won" bij dedup — de Watch-stappen leven dan onder een andere UUID dan de
-    /// view opvraagt. Zie `loadCadenceFallbackIfNeeded()`.
+    /// Epic #52 cross-source fix: HK-`stepCount`-derived cadence, fetched separately
+    /// when the stored samples contain no cadence. This happens when the displayed
+    /// `ActivityRecord` is a Strava record that "won" over an HK counterpart during
+    /// dedup — the Watch steps then live under a different UUID than the view
+    /// requests. See `loadCadenceFallbackIfNeeded()`.
     @State private var hkCadenceSeries: [TimedValue] = []
 
-    /// Unified cadens-databron voor grafiek + stats. Eerst de opgeslagen samples
-    /// (Strava-cadence-stream of HK-ingest); bij afwezigheid de los-opgehaalde
-    /// HK-stepCount-reeks. Nul-buckets (verkeerslicht, koffiestop) blijven erin
-    /// voor de grafiek; stats filteren ze zelf.
+    /// Unified cadence data source for chart + stats. First the stored samples
+    /// (Strava cadence stream or HK ingest); when absent the separately fetched
+    /// HK stepCount series. Zero buckets (traffic light, coffee stop) stay in
+    /// for the chart; stats filter them out themselves.
     private var cadencePoints: [(timestamp: Date, spm: Double)] {
         let fromSamples = samples.compactMap { sample -> (timestamp: Date, spm: Double)? in
             guard let cadence = sample.cadence else { return nil }
@@ -89,9 +89,9 @@ struct WorkoutAnalysisView: View {
         return hkCadenceSeries.map { (timestamp: $0.timestamp, spm: $0.value) }
     }
 
-    /// Epic #52: cadens-grafiek tonen we alleen voor hardlopen (HK stepCount-afgeleide
-    /// of Strava-stream — beide leveren spm). Voor cycling zit cadens als secundair
-    /// signaal in een eigen chart-flow (zou een vierde grafiek worden); buiten scope.
+    /// Epic #52: we only show the cadence chart for running (HK stepCount-derived
+    /// or Strava stream — both provide spm). For cycling, cadence sits as a secondary
+    /// signal in its own chart flow (would become a fourth chart); out of scope.
     private var hasCadence: Bool { cadencePoints.contains { $0.spm > 0 } }
     private var showCadenceChart: Bool { activity.sportCategory == .running && hasCadence }
 
@@ -112,9 +112,9 @@ struct WorkoutAnalysisView: View {
         )
     }
 
-    /// Epic #52: cadens (spm) op de scrubber-positie. Leest uit `cadencePoints`
-    /// (samples óf HK-fallback) zodat de scrubber-waarde ook klopt wanneer de
-    /// cadens niet uit de opgeslagen samples maar uit de HK-stepCount-query komt.
+    /// Epic #52: cadence (spm) at the scrubber position. Reads from `cadencePoints`
+    /// (samples or HK fallback) so the scrubber value is also correct when the
+    /// cadence comes not from the stored samples but from the HK stepCount query.
     private var scrubbedCadence: Double? {
         guard let scrubbedDate else { return nil }
         return WorkoutAnalysisHelpers.nearestSample(
@@ -133,9 +133,9 @@ struct WorkoutAnalysisView: View {
         return first...last
     }
 
-    /// Epic #44 story 44.5: HR-zones afgeleid uit het profiel. Friel als LTHR
-    /// gezet is (preciezer voor atleet), anders Karvonen op max+rest. Lege array
-    /// als de gebruiker geen drempels heeft ingesteld — chart blijft schoon.
+    /// Epic #44 story 44.5: HR zones derived from the profile. Friel when LTHR
+    /// is set (more precise for the athlete), otherwise Karvonen on max+rest. Empty
+    /// array when the user has set no thresholds — chart stays clean.
     private var heartRateChartZones: [HeartRateZone] {
         WorkoutPatternDetector.heartRateZones(from: UserProfileService.cachedProfile()) ?? []
     }
@@ -145,8 +145,8 @@ struct WorkoutAnalysisView: View {
         return PowerZoneCalculator.coggan(ftp: ftp)
     }
 
-    /// Pastel-gradient van Z1 → Z5/Z7. Bewust laag-saturatie zodat zone-bands de
-    /// chart niet overheersen. Zone 1 = blauw (recovery), Z5/6/7 = warm (max).
+    /// Pastel gradient from Z1 → Z5/Z7. Deliberately low-saturation so the zone bands
+    /// do not dominate the chart. Zone 1 = blue (recovery), Z5/6/7 = warm (max).
     private func zoneColor(forIndex index: Int) -> Color {
         switch index {
         case 1: return .blue
@@ -155,15 +155,15 @@ struct WorkoutAnalysisView: View {
         case 4: return .orange
         case 5: return .red
         case 6: return .pink
-        default: return .purple // Z7 neuromuscular voor power
+        default: return .purple // Z7 neuromuscular for power
         }
     }
 
-    /// Y-domain voor de HR-chart. Tight rond actuele data (±10 BPM marge) zodat
-    /// we geen lege "0-80 BPM" en "200-300 BPM" zones tonen waar geen data zit.
-    /// Zone-bands die buiten deze range vallen worden door Charts geclipped — dat
-    /// is precies wat we willen, alleen zones tonen die de gebruiker écht heeft
-    /// aangeraakt.
+    /// Y-domain for the HR chart. Tight around the actual data (±10 BPM margin) so
+    /// we do not show empty "0-80 BPM" and "200-300 BPM" zones where there is no data.
+    /// Zone bands that fall outside this range are clipped by Charts — that
+    /// is exactly what we want, only show zones the user actually
+    /// touched.
     private var hrYDomain: ClosedRange<Double> {
         let hrValues = samples.compactMap(\.heartRate)
         guard let minHR = hrValues.min(), let maxHR = hrValues.max() else {
@@ -174,9 +174,9 @@ struct WorkoutAnalysisView: View {
         return lower...upper
     }
 
-    /// Y-domain voor de secondary chart. Power/speed start op 0 (recovery / coasten
-    /// is betekenisvol). Bovengrens met kleine marge boven de piekwaarde — zone
-    /// Z6/Z7 (Coggan) wordt buiten deze range automatisch geclipped.
+    /// Y-domain for the secondary chart. Power/speed starts at 0 (recovery / coasting
+    /// is meaningful). Upper bound with a small margin above the peak value — zone
+    /// Z6/Z7 (Coggan) is automatically clipped outside this range.
     private var secondaryYDomain: ClosedRange<Double> {
         let values: [Double] = samples.compactMap { secondaryValue(of: $0) }
         guard let maxValue = values.max(), maxValue > 0 else { return 0...100 }
@@ -187,9 +187,9 @@ struct WorkoutAnalysisView: View {
         }
     }
 
-    /// Epic #52: Y-domain voor de cadens-grafiek. Tight rond actuele data zodat
-    /// het verloop binnen één rit goed leesbaar is. Default 140-200 spm (typische
-    /// hardloop-range) wanneer er nog geen data is, voorkomt een lege as.
+    /// Epic #52: Y-domain for the cadence chart. Tight around the actual data so
+    /// the progression within one ride is easily readable. Default 140-200 spm (typical
+    /// running range) when there is no data yet, prevents an empty axis.
     private var cadenceYDomain: ClosedRange<Double> {
         let values = cadencePoints.map(\.spm).filter { $0 > 0 }
         guard let minC = values.min(), let maxC = values.max() else {
@@ -200,21 +200,21 @@ struct WorkoutAnalysisView: View {
         return lower...upper
     }
 
-    /// Epic #52: gemiddelde cadens (spm) over de niet-nul punten — nul-buckets
-    /// (verkeerslicht, koffiestop) tellen niet mee. Nil als er geen cadens is.
+    /// Epic #52: average cadence (spm) over the non-zero points — zero buckets
+    /// (traffic light, coffee stop) do not count. Nil when there is no cadence.
     private var averageCadence: Double? {
         Self.cadenceStats(from: cadencePoints).avg
     }
 
-    /// Epic #52: piek-cadens (95e percentiel) — niet de hoogste outlier maar de
-    /// "typische top" om sprintje-spikes af te vlakken.
+    /// Epic #52: peak cadence (95th percentile) — not the highest outlier but the
+    /// "typical top" to flatten out sprint spikes.
     private var peakCadence: Double? {
         Self.cadenceStats(from: cadencePoints).peak
     }
 
-    /// Pure helper: gem. + piek (95e percentiel) over niet-nul cadens-punten.
-    /// Static zodat zowel de computed properties (grafiek-bron) als de prompt-
-    /// context (lokaal-gefetchte reeks) hem kunnen gebruiken zonder @State-race.
+    /// Pure helper: avg + peak (95th percentile) over non-zero cadence points.
+    /// Static so that both the computed properties (chart source) and the prompt
+    /// context (locally fetched series) can use it without a @State race.
     private static func cadenceStats(from points: [(timestamp: Date, spm: Double)]) -> (avg: Double?, peak: Double?) {
         let values = points.map(\.spm).filter { $0 > 0 }.sorted()
         guard !values.isEmpty else { return (nil, nil) }
@@ -223,17 +223,17 @@ struct WorkoutAnalysisView: View {
         return (avg, values[idx])
     }
 
-    /// Epic #48: laatste readiness-record (van vandaag of recenter), gebruikt
-    /// als input voor `PeriodizationEngine.evaluateAllGoals` zodat de
-    /// IntentModifier de VibeScore-drempel correct evalueert.
+    /// Epic #48: latest readiness record (from today or more recent), used
+    /// as input for `PeriodizationEngine.evaluateAllGoals` so the
+    /// IntentModifier evaluates the VibeScore threshold correctly.
     private var latestReadinessForContext: DailyReadiness? {
         readinessRecords.first
     }
 
-    /// Epic #48: stabiele fingerprint voor de blueprint- + periodisatie-state.
-    /// Verandert zodra een doel toegevoegd/verwijderd wordt, een milestone
-    /// behaald is, of een fase-overgang plaatsvindt. Botsings-vrij genoeg voor
-    /// cache-invalidatie van de Coach-analyse — geen cryptografische hash nodig.
+    /// Epic #48: stable fingerprint for the blueprint + periodization state.
+    /// Changes as soon as a goal is added/removed, a milestone
+    /// is achieved, or a phase transition occurs. Collision-free enough for
+    /// cache invalidation of the Coach analysis — no cryptographic hash needed.
     private func goalsFingerprint(blueprints: [BlueprintCheckResult],
                                    periodization: [PeriodizationResult]) -> String {
         if blueprints.isEmpty && periodization.isEmpty { return "g_empty" }
@@ -246,13 +246,13 @@ struct WorkoutAnalysisView: View {
         return (bpParts + phaseParts).joined(separator: "|")
     }
 
-    /// Epic #49: cache-key voor weer-context. Verandert zodra HK-metadata wordt
-    /// bijgewerkt (bv. na DeepSync of een latere ingest), zodat een eerder
-    /// gegenereerde Coach-analyse zonder hitte-context vervangen wordt door
-    /// een nieuwe met de hitte-weging erin. "w_empty" als geen weerdata —
-    /// stabiele key bij niet-aanwezig zodat we niet steeds opnieuw genereren.
-    /// Epic #52: voegt range-piek toe zodat een latere hourly-range-fetch
-    /// (die de snapshot kan overrulen) ook een fresh-cache-entry triggert.
+    /// Epic #49: cache key for the weather context. Changes as soon as HK metadata is
+    /// updated (e.g. after DeepSync or a later ingest), so that a previously
+    /// generated Coach analysis without heat context is replaced by
+    /// a new one with the heat weighting in it. "w_empty" when no weather data —
+    /// a stable key when absent so we do not keep regenerating.
+    /// Epic #52: adds the range peak so that a later hourly-range fetch
+    /// (which can override the snapshot) also triggers a fresh cache entry.
     private func weatherFingerprint(_ activity: ActivityRecord,
                                     range: HistoricalWeatherService.WeatherRange?) -> String {
         var parts: [String] = []
@@ -265,11 +265,11 @@ struct WorkoutAnalysisView: View {
         return parts.isEmpty ? "w_empty" : parts.joined(separator: "_")
     }
 
-    /// Epic #52: cache-fingerprint voor running-cadens. Verandert zodra nieuwe
-    /// cadens-samples binnenkomen (DeepSync of Strava-stream-ingest), zodat een
-    /// eerder gegenereerde Coach-analyse die nog géén cadens-context had,
-    /// vervangen wordt door een nieuwe met de spm-weging erin. "c_empty"
-    /// wanneer geen cadens-data — stabiele key, geen onnodige invalidaties.
+    /// Epic #52: cache fingerprint for running cadence. Changes as soon as new
+    /// cadence samples come in (DeepSync or Strava stream ingest), so that a
+    /// previously generated Coach analysis that had no cadence context yet,
+    /// is replaced by a new one with the spm weighting in it. "c_empty"
+    /// when there is no cadence data — a stable key, no unnecessary invalidations.
     private func cadenceFingerprint() -> String {
         guard activity.sportCategory == .running else { return "c_na" }
         var parts: [String] = []
@@ -278,14 +278,14 @@ struct WorkoutAnalysisView: View {
         return parts.isEmpty ? "c_empty" : parts.joined(separator: "_")
     }
 
-    /// Epic #52 cross-source fix: vult `hkCadenceSeries` met HK-`stepCount`-
-    /// afgeleide cadens als (a) het een hardloop-workout is en (b) de opgeslagen
-    /// samples geen cadens bevatten. Dat laatste gebeurt wanneer de getoonde
-    /// record een Strava-record is dat van de HK-tegenhanger won bij dedup — de
-    /// Watch-stappen leven dan onder de HK-workout-UUID, niet de Strava-UUID die
-    /// de `@Query` opvraagt. De directe HK-query op `[start, end]` omzeilt dat.
-    /// Faal-tolerant: bij geen HK-data of een query-fout blijft de reeks leeg en
-    /// verdwijnt de grafiek stil (geen cadens-bron beschikbaar).
+    /// Epic #52 cross-source fix: fills `hkCadenceSeries` with HK-`stepCount`-
+    /// derived cadence if (a) it is a running workout and (b) the stored
+    /// samples contain no cadence. The latter happens when the displayed
+    /// record is a Strava record that won over the HK counterpart during dedup — the
+    /// Watch steps then live under the HK workout UUID, not the Strava UUID that
+    /// the `@Query` requests. The direct HK query on `[start, end]` bypasses that.
+    /// Fail-tolerant: when there is no HK data or a query error, the series stays empty and
+    /// the chart disappears silently (no cadence source available).
     private func loadCadenceFallbackIfNeeded() async {
         guard activity.sportCategory == .running else { return }
         guard !samples.contains(where: { ($0.cadence ?? 0) > 0 }) else { return }
@@ -297,11 +297,11 @@ struct WorkoutAnalysisView: View {
         hkCadenceSeries = series
     }
 
-    /// Epic #52: helper om de hourly weer-range op te halen voor deze workout.
-    /// Returnt `nil` als er geen GPS-coords op het record staan (HK-only ritten)
-    /// of als de API faalt — caller valt dan terug op de snapshot in
-    /// `activity.temperatureCelsius`/`humidityPercent`. Faal-tolerant zodat
-    /// een offline gebruiker of API-timeout de Coach-analyse niet blokkeert.
+    /// Epic #52: helper to fetch the hourly weather range for this workout.
+    /// Returns `nil` when there are no GPS coords on the record (HK-only rides)
+    /// or when the API fails — the caller then falls back to the snapshot in
+    /// `activity.temperatureCelsius`/`humidityPercent`. Fail-tolerant so that
+    /// an offline user or API timeout does not block the Coach analysis.
     private func fetchWeatherRange() async -> HistoricalWeatherService.WeatherRange? {
         guard let lat = activity.startLatitude, let lon = activity.startLongitude else {
             return nil
@@ -318,10 +318,10 @@ struct WorkoutAnalysisView: View {
         }
     }
 
-    /// Combineert de gestelde drempels tot een korte sleutel. Lege drempels worden
-    /// genegeerd; resultaat is leeg-string-achtig ("p_empty") als de gebruiker geen
-    /// drempels heeft ingesteld. Niet cryptografisch — alleen botsings-vrij genoeg
-    /// voor cache-invalidatie van de Coach-analyse.
+    /// Combines the set thresholds into a short key. Empty thresholds are
+    /// ignored; the result is empty-string-like ("p_empty") when the user has set
+    /// no thresholds. Not cryptographic — just collision-free enough
+    /// for cache invalidation of the Coach analysis.
     private func profileFingerprint(_ profile: UserPhysicalProfile) -> String {
         let parts: [String?] = [
             profile.maxHeartRate.map { "m\(Int($0.value))" },
@@ -375,46 +375,46 @@ struct WorkoutAnalysisView: View {
             insightTask = nil
         }
         .refreshable {
-            // Epic #44 story 44.5 + 44.6 testflow: pull-to-refresh leegt de
-            // `WorkoutInsightCache`-entry voor deze workout en herhaalt de detect-/
-            // generate-flow met de actuele profielwaarden. Handig om kalibratie-
-            // wijzigingen (nieuwe LTHR/max in Settings) terug te zien op een
-            // bestaande workout zonder dat je hoeft te wachten op een natuurlijke
-            // pattern-fingerprint-shift.
+            // Epic #44 story 44.5 + 44.6 testflow: pull-to-refresh empties the
+            // `WorkoutInsightCache` entry for this workout and repeats the detect/
+            // generate flow with the current profile values. Useful to see calibration
+            // changes (new LTHR/max in Settings) reflected on an
+            // existing workout without having to wait for a natural
+            // pattern-fingerprint shift.
             //
-            // De Gemini-call kan 1-3s duren — langer dan SwiftUI's refreshable-task
-            // soms wacht voor 'ie cancelt. Daarom draait de werker als unstructured
-            // `Task` (overleeft refreshable-cancellation), en awaiten we hier alleen
-            // op een korte gating zodat de pull-spinner niet instant flasht. De
-            // in-card "Coach analyseert…"-spinner toont de echte voortgang.
+            // The Gemini call can take 1-3s — longer than SwiftUI's refreshable task
+            // sometimes waits before it cancels. That is why the worker runs as an unstructured
+            // `Task` (survives refreshable cancellation), and we only await here
+            // on a short gating so the pull spinner does not flash instantly. The
+            // in-card "Coach analyseert…" spinner shows the real progress.
             insightTask?.cancel()
             insightTask = Task { await refreshAnalysis() }
             try? await Task.sleep(nanoseconds: 600_000_000)
         }
     }
 
-    /// Hard-invalidate-pad: gooit de cache-entry voor dit ene record weg en herhaalt
-    /// `computePatternsAndLoadInsight()`. Roept onder de motorkap dezelfde detect-
-    /// + AI-flow aan als de initiële `.task`, dus de loading-state knippert correct.
+    /// Hard-invalidate path: throws away the cache entry for this one record and repeats
+    /// `computePatternsAndLoadInsight()`. Under the hood it calls the same detect
+    /// + AI flow as the initial `.task`, so the loading state flickers correctly.
     private func refreshAnalysis() async {
         WorkoutInsightCache().invalidate(activityID: activity.id)
         await computePatternsAndLoadInsight()
     }
 
-    // MARK: - Story 32.3b: patroon-detectie + cache + AI-narrative
+    // MARK: - Story 32.3b: pattern detection + cache + AI narrative
 
-    /// Loopt zodra de samples voor deze workout binnen zijn. Detecteert patronen,
-    /// kijkt in de cache, en kickt anders een Gemini-call af. Gebruikt
-    /// `WorkoutPatternFormatter.fingerprint` voor de cache-key zodat re-classificatie
-    /// (story 40.4 / 32.1 follow-ups) automatisch een nieuwe analyse triggert.
+    /// Runs as soon as the samples for this workout have arrived. Detects patterns,
+    /// looks in the cache, and otherwise kicks off a Gemini call. Uses
+    /// `WorkoutPatternFormatter.fingerprint` for the cache key so that re-classification
+    /// (story 40.4 / 32.1 follow-ups) automatically triggers a new analysis.
     private func computePatternsAndLoadInsight() async {
-        // Epic #44 story 44.5: zone-gates aanzetten zodra de gebruiker LTHR of
-        // max+rest heeft ingesteld. Zonder profielwaarden valt de detector terug
-        // op het populatie-globale gedrag van vóór 44.5.
-        // Epic #49: bij lege samples (typisch Strava-only wandelingen — Strava
-        // levert geen 5s-buckets voor walking, alleen voor cycling/running) blijft
-        // de detector-output leeg, maar we genereren wél een coach-frame op basis
-        // van activity-velden + weer-context. Geen samples ≠ geen analyse.
+        // Epic #44 story 44.5: turn on the zone gates as soon as the user has set LTHR or
+        // max+rest. Without profile values the detector falls back
+        // to the population-global behaviour from before 44.5.
+        // Epic #49: with empty samples (typically Strava-only walks — Strava
+        // provides no 5s buckets for walking, only for cycling/running) the
+        // detector output stays empty, but we do generate a coach frame based
+        // on activity fields + weather context. No samples ≠ no analysis.
         let detected: [WorkoutPattern] = samples.isEmpty
             ? []
             : WorkoutPatternDetector.detectAll(
@@ -422,15 +422,15 @@ struct WorkoutAnalysisView: View {
                 profile: UserProfileService.cachedProfile()
               )
         patterns = detected
-        // Epic #47 follow-up: ook bij lege patterns een Coach-analyse genereren
-        // (positieve uitvoerings-bevestiging). De system-instruction zegt dan
-        // "schrijf een korte positieve frame".
+        // Epic #47 follow-up: generate a Coach analysis even with empty patterns
+        // (positive execution confirmation). The system instruction then says
+        // "write a short positive frame".
 
-        // Epic #48: blueprint- en periodisatie-context per actief doel. Hergebruikt
-        // dezelfde formatters die de chat-coach al gebruikt zodat het format
-        // identiek blijft. `BlueprintChecker.checkAllGoals` filtert zelf op doelen
-        // met blueprint-type; `PeriodizationEngine.evaluateAllGoals` werkt op alle
-        // niet-voltooide doelen.
+        // Epic #48: blueprint and periodization context per active goal. Reuses
+        // the same formatters the chat coach already uses so the format
+        // stays identical. `BlueprintChecker.checkAllGoals` filters itself on goals
+        // with a blueprint type; `PeriodizationEngine.evaluateAllGoals` works on all
+        // uncompleted goals.
         let activeGoals = goals.filter { !$0.isCompleted && Date() < $0.targetDate }
         let blueprintResults = BlueprintChecker.checkAllGoals(activeGoals, activities: allActivitiesForContext)
         let periodizationResults = PeriodizationEngine.evaluateAllGoals(
@@ -443,23 +443,23 @@ struct WorkoutAnalysisView: View {
             .map { $0.coachingContext }
             .joined(separator: "\n\n")
 
-        // Epic #52: hourly weer-range vóór de cache-check ophalen — de range
-        // gaat in de fingerprint, dus zonder fetch zou een nieuwe range geen
-        // cache-invalidatie triggeren. Voor records zonder GPS-coords valt deze
-        // call snel terug op nil en is de fingerprint-bijdrage stabiel.
+        // Epic #52: fetch the hourly weather range before the cache check — the range
+        // goes into the fingerprint, so without a fetch a new range would not
+        // trigger cache invalidation. For records without GPS coords this
+        // call falls back quickly to nil and the fingerprint contribution is stable.
         let weatherRange = await fetchWeatherRange()
 
-        // Epic #52 cross-source fix: als de opgeslagen samples geen cadens hebben
-        // maar het is een hardloop-workout, haal de cadens rechtstreeks uit
-        // HealthKit (stepCount over [start, end]). Dit dekt het geval waarin een
-        // Strava-record bij dedup won en de Watch-stappen onder de HK-UUID staan.
+        // Epic #52 cross-source fix: if the stored samples have no cadence
+        // but it is a running workout, fetch the cadence directly from
+        // HealthKit (stepCount over [start, end]). This covers the case where a
+        // Strava record won during dedup and the Watch steps live under the HK UUID.
         await loadCadenceFallbackIfNeeded()
 
         let cache = WorkoutInsightCache()
-        // Epic #44 + #48 update: cache-key combineert pattern-fingerprint met
-        // profiel-fingerprint én een doelen-fingerprint. Een wijziging in
-        // LTHR/max/FTP, milestone-status of fase-overgang invalideert de cache
-        // automatisch — anders zou een verouderde framing in de UI blijven hangen.
+        // Epic #44 + #48 update: the cache key combines the pattern fingerprint with
+        // the profile fingerprint and a goals fingerprint. A change in
+        // LTHR/max/FTP, milestone status or phase transition invalidates the cache
+        // automatically — otherwise a stale framing would stay hanging in the UI.
         let fingerprint = WorkoutPatternFormatter.fingerprint(for: detected)
             + "|" + profileFingerprint(UserProfileService.cachedProfile())
             + "|" + goalsFingerprint(blueprints: blueprintResults, periodization: periodizationResults)
@@ -472,11 +472,11 @@ struct WorkoutAnalysisView: View {
 
         insightState = .loading
         let service = WorkoutInsightService()
-        // Epic #44 update: rijke context meegeven zodat de coach het sessie-type
-        // (drempelwerk vs. recovery) en de persoonlijke zones kan meewegen — geen
-        // populatie-aannames meer over wat "hoog" of "rustig" voor jou betekent.
-        // Epic #47: pauze-recovery-events als aparte laag in de prompt zodat de
-        // coach uitstekend herstel positief kan framen ook als er geen pin is.
+        // Epic #44 update: pass rich context so the coach can weigh the session type
+        // (threshold work vs. recovery) and the personal zones — no more
+        // population assumptions about what "high" or "easy" means for you.
+        // Epic #47: pause-recovery events as a separate layer in the prompt so the
+        // coach can positively frame excellent recovery even when there is no pin.
         let profile = UserProfileService.cachedProfile()
         let referenceHR = WorkoutPatternDetector.referenceHeartRate(from: profile)
             ?? WorkoutPatternDetector.referenceHRFallback
@@ -487,9 +487,9 @@ struct WorkoutAnalysisView: View {
                 qualityLabel: recoveryQualityLabel(drop: event.drop, referenceHR: referenceHR)
             )
         }
-        // Epic #52: cadens-stats voor running. Voor cycling laten we deze nil zodat
-        // de Coach geen cadens-koppeling probeert te leggen waar de prompt-regels
-        // expliciet "alleen running" zeggen.
+        // Epic #52: cadence stats for running. For cycling we leave these nil so
+        // the Coach does not try to make a cadence connection where the prompt rules
+        // explicitly say "running only".
         let runningAvgCadence = activity.sportCategory == .running ? averageCadence : nil
         let runningPeakCadence = activity.sportCategory == .running ? peakCadence : nil
 
@@ -522,10 +522,10 @@ struct WorkoutAnalysisView: View {
             cache.store(text, for: activity.id, fingerprint: fingerprint)
             insightState = .loaded(text)
         } catch is CancellationError {
-            // Task-cancellation = nieuwe call onderweg of view weggenavigeerd. Niet
-            // klagen in de UI; de volgende `.task`/refresh handelt het af. Zet de
-            // state terug op .idle zodat we niet voor altijd op de spinner blijven
-            // hangen als er géén nieuwe call meer komt.
+            // Task cancellation = a new call underway or the view navigated away. Do not
+            // complain in the UI; the next `.task`/refresh handles it. Set the
+            // state back to .idle so we do not stay hanging on the spinner
+            // forever if no new call comes.
             insightState = .idle
         } catch {
             insightState = .unavailable(error.localizedDescription)
@@ -561,8 +561,8 @@ struct WorkoutAnalysisView: View {
     private func patternChip(_ pattern: WorkoutPattern, index: Int, selected: Bool) -> some View {
         let color = severityColor(pattern.severity)
         return HStack(spacing: 6) {
-            // Genummerd badge (1-9 via SF Symbol). Komt 1-op-1 terug op de HR-chart als
-            // PointMark-annotatie zodat gebruiker direct ziet welke pin bij welk patroon hoort.
+            // Numbered badge (1-9 via SF Symbol). Maps 1-to-1 onto the HR chart as a
+            // PointMark annotation so the user sees directly which pin belongs to which pattern.
             Image(systemName: "\(index + 1).circle.fill")
                 .font(.subheadline)
                 .foregroundStyle(color)
@@ -578,11 +578,11 @@ struct WorkoutAnalysisView: View {
         .overlay(Capsule().strokeBorder(color.opacity(selected ? 0.60 : 0.30), lineWidth: selected ? 1.5 : 1))
     }
 
-    /// Inline detail-card die opent zodra een pattern-chip wordt aangetapt. Drie
-    /// secties: **Wat het meet** (algemene fysiologische uitleg per kind), **Drempels**
-    /// (de severity-grenzen die de detector hanteert) en **Op deze rit** (de feitelijke
-    /// `pattern.detail` met meting). Bewust geen popover/sheet — extra context bij
-    /// wat de gebruiker al ziet, niet een secundaire flow.
+    /// Inline detail card that opens as soon as a pattern chip is tapped. Three
+    /// sections: **Wat het meet** (general physiological explanation per kind), **Drempels**
+    /// (the severity thresholds the detector applies) and **Op deze rit** (the actual
+    /// `pattern.detail` with measurement). Deliberately no popover/sheet — extra context next to
+    /// what the user already sees, not a secondary flow.
     private func patternDetailCard(_ pattern: WorkoutPattern) -> some View {
         let color = severityColor(pattern.severity)
         let info = patternExplanation(pattern.kind)
@@ -614,9 +614,9 @@ struct WorkoutAnalysisView: View {
         }
     }
 
-    /// Mens-leesbare uitleg per pattern-kind voor de detail-card. Korte zin over
-    /// fysiologische betekenis + drempel-context, los van de feitelijke meting van
-    /// deze rit. Bron-drempels matchen de constanten in `WorkoutPatternDetector`.
+    /// Human-readable explanation per pattern kind for the detail card. Short sentence about
+    /// physiological meaning + threshold context, separate from the actual measurement of
+    /// this ride. Source thresholds match the constants in `WorkoutPatternDetector`.
     private func patternExplanation(_ kind: WorkoutPatternKind) -> (description: String, thresholds: String) {
         switch kind {
         case .aerobicDecoupling:
@@ -642,10 +642,10 @@ struct WorkoutAnalysisView: View {
         }
     }
 
-    /// Midden van de pattern-range — pin-positie op de HR-chart. Decoupling/drift
-    /// gebruiken de hele workout-duur, dus midpoint = midden van de rit. Cadence
-    /// fade en HR-recovery hebben smallere ranges (laatste kwart, pauze-duur),
-    /// dus midpoint valt daar gericht in het meet-bereik.
+    /// Middle of the pattern range — pin position on the HR chart. Decoupling/drift
+    /// use the whole workout duration, so midpoint = middle of the ride. Cadence
+    /// fade and HR-recovery have narrower ranges (last quarter, pause duration),
+    /// so the midpoint falls deliberately within the measurement range there.
     private func patternMidpoint(of pattern: WorkoutPattern) -> Date {
         let mid = (pattern.range.lowerBound.timeIntervalSince1970
                    + pattern.range.upperBound.timeIntervalSince1970) / 2
@@ -680,9 +680,9 @@ struct WorkoutAnalysisView: View {
         }
     }
 
-    /// Epic #47: vertaalt een pauze-recovery-drop naar een label voor de coach-prompt.
-    /// Drempels matchen de pin-grenzen in `WorkoutPatternDetector` zodat het label en
-    /// de eventuele pin consistent zijn — een "matig" event hoort bij een moderate-pin.
+    /// Epic #47: translates a pause-recovery drop into a label for the coach prompt.
+    /// Thresholds match the pin boundaries in `WorkoutPatternDetector` so the label and
+    /// the possible pin are consistent — a "matig" event belongs to a moderate pin.
     private func recoveryQualityLabel(drop: Double, referenceHR: Double) -> String {
         guard referenceHR > 0 else { return "onbekend" }
         let ratio = drop / referenceHR
@@ -694,12 +694,12 @@ struct WorkoutAnalysisView: View {
 
     // MARK: Weather context chip (Epic #49)
 
-    /// Compacte pill rechts in de Coach-analyse-header die toont welke weer-data
-    /// de coach kreeg. Transparantie-laag: zelfs als de coach het weer niet
-    /// expliciet in z'n analyse benoemt, ziet de gebruiker dat de informatie wél
-    /// is meegegeven (en blijkbaar niet relevant werd gevonden). Verschijnt alleen
-    /// als HK-metadata aanwezig is — bij missing-weather is er niets te tonen en
-    /// blijft de header schoon.
+    /// Compact pill on the right of the Coach-analysis header that shows which weather data
+    /// the coach received. Transparency layer: even if the coach does not mention the weather
+    /// explicitly in its analysis, the user sees that the information was indeed
+    /// passed in (and apparently was not found relevant). Appears only
+    /// when HK metadata is present — with missing weather there is nothing to show and
+    /// the header stays clean.
     @ViewBuilder
     private var weatherContextChip: some View {
         if activity.temperatureCelsius != nil || activity.humidityPercent != nil {
@@ -774,9 +774,9 @@ struct WorkoutAnalysisView: View {
 
     // MARK: Coach Comparison (Story 33.4)
 
-    /// Resultaat van de intent-vs-execution-analyse als er een match-plan is.
-    /// `nil` als geen plan, geen match op kalenderdag of `.insufficientData` —
-    /// in die gevallen tonen we de kaart niet (geen ruis).
+    /// Result of the intent-vs-execution analysis when there is a matching plan.
+    /// `nil` when there is no plan, no match on the calendar day, or `.insufficientData` —
+    /// in those cases we do not show the card (no noise).
     private var comparisonContent: (verdict: IntentExecutionVerdict, plannedActivity: String)? {
         guard let plan = planManager.activePlan,
               let plannedMatch = plan.workouts.first(matching: activity) else {
@@ -842,8 +842,8 @@ struct WorkoutAnalysisView: View {
                                    icon: "drop.fill",
                                    headline: "Onder plan (\(String(format: "%+.0f", pct))% TRIMP)")
         case .insufficientData:
-            // Wordt al uitgefilterd in `comparisonContent`, maar we behouden een
-            // sane fallback zodat de switch totaal is.
+            // Already filtered out in `comparisonContent`, but we keep a
+            // sane fallback so the switch is exhaustive.
             return ComparisonStyle(color: .secondary,
                                    icon: "questionmark.circle",
                                    headline: "Geen vergelijking")
@@ -888,11 +888,11 @@ struct WorkoutAnalysisView: View {
         .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
-    // MARK: Sessie-type override (Epic 33 Story 33.1b)
+    // MARK: Session-type override (Epic 33 Story 33.1b)
 
-    /// Menu waarmee de gebruiker de auto-classificatie kan overrulen. Wijzigingen
-    /// worden direct in SwiftData bewaard en propageren via observation naar de
-    /// ChatViewModel-cache (zie `cacheLastWorkoutFeedback`).
+    /// Menu that lets the user override the auto-classification. Changes
+    /// are saved directly in SwiftData and propagate via observation to the
+    /// ChatViewModel cache (see `cacheLastWorkoutFeedback`).
     private var sessionTypeMenu: some View {
         Menu {
             ForEach(SessionType.allCases) { type in
@@ -936,9 +936,9 @@ struct WorkoutAnalysisView: View {
 
     private func setSessionType(_ type: SessionType?) {
         activity.sessionType = type
-        // Epic 40 Story 40.4: bij een handmatige keuze (incl. wissen) markeren we het
-        // record als override. `SessionReclassifier` slaat zulke records over zodat een
-        // latere stream-backfill de keuze van de gebruiker niet wegdrukt.
+        // Epic 40 Story 40.4: on a manual choice (incl. clearing) we mark the
+        // record as an override. `SessionReclassifier` skips such records so a
+        // later stream backfill does not overwrite the user's choice.
         activity.manualSessionTypeOverride = true
         try? modelContext.save()
     }
@@ -969,8 +969,8 @@ struct WorkoutAnalysisView: View {
                 .foregroundStyle(.secondary)
 
             if scrubbedDate == nil {
-                // Niet-gescrubd: hint maakt duidelijk dat dit een interactief overlay is.
-                // Voorkomt verwarrende lege kaart met streepjes als enige inhoud.
+                // Not scrubbed: hint makes clear this is an interactive overlay.
+                // Prevents a confusing empty card with dashes as the only content.
                 HStack(spacing: 10) {
                     Image(systemName: "hand.draw.fill")
                         .font(.body)
@@ -1003,7 +1003,7 @@ struct WorkoutAnalysisView: View {
         .padding(.vertical, 12)
         .padding(.horizontal, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        // Match TrendWidgetView card-styling: licht in light mode, donkerder in dark.
+        // Match TrendWidgetView card-styling: light in light mode, darker in dark.
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
@@ -1038,9 +1038,9 @@ struct WorkoutAnalysisView: View {
     private var heartRateChart: some View {
         chartCard(title: "Hartslag", unit: "BPM") {
             Chart {
-                // Epic #44 story 44.5+: zone-bands als zachte achtergrond. Tonen
-                // alleen als de gebruiker drempels heeft ingesteld (Friel- of
-                // Karvonen-zones). Subtiele kleuren — line blijft prominent.
+                // Epic #44 story 44.5+: zone bands as a soft background. Shown
+                // only when the user has set thresholds (Friel or
+                // Karvonen zones). Subtle colours — the line stays prominent.
                 ForEach(heartRateChartZones, id: \.index) { zone in
                     RectangleMark(
                         xStart: .value("Begin", chartDomain.lowerBound),
@@ -1061,11 +1061,11 @@ struct WorkoutAnalysisView: View {
                         .lineStyle(StrokeStyle(lineWidth: 2.0, lineCap: .round))
                     }
                 }
-                // Story 32.3b + UX-fix: pattern-pins op het **midden** van de pattern-
-                // range (voorheen `lowerBound` — daardoor stond decoupling/drift-pin
-                // aan het rit-begin terwijl het effect over de hele rit gemeten werd).
-                // Nu: decoupling/drift = midden van workout, cadence fade = midden van
-                // laatste kwart, HR-recovery = midden van de pauze.
+                // Story 32.3b + UX fix: pattern pins at the **middle** of the pattern
+                // range (previously `lowerBound` — that put the decoupling/drift pin
+                // at the start of the ride while the effect was measured over the whole ride).
+                // Now: decoupling/drift = middle of the workout, cadence fade = middle of
+                // the last quarter, HR-recovery = middle of the pause.
                 ForEach(Array(patterns.enumerated()), id: \.element.kind) { index, pattern in
                     let pinDate = patternMidpoint(of: pattern)
                     if let hr = nearestHeartRate(at: pinDate) {
@@ -1091,7 +1091,7 @@ struct WorkoutAnalysisView: View {
             }
             .chartXScale(domain: chartDomain)
             .chartYScale(domain: hrYDomain)
-            .chartXAxis(.hidden) // Tijdsverloop staat al in de scrubber-header.
+            .chartXAxis(.hidden) // Time progression is already in the scrubber header.
             .chartYAxis {
                 AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
                     AxisGridLine().foregroundStyle(.secondary.opacity(0.15))
@@ -1109,7 +1109,7 @@ struct WorkoutAnalysisView: View {
         }
     }
 
-    // MARK: Secondary chart (speed of power)
+    // MARK: Secondary chart (speed or power)
 
     @ViewBuilder
     private var secondaryChart: some View {
@@ -1119,9 +1119,9 @@ struct WorkoutAnalysisView: View {
 
         chartCard(title: title, unit: unit) {
             Chart {
-                // Epic #44: Coggan power-zones als zachte achtergrond — alleen als
-                // we power tonen én de gebruiker een FTP heeft. Voor speed-charts
-                // hebben we (nog) geen pace-zones, dus die blijven schoon.
+                // Epic #44: Coggan power zones as a soft background — only when
+                // we show power and the user has an FTP. For speed charts
+                // we have (yet) no pace zones, so those stay clean.
                 if secondarySeries == .power {
                     ForEach(powerChartZones, id: \.index) { zone in
                         RectangleMark(
@@ -1174,14 +1174,14 @@ struct WorkoutAnalysisView: View {
         }
     }
 
-    // MARK: - Epic #52: cadens-grafiek voor hardlopen
+    // MARK: - Epic #52: cadence chart for running
 
-    /// Steps-per-minute grafiek onder de secundaire chart. Volgt het zelfde
-    /// patroon als de HR-chart: LineMark met catmullRom-interpolatie, gedeelde
-    /// scrubber, tight Y-domain. Geen zone-bands — voor running cadens bestaat
-    /// nog geen breed-geaccepteerde zone-indeling die we hier veilig kunnen
-    /// renderen (180 spm wordt populair als "ideaal" maar is fysiologisch niet
-    /// universeel — vermijden om geen normatief gevoel op te roepen).
+    /// Steps-per-minute chart below the secondary chart. Follows the same
+    /// pattern as the HR chart: LineMark with catmullRom interpolation, shared
+    /// scrubber, tight Y-domain. No zone bands — for running cadence there is
+    /// no broadly accepted zone classification yet that we can safely
+    /// render here (180 spm is becoming popular as "ideal" but is physiologically not
+    /// universal — avoided so as not to evoke a normative feeling).
     @ViewBuilder
     private var cadenceChart: some View {
         let accent = themeManager.primaryAccentColor
@@ -1224,12 +1224,12 @@ struct WorkoutAnalysisView: View {
         }
     }
 
-    /// Story 32.3b: lookup-helper voor de pin-y-positie op de HR-chart.
+    /// Story 32.3b: lookup helper for the pin y-position on the HR chart.
     private func nearestHeartRate(at date: Date) -> Double? {
         WorkoutAnalysisHelpers.nearestSample(at: date, in: samples, timestamp: { $0.timestamp })?.heartRate
     }
 
-    // MARK: Scrubber gesture layer (gedeeld door beide charts)
+    // MARK: Scrubber gesture layer (shared by both charts)
 
     private func scrubGestureLayer(proxy: ChartProxy) -> some View {
         GeometryReader { geo in
@@ -1243,8 +1243,8 @@ struct WorkoutAnalysisView: View {
                             let origin = geo[plotFrame].origin
                             let xInPlot = max(0, value.location.x - origin.x)
                             if let date: Date = proxy.value(atX: xInPlot) {
-                                // Klem op het workout-domein zodat slepen voorbij de rand
-                                // niet leidt tot een 'lege' scrubber-staat.
+                                // Clamp to the workout domain so dragging past the edge
+                                // does not lead to an 'empty' scrubber state.
                                 scrubbedDate = min(max(date, chartDomain.lowerBound), chartDomain.upperBound)
                             }
                         }
@@ -1298,7 +1298,7 @@ struct WorkoutAnalysisView: View {
         .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
-    // MARK: Stats grid (uit ActivityRecord — altijd beschikbaar, ook voor Strava)
+    // MARK: Stats grid (from ActivityRecord — always available, also for Strava)
 
     private var statsGrid: some View {
         let avgHR = activity.averageHeartrate.map { String(format: "%.0f bpm", $0) } ?? "—"
@@ -1311,9 +1311,9 @@ struct WorkoutAnalysisView: View {
             statTile(label: "Afstand", value: distanceKm, icon: "ruler")
             statTile(label: "Gem. hartslag", value: avgHR, icon: "heart")
             statTile(label: "TRIMP", value: trimp, icon: "flame")
-            // Epic #49: weer-tiles uit HK-metadata, alleen wanneer de iPhone tijdens
-            // de workout aanwezig was. Beide optioneel — soms heeft HK wel temp en
-            // geen humidity (of andersom), dan tonen we alleen wat we hebben.
+            // Epic #49: weather tiles from HK metadata, only when the iPhone was present
+            // during the workout. Both optional — sometimes HK has temp but
+            // no humidity (or vice versa), in which case we show only what we have.
             if let temp = activity.temperatureCelsius {
                 statTile(label: "Temperatuur",
                          value: "\(Int(temp.rounded())) °C",
@@ -1358,17 +1358,17 @@ struct WorkoutAnalysisView: View {
     }
 }
 
-// MARK: - Recente Workouts sectie (Dashboard)
+// MARK: - Recent Workouts section (Dashboard)
 
-/// Sectie onder de TrendWidget op het Dashboard met de meest recente HealthKit-workouts.
-/// Strava-records worden ook getoond (als context) maar zijn niet klikbaar — zij hebben geen
-/// `WorkoutSample`-data omdat de Deep Sync alleen HealthKit-bron koppelt.
+/// Section below the TrendWidget on the Dashboard with the most recent HealthKit workouts.
+/// Strava records are also shown (as context) but are not clickable — they have no
+/// `WorkoutSample` data because Deep Sync only links the HealthKit source.
 struct RecentWorkoutsSection: View {
 
     @Query(sort: \ActivityRecord.startDate, order: .reverse) private var allActivities: [ActivityRecord]
     @EnvironmentObject var themeManager: ThemeManager
 
-    /// Aantal rijen dat we tonen. Default 7 — past op één scherm zonder de scroll te dominate.
+    /// Number of rows we show. Default 7 — fits on one screen without dominating the scroll.
     let limit: Int
 
     init(limit: Int = 7) {
@@ -1407,20 +1407,20 @@ struct RecentWorkoutsSection: View {
     }
 }
 
-/// Eén rij in de "Recente Workouts" sectie. Klikbaar als `id` parseerbaar is als UUID
-/// (= HealthKit). Strava-records tonen we als statische rij zonder chevron.
+/// One row in the "Recente Workouts" section. Clickable when `id` is parseable as a UUID
+/// (= HealthKit). Strava records are shown as a static row without a chevron.
 struct RecentWorkoutRow: View {
     let activity: ActivityRecord
     @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
-        // Epic 40: zowel HealthKit-records (UUID-uuidString) als Strava-records
-        // (numerieke ID) zijn nu klikbaar. WorkoutAnalysisView maakt zelf onderscheid
-        // via `UUID.forActivityRecordID(_:)` en toont samples wanneer aanwezig — bij
-        // Strava-records zonder ge-ingestte streams verschijnt de bestaande
-        // 'Nog geen samples beschikbaar'-empty-state. Dat is correcter dan een rij
-        // zonder navigatie waar de gebruiker geen feedback krijgt over waarom hij
-        // niets kan tappen.
+        // Epic 40: both HealthKit records (UUID uuidString) and Strava records
+        // (numeric ID) are now clickable. WorkoutAnalysisView distinguishes them itself
+        // via `UUID.forActivityRecordID(_:)` and shows samples when present — for
+        // Strava records without ingested streams the existing
+        // 'Nog geen samples beschikbaar' empty state appears. That is more correct than a row
+        // without navigation where the user gets no feedback about why they
+        // cannot tap anything.
         NavigationLink {
             WorkoutAnalysisView(activity: activity)
         } label: {
@@ -1459,8 +1459,8 @@ struct RecentWorkoutRow: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
-        // Match TrendWidgetView-styling — `Color(.systemBackground)` is wit in light mode
-        // en donker in dark mode (auto-aanpassend), met dezelfde subtiele schaduw.
+        // Match TrendWidgetView styling — `Color(.systemBackground)` is white in light mode
+        // and dark in dark mode (auto-adjusting), with the same subtle shadow.
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)

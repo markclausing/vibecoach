@@ -1,40 +1,40 @@
 import SwiftUI
 
-/// Epic #31 — Sprint 31.6: Herbruikbare layout-wrapper voor de V2.0 onboarding-flow.
+/// Epic #31 — Sprint 31.6: Reusable layout wrapper for the V2.0 onboarding flow.
 ///
-/// Het UX-prototype schrijft één rustig kader voor elke stap: een continue
-/// voortgangsbalk met "X / N" label, optionele uppercase eyebrow (moss of rood),
-/// grote titel, copy-blok en één of twee knoppen onderin. De wisselende visual
-/// wordt via `@ViewBuilder content` meegegeven.
+/// The UX prototype prescribes one calm frame for every step: a continuous
+/// progress bar with an "X / N" label, an optional uppercase eyebrow (moss or red),
+/// large title, copy block and one or two buttons at the bottom. The varying visual
+/// is passed in via `@ViewBuilder content`.
 struct OnboardingTemplateView<Content: View>: View {
 
-    // MARK: - Configuratie
+    // MARK: - Configuration
 
-    /// Huidige stap (1 t/m `totalSteps`). Gebruikt voor de voortgangsbalk én het "X / N" label.
+    /// Current step (1 through `totalSteps`). Used for both the progress bar and the "X / N" label.
     let stepIndex: Int
 
-    /// Totaal aantal stappen in de flow. Standaard 5 conform Epic #31 V2.0.
+    /// Total number of steps in the flow. Defaults to 5 per Epic #31 V2.0.
     var totalSteps: Int = 5
 
-    /// Optionele uppercase-label direct boven de titel (bijv. "PRIVACY EERST").
-    /// Kleur wordt via `eyebrowColor` bepaald — standaard moss (themakleur).
+    /// Optional uppercase label directly above the title (e.g. "PRIVACY EERST").
+    /// Color is determined via `eyebrowColor` — defaults to moss (theme color).
     var eyebrow: String?
     var eyebrowColor: Color?
 
-    /// Grote koptitel bovenaan het scherm.
+    /// Large heading at the top of the screen.
     let title: String
 
-    /// Optionele copy-tekst direct onder de titel.
+    /// Optional copy text directly below the title.
     var subtitle: String?
 
-    /// De wisselende visual in het midden van het scherm.
+    /// The varying visual in the middle of the screen.
     @ViewBuilder let content: () -> Content
 
-    /// Label voor de primaire (gevulde, groene) knop.
+    /// Label for the primary (filled, green) button.
     let primaryButtonTitle: String
     let primaryAction: () -> Void
 
-    /// Label voor de secundaire (plain) knop. Optioneel — laat leeg om te verbergen.
+    /// Label for the secondary (plain) button. Optional — leave empty to hide.
     var secondaryButtonTitle: String?
     var secondaryAction: (() -> Void)?
 
@@ -46,13 +46,13 @@ struct OnboardingTemplateView<Content: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 1. Continue voortgangsbalk + "X / N" teller
+            // 1. Continuous progress bar + "X / N" counter
             progressHeader
                 .padding(.horizontal, 24)
                 .padding(.top, 8)
                 .padding(.bottom, 28)
 
-            // 2. Eyebrow + titel + copy (links uitgelijnd, zoals Dashboard-stijl)
+            // 2. Eyebrow + title + copy (left aligned, Dashboard style)
             VStack(alignment: .leading, spacing: 10) {
                 if let eyebrow {
                     Text(eyebrow)
@@ -80,13 +80,13 @@ struct OnboardingTemplateView<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 24)
 
-            // 3. Wisselende content
+            // 3. Varying content
             Spacer(minLength: 20)
             content()
                 .frame(maxWidth: .infinity)
             Spacer(minLength: 20)
 
-            // 4. Knoppen onderin
+            // 4. Buttons at the bottom
             VStack(spacing: 10) {
                 Button(action: primaryAction) {
                     Text(primaryButtonTitle)
@@ -118,11 +118,11 @@ struct OnboardingTemplateView<Content: View>: View {
         .background(Color(.secondarySystemBackground).ignoresSafeArea())
     }
 
-    // MARK: - Voortgangsbalk
+    // MARK: - Progress bar
 
-    /// Continue voortgangsbalk met rechts ervan een "X / N" teller.
-    /// De balk gebruikt één track-rechthoek met een voortgangs-overlay die
-    /// evenredig meegroeit met `stepIndex / totalSteps`.
+    /// Continuous progress bar with an "X / N" counter to its right.
+    /// The bar uses one track rectangle with a progress overlay that grows
+    /// proportionally with `stepIndex / totalSteps`.
     private var progressHeader: some View {
         HStack(spacing: 12) {
             GeometryReader { proxy in
