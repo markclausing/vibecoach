@@ -1,15 +1,15 @@
 import Foundation
 
-// CLAUDE.md §3 — DST-veilige tijdsberekeningen.
-// `TimeInterval`-wiskunde (delen door 86400 of 7*86400) is fout rond zomertijd-overgangen,
-// omdat een dag dan 23 of 25 uur kan zijn. Deze extensies gebruiken `Calendar.dateComponents`
-// zodat alle berekeningen automatisch met de tijdzone-regels rekening houden.
+// CLAUDE.md §3 — DST-safe time calculations.
+// `TimeInterval` math (dividing by 86400 or 7*86400) is wrong around DST transitions,
+// because a day can then be 23 or 25 hours. These extensions use `Calendar.dateComponents`
+// so all calculations automatically account for the timezone rules.
 extension Calendar {
 
-    /// Fractioneel aantal dagen tussen twee `Date`s — DST-veilig.
+    /// Fractional number of days between two `Date`s — DST-safe.
     ///
-    /// Gebruikt voor weergave van resterende tijd met sub-dag precisie (bijv. "12.5 dagen").
-    /// Negatief als `end` vóór `start` ligt.
+    /// Used for displaying remaining time with sub-day precision (e.g. "12.5 days").
+    /// Negative if `end` is before `start`.
     func fractionalDays(from start: Date, to end: Date) -> Double {
         let comps = dateComponents([.day, .hour, .minute], from: start, to: end)
         let days = Double(comps.day ?? 0)
@@ -18,16 +18,16 @@ extension Calendar {
         return days + hours / 24.0 + minutes / (24.0 * 60.0)
     }
 
-    /// Fractioneel aantal weken tussen twee `Date`s — DST-veilig.
+    /// Fractional number of weeks between two `Date`s — DST-safe.
     ///
-    /// Gebaseerd op `fractionalDays` / 7. Negatief als `end` vóór `start` ligt.
+    /// Based on `fractionalDays` / 7. Negative if `end` is before `start`.
     func fractionalWeeks(from start: Date, to end: Date) -> Double {
         return fractionalDays(from: start, to: end) / 7.0
     }
 
-    /// Integer aantal volledige dagen tussen twee `Date`s — DST-veilig.
+    /// Integer number of whole days between two `Date`s — DST-safe.
     ///
-    /// Gebruik dit voor "X dagen geleden"- of cooldown-checks waar fractie er niet toe doet.
+    /// Use this for "X days ago" or cooldown checks where the fraction doesn't matter.
     func wholeDays(from start: Date, to end: Date) -> Int {
         return dateComponents([.day], from: start, to: end).day ?? 0
     }

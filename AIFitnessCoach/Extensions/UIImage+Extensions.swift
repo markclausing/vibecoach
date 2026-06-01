@@ -1,22 +1,22 @@
 import UIKit
 
 extension UIImage {
-    /// Verschaalt (downsamples) de afbeelding proportioneel zodat de langste zijde
-    /// niet groter is dan `maxDimension`. Handig om payloads naar API's klein te houden.
+    /// Scales (downsamples) the image proportionally so the longest side is no
+    /// larger than `maxDimension`. Handy for keeping payloads to APIs small.
     ///
-    /// - Parameter maxDimension: De maximale grootte (in pixels) voor de langste zijde.
-    /// - Returns: De verkleinde UIImage, of de originele afbeelding als deze al kleiner was.
+    /// - Parameter maxDimension: The maximum size (in pixels) for the longest side.
+    /// - Returns: The downsized UIImage, or the original image if it was already smaller.
     func downsample(to maxDimension: CGFloat = 2048.0) -> UIImage {
         let maxSide = max(size.width, size.height)
 
-        // Alleen verkleinen als het echt groter is
+        // Only downsize if it's actually larger
         guard maxSide > maxDimension else { return self }
 
         let scale = maxDimension / maxSide
         let newSize = CGSize(width: size.width * scale, height: size.height * scale)
 
         let format = UIGraphicsImageRendererFormat.default()
-        format.scale = 1.0 // Zorg voor een exacte verhouding zonder Retina-scaling te forceren
+        format.scale = 1.0 // Ensure an exact ratio without forcing Retina scaling
 
         let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
         return renderer.image { _ in
