@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// V2.0 Sprint 1 (compleet): Horizontale week-tijdlijn + in/uitklapbaar dagschema + detail-sheet.
+/// V2.0 Sprint 1 (complete): Horizontal week timeline + collapsible day schedule + detail sheet.
 struct WeekTimelineView: View {
     let plan: SuggestedTrainingPlan?
     let activities: [ActivityRecord]
@@ -9,11 +9,11 @@ struct WeekTimelineView: View {
     var weeklyForecast: [DayForecast] = []
     var onSkipWorkout: ((SuggestedWorkout) -> Void)?
     var onAlternativeWorkout: ((SuggestedWorkout) -> Void)?
-    /// Story 33.2b: callback voor "Herschrijf schema" — Dashboard wired dit naar
-    /// `ChatViewModel.requestPlanReset(...)`. Optioneel zodat preview-views zonder
-    /// reset-flow blijven werken.
+    /// Story 33.2b: callback for "Herschrijf schema" — Dashboard wires this to
+    /// `ChatViewModel.requestPlanReset(...)`. Optional so preview views without a
+    /// reset flow keep working.
     var onResetSchema: (() -> Void)?
-    /// Story 33.2b: loading-state — disabled de knop en toont ProgressView.
+    /// Story 33.2b: loading state — disables the button and shows a ProgressView.
     var isResettingSchema: Bool = false
 
     @EnvironmentObject var themeManager: ThemeManager
@@ -29,12 +29,12 @@ struct WeekTimelineView: View {
     }
 
     private func planWorkout(for date: Date) -> SuggestedWorkout? {
-        // Story 33.2a: gebruik displayDate zodat verplaatste sessies correct matchen.
+        // Story 33.2a: use displayDate so moved sessions match correctly.
         plan?.workouts.first { Calendar.current.isDate($0.displayDate, inSameDayAs: date) }
     }
 
-    /// Story 33.2b: aantal handmatig verplaatste workouts — bepaalt of de
-    /// "Herschrijf schema"-knop zichtbaar is.
+    /// Story 33.2b: number of manually moved workouts — determines whether the
+    /// "Herschrijf schema" button is visible.
     private var swappedCount: Int {
         plan?.workouts.filter { $0.isSwapped }.count ?? 0
     }
@@ -94,7 +94,7 @@ struct WeekTimelineView: View {
         }
     }
 
-    // MARK: - Story 33.2b: Reset Schema-knop
+    // MARK: - Story 33.2b: Reset Schema button
 
     private var resetSchemaButton: some View {
         Button {
@@ -142,7 +142,7 @@ struct WeekTimelineView: View {
         .padding(.horizontal)
     }
 
-    // MARK: - Horizontale bolletjesrij
+    // MARK: - Horizontal row of dots
 
     private var circleTimeline: some View {
         HStack(spacing: 0) {
@@ -159,7 +159,7 @@ struct WeekTimelineView: View {
         .padding(.horizontal, 4)
     }
 
-    // MARK: - Hoofd kaart (in/uitgeklapt)
+    // MARK: - Main card (collapsed/expanded)
 
     private var mainCard: some View {
         VStack(spacing: 0) {
@@ -179,7 +179,7 @@ struct WeekTimelineView: View {
         .padding(.horizontal)
     }
 
-    // MARK: - Ingeklapte kaart: vandaag
+    // MARK: - Collapsed card: today
 
     private var collapsedTodayRow: some View {
         Group {
@@ -206,7 +206,7 @@ struct WeekTimelineView: View {
         }
     }
 
-    // MARK: - Uitgeklapte lijst
+    // MARK: - Expanded list
 
     private var expandedList: some View {
         VStack(spacing: 0) {
@@ -229,7 +229,7 @@ struct WeekTimelineView: View {
         }
     }
 
-    // MARK: - TRIMP voortgangsbalk
+    // MARK: - TRIMP progress bar
 
     private var trimpProgressBar: some View {
         VStack(spacing: 6) {
@@ -261,7 +261,7 @@ struct WeekTimelineView: View {
         }
     }
 
-    // MARK: - Toggle knop
+    // MARK: - Toggle button
 
     private var toggleButton: some View {
         Button {
@@ -281,7 +281,7 @@ struct WeekTimelineView: View {
         }
     }
 
-    // MARK: - Leeg schema
+    // MARK: - Empty schedule
 
     private var emptyPlanCard: some View {
         VStack(spacing: 12) {
@@ -299,7 +299,7 @@ struct WeekTimelineView: View {
 
 // MARK: - TodaySummaryRow
 
-/// De compacte "vandaag"-kaart in de ingeklapte staat van het weekschema.
+/// The compact "today" card in the collapsed state of the week schedule.
 private struct TodaySummaryRow: View {
     let workout: SuggestedWorkout
     var forecast: DayForecast?
@@ -341,7 +341,7 @@ private struct TodaySummaryRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Icoon-blok
+            // Icon block
             ZStack {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(themeManager.primaryAccentColor.opacity(0.12))
@@ -373,7 +373,7 @@ private struct TodaySummaryRow: View {
 
             Spacer()
 
-            // Weer + chevron
+            // Weather + chevron
             VStack(alignment: .trailing, spacing: 2) {
                 if let f = forecast {
                     Image(systemName: weatherIconName(f))
@@ -573,7 +573,7 @@ struct WorkoutDayRowView: View {
 
 // MARK: - TrainingDetailSheet
 
-/// Detail-sheet die opent bij het aantikken van een training in de week-lijst.
+/// Detail sheet that opens when tapping a training in the week list.
 struct TrainingDetailSheet: View {
     let workout: SuggestedWorkout
     var forecast: DayForecast?
@@ -587,7 +587,7 @@ struct TrainingDetailSheet: View {
         let f = DateFormatter()
         f.locale = Locale(identifier: "nl_NL")
         f.dateFormat = "EEE d MMM"
-        // Story 33.2a: gebruik displayDate zodat verplaatste sessies de NIEUWE dag tonen.
+        // Story 33.2a: use displayDate so moved sessions show the NEW day.
         return f.string(from: workout.displayDate).uppercased()
     }
 
@@ -608,7 +608,7 @@ struct TrainingDetailSheet: View {
         return parts.joined(separator: " · ")
     }
 
-    // Schatting hartslagzone-bereik op basis van zone-string (aanname: maxHR ~190)
+    // Estimate heart rate zone range based on the zone string (assumption: maxHR ~190)
     private var hrRange: String {
         guard let zone = workout.heartRateZone?.lowercased() else { return "—" }
         if zone.contains("1") { return "< 114 bpm" }
@@ -619,7 +619,7 @@ struct TrainingDetailSheet: View {
         return zone
     }
 
-    // Voedingsadvies op basis van duur en zone
+    // Nutrition advice based on duration and zone
     private var fuelingAdvice: (voor: String, tijdens: String, na: String) {
         let duration = workout.suggestedDurationMinutes
         let isIntense = workout.heartRateZone?.lowercased().contains("4") == true
@@ -640,7 +640,7 @@ struct TrainingDetailSheet: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
 
-                // Header: datum + badge
+                // Header: date + badge
                 HStack(spacing: 8) {
                     Text(dateLabel)
                         .font(.caption).fontWeight(.semibold).foregroundColor(.secondary)
@@ -660,7 +660,7 @@ struct TrainingDetailSheet: View {
                     }
                 }
 
-                // Titel + subtitel
+                // Title + subtitle
                 VStack(alignment: .leading, spacing: 4) {
                     Text(workout.activityType)
                         .font(.system(size: 28, weight: .bold))
@@ -669,7 +669,7 @@ struct TrainingDetailSheet: View {
                         .font(.subheadline).foregroundColor(.secondary)
                 }
 
-                // Story 33.2a: Verplaats sessie naar andere dag deze week.
+                // Story 33.2a: Move the session to another day this week.
                 Button {
                     showingMoveSheet = true
                 } label: {
@@ -681,14 +681,14 @@ struct TrainingDetailSheet: View {
                 .buttonStyle(.bordered)
                 .tint(themeManager.primaryAccentColor)
 
-                // Drie metrics blokken
+                // Three metric blocks
                 HStack(spacing: 10) {
                     MetricBlock(label: "ZONE", value: workout.heartRateZone ?? "—", unit: nil)
                     MetricBlock(label: "HARTSLAG", value: hrRange, unit: nil)
                     MetricBlock(label: "TRIMP", value: workout.targetTRIMP.map { "\($0)" } ?? "—", unit: nil)
                 }
 
-                // Weer sectie
+                // Weather section
                 if let f = forecast {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("WEER")
@@ -714,7 +714,7 @@ struct TrainingDetailSheet: View {
                     }
                 }
 
-                // Voeding sectie
+                // Nutrition section
                 VStack(alignment: .leading, spacing: 10) {
                     Text("VOEDING")
                         .font(.caption).fontWeight(.semibold).foregroundColor(.secondary).kerning(0.5)
@@ -737,7 +737,7 @@ struct TrainingDetailSheet: View {
             MoveWorkoutSheet(workout: workout) { newDate in
                 planManager.moveWorkout(workout, to: newDate)
                 showingMoveSheet = false
-                dismiss() // sluit ook detail — UI moet de bijgewerkte volgorde tonen
+                dismiss() // also close detail — UI must show the updated order
             }
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)

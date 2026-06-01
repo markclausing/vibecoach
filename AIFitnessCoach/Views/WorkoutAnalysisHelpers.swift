@@ -2,10 +2,10 @@ import Foundation
 
 // MARK: - Epic 32 Story 32.2: WorkoutAnalysisHelpers
 //
-// Pure-Swift helpers die `WorkoutAnalysisView` testbaar houden zonder SwiftUI/Charts in te trekken.
+// Pure-Swift helpers that keep `WorkoutAnalysisView` testable without pulling in SwiftUI/Charts.
 
-/// Welke metric in de onderste chart wordt getoond.
-/// Cyclisten kijken vooral naar power; hardlopers naar snelheid.
+/// Which metric is shown in the bottom chart.
+/// Cyclists mostly look at power; runners at speed.
 enum SecondarySeries: Equatable {
     case speed
     case power
@@ -14,9 +14,9 @@ enum SecondarySeries: Equatable {
 
 enum WorkoutAnalysisHelpers {
 
-    /// Vindt de sample met de timestamp die het dichtst bij `targetDate` ligt.
-    /// `samples` mag in willekeurige volgorde aangeleverd worden — we doen O(n) lineaire scan
-    /// (voor ~720 samples per workout is dat ruim binnen één frame op 60fps).
+    /// Finds the sample with the timestamp closest to `targetDate`.
+    /// `samples` may be supplied in any order — we do an O(n) linear scan
+    /// (for ~720 samples per workout that is well within one frame at 60fps).
     static func nearestSample<S>(at targetDate: Date,
                                  in samples: [S],
                                  timestamp: (S) -> Date) -> S? {
@@ -35,12 +35,12 @@ enum WorkoutAnalysisHelpers {
         return best
     }
 
-    /// Bepaalt welke metric de secondary chart toont op basis van sport-categorie en
-    /// daadwerkelijk beschikbare meetdata. Voorkeur:
-    ///   • Cycling + power-data → power
-    ///   • Anders met speed-data → speed
-    ///   • Anders met power-data → power
-    ///   • Anders → none (chart wordt verborgen)
+    /// Determines which metric the secondary chart shows based on sport category and
+    /// the measurement data actually available. Preference:
+    ///   • Cycling + power data → power
+    ///   • Otherwise with speed data → speed
+    ///   • Otherwise with power data → power
+    ///   • Otherwise → none (chart is hidden)
     static func chooseSecondarySeries(sportCategory: String?,
                                       hasSpeed: Bool,
                                       hasPower: Bool) -> SecondarySeries {

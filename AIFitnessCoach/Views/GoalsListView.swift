@@ -16,7 +16,7 @@ struct GoalsListView: View {
     @State private var showingAddSheet = false
     @AppStorage("vibecoach_recoveryPlanTimestamp") private var recoveryPlanTimestamp: Double = 0
 
-    // Epic 34.1: scroll-state voor materiaal-overlay onder de statusbalk.
+    // Epic 34.1: scroll state for the material overlay under the status bar.
     @State private var isGoalsScrolled: Bool = false
 
     // MARK: - Computed
@@ -40,7 +40,7 @@ struct GoalsListView: View {
     private var hasActiveRecoveryPlan: Bool {
         guard recoveryPlanTimestamp > 0 else { return false }
         let planDate = Date(timeIntervalSince1970: recoveryPlanTimestamp)
-        // CLAUDE.md §3: kalender-gebaseerd ipv `3 * 24 * 3600` zodat DST geen 1u-drift veroorzaakt.
+        // CLAUDE.md §3: calendar-based instead of `3 * 24 * 3600` so DST does not cause a 1h drift.
         return Calendar.current.fractionalDays(from: planDate, to: Date()) < 3.0
     }
 
@@ -282,7 +282,7 @@ struct GoalsListView: View {
                 ForEach(segments, id: \.phase.rawValue) { seg in
                     let isActive = seg.phase == currentPhase
                     // swiftlint:disable:next redundant_discardable_let
-                    let _ = Double(totalW)  // ForEach-disambiguation; verwijderen breekt closure-type-inferentie.
+                    let _ = Double(totalW)  // ForEach disambiguation; removing it breaks closure type inference.
                     Text(phaseShortLabel(seg.phase) + " \(seg.weeks)w")
                         .font(.system(size: 9, weight: isActive ? .bold : .regular))
                         .foregroundColor(isActive ? themeManager.primaryAccentColor : .secondary)
@@ -356,7 +356,7 @@ struct GoalsListView: View {
                 .font(.caption).fontWeight(.semibold)
                 .foregroundColor(.secondary).kerning(0.5)
 
-            // Trainingsbelasting (TRIMP)
+            // Training load (TRIMP)
             PhaseProgressCard(
                 label: "Trainingsbelasting",
                 valueCurrent: String(format: "%.0f", gap.actualTRIMPToDate),
@@ -367,7 +367,7 @@ struct GoalsListView: View {
                 accentColor: themeManager.primaryAccentColor
             )
 
-            // Afstand
+            // Distance
             if gap.totalPhaseKmTarget > 0 {
                 let sportLabel = gap.blueprintType == .cyclingTour ? "Afstand (wielrennen)" : "Afstand (hardlopen)"
                 PhaseProgressCard(
@@ -381,7 +381,7 @@ struct GoalsListView: View {
                 )
             }
 
-            // Langste sessie
+            // Longest session
             if let session = periResult?.milestoneItems.first(where: { $0.label == "Langste sessie" }) {
                 PhaseProgressCard(
                     label: "Langste sessie",

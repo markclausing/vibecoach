@@ -1,14 +1,14 @@
 import SwiftUI
 
-/// Toont een banner op het Dashboard zodra de SwiftData-migratie tijdens de
-/// laatste app-launch is gefaald en de fresh-DB-fallback (CLAUDE.md §12) is
-/// geactiveerd. De gebruiker leert daardoor dat doelen, voorkeuren en
-/// blessure-meldingen lokaal-only data zijn — workouts uit HealthKit en
-/// Strava re-syncen vanzelf en zijn niet beïnvloed.
+/// Shows a banner on the Dashboard as soon as the SwiftData migration failed
+/// during the last app launch and the fresh-DB fallback (CLAUDE.md §12) was
+/// activated. This tells the user that goals, preferences and injury reports
+/// are local-only data — workouts from HealthKit and Strava re-sync
+/// automatically and are not affected.
 ///
-/// Pollt elke `.onAppear` de `MigrationFallbackStore`-flag (geen reactieve
-/// publisher nodig — de flag wordt enkel tijdens app-init geschreven). Bij
-/// "Sluit" wist de banner de flag en verdwijnt definitief tot de volgende
+/// Polls the `MigrationFallbackStore` flag on every `.onAppear` (no reactive
+/// publisher needed — the flag is only written during app init). On "Sluit"
+/// the banner clears the flag and disappears permanently until the next
 /// fallback.
 struct MigrationFallbackBanner: View {
     private let store: MigrationFallbackStore
