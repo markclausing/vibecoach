@@ -2,31 +2,31 @@ import Foundation
 
 // MARK: - Epic 44 Story 44.1: HeartRateZoneCalculator
 //
-// Pure-Swift afleiding van 5 hartslag-zones uit een paar persoonlijke drempels.
-// Twee strategieën:
-//   • **Karvonen** (HR-Reserve methode): zones als percentage van (max − rest) + rest.
-//     Vereist max-HR én rust-HR.
-//   • **Friel** (LTHR-methode): zones als percentage van de lactate threshold HR.
-//     Vereist alleen LTHR — wordt door veel coaches als nauwkeuriger beschouwd
-//     omdat LTHR een functioneel meetpunt is, terwijl max-HR vaak geschat is.
+// Pure-Swift derivation of 5 heart-rate zones from a few personal thresholds.
+// Two strategies:
+//   • **Karvonen** (HR-Reserve method): zones as a percentage of (max − rest) + rest.
+//     Requires both max HR and resting HR.
+//   • **Friel** (LTHR method): zones as a percentage of the lactate threshold HR.
+//     Requires only LTHR — considered more accurate by many coaches
+//     because LTHR is a functional measurement, while max HR is often estimated.
 //
-// Beide retourneren `[HeartRateZone]` met dezelfde 5-zone-naming. UI en
-// detector kunnen kiezen welke strategie ze gebruiken op basis van wat in het
-// profiel beschikbaar is — Friel heeft voorkeur als LTHR bekend is.
+// Both return `[HeartRateZone]` with the same 5-zone naming. The UI and
+// detector can choose which strategy to use based on what is
+// available in the profile — Friel is preferred when LTHR is known.
 
 struct HeartRateZone: Equatable {
-    /// 1-based index, 1 = recovery, 5 = VO2max. Stable voor UI-koppelingen.
+    /// 1-based index, 1 = recovery, 5 = VO2max. Stable for UI bindings.
     let index: Int
-    /// Korte naam (Engels — Swift-conventie). UI mag in het Nederlands renderen.
+    /// Short name (English — Swift convention). The UI may render in Dutch.
     let name: String
-    /// Onder- en bovengrens in BPM (afgerond op gehele BPM).
+    /// Lower and upper bound in BPM (rounded to whole BPM).
     let lowerBPM: Int
     let upperBPM: Int
 }
 
 enum HeartRateZoneCalculator {
 
-    /// Karvonen-formule: `zoneBPM = restHR + (maxHR − restHR) × percentage`.
+    /// Karvonen formula: `zoneBPM = restHR + (maxHR − restHR) × percentage`.
     /// Joe Friel / TrainingPeaks 5-zone percentages:
     ///   Z1 Recovery   50–60% HRR
     ///   Z2 Endurance  60–70% HRR
@@ -34,9 +34,9 @@ enum HeartRateZoneCalculator {
     ///   Z4 Threshold  80–90% HRR
     ///   Z5 VO2max     90–100% HRR
     /// - Parameters:
-    ///   - maxHR: Maximale hartslag in BPM. Moet > restHR zijn anders krijg je een lege array.
-    ///   - restingHR: Rusthartslag in BPM. Moet >= 0 en < maxHR zijn.
-    /// - Returns: Vijf zones gesorteerd van laag naar hoog. Lege array bij ongeldige input.
+    ///   - maxHR: Maximum heart rate in BPM. Must be > restHR or you get an empty array.
+    ///   - restingHR: Resting heart rate in BPM. Must be >= 0 and < maxHR.
+    /// - Returns: Five zones sorted low to high. Empty array on invalid input.
     static func karvonen(maxHR: Double, restingHR: Double) -> [HeartRateZone] {
         let hrr = maxHR - restingHR
         guard maxHR > 0, restingHR >= 0, hrr > 0 else { return [] }
@@ -59,21 +59,21 @@ enum HeartRateZoneCalculator {
         }
     }
 
-    /// Friel-LTHR-formule: zones als percentage van de lactate threshold HR.
-    /// Cycling-variant (loop-zones zijn iets anders, maar verschil zit op 1-2 BPM
-    /// en is voor onze pattern-detector kalibratie verwaarloosbaar).
+    /// Friel-LTHR formula: zones as a percentage of the lactate threshold HR.
+    /// Cycling variant (running zones differ slightly, but the difference is 1-2 BPM
+    /// and is negligible for our pattern-detector calibration).
     ///   Z1 Recovery   <81% LTHR
     ///   Z2 Endurance  81–89% LTHR
     ///   Z3 Tempo      90–93% LTHR
     ///   Z4 Threshold  94–99% LTHR
-    ///   Z5 VO2max     ≥100% LTHR (bovengrens conservatief op 110% LTHR)
-    /// - Parameter lactateThresholdHR: LTHR in BPM (typisch 85–90% van maxHR).
-    /// - Returns: Vijf zones. Lege array bij ongeldige input.
+    ///   Z5 VO2max     ≥100% LTHR (upper bound conservatively at 110% LTHR)
+    /// - Parameter lactateThresholdHR: LTHR in BPM (typically 85–90% of maxHR).
+    /// - Returns: Five zones. Empty array on invalid input.
     static func friel(lactateThresholdHR: Double) -> [HeartRateZone] {
         guard lactateThresholdHR > 0 else { return [] }
-        // Onderkant Z1 mag niet onder de typische rust-HR (60) zakken; we beginnen bij 50%
-        // van LTHR als pragmatische ondergrens. UI kan dit altijd overschrijven met de
-        // werkelijke rust-HR uit het profiel als die bekend is.
+        // The bottom of Z1 must not drop below the typical resting HR (60); we start at 50%
+        // of LTHR as a pragmatic lower bound. The UI can always override this with the
+        // actual resting HR from the profile if known.
         let percentages: [(name: String, low: Double, high: Double)] = [
             ("Recovery", 0.50, 0.81),
             ("Endurance", 0.81, 0.90),
@@ -93,9 +93,9 @@ enum HeartRateZoneCalculator {
         }
     }
 
-    /// Geeft de zone (1-5) terug waarin een gegeven BPM-waarde valt op basis
-    /// van een al-berekende zone-set. Voor BPM onder Z1 returnt 0; boven Z5 returnt 6.
-    /// Handig voor `WorkoutPatternDetector`-gates ("alleen meten in Z2/Z3").
+    /// Returns the zone (1-5) a given BPM value falls into based on
+    /// an already-computed zone set. For BPM below Z1 returns 0; above Z5 returns 6.
+    /// Handy for `WorkoutPatternDetector` gates ("only measure in Z2/Z3").
     static func zoneIndex(for bpm: Double, in zones: [HeartRateZone]) -> Int {
         guard !zones.isEmpty else { return 0 }
         if bpm < Double(zones[0].lowerBPM) { return 0 }

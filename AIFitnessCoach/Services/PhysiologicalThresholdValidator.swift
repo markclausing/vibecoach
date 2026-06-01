@@ -1,35 +1,34 @@
 import Foundation
 
-/// Epic #51-C: pure-Swift validatie voor de vier persoonlijke trainingsdrempels
-/// die de gebruiker handmatig kan invoeren in `TrainingThresholdsSettingsView`.
+/// Epic #51-C: pure-Swift validation for the four personal training thresholds
+/// the user can enter manually in `TrainingThresholdsSettingsView`.
 ///
-/// Twee soorten checks, beide gegrond in sport-fysiologie:
+/// Two kinds of checks, both grounded in sports physiology:
 ///
-/// 1. **Range-checks** per individuele drempel — voorkomt typos en absurde
-///    waarden (Max HR = 5, FTP = 5000W) die de zone-calculators zinloze zones
-///    laten opleveren.
-/// 2. **Cross-checks** over het hele profiel — fysiologische consistentie
-///    (Max HR moet hoger zijn dan Rust HR, LTHR ligt tussen Rust en Max).
-///    Zonder deze checks gaf `HeartRateZoneCalculator.karvonen()` stilletjes
-///    een lege zone-array en zag de gebruiker enkel "—" in de zone-preview.
+/// 1. **Range checks** per individual threshold — prevents typos and absurd
+///    values (Max HR = 5, FTP = 5000W) that make the zone calculators produce
+///    meaningless zones.
+/// 2. **Cross checks** across the whole profile — physiological consistency
+///    (Max HR must be higher than Resting HR, LTHR sits between Resting and Max).
+///    Without these checks `HeartRateZoneCalculator.karvonen()` silently
+///    returned an empty zone array and the user only saw "—" in the zone preview.
 ///
-/// AppStorage-vrij — caller injecteert de invoer als parameters zodat tests
-/// een fresh `UserDefaults(suiteName:)`-flow niet hoeven op te zetten
-/// (CLAUDE.md §6).
+/// AppStorage-free — the caller injects the input as parameters so tests don't
+/// have to set up a fresh `UserDefaults(suiteName:)` flow (CLAUDE.md §6).
 enum PhysiologicalThresholdValidator {
 
-    /// Geldige ranges per drempel — `closed range` waarin de waarde fysiologisch
-    /// realistisch is. Buiten deze range is een **warning** (toch op te slaan
-    /// met een waarschuwing), buiten de absolute grens (negatief, 0) is een
-    /// **error** (geblokkeerd).
+    /// Valid ranges per threshold — `closed range` in which the value is
+    /// physiologically realistic. Outside this range is a **warning** (still
+    /// savable with a warning); outside the absolute bound (negative, 0) is an
+    /// **error** (blocked).
     enum Range {
         static let maxHR: ClosedRange<Double> = 120...230
         static let restingHR: ClosedRange<Double> = 30...100
         static let lthr: ClosedRange<Double> = 100...200
         static let ftp: ClosedRange<Double> = 75...600
 
-        /// Absolute "absurde waarden"-grens — buiten deze range hard blokkeren
-        /// omdat de zone-calculator dan onzin-zones produceert.
+        /// Absolute "absurd values" bound — outside this range we hard-block
+        /// because the zone calculator would otherwise produce nonsense zones.
         static let absoluteMaxHR: ClosedRange<Double> = 60...250
         static let absoluteRestingHR: ClosedRange<Double> = 20...120
         static let absoluteLTHR: ClosedRange<Double> = 80...220
@@ -47,8 +46,8 @@ enum PhysiologicalThresholdValidator {
         let message: String
     }
 
-    /// Het hele profiel als input — alleen waarden die de gebruiker daadwerkelijk
-    /// heeft ingevuld zijn `Double`, ontbrekende drempels blijven `nil`.
+    /// The whole profile as input — only values the user actually entered are
+    /// `Double`; missing thresholds stay `nil`.
     struct ProfileInput: Equatable {
         var maxHR: Double?
         var restingHR: Double?
@@ -79,15 +78,15 @@ enum PhysiologicalThresholdValidator {
         }
     }
 
-    // MARK: - Per-veld validatie
+    // MARK: - Per-field validation
 
-    /// Valideert één drempel onafhankelijk van de rest van het profiel.
+    /// Validates one threshold independently of the rest of the profile.
     ///
-    /// - `value == nil` → `.ok` (drempel niet ingesteld = ok, formule-default
-    ///   wordt gebruikt door de zone-calculators)
-    /// - `value <= 0` of buiten absolute range → `.error`
-    /// - `value` buiten realistische range → `.warning`
-    /// - anders → `.ok`
+    /// - `value == nil` → `.ok` (threshold not set = ok, the zone calculators
+    ///   use the formula default)
+    /// - `value <= 0` or outside the absolute range → `.error`
+    /// - `value` outside the realistic range → `.warning`
+    /// - otherwise → `.ok`
     static func validateField(_ kind: Kind, value: Double?) -> Issue {
         guard let value else {
             return Issue(severity: .ok, message: "")
@@ -110,16 +109,16 @@ enum PhysiologicalThresholdValidator {
         return Issue(severity: .ok, message: "")
     }
 
-    // MARK: - Cross-validatie
+    // MARK: - Cross-validation
 
-    /// Valideert het volledige profiel op fysiologische consistentie. Specifiek:
-    /// - Max HR moet > Rust HR zijn (anders levert de Karvonen-formule een
-    ///   negatieve HRR op en faalt de zone-berekening stilletjes).
-    /// - LTHR moet < Max HR (LTHR is per definitie sub-maximaal).
-    /// - LTHR moet > Rust HR (anders is het geen threshold-effort).
-    /// - FTP staat los — geen cross-relatie met HR-drempels.
+    /// Validates the full profile for physiological consistency. Specifically:
+    /// - Max HR must be > Resting HR (otherwise the Karvonen formula yields a
+    ///   negative HRR and the zone calculation fails silently).
+    /// - LTHR must be < Max HR (LTHR is by definition sub-maximal).
+    /// - LTHR must be > Resting HR (otherwise it isn't a threshold effort).
+    /// - FTP stands alone — no cross relation with the HR thresholds.
     ///
-    /// Returnt een lege array als alles ok is, anders één of meer `Issue`s.
+    /// Returns an empty array if everything is ok, otherwise one or more `Issue`s.
     static func validateProfile(_ profile: ProfileInput) -> [Issue] {
         var issues: [Issue] = []
 
@@ -153,18 +152,18 @@ enum PhysiologicalThresholdValidator {
         return issues
     }
 
-    /// Convenience voor de UI: returnt `true` als het volledige profiel veilig
-    /// op te slaan is (geen `.error`-issues). `.warning`-issues blokkeren niet.
+    /// Convenience for the UI: returns `true` if the full profile is safe to
+    /// save (no `.error` issues). `.warning` issues do not block.
     static func isSavable(_ profile: ProfileInput) -> Bool {
         validateProfile(profile).allSatisfy { $0.severity != .error }
     }
 
-    // MARK: - Zone-card-uitleg (C4)
+    // MARK: - Zone-card explanation (C4)
 
-    /// Genereert een uitlegtekst voor de zones-preview-card wanneer de zones
-    /// niet berekend kunnen worden. Voorkomt dat de gebruiker enkel een
-    /// generieke "stel drempels in"-tekst ziet terwijl de echte oorzaak een
-    /// fysiologisch inconsistente combinatie is.
+    /// Generates an explanation text for the zones preview card when the zones
+    /// cannot be computed. Prevents the user from only seeing a generic
+    /// "set thresholds" text while the real cause is a physiologically
+    /// inconsistent combination.
     static func emptyHRZonesExplanation(for profile: ProfileInput) -> String {
         let cross = validateProfile(profile)
         if let firstError = cross.first(where: { $0.severity == .error }) {
@@ -187,7 +186,7 @@ enum PhysiologicalThresholdValidator {
         }
     }
 
-    /// Uitlegtekst voor de FTP-zones wanneer die niet berekend kunnen worden.
+    /// Explanation text for the FTP zones when they cannot be computed.
     static func emptyPowerZonesExplanation(for profile: ProfileInput) -> String {
         if let ftp = profile.ftp, ftp > 0 {
             return "Power-zones kunnen niet berekend worden met de huidige FTP-waarde."

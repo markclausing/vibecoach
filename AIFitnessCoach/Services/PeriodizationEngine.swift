@@ -2,24 +2,24 @@ import Foundation
 
 // MARK: - Epic 17.1: PeriodizationEngine
 
-/// Berekent per actief doel de sportwetenschappelijke voortgang op basis van de huidige
-/// trainingsfase en de bijbehorende succescriteria uit de GoalBlueprint.
+/// Computes, per active goal, the sports-science progress based on the current
+/// training phase and the corresponding success criteria from the GoalBlueprint.
 ///
-/// Werkt samen met BlueprintChecker (kritieke milestone-checks) en TrainingPhase (fase-detectie)
-/// om een volledig beeld te geven: "Wat moet ik NU doen om op schema te blijven?"
+/// Works together with BlueprintChecker (critical milestone checks) and TrainingPhase (phase detection)
+/// to give a complete picture: "What do I need to do NOW to stay on schedule?"
 struct PeriodizationEngine {
 
-    // MARK: - Evaluatie
+    // MARK: - Evaluation
 
-    /// Evalueert één doel: detecteert de actieve blueprint, bepaalt de fase en toetst
-    /// de recente activiteiten aan de fase-specifieke succescriteria.
+    /// Evaluates one goal: detects the active blueprint, determines the phase and tests
+    /// the recent activities against the phase-specific success criteria.
     ///
     /// - Parameters:
-    ///   - goal: Het te evalueren fitnessdoel.
-    ///   - activities: Alle beschikbare activiteiten van de gebruiker.
-    ///   - latestReadinessScore: Meest recente VibeScore (0–100). Nil = onbekend → neutraal gedrag.
-    /// - Returns: `PeriodizationResult` met fase, criteria, langste sessie en TRIMP-check,
-    ///   of `nil` als er geen blueprint van toepassing is of het doel al afgerond/verlopen is.
+    ///   - goal: The fitness goal to evaluate.
+    ///   - activities: All available activities of the user.
+    ///   - latestReadinessScore: Most recent VibeScore (0–100). Nil = unknown → neutral behaviour.
+    /// - Returns: A `PeriodizationResult` with phase, criteria, longest session and TRIMP check,
+    ///   or `nil` if no blueprint applies or the goal is already completed/expired.
     static func evaluate(
         goal: FitnessGoal,
         activities: [ActivityRecord],
@@ -33,14 +33,14 @@ struct PeriodizationEngine {
         let phase = TrainingPhase.calculate(weeksRemaining: weeksRemaining)
         let criteria = phase.successCriteria
 
-        // Bepaal het sport-type dat bij de blueprint past (hardlopen voor marathon, fietsen voor tour)
+        // Determine the sport type matching the blueprint (running for marathon, cycling for tour)
         let targetSport: SportCategory
         switch blueprintType {
         case .marathon, .halfMarathon: targetSport = .running
         case .cyclingTour:             targetSport = .cycling
         }
 
-        // Langste sessie binnen het fase-specifieke terugkijkvenster
+        // Longest session within the phase-specific look-back window
         let windowStart = Calendar.current.date(
             byAdding: .weekOfYear,
             value: -criteria.sessionWindowWeeks,
@@ -52,7 +52,7 @@ struct PeriodizationEngine {
             .map { $0.distance }
             .max() ?? 0.0
 
-        // Gemiddeld wekelijks TRIMP over de afgelopen 4 weken (breed venster voor stabiliteit)
+        // Average weekly TRIMP over the past 4 weeks (a wide window for stability)
         let fourWeeksAgo = Calendar.current.date(byAdding: .weekOfYear, value: -4, to: Date()) ?? Date()
         let recentTRIMP = activities
             .filter { $0.startDate >= fourWeeksAgo }
@@ -60,7 +60,7 @@ struct PeriodizationEngine {
             .reduce(0, +)
         let avgWeeklyTrimp = recentTRIMP / 4.0
 
-        // Epic Doel-Intenties: bouw de intentie-modifier op basis van format, intent en VibeScore
+        // Epic Goal Intents: build the intent modifier based on format, intent and VibeScore
         let intentModifier = buildIntentModifier(goal: goal, phase: phase, readinessScore: latestReadinessScore)
 
         return PeriodizationResult(
@@ -74,8 +74,8 @@ struct PeriodizationEngine {
         )
     }
 
-    /// Evalueert alle actieve doelen en retourneert resultaten gesorteerd op urgentie
-    /// (doelen die niet op schema zijn komen eerst).
+    /// Evaluates all active goals and returns results sorted by urgency
+    /// (goals not on schedule come first).
     static func evaluateAllGoals(
         _ goals: [FitnessGoal],
         activities: [ActivityRecord],
@@ -90,18 +90,18 @@ struct PeriodizationEngine {
 
     // MARK: - Intent Modifier Builder
 
-    /// Bouwt een IntentModifier op basis van de intentie, het format en de actuele VibeScore van het doel.
+    /// Builds an IntentModifier based on the goal's intent, format and current VibeScore.
     static func buildIntentModifier(
         goal: FitnessGoal,
         phase: TrainingPhase,
         readinessScore: Int?
     ) -> IntentModifier {
-        let vibeScore = readinessScore ?? 70          // onbekend → neutraal
+        let vibeScore = readinessScore ?? 70          // unknown → neutral
         let isHighReadiness = vibeScore > 65
         let isMultiDay      = goal.resolvedFormat == .multiDayStage
 
-        // Completion-modus: aerobe basis, TENZIJ er een stretchGoalTime is én VibeScore hoog genoeg is.
-        // Dan staat één temposessie per week toe — sporter wil finishen maar heeft ook een tijdsdoel.
+        // Completion mode: aerobic base, UNLESS there is a stretchGoalTime and the VibeScore is high enough.
+        // Then one tempo session per week is allowed — the athlete wants to finish but also has a time goal.
         if goal.resolvedIntent == .completion {
             let hasStretchWithReadiness = goal.stretchGoalTime != nil && isHighReadiness
             return IntentModifier(
@@ -113,7 +113,7 @@ struct PeriodizationEngine {
             )
         }
 
-        // Peak Performance-modus: intensiteit toegestaan als VibeScore hoog genoeg is
+        // Peak Performance mode: intensity allowed if the VibeScore is high enough
         let stretchPaceAllowed = isHighReadiness && goal.stretchGoalTime != nil && phase != .tapering
         let allowHighIntensity = isHighReadiness && phase != .tapering
 
@@ -131,7 +131,7 @@ struct PeriodizationEngine {
         )
     }
 
-    // MARK: - Coaching Instructie Builders
+    // MARK: - Coaching Instruction Builders
 
     private static func completionInstruction(goal: FitnessGoal, vibeScore: Int, isMultiDay: Bool, stretchAllowed: Bool) -> String {
         var lines = ["══ DOEL-INTENTIE: UITLOPEN / OVERLEVEN ══"]

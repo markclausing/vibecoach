@@ -1,33 +1,33 @@
 import Foundation
 
-/// Epic #51-A3: splitst een chat-message-array in een zichtbaar deel en een
-/// archief-deel zodra het gesprek voorbij `visibleLimit` berichten gaat.
-/// Voorkomt UI-bloat bij lange gesprekken (ChatView toont alleen de zichtbare
-/// staart; het archief klapt de gebruiker desgewenst zelf uit).
+/// Epic #51-A3: splits a chat-message array into a visible part and an
+/// archive part once the conversation exceeds `visibleLimit` messages.
+/// Prevents UI bloat in long conversations (ChatView shows only the visible
+/// tail; the user can expand the archive themselves if desired).
 ///
-/// De huidige `ChatViewModel.fetchAIResponse` stuurt geen message-history mee
-/// naar Gemini — elke turn is een one-shot call met alleen de context-prefix.
-/// Daardoor heeft trimmen géén invloed op het AI-geheugen; het is puur een
-/// UI/geheugen-optimalisatie. Wis-acties zijn niet destructief: het archief
-/// blijft in het ChatViewModel staan en is een tap verder.
+/// The current `ChatViewModel.fetchAIResponse` does not send message history
+/// to Gemini — every turn is a one-shot call with only the context prefix.
+/// Therefore trimming has no effect on the AI memory; it is purely a
+/// UI/memory optimisation. Clear actions are not destructive: the archive
+/// stays in the ChatViewModel and is one tap away.
 ///
-/// Pure-Swift zodat de trim-logica los testbaar is van SwiftUI/SwiftData.
+/// Pure-Swift so the trim logic is testable independently of SwiftUI/SwiftData.
 enum ChatConversationTrimmer {
 
-    /// Drempel waarboven oudere berichten standaard naar het archief verschuiven.
-    /// 50 is gekozen omdat de acceptance-criteria expliciet "50 berichten breken
-    /// de coach niet" noemt — daarmee blijft het hele recente gesprek in beeld
-    /// en valt pas archivering in bij echt zeer lange sessies.
+    /// Threshold above which older messages move to the archive by default.
+    /// 50 is chosen because the acceptance criteria explicitly mention "50 messages
+    /// don't break the coach" — that keeps the whole recent conversation in view
+    /// and archiving only kicks in for genuinely very long sessions.
     static let defaultVisibleLimit = 50
 
-    /// Splitst `messages` in twee arrays: alle berichten die buiten beeld klappen
-    /// (`archived`) en de berichten die direct zichtbaar blijven (`visible`).
-    /// Volgorde van de array wordt behouden — `archived` bevat de oudste,
-    /// `visible` de meest recente `visibleLimit` berichten.
+    /// Splits `messages` into two arrays: all messages that fold out of view
+    /// (`archived`) and the messages that stay directly visible (`visible`).
+    /// The order of the array is preserved — `archived` holds the oldest,
+    /// `visible` the most recent `visibleLimit` messages.
     ///
-    /// Generic over `Element` zodat de helper niets weet over `ChatMessage` zelf
-    /// — daardoor compileert hij in unit-tests zonder de SwiftData/SwiftUI-keten
-    /// die `ChatMessage` met zich meebrengt.
+    /// Generic over `Element` so the helper knows nothing about `ChatMessage` itself
+    /// — that way it compiles in unit tests without the SwiftData/SwiftUI chain
+    /// that `ChatMessage` brings along.
     static func split<Element>(messages: [Element],
                                visibleLimit: Int = defaultVisibleLimit) -> (archived: [Element], visible: [Element]) {
         guard visibleLimit > 0 else { return (messages, []) }

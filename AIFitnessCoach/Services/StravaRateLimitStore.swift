@@ -2,14 +2,14 @@ import Foundation
 
 // MARK: - Epic #51-F2: Strava Rate-Limit Cooldown Store
 //
-// Persisteert het Strava `Retry-After`-tijdstip in UserDefaults zodat een
-// 429-response wordt gerespecteerd over app-launches heen. Auto-sync trigger
-// vlak na launch zou anders direct opnieuw tegen de rate-limit aanlopen
-// (Strava 100/15-min, 1.000/dag), wat een retry-storm geeft en de
-// rate-limit-banner permanent zou laten knipperen.
+// Persists the Strava `Retry-After` time in UserDefaults so a
+// 429 response is respected across app launches. An auto-sync trigger
+// right after launch would otherwise immediately hit the rate limit again
+// (Strava 100/15-min, 1,000/day), causing a retry storm and making the
+// rate-limit banner flicker permanently.
 //
-// Pure-Swift, AppStorage-vrij — UserDefaults via init injecteerbaar zodat
-// unit-tests met een fresh `UserDefaults(suiteName:)` werken (CLAUDE.md §6).
+// Pure-Swift, AppStorage-free — UserDefaults injectable via the init so
+// unit tests work with a fresh `UserDefaults(suiteName:)` (CLAUDE.md §6).
 
 struct StravaRateLimitStore {
     static let key = "vibecoach_stravaRateLimitedUntil"
@@ -20,18 +20,18 @@ struct StravaRateLimitStore {
         self.defaults = defaults
     }
 
-    /// Tijdstip waarop de cooldown afloopt, of `nil` als geen actieve limiet hangt.
-    /// Wordt als `Double` (Unix-timestamp) opgeslagen zodat `@AppStorage` in
-    /// `SyncStatusBanner` er rechtstreeks op kan binden — `@AppStorage` heeft
-    /// geen native ondersteuning voor `Date`.
+    /// Time the cooldown expires, or `nil` if no active limit is in place.
+    /// Stored as a `Double` (Unix timestamp) so `@AppStorage` in
+    /// `SyncStatusBanner` can bind to it directly — `@AppStorage` has
+    /// no native support for `Date`.
     var rateLimitedUntil: Date? {
         let value = defaults.double(forKey: Self.key)
         guard value > 0 else { return nil }
         return Date(timeIntervalSince1970: value)
     }
 
-    /// Geeft de actieve cooldown alleen terug als hij nog niet verlopen is.
-    /// Verlopen entries worden meteen gewist — voorkomt stale state.
+    /// Returns the active cooldown only if it has not yet expired.
+    /// Expired entries are cleared immediately — prevents stale state.
     func currentCooldown(now: Date = Date()) -> Date? {
         guard let until = rateLimitedUntil else { return nil }
         if until > now {

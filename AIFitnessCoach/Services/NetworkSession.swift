@@ -1,9 +1,9 @@
 import Foundation
 
-/// Protocol om netwerkverkeer (URLSession) abstract te maken voor TDD doeleinden
+/// Protocol to abstract network traffic (URLSession) for TDD purposes.
 protocol NetworkSession {
     func data(for request: URLRequest) async throws -> (Data, URLResponse)
 }
 
-/// Conform de standaard URLSession aan dit protocol
+/// Make the standard URLSession conform to this protocol.
 extension URLSession: NetworkSession {}

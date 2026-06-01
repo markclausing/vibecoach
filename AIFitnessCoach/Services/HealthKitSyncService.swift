@@ -2,7 +2,7 @@ import Foundation
 import HealthKit
 import SwiftData
 
-/// SPRINT 7.4 - Nieuwe service voor het asynchroon synchroniseren van historische workouts direct uit Apple HealthKit.
+/// SPRINT 7.4 - New service for asynchronously syncing historical workouts directly from Apple HealthKit.
 actor HealthKitSyncService {
     private let healthKitManager: HealthKitManager
     private let physiologicalCalculator: PhysiologicalCalculatorProtocol
@@ -13,22 +13,22 @@ actor HealthKitSyncService {
         self.physiologicalCalculator = physiologicalCalculator
     }
 
-    /// Haalt 1 jaar (365 dagen) aan historische workouts op uit HealthKit, berekent lokaal de TRIMP,
-    /// en bewaart deze als `ActivityRecord` in de SwiftData context.
-    /// - Parameter context: De context waarin de gesynchroniseerde data opgeslagen moet worden.
-    /// - Returns: Aantal HK-workouts dat de query teruggaf in het 365d-window. Epic #38 Story 38.2
-    ///   gebruikt deze count om de "stille sync"-banner op het Dashboard te triggeren wanneer
-    ///   `count == 0 && workoutAuthStatus != .sharingAuthorized` — voorkomt dat de gebruiker
-    ///   dagen rondloopt met een leeg dashboard zonder te weten dat het aan toestemmingen ligt.
+    /// Fetches 1 year (365 days) of historical workouts from HealthKit, computes TRIMP locally,
+    /// and stores them as `ActivityRecord`s in the SwiftData context.
+    /// - Parameter context: The context in which the synced data should be stored.
+    /// - Returns: Number of HK workouts the query returned in the 365d window. Epic #38 Story 38.2
+    ///   uses this count to trigger the "silent sync" banner on the Dashboard when
+    ///   `count == 0 && workoutAuthStatus != .sharingAuthorized` — prevents the user from
+    ///   walking around for days with an empty dashboard without knowing it's a permissions issue.
     @MainActor
     func syncHistoricalWorkouts(to context: ModelContext) async throws -> Int {
         let workoutType = HKObjectType.workoutType()
         let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)!
         let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
 
-        // Epic 33 Story 33.1b: maxHR afleiden via Tanaka-formule + dateOfBirth.
-        // Eenmalig per sync (niet per workout) — geboortedatum verandert sowieso niet.
-        // Bij ontbrekende toestemming/data valt classifier terug op 190 bpm default.
+        // Epic 33 Story 33.1b: derive maxHR via the Tanaka formula + dateOfBirth.
+        // Once per sync (not per workout) — the birth date doesn't change anyway.
+        // On missing permission/data the classifier falls back to the 190 bpm default.
         let birthDate: Date? = {
             do {
                 let dob = try healthKitManager.healthStore.dateOfBirthComponents()
@@ -41,16 +41,16 @@ actor HealthKitSyncService {
         let sessionClassifier = SessionClassifier(maxHeartRate: estimatedMaxHR)
 
         let now = Date()
-        // Zoek 365 dagen terug
+        // Look back 365 days
         guard let oneYearAgo = Calendar.current.date(byAdding: .day, value: -365, to: now) else {
             throw FitnessDataError.networkError("Kan datum voor historie niet berekenen.")
         }
 
-        // We filteren niet op type; alle workouts tussen 1 jaar geleden en nu worden opgehaald
+        // We don't filter on type; all workouts between 1 year ago and now are fetched
         let predicate = HKQuery.predicateForSamples(withStart: oneYearAgo, end: now, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 
-        // Gebruik withCheckedThrowingContinuation om de asynchrone HealthKit query veilig te overbruggen
+        // Use withCheckedThrowingContinuation to safely bridge the asynchronous HealthKit query
         let workouts: [HKWorkout] = try await withCheckedThrowingContinuation { continuation in
             let query = HKSampleQuery(sampleType: workoutType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
                 if let error = error {
@@ -64,18 +64,18 @@ actor HealthKitSyncService {
             healthKitManager.healthStore.execute(query)
         }
 
-        // Loop asynchroon door alle gevonden workouts om de hartslag (gemiddeld, max) en rusthartslag op te halen
-        // Lokale Set als extra veiligheidsnet: vangt duplicaten op die HealthKit zelf teruggeeft
-        // (zelfde batch, zelfde UUID) — `smartInsert` doet de DB-zijde dedupe voor ons.
+        // Loop asynchronously through all found workouts to fetch heart rate (average, max) and resting HR
+        // Local Set as an extra safety net: catches duplicates HealthKit returns itself
+        // (same batch, same UUID) — `smartInsert` does the DB-side dedupe for us.
         var seenWorkoutIds = Set<String>()
 
         for workout in workouts {
-            // Uniek ID gebaseerd op de HealthKit UUID
+            // Unique ID based on the HealthKit UUID
             let workoutId = workout.uuid.uuidString
 
-            // In-batch UUID-dedupe: HealthKit kan dezelfde workout twee keer teruggeven
-            // binnen één query (Watch + iPhone). `smartInsert` ziet niet-gesavede records
-            // niet, dus deze laag blijft nodig om binnen één run dubbele inserts te voorkomen.
+            // In-batch UUID dedupe: HealthKit can return the same workout twice
+            // within one query (Watch + iPhone). `smartInsert` doesn't see unsaved
+            // records, so this layer stays necessary to prevent duplicate inserts within one run.
             guard seenWorkoutIds.insert(workoutId).inserted else {
                 AppLoggers.fitnessDataService.debug("Sync: HealthKit UUID \(workoutId, privacy: .private) al verwerkt in deze batch — overgeslagen")
                 continue
@@ -85,11 +85,11 @@ actor HealthKitSyncService {
 
             var avgHR: Double?
             var maxHR: Double = 0
-            var restHR: Double = 60 // Standaardwaarde als fallback
+            var restHR: Double = 60 // Default value as fallback
 
             do {
-                // Haal de ruwe samples op voor deze workout (hergebruik van de functie uit HealthKitManager is hier niet direct beschikbaar via public scope, we doen de queries expliciet of we voegen een helper toe. Aangezien we de manager al hebben, kunnen we hem daar in theorie public maken of we herschrijven de call kort).
-                // Om geen private methodes van de manager aan te roepen, gebruiken we een custom fetch
+                // Fetch the raw samples for this workout (reusing the function from HealthKitManager isn't directly available via public scope here; we either do the queries explicitly or add a helper. Since we already have the manager, we could in theory make it public there, or rewrite the call briefly).
+                // To avoid calling private methods of the manager, we use a custom fetch
                 let hrSamples = try await fetchHeartRateSamples(for: workout, quantityType: heartRateType)
                 let heartRateData = hrSamples.map { $0.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute())) }
 
@@ -98,26 +98,26 @@ actor HealthKitSyncService {
                     maxHR = heartRateData.max() ?? 0
                 }
 
-                // Rusthartslag ophalen op de dag van de workout (vereenvoudigde benadering)
+                // Fetch the resting heart rate on the day of the workout (simplified approach)
                 restHR = try await fetchRestingHeartRate(near: workout.startDate, quantityType: restingHeartRateType)
             } catch {
                 AppLoggers.fitnessDataService.error("Kon geen HR data ophalen voor workout. Fout: \(error.localizedDescription, privacy: .public)")
             }
 
-            // Bereken TRIMP (of gebruik nil als er geen hartslag is gemeten)
+            // Compute TRIMP (or use nil if no heart rate was measured)
             let calcTSS = await physiologicalCalculator.calculateTSS(durationInSeconds: workout.duration, averageHeartRate: avgHR ?? 0, maxHeartRate: maxHR, restingHeartRate: restHR)
             let trimp = (avgHR != nil) ? calcTSS : nil
 
-            // Map de HealthKit Workout naar onze ActivityRecord (SwiftData Model)
-            // Gebruik de menselijke SportCategory-naam zodat de coach "wandeling" ziet, niet "HealthKit 52"
-            // `sport` is al gedeclareerd op basis van workoutActivityType (Laag 1b hierboven)
+            // Map the HealthKit Workout to our ActivityRecord (SwiftData Model)
+            // Use the human SportCategory name so the coach sees "wandeling", not "HealthKit 52"
+            // `sport` is already declared based on workoutActivityType (Layer 1b above)
             let recordName = sport.workoutName.prefix(1).uppercased() + sport.workoutName.dropFirst()
 
-            // Epic 33 Story 33.1b: voorstel een sessionType op basis van avg HR + duur.
-            // HealthKit-records hebben geen rijke titel — keyword-strategie levert hier
-            // doorgaans niets op; de classifier valt automatisch terug op de avg-HR-route.
-            // Bij latere DeepSync (samples) kan dit type opnieuw geclassificeerd worden;
-            // voor 33.1b gebruiken we alleen het at-ingest signaal.
+            // Epic 33 Story 33.1b: propose a sessionType based on avg HR + duration.
+            // HealthKit records have no rich title — the keyword strategy usually yields
+            // nothing here; the classifier automatically falls back to the avg-HR route.
+            // On a later DeepSync (samples) this type can be reclassified;
+            // for 33.1b we use only the at-ingest signal.
             let suggestedSessionType = sessionClassifier.classify(
                 samples: nil,
                 averageHeartRate: avgHR,
@@ -125,11 +125,11 @@ actor HealthKitSyncService {
                 title: nil
             )
 
-            // Epic 49: lees weer-metadata uit HKWorkout. iPhone schrijft tijdens
-            // outdoor-workouts `HKMetadataKeyWeatherTemperature` (HKQuantity in
-            // graden Fahrenheit) en `HKMetadataKeyWeatherHumidity` (HKQuantity in
-            // percent). Voor records zonder metadata blijven beide nil — coach
-            // valt dan terug op generieke aannames i.p.v. naar hitte te vragen.
+            // Epic 49: read weather metadata from HKWorkout. During outdoor workouts
+            // the iPhone writes `HKMetadataKeyWeatherTemperature` (HKQuantity in
+            // degrees Fahrenheit) and `HKMetadataKeyWeatherHumidity` (HKQuantity in
+            // percent). For records without metadata both stay nil — the coach then
+            // falls back to generic assumptions instead of asking about heat.
             let (weatherTempC, weatherHumidity) = Self.extractWeather(from: workout.metadata)
 
             let record = ActivityRecord(
@@ -146,9 +146,9 @@ actor HealthKitSyncService {
                 humidityPercent: weatherHumidity
             )
 
-            // Epic 41.4: smart-insert beschermt tegen cross-source verarming.
-            // Een Strava-record met deviceWatts dat al binnen ±5s in DB staat blijft
-            // staan; een armer HK-record overschrijft dat niet meer.
+            // Epic 41.4: smart-insert protects against cross-source impoverishment.
+            // A Strava record with deviceWatts that's already in the DB within ±5s stays;
+            // a poorer HK record no longer overwrites it.
             let result = try ActivityDeduplicator.smartInsert(record, into: context)
             switch result {
             case .skippedExistingRicher:
@@ -164,7 +164,7 @@ actor HealthKitSyncService {
         return workouts.count
     }
 
-    // Hulpfunctie voor ruwe samples binnen dit actor domein
+    // Helper for raw samples within this actor domain
     private func fetchHeartRateSamples(for workout: HKWorkout, quantityType: HKQuantityType) async throws -> [HKQuantitySample] {
         let predicate = HKQuery.predicateForSamples(withStart: workout.startDate, end: workout.endDate, options: .strictStartDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
@@ -181,9 +181,9 @@ actor HealthKitSyncService {
         }
     }
 
-    // Hulpfunctie voor rusthartslag
+    // Helper for resting heart rate
     private func fetchRestingHeartRate(near date: Date, quantityType: HKQuantityType) async throws -> Double {
-        // Haal de RHR op in een venster van 30 dagen voorafgaand aan de activiteit
+        // Fetch the RHR in a window of 30 days preceding the activity
         guard let pastDate = Calendar.current.date(byAdding: .month, value: -1, to: date) else { return 60.0 }
         let predicate = HKQuery.predicateForSamples(withStart: pastDate, end: date, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
@@ -209,19 +209,19 @@ actor HealthKitSyncService {
 
     // MARK: - Weather metadata (Epic 49)
 
-    /// Pakt temperatuur (in graden Celsius) en luchtvochtigheid (%) uit een
-    /// HKWorkout-metadata-dictionary. Apple slaat deze tijdens outdoor-workouts
-    /// op als HKQuantity-waarden in respectievelijk degF en %. Returnt (nil, nil)
-    /// als de keys ontbreken (Strava-only ingest, indoor-workout, oude iOS).
-    /// Static + internal voor unit-test-zichtbaarheid.
+    /// Extracts temperature (in degrees Celsius) and humidity (%) from an
+    /// HKWorkout metadata dictionary. During outdoor workouts Apple stores these
+    /// as HKQuantity values in degF and % respectively. Returns (nil, nil) when
+    /// the keys are absent (Strava-only ingest, indoor workout, old iOS).
+    /// Static + internal for unit-test visibility.
     static func extractWeather(from metadata: [String: Any]?) -> (temperatureCelsius: Double?, humidityPercent: Double?) {
         guard let metadata else { return (nil, nil) }
         var tempC: Double?
         var humidity: Double?
 
         if let q = metadata[HKMetadataKeyWeatherTemperature] as? HKQuantity {
-            // Apple gebruikt degF in metadata; converteer expliciet naar Celsius
-            // zodat we niet afhankelijk zijn van de gebruikers-locale.
+            // Apple uses degF in metadata; convert explicitly to Celsius
+            // so we don't depend on the user's locale.
             if q.is(compatibleWith: .degreeCelsius()) {
                 tempC = q.doubleValue(for: .degreeCelsius())
             } else if q.is(compatibleWith: .degreeFahrenheit()) {
@@ -231,8 +231,8 @@ actor HealthKitSyncService {
         }
         if let q = metadata[HKMetadataKeyWeatherHumidity] as? HKQuantity,
            q.is(compatibleWith: .percent()) {
-            // HK levert percent als 0–1 of 0–100 afhankelijk van bron — normaliseer
-            // op 0–100 voor de coach-prompt en UI-formatting.
+            // HK provides percent as 0–1 or 0–100 depending on source — normalize
+            // to 0–100 for the coach prompt and UI formatting.
             let raw = q.doubleValue(for: .percent())
             humidity = raw <= 1.0 ? raw * 100 : raw
         }

@@ -4,27 +4,27 @@ import BackgroundTasks
 import UserNotifications
 import os
 
-/// Sprint 13.2: Dual Engine notificatie-architectuur voor proactieve coaching.
+/// Sprint 13.2: Dual Engine notification architecture for proactive coaching.
 ///
-/// Engine A (Action Trigger): Reageert op nieuwe workouts via HKObserverQuery +
-/// enableBackgroundDelivery. iOS wekt de app zodra een workout wordt opgeslagen.
+/// Engine A (Action Trigger): Reacts to new workouts via HKObserverQuery +
+/// enableBackgroundDelivery. iOS wakes the app as soon as a workout is saved.
 ///
-/// Engine B (Inaction Trigger): Dagelijkse stille achtergrondcheck via BGAppRefreshTask.
-/// Stuurt een waarschuwing als de gebruiker 2+ dagen inactief is én een doel op rood staat.
+/// Engine B (Inaction Trigger): Daily silent background check via BGAppRefreshTask.
+/// Sends a warning if the user has been inactive 2+ days and a goal is in the red.
 final class ProactiveNotificationService {
 
-    /// Logger leeft centraal in `AppLoggers.proactiveNotification`. Gebruik `.public`
-    /// voor status-strings en `.private` voor PII (doeltitels, TRIMP-waardes per
-    /// gebruiker) zodat sysdiagnose-logs in release-builds niets identificerends lekken.
+    /// The logger lives centrally in `AppLoggers.proactiveNotification`. Use `.public`
+    /// for status strings and `.private` for PII (goal titles, per-user TRIMP values)
+    /// so sysdiagnose logs in release builds don't leak anything identifying.
 
     static let shared = ProactiveNotificationService()
 
     private let healthStore = HKHealthStore()
 
-    /// Unieke identifier voor de dagelijkse BGAppRefreshTask (moet ook in Info.plist staan).
+    /// Unique identifier for the daily BGAppRefreshTask (must also be in Info.plist).
     static let bgTaskIdentifier = "com.markclausing.aifitnesscoach.dailygoalcheck"
 
-    // UserDefaults-sleutels voor het delen van state tussen foreground en achtergrond
+    // UserDefaults keys for sharing state between foreground and background
     private let atRiskTitlesKey      = "vibecoach_atRiskGoalTitles"
     private let lastNotificationKey  = "vibecoach_lastProactiveNotificationDate"
     private let lastWorkoutDateKey   = "vibecoach_lastWorkoutDate"
@@ -33,32 +33,32 @@ final class ProactiveNotificationService {
 
     // MARK: - Engine A: Action Trigger (HKObserverQuery + enableBackgroundDelivery)
 
-    /// Registreert een HKObserverQuery voor workouts en schakelt background delivery in.
-    /// iOS wekt de app op de achtergrond zodra een nieuwe workout in Apple Health verschijnt.
+    /// Registers an HKObserverQuery for workouts and enables background delivery.
+    /// iOS wakes the app in the background as soon as a new workout appears in Apple Health.
     ///
-    /// Vereist entitlement: com.apple.developer.healthkit.background-delivery = true
+    /// Requires entitlement: com.apple.developer.healthkit.background-delivery = true
     func setupEngineA() {
         guard HKHealthStore.isHealthDataAvailable() else { return }
 
         let workoutType = HKObjectType.workoutType()
 
-        // Observer query: vuurt bij elke nieuwe of gewijzigde workout
+        // Observer query: fires on every new or changed workout
         let observerQuery = HKObserverQuery(sampleType: workoutType, predicate: nil) { [weak self] _, completionHandler, error in
             guard error == nil else {
                 AppLoggers.proactiveNotification.error("Engine A observer fout: \(error!.localizedDescription, privacy: .public)")
-                completionHandler() // Altijd aanroepen — anders stopt background delivery
+                completionHandler() // Always call — otherwise background delivery stops
                 return
             }
 
             Task {
                 await self?.handleNewWorkoutDetected()
-                completionHandler() // Verplicht signaal aan HealthKit dat we klaar zijn
+                completionHandler() // Mandatory signal to HealthKit that we're done
             }
         }
 
         healthStore.execute(observerQuery)
 
-        // Schakel achtergrondlevering in: iOS wekt de app bij elke nieuwe workout
+        // Enable background delivery: iOS wakes the app on every new workout
         healthStore.enableBackgroundDelivery(for: workoutType, frequency: .immediate) { success, error in
             if success {
                 AppLoggers.proactiveNotification.info("Engine A: HealthKit achtergrondlevering actief")
@@ -68,15 +68,15 @@ final class ProactiveNotificationService {
         }
     }
 
-    /// Verwerkt een nieuw workout-signaal van Engine A.
-    /// Checkt de TRIMP van de zojuist voltooide workout en past de notificatietekst
-    /// daarop aan: prijst flinke inspanning, neutraal bij lichte sessies.
+    /// Handles a new workout signal from Engine A.
+    /// Checks the TRIMP of the just-completed workout and adapts the notification
+    /// text to it: praises substantial effort, neutral on light sessions.
     private func handleNewWorkoutDetected() async {
-        // Sla de datum van de meest recente workout op (gebruikt door Engine B)
+        // Store the date of the most recent workout (used by Engine B)
         UserDefaults.standard.set(Date(), forKey: lastWorkoutDateKey)
 
-        // Wacht even zodat HealthKit de workout-data volledig kan opslaan
-        try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconden
+        // Wait a moment so HealthKit can fully store the workout data
+        try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
 
         let atRiskTitles = UserDefaults.standard.stringArray(forKey: atRiskTitlesKey) ?? []
         guard !atRiskTitles.isEmpty else {
@@ -84,9 +84,9 @@ final class ProactiveNotificationService {
             return
         }
 
-        // Haal de TRIMP van de meest recente workout op om de toon te bepalen
+        // Fetch the TRIMP of the most recent workout to determine the tone
         let recentTRIMP = await fetchMostRecentWorkoutTRIMP()
-        // TRIMP is user-specifieke fysiologische data → private.
+        // TRIMP is user-specific physiological data → private.
         AppLoggers.proactiveNotification.debug("Engine A: Meest recente workout TRIMP = \(recentTRIMP.map { String(format: "%.0f", $0) } ?? "onbekend", privacy: .private)")
 
         let content = Self.composeEngineAContent(recentTRIMP: recentTRIMP, atRiskTitles: atRiskTitles)
@@ -97,15 +97,15 @@ final class ProactiveNotificationService {
         )
     }
 
-    /// Pure helper voor Engine A notificatie-tekst. Geëxtraheerd zodat
-    /// alle string-paden in `ProactiveNotificationServiceTests` getest kunnen
-    /// worden zonder HealthKit / UserDefaults te raken.
+    /// Pure helper for Engine A notification text. Extracted so all string paths
+    /// can be tested in `ProactiveNotificationServiceTests` without touching
+    /// HealthKit / UserDefaults.
     static func composeEngineAContent(
         recentTRIMP: Double?,
         atRiskTitles: [String]
     ) -> (title: String, body: String) {
         if let trimp = recentTRIMP, trimp >= 50 {
-            // Flinke workout (≥ 50 TRIMP) — eerst de inzet prijzen, dan pas de context geven
+            // Substantial workout (≥ 50 TRIMP) — praise the effort first, then give context
             let trimpInt = Int(trimp)
             let title = "Lekker getraind! 💪"
             let body: String
@@ -118,7 +118,7 @@ final class ProactiveNotificationService {
         }
 
         if let trimp = recentTRIMP, trimp > 0 {
-            // Lichte workout (< 50 TRIMP) — neutraal
+            // Light workout (< 50 TRIMP) — neutral
             let trimpInt = Int(trimp)
             let title = "Workout geregistreerd (\(trimpInt) TRIMP)"
             let body = atRiskTitles.count == 1
@@ -127,7 +127,7 @@ final class ProactiveNotificationService {
             return (title, body)
         }
 
-        // Geen TRIMP-data beschikbaar — neutrale fallback
+        // No TRIMP data available — neutral fallback
         let title = "Workout geregistreerd"
         let body = atRiskTitles.count == 1
             ? "Je loopt nog achter op '\(atRiskTitles[0])'. Open de coach voor de volgende stap."
@@ -135,9 +135,9 @@ final class ProactiveNotificationService {
         return (title, body)
     }
 
-    /// Haalt de TRIMP van de meest recente workout op uit HealthKit (max 6 uur geleden).
-    /// Gebruikt de Banister-formule op basis van duur en gemiddelde hartslag.
-    /// Geeft `nil` terug als er geen recente workout gevonden is of HealthKit niet beschikbaar is.
+    /// Fetches the TRIMP of the most recent workout from HealthKit (max 6 hours ago).
+    /// Uses the Banister formula based on duration and average heart rate.
+    /// Returns `nil` if no recent workout is found or HealthKit isn't available.
     private func fetchMostRecentWorkoutTRIMP() async -> Double? {
         guard HKHealthStore.isHealthDataAvailable() else { return nil }
 
@@ -167,7 +167,7 @@ final class ProactiveNotificationService {
                     return
                 }
 
-                // Probeer gemiddelde hartslag op te halen uit de workout-statistieken
+                // Try to fetch the average heart rate from the workout statistics
                 let hrType = HKQuantityType(.heartRate)
                 let avgHRQuantity = workout.statistics(for: hrType)?.averageQuantity()
                 let avgHR = avgHRQuantity?.doubleValue(for: HKUnit(from: "count/min"))
@@ -182,10 +182,10 @@ final class ProactiveNotificationService {
         }
     }
 
-    /// Banister TRIMP-berekening op basis van duur en gemiddelde hartslag.
-    /// Zonder HR-data: conservatieve Zone 2-schatting (1.5 TRIMP/min).
-    /// Met HR > 60 bpm: full Banister formule met rusthartslag 60 en max 190.
-    /// Pure functie — geëxtraheerd voor unit-test dekking van de math.
+    /// Banister TRIMP calculation based on duration and average heart rate.
+    /// Without HR data: conservative Zone 2 estimate (1.5 TRIMP/min).
+    /// With HR > 60 bpm: full Banister formula with resting HR 60 and max 190.
+    /// Pure function — extracted for unit-test coverage of the math.
     static func banisterTRIMP(
         durationMinutes: Double,
         averageHeartRate: Double?,
@@ -201,11 +201,11 @@ final class ProactiveNotificationService {
 
     // MARK: - Engine B: Inaction Trigger (BGAppRefreshTask)
 
-    /// Plant de volgende dagelijkse achtergrondcheck via BGTaskScheduler.
-    /// Roep aan bij app launch én aan het einde van elke BGTask run.
+    /// Schedules the next daily background check via BGTaskScheduler.
+    /// Call at app launch and at the end of every BGTask run.
     func scheduleEngineB() {
         let request = BGAppRefreshTaskRequest(identifier: Self.bgTaskIdentifier)
-        // iOS kiest het exacte tijdstip — dit is het vroegste moment
+        // iOS picks the exact time — this is the earliest moment
         request.earliestBeginDate = Calendar.current.date(byAdding: .hour, value: 20, to: Date())
 
         do {
@@ -216,25 +216,25 @@ final class ProactiveNotificationService {
         }
     }
 
-    /// Verwerkt een BGAppRefreshTask van Engine B.
-    /// Plant direct de volgende run en controleert inactiviteit + doelaflwijking.
+    /// Handles a BGAppRefreshTask from Engine B.
+    /// Immediately schedules the next run and checks inactivity + goal deviation.
     func handleEngineBTask(_ task: BGAppRefreshTask) {
-        scheduleEngineB() // Herplan de volgende dagelijkse check
+        scheduleEngineB() // Reschedule the next daily check
 
         let taskWork = Task {
             await checkInactionAndNotify()
             task.setTaskCompleted(success: true)
         }
 
-        // iOS geeft een beperkte tijdswindow — annuleer netjes als de tijd op is
+        // iOS gives a limited time window — cancel cleanly if time runs out
         task.expirationHandler = {
             taskWork.cancel()
             task.setTaskCompleted(success: false)
         }
     }
 
-    /// Checkt of de gebruiker 2+ dagen inactief is geweest én een doel op rood staat.
-    /// Stuurt een motivatienotificatie om de gebruiker weer in beweging te krijgen.
+    /// Checks whether the user has been inactive 2+ days and a goal is in the red.
+    /// Sends a motivational notification to get the user moving again.
     private func checkInactionAndNotify() async {
         let atRiskTitles = UserDefaults.standard.stringArray(forKey: atRiskTitlesKey) ?? []
         let lastWorkout = UserDefaults.standard.object(forKey: lastWorkoutDateKey) as? Date
@@ -255,22 +255,20 @@ final class ProactiveNotificationService {
         )
     }
 
-    /// Inactiviteits-drempel in dagen waarbij Engine B mag triggeren.
+    /// Inactivity threshold in days at which Engine B may trigger.
     static let engineBInactivityThresholdDays: Double = 2
 
-    /// Bouwt de Engine B notificatie-content of geeft `nil` terug wanneer de
-    /// engine niet zou moeten vuren. Pure functie — alle iOS-state komt via
-    /// parameters, zodat unit-tests alle branches deterministisch kunnen
-    /// driven.
+    /// Builds the Engine B notification content or returns `nil` when the engine
+    /// shouldn't fire. Pure function — all iOS state comes via parameters so
+    /// unit tests can drive all branches deterministically.
     ///
-    /// Beslislogica:
-    ///  - Geen doelen op rood → `nil` (engine doet niets).
-    ///  - `lastWorkoutDate == nil` → behandelen als 3 dagen geleden (worst-case
-    ///    aanname: gebruiker heeft geen activiteit-historie en doelen staan
-    ///    op rood, dus signaal sturen).
-    ///  - daysSinceWorkout < drempel (2 dagen) → `nil`.
-    ///  - daysSinceWorkout ≥ 4 → urgentere toon ("Tijd voor actie!").
-    ///  - 2-3 dagen → vriendelijke toon ("Je doel heeft je nodig").
+    /// Decision logic:
+    ///  - No goals in the red → `nil` (engine does nothing).
+    ///  - `lastWorkoutDate == nil` → treat as 3 days ago (worst-case assumption:
+    ///    the user has no activity history and goals are in the red, so send a signal).
+    ///  - daysSinceWorkout < threshold (2 days) → `nil`.
+    ///  - daysSinceWorkout ≥ 4 → more urgent tone ("Tijd voor actie!").
+    ///  - 2-3 days → friendly tone ("Je doel heeft je nodig").
     static func composeEngineBContent(
         atRiskTitles: [String],
         lastWorkoutDate: Date?,
@@ -280,10 +278,10 @@ final class ProactiveNotificationService {
 
         let daysSinceWorkout: Double
         if let lastWorkout = lastWorkoutDate {
-            // CLAUDE.md §3: kalender-gebaseerd; vermijdt 1u-drift rond DST.
+            // CLAUDE.md §3: calendar-based; avoids 1h drift around DST.
             daysSinceWorkout = Calendar.current.fractionalDays(from: lastWorkout, to: now)
         } else {
-            // Geen data beschikbaar = aanname van inactiviteit (3 dagen)
+            // No data available = assumption of inactivity (3 days)
             daysSinceWorkout = 3
         }
 
@@ -293,25 +291,25 @@ final class ProactiveNotificationService {
         let daysText = daysInt >= 3 ? "\(daysInt) dagen" : "2 dagen"
 
         if daysInt >= 4 {
-            // Lang inactief — schop onder de kont
+            // Long inactive — a kick in the pants
             return (
                 title: "Tijd voor actie! ⚠️",
                 body: "Je hebt \(daysText) niet getraind en '\(primaryTitle)' loopt gevaarlijk achter. Elke dag telt nu. Open de coach voor een herstelplan."
             )
         }
 
-        // 2-3 dagen inactief — vriendelijk maar duidelijk
+        // 2-3 days inactive — friendly but clear
         return (
             title: "Je doel heeft je nodig 👟",
             body: "Je hebt \(daysText) niet getraind en '\(primaryTitle)' loopt achter. Zelfs een korte sessie helpt. Open de coach voor de volgende stap."
         )
     }
 
-    // MARK: - Toestemming aanvragen
+    // MARK: - Requesting permission
 
-    /// Vraagt toestemming aan voor lokale notificaties.
-    /// Roep aan bij app-start (didFinishLaunching of DashboardView.onAppear).
-    /// Als de status al bepaald is (.authorized of .denied) doet deze functie niets.
+    /// Requests permission for local notifications.
+    /// Call at app start (didFinishLaunching or DashboardView.onAppear).
+    /// If the status is already determined (.authorized or .denied) this function does nothing.
     func requestNotificationPermissions() {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             guard settings.authorizationStatus == .notDetermined else {
@@ -330,13 +328,13 @@ final class ProactiveNotificationService {
         }
     }
 
-    // MARK: - Gedeelde notificatielogica
+    // MARK: - Shared notification logic
 
-    /// Cooldown-window: maximaal één proactieve notificatie per `cooldownSeconds`.
+    /// Cooldown window: at most one proactive notification per `cooldownSeconds`.
     static let proactiveCooldownSeconds: TimeInterval = 86400
 
-    /// Pure cooldown-check. Apart blootgesteld voor unit-tests — `sendNotification`
-    /// roept hem aan op de huidige datum + de waarde uit `UserDefaults`.
+    /// Pure cooldown check. Exposed separately for unit tests — `sendNotification`
+    /// calls it with the current date + the value from `UserDefaults`.
     static func isCooldownActive(
         lastNotificationDate: Date?,
         now: Date = Date(),
@@ -346,16 +344,16 @@ final class ProactiveNotificationService {
         return now.timeIntervalSince(last) < cooldownSeconds
     }
 
-    /// Verstuurt een lokale push notificatie met een 24-uurs cooldown tegen spam.
+    /// Sends a local push notification with a 24-hour cooldown against spam.
     private func sendNotification(title: String, body: String, identifier: String) async {
-        // Controleer of de gebruiker notificaties heeft toegestaan
+        // Check whether the user has allowed notifications
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         guard settings.authorizationStatus == .authorized else {
             AppLoggers.proactiveNotification.info("Notificaties niet toegestaan (status: \(settings.authorizationStatus.rawValue, privacy: .public)) — overgeslagen")
             return
         }
 
-        // Cooldown: maximaal 1 proactieve notificatie per 24 uur
+        // Cooldown: at most 1 proactive notification per 24 hours
         let lastDate = UserDefaults.standard.object(forKey: lastNotificationKey) as? Date
         if Self.isCooldownActive(lastNotificationDate: lastDate) {
             AppLoggers.proactiveNotification.debug("Proactieve notificatie overgeslagen: cooldown actief")
@@ -366,7 +364,7 @@ final class ProactiveNotificationService {
         content.title = title
         content.body = body
         content.sound = .default
-        // Herkenbaar type voor de tap-handler in AppDelegate
+        // Recognizable type for the tap handler in AppDelegate
         content.userInfo = ["type": "goalRisk"]
 
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
@@ -374,44 +372,44 @@ final class ProactiveNotificationService {
         do {
             try await UNUserNotificationCenter.current().add(request)
             UserDefaults.standard.set(Date(), forKey: lastNotificationKey)
-            // Notificatie-titel kan doelnaam bevatten (PII) → private.
+            // Notification title can contain a goal name (PII) → private.
             AppLoggers.proactiveNotification.info("Proactieve notificatie verstuurd: \(title, privacy: .private)")
         } catch {
             AppLoggers.proactiveNotification.error("Notificatie versturen mislukt: \(error.localizedDescription, privacy: .public)")
         }
     }
 
-    // MARK: - Cache bijwerken vanuit de UI
+    // MARK: - Updating the cache from the UI
 
-    /// Wordt aangeroepen door DashboardView (onAppear + na refresh) om de gecachede
-    /// risicodata bij te werken zodat de achtergrond-engines actuele informatie hebben.
+    /// Called by DashboardView (onAppear + after refresh) to update the cached
+    /// risk data so the background engines have current information.
     func updateRiskCache(atRiskGoalTitles: [String]) {
         UserDefaults.standard.set(atRiskGoalTitles, forKey: atRiskTitlesKey)
-        // Doeltitels zijn user-content (PII).
+        // Goal titles are user content (PII).
         AppLoggers.proactiveNotification.debug("Risicocache bijgewerkt: \(atRiskGoalTitles.isEmpty ? "geen doelen op rood" : atRiskGoalTitles.joined(separator: ", "), privacy: .private)")
     }
 
     // MARK: - Debug Tools
 
-    /// Debug trigger: simuleert exact de logica die Engine A én Engine B zouden afvuren.
-    /// De 24-uurs cooldown wordt tijdelijk gereset zodat de notificatie écht verstuurd wordt.
-    /// Als toestemming nog niet is gevraagd, vraagt deze functie dat alsnog vóór de engines draaien.
+    /// Debug trigger: simulates exactly the logic that Engine A and Engine B would fire.
+    /// The 24-hour cooldown is temporarily reset so the notification is actually sent.
+    /// If permission hasn't been requested yet, this function requests it before the engines run.
     ///
-    /// M-06: de volledige body staat in een `#if DEBUG`-guard. In release-builds
-    /// is dit een no-op. Dat voorkomt dat een onbedoelde call-site (bijv. een
-    /// resterende debug-knop of een later toegevoegde test-hook) in productie
-    /// engines kan afvuren en de notificatie-cooldown kan resetten.
+    /// M-06: the full body is inside an `#if DEBUG` guard. In release builds this is
+    /// a no-op. That prevents an unintended call site (e.g. a leftover debug button
+    /// or a later-added test hook) from firing engines in production and resetting
+    /// the notification cooldown.
     func debugTriggerEngines() async {
         #if DEBUG
         AppLoggers.proactiveNotification.debug("DEBUG: Handmatige trigger van beide proactieve engines")
 
-        // Controleer de toestemmingsstatus — vraag alsnog als nog niet bepaald
+        // Check the permission status — request if not yet determined
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         if settings.authorizationStatus == .notDetermined {
             AppLoggers.proactiveNotification.debug("DEBUG: Toestemming nog niet bepaald — aanvraag starten")
-            // requestAuthorization is een throwing async functie
+            // requestAuthorization is a throwing async function
             _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
-            // Geef iOS even de tijd om de keuze te verwerken
+            // Give iOS a moment to process the choice
             try? await Task.sleep(nanoseconds: 500_000_000)
         }
 
@@ -420,16 +418,16 @@ final class ProactiveNotificationService {
             return
         }
 
-        // Reset de cooldown zodat de notificatie niet wordt onderdrukt
+        // Reset the cooldown so the notification isn't suppressed
         UserDefaults.standard.removeObject(forKey: lastNotificationKey)
-        // Engine A: stel in dat er net een workout was (om de 3-seconden sleep te omzeilen)
+        // Engine A: set that there was just a workout (to bypass the 3-second sleep)
         UserDefaults.standard.set(Date().addingTimeInterval(-10), forKey: lastWorkoutDateKey)
-        // Voer Engine A logica uit — de TRIMP wordt opgehaald uit de meest recente HealthKit-workout
-        // (In de simulator is dat waarschijnlijk nil, dus de neutrale tekst verschijnt)
+        // Run Engine A logic — the TRIMP is fetched from the most recent HealthKit workout
+        // (In the simulator that's likely nil, so the neutral text appears)
         await handleNewWorkoutDetected()
-        // Reset cooldown opnieuw zodat Engine B ook een notificatie kan sturen
+        // Reset the cooldown again so Engine B can also send a notification
         UserDefaults.standard.removeObject(forKey: lastNotificationKey)
-        // Voer Engine B logica uit (inactiviteitscheck)
+        // Run Engine B logic (inactivity check)
         await checkInactionAndNotify()
         AppLoggers.proactiveNotification.debug("DEBUG: Beide engines afgevuurd")
         #endif

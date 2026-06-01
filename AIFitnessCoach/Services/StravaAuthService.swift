@@ -8,9 +8,9 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
     private let session: NetworkSession
     private var authSession: ASWebAuthenticationSession?
 
-    /// CSRF-bescherming: bewaart de `state`-waarde die we meegaven aan Strava.
-    /// Wordt gezet in `authenticate()` en gewist zodra de callback is afgehandeld
-    /// (bij succes, fout óf state-mismatch).
+    /// CSRF protection: stores the `state` value we passed to Strava.
+    /// Set in `authenticate()` and cleared once the callback is handled
+    /// (on success, error or state mismatch).
     private var pendingState: String?
 
     @Published var authError: String?
@@ -43,9 +43,9 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
         return window
     }
 
-    /// Bouwt de Strava OAuth authorize-URL inclusief een cryptografisch random
-    /// `state`-parameter (CSRF). Pure functie — geen side effects — zodat we
-    /// hem in unit-tests kunnen asserten.
+    /// Builds the Strava OAuth authorize URL including a cryptographically random
+    /// `state` parameter (CSRF). A pure function — no side effects — so we
+    /// can assert it in unit tests.
     static func makeAuthorizationURL(clientId: String, callbackScheme: String, state: String) -> URL? {
         var components = URLComponents(string: "https://www.strava.com/oauth/mobile/authorize")
         components?.queryItems = [
@@ -59,9 +59,9 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
         return components?.url
     }
 
-    /// Valideert dat de `state`-parameter uit de callback-URL exact overeenkomt
-    /// met de verwachte waarde. Retourneert `false` bij ontbrekende of afwijkende
-    /// state — dat duidt op een CSRF-poging of een gemanipuleerde callback.
+    /// Validates that the `state` parameter from the callback URL matches the
+    /// expected value exactly. Returns `false` on a missing or differing
+    /// state — that indicates a CSRF attempt or a manipulated callback.
     static func validateCallbackState(callbackURL: URL, expectedState: String?) -> Bool {
         guard let expectedState = expectedState, !expectedState.isEmpty else { return false }
         guard let components = URLComponents(url: callbackURL, resolvingAgainstBaseURL: false),
@@ -76,10 +76,10 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
         let clientId = Secrets.stravaClientID
         let callbackScheme = "aifitnesscoach"
 
-        // H-01: genereer per sessie een random UUID als `state`-parameter.
-        // Strava stuurt deze onaangetast terug in de callback; als de waarde
-        // niet matcht, is de callback niet door onze eigen flow geïnitieerd
-        // en breken we de authenticatie af.
+        // H-01: generate a random UUID per session as the `state` parameter.
+        // Strava returns it unchanged in the callback; if the value
+        // doesn't match, the callback was not initiated by our own flow
+        // and we abort authentication.
         let state = UUID().uuidString
         self.pendingState = state
 
@@ -110,8 +110,8 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
                 return
             }
 
-            // H-01: valideer de state vóórdat we de autorisatie-code vertrouwen.
-            // Bij mismatch stoppen we de flow — geen token-exchange.
+            // H-01: validate the state before trusting the authorization code.
+            // On mismatch we stop the flow — no token exchange.
             Task { @MainActor in
                 guard Self.validateCallbackState(callbackURL: callbackURL, expectedState: self.pendingState) else {
                     self.authError = "Beveiligingsfout: de Strava-callback is niet door onze flow geïnitieerd. Probeer opnieuw."
@@ -124,13 +124,13 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
         }
 
         self.authSession?.presentationContextProvider = self
-        self.authSession?.prefersEphemeralWebBrowserSession = false // Handig zodat Safari inloggegevens van Strava evt. onthoudt
+        self.authSession?.prefersEphemeralWebBrowserSession = false // Handy so Safari can remember Strava login details if desired
         self.authSession?.start()
     }
 
     func exchangeCodeForToken(code: String) async {
-        // C-01: token-exchange loopt via de server-side proxy zodat het
-        // `client_secret` niet in de app-binary hoeft te zitten.
+        // C-01: the token exchange runs via the server-side proxy so the
+        // `client_secret` does not have to be in the app binary.
         guard let url = URL(string: "\(Secrets.stravaProxyBaseURL)/oauth/strava/exchange") else {
             self.authError = "Ongeldige proxy URL"
             return
@@ -161,10 +161,10 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
                 return
             }
 
-            // De proxy geeft het Strava JSON-schema 1-op-1 door.
+            // The proxy passes the Strava JSON schema through 1-to-1.
             let tokenResponse = try JSONDecoder().decode(StravaTokenResponse.self, from: data)
 
-            // Sla op in Keychain
+            // Store in the Keychain
             try tokenStore.saveToken(tokenResponse.access_token, forService: "StravaToken")
             try tokenStore.saveToken(tokenResponse.refresh_token, forService: "StravaRefreshToken")
             try tokenStore.saveToken(String(tokenResponse.expires_at), forService: "StravaTokenExpiresAt")

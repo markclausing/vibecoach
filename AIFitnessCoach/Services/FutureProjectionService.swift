@@ -1,46 +1,47 @@
 import Foundation
 
-// MARK: - Epic 23 Sprint 2 (Fix): Future Projection Engine — Bottleneck-gebaseerde projectie
+// MARK: - Epic 23 Sprint 2 (Fix): Future Projection Engine — Bottleneck-based projection
 
 // ──────────────────────────────────────────────────────────────────────────────
 // BUGFIX RATIONALE
 // ──────────────────────────────────────────────────────────────────────────────
-// Origineel probleem: het algoritme berekende de projectiedatum puur op basis van
-// TRIMP (alle activiteiten), zonder onderscheid tussen sport-types. Een marathonloper
-// met een blessure die tijdelijk fietst, accumuleerde fietsen-TRIMP waardoor de
-// marathon-projectie optimistisch werd — terwijl de hardloop-km nog ver achterliep.
+// Original problem: the algorithm computed the projection date purely based on
+// TRIMP (all activities), without distinguishing sport types. A marathon runner
+// with an injury who temporarily cycles accumulated cycling TRIMP, which made the
+// marathon projection optimistic — while the running km still lagged far behind.
 //
-// De fix bestaat uit drie lagen:
-//   1. SPORT-ISOLATIE: km-trend wordt uitsluitend berekend op activiteiten van
-//      het doelsport-type (hardlopen → .running, fietsen → .cycling).
-//   2. BOTTLENECK-REGEL: projectedPeakDate = max(TRIMP-datum, km-datum).
-//      De langzaamst groeiende of verst achterlopende metric bepaalt de datum.
-//   3. VEILIGHEIDSCHECK: als de cumulatieve km-achterstand > 5% van de target
-//      is, kan de projectie nooit vroeger vallen dan de plannedPeakDate.
+// The fix consists of three layers:
+//   1. SPORT ISOLATION: the km trend is computed exclusively on activities of the
+//      target sport type (running → .running, cycling → .cycling).
+//   2. BOTTLENECK RULE: projectedPeakDate = max(TRIMP date, km date).
+//      The slowest-growing or furthest-behind metric determines the date.
+//   3. SAFETY CHECK: if the cumulative km deficit is > 5% of the target, the
+//      projection can never fall earlier than the plannedPeakDate.
 // ──────────────────────────────────────────────────────────────────────────────
 
-/// Welke metric de projectiedatum bepaalt (voor UI-toelichting en coach-context).
+/// Which metric determines the projection date (for UI explanation and coach context).
 enum BottleneckMetric {
-    case trimp       // TRIMP is de beperkende factor (km loopt voor)
-    case km          // Km is de bottleneck (sport-specifiek volume loopt achter)
-    case both        // Beide unreachable of beide gelijk
-    case alreadyMet  // Atleet voldoet al aan beide eisen
+    case trimp       // TRIMP is the limiting factor (km is ahead)
+    case km          // Km is the bottleneck (sport-specific volume lags)
+    case both        // Both unreachable or both equal
+    case alreadyMet  // Athlete already meets both requirements
 }
 
-/// Projectiestatus — of de atleet de Peak Phase haalt vóór zijn racedag.
+/// Projection status — whether the athlete reaches the Peak Phase before race day.
 enum ProjectionStatus {
-    /// Het huidige wekelijkse TRIMP én km voldoen al aan de Peak Phase-eis.
+    /// The current weekly TRIMP and km already meet the Peak Phase requirement.
     case alreadyPeaking
-    /// Prognose: de atleet haalt de Peak Phase vóór de geplande peakdatum.
+    /// Forecast: the athlete reaches the Peak Phase before the planned peak date.
     case onTrack
-    /// Prognose: de atleet haalt de Peak Phase pas ná de geplande peakdatum,
-    /// maar nog vóór de racedag — risico.
+    /// Forecast: the athlete reaches the Peak Phase only after the planned peak date,
+    /// but still before race day — risk.
     case atRisk
-    /// Wiskundig onhaalbaar met huidige groei, maar race > 12 weken weg —
-    /// voldoende tijd voor een gerichte inhaalslag. Oranje, niet rood.
+    /// Mathematically unreachable at the current growth, but race > 12 weeks away —
+    /// enough time for a targeted catch-up. Orange, not red.
     case catchUpNeeded
-    /// Wiskundig onhaalbaar: zelfs met maximale groeicap is de Peak Phase niet haalbaar
-    /// vóór de racedag (race < 12 weken weg), of het huidige volume is nul/negatief.
+    /// Mathematically unreachable: even with the maximum growth cap the Peak Phase
+    /// isn't reachable before race day (race < 12 weeks away), or the current volume
+    /// is zero/negative.
     case unreachable
 
     var icon: String {
@@ -72,49 +73,49 @@ enum ProjectionStatus {
     }
 }
 
-/// De volledige toekomstprognose voor één doel — bottleneck-gebaseerd.
+/// The full future forecast for one goal — bottleneck-based.
 struct GoalProjection {
     let goal: FitnessGoal
     let blueprintType: GoalBlueprintType
 
-    // MARK: - TRIMP metrics (alle activiteiten — sport-onafhankelijk)
+    // MARK: - TRIMP metrics (all activities — sport-independent)
 
     let currentWeeklyTRIMP: Double
     let observedGrowthRate: Double
     let effectiveGrowthRate: Double
     let requiredPeakTRIMP: Double
 
-    // MARK: - KM metrics (STRIKT sport-gefilterd)
-    // Marathon/halve marathon → alleen .running activiteiten
-    // Fietstocht             → alleen .cycling activiteiten
+    // MARK: - KM metrics (STRICTLY sport-filtered)
+    // Marathon/half marathon → only .running activities
+    // Cycling tour           → only .cycling activities
 
     let currentWeeklyKm: Double
     let kmObservedGrowthRate: Double
     let effectiveKmGrowthRate: Double
     let requiredPeakKm: Double
 
-    // MARK: - Projectieresultaten per metric
+    // MARK: - Projection results per metric
 
-    /// Datum waarop TRIMP de piekeis bereikt (nil als al voldaan of onbereikbaar).
+    /// Date on which TRIMP reaches the peak requirement (nil if already met or unreachable).
     let projectedPeakDateTRIMP: Date?
 
-    /// Datum waarop km de piekeis bereikt (nil als al voldaan of onbereikbaar).
+    /// Date on which km reaches the peak requirement (nil if already met or unreachable).
     let projectedPeakDateKm: Date?
 
-    // MARK: - Bottleneck: de bepaler van de finale projectiedatum
+    // MARK: - Bottleneck: the determinant of the final projection date
 
-    /// De metric die de einddatum bepaalt.
+    /// The metric that determines the end date.
     let bottleneck: BottleneckMetric
 
-    // MARK: - Finale projectieresultaten (UI + coach)
+    // MARK: - Final projection results (UI + coach)
 
     let plannedPeakDate: Date
     let projectedPeakDate: Date?
     let weeksDelta: Double
     let status: ProjectionStatus
 
-    /// True als de Cross-Training Bonus actief was: TRIMP ≥ 90% van basisweekdoel,
-    /// waardoor de km-groeicap verhoogd werd van 10% naar 17%.
+    /// True if the Cross-Training Bonus was active: TRIMP ≥ 90% of the base week
+    /// target, which raised the km growth cap from 10% to 17%.
     let hasCrossTrainingBonus: Bool
 
     // MARK: - Coach context
@@ -206,29 +207,29 @@ struct GoalProjection {
 
 struct FutureProjectionService {
 
-    /// Maximaal toegestane wekelijkse groei (sportwetenschappelijke 10%-regel).
+    /// Maximum allowed weekly growth (the sports-science 10% rule).
     static let maxWeeklyGrowthRate: Double = 0.10
 
-    /// Verhoogde groeicap bij Cross-Training Bonus: atleet heeft sterke aerobe basis
-    /// (TRIMP ≥ 90% van basisweekdoel) maar loopt achter op sport-specifieke km.
-    /// Sportwetenschappelijk verantwoord: goede aeroob-getrainde atleet kan sneller opbouwen.
+    /// Raised growth cap under the Cross-Training Bonus: the athlete has a strong
+    /// aerobic base (TRIMP ≥ 90% of the base week target) but lags on sport-specific
+    /// km. Sports-science justified: a well aerobically trained athlete can build up faster.
     static let maxWeeklyGrowthRateCrossTraining: Double = 0.17
 
-    /// Minimale TRIMP-ratio t.o.v. basisweekdoel om Cross-Training Bonus te activeren.
+    /// Minimum TRIMP ratio relative to the base week target to activate the Cross-Training Bonus.
     static let trimpOnScheduleThreshold: Double = 0.90
 
-    /// Weken tot racedag waarbij 'Onhaalbaar' (rood) mag worden getoond.
-    /// Daarboven toont de app 'Inhaalslag nodig' (oranje) — er is nog genoeg tijd.
+    /// Weeks until race day below which 'Unreachable' (red) may be shown.
+    /// Above that the app shows 'Catch-up needed' (orange) — there is still enough time.
     static let gracePeriodWeeks: Int = 12
 
-    /// Weken vóór racedag dat Peak Phase idealiter begint.
+    /// Weeks before race day that the Peak Phase ideally starts.
     static let peakPhaseStartWeeksBefore: Int = 4
 
-    /// Km-achterstand t.o.v. target waarbij de veiligheidscap actief wordt.
-    /// 5% onder de piek-eis = projectie nooit eerder dan plannedPeakDate.
+    /// Km deficit relative to target at which the safety cap activates.
+    /// 5% below the peak requirement = projection never earlier than plannedPeakDate.
     static let kmSafetyThreshold: Double = 0.95
 
-    // MARK: - Publieke API
+    // MARK: - Public API
 
     static func calculateProjections(
         for goals: [FitnessGoal],
@@ -239,7 +240,7 @@ struct FutureProjectionService {
             .compactMap { calculateProjection(for: $0, activities: activities) }
     }
 
-    // MARK: - Kernalgoritme
+    // MARK: - Core algorithm
 
     static func calculateProjection(
         for goal: FitnessGoal,
@@ -250,16 +251,16 @@ struct FutureProjectionService {
         let calendar  = Calendar.current
         let now       = Date()
 
-        // ── Stap 1: Doelsport bepalen (strikt — geen cross-sport compensatie) ──
+        // ── Step 1: Determine the target sport (strict — no cross-sport compensation) ──
         let targetSport: SportCategory
         switch blueprintType {
         case .marathon, .halfMarathon: targetSport = .running
         case .cyclingTour:             targetSport = .cycling
         }
 
-        // ── Stap 2: Wekelijkse sliding windows (afgelopen 4 weken) ──
-        // week[0] = meest recent (0–7 dagen geleden)
-        // week[3] = oudst (21–28 dagen geleden)
+        // ── Step 2: Weekly sliding windows (past 4 weeks) ──
+        // week[0] = most recent (0–7 days ago)
+        // week[3] = oldest (21–28 days ago)
         let weeklyTRIMP: [Double] = (0..<4).map { i in
             let end   = calendar.date(byAdding: .day, value: -(i * 7), to: now) ?? now
             let start = calendar.date(byAdding: .day, value: -((i + 1) * 7), to: now) ?? now
@@ -269,7 +270,7 @@ struct FutureProjectionService {
                 .reduce(0, +)
         }
 
-        // Km: ALLEEN de doelsport — fiets-km tellen niet mee voor een hardloopdoel
+        // Km: ONLY the target sport — cycling km don't count toward a running goal
         let weeklyKm: [Double] = (0..<4).map { i in
             let end   = calendar.date(byAdding: .day, value: -(i * 7), to: now) ?? now
             let start = calendar.date(byAdding: .day, value: -((i + 1) * 7), to: now) ?? now
@@ -279,19 +280,19 @@ struct FutureProjectionService {
             return sportActivities.map { $0.distance / 1000.0 }.reduce(0, +)
         }
 
-        // ── Stap 3: Huidig volume (gemiddelde laatste 2 weken) ──
+        // ── Step 3: Current volume (average of the last 2 weeks) ──
         let currentWeeklyTRIMP = (weeklyTRIMP[0] + weeklyTRIMP[1]) / 2.0
         let currentWeeklyKm    = (weeklyKm[0]    + weeklyKm[1])    / 2.0
 
-        // ── Stap 3b: Cross-Training Bonus ──
-        // Als de algehele TRIMP (inclusief cross-training) op schema is maar de
-        // sport-specifieke km achterlopen (bijv. kuitblessure), krijgt de atleet
-        // een hogere km-groeicap. Een goede aerobe basis versnelt het herstel.
+        // ── Step 3b: Cross-Training Bonus ──
+        // If the overall TRIMP (including cross-training) is on schedule but the
+        // sport-specific km lag (e.g. a calf injury), the athlete gets a higher km
+        // growth cap. A good aerobic base accelerates recovery.
         let hasCrossTrainingBonus = currentWeeklyTRIMP >= trimpOnScheduleThreshold * blueprint.weeklyTrimpTarget
         let kmGrowthCap = hasCrossTrainingBonus ? maxWeeklyGrowthRateCrossTraining : maxWeeklyGrowthRate
 
-        // ── Stap 4: Groeisnelheid per metric ──
-        // Vergelijk gemiddelde week 0–1 met gemiddelde week 2–3, gedeeld door 2 weken.
+        // ── Step 4: Growth rate per metric ──
+        // Compare the average of week 0–1 with the average of week 2–3, divided by 2 weeks.
         let olderTRIMP = (weeklyTRIMP[2] + weeklyTRIMP[3]) / 2.0
         let observedTRIMPGrowth: Double = olderTRIMP > 5
             ? (currentWeeklyTRIMP - olderTRIMP) / olderTRIMP / 2.0
@@ -305,9 +306,9 @@ struct FutureProjectionService {
         let effectiveGrowthRate   = min(observedTRIMPGrowth, maxWeeklyGrowthRate)
         let effectiveKmGrowthRate = min(observedKmGrowth, kmGrowthCap)
 
-        // ── Stap 5: Piek-eisen (blueprint × Peak Phase multiplier 1.30) ──
-        // Voor toertochten (.singleDayTour / .multiDayStage) ligt de piek-eis lager dan voor een wedstrijd:
-        // een fondo of etapperit vereist duurvermogen over meerdere dagen, niet een absoluut weekpiek-volume.
+        // ── Step 5: Peak requirements (blueprint × Peak Phase multiplier 1.30) ──
+        // For tours (.singleDayTour / .multiDayStage) the peak requirement is lower than for a race:
+        // a fondo or stage ride requires endurance over multiple days, not an absolute weekly peak volume.
         let peakKmFormatMultiplier: Double = {
             switch goal.resolvedFormat {
             case .singleDayRace:  return 1.00
@@ -324,7 +325,7 @@ struct FutureProjectionService {
             to: goal.targetDate
         ) ?? goal.targetDate
 
-        // ── Stap 6: Projectiedatum per metric ──
+        // ── Step 6: Projection date per metric ──
         let projectedPeakDateTRIMP = projectDate(
             current: currentWeeklyTRIMP,
             required: requiredPeakTRIMP,
@@ -341,7 +342,7 @@ struct FutureProjectionService {
             calendar: calendar
         )
 
-        // ── Stap 7: Bottleneck — de final datum is de LATEST van de twee ──
+        // ── Step 7: Bottleneck — the final date is the LATEST of the two ──
         let trimpAlreadyMet = currentWeeklyTRIMP >= requiredPeakTRIMP
         let kmAlreadyMet    = currentWeeklyKm    >= requiredPeakKm
 
@@ -362,7 +363,7 @@ struct FutureProjectionService {
             )
         }
 
-        // Beide unreachable (geen data of nul groei)?
+        // Both unreachable (no data or zero growth)?
         let trimpUnreachable = !trimpAlreadyMet && projectedPeakDateTRIMP == nil
         let kmUnreachable    = !kmAlreadyMet    && projectedPeakDateKm    == nil
 
@@ -387,9 +388,9 @@ struct FutureProjectionService {
             )
         }
 
-        // ── Stap 8: Bottleneck bepalen en finale datum berekenen ──
-        // Gebruik een ver-toekomst sentinel voor metrices die al voldaan zijn
-        let sentinel = Date.distantPast  // voor "al voldaan" gevallen
+        // ── Step 8: Determine the bottleneck and compute the final date ──
+        // Use a far-future sentinel for metrics that are already met
+        let sentinel = Date.distantPast  // for "already met" cases
         let dayAfterTarget = Calendar.current.date(byAdding: .day, value: 1, to: goal.targetDate) ?? goal.targetDate
         let trimpDate = trimpAlreadyMet ? sentinel : (projectedPeakDateTRIMP ?? dayAfterTarget)
         let kmDate    = kmAlreadyMet    ? sentinel : (projectedPeakDateKm    ?? dayAfterTarget)
@@ -408,16 +409,16 @@ struct FutureProjectionService {
             rawProjectedDate = max(trimpDate, kmDate)
         }
 
-        // ── Stap 9: Veiligheidscap ──
-        // Als de wekelijkse km structureel onder de piek-eis zit (< 95%), kan de
-        // projectie nooit eerder vallen dan de gepland peakdatum.
-        // Dit voorkomt dat een TRIMP-voorsprong (door cross-training) een km-achterstand maskeert.
+        // ── Step 9: Safety cap ──
+        // If the weekly km is structurally below the peak requirement (< 95%), the
+        // projection can never fall earlier than the planned peak date.
+        // This prevents a TRIMP lead (from cross-training) masking a km deficit.
         let kmRatio = requiredPeakKm > 0 ? currentWeeklyKm / requiredPeakKm : 1.0
         if kmRatio < kmSafetyThreshold && rawProjectedDate < plannedPeakDate {
             rawProjectedDate = plannedPeakDate
         }
 
-        // ── Stap 10: Status bepalen ──
+        // ── Step 10: Determine status ──
         let weeksDelta = Calendar.current.fractionalWeeks(from: plannedPeakDate, to: rawProjectedDate)
         let weeksUntilRace = goal.weeksRemaining(from: now)
 
@@ -430,8 +431,8 @@ struct FutureProjectionService {
             status = .unreachable
         }
 
-        // Grace Period: race nog > 12 weken weg → 'Onhaalbaar' niet tonen.
-        // De atleet heeft genoeg tijd om bij te sturen; rood demotiveert onnodig.
+        // Grace Period: race still > 12 weeks away → don't show 'Unreachable'.
+        // The athlete has enough time to adjust; red demotivates unnecessarily.
         if status == .unreachable && weeksUntilRace > Double(gracePeriodWeeks) {
             status = .catchUpNeeded
         }
@@ -480,9 +481,9 @@ struct FutureProjectionService {
 
     // MARK: - Private helper
 
-    /// Berekent via de logaritmische projectieformule hoeveel weken er nodig zijn
-    /// om van `current` naar `required` te groeien bij `effectiveRate` per week.
-    /// Geeft `nil` terug als de berekening niet mogelijk of negatief is.
+    /// Computes, via the logarithmic projection formula, how many weeks are needed
+    /// to grow from `current` to `required` at `effectiveRate` per week.
+    /// Returns `nil` if the calculation isn't possible or is negative.
     private static func projectDate(
         current: Double,
         required: Double,
@@ -490,9 +491,9 @@ struct FutureProjectionService {
         from now: Date,
         calendar: Calendar
     ) -> Date? {
-        // Al voldaan
+        // Already met
         if current >= required { return nil }
-        // Geen positieve groei → onbereikbaar
+        // No positive growth → unreachable
         guard current > 0, effectiveRate > 0 else { return nil }
 
         // n = log(required / current) / log(1 + r)

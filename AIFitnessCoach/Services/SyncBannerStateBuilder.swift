@@ -1,18 +1,18 @@
 import Foundation
 
-// MARK: - Epic #51-F1/F2/F5: Sync-banner-state-builder
+// MARK: - Epic #51-F1/F2/F5: Sync-banner state builder
 //
-// Pure functie die op basis van een `SyncStatusSnapshot` bepaalt welke banner
-// moet worden getoond. Eén banner tegelijk volgens deze prioriteit:
-//   1. **offline** — `isOffline == true`  (wint van alles, want zonder
-//      verbinding zijn alle sub-fouten irrelevant)
+// Pure function that, based on a `SyncStatusSnapshot`, determines which banner
+// should be shown. One banner at a time per this priority:
+//   1. **offline** — `isOffline == true`  (beats everything, because without a
+//      connection all sub-errors are irrelevant)
 //   2. **rate-limit** — `stravaRateLimitedUntil > now`
-//   3. **error** — meest recente niet-rate-limit-fout op Strava of HK
-//   4. **nil** — geen banner
+//   3. **error** — most recent non-rate-limit error on Strava or HK
+//   4. **nil** — no banner
 //
-// AppStorage-vrij, side-effect-vrij, deterministisch. Tests verifiëren elke
-// prioriteit-grens zodat we niet in productie ontdekken dat een rate-limit
-// banner blijft staan terwijl de gebruiker offline is gegaan.
+// AppStorage-free, side-effect-free, deterministic. Tests verify each
+// priority boundary so we don't discover in production that a rate-limit
+// banner stays up while the user has gone offline.
 
 enum SyncBannerState: Equatable {
     case offline(lastSyncAt: Date?)
@@ -23,11 +23,11 @@ enum SyncBannerState: Equatable {
 
 enum SyncBannerStateBuilder {
 
-    /// Berekent de banner-staat voor het huidige moment. Geeft `nil` terug
-    /// wanneer er niets te tonen is.
+    /// Computes the banner state for the current moment. Returns `nil`
+    /// when there is nothing to show.
     /// - Parameters:
-    ///   - snapshot: gefotografeerde sync-status van de `SyncStatusStore`.
-    ///   - now: huidig tijdstip — injecteerbaar voor deterministische tests.
+    ///   - snapshot: snapshotted sync status from the `SyncStatusStore`.
+    ///   - now: current time — injectable for deterministic tests.
     static func state(from snapshot: SyncStatusSnapshot,
                       now: Date = Date()) -> SyncBannerState? {
         if snapshot.isOffline {
@@ -38,11 +38,11 @@ enum SyncBannerStateBuilder {
             return .rateLimited(until: until)
         }
 
-        // Pak de meest recente fout — een oudere HK-fout mag een verse
-        // Strava-fout niet overschrijven en vice versa. `.rateLimit` is hier
-        // niet relevant (de cooldown is verlopen of er was geen 429), dus de
-        // bijbehorende error-category-entry kan blijven staan — we vegen 'm
-        // mee wanneer een succesvolle sync de error-velden wist.
+        // Take the most recent error — an older HK error must not override a fresh
+        // Strava error and vice versa. `.rateLimit` is not relevant here
+        // (the cooldown has expired or there was no 429), so the
+        // corresponding error-category entry may remain — we sweep it
+        // away when a successful sync clears the error fields.
         let stravaCandidate = nonRateLimitError(
             category: snapshot.lastStravaError,
             at: snapshot.lastStravaErrorAt

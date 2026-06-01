@@ -2,10 +2,10 @@ import Foundation
 
 // MARK: - Epic 24 Sprint 1: Nutrition & Fueling Engine
 
-/// Trainingszone — bepaalt de metabole brandstofmix en het zweetverlies.
+/// Training zone — determines the metabolic fuel mix and sweat loss.
 enum TrainingZone: Int, CaseIterable {
-    case zone2 = 2  // aeroob, vetverbranding dominant, ~60–70% HRmax
-    case zone4 = 4  // lactaatdrempel, glycogeen dominant, ~80–90% HRmax
+    case zone2 = 2  // aerobic, fat burning dominant, ~60–70% HRmax
+    case zone4 = 4  // lactate threshold, glycogen dominant, ~80–90% HRmax
 
     var displayName: String {
         switch self {
@@ -15,19 +15,19 @@ enum TrainingZone: Int, CaseIterable {
     }
 }
 
-/// Berekende voedingsbehoefte voor één trainingsblok.
+/// Computed nutrition requirement for one training block.
 struct WorkoutFuelingPlan {
     let durationMinutes: Int
     let zone: TrainingZone
 
-    /// Calorieverbranding inclusief BMR-aandeel tijdens de training.
+    /// Calorie burn including the BMR share during the training.
     let totalCaloriesBurned: Double
-    /// Koolhydratenbehoefte in gram (aanbevolen inname rondom de training).
+    /// Carbohydrate need in grams (recommended intake around the training).
     let carbsGram: Double
-    /// Vochtinname in milliliter (tijdens de workout).
+    /// Fluid intake in millilitres (during the workout).
     let fluidMl: Double
 
-    /// Leesbare samenvatting voor de coach-prompt.
+    /// Readable summary for the coach prompt.
     var coachSummary: String {
         let carbsRounded = Int(carbsGram.rounded())
         let fluidRounded = Int(fluidMl.rounded())
@@ -39,57 +39,57 @@ struct WorkoutFuelingPlan {
     }
 }
 
-/// Berekent de voedingsbehoefte op basis van het fysiologisch profiel + trainingsbelasting.
+/// Computes the nutrition requirement based on the physiological profile + training load.
 ///
-/// **Wetenschappelijke basis:**
-/// - BMR via Mifflin-St Jeor (nauwkeuriger dan Harris-Benedict voor actieve populaties)
-/// - MET-waarden: Zone 2 = 6 MET (rustig hardlopen/fietsen), Zone 4 = 10 MET
-/// - Koolhydraten: Zone 2 = ~0.5 g/min, Zone 4 = ~1.0 g/min (Burke et al., 2011)
-/// - Vocht: ~500 ml/uur (Zone 2) → ~800 ml/uur (Zone 4) — ACSM richtlijnen
+/// **Scientific basis:**
+/// - BMR via Mifflin-St Jeor (more accurate than Harris-Benedict for active populations)
+/// - MET values: Zone 2 = 6 MET (easy running/cycling), Zone 4 = 10 MET
+/// - Carbohydrates: Zone 2 = ~0.5 g/min, Zone 4 = ~1.0 g/min (Burke et al., 2011)
+/// - Fluid: ~500 ml/hour (Zone 2) → ~800 ml/hour (Zone 4) — ACSM guidelines
 struct NutritionService {
 
-    // MARK: - MET-waarden per zone
+    // MARK: - MET values per zone
 
     private static let metZone2: Double = 6.0
     private static let metZone4: Double = 10.0
 
-    // MARK: - Koolhydraten per minuut (gram)
+    // MARK: - Carbohydrates per minute (grams)
 
     private static let carbsPerMinZone2: Double = 0.5
     private static let carbsPerMinZone4: Double = 1.0
 
-    // MARK: - Vocht per minuut (ml)
+    // MARK: - Fluid per minute (ml)
 
     private static let fluidMlPerMinZone2: Double = 500.0 / 60.0  // ~8.3 ml/min
     private static let fluidMlPerMinZone4: Double = 800.0 / 60.0  // ~13.3 ml/min
 
-    // MARK: - BMR berekening
+    // MARK: - BMR calculation
 
-    /// Berekent het basaal metabolisme (kcal/dag) via de Mifflin-St Jeor formule.
-    /// Man:   (10 × gewicht kg) + (6.25 × lengte cm) − (5 × leeftijd) + 5
-    /// Vrouw: (10 × gewicht kg) + (6.25 × lengte cm) − (5 × leeftijd) − 161
+    /// Computes the basal metabolic rate (kcal/day) via the Mifflin-St Jeor formula.
+    /// Male:   (10 × weight kg) + (6.25 × height cm) − (5 × age) + 5
+    /// Female: (10 × weight kg) + (6.25 × height cm) − (5 × age) − 161
     static func calculateBMR(profile: UserPhysicalProfile) -> Double {
         let base = (10 * profile.weightKg) + (6.25 * profile.heightCm) - (5 * Double(profile.ageYears))
         switch profile.sex {
         case .male:            return base + 5
         case .female:          return base - 161
-        case .other, .unknown: return base - 78  // gemiddelde van man/vrouw offset
+        case .other, .unknown: return base - 78  // average of male/female offset
         }
     }
 
-    // MARK: - Trainingsverbranding
+    // MARK: - Training burn
 
-    /// Berekent de calorieverbranding voor een trainingsblok.
-    /// Formule: MET × gewicht (kg) × tijd (uur)
+    /// Computes the calorie burn for a training block.
+    /// Formula: MET × weight (kg) × time (hours)
     static func caloriesBurned(durationMinutes: Int, zone: TrainingZone, weightKg: Double) -> Double {
         let met: Double = zone == .zone2 ? metZone2 : metZone4
         let hours = Double(durationMinutes) / 60.0
         return met * weightKg * hours
     }
 
-    // MARK: - Volledige voedingsplan
+    // MARK: - Full fueling plan
 
-    /// Stelt een compleet fueling-plan op voor één workout.
+    /// Builds a complete fueling plan for one workout.
     static func fuelingPlan(
         durationMinutes: Int,
         zone: TrainingZone,
@@ -112,9 +112,9 @@ struct NutritionService {
         )
     }
 
-    // MARK: - SuggestedWorkout integratie
+    // MARK: - SuggestedWorkout integration
 
-    /// Bepaalt de trainingszone op basis van het hartslagzone- of beschrijvingsveld.
+    /// Determines the training zone based on the heart-rate-zone or description field.
     static func zone(for workout: SuggestedWorkout) -> TrainingZone {
         let text = ((workout.heartRateZone ?? "") + " " + workout.description).lowercased()
         let isHigh = text.contains("interval") || text.contains("tempo")
@@ -122,8 +122,8 @@ struct NutritionService {
         return isHigh ? .zone4 : .zone2
     }
 
-    /// Berekent het voedingsplan voor een `SuggestedWorkout` op basis van het gecachte profiel.
-    /// Geeft `nil` terug voor rustdagen of workouts zonder duur.
+    /// Computes the fueling plan for a `SuggestedWorkout` based on the cached profile.
+    /// Returns `nil` for rest days or workouts without a duration.
     static func fuelingPlan(for workout: SuggestedWorkout, profile: UserPhysicalProfile) -> WorkoutFuelingPlan? {
         guard workout.suggestedDurationMinutes > 0,
               workout.activityType.lowercased() != "rust" else { return nil }
@@ -134,10 +134,10 @@ struct NutritionService {
         )
     }
 
-    // MARK: - Interval-verdeling
+    // MARK: - Interval breakdown
 
-    /// Breekt het voedingsplan op in vaste intervallen voor de detailweergave.
-    /// Bijv. elke 15 min: drink X ml, eet Y g koolhydraten.
+    /// Breaks the fueling plan into fixed intervals for the detail view.
+    /// E.g. every 15 min: drink X ml, eat Y g carbohydrates.
     struct FuelingInterval {
         let intervalMinutes: Int
         let fluidMl: Double
@@ -153,10 +153,10 @@ struct NutritionService {
         )
     }
 
-    // MARK: - Coach prompt blok
+    // MARK: - Coach prompt block
 
-    /// Bouwt het `[VOEDING & FYSIOLOGIE]` blok voor de AI-prompt.
-    /// Bevat BMR, profiel-samenvatting en fueling-plannen voor vandaag en morgen.
+    /// Builds the `[VOEDING & FYSIOLOGIE]` block for the AI prompt.
+    /// Contains BMR, profile summary and fueling plans for today and tomorrow.
     static func buildCoachContext(
         profile: UserPhysicalProfile,
         todayWorkouts: [(durationMinutes: Int, zone: TrainingZone)],

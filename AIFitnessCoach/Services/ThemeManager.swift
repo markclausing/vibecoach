@@ -3,8 +3,8 @@ import UIKit
 
 // MARK: - ThemeManager
 
-/// Beheert het actieve thema, kleurenpaletten en typografie-instellingen.
-/// Gebruik als @EnvironmentObject vanuit de root om app-brede reactiviteit te garanderen.
+/// Manages the active theme, colour palettes and typography settings.
+/// Use as an @EnvironmentObject from the root to guarantee app-wide reactivity.
 @MainActor
 final class ThemeManager: ObservableObject {
 
@@ -12,7 +12,7 @@ final class ThemeManager: ObservableObject {
         didSet { UserDefaults.standard.set(currentTheme.rawValue, forKey: "vibecoach_selected_theme") }
     }
 
-    /// Kleurintensiteit van de hele app — 0.3 = zeer mat, 1.0 = volle kleur.
+    /// Colour intensity of the whole app — 0.3 = very muted, 1.0 = full colour.
     @Published var themeSaturation: Double {
         didSet { UserDefaults.standard.set(themeSaturation, forKey: "vibecoach_theme_saturation") }
     }
@@ -25,9 +25,9 @@ final class ThemeManager: ObservableObject {
         themeSaturation = s == 0 ? 1.0 : s
     }
 
-    // MARK: - Adaptieve kleuren (light/dark bewust)
+    // MARK: - Adaptive colours (light/dark aware)
 
-    /// Primaire accentkleur — past automatisch aan op light/dark mode.
+    /// Primary accent colour — adapts automatically to light/dark mode.
     var primaryAccentColor: Color {
         Color(uiColor: UIColor { traits in
             let dark = traits.userInterfaceStyle == .dark
@@ -48,7 +48,7 @@ final class ThemeManager: ObservableObject {
         })
     }
 
-    /// Achtergrondkleur — zachte tint passend bij het thema.
+    /// Background colour — soft tint matching the theme.
     var backgroundColor: Color {
         Color(uiColor: UIColor { traits in
             let dark = traits.userInterfaceStyle == .dark
@@ -63,16 +63,16 @@ final class ThemeManager: ObservableObject {
         })
     }
 
-    /// Zacht gradient voor achtergronden (twee lagen, van boven naar onder).
+    /// Soft gradient for backgrounds (two layers, top to bottom).
     var backgroundGradient: LinearGradient {
         let top    = backgroundColor
         let bottom = primaryAccentColor.opacity(0.08)
         return LinearGradient(colors: [top, bottom], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
-    // MARK: - Icoon helpers
+    // MARK: - Icon helpers
 
-    /// Geeft het SF Symbol terug dat bij het actieve thema past voor een UI-context.
+    /// Returns the SF Symbol matching the active theme for a UI context.
     func icon(for context: IconContext) -> String {
         switch context {
         case .home:
@@ -100,7 +100,7 @@ final class ThemeManager: ObservableObject {
 
 }
 
-/// UI-contexten waarvoor een themabewust icoon beschikbaar is.
+/// UI contexts for which a theme-aware icon is available.
 enum IconContext {
     case home
     case goal
@@ -109,7 +109,7 @@ enum IconContext {
 
 // MARK: - SereneIconStyle
 
-/// Past hiërarchische SF Symbol-rendering en de thema-accentkleur toe op een icoon.
+/// Applies hierarchical SF Symbol rendering and the theme accent colour to an icon.
 struct SereneIconStyle: ViewModifier {
     let color: Color
 
@@ -135,8 +135,8 @@ private extension UIColor {
 }
 
 // MARK: - Haptics
-// Lichte wrapper om UIKit-feedback-generators; gebruikt voor bevestigingen (doel opgeslagen,
-// bericht verstuurd, onboarding afgerond) zodat key-interacties tactiel aanvoelen.
+// Light wrapper around UIKit feedback generators; used for confirmations (goal saved,
+// message sent, onboarding completed) so key interactions feel tactile.
 enum Haptics {
     static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
         let generator = UIImpactFeedbackGenerator(style: style)

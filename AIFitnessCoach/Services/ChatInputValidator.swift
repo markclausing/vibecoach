@@ -1,35 +1,34 @@
 import Foundation
 
-/// Epic #51-A4: bewaakt de chat-invoer tegen plak-acties die de Gemini-prompt
-/// laten doorslaan in 45s-timeouts of safety-blocks. De pre-#51-implementatie
-/// had geen limiet en geen visuele feedback — een gebruiker die een PDF-quote
-/// in de input plakte, kreeg pas na drie minuten een vage foutmelding terug.
+/// Epic #51-A4: guards the chat input against paste actions that push the Gemini
+/// prompt into 45s timeouts or safety blocks. The pre-#51 implementation
+/// had no limit and no visual feedback — a user who pasted a PDF quote
+/// into the input only got a vague error back after three minutes.
 ///
-/// Pure-Swift zodat clamp- en counter-logica los testbaar is van SwiftUI.
+/// Pure-Swift so the clamp and counter logic is testable independently of SwiftUI.
 enum ChatInputValidator {
 
-    /// Maximum aantal tekens dat de coach in één turn accepteert. 5000 chars
-    /// komt grofweg overeen met ~1200 tokens — ruim genoeg voor een uitgebreide
-    /// reflectie, ruim onder het Gemini-input-window, en geeft de prompt nog
-    /// kop-en-staart-ruimte voor onze context-prefix.
+    /// Maximum number of characters the coach accepts in one turn. 5000 chars
+    /// roughly corresponds to ~1200 tokens — ample for an extensive
+    /// reflection, well under the Gemini input window, and still leaves the prompt
+    /// head-and-tail room for our context prefix.
     static let maxLength = 5000
 
-    /// Drempel waarboven we de char-counter onder het invoerveld tonen. 80%
-    /// van het maximum: de counter verschijnt pas wanneer de gebruiker in de
-    /// gevarenzone komt; bij normaal typen blijft de UI rustig.
+    /// Threshold above which we show the char counter below the input field. 80%
+    /// of the maximum: the counter only appears once the user enters the
+    /// danger zone; during normal typing the UI stays calm.
     static let counterThreshold = 4000
 
-    /// Clamp-resultaat dat caller informatie geeft over wat er gebeurd is —
-    /// `didClamp == true` betekent dat de input afgekapt is en een korte toast
-    /// gerechtvaardigd is.
+    /// Clamp result that gives the caller information about what happened —
+    /// `didClamp == true` means the input was truncated and a short toast
+    /// is warranted.
     struct ClampResult: Equatable {
         let clamped: String
         let didClamp: Bool
     }
 
-    /// Kapt `text` af op `limit` tekens. Geeft `didClamp = true` terug zodra
-    /// er daadwerkelijk iets is afgesneden, zodat de UI eenmalig een toast
-    /// kan tonen.
+    /// Truncates `text` to `limit` characters. Returns `didClamp = true` once
+    /// something was actually cut off, so the UI can show a one-time toast.
     static func clamp(_ text: String, limit: Int = maxLength) -> ClampResult {
         guard limit >= 0 else { return ClampResult(clamped: "", didClamp: !text.isEmpty) }
         if text.count <= limit {
@@ -39,8 +38,8 @@ enum ChatInputValidator {
         return ClampResult(clamped: clamped, didClamp: true)
     }
 
-    /// Bepaalt of de visuele counter zichtbaar moet zijn. Caller (ChatView)
-    /// rendert hem onder de TextField als deze functie `true` retourneert.
+    /// Determines whether the visual counter should be visible. The caller (ChatView)
+    /// renders it below the TextField when this function returns `true`.
     static func shouldShowCounter(_ text: String, threshold: Int = counterThreshold) -> Bool {
         text.count >= threshold
     }

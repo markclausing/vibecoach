@@ -1,22 +1,22 @@
 import Foundation
 
-/// Epic #51-H2: leest de marketing-versie en build-nummer uit `Bundle.main`
-/// en formatteert ze als één string voor de Settings-footer.
+/// Epic #51-H2: reads the marketing version and build number from `Bundle.main`
+/// and formats them as one string for the Settings footer.
 ///
-/// `CFBundleShortVersionString` is de versie die in Info.plist is gepind
-/// (matcht `architecture.json#meta.appVersion`). `CFBundleVersion` wordt
-/// at-build-time op `git rev-list --count HEAD` gezet door de Build-Phase
-/// script (zie ARCHITECTURE.md §11).
+/// `CFBundleShortVersionString` is the version pinned in Info.plist
+/// (matches `architecture.json#meta.appVersion`). `CFBundleVersion` is set
+/// at build time to `git rev-list --count HEAD` by the Build Phase
+/// script (see ARCHITECTURE.md §11).
 enum AppVersionInfo {
-    /// Bundle dat in productie altijd `Bundle.main` is; in tests kan een
-    /// fixture-bundle geïnjecteerd worden via `displayString(in:)`.
+    /// Bundle that in production is always `Bundle.main`; in tests a
+    /// fixture bundle can be injected via `displayString(in:)`.
     static var displayString: String {
         displayString(in: .main)
     }
 
-    /// Genereert de format `VibeCoach 2.0.0 (build 627)` uit Bundle-keys.
-    /// Bij ontbrekende keys (zou niet horen, maar defensief) toont enkel de
-    /// app-naam zonder cijfers — beter een schone string dan "VibeCoach (build )".
+    /// Generates the format `VibeCoach 2.0.0 (build 627)` from Bundle keys.
+    /// On missing keys (shouldn't happen, but defensive) it shows only the
+    /// app name without numbers — a clean string is better than "VibeCoach (build )".
     static func displayString(in bundle: Bundle) -> String {
         let name = bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
             ?? bundle.object(forInfoDictionaryKey: "CFBundleName") as? String

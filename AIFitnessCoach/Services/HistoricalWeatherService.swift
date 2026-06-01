@@ -2,31 +2,31 @@ import Foundation
 
 // MARK: - Epic #50: HistoricalWeatherService
 //
-// Bevraagt Open-Meteo voor temperatuur en luchtvochtigheid op een gegeven
-// (latitude, longitude, datum-tijd). Vult het gat dat Epic #49 (HK-metadata)
-// achterlaat: Garmin/fietscomputer-only ritten gesynced naar Strava hebben geen
-// HK-tegenhanger (iPhone niet aanwezig tijdens rit), dus de cross-source merge
-// in `ActivityDeduplicator` levert daar niets op. Met de Strava `start_latlng`
-// kunnen we Open-Meteo's archive-API bevragen voor exact die locatie en tijd.
+// Queries Open-Meteo for temperature and humidity at a given
+// (latitude, longitude, date-time). Fills the gap that Epic #49 (HK metadata)
+// leaves: Garmin/bike-computer-only rides synced to Strava have no HK
+// counterpart (iPhone not present during the ride), so the cross-source merge
+// in `ActivityDeduplicator` yields nothing there. With the Strava `start_latlng`
+// we can query Open-Meteo's archive API for exactly that location and time.
 //
-// **Privacy:** voordat we de coords naar Open-Meteo sturen ronden we ze af op
-// 0.1° (~11km radius). Voor weer-classificatie ruim genoeg — bij 2 km/uur
-// temperatuur-gradient over 11km zit je nog binnen ±1°C — en het voorkomt dat
-// we exacte GPS-coordinaten (PII) naar een externe API lekken.
+// **Privacy:** before sending the coords to Open-Meteo we round them to
+// 0.1° (~11km radius). More than enough for weather classification — with a
+// 2 °C/hour temperature gradient over 11km you're still within ±1°C — and it
+// prevents us from leaking exact GPS coordinates (PII) to an external API.
 //
-// **Endpoint-strategie:**
-//   - `archive-api.open-meteo.com/v1/archive` voor data ouder dan ~5 dagen
-//     (officiële historische dataset, ERA5).
-//   - `api.open-meteo.com/v1/forecast` met `past_days` voor recentere data
-//     (forecast-API houdt recente metingen tot enkele dagen terug).
-// We kiezen op basis van workout-leeftijd. Beide hebben dezelfde response-shape.
+// **Endpoint strategy:**
+//   - `archive-api.open-meteo.com/v1/archive` for data older than ~5 days
+//     (official historical dataset, ERA5).
+//   - `api.open-meteo.com/v1/forecast` with `past_days` for more recent data
+//     (the forecast API keeps recent measurements for a few days back).
+// We choose based on workout age. Both have the same response shape.
 //
-// Service is testbaar via een geïnjecteerde `URLSessionProtocol` zodat unit
-// tests een mock-response kunnen leveren zonder echte HTTP-call.
+// The service is testable via an injected `URLSessionProtocol` so unit tests
+// can supply a mock response without a real HTTP call.
 
-/// Lichtgewicht protocol-wrapper rond `URLSession.data(from:)` zodat de service
-/// te testen is met een mock. Bewust niet `URLSessionProtocol` genoemd om
-/// botsing met andere services te voorkomen.
+/// Lightweight protocol wrapper around `URLSession.data(from:)` so the service
+/// can be tested with a mock. Deliberately not named `URLSessionProtocol` to
+/// avoid clashing with other services.
 protocol WeatherURLFetcher {
     func data(from url: URL) async throws -> (Data, URLResponse)
 }
@@ -42,18 +42,18 @@ final class HistoricalWeatherService {
         case requestFailed(statusCode: Int)
     }
 
-    /// Privacy-rounding: GPS-coords worden afgerond op 0.1° (~11km) vóór de
-    /// API-call. Test injectie kan deze waarde overrulen voor edge-cases.
+    /// Privacy rounding: GPS coords are rounded to 0.1° (~11km) before the API
+    /// call. Test injection can override this value for edge cases.
     static let privacyRoundingDegrees: Double = 0.1
 
-    /// Workouts ouder dan dit aantal dagen gaan via de archive-API; nieuwere via
-    /// de forecast-API met `past_days`. Open-Meteo's archive heeft een lag van
-    /// ongeveer 5 dagen voordat ERA5-data beschikbaar is.
+    /// Workouts older than this number of days go via the archive API; newer ones
+    /// via the forecast API with `past_days`. Open-Meteo's archive has a lag of
+    /// about 5 days before ERA5 data is available.
     static let archiveLagDays: Int = 5
 
-    /// Maximale leeftijd waarvoor we het zinvol vinden om weer op te halen. ERA5
-    /// gaat terug tot 1940 maar onze app-data zal dat in praktijk niet raken; 2
-    /// jaar is ruim voldoende voor alle relevante workout-historie.
+    /// Maximum age for which we consider it useful to fetch weather. ERA5 goes
+    /// back to 1940 but our app data won't reach that in practice; 2 years is
+    /// more than enough for all relevant workout history.
     static let maxAgeYears: Int = 2
 
     private let fetcher: WeatherURLFetcher
@@ -62,14 +62,14 @@ final class HistoricalWeatherService {
         self.fetcher = fetcher
     }
 
-    /// Haalt temperatuur (°C) en luchtvochtigheid (%) op voor het uur waarin de
-    /// workout-startdate valt. Returnt `(nil, nil)` als de API geen data levert
-    /// voor dat uur (bijv. lat/lng buiten ERA5-grid). Gooit alleen bij echte
-    /// transport-fouten zodat caller graceful kan terugvallen op "geen weer".
+    /// Fetches temperature (°C) and humidity (%) for the hour in which the
+    /// workout start date falls. Returns `(nil, nil)` if the API provides no data
+    /// for that hour (e.g. lat/lng outside the ERA5 grid). Throws only on real
+    /// transport errors so the caller can gracefully fall back to "no weather".
     /// - Parameters:
-    ///   - latitude: Werkelijke GPS-latitude — wordt intern afgerond voor privacy.
-    ///   - longitude: Werkelijke GPS-longitude.
-    ///   - startDate: Tijdstip waarvan we het uur willen pakken.
+    ///   - latitude: Actual GPS latitude — rounded internally for privacy.
+    ///   - longitude: Actual GPS longitude.
+    ///   - startDate: The moment whose hour we want to take.
     func fetchWeather(latitude: Double,
                       longitude: Double,
                       startDate: Date) async throws -> (temperatureCelsius: Double?, humidityPercent: Double?) {
@@ -105,35 +105,34 @@ final class HistoricalWeatherService {
         return Self.extractHourValues(from: decoded, at: startDate)
     }
 
-    // MARK: - Epic #52: hourly range aggregaat
+    // MARK: - Epic #52: hourly range aggregate
 
-    /// Aggregaat over een workout-tijdvenster — gebruikt door de Coach-analyse
-    /// zodat een 90-min run die om 9:43 begon bij 15°C maar onderweg naar 22°C
-    /// piek liep, fair als "22°C-rit" wordt geëvalueerd (i.p.v. de single-point
-    /// snapshot uit HK-metadata op rit-start). Alle velden optioneel; bij
-    /// onvolledige data laat caller de prompt-blok weg.
+    /// Aggregate over a workout time window — used by the Coach analysis so a
+    /// 90-min run that started at 9:43 at 15°C but ran up to a 22°C peak is fairly
+    /// evaluated as a "22°C ride" (instead of the single-point snapshot from HK
+    /// metadata at ride start). All fields optional; on incomplete data the caller
+    /// omits the prompt block.
     struct WeatherRange: Equatable {
         let peakTempCelsius: Double?
         let avgTempCelsius: Double?
         let peakHumidityPercent: Double?
         let avgHumidityPercent: Double?
-        /// Aantal hourly buckets dat aan het aggregaat heeft bijgedragen. Onder de
-        /// 2 is er weinig "range" te benoemen — caller kan ervoor kiezen om dan
-        /// op de single-point fallback te blijven.
+        /// Number of hourly buckets that contributed to the aggregate. Below 2
+        /// there's little "range" to speak of — the caller may choose to stay on
+        /// the single-point fallback then.
         let hourlyBucketCount: Int
     }
 
-    /// Haalt hourly weer-data op voor het volledige workout-venster `[startDate, endDate]`
-    /// en aggregeert naar peak/avg voor zowel temperatuur als luchtvochtigheid. Werkt
-    /// over meerdere uren én meerdere dagen (rare-case: nacht-ultra). Lege buckets
-    /// (API levert `null`) worden genegeerd in het gemiddelde, niet meegeteld als 0.
-    /// Gooit alleen bij echte transport- of validatie-fouten — graceful fallback bij
-    /// de caller.
+    /// Fetches hourly weather data for the full workout window `[startDate, endDate]`
+    /// and aggregates into peak/avg for both temperature and humidity. Works across
+    /// multiple hours and multiple days (rare case: night ultra). Empty buckets
+    /// (API returns `null`) are ignored in the average, not counted as 0. Throws
+    /// only on real transport or validation errors — graceful fallback at the caller.
     /// - Parameters:
-    ///   - latitude: Werkelijke GPS-latitude — wordt intern afgerond voor privacy.
-    ///   - longitude: Werkelijke GPS-longitude.
-    ///   - startDate: Begin van de workout.
-    ///   - endDate: Einde van de workout. Moet `>= startDate` zijn.
+    ///   - latitude: Actual GPS latitude — rounded internally for privacy.
+    ///   - longitude: Actual GPS longitude.
+    ///   - startDate: Start of the workout.
+    ///   - endDate: End of the workout. Must be `>= startDate`.
     func fetchWeatherRange(latitude: Double,
                            longitude: Double,
                            startDate: Date,
@@ -175,9 +174,9 @@ final class HistoricalWeatherService {
 
     // MARK: - URL builder (testable)
 
-    /// Epic #52: signature uitgebreid met `startDate` + `endDate` zodat één call
-    /// hourly data over een meerdere-uren-venster kan dekken. Voor de oude
-    /// single-point fetch geeft caller `startDate == endDate` mee (range = 1 dag).
+    /// Epic #52: signature extended with `startDate` + `endDate` so one call can
+    /// cover hourly data over a multi-hour window. For the old single-point fetch
+    /// the caller passes `startDate == endDate` (range = 1 day).
     static func makeURL(latitude: Double,
                         longitude: Double,
                         startDate: Date,
@@ -204,9 +203,9 @@ final class HistoricalWeatherService {
             items.append(URLQueryItem(name: "start_date", value: startStr))
             items.append(URLQueryItem(name: "end_date", value: endStr))
         } else {
-            // Forecast-endpoint: past_days = aantal dagen historie inclusief vandaag.
-            // We baseren op startDate — endDate ligt typisch enkele uren later, dus
-            // valt binnen dezelfde dag of net erna; forecast_days=1 dekt dat af.
+            // Forecast endpoint: past_days = number of days of history including today.
+            // We base it on startDate — endDate is typically a few hours later, so it
+            // falls within the same day or just after; forecast_days=1 covers that.
             let now = Date()
             let days = max(0, Int(now.timeIntervalSince(startDate) / 86_400)) + 1
             items.append(URLQueryItem(name: "past_days", value: String(days)))
@@ -217,7 +216,7 @@ final class HistoricalWeatherService {
         return url
     }
 
-    // MARK: - Helpers (internal voor test-zichtbaarheid)
+    // MARK: - Helpers (internal for test visibility)
 
     static func roundForPrivacy(_ degrees: Double) -> Double {
         let factor = privacyRoundingDegrees
@@ -226,19 +225,18 @@ final class HistoricalWeatherService {
 
     static func extractHourValues(from response: OpenMeteoHourlyResponse,
                                   at date: Date) -> (temperatureCelsius: Double?, humidityPercent: Double?) {
-        // Open-Meteo levert `hourly.time` als ISO-strings in de auto-detected timezone.
-        // We zoeken het uur-bucket dat 't dichtst bij de workout-startdate ligt.
+        // Open-Meteo returns `hourly.time` as ISO strings in the auto-detected timezone.
+        // We look for the hour bucket closest to the workout start date.
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
 
         var bestIndex: Int?
         var bestDelta: TimeInterval = .infinity
         for (i, timeString) in response.hourly.time.enumerated() {
-            // Open-Meteo levert "yyyy-MM-ddTHH:mm" zonder timezone-offset (locale-tijd).
-            // Voor minuten-niveau-precisie hebben we de timezone-offset uit de response
-            // nodig, maar voor matching op het naast-bij-uur kunnen we ook met een
-            // timezone-onafhankelijke parse werken: pak het uur als String en match
-            // op locale-uur van date.
+            // Open-Meteo returns "yyyy-MM-ddTHH:mm" without a timezone offset (local time).
+            // For minute-level precision we'd need the timezone offset from the response,
+            // but for nearest-hour matching we can work with a timezone-independent
+            // parse: take the hour as a String and match on the local hour of date.
             guard let parsed = Self.parseLocalDateTime(timeString) else { continue }
             let delta = abs(parsed.timeIntervalSince(date))
             if delta < bestDelta {
@@ -252,10 +250,10 @@ final class HistoricalWeatherService {
         return (temp, humidity)
     }
 
-    /// Open-Meteo levert `hourly.time` als "yyyy-MM-ddTHH:mm" in de auto-detected
-    /// timezone (zonder offset-suffix). We parsen 'm als locale-tijd in UTC zodat
-    /// de relatieve hour-bucket-matching klopt — exacte timezone is niet kritiek
-    /// want we matchen op tijdsverschil binnen één dag.
+    /// Open-Meteo returns `hourly.time` as "yyyy-MM-ddTHH:mm" in the auto-detected
+    /// timezone (without offset suffix). We parse it as local time in UTC so the
+    /// relative hour-bucket matching is correct — the exact timezone isn't critical
+    /// since we match on time difference within one day.
     static func parseLocalDateTime(_ s: String) -> Date? {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd'T'HH:mm"
@@ -263,20 +261,20 @@ final class HistoricalWeatherService {
         return f.date(from: s)
     }
 
-    // MARK: - Epic #52: aggregaat-helper (pure, testbaar)
+    // MARK: - Epic #52: aggregate helper (pure, testable)
 
-    /// Aggregeert hourly waardes naar peak/avg over een workout-venster `[start, end]`.
-    /// Inclusief het start-uur (eerste uur dat de workout overlapt) en alle volgende
-    /// uren tot en met het uur waarin `end` valt. Buckets met `null`-waarden worden
-    /// genegeerd in het gemiddelde (geen 0-vervuiling). Bij 0 valide buckets keren
-    /// alle velden `nil` terug zodat caller graceful kan terugvallen.
+    /// Aggregates hourly values into peak/avg over a workout window `[start, end]`.
+    /// Includes the start hour (first hour the workout overlaps) and all following
+    /// hours up to and including the hour in which `end` falls. Buckets with `null`
+    /// values are ignored in the average (no 0-pollution). With 0 valid buckets all
+    /// fields return `nil` so the caller can gracefully fall back.
     ///
-    /// **Tijdsmatch:** Open-Meteo levert hourly-times zonder timezone-offset (auto-
-    /// detect timezone op de coords). Onze `start`/`end` zijn UTC-Date-instanties.
-    /// Match-strategie: vergelijk hourly-time als UTC-parsed met start/end op `<=`/
-    /// `<=` — kleine timezone-skew wordt gedempt door het feit dat we hele uren
-    /// matchen, niet minuten. Voor een 90-min run die om 9:43 begint en om 11:13
-    /// eindigt pikken we typisch 3 hourly-buckets: 9:00, 10:00, 11:00.
+    /// **Time match:** Open-Meteo returns hourly times without a timezone offset
+    /// (auto-detect timezone on the coords). Our `start`/`end` are UTC Date
+    /// instances. Match strategy: compare hourly-time parsed as UTC with start/end
+    /// on `<=`/`<=` — small timezone skew is dampened by the fact that we match
+    /// whole hours, not minutes. For a 90-min run starting at 9:43 and ending at
+    /// 11:13 we typically pick up 3 hourly buckets: 9:00, 10:00, 11:00.
     static func extractWindowAggregates(from response: OpenMeteoHourlyResponse,
                                         start: Date,
                                         end: Date) -> WeatherRange {
@@ -284,9 +282,9 @@ final class HistoricalWeatherService {
         let temps = response.hourly.temperature_2m
         let hums = response.hourly.relative_humidity_2m
 
-        // Eerste hourly-bucket = begin van het uur waarin `start` valt. Voorbeeld:
-        // start 9:43 → bucket 9:00 telt mee. Een workout die binnen één uur valt
-        // (start 9:43, end 9:55) pakt zo altijd ten minste die ene bucket op.
+        // First hourly bucket = start of the hour in which `start` falls. Example:
+        // start 9:43 → bucket 9:00 counts. A workout that falls within one hour
+        // (start 9:43, end 9:55) thus always picks up at least that one bucket.
         var utcCalendar = Calendar(identifier: .gregorian)
         utcCalendar.timeZone = TimeZone(identifier: "UTC")!
         let startBucket = utcCalendar.dateInterval(of: .hour, for: start)?.start ?? start
@@ -296,7 +294,7 @@ final class HistoricalWeatherService {
 
         for (i, timeString) in times.enumerated() {
             guard let parsed = parseLocalDateTime(timeString) else { continue }
-            // Inclusief beide bounds: parsed >= startBucket && parsed <= end
+            // Both bounds inclusive: parsed >= startBucket && parsed <= end
             guard parsed >= startBucket && parsed <= end else { continue }
             if temps.indices.contains(i), let t = temps[i] {
                 tempValues.append(t)
@@ -318,14 +316,14 @@ final class HistoricalWeatherService {
 
 // MARK: - DTO
 
-/// Response-shape voor zowel `archive` als `forecast` Open-Meteo endpoints —
-/// beide leveren `hourly.{time,temperature_2m,relative_humidity_2m}`.
+/// Response shape for both the `archive` and `forecast` Open-Meteo endpoints —
+/// both return `hourly.{time,temperature_2m,relative_humidity_2m}`.
 struct OpenMeteoHourlyResponse: Decodable, Equatable {
     let hourly: Hourly
 
     struct Hourly: Decodable, Equatable {
         let time: [String]
-        /// Open-Meteo levert sommige uren als `null` bij missing data; daarom optional.
+        /// Open-Meteo returns some hours as `null` on missing data; hence optional.
         let temperature_2m: [Double?]
         let relative_humidity_2m: [Double?]
 
@@ -334,21 +332,22 @@ struct OpenMeteoHourlyResponse: Decodable, Equatable {
     }
 }
 
-// MARK: - Convenience: enrich ActivityRecord vanuit Strava-ingest
+// MARK: - Convenience: enrich ActivityRecord from Strava ingest
 
 extension HistoricalWeatherService {
 
-    /// Vraagt Open-Meteo voor de Strava-startlocatie en zet temperatuur/luchtvochtigheid
-    /// op de `ActivityRecord` als beschikbaar. Idempotent — slaat de weer-fetch over
-    /// als het record al weer-data heeft (bijv. via HK-cross-source-merge uit Epic #49).
-    /// Faal-tolerant — bij netwerk- of API-fouten blijven de velden nil en gaat ingest
-    /// gewoon door. Roep aan vanuit Strava-ingest-paden (auto-sync + historische sync)
-    /// ná het bouwen van het record en vóór `ActivityDeduplicator.smartInsert`.
+    /// Queries Open-Meteo for the Strava start location and sets temperature/humidity
+    /// on the `ActivityRecord` if available. Idempotent — skips the weather fetch
+    /// if the record already has weather data (e.g. via the HK cross-source merge
+    /// from Epic #49). Fault-tolerant — on network or API errors the fields stay nil
+    /// and ingest just continues. Call from Strava ingest paths (auto-sync +
+    /// historical sync) after building the record and before
+    /// `ActivityDeduplicator.smartInsert`.
     ///
-    /// **Epic #52:** persisteert óók `startLatitude` + `startLongitude` op het record
-    /// zodat een latere Coach-call hourly weer-range kan ophalen zonder de Strava-API
-    /// opnieuw te bevragen. Dit gebeurt onafhankelijk van de weer-fetch — coords-only
-    /// (geen weer-data) is ook nuttig voor het range-pad.
+    /// **Epic #52:** also persists `startLatitude` + `startLongitude` on the record
+    /// so a later Coach call can fetch the hourly weather range without querying the
+    /// Strava API again. This happens independently of the weather fetch — coords-only
+    /// (no weather data) is also useful for the range path.
     @MainActor
     static func enrichRecord(_ record: ActivityRecord,
                              from activity: StravaActivity,
@@ -356,15 +355,15 @@ extension HistoricalWeatherService {
                              service: HistoricalWeatherService = HistoricalWeatherService()) async {
         guard let coords = activity.start_latlng, coords.count == 2 else { return }
 
-        // Epic #52: GPS-coords altijd persisteren als ze nog niet gezet zijn,
-        // los van de weer-fetch hieronder. Zo profiteren bestaande records van
-        // de hourly-range-fetch zodra de eerstvolgende re-ingest plaatsvindt.
+        // Epic #52: always persist GPS coords if not yet set, independent of the
+        // weather fetch below. This way existing records benefit from the
+        // hourly-range fetch as soon as the next re-ingest happens.
         if record.startLatitude == nil { record.startLatitude = coords[0] }
         if record.startLongitude == nil { record.startLongitude = coords[1] }
 
-        // Snapshot-fetch alleen als nog niet aanwezig — voor backwards-compat met
-        // Epic #49 HK-metadata. De hourly-range-fetch leeft in de Coach-flow en
-        // gebruikt deze snapshot niet.
+        // Snapshot fetch only if not already present — for backwards-compat with
+        // Epic #49 HK metadata. The hourly-range fetch lives in the Coach flow and
+        // doesn't use this snapshot.
         guard record.temperatureCelsius == nil, record.humidityPercent == nil else { return }
         do {
             let (temp, humidity) = try await service.fetchWeather(

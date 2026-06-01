@@ -2,13 +2,14 @@ import Foundation
 
 // MARK: - Epic 32 Story 32.3b: WorkoutInsightService
 //
-// Genereert een korte coaching-narrative bij één workout op basis van de patronen
-// uit `WorkoutPatternDetector`. Aparte service (i.p.v. via `ChatViewModel`)
-// omdat het een andere AI-rol is: per-workout fysiologische analyse, géén
-// trainingsplan-aanpassing en géén JSON-respons. Eigen system-instruction
-// houdt de prompt hier rond, zonder de chat-coach-instructie te vervuilen.
+// Generates a short coaching narrative for one workout based on the patterns
+// from `WorkoutPatternDetector`. A separate service (instead of going through
+// `ChatViewModel`) because it's a different AI role: per-workout physiological
+// analysis, no training-plan adjustment and no JSON response. Its own system
+// instruction keeps the prompt self-contained without polluting the chat-coach
+// instruction.
 //
-// Reuse: `GenerativeModelProtocol` zodat unit tests een mock kunnen injecteren.
+// Reuse: `GenerativeModelProtocol` so unit tests can inject a mock.
 
 final class WorkoutInsightService {
 
@@ -41,15 +42,14 @@ final class WorkoutInsightService {
         }
     }
 
-    /// System-instruction. Bewust ander register dan de chat-coach: hier is de
-    /// coach een fysiologisch analist die patronen samenbrengt tot een kort
-    /// verhaal — geen oefenschema, geen vragen.
-    /// Epic #44 update: leest sessie-type en persoonlijke zones uit de context
-    /// zodat een opzettelijke threshold-/VO2max-sessie niet als "te hard" wordt
-    /// geframed; alleen onverwacht hoge HR triggert een waarschuwende toon.
-    /// Epic #52 update: harde regel dat de analyse nooit met een vraag eindigt —
-    /// deze view heeft geen chat-functie, dus elke open vraag blijft hangen
-    /// zonder beantwoording.
+    /// System instruction. Deliberately a different register than the chat coach:
+    /// here the coach is a physiological analyst who brings patterns together into
+    /// a short narrative — no exercise schedule, no questions.
+    /// Epic #44 update: reads session type and personal zones from the context so
+    /// an intentional threshold/VO2max session isn't framed as "too hard"; only an
+    /// unexpectedly high HR triggers a cautionary tone.
+    /// Epic #52 update: hard rule that the analysis never ends with a question —
+    /// this view has no chat function, so any open question would hang unanswered.
     private static let systemInstruction: String = """
     Je bent een sportfysiologisch analist die patronen in een workout interpreteert.
 
@@ -154,10 +154,10 @@ final class WorkoutInsightService {
     private let primaryFactory: () -> GenerativeModelProtocol?
     private let fallbackFactory: () -> GenerativeModelProtocol?
 
-    /// Default factories bouwen echte Gemini-modellen met dezelfde system-instruction;
-    /// tests injecteren mocks. Fallback gebruikt het lichtere model — exact dezelfde
-    /// strategie als `ChatViewModel.buildFallbackGenerativeModel()` zodat 503/429 op
-    /// het primaire model niet meteen tot een gebruikersfout leidt.
+    /// Default factories build real Gemini models with the same system instruction;
+    /// tests inject mocks. The fallback uses the lighter model — exactly the same
+    /// strategy as `ChatViewModel.buildFallbackGenerativeModel()` so a 503/429 on
+    /// the primary model doesn't immediately surface as a user error.
     init(primaryFactory: @escaping () -> GenerativeModelProtocol? = WorkoutInsightService.makePrimaryModel,
          fallbackFactory: @escaping () -> GenerativeModelProtocol? = WorkoutInsightService.makeFallbackModel) {
         self.primaryFactory = primaryFactory
@@ -177,9 +177,9 @@ final class WorkoutInsightService {
     private static func makeModel(provider: AIProvider, modelName: String) -> GenerativeModelProtocol? {
         let key = UserAPIKeyStore.read(for: provider)
         guard !key.isEmpty else { return nil }
-        // Epic #53: provider-agnostisch via de `AIModelFactory`. `jsonMode = false`
-        // — de Coach-analyse is vrije tekst, geen JSON-schema. Timeout 30s zoals
-        // voorheen. Sleutel + modelnaam horen bij de actieve provider.
+        // Epic #53: provider-agnostic via the `AIModelFactory`. `jsonMode = false`
+        // — the Coach analysis is free text, no JSON schema. Timeout 30s as before.
+        // The key + model name belong to the active provider.
         return AIModelFactory.makeModel(
             provider: provider,
             modelName: modelName,
@@ -190,9 +190,8 @@ final class WorkoutInsightService {
         )
     }
 
-    /// Workout-context voor de AI-prompt. Velden zijn optioneel; wat onbekend
-    /// is wordt simpelweg weggelaten zodat de prompt niet wordt vervuild met
-    /// "onbekend" of nil-waarden.
+    /// Workout context for the AI prompt. Fields are optional; whatever is unknown
+    /// is simply omitted so the prompt isn't polluted with "unknown" or nil values.
     struct InsightContext {
         let sportLabel: String
         let durationMinutes: Int
@@ -202,40 +201,39 @@ final class WorkoutInsightService {
         let maxHeartRate: Double?
         let lactateThresholdHR: Double?
         let ftp: Double?
-        /// Epic #47: alle gedetecteerde pauze-recovery-events — ook positieve.
-        /// Stelt de coach in staat om bij goede recovery positief te framen,
-        /// los van het pin-systeem (dat alleen exceptions toont conform §1).
+        /// Epic #47: all detected pause-recovery events — positive ones too.
+        /// Lets the coach frame good recovery positively, independent of the pin
+        /// system (which only shows exceptions per §1).
         let recoveryEvents: [RecoveryEventSummary]
-        /// Epic #48: blueprint-status per actief doel (titel, weken-resterend,
-        /// milestones ✅/❌). Output van `BlueprintContextFormatter.format(results:)`.
-        /// nil/leeg → blok valt weg, coach noemt doelen niet.
+        /// Epic #48: blueprint status per active goal (title, weeks remaining,
+        /// milestones ✅/❌). Output of `BlueprintContextFormatter.format(results:)`.
+        /// nil/empty → block is dropped, coach doesn't mention goals.
         let goalsContext: String?
-        /// Epic #48: periodisatie-fase per doel (Base/Build/Peak/Taper) +
-        /// succescriteria. Joined `PeriodizationResult.coachingContext`-blokken.
+        /// Epic #48: periodization phase per goal (Base/Build/Peak/Taper) +
+        /// success criteria. Joined `PeriodizationResult.coachingContext` blocks.
         let periodizationContext: String?
-        /// Epic #49: omgevings-temperatuur (°C) en luchtvochtigheid (%) op het
-        /// moment van de workout, uit `HKMetadataKeyWeather*`. Beide nil → blok
-        /// valt weg uit de prompt en de coach valt terug op generieke aannames
-        /// over hitte/dehydratie. Voor records mét GPS-coords krijgt Epic #52
-        /// voorrang (hourly-range), maar deze snapshot blijft het fallback-pad
-        /// voor HK-only ritten zonder geregistreerde coords.
+        /// Epic #49: ambient temperature (°C) and humidity (%) at the moment of
+        /// the workout, from `HKMetadataKeyWeather*`. Both nil → block is dropped
+        /// from the prompt and the coach falls back to generic assumptions about
+        /// heat/dehydration. For records with GPS coords Epic #52 takes precedence
+        /// (hourly range), but this snapshot remains the fallback path for HK-only
+        /// rides without recorded coords.
         let temperatureCelsius: Double?
         let humidityPercent: Double?
-        /// Epic #52: hourly weer-aggregaat over het volledige workout-venster.
-        /// Piek (warmste uur tijdens de rit) en gemiddelde voor zowel temperatuur
-        /// als luchtvochtigheid. Wanneer aanwezig krijgt deze range voorrang
-        /// op de snapshot — een 90-min run die om 9:43 bij 15°C startte maar
-        /// onderweg naar 22°C piek liep, wordt fair als 22°C-rit geëvalueerd.
-        /// Alle subvelden optioneel; nil → blok valt weg.
+        /// Epic #52: hourly weather aggregate over the full workout window.
+        /// Peak (warmest hour during the ride) and average for both temperature
+        /// and humidity. When present this range takes precedence over the
+        /// snapshot — a 90-min run that started at 9:43 at 15°C but ran up to a
+        /// 22°C peak is fairly evaluated as a 22°C ride.
+        /// All subfields optional; nil → block is dropped.
         let peakTempCelsius: Double?
         let avgTempCelsius: Double?
         let peakHumidityPercent: Double?
         let avgHumidityPercent: Double?
-        /// Epic #52: cadens (steps per minute) tijdens een hardloop. Gemiddelde
-        /// over niet-nul samples (rust-buckets uitgesloten) + piek (95e
-        /// percentiel om sprintje-spikes af te vlakken). Alleen aanwezig voor
-        /// running-workouts; cycling-cadens wordt vandaag niet in deze prompt
-        /// meegenomen. Beide nil → blok valt weg.
+        /// Epic #52: cadence (steps per minute) during a run. Average over
+        /// non-zero samples (rest buckets excluded) + peak (95th percentile to
+        /// flatten sprint spikes). Only present for running workouts; cycling
+        /// cadence is not included in this prompt today. Both nil → block is dropped.
         let averageCadenceSPM: Double?
         let peakCadenceSPM: Double?
 
@@ -280,20 +278,20 @@ final class WorkoutInsightService {
         }
     }
 
-    /// Lichte struct voor de coach-prompt. Bevat alleen wat de AI nodig heeft:
-    /// duur (in seconden) en drop (BPM). De `qualityLabel` wordt door de caller
-    /// afgeleid uit de drop-ratio relatief aan referenceHR — zo houdt de service
-    /// zelf geen drempel-kennis bij zich.
+    /// Lightweight struct for the coach prompt. Contains only what the AI needs:
+    /// duration (in seconds) and drop (BPM). The `qualityLabel` is derived by the
+    /// caller from the drop ratio relative to referenceHR — this way the service
+    /// itself holds no threshold knowledge.
     struct RecoveryEventSummary: Equatable {
         let durationSeconds: TimeInterval
         let drop: Double
         let qualityLabel: String
     }
 
-    /// Genereert een coaching-narrative voor de meegeleverde patronen + workout-context.
-    /// Probeert eerst het primaire model; faalt dat op een retryable fout, dan
-    /// volgt automatisch een poging op het fallback-model. Zo blijft de Coach-analyse
-    /// werken bij een tijdelijke 503/429 op het primaire model.
+    /// Generates a coaching narrative for the given patterns + workout context.
+    /// Tries the primary model first; if it fails on a retryable error, an attempt
+    /// on the fallback model follows automatically. This keeps the Coach analysis
+    /// working during a temporary 503/429 on the primary model.
     func generateInsight(patterns: [WorkoutPattern],
                          context: InsightContext) async throws -> String {
         guard let primary = primaryFactory() else { throw InsightError.missingAPIKey }
@@ -303,13 +301,13 @@ final class WorkoutInsightService {
         do {
             return try await callModel(primary, prompt: prompt)
         } catch {
-            // Task-cancellation = de view of een nieuwe call heeft ons gepasseerd.
-            // Geen fallback proberen (zou ook gecancelled worden), CancellationError
-            // doorgeven zodat de view 'm stilletjes kan negeren.
+            // Task cancellation = the view or a new call has superseded us.
+            // Don't try the fallback (it would also be cancelled); pass on
+            // CancellationError so the view can silently ignore it.
             if Self.isCancellation(error) { throw CancellationError() }
 
-            // Authenticatie of content-blocking is per-key/per-prompt; de fallback gaat
-            // dat niet oplossen. Direct doorgeven.
+            // Authentication or content blocking is per-key/per-prompt; the fallback
+            // won't fix that. Pass it on directly.
             if let mapped = mapError(error, retried: false), case .authenticationFailed = mapped {
                 throw mapped
             }
@@ -317,7 +315,7 @@ final class WorkoutInsightService {
                 throw mapped
             }
 
-            // Probeer fallback. Als die ook ontbreekt of valt, propageer de zwaarste fout.
+            // Try the fallback. If it's also missing or fails, propagate the worst error.
             guard let fallback = fallbackFactory() else {
                 throw mapError(error, retried: false) ?? .unavailable(retried: false, detail: error.localizedDescription)
             }
@@ -330,10 +328,10 @@ final class WorkoutInsightService {
         }
     }
 
-    /// Detecteert SwiftUI/URLSession task-cancellation in alle vormen die we tegenkomen:
-    /// rauwe `CancellationError`, `URLError.cancelled`, of een `URLError.cancelled` die
-    /// in `GenerateContentError.internalError(underlying:)` ingewikkeld zit. We checken
-    /// op `String(describing:)` als laatste vangnet voor het ingewikkelde geval.
+    /// Detects SwiftUI/URLSession task cancellation in all the forms we encounter:
+    /// a raw `CancellationError`, `URLError.cancelled`, or a `URLError.cancelled`
+    /// wrapped inside `GenerateContentError.internalError(underlying:)`. We check
+    /// `String(describing:)` as a last-resort net for the wrapped case.
     private static func isCancellation(_ error: Error) -> Bool {
         if error is CancellationError { return true }
         if let urlError = error as? URLError, urlError.code == .cancelled { return true }
@@ -341,9 +339,9 @@ final class WorkoutInsightService {
         return desc.contains("Code=-999") || desc.contains("\"cancelled\"")
     }
 
-    /// Internal voor `@testable` zichtbaarheid in `WorkoutInsightServiceTests`
-    /// (Epic #48). Bouwt de complete prompt zonder daadwerkelijk een API-call
-    /// te doen — handig voor unit-testen van blok-conditie's en formatting.
+    /// Internal for `@testable` visibility in `WorkoutInsightServiceTests`
+    /// (Epic #48). Builds the complete prompt without actually making an API call —
+    /// handy for unit-testing block conditions and formatting.
     func buildPrompt(patterns: [WorkoutPattern], context: InsightContext) -> String {
         let snippet = WorkoutPatternFormatter.promptSnippet(for: patterns) ?? ""
 
@@ -357,8 +355,8 @@ final class WorkoutInsightService {
             lines.append("- Titel: \"\(title)\"")
         }
 
-        // Drempels-blok pas toevoegen als minstens één bekende waarde gezet is —
-        // bij geen profielwaarden valt de coach terug op generieke aannames.
+        // Only add the thresholds block when at least one known value is set —
+        // with no profile values the coach falls back to generic assumptions.
         var thresholdLines: [String] = []
         if let max = context.maxHeartRate { thresholdLines.append("- Max HR: \(Int(max)) BPM") }
         if let lthr = context.lactateThresholdHR { thresholdLines.append("- LTHR: \(Int(lthr)) BPM") }
@@ -378,10 +376,10 @@ final class WorkoutInsightService {
         lines.append("Gedetecteerde patronen:")
         lines.append(snippet.isEmpty ? "Geen significante patronen gedetecteerd — uitvoering was binnen verwachting." : snippet)
 
-        // Epic #47: pauze-gebaseerde recovery-events meegeven — ook positieve.
-        // Coach kan dan bij vraag "hoe ging mijn rit?" het uitstekende herstel
-        // benoemen ook als er geen pin is. Voor matig herstel verstevigt dit
-        // de pattern-pin met de feitelijke pauze-context.
+        // Epic #47: pass along pause-based recovery events — positive ones too.
+        // The coach can then, on "how did my ride go?", name the excellent
+        // recovery even when there's no pin. For mediocre recovery this reinforces
+        // the pattern pin with the actual pause context.
         if !context.recoveryEvents.isEmpty {
             lines.append("")
             lines.append("Recovery-events (per pauze):")
@@ -393,10 +391,10 @@ final class WorkoutInsightService {
             }
         }
 
-        // Epic #48: doelen-status (blueprint milestones per actief doel) en
-        // periodisering (huidige fase + succescriteria per doel). Beide blokken
-        // worden weggelaten als ze leeg/nil zijn — coach valt dan terug op pure
-        // uitvoerings-analyse zonder doel-koppeling.
+        // Epic #48: goals status (blueprint milestones per active goal) and
+        // periodization (current phase + success criteria per goal). Both blocks
+        // are omitted when empty/nil — the coach then falls back to pure
+        // execution analysis without a goal link.
         if let goals = context.goalsContext, !goals.isEmpty {
             lines.append("")
             lines.append("[DOELEN-STATUS]")
@@ -408,10 +406,10 @@ final class WorkoutInsightService {
             lines.append(phase)
         }
 
-        // Epic #49 + #52: weer-context tijdens de workout. Range (hourly piek + gem.)
-        // krijgt voorrang op snapshot wanneer aanwezig — een 90-min run pikt zo de
-        // warmte tijdens de rit op, niet alleen de single-point bij rit-start.
-        // Alleen toevoegen als minstens één van de velden beschikbaar is.
+        // Epic #49 + #52: weather context during the workout. The range (hourly peak
+        // + avg) takes precedence over the snapshot when present — a 90-min run thus
+        // picks up the heat during the ride, not just the single point at ride start.
+        // Only add it when at least one of the fields is available.
         let hasRange = context.peakTempCelsius != nil
             || context.avgTempCelsius != nil
             || context.peakHumidityPercent != nil
@@ -445,8 +443,8 @@ final class WorkoutInsightService {
             }
         }
 
-        // Epic #52: cadens-context voor hardloop. Alleen toonbaar bij minstens
-        // één van de twee waardes — anders valt het blok stil weg.
+        // Epic #52: cadence context for running. Only shown with at least one of
+        // the two values — otherwise the block is silently dropped.
         if context.averageCadenceSPM != nil || context.peakCadenceSPM != nil {
             lines.append("")
             lines.append("[CADENS]")
@@ -471,11 +469,11 @@ final class WorkoutInsightService {
         return text
     }
 
-    /// Mapt SDK-fouten op gebruiker-vriendelijke `InsightError`-cases. Match op de
-    /// case-naam via `String(describing:)` (bv. `promptBlockedError(...)`) plus op
-    /// `localizedDescription` voor URLError + non-Google fouten. Logt de rauwe fout
-    /// naar de console — als de UI "Onbekende AI-fout (...)" toont, kunnen we daar
-    /// de case-naam aflezen en 'm in een volgende ronde mappen.
+    /// Maps SDK errors to user-friendly `InsightError` cases. Matches on the case
+    /// name via `String(describing:)` (e.g. `promptBlockedError(...)`) plus on
+    /// `localizedDescription` for URLError + non-Google errors. Logs the raw error
+    /// to the console — if the UI shows "Onbekende AI-fout (...)", we can read the
+    /// case name there and map it in a later round.
     private func mapError(_ error: Error, retried: Bool) -> InsightError? {
         let caseDescription = String(describing: error)
         let message = error.localizedDescription
@@ -483,9 +481,9 @@ final class WorkoutInsightService {
 
         AppLoggers.workoutInsight.error("AI-call failed (retried=\(retried, privacy: .public)): \(caseDescription, privacy: .public) | localized=\(message, privacy: .public)")
 
-        // Epic #53: getypeerde mapping voor de niet-Gemini REST-clients (OpenAI/
-        // Claude/Mistral) die `AIProviderError` gooien. Gaat vóór de string-matching
-        // zodat we niet afhankelijk zijn van de stringrepresentatie.
+        // Epic #53: typed mapping for the non-Gemini REST clients (OpenAI/Claude/
+        // Mistral) that throw `AIProviderError`. Goes before the string matching so
+        // we don't depend on the string representation.
         if let providerError = error as? AIProviderError {
             switch providerError {
             case .overloaded:
@@ -504,7 +502,7 @@ final class WorkoutInsightService {
             }
         }
 
-        // Specifieke Google-SDK cases — case-naam is stabieler dan localized text.
+        // Specific Google-SDK cases — the case name is more stable than localized text.
         if combined.contains("invalidapikey") || combined.contains("api key") || combined.contains("unauthenticated") || combined.contains("unauthorized") {
             return .authenticationFailed
         }
@@ -523,8 +521,8 @@ final class WorkoutInsightService {
         if combined.contains("responsestoppedearly") {
             return .unavailable(retried: retried, detail: "AI stopte de respons voortijdig — pull-to-refresh om opnieuw te proberen.")
         }
-        // Onbekende case: geef de rauwe case-naam terug zodat we hem in de UI kunnen
-        // aflezen en in een volgende iteratie expliciet mappen.
+        // Unknown case: return the raw case name so we can read it in the UI and
+        // map it explicitly in a later iteration.
         return .unavailable(retried: retried, detail: "Onbekende AI-fout — \(caseDescription)")
     }
 }

@@ -2,62 +2,62 @@ import Foundation
 
 // MARK: - Epic 33 Story 33.4: IntentExecutionAnalyzer
 //
-// Vergelijkt de geplande sessie (`SuggestedWorkout`) met de werkelijke uitvoering
-// (`ActivityRecord`) en geeft één verdict terug. Pure Swift — geen state, geen
-// HealthKit-dependency, volledig unit-testbaar.
+// Compares the planned session (`SuggestedWorkout`) with the actual execution
+// (`ActivityRecord`) and returns one verdict. Pure Swift — no state, no
+// HealthKit dependency, fully unit-testable.
 //
-// Cascade-volgorde (eerste match wint):
-//   1. typeMismatch: planned- en actual-SessionType bekend én verschillend
+// Cascade order (first match wins):
+//   1. typeMismatch: planned and actual SessionType known and different
 //   2. overload:     TRIMP > planned + 15%
 //   3. underload:    TRIMP < planned − 15%
-//   4. match:        types gelijk + TRIMP binnen ±15%
-//   5. insufficientData: te weinig signaal om iets te zeggen
+//   4. match:        types equal + TRIMP within ±15%
+//   5. insufficientData: too little signal to say anything
 //
-// Type-mismatch gaat boven TRIMP-vergelijking omdat 'gepland tempo, gedaan endurance'
-// fundamenteler is dan een TRIMP-afwijking — vaak veroorzaakt het type-verschil
-// óók de TRIMP-afwijking, dus dubbele rapportage zou ruis zijn.
+// Type mismatch outranks the TRIMP comparison because 'planned tempo, did endurance'
+// is more fundamental than a TRIMP deviation — often the type difference also
+// causes the TRIMP deviation, so double reporting would be noise.
 
-/// Eindoordeel per (planned, actual)-paar.
+/// Final verdict per (planned, actual) pair.
 enum IntentExecutionVerdict: Equatable {
     case match
     case typeMismatch(planned: SessionType, actual: SessionType?)
-    case overload(trimpDeltaPercent: Double)   // bv. 22.5 voor "+22.5%"
-    case underload(trimpDeltaPercent: Double)  // bv. -18.0 voor "-18%"
+    case overload(trimpDeltaPercent: Double)   // e.g. 22.5 for "+22.5%"
+    case underload(trimpDeltaPercent: Double)  // e.g. -18.0 for "-18%"
     case insufficientData
 }
 
 enum IntentExecutionAnalyzer {
 
-    /// TRIMP-afwijking-marge (15% in beide richtingen).
+    /// TRIMP deviation margin (15% in both directions).
     private static let trimpToleranceFraction: Double = 0.15
 
-    /// Hoofd-entry: vergelijkt geplande sessie tegen werkelijke uitvoering.
+    /// Main entry: compares the planned session against the actual execution.
     /// - Parameters:
-    ///   - planned: De `SuggestedWorkout` voor de betreffende dag.
-    ///   - actual: De `ActivityRecord` die op dezelfde dag is gemaakt.
-    ///   - maxHeartRate: Voor de SessionClassifier-fallback bij keyword-classificatie
-    ///     van het plan. Niet kritiek — alleen `classifyByKeywords` wordt gebruikt
-    ///     en die gebruikt `maxHeartRate` niet, maar de classifier-init eist 'm.
-    /// - Returns: Een `IntentExecutionVerdict` (nooit `nil`; bij gebrek aan signaal
+    ///   - planned: The `SuggestedWorkout` for that day.
+    ///   - actual: The `ActivityRecord` created on the same day.
+    ///   - maxHeartRate: For the SessionClassifier fallback on keyword classification
+    ///     of the plan. Not critical — only `classifyByKeywords` is used
+    ///     and it doesn't use `maxHeartRate`, but the classifier init requires it.
+    /// - Returns: An `IntentExecutionVerdict` (never `nil`; on a lack of signal
     ///   `.insufficientData`).
     static func analyze(planned: SuggestedWorkout,
                         actual: ActivityRecord,
                         maxHeartRate: Double) -> IntentExecutionVerdict {
 
-        // Stap 1 — Bepaal het geplande SessionType via keyword-classificatie op de
-        // tekstuele velden van de SuggestedWorkout (Optie B: geen schema-wijziging).
+        // Step 1 — Determine the planned SessionType via keyword classification on the
+        // textual fields of the SuggestedWorkout (Option B: no schema change).
         let plannedSearchString = [planned.activityType, planned.description, planned.heartRateZone ?? ""]
             .joined(separator: " ")
         let classifier = SessionClassifier(maxHeartRate: maxHeartRate)
         let plannedType = classifier.classifyByKeywords(title: plannedSearchString)
         let actualType = actual.sessionType
 
-        // Stap 2 — Type-mismatch heeft hoogste prioriteit.
+        // Step 2 — Type mismatch has the highest priority.
         if let plannedType, let actualType, plannedType != actualType {
             return .typeMismatch(planned: plannedType, actual: actualType)
         }
 
-        // Stap 3 — TRIMP-vergelijking (alleen als beide TRIMPs zinvol zijn).
+        // Step 3 — TRIMP comparison (only if both TRIMPs are meaningful).
         guard let plannedTrimpInt = planned.targetTRIMP, plannedTrimpInt > 0 else {
             return .insufficientData
         }
@@ -76,21 +76,21 @@ enum IntentExecutionAnalyzer {
             return .underload(trimpDeltaPercent: deltaPercent)
         }
 
-        // Stap 4 — Binnen marge: type ofwel gelijk, ofwel één van beide onbekend.
-        // Beide TRIMPs zijn binnen ±15% en geen type-mismatch → coach mag dit als
-        // success markeren. Een onbekende type-zijde verzwakt het signaal niet:
-        // zelfs zonder explicit type is een TRIMP-match een sterk indicator van
+        // Step 4 — Within margin: type either equal, or one of the two unknown.
+        // Both TRIMPs are within ±15% and there's no type mismatch → the coach may
+        // mark this as success. An unknown type side does not weaken the signal:
+        // even without an explicit type, a TRIMP match is a strong indicator of
         // discipline.
         return .match
     }
 }
 
-// MARK: - SuggestedWorkout match-helper
+// MARK: - SuggestedWorkout match helper
 
 extension Array where Element == SuggestedWorkout {
-    /// Vindt de `SuggestedWorkout` die op dezelfde kalenderdag staat als de gegeven
-    /// `ActivityRecord.startDate`. Eén-op-één: bij meerdere matches op één dag krijg
-    /// je de eerste — voor 33.4 is dat acceptabel (zeldzaam scenario).
+    /// Finds the `SuggestedWorkout` on the same calendar day as the given
+    /// `ActivityRecord.startDate`. One-to-one: on multiple matches on one day you get
+    /// the first — for 33.4 that's acceptable (a rare scenario).
     func first(matching activity: ActivityRecord) -> SuggestedWorkout? {
         let calendar = Calendar.current
         let activityDay = calendar.startOfDay(for: activity.startDate)

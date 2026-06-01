@@ -2,44 +2,44 @@ import Foundation
 
 // MARK: - Epic 32 Story 32.3b: WorkoutPatternFormatter
 //
-// Pure-Swift helper die `[WorkoutPattern]` omzet in twee tekstvormen:
-//   • `promptSnippet`: gestructureerde context voor AI-prompts (per-workout
-//     coach-analyse én de globale chat-context-prefix uit story 32.3c).
-//   • `fingerprint`: stabiele cache-sleutel zodat opnieuw genereren alleen
-//     gebeurt als de patronen daadwerkelijk veranderen (bv. na re-classificatie).
+// Pure-Swift helper that turns `[WorkoutPattern]` into two text forms:
+//   • `promptSnippet`: structured context for AI prompts (per-workout
+//     coach analysis and the global chat context prefix from story 32.3c).
+//   • `fingerprint`: a stable cache key so regeneration only
+//     happens when the patterns actually change (e.g. after reclassification).
 //
-// Geen UI-, AppStorage- of AI-afhankelijkheid — `[WorkoutPattern]` in,
-// `String` uit. Dat houdt alle prompt-engineering-keuzes in één bestand
-// en volledig unit-testbaar.
+// No UI, AppStorage or AI dependency — `[WorkoutPattern]` in,
+// `String` out. That keeps all prompt-engineering choices in one file
+// and fully unit-testable.
 
 enum WorkoutPatternFormatter {
 
-    /// Bouwt een prompt-snippet die de AI als context kan lezen. Ontwerp:
-    ///   • One-liner per patroon, prefix met severity-token zodat de AI prioriteit ziet
-    ///   • Numerieke waarde meegeven (geen "ergens rond 5%") — geeft de coach houvast
-    ///   • Volgorde matcht de detector-output (decoupling → drift → cadence → recovery)
-    ///   • Lege patronen-array → `nil` zodat caller weet dat er niets te zeggen is
+    /// Builds a prompt snippet the AI can read as context. Design:
+    ///   • One-liner per pattern, prefixed with a severity token so the AI sees priority
+    ///   • Include the numeric value (no "somewhere around 5%") — gives the coach something to hold on to
+    ///   • Order matches the detector output (decoupling → drift → cadence → recovery)
+    ///   • Empty patterns array → `nil` so the caller knows there is nothing to say
     static func promptSnippet(for patterns: [WorkoutPattern]) -> String? {
         guard !patterns.isEmpty else { return nil }
         let lines = patterns.map { line(for: $0) }
         return lines.joined(separator: "\n")
     }
 
-    /// Story 45.1: één-regel-variant van `promptSnippet` voor inline-suffix in
-    /// `WorkoutHistoryContextBuilder`-output. Patronen worden met ` / ` gescheiden
-    /// i.p.v. `\n`, en het detail-veld wordt vervangen door een korte `value`-met-
-    /// eenheid-rendering. Dat voorkomt de redundantie van `[SEVERITY] kind: Kind: …`
-    /// die in de prozaïsche detail-strings van de detector zit en bespaart ~60% tokens
-    /// per patroon op de prompt. De volledige `detail`-tekst blijft beschikbaar voor
-    /// de UI-pins in `WorkoutAnalysisView` via `promptSnippet`.
+    /// Story 45.1: a one-line variant of `promptSnippet` for an inline suffix in
+    /// `WorkoutHistoryContextBuilder` output. Patterns are separated with ` / `
+    /// instead of `\n`, and the detail field is replaced by a short `value`-with-
+    /// unit rendering. This avoids the redundancy of `[SEVERITY] kind: Kind: …`
+    /// in the detector's prose detail strings and saves ~60% tokens
+    /// per pattern in the prompt. The full `detail` text remains available for
+    /// the UI pins in `WorkoutAnalysisView` via `promptSnippet`.
     static func inlineSnippet(for patterns: [WorkoutPattern]) -> String? {
         guard !patterns.isEmpty else { return nil }
         return patterns.map { inlineLine(for: $0) }.joined(separator: " / ")
     }
 
-    /// Inline-format: `[SEVERITY] kind value+eenheid`. Eenheid hangt af van `kind`
-    /// (zie comment op `WorkoutPattern.value`): drift-types in %, recovery in bpm,
-    /// cadence-fade unitless (sport-afhankelijk: rpm voor cycling, spm voor running).
+    /// Inline format: `[SEVERITY] kind value+unit`. The unit depends on `kind`
+    /// (see comment on `WorkoutPattern.value`): drift types in %, recovery in bpm,
+    /// cadence fade unitless (sport-dependent: rpm for cycling, spm for running).
     private static func inlineLine(for pattern: WorkoutPattern) -> String {
         let severityToken = severityToken(for: pattern.severity)
         let kindToken = kindToken(for: pattern.kind)
@@ -72,15 +72,15 @@ enum WorkoutPatternFormatter {
         }
     }
 
-    /// One-liner per patroon. Format: `[severity] kind: numerieke waarde + uitleg`.
+    /// One-liner per pattern. Format: `[severity] kind: numeric value + explanation`.
     private static func line(for pattern: WorkoutPattern) -> String {
         "[\(severityToken(for: pattern.severity))] \(kindToken(for: pattern.kind)): \(pattern.detail)"
     }
 
-    /// Stabiele fingerprint voor cache-invalidatie. Verandert zodra patronen,
-    /// severity óf afgeronde value verschuift; ongevoelig voor microscopische
-    /// drift-verschillen na hernieuwde classificatie. Geen cryptografische hash —
-    /// alleen botsings-vrij genoeg voor cache-keys per workout.
+    /// Stable fingerprint for cache invalidation. Changes as soon as patterns,
+    /// severity or the rounded value shifts; insensitive to microscopic
+    /// drift differences after reclassification. Not a cryptographic hash —
+    /// just collision-free enough for per-workout cache keys.
     static func fingerprint(for patterns: [WorkoutPattern]) -> String {
         guard !patterns.isEmpty else { return "empty" }
         let parts = patterns
@@ -89,10 +89,10 @@ enum WorkoutPatternFormatter {
         return parts.joined(separator: "|")
     }
 
-    /// Bouwt de gebruikers-richting van het prompt-fragment voor de chat-context-prefix
-    /// (story 32.3c). Geeft een korte, leesbare zin terug die de coach in een gewone
-    /// turn kan toelichten zonder JSON-structuur. Returnt `nil` als er geen significante
-    /// patronen zijn — mild patronen vermelden in elke chat-turn is té druk.
+    /// Builds the user-facing direction of the prompt fragment for the chat context prefix
+    /// (story 32.3c). Returns a short, readable sentence the coach can elaborate on in a normal
+    /// turn without JSON structure. Returns `nil` if there are no significant
+    /// patterns — mentioning mild patterns in every chat turn is too noisy.
     static func chatContextLine(for patterns: [WorkoutPattern]) -> String? {
         let significant = patterns.filter { $0.severity == .significant }
         guard !significant.isEmpty else { return nil }

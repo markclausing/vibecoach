@@ -3,42 +3,42 @@ import SwiftData
 
 // MARK: - Epic 41: Dual-Source Single-Record-of-Truth
 //
-// Een Garmin-rit kan tegelijk via Apple Health (workout + HR, geen power) én via
-// Strava (volledig met power) als losse `ActivityRecord` in SwiftData belanden.
-// Voor de gebruiker is dat één rit; deze helper kiest de "rijkste" versie.
+// A Garmin ride can land in SwiftData as separate `ActivityRecord`s both via
+// Apple Health (workout + HR, no power) and via Strava (fully with power).
+// For the user that is one ride; this helper picks the "richest" version.
 //
-// Heuristiek-volgorde — eerste signal dat verschilt wint:
-//   1. heeft samples in WorkoutSampleStore (= 5s-stream-data al ge-ingest)
-//   2. `deviceWatts == true` (Strava-record gemeten met powermeter)
+// Heuristic order — the first signal that differs wins:
+//   1. has samples in WorkoutSampleStore (= 5s stream data already ingested)
+//   2. `deviceWatts == true` (Strava record measured with a power meter)
 //   3. `trimp != nil`
 //   4. `averageHeartrate != nil`
-//   5. stable tiebreaker: hoogste id (lexicografisch — geeft deterministisch
-//      gedrag bij volledig identieke records)
+//   5. stable tiebreaker: highest id (lexicographic — gives deterministic
+//      behaviour for fully identical records)
 //
-// Pure-Swift logica met geïnjecteerde `samplesCount`-lookup zodat de helper
-// volledig unit-testbaar is zonder SwiftData / WorkoutSampleStore-afhankelijkheid.
+// Pure-Swift logic with an injected `samplesCount` lookup so the helper is
+// fully unit-testable without a SwiftData / WorkoutSampleStore dependency.
 
 enum ActivityDeduplicator {
 
-    /// Tijd-tolerantie voor "dezelfde" rit met matching sport-categorie. Garmin en
-    /// Apple Watch loggen niet altijd op precies dezelfde tick.
+    /// Time tolerance for the "same" ride with a matching sport category. Garmin and
+    /// Apple Watch don't always log on exactly the same tick.
     static let matchToleranceSeconds: TimeInterval = 5
 
-    /// Strikte tolerantie voor cross-sport-match. Bij identieke timestamp is een
-    /// sport-categorie-verschil in de praktijk een mapping-issue (HK-records die
-    /// in `.other` belanden omdat `SportCategory.from(hkType:)` de specifieke
-    /// HK-type-id niet kent), niet twee parallel uitgevoerde workouts. Bij grotere
-    /// drift willen we wel een sport-check om false positives te vermijden.
+    /// Strict tolerance for a cross-sport match. At an identical timestamp a
+    /// sport-category difference is in practice a mapping issue (HK records that
+    /// land in `.other` because `SportCategory.from(hkType:)` doesn't know the
+    /// specific HK type id), not two workouts performed in parallel. With larger
+    /// drift we do want a sport check to avoid false positives.
     static let strictMatchToleranceSeconds: TimeInterval = 1
 
     // MARK: Score
 
-    /// Hogere score = rijkere versie. Pure functie — `samplesCount` injecteren maakt
-    /// het testbaar zonder WorkoutSampleStore.
+    /// Higher score = richer version. Pure function — injecting `samplesCount` makes
+    /// it testable without WorkoutSampleStore.
     static func score(record: ActivityRecord, samplesCount: Int) -> Int {
         var s = 0
-        if samplesCount > 0 { s += 1000 }   // Sterkste signal
-        if record.deviceWatts == true { s += 500 } // Power-meter is reeds een belofte van rijke data
+        if samplesCount > 0 { s += 1000 }   // Strongest signal
+        if record.deviceWatts == true { s += 500 } // A power meter is already a promise of rich data
         if record.trimp != nil { s += 100 }
         if record.averageHeartrate != nil { s += 10 }
         return s
@@ -46,14 +46,14 @@ enum ActivityDeduplicator {
 
     // MARK: Group
 
-    /// Groepeert records die "dezelfde rit" representeren. Twee match-regels:
-    ///   • Strict (±1s): match ongeacht sport-categorie — vangt mapping-issues op
-    ///     (HK krachttraining die als `.other` belandt vs Strava's `.strength`)
-    ///   • Loose (1-5s): vereist gelijke sport-categorie als veiligheidsnet tegen
-    ///     false positives bij grotere timestamp-drift
-    /// Records die alleen in hun eigen groep zitten worden ook teruggegeven.
+    /// Groups records that represent the "same ride". Two match rules:
+    ///   • Strict (±1s): match regardless of sport category — catches mapping issues
+    ///     (HK strength training landing as `.other` vs Strava's `.strength`)
+    ///   • Loose (1-5s): requires equal sport category as a safety net against
+    ///     false positives at larger timestamp drift
+    /// Records that are alone in their own group are also returned.
     static func findDuplicateGroups(_ records: [ActivityRecord]) -> [[ActivityRecord]] {
-        // Sort op startDate voor deterministische groepering.
+        // Sort on startDate for deterministic grouping.
         let sorted = records.sorted { $0.startDate < $1.startDate }
         var groups: [[ActivityRecord]] = []
 
@@ -69,15 +69,15 @@ enum ActivityDeduplicator {
         return groups
     }
 
-    /// Bepaalt of twee records dezelfde workout zijn op basis van time + sport.
+    /// Determines whether two records are the same workout based on time + sport.
     private static func isMatch(_ a: ActivityRecord, _ b: ActivityRecord) -> Bool {
         let diff = abs(a.startDate.timeIntervalSince(b.startDate))
         if diff <= strictMatchToleranceSeconds {
-            // Identieke seconde — bron-mapping is dan onbetrouwbaar, dedupe altijd.
+            // Identical second — source mapping is then unreliable, always dedupe.
             return true
         }
         if diff <= matchToleranceSeconds {
-            // Drift binnen 5s — sport-categorie als veiligheidsnet.
+            // Drift within 5s — sport category as a safety net.
             return a.sportCategory == b.sportCategory
         }
         return false
@@ -85,18 +85,18 @@ enum ActivityDeduplicator {
 
     // MARK: Decide
 
-    /// Resultaat van een dedupe-analyse: wie blijft, wie wordt verwijderd.
-    /// Geen `Equatable`-conformance — `ActivityRecord` is een `@Model`-class
-    /// (referentie-type, niet automatisch Equatable). Tests vergelijken via `id`.
+    /// Result of a dedupe analysis: who stays, who gets removed.
+    /// No `Equatable` conformance — `ActivityRecord` is a `@Model` class
+    /// (reference type, not automatically Equatable). Tests compare via `id`.
     struct Decision {
         let winners: [ActivityRecord]
         let losers: [ActivityRecord]
     }
 
-    /// Loopt door alle groepen, kiest binnen elke groep de winnaar.
+    /// Walks through all groups and picks the winner within each group.
     /// - Parameters:
-    ///   - records: Volledige lijst ActivityRecords (typisch alles uit de DB).
-    ///   - samplesCount: Lookup-functie die per record het aantal samples teruggeeft.
+    ///   - records: Full list of ActivityRecords (typically everything from the DB).
+    ///   - samplesCount: Lookup function returning the sample count per record.
     static func decide(records: [ActivityRecord],
                        samplesCount: (ActivityRecord) -> Int) -> Decision {
         let groups = findDuplicateGroups(records)
@@ -108,7 +108,7 @@ enum ActivityDeduplicator {
                 winners.append(contentsOf: group)
                 continue
             }
-            // Sorteer hoogste score eerst; tiebreaker op id desc (stabiel bij gelijke score).
+            // Sort highest score first; tiebreaker on id desc (stable at equal score).
             let ranked = group.sorted { lhs, rhs in
                 let lScore = score(record: lhs, samplesCount: samplesCount(lhs))
                 let rScore = score(record: rhs, samplesCount: samplesCount(rhs))
@@ -123,36 +123,36 @@ enum ActivityDeduplicator {
 
     // MARK: Smart Ingest (Epic 41.4)
 
-    /// Resultaat van een `smartInsert`-flow. Tests en logging-callers kunnen op
-    /// basis van deze waarde verifiëren of een record daadwerkelijk de DB inging,
-    /// een bestaande overschreef of bewust werd weggegooid.
+    /// Result of a `smartInsert` flow. Tests and logging callers can use this
+    /// value to verify whether a record actually entered the DB, overwrote an
+    /// existing one, or was deliberately discarded.
     enum SmartInsertResult: Equatable {
         case inserted
-        case replaced            // new record verving een armer existing-record
-        case skippedSameSource   // exact dezelfde id stond er al — idempotente import
-        case skippedExistingRicher // duplicaat-detectie + existing wint van new
+        case replaced            // new record replaced a poorer existing record
+        case skippedSameSource   // exact same id already present — idempotent import
+        case skippedExistingRicher // duplicate detection + existing beats new
     }
 
-    /// Vergelijkt rijkdom van twee records bij ingest. Bewust zonder samples-lookup:
-    /// op het ingest-moment zijn er voor de incoming record nog geen samples binnen,
-    /// dus die zouden de score altijd op 0 zetten — onnauwkeurig én duur. Power-meter
-    /// + TRIMP + avg-HR zijn aan-de-deur signalen die we wél kennen.
+    /// Compares the richness of two records at ingest. Deliberately without a
+    /// samples lookup: at ingest time the incoming record has no samples yet, so
+    /// that would always set the score to 0 — inaccurate and expensive. Power
+    /// meter + TRIMP + avg HR are at-the-door signals we do know.
     static func shouldReplace(existing: ActivityRecord, new: ActivityRecord) -> Bool {
         score(record: new, samplesCount: 0) > score(record: existing, samplesCount: 0)
     }
 
-    /// Cross-source field-completion (Epic #49). Wanneer dedupe één bron als "winner"
-    /// kiest verliezen we normaal alle velden van de loser. Voor "soft" velden die
-    /// een bron-onafhankelijke betekenis hebben (zoals omgevings-temperatuur en
-    /// luchtvochtigheid uit `HKMetadataKeyWeather*`) is dat zonde — de winner heeft
-    /// die velden vaak niet, de loser wel. Deze helper kopieert ze door **als de
-    /// winner het veld nog leeg heeft**, zodat de uiteindelijke record het beste
-    /// van beide bronnen combineert. Wordt geroepen vóór `delete(loser)` of vóór
-    /// het weggooien van de candidate-die-verliest.
+    /// Cross-source field completion (Epic #49). When dedupe picks one source as the
+    /// "winner" we normally lose all of the loser's fields. For "soft" fields that
+    /// have a source-independent meaning (such as ambient temperature and humidity
+    /// from `HKMetadataKeyWeather*`) that's a waste — the winner often lacks those
+    /// fields while the loser has them. This helper copies them over **when the
+    /// winner's field is still empty**, so the final record combines the best of
+    /// both sources. Called before `delete(loser)` or before discarding the
+    /// candidate-that-loses.
     ///
-    /// Uitbreidbaar: nieuwe "soft" velden hier toevoegen volgens hetzelfde patroon
-    /// (alleen overschrijven als de winner nil is — geen aannames over welk veld
-    /// de "betere" waarde heeft).
+    /// Extensible: add new "soft" fields here following the same pattern (only
+    /// overwrite when the winner is nil — no assumptions about which field has
+    /// the "better" value).
     static func enrichEmptyFields(into winner: ActivityRecord, from loser: ActivityRecord) {
         if winner.temperatureCelsius == nil, let temp = loser.temperatureCelsius {
             winner.temperatureCelsius = temp
@@ -162,23 +162,24 @@ enum ActivityDeduplicator {
         }
     }
 
-    /// Smart-insert pipeline voor één incoming record. Volgt drie lagen:
-    ///   1. **Source-id match** → idempotente skip (re-sync van dezelfde bron).
-    ///   2. **Cross-source match** binnen ±5s + sport-categorie:
-    ///        • new is rijker → existing wordt verwijderd, new geïnsert.
-    ///        • existing is rijker (of gelijk) → new wordt overgeslagen.
-    ///   3. **Geen match** → reguliere insert.
-    /// Caller moet zélf `try context.save()` aanroepen op een geschikt moment
-    /// (typisch na een batch) — `smartInsert` saved niet om N writes te bundelen.
+    /// Smart-insert pipeline for one incoming record. Follows three layers:
+    ///   1. **Source-id match** → idempotent skip (re-sync of the same source).
+    ///   2. **Cross-source match** within ±5s + sport category:
+    ///        • new is richer → existing is removed, new is inserted.
+    ///        • existing is richer (or equal) → new is skipped.
+    ///   3. **No match** → regular insert.
+    /// The caller must call `try context.save()` itself at a suitable moment
+    /// (typically after a batch) — `smartInsert` doesn't save, to bundle N writes.
     @MainActor
     @discardableResult
     static func smartInsert(_ candidate: ActivityRecord,
                             into context: ModelContext) throws -> SmartInsertResult {
-        // Laag 1 — source-id idempotency. Werkt voor zowel HK-UUID's als deterministische
-        // Strava-id's omdat `ActivityRecord.id` altijd gelijk is aan de stored source-id.
-        // Epic #50: incoming candidate kan velden hebben die het bestaande mist (typisch
-        // weer-data uit Open-Meteo bij re-sync van een Garmin-rit). Doorgesluisd via
-        // `enrichEmptyFields` vóór de skip — anders gaat de nieuwe data verloren.
+        // Layer 1 — source-id idempotency. Works for both HK UUIDs and deterministic
+        // Strava ids because `ActivityRecord.id` always equals the stored source id.
+        // Epic #50: the incoming candidate may have fields the existing one lacks
+        // (typically weather data from Open-Meteo when re-syncing a Garmin ride).
+        // Funneled through `enrichEmptyFields` before the skip — otherwise the new
+        // data is lost.
         let candidateID = candidate.id
         let sameIDFetch = FetchDescriptor<ActivityRecord>(
             predicate: #Predicate { $0.id == candidateID }
@@ -189,8 +190,8 @@ enum ActivityDeduplicator {
             return .skippedSameSource
         }
 
-        // Laag 2 — cross-source duplicaat-detectie. ±5s window vangt zowel de strict
-        // (1s, cross-sport) als de loose (1-5s, same-sport) match-regel uit `findDuplicateGroups`.
+        // Layer 2 — cross-source duplicate detection. The ±5s window covers both the
+        // strict (1s, cross-sport) and loose (1-5s, same-sport) match rule from `findDuplicateGroups`.
         let windowStart = candidate.startDate.addingTimeInterval(-matchToleranceSeconds)
         let windowEnd   = candidate.startDate.addingTimeInterval(matchToleranceSeconds)
         let windowFetch = FetchDescriptor<ActivityRecord>(
@@ -199,48 +200,48 @@ enum ActivityDeduplicator {
         let nearby = (try? context.fetch(windowFetch)) ?? []
 
         for existing in nearby {
-            // Hergebruikt `findDuplicateGroups` voor één-op-één match-semantics —
-            // zo blijft strict <1s + loose <5s+sport in één plek gedefinieerd.
+            // Reuses `findDuplicateGroups` for one-on-one match semantics —
+            // this keeps strict <1s + loose <5s+sport defined in one place.
             let groups = findDuplicateGroups([existing, candidate])
             guard groups.count == 1 else { continue }
 
             if shouldReplace(existing: existing, new: candidate) {
-                // Epic #49: pak velden van de verliezer over die de winner mist —
-                // zo verliezen we geen weer-metadata van een armer HK-record als
-                // het rijkere Strava-record geen weer heeft.
+                // Epic #49: take over fields from the loser that the winner lacks —
+                // this way we don't lose weather metadata from a poorer HK record if
+                // the richer Strava record has no weather.
                 Self.enrichEmptyFields(into: candidate, from: existing)
                 context.delete(existing)
                 context.insert(candidate)
                 return .replaced
             } else {
-                // Existing wint, maar de candidate (vaak HK met weer-metadata) kan
-                // velden hebben die de existing (vaak Strava zonder weer) mist.
-                // Doorzetten vóór we de candidate weggooien.
+                // Existing wins, but the candidate (often HK with weather metadata)
+                // may have fields the existing one (often Strava without weather)
+                // lacks. Carry them over before we discard the candidate.
                 Self.enrichEmptyFields(into: existing, from: candidate)
                 return .skippedExistingRicher
             }
         }
 
-        // Laag 3 — geen duplicaat: reguliere insert.
+        // Layer 3 — no duplicate: regular insert.
         context.insert(candidate)
         return .inserted
     }
 
     // MARK: Apply (SwiftData)
 
-    /// Voert de dedupe-actie uit op een ModelContext: verwijdert alle losers en
-    /// saved. Sample-counts worden opgehaald via de meegegeven store. Idempotent —
-    /// een tweede call op een schone DB doet niets.
-    /// - Returns: Aantal verwijderde records.
+    /// Performs the dedupe action on a ModelContext: removes all losers and saves.
+    /// Sample counts are fetched via the given store. Idempotent — a second call
+    /// on a clean DB does nothing.
+    /// - Returns: Number of removed records.
     @MainActor
     static func runDedupe(in context: ModelContext,
                           store: WorkoutSampleStore) async throws -> Int {
         let descriptor = FetchDescriptor<ActivityRecord>(sortBy: [SortDescriptor(\.startDate, order: .forward)])
         let allRecords = try context.fetch(descriptor)
 
-        // Pre-fetch sample-counts per record (één query per record, voor 100-tal
-        // records is dat acceptabel). Caching hier zou nuttig zijn bij 1000+
-        // records — voor nu eenvoud boven optimalisatie.
+        // Pre-fetch sample counts per record (one query per record, acceptable for
+        // around a hundred records). Caching here would help at 1000+ records —
+        // for now simplicity over optimization.
         var counts: [String: Int] = [:]
         for record in allRecords {
             let uuid = UUID.forActivityRecordID(record.id)
@@ -249,10 +250,10 @@ enum ActivityDeduplicator {
 
         let decision = decide(records: allRecords) { counts[$0.id] ?? 0 }
 
-        // Epic #49: cross-source field-completion vóór delete. Pak weer-metadata
-        // van losers door naar de winner zodat een Strava-winner de HK-temperatuur
-        // niet verliest. Pair losers aan hun winner via dezelfde groeperings-logica
-        // als `decide` zelf gebruikt.
+        // Epic #49: cross-source field completion before delete. Carry weather
+        // metadata from losers over to the winner so a Strava winner doesn't lose
+        // the HK temperature. Pair losers to their winner via the same grouping
+        // logic that `decide` itself uses.
         let winnersByGroup = Dictionary(uniqueKeysWithValues: decision.winners.map { ($0.id, $0) })
         let groups = findDuplicateGroups(allRecords)
         for group in groups where group.count > 1 {

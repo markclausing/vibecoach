@@ -1,10 +1,10 @@
 import Foundation
 import CoreLocation
 
-// MARK: - Open-Meteo API response modellen
+// MARK: - Open-Meteo API response models
 
-/// Decoderingsmodel voor de Open-Meteo /v1/forecast daily-respons.
-/// Documentatie: https://open-meteo.com/en/docs
+/// Decoding model for the Open-Meteo /v1/forecast daily response.
+/// Documentation: https://open-meteo.com/en/docs
 private struct OpenMeteoResponse: Decodable {
     let daily: OpenMeteoDailyData
 }
@@ -29,24 +29,24 @@ private struct OpenMeteoDailyData: Decodable {
 
 // MARK: - WeatherSafetyEvaluator
 
-/// Pure beslissingslogica voor het evalueren van weersomstandigheden voor buitentraining.
-/// Bevat geen netwerk-, locatie- of UI-afhankelijkheden — volledig unit-testbaar.
+/// Pure decision logic for evaluating weather conditions for outdoor training.
+/// Contains no network, location or UI dependencies — fully unit-testable.
 struct WeatherSafetyEvaluator {
 
-    /// Neerslagkans boven deze drempel (fractie 0–1) geldt als risico.
+    /// Precipitation probability above this threshold (fraction 0–1) counts as a risk.
     static let precipitationRiskThreshold: Double = 0.60
-    /// Windsnelheid (km/h) boven deze waarde geldt als risico.
+    /// Wind speed (km/h) above this value counts as a risk.
     static let windRiskThresholdKmh: Double = 50.0
-    /// Maximumtemperatuur (°C) onder deze waarde: te koud risico.
+    /// Maximum temperature (°C) below this value: too-cold risk.
     static let coldRiskCelsius: Double = -5.0
-    /// Maximumtemperatuur (°C) boven deze waarde: hittestress risico.
+    /// Maximum temperature (°C) above this value: heat-stress risk.
     static let heatRiskCelsius: Double = 38.0
 
-    /// Retourneert true als de omstandigheden een risico vormen voor een buitentraining.
+    /// Returns true if the conditions pose a risk for outdoor training.
     /// - Parameters:
-    ///   - precipitationProbability: Neerslagkans als fractie 0.0–1.0.
-    ///   - windSpeedKmh: Windsnelheid in km/h.
-    ///   - highCelsius: Maximumtemperatuur van de dag in °C.
+    ///   - precipitationProbability: Precipitation probability as a fraction 0.0–1.0.
+    ///   - windSpeedKmh: Wind speed in km/h.
+    ///   - highCelsius: The day's maximum temperature in °C.
     static func isRisky(
         precipitationProbability: Double,
         windSpeedKmh: Double,
@@ -61,19 +61,19 @@ struct WeatherSafetyEvaluator {
 
 // MARK: - DayForecast
 
-/// Een compacte dagelijkse weersverwachting voor trainingsadvies.
+/// A compact daily weather forecast for training advice.
 struct DayForecast: Identifiable {
     let id = UUID()
     let date: Date
     let highCelsius: Double
     let lowCelsius: Double
-    /// Neerslagkans als fractie 0.0–1.0.
+    /// Precipitation probability as a fraction 0.0–1.0.
     let precipitationProbability: Double
     let windSpeedKmh: Double
     let conditionDescription: String
 
-    /// True als de omstandigheden slecht zijn voor een buitentraining.
-    /// Delegeert naar WeatherSafetyEvaluator voor geïsoleerde testbaarheid.
+    /// True if the conditions are bad for outdoor training.
+    /// Delegates to WeatherSafetyEvaluator for isolated testability.
     var isRiskyForOutdoorTraining: Bool {
         WeatherSafetyEvaluator.isRisky(
             precipitationProbability: precipitationProbability,
@@ -85,26 +85,26 @@ struct DayForecast: Identifiable {
 
 // MARK: - WeatherManager
 
-/// Haalt via de gratis Open-Meteo API de weersverwachting op voor de komende 7 dagen.
-/// Vereist alleen locatietoestemming — geen API-sleutel of betaald developer account nodig.
+/// Fetches the 7-day weather forecast via the free Open-Meteo API.
+/// Requires only location permission — no API key or paid developer account needed.
 @MainActor
 class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     static let shared = WeatherManager()
 
-    /// Dagelijkse weersverwachting voor de komende 7 dagen (index 0 = vandaag).
+    /// Daily weather forecast for the coming 7 days (index 0 = today).
     @Published var weeklyForecast: [DayForecast] = []
 
-    /// True terwijl de locatie of het weer worden opgehaald.
+    /// True while the location or weather is being fetched.
     @Published var isLoading: Bool = false
 
-    /// Foutmelding als er iets misging, anders nil.
+    /// Error message if something went wrong, otherwise nil.
     @Published var errorMessage: String?
 
     private let locationManager = CLLocationManager()
 
-    /// Callback die wordt aangeroepen zodra de weerdata beschikbaar is.
-    /// Het argument is de geformatteerde AI-context string.
+    /// Callback invoked once the weather data is available.
+    /// The argument is the formatted AI-context string.
     var onWeatherUpdated: ((String) -> Void)?
 
     private override init() {
@@ -113,10 +113,10 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers
     }
 
-    // MARK: - Publieke API
+    // MARK: - Public API
 
-    /// Vraagt locatiepermissie en start het ophalen van het weer.
-    /// Bij al verleende toestemming wordt direct een locatie-update gevraagd.
+    /// Requests location permission and starts fetching the weather.
+    /// If permission is already granted, a location update is requested directly.
     func requestWeatherIfNeeded() {
         let status = locationManager.authorizationStatus
         switch status {
@@ -125,7 +125,7 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         case .authorizedWhenInUse, .authorizedAlways:
             locationManager.requestLocation()
         default:
-            // Geen toestemming — stil falen, coach werkt zonder weerdata
+            // No permission — fail silently, the coach works without weather data
             break
         }
     }
@@ -149,8 +149,8 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        // Locatiefout — stil negeren, coach werkt gewoon zonder weerdata.
-        // `Logger` is intern thread-safe, dus géén MainActor-hop nodig voor de log.
+        // Location error — ignore silently, the coach just works without weather data.
+        // `Logger` is internally thread-safe, so no MainActor hop needed for the log.
         AppLoggers.weather.error("Locatiefout: \(error.localizedDescription, privacy: .public)")
     }
 
@@ -163,8 +163,8 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         let lat = location.coordinate.latitude
         let lon = location.coordinate.longitude
 
-        // Open-Meteo gratis endpoint — geen API-sleutel vereist.
-        // daily-parameters: temperatuur (min/max), neerslagkans, windsnelheid, weercode.
+        // Open-Meteo free endpoint — no API key required.
+        // daily parameters: temperature (min/max), precipitation probability, wind speed, weather code.
         var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
         components.queryItems = [
             URLQueryItem(name: "latitude", value: String(format: "%.4f", lat)),
@@ -215,7 +215,7 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
                 date: date,
                 highCelsius: high,
                 lowCelsius: low,
-                precipitationProbability: rain / 100.0,   // Open-Meteo geeft % terug, wij willen 0–1
+                precipitationProbability: rain / 100.0,   // Open-Meteo returns %, we want 0–1
                 windSpeedKmh: wind,
                 conditionDescription: wmoDescription(code)
             )
@@ -224,7 +224,7 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
     // MARK: - AI Context Builder
 
-    /// Bouwt een gestructureerde tekst op die in de Gemini-prompt wordt geïnjecteerd.
+    /// Builds a structured text injected into the Gemini prompt.
     func buildAIContext() -> String {
         guard !weeklyForecast.isEmpty else { return "" }
 
@@ -248,8 +248,8 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         return lines.joined(separator: "\n")
     }
 
-    // MARK: - WMO weercodes → Nederlandse beschrijving
-    // WMO code definitie: https://open-meteo.com/en/docs (paragraaf "Weather variable descriptions")
+    // MARK: - WMO weather codes → Dutch description
+    // WMO code definition: https://open-meteo.com/en/docs (section "Weather variable descriptions")
 
     private func wmoDescription(_ code: Int) -> String {
         switch code {
