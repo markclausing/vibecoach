@@ -32,8 +32,10 @@ final class ChatScopeInstructionTests: XCTestCase {
     /// De toegestane onderwerpen-lijst moet de kern-coaching-categorieën
     /// noemen zodat het model weet wat WEL onder scope valt.
     func testScopeLisstInScopeCategories() {
+        // Epic #37 deel 5: the scope instruction is now in English; the user-facing
+        // refusal phrase + exception example stay Dutch. Assert on the English category labels.
         let text = ChatScopeInstruction.text.lowercased()
-        for keyword in ["trainingen", "herstel", "blessures", "doelen"] {
+        for keyword in ["workouts", "recovery", "injuries", "sport goals"] {
             XCTAssertTrue(text.contains(keyword), "Scope moet '\(keyword)' expliciet toelaten als coaching-onderwerp.")
         }
     }
@@ -42,6 +44,6 @@ final class ChatScopeInstructionTests: XCTestCase {
     /// (bijv. "kan ik trainen met deze hoofdpijn?") moet erin staan zodat
     /// de coach niet te streng wordt en relevante vragen alsnog beantwoordt.
     func testScopeIncludesTrainingContextException() {
-        XCTAssertTrue(ChatScopeInstruction.text.lowercased().contains("uitzondering"))
+        XCTAssertTrue(ChatScopeInstruction.text.lowercased().contains("exception"))
     }
 }

@@ -187,9 +187,9 @@ final class ChatViewModelTests: XCTestCase {
             let desc = String(describing: firstPart)
             XCTAssertTrue(desc.contains("CONTEXT ATLEET:"), "Payload string naar AI mist de profiel prefix")
             XCTAssertTrue(desc.contains("50.0 km"), "Payload string mist geparseerde piekprestatie")
-            XCTAssertTrue(desc.contains("240 minuten per week"), "Payload string mist wekelijks volume (14400s / 60)")
+            XCTAssertTrue(desc.contains("240 minutes per week"), "Payload string mist wekelijks volume (14400s / 60)")
             XCTAssertTrue(desc.contains(userText), "Payload string mist de daadwerkelijke user vraag")
-            XCTAssertFalse(desc.contains("URGENT: De atleet vertoont tekenen van overtraining"), "Warning mag niet inzitten als isRecoveryNeeded false is")
+            XCTAssertFalse(desc.contains("URGENT: The athlete shows signs of overtraining"), "Warning mag niet inzitten als isRecoveryNeeded false is")
         }
     }
 
@@ -212,7 +212,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(mockModel.receivedParts.count, 1)
         if let firstPart = mockModel.receivedParts.first {
             let desc = String(describing: firstPart)
-            XCTAssertTrue(desc.contains("URGENT: De atleet vertoont tekenen van overtraining"), "Urgent waarschuwing mist in payload")
+            XCTAssertTrue(desc.contains("URGENT: The athlete shows signs of overtraining"), "Urgent waarschuwing mist in payload")
         }
     }
 
