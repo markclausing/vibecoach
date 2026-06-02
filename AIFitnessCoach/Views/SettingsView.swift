@@ -43,6 +43,8 @@ struct SettingsView: View {
     // Notification switches and background sync return once the
     // `ProactiveNotificationService` can be configured per channel.
     @AppStorage("vibecoach_colorScheme")     private var colorSchemeRaw: String = "auto"
+    // Epic #37 story 37.5: app language preference (drives `.environment(\.locale, …)` at the app root).
+    @AppStorage(AppLanguage.storageKey)      private var appLanguageRaw: String = AppLanguage.system.rawValue
     @State private var physicalProfile: UserPhysicalProfile?
 
     @State private var weeklyAvgMinutes: Int?
@@ -528,6 +530,27 @@ struct SettingsView: View {
                             .pickerStyle(.segmented)
                             .frame(width: 180)
                             .padding(.trailing, 14)
+                        }
+                        .padding(.vertical, 10)
+                    }
+                    .padding(.bottom, 24)
+
+                    // ── TAAL (Epic #37 story 37.5)
+                    settingsSectionLabel("TAAL")
+                    settingsCard {
+                        HStack {
+                            Text("Taal")
+                                .font(.subheadline)
+                                .padding(.leading, 14)
+                            Spacer()
+                            Picker("", selection: $appLanguageRaw) {
+                                ForEach(AppLanguage.selectableCases) { language in
+                                    Text(language.displayName).tag(language.rawValue)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .padding(.trailing, 14)
+                            .accessibilityIdentifier("AppLanguagePicker")
                         }
                         .padding(.vertical, 10)
                     }
