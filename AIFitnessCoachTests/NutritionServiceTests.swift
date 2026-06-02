@@ -186,7 +186,7 @@ final class NutritionServiceTests: XCTestCase {
         XCTAssertTrue(summary.contains("60"), "Summary moet de duur (60) bevatten.")
         XCTAssertTrue(summary.contains("Zone 2"), "Summary moet de zonenaam bevatten.")
         XCTAssertTrue(summary.contains("kcal"), "Summary moet 'kcal' bevatten.")
-        XCTAssertTrue(summary.contains("koolhydraten"), "Summary moet 'koolhydraten' bevatten.")
+        XCTAssertTrue(summary.contains("carbs"), "Summary must contain 'carbs'.")
         XCTAssertTrue(summary.contains("ml"), "Summary moet 'ml' bevatten.")
     }
 
@@ -324,7 +324,7 @@ final class NutritionServiceTests: XCTestCase {
                       "Coach context moet de sectie-header bevatten.")
         XCTAssertTrue(context.contains("BMR"),
                       "Coach context moet 'BMR' bevatten.")
-        XCTAssertTrue(context.contains("Fysiologisch profiel"),
+        XCTAssertTrue(context.contains("Physiological profile"),
                       "Coach context moet 'Fysiologisch profiel' bevatten.")
     }
 
@@ -347,9 +347,9 @@ final class NutritionServiceTests: XCTestCase {
             todayWorkouts: [(durationMinutes: 60, zone: .zone2)],
             tomorrowWorkouts: []
         )
-        XCTAssertTrue(context.contains("Workouts vandaag"),
+        XCTAssertTrue(context.contains("Workouts today"),
                       "Context moet 'Workouts vandaag' bevatten als er workouts zijn.")
-        XCTAssertFalse(context.contains("Workouts morgen"),
+        XCTAssertFalse(context.contains("Workouts tomorrow"),
                        "Context mag 'Workouts morgen' NIET bevatten als die lijst leeg is.")
     }
 
@@ -360,9 +360,9 @@ final class NutritionServiceTests: XCTestCase {
             todayWorkouts:    [(durationMinutes: 45, zone: .zone4)],
             tomorrowWorkouts: [(durationMinutes: 30, zone: .zone2)]
         )
-        XCTAssertTrue(context.contains("Workouts vandaag"),
+        XCTAssertTrue(context.contains("Workouts today"),
                       "Context moet 'Workouts vandaag' bevatten.")
-        XCTAssertTrue(context.contains("Workouts morgen"),
+        XCTAssertTrue(context.contains("Workouts tomorrow"),
                       "Context moet 'Workouts morgen' bevatten als die lijst niet leeg is.")
     }
 

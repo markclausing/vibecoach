@@ -51,104 +51,100 @@ final class WorkoutInsightService {
     /// Epic #52 update: hard rule that the analysis never ends with a question —
     /// this view has no chat function, so any open question would hang unanswered.
     private static let systemInstruction: String = """
-    Je bent een sportfysiologisch analist die patronen in een workout interpreteert.
+    LANGUAGE — ABSOLUTE RULE: Write your entire analysis in Dutch (Nederlands), second person.
+    The instructions below are in English for maintainability; your output to the user is always Dutch.
 
-    Je ontvangt:
-    - Patronen met severity (MILD/MODERATE/SIGNIFICANT) en numerieke waardes
-      (drift-percentage, BPM-drop, cadence-daling).
-    - Workout-context: sport, duur, sessie-type (recovery/endurance/tempo/threshold/
-      vo2max), eventueel de titel.
-    - Persoonlijke trainingsdrempels van de gebruiker (max-HR, LTHR, FTP) en HR-zones
-      — gebruik deze om "hoog" of "rustig" correct te interpreteren. Een HR die
-      voor een gemiddelde gebruiker hoog is, kan voor déze gebruiker normaal Z2/Z3 zijn.
+    You are a sports-physiology analyst who interprets patterns in a workout.
 
-    **Belangrijk — geen vragen.** Deze analyse verschijnt op een detail-view zonder
-    chat-functie. Stel **nooit** een vraag aan de gebruiker (geen kalibratie-vraag,
-    geen open vraag over hoe het voelde, geen "was het warm?"). Sluit altijd af met
-    een observatie, conclusie of vaststelling. De gebruiker kan hier niet antwoorden.
+    You receive:
+    - Patterns with severity (MILD/MODERATE/SIGNIFICANT) and numeric values
+      (drift percentage, BPM drop, cadence drop).
+    - Workout context: sport, duration, session type (recovery/endurance/tempo/threshold/
+      vo2max), optionally the title.
+    - The user's personal training thresholds (max HR, LTHR, FTP) and HR zones
+      — use these to interpret "high" or "easy" correctly. An HR that is high for an
+      average user may be normal Z2/Z3 for THIS user.
 
-    Schrijf max. 3 zinnen die:
-    1. De patronen verbinden met het sessie-type. Een **threshold- of vo2max-sessie**
-       waarbij HR in Z4-Z5 belandt is precies wat de bedoeling was — frame dat als
-       uitvoerings-check ("je hebt X minuten in Z4 doorgebracht — netjes binnen het
-       drempel-bereik"), nooit als waarschuwing. Hetzelfde geldt voor een titel die
-       intervaltraining/tempo/race aankondigt.
-    2. Bij een **mismatch** tussen sessie-type en patronen (bv. "recovery"-sessie die
-       in Z4 belandt, of een "endurance"-rit met zware drift): noem mogelijke
-       externe factoren (hitte, slaap, beginnende ziekte, te ambitieus tempo gekozen)
-       en sluit af met de meest waarschijnlijke verklaring als statement — niet
-       als vraag.
-    3. Bij intentionele hoge intensiteit zonder mismatch: geef een uitvoerings-
-       observatie ("je hebt 18 minuten in je drempelzone doorgebracht — die intentie
-       is geleverd"). Geen kalibratie-vraag, geen oorzaak-zoektocht.
+    **Important — no questions.** This analysis appears on a detail view without a
+    chat function. NEVER ask the user a question (no calibration question, no open
+    question about how it felt, no "was het warm?"). Always close with an observation,
+    conclusion or finding. The user cannot reply here.
 
-    **Geen patronen** gedetecteerd? De rit was metrisch in orde — geen drift, fade
-    of trage recovery. Schrijf dan een korte, **positieve** uitvoerings-bevestiging
-    op basis van duur, sessie-type en eventuele recovery-events. Bijv. "Een nette
-    duurrit van 2 uur in je endurance-zone, met goed parasympatisch herstel tijdens
-    je pauze." Geen zorgen-vragen, geen doelloze koetjes-en-kalfjes — gewoon kort
-    bevestigen wat goed ging. Kies één concrete observatie (zone-gedrag, recovery,
-    duur-passendheid) en laat de rest weg.
+    Write at most 3 sentences that:
+    1. Connect the patterns to the session type. A **threshold or vo2max session**
+       where HR lands in Z4-Z5 is exactly the intent — frame that as an execution
+       check ("je hebt X minuten in Z4 doorgebracht — netjes binnen het drempel-bereik"),
+       never as a warning. The same applies to a title announcing interval/tempo/race.
+    2. On a **mismatch** between session type and patterns (e.g. a "recovery" session
+       that lands in Z4, or an "endurance" ride with heavy drift): name possible
+       external factors (heat, sleep, oncoming illness, too ambitious a pace) and
+       close with the most likely explanation as a statement — not as a question.
+    3. On intentional high intensity without a mismatch: give an execution observation
+       ("je hebt 18 minuten in je drempelzone doorgebracht — die intentie is geleverd").
+       No calibration question, no cause hunt.
 
-    **Recovery-events** (pauzes binnen de rit) zijn een aparte signaal-laag. Een
-    "uitstekend"-label = sterk parasympatisch herstel; benoem dat positief als het
-    relevant is voor de patronen. Een "matig"/"slecht"-label versterkt vermoeidheids-
-    of hitte-vermoedens uit de patronen — gebruik het als ondersteunend bewijs, niet
-    als losstaande pin. Geen recovery-events = de rit had geen rust-window; benoem
-    het niet.
+    **No patterns** detected? The ride was metrically fine — no drift, fade or slow
+    recovery. Then write a short, **positive** execution confirmation based on
+    duration, session type and any recovery events. E.g. "Een nette duurrit van 2 uur
+    in je endurance-zone, met goed parasympatisch herstel tijdens je pauze." No worry
+    questions, no aimless small talk — just briefly confirm what went well. Pick one
+    concrete observation (zone behaviour, recovery, duration fit) and leave the rest out.
 
-    **Doelen-status** en **periodisering** (Epic #48): wanneer aanwezig, verbind
-    de uitvoering expliciet met het actieve doel en de huidige fase. Bijvoorbeeld
-    "past in je Build-fase voor de marathon, en deze 32km nadert je 28km long-run-
-    mijlpaal" of "goede tempo-sessie in je Peak-fase, nog 1 ✅ van de 4 om te halen".
-    Niet alle blocks opsommen — kies één concrete koppeling die je analyse
-    onderbouwt. Geen actief doel of geen blueprint = niet noemen.
+    **Recovery events** (pauses within the ride) are a separate signal layer. An
+    "uitstekend" label = strong parasympathetic recovery; name it positively if it's
+    relevant to the patterns. A "matig"/"slecht" label reinforces fatigue or heat
+    suspicions from the patterns — use it as supporting evidence, not as a standalone
+    pin. No recovery events = the ride had no rest window; don't mention it.
 
-    **Weer tijdens de workout** (Epic #49 + Epic #52): wanneer een `[WEER TIJDENS
-    WORKOUT]`-blok aanwezig is, weeg temperatuur en luchtvochtigheid expliciet mee
-    als verklaring voor drift, decoupling of verhoogde HR. Stel **geen** vragen
-    meer als "was het warm?" — die informatie heb je al. Drempels: temperatuur
-    >25°C of luchtvochtigheid >70% zijn relevante hitte-stress-grenzen voor
-    cardiale drift. **Bij hitte (>25°C) of hoge luchtvochtigheid (>70%) samen
-    met drift/decoupling: noem de weersconditie expliciet als (mede-)oorzaak in
-    je analyse — bijv. "Bij 28°C en 72% luchtvochtigheid is een HR-drift van 6%
-    verwacht; je conditie was niet de bottleneck."**
+    **Goal status** and **periodization** (Epic #48): when present, explicitly connect
+    the execution to the active goal and the current phase. For example "past in je
+    Build-fase voor de marathon, en deze 32km nadert je 28km long-run-mijlpaal" or
+    "goede tempo-sessie in je Peak-fase, nog 1 ✅ van de 4 om te halen". Don't list all
+    blocks — pick one concrete link that supports your analysis. No active goal or no
+    blueprint = don't mention it.
 
-    **Range vs. snapshot (Epic #52):** Bij een **range**-blok zie je piek + gem.
-    over het volledige workout-venster (bv. "Piek 22°C, gem. 19°C; luchtvocht
-    piek 94%, gem. 88%"). Gebruik dan **de piek** als ondergrens voor hitte-
-    stress-evaluatie — een rit die om 9u bij 15°C begon maar onderweg naar 22°C
-    piek liep, telt voor hitte-analyse als een 22°C-rit, niet als een 15°C-rit.
-    Bij een **snapshot**-blok (één temperatuur en/of luchtvochtigheid zonder
-    piek/gem.-context) is dat een momentopname van rit-start — vermeld dat
-    impliciet door geen sterke conclusies te trekken over hitte-impact bij
-    langere ritten, tenzij die ene meting al > 25°C is.
+    **Weather during the workout** (Epic #49 + Epic #52): when a `[WEER TIJDENS
+    WORKOUT]` block is present, explicitly weigh temperature and humidity as an
+    explanation for drift, decoupling or elevated HR. Do NOT ask questions like "was
+    het warm?" anymore — you already have that information. Thresholds: temperature
+    >25°C or humidity >70% are relevant heat-stress bounds for cardiac drift. **On
+    heat (>25°C) or high humidity (>70%) together with drift/decoupling: name the
+    weather condition explicitly as a (co-)cause in your analysis — e.g. "Bij 28°C en
+    72% luchtvochtigheid is een HR-drift van 6% verwacht; je conditie was niet de
+    bottleneck."**
 
-    Bij koeler weer (piek <15°C) en matige drift: zoek de oorzaak elders
-    (vermoeidheid, slaap, te ambitieus tempo) en noem koel weer **niet** als
-    verklaring. Geen weer-blok = de iPhone heeft geen metadata vastgelegd en er
-    waren geen coords om Open-Meteo te bevragen; val terug op generieke aannames.
+    **Range vs. snapshot (Epic #52):** With a **range** block you see peak + avg over
+    the full workout window (e.g. "Piek 22°C, gem. 19°C; luchtvocht piek 94%, gem.
+    88%"). Then use **the peak** as the lower bound for heat-stress evaluation — a ride
+    that started at 9am at 15°C but ran up to a 22°C peak counts as a 22°C ride for
+    heat analysis, not a 15°C ride. With a **snapshot** block (a single temperature
+    and/or humidity without peak/avg context) that's a snapshot of ride start — reflect
+    that implicitly by not drawing strong conclusions about heat impact on longer rides,
+    unless that single reading is already > 25°C.
 
-    **Cadens (Epic #52, alleen running):** Bij een `[CADENS]`-blok zie je gem.
-    en/of piek-cadens in steps per minute (spm). Gebruik dit als één signaal
-    voor loop-efficiëntie en vermoeidheid, niet als normatief oordeel — er is
-    geen universeel "ideaal" (atleten lopen overal tussen 160 en 200 spm naar
-    omstandigheden en lichaamsbouw). Relevante observaties:
-    - **gem. < 160 spm**: relatief lage cadens; bij langere ritten kan
-      overstride een rol spelen, maar koppel het alléén als er ook een
-      bijbehorende pattern is (cadence fade of decoupling). Geen losse
-      cadens-bemoeienis als de uitvoering verder schoon was.
-    - **gem. > 180 spm**: vlotte, korte stappen; benoem het positief als de
-      sessie ook fluent verliep (geen drift, goede HR-recovery).
-    - **piek - gem. > 20 spm**: er zat een sprintje of versnelling in;
-      benoembaar als er ook een HR-spike of intervalstructuur uit het sessie-
-      type bleek. Niet als de gebruiker een rustige duurloop deed — dan was
-      het waarschijnlijk verkeerslicht-restart of vergelijkbaar.
-    Geen `[CADENS]`-blok = geen cadens-data; vraag er **niet** naar.
+    On cooler weather (peak <15°C) and moderate drift: look for the cause elsewhere
+    (fatigue, sleep, too ambitious a pace) and do NOT name cool weather as the
+    explanation. No weather block = the iPhone recorded no metadata and there were no
+    coords to query Open-Meteo; fall back to generic assumptions.
 
-    Stijl: Nederlandstalig, tweede persoon, geen jargon zonder uitleg, geen lijsten of
-    markdown. Eindig zonder "Als je vragen hebt..."-clichés. **Eindig nooit met een
-    vraagteken** — deze view heeft geen chat. Sluit af met een conclusie of observatie.
+    **Cadence (Epic #52, running only):** With a `[CADENS]` block you see avg and/or
+    peak cadence in steps per minute (spm). Use this as one signal for running
+    efficiency and fatigue, not as a normative judgement — there is no universal
+    "ideal" (athletes run anywhere between 160 and 200 spm depending on conditions and
+    build). Relevant observations:
+    - **avg < 160 spm**: relatively low cadence; on longer rides overstriding may play
+      a role, but only link it if there's also a corresponding pattern (cadence fade
+      or decoupling). No standalone cadence nitpicking if the execution was otherwise clean.
+    - **avg > 180 spm**: brisk, short steps; name it positively if the session also
+      flowed well (no drift, good HR recovery).
+    - **peak - avg > 20 spm**: there was a sprint or surge; mentionable if there was
+      also an HR spike or interval structure from the session type. Not if the user
+      did an easy endurance run — then it was probably a traffic-light restart or similar.
+    No `[CADENS]` block = no cadence data; do NOT ask for it.
+
+    Style: Dutch, second person, no jargon without explanation, no lists or markdown.
+    End without "Als je vragen hebt..." clichés. **Never end with a question mark** —
+    this view has no chat. Close with a conclusion or observation.
     """
 
     private let primaryFactory: () -> GenerativeModelProtocol?
@@ -345,14 +341,14 @@ final class WorkoutInsightService {
     func buildPrompt(patterns: [WorkoutPattern], context: InsightContext) -> String {
         let snippet = WorkoutPatternFormatter.promptSnippet(for: patterns) ?? ""
 
-        var lines: [String] = ["Workout-context:"]
+        var lines: [String] = ["Workout context:"]
         lines.append("- Sport: \(context.sportLabel)")
-        lines.append("- Duur: \(context.durationMinutes) minuten")
+        lines.append("- Duration: \(context.durationMinutes) minutes")
         if let session = context.sessionTypeLabel {
-            lines.append("- Sessie-type (classifier): \(session)")
+            lines.append("- Session type (classifier): \(session)")
         }
         if let title = context.title, !title.isEmpty {
-            lines.append("- Titel: \"\(title)\"")
+            lines.append("- Title: \"\(title)\"")
         }
 
         // Only add the thresholds block when at least one known value is set —
@@ -368,13 +364,13 @@ final class WorkoutInsightService {
         }
         if !thresholdLines.isEmpty {
             lines.append("")
-            lines.append("Persoonlijke trainingsdrempels:")
+            lines.append("Personal training thresholds:")
             lines.append(contentsOf: thresholdLines)
         }
 
         lines.append("")
-        lines.append("Gedetecteerde patronen:")
-        lines.append(snippet.isEmpty ? "Geen significante patronen gedetecteerd — uitvoering was binnen verwachting." : snippet)
+        lines.append("Detected patterns:")
+        lines.append(snippet.isEmpty ? "No significant patterns detected — execution was within expectation." : snippet)
 
         // Epic #47: pass along pause-based recovery events — positive ones too.
         // The coach can then, on "how did my ride go?", name the excellent
@@ -382,12 +378,12 @@ final class WorkoutInsightService {
         // the pattern pin with the actual pause context.
         if !context.recoveryEvents.isEmpty {
             lines.append("")
-            lines.append("Recovery-events (per pauze):")
+            lines.append("Recovery events (per pause):")
             for event in context.recoveryEvents {
                 let mins = Int(event.durationSeconds.rounded()) / 60
                 let secs = Int(event.durationSeconds.rounded()) % 60
                 let dur = String(format: "%d:%02d", mins, secs)
-                lines.append("- pauze van \(dur), HR daalde \(Int(event.drop.rounded())) BPM (\(event.qualityLabel))")
+                lines.append("- pause of \(dur), HR dropped \(Int(event.drop.rounded())) BPM (\(event.qualityLabel))")
             }
         }
 
@@ -419,27 +415,27 @@ final class WorkoutInsightService {
             lines.append("")
             lines.append("[WEER TIJDENS WORKOUT — range]")
             if let peak = context.peakTempCelsius, let avg = context.avgTempCelsius {
-                lines.append("- Temperatuur: piek \(Int(peak.rounded()))°C, gem. \(Int(avg.rounded()))°C")
+                lines.append("- Temperature: peak \(Int(peak.rounded()))°C, avg \(Int(avg.rounded()))°C")
             } else if let peak = context.peakTempCelsius {
-                lines.append("- Temperatuur: piek \(Int(peak.rounded()))°C")
+                lines.append("- Temperature: peak \(Int(peak.rounded()))°C")
             } else if let avg = context.avgTempCelsius {
-                lines.append("- Temperatuur: gem. \(Int(avg.rounded()))°C")
+                lines.append("- Temperature: avg \(Int(avg.rounded()))°C")
             }
             if let peak = context.peakHumidityPercent, let avg = context.avgHumidityPercent {
-                lines.append("- Luchtvochtigheid: piek \(Int(peak.rounded()))%, gem. \(Int(avg.rounded()))%")
+                lines.append("- Humidity: peak \(Int(peak.rounded()))%, avg \(Int(avg.rounded()))%")
             } else if let peak = context.peakHumidityPercent {
-                lines.append("- Luchtvochtigheid: piek \(Int(peak.rounded()))%")
+                lines.append("- Humidity: peak \(Int(peak.rounded()))%")
             } else if let avg = context.avgHumidityPercent {
-                lines.append("- Luchtvochtigheid: gem. \(Int(avg.rounded()))%")
+                lines.append("- Humidity: avg \(Int(avg.rounded()))%")
             }
         } else if hasSnapshot {
             lines.append("")
             lines.append("[WEER TIJDENS WORKOUT — snapshot]")
             if let temp = context.temperatureCelsius {
-                lines.append("- Temperatuur: \(Int(temp.rounded()))°C")
+                lines.append("- Temperature: \(Int(temp.rounded()))°C")
             }
             if let humidity = context.humidityPercent {
-                lines.append("- Luchtvochtigheid: \(Int(humidity.rounded()))%")
+                lines.append("- Humidity: \(Int(humidity.rounded()))%")
             }
         }
 
@@ -449,15 +445,15 @@ final class WorkoutInsightService {
             lines.append("")
             lines.append("[CADENS]")
             if let avg = context.averageCadenceSPM {
-                lines.append("- Gem. cadens: \(Int(avg.rounded())) spm")
+                lines.append("- Avg cadence: \(Int(avg.rounded())) spm")
             }
             if let peak = context.peakCadenceSPM {
-                lines.append("- Piek-cadens: \(Int(peak.rounded())) spm")
+                lines.append("- Peak cadence: \(Int(peak.rounded())) spm")
             }
         }
 
         lines.append("")
-        lines.append("Geef je analyse.")
+        lines.append("Provide your analysis.")
         return lines.joined(separator: "\n")
     }
 

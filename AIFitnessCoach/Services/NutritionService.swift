@@ -34,7 +34,7 @@ struct WorkoutFuelingPlan {
         let calRounded   = Int(totalCaloriesBurned.rounded())
         return """
         \(durationMinutes) min \(zone.displayName): \
-        ~\(calRounded) kcal, ~\(carbsRounded) g koolhydraten, ~\(fluidRounded) ml vocht
+        ~\(calRounded) kcal, ~\(carbsRounded) g carbs, ~\(fluidRounded) ml fluid
         """
     }
 }
@@ -165,18 +165,18 @@ struct NutritionService {
         let bmr = Int(calculateBMR(profile: profile).rounded())
         var lines = [String]()
         lines.append("[VOEDING & FYSIOLOGIE]")
-        lines.append("Fysiologisch profiel: \(profile.coachSummary)")
-        lines.append("Basaal metabolisme (BMR): ~\(bmr) kcal/dag")
+        lines.append("Physiological profile: \(profile.coachSummary)")
+        lines.append("Basal metabolic rate (BMR): ~\(bmr) kcal/day")
 
         if !todayWorkouts.isEmpty {
-            lines.append("Workouts vandaag:")
+            lines.append("Workouts today:")
             for w in todayWorkouts {
                 let plan = fuelingPlan(durationMinutes: w.durationMinutes, zone: w.zone, profile: profile)
                 lines.append("  • \(plan.coachSummary)")
             }
         }
         if !tomorrowWorkouts.isEmpty {
-            lines.append("Workouts morgen:")
+            lines.append("Workouts tomorrow:")
             for w in tomorrowWorkouts {
                 let plan = fuelingPlan(durationMinutes: w.durationMinutes, zone: w.zone, profile: profile)
                 lines.append("  • \(plan.coachSummary)")
@@ -184,11 +184,11 @@ struct NutritionService {
         }
 
         lines.append("""
-        Instructies voor de coach:
-        - Geef concrete koolhydraten- en vocht-adviezen (gram en ml) passend bij bovenstaande workouts.
-        - Noem altijd de timing: voor, tijdens en na de training.
-        - Houd rekening met het BMR: de dagelijkse energiebehoefte ligt hoger dan alleen de trainingsverbranding.
-        - Pas adviezen aan op basis van de Vibe Score: bij herstel (<50) voedingsfocus op eiwitten en hydratie; bij vol gas (≥80) koolhydraatloading voor lange sessies.
+        Instructions for the coach:
+        - Give concrete carbohydrate and fluid advice (grams and ml) matching the workouts above.
+        - Always mention the timing: before, during and after the workout.
+        - Account for the BMR: the daily energy need is higher than just the training burn.
+        - Adapt advice based on the Vibe Score: on recovery (<50) focus nutrition on protein and hydration; at full gas (≥80) carb-load for long sessions.
         """)
 
         return lines.joined(separator: "\n")
