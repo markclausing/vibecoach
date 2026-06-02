@@ -30,7 +30,7 @@ final class PlanResetPromptBuilderTests: XCTestCase {
         let plan = [makeWorkout(activityType: "Intervaltraining", scheduledDate: date, targetTRIMP: 90)]
         let (system, user) = PlanResetPromptBuilder.build(swappedWorkouts: plan, now: referenceDate)
 
-        XCTAssertTrue(system.contains("Heilige verplaatste sessies"),
+        XCTAssertTrue(system.contains("Sacred moved sessions"),
                       "De heilige-sectie moet bovenaan zodat de coach 'm niet kan missen")
         XCTAssertTrue(system.contains("Intervaltraining"))
         XCTAssertTrue(system.contains("TRIMP 90"))
@@ -71,9 +71,9 @@ final class PlanResetPromptBuilderTests: XCTestCase {
 
     func testEmptySwapsStillProducesValidPrompt() {
         let (system, user) = PlanResetPromptBuilder.build(swappedWorkouts: [], now: referenceDate)
-        XCTAssertTrue(system.contains("schoon 7-daags plan"),
+        XCTAssertTrue(system.contains("clean 7-day plan"),
                       "Bij geen swaps moet de instructie helder zijn dat het een vers plan wordt")
-        XCTAssertFalse(system.contains("Heilige"),
+        XCTAssertFalse(system.contains("Sacred"),
                        "Geen heilige-sectie als er niets te beschermen is — anders verwarrend")
         XCTAssertFalse(user.isEmpty)
     }
@@ -85,11 +85,11 @@ final class PlanResetPromptBuilderTests: XCTestCase {
         let plan = [makeWorkout(activityType: "Tempo", scheduledDate: date)]
         let (system, _) = PlanResetPromptBuilder.build(swappedWorkouts: plan, now: referenceDate)
 
-        XCTAssertTrue(system.contains("VOLLEDIGE 7-daagse schema"),
+        XCTAssertTrue(system.contains("FULL 7-day schedule"),
                       "AI moet expliciet weten dat hij ALLE dagen moet retourneren")
-        XCTAssertTrue(system.contains("ISO-datums") || system.contains("yyyy-MM-dd"),
+        XCTAssertTrue(system.contains("ISO dates") || system.contains("yyyy-MM-dd"),
                       "ISO-datum-instructie verkleint kans op weekday-string-ambiguïteit")
-        XCTAssertTrue(system.contains("App-side merge filtert"),
+        XCTAssertTrue(system.contains("App-side merge still filters"),
                       "Coach moet weten dat z'n output door een veiligheidsnet gaat — minder druk om perfect te zijn")
     }
 

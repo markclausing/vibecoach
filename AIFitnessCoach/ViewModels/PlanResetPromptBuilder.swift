@@ -28,15 +28,15 @@ enum PlanResetPromptBuilder {
         let todayIso = isoFormatter.string(from: now)
 
         var lines: [String] = [
-            "PLAN-RESET CONTEXT — De gebruiker heeft één of meer sessies handmatig verplaatst en vraagt nu om de rest van de week opnieuw te plannen.",
+            "PLAN-RESET CONTEXT — The user has manually moved one or more sessions and now asks to re-plan the rest of the week.",
             ""
         ]
 
         if swappedWorkouts.isEmpty {
             // Edge case: no swaps → reset anyway; we ask for a clean 7-day plan.
-            lines.append("Er zijn geen handmatig verplaatste sessies. Bouw een schoon 7-daags plan vanaf \(todayLabel) (\(todayIso)).")
+            lines.append("There are no manually moved sessions. Build a clean 7-day plan from \(todayLabel) (\(todayIso)).")
         } else {
-            lines.append("Heilige verplaatste sessies (NIET aanraken — exact deze dag, exact deze sessie behouden):")
+            lines.append("Sacred moved sessions (DO NOT touch — keep exactly this day, exactly this session):")
             for workout in swappedWorkouts {
                 let dayLabel = dateFormatter.string(from: workout.displayDate).capitalized
                 let dayIso = isoFormatter.string(from: workout.displayDate)
@@ -44,15 +44,15 @@ enum PlanResetPromptBuilder {
                 lines.append("- \(dayLabel) (\(dayIso)): '\(workout.activityType)'\(trimpStr)")
             }
             lines.append("")
-            lines.append("INSTRUCTIE: Plan de andere 6 dagen vanaf \(todayLabel) (\(todayIso)). De verplaatste sessies hierboven moeten EXACT op hun datum blijven staan met EXACT hun activityType. Verzin geen alternatieven, verschuif niet, vervang niet. Pas je weekvolume-target aan rond deze vaste sessies — je hebt minder vrije ruimte dan normaal.")
+            lines.append("INSTRUCTION: Plan the other 6 days from \(todayLabel) (\(todayIso)). The moved sessions above must stay EXACTLY on their date with EXACTLY their activityType. Don't invent alternatives, don't shift, don't replace. Adjust your weekly volume target around these fixed sessions — you have less free space than usual.")
         }
         lines.append(contentsOf: [
             "",
-            "BELANGRIJK:",
-            "1. Retourneer het VOLLEDIGE 7-daagse schema in JSON-formaat (inclusief de heilige sessies — kopieer ze letterlijk uit de lijst hierboven).",
-            "2. Gebruik ISO-datums (yyyy-MM-dd) in `dateOrDay` zodat de mapping eenduidig is, niet 'Maandag'.",
-            "3. Respecteer de 10-15% progressieregel en de huidige TrainingPhase-target (zie eerdere context).",
-            "4. App-side merge filtert alsnog elke sessie weg die toch op een heilige dag landt — dus liever te conservatief dan te creatief."
+            "IMPORTANT:",
+            "1. Return the FULL 7-day schedule in JSON format (including the sacred sessions — copy them verbatim from the list above).",
+            "2. Use ISO dates (yyyy-MM-dd) in `dateOrDay` so the mapping is unambiguous, not 'Maandag'.",
+            "3. Respect the 10-15% progression rule and the current TrainingPhase target (see earlier context).",
+            "4. App-side merge still filters out any session that lands on a sacred day — so rather too conservative than too creative."
         ])
 
         let systemText = lines.joined(separator: "\n")

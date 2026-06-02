@@ -92,7 +92,7 @@ final class WorkoutInsightServicePromptTests: XCTestCase {
 
     func testBuildPrompt_EmptyPatterns_ContainsFallbackPhrase() {
         let prompt = service.buildPrompt(patterns: [], context: makeContext())
-        XCTAssertTrue(prompt.contains("Geen significante patronen gedetecteerd"),
+        XCTAssertTrue(prompt.contains("No significant patterns detected"),
                       "Bij lege patterns moet de fallback-zin in de prompt staan zodat de coach positief kan framen")
     }
 
@@ -111,7 +111,7 @@ final class WorkoutInsightServicePromptTests: XCTestCase {
                 recoveryEvents: [event]
             )
         )
-        XCTAssertTrue(prompt.contains("Recovery-events"))
+        XCTAssertTrue(prompt.contains("Recovery events"))
         XCTAssertTrue(prompt.contains("[DOELEN-STATUS]"))
         XCTAssertTrue(prompt.contains("uitstekend"),
                       "Quality-label moet meekomen zodat de coach de juiste toon kan kiezen")

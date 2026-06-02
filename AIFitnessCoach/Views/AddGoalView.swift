@@ -143,18 +143,18 @@ struct AddGoalView: View {
             return fallbackTRIMP(for: goal.targetDate)
         }
 
-        var profileText = "Geen specifieke historie bekend."
+        var profileText = "No specific history known."
         if let p = profile {
-            profileText = "Trainde recent \(p.averageWeeklyVolumeInSeconds / 60) min per week."
+            profileText = "Recently trained \(p.averageWeeklyVolumeInSeconds / 60) min per week."
         }
 
         let sport = goal.sportCategory?.displayName ?? "Sport"
         let prompt = """
-        De gebruiker heeft als doel '\(goal.title)' (\(sport)) op \(goal.targetDate.formatted(date: .complete, time: .omitted)).
-        Het huidige niveau is: \(profileText).
-        Vandaag is het \(Date().formatted(date: .complete, time: .omitted)).
-        Hoeveel cumulatieve TRIMP is er ruwweg nodig voor deze specifieke voorbereiding vanaf vandaag tot de doeldatum?
-        Retourneer UITSLUITEND een logisch, kaal getal (Double of Integer) zonder verdere tekst, leestekens of eenheden. Bijv: 4500.
+        The user's goal is '\(goal.title)' (\(sport)) on \(goal.targetDate.formatted(date: .complete, time: .omitted)).
+        The current level is: \(profileText).
+        Today is \(Date().formatted(date: .complete, time: .omitted)).
+        Roughly how much cumulative TRIMP is needed for this specific preparation from today until the target date?
+        Return ONLY a logical, bare number (Double or Integer) without any further text, punctuation or units. E.g.: 4500.
         """
 
         // Epic #53: provider-agnostic via the `AIModelFactory`. No system
