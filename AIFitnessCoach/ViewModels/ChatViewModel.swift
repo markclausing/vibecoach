@@ -1378,10 +1378,16 @@ class ChatViewModel: ObservableObject {
     ///
     /// Strategy (in order):
     /// 1. Strip markdown code block tags (```json, ```JSON, ```) at the beginning and end.
-    /// 2. If the string still does not start with `{` afterwards, find the first `{`
-    ///    and the last `}` and extract only that part.
+    /// 2. Extract the first balanced top-level `{ ... }` object: scan from the first `{`
+    ///    while tracking string context (so braces inside string values don't count) and
+    ///    brace depth, then stop at the matching `}`. This discards any trailing junk —
+    ///    most importantly a duplicated closing brace (`}}`), which the model occasionally
+    ///    emits and which `JSONDecoder` rejects as malformed.
     /// 3. Trim whitespace.
-    private func extractCleanJSON(from rawText: String) -> String {
+    ///
+    /// `static` + internal so the brace-balancing logic is unit-testable without a
+    /// ChatViewModel instance (CLAUDE.md §6).
+    static func extractCleanJSON(from rawText: String) -> String {
         var text = rawText
 
         // Step 1: Strip markdown code block opening tag (```json or ```)
@@ -1399,11 +1405,48 @@ class ChatViewModel: ObservableObject {
 
         text = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Step 2: If there is still prose before the JSON, extract the { ... } block directly
-        if !text.hasPrefix("{") {
-            if let startIndex = text.firstIndex(of: "{"),
-               let endIndex = text.lastIndex(of: "}") {
-                text = String(text[startIndex...endIndex])
+        // Step 2: Extract the first balanced { ... } object. String-aware so a `{`/`}`
+        // inside a description/reasoning value doesn't throw off the depth count, and
+        // escape-aware so an escaped quote (\") inside a string isn't treated as the
+        // string terminator.
+        guard let start = text.firstIndex(of: "{") else {
+            return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        var depth = 0
+        var inString = false
+        var escaped = false
+        var idx = start
+        var balancedEnd: String.Index?
+        while idx < text.endIndex {
+            let ch = text[idx]
+            if escaped {
+                escaped = false
+            } else if ch == "\\" {
+                escaped = true
+            } else if ch == "\"" {
+                inString.toggle()
+            } else if !inString {
+                if ch == "{" {
+                    depth += 1
+                } else if ch == "}" {
+                    depth -= 1
+                    if depth == 0 {
+                        balancedEnd = idx
+                        break
+                    }
+                }
+            }
+            idx = text.index(after: idx)
+        }
+
+        if let balancedEnd {
+            // Found a complete object — drop anything after the matching brace.
+            text = String(text[start...balancedEnd])
+        } else if !text.hasPrefix("{") {
+            // Unbalanced (e.g. a truncated response) and there was leading prose:
+            // fall back to the old first-{ … last-} slice so we still attempt a parse.
+            if let lastBrace = text.lastIndex(of: "}") {
+                text = String(text[start...lastBrace])
             }
         }
 
@@ -1534,7 +1577,7 @@ class ChatViewModel: ObservableObject {
             print("DEBUG RAW RESPONSE: \(responseText ?? "nil")")
 
             // Use the robust JSON extractor: strip markdown and pull out the JSON object
-            let cleanedJSON = extractCleanJSON(from: responseText ?? "{}")
+            let cleanedJSON = Self.extractCleanJSON(from: responseText ?? "{}")
 
             var parsedPlan: SuggestedTrainingPlan?
             var motivationText: String

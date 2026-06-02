@@ -545,4 +545,52 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.last?.role, .ai)
         XCTAssertEqual(viewModel.messages.last?.text, expectedAIResponse)
     }
+
+    // MARK: - extractCleanJSON (brace-balancing robustness)
+
+    /// Helper: a minimal but representative coach plan JSON body.
+    private let planJSONBody = """
+    {"motivation": "Test", "workouts": [{"dateOrDay": "Maandag", "activityType": "Wielrennen"}], "newPreferences": []}
+    """
+
+    /// Regression for the reported "JSON-parsing mislukt" bug: the model sometimes emits a
+    /// duplicated trailing closing brace (`}}`). The old extractor only sliced when the text
+    /// did NOT start with `{`, so a leading-`{` response with a trailing extra `}` was passed
+    /// to JSONDecoder verbatim and failed. The balanced extractor must drop the extra brace.
+    func testExtractCleanJSON_DropsDuplicatedTrailingBrace() throws {
+        let raw = planJSONBody + "\n}"
+        let cleaned = ChatViewModel.extractCleanJSON(from: raw)
+        XCTAssertEqual(cleaned, planJSONBody)
+        // And the result must actually decode.
+        XCTAssertNoThrow(try JSONSerialization.jsonObject(with: Data(cleaned.utf8)))
+    }
+
+    /// A clean object (already starting with `{`) must pass through unchanged.
+    func testExtractCleanJSON_CleanObject_Unchanged() {
+        XCTAssertEqual(ChatViewModel.extractCleanJSON(from: planJSONBody), planJSONBody)
+    }
+
+    /// Markdown code fences and surrounding prose are stripped, and only the balanced object remains.
+    func testExtractCleanJSON_StripsMarkdownFenceAndProse() throws {
+        let raw = "Hier is je schema:\n```json\n\(planJSONBody)\n```\nVeel plezier!"
+        let cleaned = ChatViewModel.extractCleanJSON(from: raw)
+        XCTAssertEqual(cleaned, planJSONBody)
+        XCTAssertNoThrow(try JSONSerialization.jsonObject(with: Data(cleaned.utf8)))
+    }
+
+    /// A brace inside a string value (e.g. a description) must not throw off the depth count.
+    func testExtractCleanJSON_BraceInsideStringValue_DoesNotMiscount() throws {
+        let body = #"{"motivation": "Gebruik {haakjes} bewust", "workouts": [], "newPreferences": []}"#
+        let cleaned = ChatViewModel.extractCleanJSON(from: body + "\n}")
+        XCTAssertEqual(cleaned, body)
+        XCTAssertNoThrow(try JSONSerialization.jsonObject(with: Data(cleaned.utf8)))
+    }
+
+    /// An escaped quote inside a string must not be treated as the string terminator.
+    func testExtractCleanJSON_EscapedQuoteInString_StaysBalanced() throws {
+        let body = #"{"motivation": "Hij zei \"ga door\" tegen me", "workouts": [], "newPreferences": []}"#
+        let cleaned = ChatViewModel.extractCleanJSON(from: body + "}}")
+        XCTAssertEqual(cleaned, body)
+        XCTAssertNoThrow(try JSONSerialization.jsonObject(with: Data(cleaned.utf8)))
+    }
 }
