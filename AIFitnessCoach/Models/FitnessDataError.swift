@@ -17,7 +17,7 @@ enum FitnessDataError: Error, LocalizedError, Equatable {
             return "Het Strava-token is ongeldig of verlopen (401 Unauthorized)."
         case .rateLimited(let retryAfter):
             let f = DateFormatter()
-            f.locale = Locale(identifier: "nl_NL")
+            f.locale = AppLanguage.currentLocale
             f.dateFormat = "HH:mm"
             return "Strava-limiet bereikt — hervat om \(f.string(from: retryAfter))."
         case .networkError(let message):

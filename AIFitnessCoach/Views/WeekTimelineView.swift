@@ -326,7 +326,7 @@ private struct TodaySummaryRow: View {
 
     private var todayLabel: String {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "nl_NL")
+        f.locale = AppLanguage.currentLocale
         f.dateFormat = "EEE d"
         return "VANDAAG · \(f.string(from: Date()).uppercased())"
     }
@@ -412,7 +412,7 @@ struct DayCircleView: View {
     private var isCompleted: Bool { isPast && hasActivity }
 
     private var dayAbbrev: String {
-        let f = DateFormatter(); f.locale = Locale(identifier: "nl_NL"); f.dateFormat = "EEE"
+        let f = DateFormatter(); f.locale = AppLanguage.currentLocale; f.dateFormat = "EEE"
         return f.string(from: date).prefix(2).uppercased()
     }
     private var dayNumber: String {
@@ -484,7 +484,7 @@ struct WorkoutDayRowView: View {
     }
 
     private var dayLabel: (abbrev: String, number: String) {
-        let a = DateFormatter(); a.locale = Locale(identifier: "nl_NL"); a.dateFormat = "EEE"
+        let a = DateFormatter(); a.locale = AppLanguage.currentLocale; a.dateFormat = "EEE"
         let n = DateFormatter(); n.dateFormat = "d"
         return (a.string(from: date).prefix(2).uppercased(), n.string(from: date))
     }
@@ -585,7 +585,7 @@ struct TrainingDetailSheet: View {
 
     private var dateLabel: String {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "nl_NL")
+        f.locale = AppLanguage.currentLocale
         f.dateFormat = "EEE d MMM"
         // Story 33.2a: use displayDate so moved sessions show the NEW day.
         return f.string(from: workout.displayDate).uppercased()

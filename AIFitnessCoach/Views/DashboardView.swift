@@ -478,7 +478,7 @@ struct PostWorkoutCheckinCard: View {
         } else {
             let formatter = DateFormatter()
             formatter.dateFormat = "d MMM"
-            formatter.locale = Locale(identifier: "nl_NL")
+            formatter.locale = AppLanguage.currentLocale
             relativeDay = formatter.string(from: activity.startDate)
         }
         return "\(sport) • \(durationMin) min • \(relativeDay)"
@@ -1203,7 +1203,7 @@ struct DashboardView: View {
         guard lastAnalysisTimestamp > 0 else { return "" }
         let date = Date(timeIntervalSince1970: lastAnalysisTimestamp)
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "nl_NL")
+        formatter.locale = AppLanguage.currentLocale
         if Calendar.current.isDateInToday(date) {
             formatter.dateFormat = "'vandaag om' HH:mm"
         } else if Calendar.current.isDateInYesterday(date) {

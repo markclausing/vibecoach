@@ -440,7 +440,7 @@ struct GoalsListView: View {
     private func completedGoalRow(_ goal: FitnessGoal) -> some View {
         let df = DateFormatter()
         df.dateStyle = .medium
-        df.locale = Locale(identifier: "nl_NL")
+        df.locale = AppLanguage.currentLocale
 
         return HStack(spacing: 12) {
             ZStack {
@@ -538,7 +538,7 @@ struct GoalsListView: View {
     private func nextPhaseStartLabel(for goal: FitnessGoal) -> String? {
         let df  = DateFormatter()
         df.dateFormat = "d MMM"
-        df.locale = Locale(identifier: "nl_NL")
+        df.locale = AppLanguage.currentLocale
         let cal = Calendar.current
 
         switch goal.currentPhase {
@@ -560,7 +560,7 @@ struct GoalsListView: View {
         let cal = Calendar.current
         let df  = DateFormatter()
         df.dateFormat = "d MMM"
-        df.locale = Locale(identifier: "nl_NL")
+        df.locale = AppLanguage.currentLocale
         let now = Date()
 
         var items: [GoalMilestoneItem] = []
