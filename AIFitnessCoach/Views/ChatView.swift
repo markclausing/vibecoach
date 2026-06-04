@@ -1277,7 +1277,7 @@ struct MoveWorkoutSheet: View {
     private func dayChip(for day: Date) -> some View {
         let isSelected = Calendar.current.isDate(day, inSameDayAs: selectedDate)
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "nl_NL")
+        formatter.locale = AppLanguage.currentLocale
         formatter.dateFormat = "EEE"
         let weekday = formatter.string(from: day).prefix(1).uppercased() + formatter.string(from: day).dropFirst()
         let dayNumber = Calendar.current.component(.day, from: day)

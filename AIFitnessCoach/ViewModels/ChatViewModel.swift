@@ -1354,7 +1354,7 @@ class ChatViewModel: ObservableObject {
             case .unauthorized: errorMsg += "Je Strava sessie is verlopen. Koppel opnieuw in de instellingen."
             case .rateLimited(let retryAfter):
                 let f = DateFormatter()
-                f.locale = Locale(identifier: "nl_NL")
+                f.locale = AppLanguage.currentLocale
                 f.dateFormat = "HH:mm"
                 errorMsg += "Strava-limiet bereikt — hervat om \(f.string(from: retryAfter))."
             case .networkError(let desc): errorMsg += "Netwerkfout (\(desc))."
