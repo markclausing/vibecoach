@@ -228,6 +228,15 @@ struct AIFitnessCoachApp: App {
     // Epic 30: Color mode setting (light / dark / auto)
     @AppStorage("vibecoach_colorScheme") private var colorSchemeRaw: String = "auto"
 
+    // Epic #37 story 37.5: app language preference. `.system` follows the device locale,
+    // so existing users see no forced switch. Drives `.environment(\.locale, …)` below;
+    // services read the same key via `AppLanguage.currentLocale`.
+    @AppStorage(AppLanguage.storageKey) private var appLanguageRaw: String = AppLanguage.system.rawValue
+
+    private var resolvedLocale: Locale {
+        (AppLanguage(rawValue: appLanguageRaw) ?? .system).resolvedLocale
+    }
+
     private var preferredColorScheme: ColorScheme? {
         switch colorSchemeRaw {
         case "light": return .light
@@ -302,6 +311,7 @@ struct AIFitnessCoachApp: App {
                 .environmentObject(appState)
                 .environmentObject(planManager)
                 .environmentObject(themeManager)
+                .environment(\.locale, resolvedLocale)
                 .preferredColorScheme(preferredColorScheme)
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active && hasCompletedOnboarding {
