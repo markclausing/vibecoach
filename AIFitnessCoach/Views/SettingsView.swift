@@ -45,6 +45,8 @@ struct SettingsView: View {
     @AppStorage("vibecoach_colorScheme")     private var colorSchemeRaw: String = "auto"
     // Epic #37 story 37.5: app language preference (drives `.environment(\.locale, …)` at the app root).
     @AppStorage(AppLanguage.storageKey)      private var appLanguageRaw: String = AppLanguage.system.rawValue
+    // Epic #37 story 37.1: shown after a language change — UI-string switch needs a relaunch.
+    @State private var showLanguageRelaunchNote = false
     @State private var physicalProfile: UserPhysicalProfile?
 
     @State private var weeklyAvgMinutes: Int?
@@ -535,24 +537,43 @@ struct SettingsView: View {
                     }
                     .padding(.bottom, 24)
 
-                    // ── TAAL (Epic #37 story 37.5)
+                    // ── TAAL (Epic #37 story 37.5 / 37.1)
                     settingsSectionLabel("TAAL")
                     settingsCard {
-                        HStack {
-                            Text("Taal")
-                                .font(.subheadline)
-                                .padding(.leading, 14)
-                            Spacer()
-                            Picker("", selection: $appLanguageRaw) {
-                                ForEach(AppLanguage.selectableCases) { language in
-                                    Text(language.displayName).tag(language.rawValue)
+                        VStack(spacing: 0) {
+                            HStack {
+                                Text("Taal")
+                                    .font(.subheadline)
+                                    .padding(.leading, 14)
+                                Spacer()
+                                Picker("", selection: $appLanguageRaw) {
+                                    ForEach(AppLanguage.selectableCases) { language in
+                                        Text(language.displayName).tag(language.rawValue)
+                                    }
+                                }
+                                .pickerStyle(.menu)
+                                .padding(.trailing, 14)
+                                .accessibilityIdentifier("AppLanguagePicker")
+                                .onChange(of: appLanguageRaw) { _, newValue in
+                                    // Story 37.1: write the AppleLanguages override so the next launch
+                                    // loads the chosen language's strings. iOS reads it once at launch,
+                                    // so the visible UI-string switch needs a relaunch.
+                                    (AppLanguage(rawValue: newValue) ?? .system).applyToBundleOverride()
+                                    showLanguageRelaunchNote = true
                                 }
                             }
-                            .pickerStyle(.menu)
-                            .padding(.trailing, 14)
-                            .accessibilityIdentifier("AppLanguagePicker")
+                            .padding(.vertical, 10)
+
+                            if showLanguageRelaunchNote {
+                                Text("Herstart de app om de nieuwe taal volledig toe te passen.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 14)
+                                    .padding(.bottom, 10)
+                                    .accessibilityIdentifier("AppLanguageRelaunchNote")
+                            }
                         }
-                        .padding(.vertical, 10)
                     }
                     .padding(.bottom, 24)
 

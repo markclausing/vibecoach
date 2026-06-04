@@ -1,0 +1,73 @@
+{
+  "sourceLanguage" : "nl",
+  "strings" : {
+    "Auto" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Auto" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Auto" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Auto" } }
+      }
+    },
+    "Donker" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Dunkel" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Dark" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Oscuro" } }
+      }
+    },
+    "Licht" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Hell" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Light" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Claro" } }
+      }
+    },
+    "Modus" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Modus" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Mode" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Modo" } }
+      }
+    },
+    "Systeemtaal" : {
+      "comment" : "Picker option that follows the device language",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Systemsprache" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "System language" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Idioma del sistema" } }
+      }
+    },
+    "TAAL" : {
+      "comment" : "Settings section header for the language picker",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "SPRACHE" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "LANGUAGE" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "IDIOMA" } }
+      }
+    },
+    "Taal" : {
+      "comment" : "Row label inside the language section",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Sprache" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Language" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Idioma" } }
+      }
+    },
+    "Thema" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Thema" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Theme" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Tema" } }
+      }
+    },
+    "UITERLIJK" : {
+      "comment" : "Settings section header for appearance",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "DARSTELLUNG" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "APPEARANCE" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "APARIENCIA" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

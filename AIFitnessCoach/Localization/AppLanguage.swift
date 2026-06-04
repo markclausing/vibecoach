@@ -65,7 +65,7 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     }
 
     /// The base language code (`nl`/`en`/`de`/`es`) for a specific case, or `nil` for
-    /// `.system`. Used later by the String Catalog / `AppleLanguages` override.
+    /// `.system`. Used by the String Catalog / `AppleLanguages` override.
     var languageCode: String? {
         switch self {
         case .system:  return nil
@@ -73,6 +73,23 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         case .english: return "en"
         case .german:  return "de"
         case .spanish: return "es"
+        }
+    }
+
+    // MARK: - Runtime bundle override
+
+    /// `UserDefaults` key that overrides the app's localization at launch. SwiftUI loads the
+    /// matching `.lproj` from `Localizable.xcstrings` based on this, so `Text("…")` resolves to
+    /// the chosen language. iOS reads it once at launch — hence the picker shows a relaunch note.
+    static let appleLanguagesKey = "AppleLanguages"
+
+    /// Writes (or clears for `.system`) the `AppleLanguages` override so the next launch loads
+    /// the chosen language's strings. `.system` removes the override and restores device behaviour.
+    func applyToBundleOverride(_ defaults: UserDefaults = .standard) {
+        if let code = languageCode {
+            defaults.set([code], forKey: Self.appleLanguagesKey)
+        } else {
+            defaults.removeObject(forKey: Self.appleLanguagesKey)
         }
     }
 
