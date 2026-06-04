@@ -155,7 +155,7 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
     /// Uses `displayDate` so moved sessions immediately show the new label.
     var displayDayLabel: String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "nl_NL")
+        formatter.locale = AppLanguage.currentLocale
         formatter.dateFormat = "EEEE d MMM"
         let label = formatter.string(from: displayDate)
         return label.prefix(1).uppercased() + label.dropFirst()

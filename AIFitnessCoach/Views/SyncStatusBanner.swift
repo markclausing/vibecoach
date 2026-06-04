@@ -153,7 +153,7 @@ struct SyncStatusBanner: View {
 
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "nl_NL")
+        f.locale = AppLanguage.currentLocale
         f.dateFormat = "HH:mm"
         return f
     }()
