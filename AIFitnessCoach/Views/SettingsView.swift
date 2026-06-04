@@ -762,7 +762,10 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
-    private func settingsSectionLabel(_ label: String) -> some View {
+    // Epic #37 story 37.1: `LocalizedStringKey` (not `String`) so the literal section
+    // headers resolve via `Localizable.xcstrings`. `Text(stringVariable)` is verbatim and
+    // would NOT localize — this is the pattern for helper-wrapped UI strings.
+    private func settingsSectionLabel(_ label: LocalizedStringKey) -> some View {
         Text(label)
             .font(.caption).fontWeight(.semibold)
             .foregroundColor(.secondary).kerning(0.5)
