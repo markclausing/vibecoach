@@ -1,6 +1,22 @@
 {
   "sourceLanguage" : "nl",
   "strings" : {
+    "AI COACH" : {
+      "comment" : "Settings section header",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "KI-COACH" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "AI COACH" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "ENTRENADOR IA" } }
+      }
+    },
+    "ATLETISCH PROFIEL" : {
+      "comment" : "Settings section header",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "SPORTLICHES PROFIL" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "ATHLETIC PROFILE" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "PERFIL ATLÉTICO" } }
+      }
+    },
     "Auto" : {
       "localizations" : {
         "de" : { "stringUnit" : { "state" : "translated", "value" : "Auto" } },
@@ -8,11 +24,67 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Auto" } }
       }
     },
+    "BRON-VOORKEUR" : {
+      "comment" : "Settings section header",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "QUELLENPRÄFERENZ" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "SOURCE PREFERENCE" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "PREFERENCIA DE FUENTE" } }
+      }
+    },
+    "Coach" : {
+      "comment" : "Tab bar item",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Coach" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Coach" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Entrenador" } }
+      }
+    },
+    "Doelen" : {
+      "comment" : "Tab bar item / Goals screen title",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Ziele" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Goals" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Objetivos" } }
+      }
+    },
     "Donker" : {
       "localizations" : {
         "de" : { "stringUnit" : { "state" : "translated", "value" : "Dunkel" } },
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Dark" } },
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Oscuro" } }
+      }
+    },
+    "FYSIOLOGISCH PROFIEL" : {
+      "comment" : "Settings section header",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "PHYSIOLOGISCHES PROFIL" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "PHYSIOLOGICAL PROFILE" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "PERFIL FISIOLÓGICO" } }
+      }
+    },
+    "Geheugen" : {
+      "comment" : "Tab bar item (coach memory / preferences)",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Speicher" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Memory" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Memoria" } }
+      }
+    },
+    "Instellingen" : {
+      "comment" : "Tab bar item / Settings screen title",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Einstellungen" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Ajustes" } }
+      }
+    },
+    "JOUW PROFIEL" : {
+      "comment" : "Settings section header",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "DEIN PROFIL" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "YOUR PROFILE" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "TU PERFIL" } }
       }
     },
     "Licht" : {
@@ -29,6 +101,22 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Modo" } }
       }
     },
+    "NOTIFICATIES" : {
+      "comment" : "Settings section header",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "MITTEILUNGEN" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "NOTIFICATIONS" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "NOTIFICACIONES" } }
+      }
+    },
+    "Overzicht" : {
+      "comment" : "Tab bar item (dashboard)",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Übersicht" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Overview" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Resumen" } }
+      }
+    },
     "Systeemtaal" : {
       "comment" : "Picker option that follows the device language",
       "localizations" : {
@@ -43,6 +131,14 @@
         "de" : { "stringUnit" : { "state" : "translated", "value" : "SPRACHE" } },
         "en" : { "stringUnit" : { "state" : "translated", "value" : "LANGUAGE" } },
         "es" : { "stringUnit" : { "state" : "translated", "value" : "IDIOMA" } }
+      }
+    },
+    "TRAININGSDREMPELS" : {
+      "comment" : "Settings section header",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "TRAININGSSCHWELLEN" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "TRAINING THRESHOLDS" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "UMBRALES DE ENTRENAMIENTO" } }
       }
     },
     "Taal" : {
@@ -66,6 +162,22 @@
         "de" : { "stringUnit" : { "state" : "translated", "value" : "DARSTELLUNG" } },
         "en" : { "stringUnit" : { "state" : "translated", "value" : "APPEARANCE" } },
         "es" : { "stringUnit" : { "state" : "translated", "value" : "APARIENCIA" } }
+      }
+    },
+    "VERBINDINGEN" : {
+      "comment" : "Settings section header",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "VERBINDUNGEN" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "CONNECTIONS" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "CONEXIONES" } }
+      }
+    },
+    "VERBINDINGSDETAILS" : {
+      "comment" : "Settings section header",
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "VERBINDUNGSDETAILS" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "CONNECTION DETAILS" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "DETALLES DE CONEXIÓN" } }
       }
     }
   },
