@@ -57,4 +57,25 @@ final class AppLanguageTests: XCTestCase {
             XCTAssertFalse(language.displayName.isEmpty, "\(language) mist een displayName")
         }
     }
+
+    // MARK: - applyToBundleOverride (story 37.1)
+
+    func testApplyToBundleOverride_SpecificLanguage_SetsAppleLanguages() {
+        let defaults = UserDefaults(suiteName: "AppLanguageTests.override")!
+        defaults.removeObject(forKey: AppLanguage.appleLanguagesKey)
+        AppLanguage.german.applyToBundleOverride(defaults)
+        XCTAssertEqual(defaults.stringArray(forKey: AppLanguage.appleLanguagesKey), ["de"])
+        defaults.removePersistentDomain(forName: "AppLanguageTests.override")
+    }
+
+    func testApplyToBundleOverride_System_ClearsAppleLanguages() {
+        let defaults = UserDefaults(suiteName: "AppLanguageTests.override")!
+        defaults.set(["de"], forKey: AppLanguage.appleLanguagesKey)
+        XCTAssertEqual(defaults.stringArray(forKey: AppLanguage.appleLanguagesKey), ["de"])
+        AppLanguage.system.applyToBundleOverride(defaults)
+        // `.system` removes the app-level override. Reads then fall back to the global
+        // domain (the device language list), so the value is no longer the forced ["de"].
+        XCTAssertNotEqual(defaults.stringArray(forKey: AppLanguage.appleLanguagesKey), ["de"])
+        defaults.removePersistentDomain(forName: "AppLanguageTests.override")
+    }
 }
