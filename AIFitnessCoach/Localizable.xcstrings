@@ -3877,7 +3877,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Reintentar"
+            "value": "Inténtalo de nuevo"
           }
         }
       }
@@ -8759,6 +8759,798 @@
           "stringUnit": {
             "state": "translated",
             "value": "Caída como porcentaje de la LTHR: ≥15% excelente (sin marcador) · 12–15% leve · 9–12% moderado · <9% significativo."
+          }
+        }
+      }
+    },
+    "Je lichaam stuurt, wij luisteren mee.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your body leads, we listen in."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Körper führt, wir hören mit."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu cuerpo manda, nosotros escuchamos."
+          }
+        }
+      }
+    },
+    "Herstel meten, belasting plannen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measure recovery, plan load."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erholung messen, Belastung planen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mide la recuperación, planifica la carga."
+          }
+        }
+      }
+    },
+    "Jouw data, jouw AI-sleutel.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your data, your AI key."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Daten, dein KI-Schlüssel."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tus datos, tu clave de IA."
+          }
+        }
+      }
+    },
+    "Koppel met Apple Health.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect to Apple Health."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit Apple Health verbinden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conecta con Apple Health."
+          }
+        }
+      }
+    },
+    "Coach-signalen, niet meer.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coach signals, nothing more."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coach-Signale, mehr nicht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Señales del coach, nada más."
+          }
+        }
+      }
+    },
+    "Je persoonlijke trainingscoach, gestuurd door je eigen Apple Health data.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your personal training coach, driven by your own Apple Health data."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein persönlicher Trainingscoach, gesteuert von deinen eigenen Apple-Health-Daten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu entrenador personal, impulsado por tus propios datos de Apple Health."
+          }
+        }
+      }
+    },
+    "VibeCoach leest twee signalen: hoe je lichaam herstelt en hoe zwaar je traint. Samen bepalen ze wat vandaag verstandig is.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCoach reads two signals: how your body recovers and how hard you train. Together they decide what's wise today."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCoach liest zwei Signale: wie sich dein Körper erholt und wie hart du trainierst. Zusammen bestimmen sie, was heute sinnvoll ist."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCoach lee dos señales: cómo se recupera tu cuerpo y cuán duro entrenas. Juntas deciden qué es sensato hoy."
+          }
+        }
+      }
+    },
+    "VibeCoach gebruikt jouw eigen API-sleutel. Zo blijven je gesprekken en trainingsdata van jou — wij zien ze nooit.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCoach uses your own API key. That way your conversations and training data stay yours — we never see them."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCoach nutzt deinen eigenen API-Schlüssel. So bleiben deine Gespräche und Trainingsdaten deins — wir sehen sie nie."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCoach usa tu propia clave de API. Así tus conversaciones y datos de entrenamiento siguen siendo tuyos: nunca los vemos."
+          }
+        }
+      }
+    },
+    "VibeCoach leest HRV en slaap uit Apple Health — die blijven op jouw iPhone. We sturen niets naar externe servers.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCoach reads HRV and sleep from Apple Health — they stay on your iPhone. We send nothing to external servers."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCoach liest HRV und Schlaf aus Apple Health — sie bleiben auf deinem iPhone. Wir senden nichts an externe Server."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCoach lee la VFC y el sueño de Apple Health: se quedan en tu iPhone. No enviamos nada a servidores externos."
+          }
+        }
+      }
+    },
+    "We sturen alleen een bericht als je lichaam afwijkt van je plan — gemiddeld één keer per week, nooit meer dan één per doel per dag.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We only send a message when your body deviates from your plan — on average once a week, never more than one per goal per day."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wir senden nur eine Nachricht, wenn dein Körper von deinem Plan abweicht — im Schnitt einmal pro Woche, nie mehr als eine pro Ziel und Tag."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo enviamos un mensaje cuando tu cuerpo se desvía de tu plan: de media una vez por semana, nunca más de uno por objetivo al día."
+          }
+        }
+      }
+    },
+    "TWEE LAGEN": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TWO LAYERS"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ZWEI EBENEN"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DOS CAPAS"
+          }
+        }
+      }
+    },
+    "PRIVACY EERST": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRIVACY FIRST"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRIVATSPHÄRE ZUERST"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRIVACIDAD PRIMERO"
+          }
+        }
+      }
+    },
+    "PERMISSIE 1 VAN 2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PERMISSION 1 OF 2"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BERECHTIGUNG 1 VON 2"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PERMISO 1 DE 2"
+          }
+        }
+      }
+    },
+    "PERMISSIE 2 VAN 2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PERMISSION 2 OF 2"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BERECHTIGUNG 2 VON 2"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PERMISO 2 DE 2"
+          }
+        }
+      }
+    },
+    "Aan de slag": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get started"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los geht's"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar"
+          }
+        }
+      }
+    },
+    "Volgende": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiter"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siguiente"
+          }
+        }
+      }
+    },
+    "Koppel Apple Health": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect Apple Health"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Health verbinden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectar Apple Health"
+          }
+        }
+      }
+    },
+    "Sta notificaties toe": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow notifications"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitteilungen erlauben"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitir notificaciones"
+          }
+        }
+      }
+    },
+    "Even geduld…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One moment…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einen Moment…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un momento…"
+          }
+        }
+      }
+    },
+    "Sla over, doe later": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip, do it later"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überspringen, später"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omitir, hazlo luego"
+          }
+        }
+      }
+    },
+    "Nu niet, later in Instellingen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now, later in Settings"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jetzt nicht, später in den Einstellungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no, luego en Ajustes"
+          }
+        }
+      }
+    },
+    "Overslaan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überspringen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omitir"
+          }
+        }
+      }
+    },
+    "Hartslagvariabiliteit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heart rate variability"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herzfrequenzvariabilität"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Variabilidad de la frecuencia cardíaca"
+          }
+        }
+      }
+    },
+    "Meet je autonome herstel — de hoeksteen van je Vibe Score.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measures your autonomic recovery — the cornerstone of your Vibe Score."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Misst deine autonome Erholung — der Eckpfeiler deines Vibe Score."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mide tu recuperación autónoma: la piedra angular de tu Vibe Score."
+          }
+        }
+      }
+    },
+    "Slaap": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schlaf"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sueño"
+          }
+        }
+      }
+    },
+    "Fase-opdeling (REM / diep / licht) voor betere trainingsadviezen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stage breakdown (REM / deep / light) for better training advice."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phasenaufteilung (REM / Tief / Leicht) für besseres Trainingsfeedback."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desglose por fases (REM / profundo / ligero) para mejores consejos de entrenamiento."
+          }
+        }
+      }
+    },
+    "Strava-sync mislukt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strava sync failed"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strava-Sync fehlgeschlagen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error de sincronización de Strava"
+          }
+        }
+      }
+    },
+    "Apple Health-sync mislukt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Health sync failed"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple-Health-Sync fehlgeschlagen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error de sincronización de Apple Health"
+          }
+        }
+      }
+    },
+    "Geen verbinding met %@. Probeer opnieuw vanuit Instellingen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No connection to %@. Try again from Settings."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Verbindung zu %@. Versuche es erneut über die Einstellungen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin conexión con %@. Inténtalo de nuevo desde Ajustes."
+          }
+        }
+      }
+    },
+    "Aanmelden bij %@ is nodig — controleer de koppeling in Instellingen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You need to sign in to %@ — check the connection in Settings."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anmeldung bei %@ erforderlich — prüfe die Verbindung in den Einstellungen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Necesitas iniciar sesión en %@: comprueba la conexión en Ajustes."
+          }
+        }
+      }
+    },
+    "%@-limiet bereikt. Probeer het later opnieuw.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ limit reached. Try again later."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@-Limit erreicht. Versuche es später erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Límite de %@ alcanzado. Inténtalo más tarde."
+          }
+        }
+      }
+    },
+    "%@ gaf een onleesbaar antwoord. Probeer opnieuw vanuit Instellingen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ returned an unreadable response. Try again from Settings."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ lieferte eine unlesbare Antwort. Versuche es erneut über die Einstellungen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ devolvió una respuesta ilegible. Inténtalo de nuevo desde Ajustes."
+          }
+        }
+      }
+    },
+    "%@-sync mislukt. Probeer opnieuw vanuit Instellingen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ sync failed. Try again from Settings."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@-Sync fehlgeschlagen. Versuche es erneut über die Einstellungen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error de sincronización de %@. Inténtalo de nuevo desde Ajustes."
+          }
+        }
+      }
+    },
+    "Ideaal schema": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ideal schedule"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idealer Plan"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan ideal"
+          }
+        }
+      }
+    },
+    "Jouw voortgang": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your progress"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Fortschritt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu progreso"
+          }
+        }
+      }
+    },
+    "TRIMP / DAG": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TRIMP / DAY"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TRIMP / TAG"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TRIMP / DÍA"
           }
         }
       }

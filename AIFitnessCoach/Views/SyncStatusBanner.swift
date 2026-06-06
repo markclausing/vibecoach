@@ -116,7 +116,9 @@ struct SyncStatusBanner: View {
     private func errorBanner(title: String, message: String, onDismiss: @escaping () -> Void) -> some View {
         DashboardBannerView(icon: "exclamationmark.arrow.triangle.2.circlepath", color: .red) {
             VStack(alignment: .leading, spacing: 8) {
-                Text(title)
+                // Epic #37 story 37.1c: title is a Dutch literal -> catalog; message is already
+                // localized by message(for:source:).
+                Text(LocalizedStringKey(title))
                     .font(.subheadline.bold())
                 Text(message)
                     .font(.caption)
@@ -135,19 +137,21 @@ struct SyncStatusBanner: View {
         }
     }
 
+    // Epic #37 story 37.1c: rendered via Text(message) -> verbatim, so resolve via the catalog.
+    // `source` (Strava/HealthKit, a brand name) interpolates as %@.
     private func message(for category: SyncErrorCategory, source: String) -> String {
         switch category {
         case .network:
-            return "Geen verbinding met \(source). Probeer opnieuw vanuit Instellingen."
+            return String(localized: "Geen verbinding met \(source). Probeer opnieuw vanuit Instellingen.")
         case .authentication:
-            return "Aanmelden bij \(source) is nodig — controleer de koppeling in Instellingen."
+            return String(localized: "Aanmelden bij \(source) is nodig — controleer de koppeling in Instellingen.")
         case .rateLimit:
             // Defensive fallback; rateLimit should go through the separate banner.
-            return "\(source)-limiet bereikt. Probeer het later opnieuw."
+            return String(localized: "\(source)-limiet bereikt. Probeer het later opnieuw.")
         case .decoding:
-            return "\(source) gaf een onleesbaar antwoord. Probeer opnieuw vanuit Instellingen."
+            return String(localized: "\(source) gaf een onleesbaar antwoord. Probeer opnieuw vanuit Instellingen.")
         case .other:
-            return "\(source)-sync mislukt. Probeer opnieuw vanuit Instellingen."
+            return String(localized: "\(source)-sync mislukt. Probeer opnieuw vanuit Instellingen.")
         }
     }
 

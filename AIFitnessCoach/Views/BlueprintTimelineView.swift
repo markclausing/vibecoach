@@ -389,7 +389,8 @@ struct BlueprintTimelineView: View {
                 )
             }
             .frame(width: 20, height: 10)
-            Text(label)
+            // Epic #37 story 37.1c: legend label is a Dutch literal -> resolve via the catalog.
+            Text(LocalizedStringKey(label))
                 .foregroundStyle(.secondary)
         }
     }
