@@ -7508,6 +7508,182 @@
           }
         }
       }
+    },
+    "Je piekbelasting is al bereikt. Vasthouden en binnenkort beginnen met taperen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your peak load is already reached. Hold it and start tapering soon."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Spitzenbelastung ist bereits erreicht. Halten und bald mit dem Tapering beginnen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya has alcanzado tu carga máxima. Mantenla y empieza pronto el taper."
+          }
+        }
+      }
+    },
+    "Op basis van %@ groei/week ben je %lld week(en) eerder klaar dan gepland. Goed bezig!": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At %@ growth/week you'll be ready %lld week(s) earlier than planned. Well done!"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bei %@ Zuwachs/Woche bist du %lld Woche(n) früher bereit als geplant. Gut gemacht!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con un %@ de crecimiento/semana estarás listo %lld semana(s) antes de lo previsto. ¡Bien hecho!"
+          }
+        }
+      }
+    },
+    "Je groeit %@ per week. Je loopt %lld week(en) achter op de geplande piekdatum. Schroef het volume op.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're growing %@ per week. You're %lld week(s) behind the planned peak date. Ramp up the volume."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du wächst %@ pro Woche. Du bist %lld Woche(n) hinter dem geplanten Peak-Datum. Erhöhe das Volumen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creces un %@ por semana. Vas %lld semana(s) por detrás de la fecha de pico prevista. Aumenta el volumen."
+          }
+        }
+      }
+    },
+    "fiets": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cycling"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rad"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ciclismo"
+          }
+        }
+      }
+    },
+    "hardloop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "running"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lauf"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "carrera"
+          }
+        }
+      }
+    },
+    "Bottleneck: %@-volume. Omdat je aerobe basis (TRIMP) sterk is, kunnen we dit gat de komende weken sneller dichten zodra je hersteld bent. Nog %lld week(en) bij te sturen — ruim op tijd.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bottleneck: %@ volume. Because your aerobic base (TRIMP) is strong, we can close this gap faster over the coming weeks once you've recovered. %lld week(s) left to adjust — plenty of time."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engpass: %@-Volumen. Da deine aerobe Basis (TRIMP) stark ist, können wir diese Lücke in den kommenden Wochen schneller schließen, sobald du erholt bist. Noch %lld Woche(n) zum Nachsteuern — reichlich Zeit."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuello de botella: volumen de %@. Como tu base aeróbica (TRIMP) es fuerte, podemos cerrar esta brecha más rápido en las próximas semanas una vez recuperado. Quedan %lld semana(s) para ajustar: tiempo de sobra."
+          }
+        }
+      }
+    },
+    "Je loopt %lld week(en) achter, maar de racedag is nog ver genoeg weg voor een gerichte inhaalslag. Stap voor stap opbouwen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're %lld week(s) behind, but race day is still far enough away for a focused catch-up. Build it step by step."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du bist %lld Woche(n) im Rückstand, aber der Renntag ist noch weit genug entfernt für eine gezielte Aufholjagd. Bau es Schritt für Schritt auf."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vas %lld semana(s) por detrás, pero el día de carrera está aún lo bastante lejos para una recuperación enfocada. Constrúyelo paso a paso."
+          }
+        }
+      }
+    },
+    "Zelfs met maximale wekelijkse groei is de piekbelasting niet haalbaar vóór de racedag. Bespreek dit met je coach.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Even with maximum weekly growth, the peak load isn't achievable before race day. Discuss this with your coach."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selbst mit maximalem wöchentlichem Zuwachs ist die Spitzenbelastung vor dem Renntag nicht erreichbar. Besprich das mit deinem Coach."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incluso con el máximo crecimiento semanal, la carga máxima no es alcanzable antes del día de carrera. Coméntalo con tu entrenador."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
