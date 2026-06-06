@@ -8102,6 +8102,666 @@
           }
         }
       }
+    },
+    "onbekend": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "unknown"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "unbekannt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "desconocido"
+          }
+        }
+      }
+    },
+    "slecht": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "poor"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "schlecht"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "malo"
+          }
+        }
+      }
+    },
+    "Wat het meet": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What it measures"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was es misst"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qué mide"
+          }
+        }
+      }
+    },
+    "Drempels": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thresholds"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schwellen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Umbrales"
+          }
+        }
+      }
+    },
+    "Op deze rit": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On this ride"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bei dieser Einheit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En esta sesión"
+          }
+        }
+      }
+    },
+    "Hartslag": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heart rate"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herzfrequenz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frecuencia cardíaca"
+          }
+        }
+      }
+    },
+    "Snelheid": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speed"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschwindigkeit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Velocidad"
+          }
+        }
+      }
+    },
+    "Vermogen": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leistung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potencia"
+          }
+        }
+      }
+    },
+    "Cadens": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cadence"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trittfrequenz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cadencia"
+          }
+        }
+      }
+    },
+    "Duur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dauer"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duración"
+          }
+        }
+      }
+    },
+    "Afstand": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Distance"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Distanz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Distancia"
+          }
+        }
+      }
+    },
+    "Gem. hartslag": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avg. heart rate"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ø Herzfrequenz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FC media"
+          }
+        }
+      }
+    },
+    "Temperatuur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temperature"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temperatur"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temperatura"
+          }
+        }
+      }
+    },
+    "Luchtvochtigheid": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Humidity"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luftfeuchtigkeit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Humedad"
+          }
+        }
+      }
+    },
+    "Plan behaald": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan met"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan erfüllt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan cumplido"
+          }
+        }
+      }
+    },
+    "Type wijkt af": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type differs"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Typ weicht ab"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El tipo difiere"
+          }
+        }
+      }
+    },
+    "Boven plan (%@ TRIMP)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Above plan (%@ TRIMP)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Über Plan (%@ TRIMP)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por encima del plan (%@ TRIMP)"
+          }
+        }
+      }
+    },
+    "Onder plan (%@ TRIMP)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Below plan (%@ TRIMP)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unter Plan (%@ TRIMP)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por debajo del plan (%@ TRIMP)"
+          }
+        }
+      }
+    },
+    "Geen vergelijking": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No comparison"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kein Vergleich"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin comparación"
+          }
+        }
+      }
+    },
+    "onbepaald": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "undetermined"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "unbestimmt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sin determinar"
+          }
+        }
+      }
+    },
+    "Gepland: %@ → Uitgevoerd: %@. Type én belasting binnen marge.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planned: %@ → Done: %@. Both type and load within margin."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geplant: %@ → Ausgeführt: %@. Typ und Belastung im Rahmen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previsto: %@ → Realizado: %@. Tipo y carga dentro del margen."
+          }
+        }
+      }
+    },
+    "Gepland: %@ (%@) → Uitgevoerd: %@ (%@).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planned: %@ (%@) → Done: %@ (%@)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geplant: %@ (%@) → Ausgeführt: %@ (%@)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previsto: %@ (%@) → Realizado: %@ (%@)."
+          }
+        }
+      }
+    },
+    "Gepland: %@ → Uitgevoerd: %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planned: %@ → Done: %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geplant: %@ → Ausgeführt: %@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previsto: %@ → Realizado: %@."
+          }
+        }
+      }
+    },
+    "Vergelijkt de hartslag/intensiteit-ratio in helft 1 versus helft 2 van je rit. Als de ratio stijgt, deed je hart in de tweede helft meer werk per watt of m/s — een teken dat je aerobic ceiling onder druk stond.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compares the heart-rate/intensity ratio in half 1 versus half 2 of your ride. If the ratio rises, your heart did more work per watt or m/s in the second half — a sign your aerobic ceiling was under pressure."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vergleicht das Herzfrequenz/Intensitäts-Verhältnis in Hälfte 1 gegenüber Hälfte 2 deiner Einheit. Steigt das Verhältnis, leistete dein Herz in der zweiten Hälfte mehr pro Watt oder m/s — ein Zeichen, dass deine aerobe Decke unter Druck stand."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compara la relación frecuencia cardíaca/intensidad en la mitad 1 frente a la mitad 2 de tu sesión. Si la relación sube, tu corazón trabajó más por vatio o m/s en la segunda mitad: señal de que tu techo aeróbico estuvo bajo presión."
+          }
+        }
+      }
+    },
+    "<3% stabiel · 3–5% mild · 5–8% moderate · >8% significant. Wordt niet gemeten bij stop-and-go-ritten (te variabele intensiteit).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "<3% stable · 3–5% mild · 5–8% moderate · >8% significant. Not measured on stop-and-go rides (intensity too variable)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "<3% stabil · 3–5% leicht · 5–8% moderat · >8% signifikant. Wird bei Stop-and-go-Fahrten nicht gemessen (zu variable Intensität)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "<3% estable · 3–5% leve · 5–8% moderado · >8% significativo. No se mide en sesiones con muchas paradas (intensidad demasiado variable)."
+          }
+        }
+      }
+    },
+    "HR-stijging tussen helft 1 en helft 2, los van intensiteit. Bij gelijkmatige inspanning duidt drift op vermoeidheid, hitte of dehydratie. Wordt alleen gemeten in Z1–Z3; drift in Z4–Z5 is verwacht gedrag bij drempel-/VO2max-werk.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HR rise between half 1 and half 2, independent of intensity. At steady effort, drift indicates fatigue, heat or dehydration. Only measured in Z1–Z3; drift in Z4–Z5 is expected behaviour during threshold/VO2max work."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HF-Anstieg zwischen Hälfte 1 und Hälfte 2, unabhängig von der Intensität. Bei gleichmäßiger Belastung deutet Drift auf Ermüdung, Hitze oder Dehydrierung hin. Wird nur in Z1–Z3 gemessen; Drift in Z4–Z5 ist bei Schwellen-/VO2max-Arbeit zu erwarten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aumento de FC entre la mitad 1 y la mitad 2, independiente de la intensidad. Con esfuerzo constante, la deriva indica fatiga, calor o deshidratación. Solo se mide en Z1–Z3; la deriva en Z4–Z5 es esperable en trabajo de umbral/VO2max."
+          }
+        }
+      }
+    },
+    "Daling van je gemiddelde cadans tussen het eerste en laatste kwart. Zero-cadence-momenten (verkeerslicht, koffiestop) worden uit de meting gefilterd. Een fors verschil duidt op spiervermoeidheid of bewust temperen aan het einde.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop in your average cadence between the first and last quarter. Zero-cadence moments (traffic light, coffee stop) are filtered out. A large difference indicates muscular fatigue or deliberately easing off at the end."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rückgang deiner durchschnittlichen Trittfrequenz zwischen dem ersten und letzten Viertel. Null-Trittfrequenz-Momente (Ampel, Kaffeepause) werden herausgefiltert. Ein großer Unterschied deutet auf muskuläre Ermüdung oder bewusstes Zurücknehmen am Ende hin."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caída de tu cadencia media entre el primer y el último cuarto. Los momentos de cadencia cero (semáforo, parada para café) se filtran. Una diferencia grande indica fatiga muscular o aflojar deliberadamente al final."
+          }
+        }
+      }
+    },
+    "3 mild · 5 moderate · 10 significant — eenheden zijn RPM bij cycling, SPM bij lopen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 mild · 5 moderate · 10 significant — units are RPM for cycling, SPM for running."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 leicht · 5 moderat · 10 signifikant — Einheiten sind RPM beim Radfahren, SPM beim Laufen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 leve · 5 moderado · 10 significativo: las unidades son RPM en ciclismo, SPM al correr."
+          }
+        }
+      }
+    },
+    "Hoeveel zakte je hartslag tijdens een rust-pauze (≥45s, power+cadence beide ≈ 0) ten opzichte van de piek-binnen-pauze. Snelle daling = sterk parasympatisch herstel; trage daling kan vermoeidheid, hitte of cumulatieve belasting indiceren. Alleen pauzes ≥90s zijn pin-waardig.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How much your heart rate dropped during a rest pause (≥45s, power+cadence both ≈ 0) relative to the peak within the pause. Fast drop = strong parasympathetic recovery; slow drop can indicate fatigue, heat or cumulative load. Only pauses ≥90s are pin-worthy."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie stark deine Herzfrequenz während einer Ruhepause (≥45s, Leistung+Trittfrequenz beide ≈ 0) gegenüber der Spitze innerhalb der Pause sank. Schneller Abfall = starke parasympathische Erholung; langsamer Abfall kann auf Ermüdung, Hitze oder kumulative Belastung hindeuten. Nur Pausen ≥90s sind pin-würdig."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuánto bajó tu frecuencia cardíaca durante una pausa de descanso (≥45s, potencia+cadencia ambas ≈ 0) respecto al pico dentro de la pausa. Caída rápida = fuerte recuperación parasimpática; caída lenta puede indicar fatiga, calor o carga acumulada. Solo las pausas ≥90s merecen marcador."
+          }
+        }
+      }
+    },
+    "Drop als percentage van LTHR: ≥15% uitstekend (geen pin) · 12–15% mild · 9–12% moderate · <9% significant.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drop as a percentage of LTHR: ≥15% excellent (no pin) · 12–15% mild · 9–12% moderate · <9% significant."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abfall als Prozentsatz der LTHR: ≥15% ausgezeichnet (kein Pin) · 12–15% leicht · 9–12% moderat · <9% signifikant."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caída como porcentaje de la LTHR: ≥15% excelente (sin marcador) · 12–15% leve · 9–12% moderado · <9% significativo."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

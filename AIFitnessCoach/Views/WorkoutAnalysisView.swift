@@ -604,7 +604,9 @@ struct WorkoutAnalysisView: View {
     @ViewBuilder
     private func detailSection(title: String, body: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title.uppercased())
+            // Epic #37 story 37.1c: localize the title (passed as a Dutch literal) before
+            // uppercasing. `body` is already localized by the caller.
+            Text(String(localized: String.LocalizationValue(title)).uppercased())
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .tracking(0.4)
@@ -621,23 +623,23 @@ struct WorkoutAnalysisView: View {
         switch kind {
         case .aerobicDecoupling:
             return (
-                description: "Vergelijkt de hartslag/intensiteit-ratio in helft 1 versus helft 2 van je rit. Als de ratio stijgt, deed je hart in de tweede helft meer werk per watt of m/s — een teken dat je aerobic ceiling onder druk stond.",
-                thresholds: "<3% stabiel · 3–5% mild · 5–8% moderate · >8% significant. Wordt niet gemeten bij stop-and-go-ritten (te variabele intensiteit)."
+                description: String(localized: "Vergelijkt de hartslag/intensiteit-ratio in helft 1 versus helft 2 van je rit. Als de ratio stijgt, deed je hart in de tweede helft meer werk per watt of m/s — een teken dat je aerobic ceiling onder druk stond."),
+                thresholds: String(localized: "<3% stabiel · 3–5% mild · 5–8% moderate · >8% significant. Wordt niet gemeten bij stop-and-go-ritten (te variabele intensiteit).")
             )
         case .cardiacDrift:
             return (
-                description: "HR-stijging tussen helft 1 en helft 2, los van intensiteit. Bij gelijkmatige inspanning duidt drift op vermoeidheid, hitte of dehydratie. Wordt alleen gemeten in Z1–Z3; drift in Z4–Z5 is verwacht gedrag bij drempel-/VO2max-werk.",
-                thresholds: "<3% stabiel · 3–5% mild · 5–8% moderate · >8% significant."
+                description: String(localized: "HR-stijging tussen helft 1 en helft 2, los van intensiteit. Bij gelijkmatige inspanning duidt drift op vermoeidheid, hitte of dehydratie. Wordt alleen gemeten in Z1–Z3; drift in Z4–Z5 is verwacht gedrag bij drempel-/VO2max-werk."),
+                thresholds: String(localized: "<3% stabiel · 3–5% mild · 5–8% moderate · >8% significant.")
             )
         case .cadenceFade:
             return (
-                description: "Daling van je gemiddelde cadans tussen het eerste en laatste kwart. Zero-cadence-momenten (verkeerslicht, koffiestop) worden uit de meting gefilterd. Een fors verschil duidt op spiervermoeidheid of bewust temperen aan het einde.",
-                thresholds: "3 mild · 5 moderate · 10 significant — eenheden zijn RPM bij cycling, SPM bij lopen."
+                description: String(localized: "Daling van je gemiddelde cadans tussen het eerste en laatste kwart. Zero-cadence-momenten (verkeerslicht, koffiestop) worden uit de meting gefilterd. Een fors verschil duidt op spiervermoeidheid of bewust temperen aan het einde."),
+                thresholds: String(localized: "3 mild · 5 moderate · 10 significant — eenheden zijn RPM bij cycling, SPM bij lopen.")
             )
         case .heartRateRecovery:
             return (
-                description: "Hoeveel zakte je hartslag tijdens een rust-pauze (≥45s, power+cadence beide ≈ 0) ten opzichte van de piek-binnen-pauze. Snelle daling = sterk parasympatisch herstel; trage daling kan vermoeidheid, hitte of cumulatieve belasting indiceren. Alleen pauzes ≥90s zijn pin-waardig.",
-                thresholds: "Drop als percentage van LTHR: ≥15% uitstekend (geen pin) · 12–15% mild · 9–12% moderate · <9% significant."
+                description: String(localized: "Hoeveel zakte je hartslag tijdens een rust-pauze (≥45s, power+cadence beide ≈ 0) ten opzichte van de piek-binnen-pauze. Snelle daling = sterk parasympatisch herstel; trage daling kan vermoeidheid, hitte of cumulatieve belasting indiceren. Alleen pauzes ≥90s zijn pin-waardig."),
+                thresholds: String(localized: "Drop als percentage van LTHR: ≥15% uitstekend (geen pin) · 12–15% mild · 9–12% moderate · <9% significant.")
             )
         }
     }
@@ -683,6 +685,8 @@ struct WorkoutAnalysisView: View {
     /// Epic #47: translates a pause-recovery drop into a label for the coach prompt.
     /// Thresholds match the pin boundaries in `WorkoutPatternDetector` so the label and
     /// the possible pin are consistent — a "matig" event belongs to a moderate pin.
+    /// Epic #37 story 37.1c: NOT localized — this label feeds the coach prompt
+    /// (WorkoutInsightService), not the UI. Prompt-coupled strings stay Dutch until 37.4.
     private func recoveryQualityLabel(drop: Double, referenceHR: Double) -> String {
         guard referenceHR > 0 else { return "onbekend" }
         let ratio = drop / referenceHR
@@ -825,40 +829,47 @@ struct WorkoutAnalysisView: View {
 
     private func comparisonStyle(for verdict: IntentExecutionVerdict) -> ComparisonStyle {
         switch verdict {
+        // Epic #37 story 37.1c: headline rendered verbatim -> resolve via the catalog. The
+        // percentage (incl. its % sign) is pre-formatted and interpolated as %@ to keep a
+        // literal % out of the generated format key.
         case .match:
             return ComparisonStyle(color: .green,
                                    icon: "checkmark.circle.fill",
-                                   headline: "Plan behaald")
+                                   headline: String(localized: "Plan behaald"))
         case .typeMismatch:
             return ComparisonStyle(color: .orange,
                                    icon: "exclamationmark.triangle.fill",
-                                   headline: "Type wijkt af")
+                                   headline: String(localized: "Type wijkt af"))
         case .overload(let pct):
+            let pctStr = String(format: "%+.0f%%", pct)
             return ComparisonStyle(color: Color(red: 0.93, green: 0.42, blue: 0.21),
                                    icon: "flame.fill",
-                                   headline: "Boven plan (\(String(format: "%+.0f", pct))% TRIMP)")
+                                   headline: String(localized: "Boven plan (\(pctStr) TRIMP)"))
         case .underload(let pct):
+            let pctStr = String(format: "%+.0f%%", pct)
             return ComparisonStyle(color: .blue,
                                    icon: "drop.fill",
-                                   headline: "Onder plan (\(String(format: "%+.0f", pct))% TRIMP)")
+                                   headline: String(localized: "Onder plan (\(pctStr) TRIMP)"))
         case .insufficientData:
             // Already filtered out in `comparisonContent`, but we keep a
             // sane fallback so the switch is exhaustive.
             return ComparisonStyle(color: .secondary,
                                    icon: "questionmark.circle",
-                                   headline: "Geen vergelijking")
+                                   headline: String(localized: "Geen vergelijking"))
         }
     }
 
     private func comparisonSubtitle(for verdict: IntentExecutionVerdict, planned plannedActivity: String) -> String {
         switch verdict {
+        // Epic #37 story 37.1c: rendered verbatim -> resolve via the catalog. Activity names
+        // interpolate as %@ (data).
         case .match:
-            return "Gepland: \(plannedActivity) → Uitgevoerd: \(activity.displayName). Type én belasting binnen marge."
+            return String(localized: "Gepland: \(plannedActivity) → Uitgevoerd: \(activity.displayName). Type én belasting binnen marge.")
         case .typeMismatch(let plannedType, let actualType):
-            let actualLabel = actualType?.displayName ?? "onbepaald"
-            return "Gepland: \(plannedActivity) (\(plannedType.displayName)) → Uitgevoerd: \(activity.displayName) (\(actualLabel))."
+            let actualLabel = actualType?.displayName ?? String(localized: "onbepaald")
+            return String(localized: "Gepland: \(plannedActivity) (\(plannedType.displayName)) → Uitgevoerd: \(activity.displayName) (\(actualLabel)).")
         case .overload, .underload:
-            return "Gepland: \(plannedActivity) → Uitgevoerd: \(activity.displayName)."
+            return String(localized: "Gepland: \(plannedActivity) → Uitgevoerd: \(activity.displayName).")
         case .insufficientData:
             return ""
         }
@@ -1258,7 +1269,8 @@ struct WorkoutAnalysisView: View {
                                           @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(title.uppercased())
+                // Epic #37 story 37.1c: localize the chart title (Dutch literal) before uppercasing.
+                Text(String(localized: String.LocalizationValue(title)).uppercased())
                     .font(.caption2).fontWeight(.semibold)
                     .kerning(0.5)
                     .foregroundStyle(.secondary)
@@ -1329,7 +1341,8 @@ struct WorkoutAnalysisView: View {
 
     private func statTile(label: String, value: String, icon: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Label(label, systemImage: icon)
+            // Epic #37 story 37.1c: label passed as a Dutch literal -> resolve via the catalog.
+            Label(LocalizedStringKey(label), systemImage: icon)
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text(value)
