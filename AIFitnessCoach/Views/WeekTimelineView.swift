@@ -324,11 +324,13 @@ private struct TodaySummaryRow: View {
         return workout.heartRateZone?.uppercased() ?? ""
     }
 
+    // Epic #37 story 37.1c: rendered via Text(todayLabel) -> verbatim. The "VANDAAG" prefix is
+    // localized; the date (%@) is locale-formatted.
     private var todayLabel: String {
         let f = DateFormatter()
         f.locale = AppLanguage.currentLocale
         f.dateFormat = "EEE d"
-        return "VANDAAG · \(f.string(from: Date()).uppercased())"
+        return String(localized: "VANDAAG · \(f.string(from: Date()).uppercased())")
     }
 
     private var subtitle: String {
@@ -591,13 +593,15 @@ struct TrainingDetailSheet: View {
         return f.string(from: workout.displayDate).uppercased()
     }
 
+    // Epic #37 story 37.1c: rendered via Text(activityBadge) -> verbatim, so localize the badge
+    // words. The activityType matching below runs against the raw Dutch plan strings (data).
     private var activityBadge: String {
         let t = workout.activityType.lowercased()
-        if t.contains("interval") { return "INTERVAL" }
-        if t.contains("duur") || t.contains("rit") || t.contains("z2") { return "DUUR" }
-        if t.contains("kracht") { return "KRACHT" }
-        if t.contains("lang") { return "LANGE DUUR" }
-        return workout.heartRateZone?.uppercased() ?? "TRAINING"
+        if t.contains("interval") { return String(localized: "INTERVAL") }
+        if t.contains("duur") || t.contains("rit") || t.contains("z2") { return String(localized: "DUUR") }
+        if t.contains("kracht") { return String(localized: "KRACHT") }
+        if t.contains("lang") { return String(localized: "LANGE DUUR") }
+        return workout.heartRateZone?.uppercased() ?? String(localized: "TRAINING")
     }
 
     private var subtitle: String {
@@ -628,11 +632,11 @@ struct TrainingDetailSheet: View {
         let isLong = duration >= 90
 
         if isLong {
-            return ("Maaltijd · 2u vooraf", "30g koolhydraten / 20 min + water", "Herstelmaaltijd binnen 45 min")
+            return (String(localized: "Maaltijd · 2u vooraf"), String(localized: "30g koolhydraten / 20 min + water"), String(localized: "Herstelmaaltijd binnen 45 min"))
         } else if isIntense {
-            return ("Lichte snack · 60 min vooraf", "Water", "Maaltijd binnen 90 min")
+            return (String(localized: "Lichte snack · 60 min vooraf"), String(localized: "Water"), String(localized: "Maaltijd binnen 90 min"))
         } else {
-            return ("Geen speciale voorbereiding", "Water", "Normale maaltijd")
+            return (String(localized: "Geen speciale voorbereiding"), String(localized: "Water"), String(localized: "Normale maaltijd"))
         }
     }
 
@@ -751,11 +755,16 @@ struct TrainingDetailSheet: View {
         return "sun.max.fill"
     }
 
+    // Epic #37 story 37.1c: rendered via Text(weatherAdvice(...)) -> verbatim, so localize each
+    // branch. The embedded cycling/training distinction is split into two full sentences.
     private func weatherAdvice(_ f: DayForecast) -> String {
-        if f.isRiskyForOutdoorTraining { return "Overweeg een alternatieve indoor training." }
-        if f.highCelsius > 25 { return "Warm — extra hydratatie aanbevolen." }
-        if f.windSpeedKmh < 20 && f.precipitationProbability < 0.2 { return "Prima \(workout.activityType.lowercased().contains("fiets") || workout.activityType.lowercased().contains("rit") ? "fietsweer" : "trainingsweeer")." }
-        return "Controleer het weer voor vertrek."
+        if f.isRiskyForOutdoorTraining { return String(localized: "Overweeg een alternatieve indoor training.") }
+        if f.highCelsius > 25 { return String(localized: "Warm — extra hydratatie aanbevolen.") }
+        if f.windSpeedKmh < 20 && f.precipitationProbability < 0.2 {
+            let isCycling = workout.activityType.lowercased().contains("fiets") || workout.activityType.lowercased().contains("rit")
+            return isCycling ? String(localized: "Prima fietsweer.") : String(localized: "Prima trainingsweer.")
+        }
+        return String(localized: "Controleer het weer voor vertrek.")
     }
 }
 
