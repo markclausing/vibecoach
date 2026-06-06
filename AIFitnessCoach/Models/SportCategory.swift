@@ -12,17 +12,18 @@ enum SportCategory: String, Codable, CaseIterable, Identifiable {
 
     var id: String { self.rawValue }
 
-    // Epic #37 story 37.1c: UI label resolved via the String Catalog. Not used in prompts
-    // (the lowercase activity-noun helper below feeds prompt context and stays Dutch).
+    // Epic #37 story 37.1c: NOT localized — this displayName is interpolated into coach prompts
+    // (WorkoutHistoryContextBuilder, ChatViewModel goal context), so it stays Dutch for prompt
+    // stability until 37.4 splits the UI label from the prompt term.
     var displayName: String {
         switch self {
-        case .running: return String(localized: "Hardlopen")
-        case .cycling: return String(localized: "Wielrennen")
-        case .swimming: return String(localized: "Zwemmen")
-        case .strength: return String(localized: "Krachttraining")
-        case .walking: return String(localized: "Wandelen")
-        case .triathlon: return String(localized: "Triatlon")
-        case .other: return String(localized: "Anders")
+        case .running: return "Hardlopen"
+        case .cycling: return "Wielrennen"
+        case .swimming: return "Zwemmen"
+        case .strength: return "Krachttraining"
+        case .walking: return "Wandelen"
+        case .triathlon: return "Triatlon"
+        case .other: return "Anders"
         }
     }
 

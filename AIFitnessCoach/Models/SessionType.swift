@@ -22,17 +22,18 @@ enum SessionType: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     /// Short name for UI context (Picker, badges).
-    /// Epic #37 story 37.1c: resolved via the String Catalog. Not used in prompts, so this is
-    /// UI-only. "VO₂max" has no catalog entry and falls back to itself.
+    /// Epic #37 story 37.1c: NOT localized — this displayName is interpolated into coach prompts
+    /// (LastWorkoutContextFormatter, IntentExecutionContextFormatter, WorkoutHistoryContextBuilder),
+    /// so it stays Dutch for prompt stability until 37.4 splits the UI label from the prompt term.
     var displayName: String {
         switch self {
         case .vo2Max:    return "VO₂max"
-        case .threshold: return String(localized: "Drempel")
-        case .tempo:     return String(localized: "Tempo")
-        case .endurance: return String(localized: "Duurtraining")
-        case .recovery:  return String(localized: "Herstel")
-        case .social:    return String(localized: "Sociaal")
-        case .race:      return String(localized: "Wedstrijd")
+        case .threshold: return "Drempel"
+        case .tempo:     return "Tempo"
+        case .endurance: return "Duurtraining"
+        case .recovery:  return "Herstel"
+        case .social:    return "Sociaal"
+        case .race:      return "Wedstrijd"
         }
     }
 
