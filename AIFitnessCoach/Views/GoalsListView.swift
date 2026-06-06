@@ -251,9 +251,11 @@ struct GoalsListView: View {
         let segments = phaseSegments(for: goal)
         let totalW   = max(1, segments.reduce(0) { $0 + $1.weeks })
 
+        // Epic #37 story 37.1c: assigned to a var then Text(weekLabel) -> verbatim. The phase
+        // name (%@) and counts (%lld) interpolate into a catalog format key.
         let weekLabel: String = {
             if let g = gap {
-                return "\(currentPhase.displayName) · week \(g.phaseWeekNumber) van \(g.phaseTotalWeeks)"
+                return String(localized: "\(currentPhase.displayName) · week \(g.phaseWeekNumber) van \(g.phaseTotalWeeks)")
             }
             return currentPhase.displayName
         }()
@@ -542,15 +544,17 @@ struct GoalsListView: View {
         let cal = Calendar.current
 
         switch goal.currentPhase {
+        // Epic #37 story 37.1c: rendered via Text(nextLabel) -> verbatim. Phase names stay
+        // English (matching TrainingPhase.displayName); the date interpolates as %@.
         case .baseBuilding:
             let d = cal.date(byAdding: .weekOfYear, value: -12, to: goal.targetDate)!
-            return "Build start \(df.string(from: d))"
+            return String(localized: "Build start \(df.string(from: d))")
         case .buildPhase:
             let d = cal.date(byAdding: .weekOfYear, value: -4, to: goal.targetDate)!
-            return "Peak start \(df.string(from: d))"
+            return String(localized: "Peak start \(df.string(from: d))")
         case .peakPhase:
             let d = cal.date(byAdding: .weekOfYear, value: -2, to: goal.targetDate)!
-            return "Taper start \(df.string(from: d))"
+            return String(localized: "Taper start \(df.string(from: d))")
         case .tapering, nil:
             return nil
         }
@@ -642,7 +646,9 @@ private struct MilestoneTimelineRow: View {
                 Text(item.date)
                     .font(.caption2).fontWeight(.semibold)
                     .foregroundColor(item.isCompleted ? accentColor : .secondary)
-                Text(item.label)
+                // Epic #37 story 37.1c: milestone label resolved via the catalog (item.date is
+                // a pre-formatted date string and stays verbatim).
+                Text(LocalizedStringKey(item.label))
                     .font(.caption)
                     .foregroundColor(item.isCompleted ? .primary : .secondary)
             }
@@ -667,7 +673,9 @@ private struct PhaseProgressCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(label)
+                // Epic #37 story 37.1c: `label` is a String passed by the caller, resolved
+                // via the catalog. valueCurrent/valueTarget/unit stay verbatim (data + units).
+                Text(LocalizedStringKey(label))
                     .font(.caption).fontWeight(.medium)
                     .foregroundColor(.primary)
                 Spacer()

@@ -233,16 +233,18 @@ struct VibeScoreCardView: View {
                         .foregroundColor(.secondary)
                         .padding(.top, 2)
                 } else if let r = readiness {
+                    // Epic #37 story 37.1c: computed String rendered via Text(label) -> verbatim,
+                    // so resolve each branch via the String Catalog.
                     let label: String = {
                         // Epic 18: injury risk overrides the recovery status
                         switch injuryRiskLevel {
-                        case .risk:    return "Voorzichtig — Blessurerisico"
-                        case .caution: return "Let op — Actieve Klachten"
+                        case .risk:    return String(localized: "Voorzichtig — Blessurerisico")
+                        case .caution: return String(localized: "Let op — Actieve Klachten")
                         case .safe: break
                         }
-                        if r.readinessScore >= 80 { return "Optimaal Hersteld" }
-                        if r.readinessScore >= 50 { return "Matig Hersteld" }
-                        return "Focus op Herstel"
+                        if r.readinessScore >= 80 { return String(localized: "Optimaal Hersteld") }
+                        if r.readinessScore >= 50 { return String(localized: "Matig Hersteld") }
+                        return String(localized: "Focus op Herstel")
                     }()
                     Text(label)
                         .font(.headline)
@@ -350,7 +352,8 @@ private struct SleepStagesBarView: View {
                 // (Management by Exception: no label when good/excellent)
                 let deepR = ratio(deepMinutes)
                 if deepR < 0.15 {
-                    let qualLabel = deepR >= 0.10 ? "Diep: Matig" : "Diep: Onvoldoende"
+                    // Epic #37 story 37.1c: assigned to a var then Text(qualLabel) -> verbatim.
+                    let qualLabel = deepR >= 0.10 ? String(localized: "Diep: Matig") : String(localized: "Diep: Onvoldoende")
                     Text(qualLabel)
                         .font(.caption2)
                         .fontWeight(.semibold)
@@ -472,9 +475,9 @@ struct PostWorkoutCheckinCard: View {
         let calendar = Calendar.current
         let relativeDay: String
         if calendar.isDateInToday(activity.startDate) {
-            relativeDay = "Vandaag"
+            relativeDay = String(localized: "Vandaag")
         } else if calendar.isDateInYesterday(activity.startDate) {
-            relativeDay = "Gisteren"
+            relativeDay = String(localized: "Gisteren")
         } else {
             let formatter = DateFormatter()
             formatter.dateFormat = "d MMM"
@@ -544,7 +547,7 @@ struct PostWorkoutCheckinCard: View {
                                     .font(.title2)
                                     .symbolRenderingMode(.hierarchical)
                                     .foregroundStyle(selectedMood == mood.icon ? themeManager.primaryAccentColor : Color.secondary)
-                                Text(mood.label)
+                                Text(LocalizedStringKey(mood.label))
                                     .font(.caption2)
                                     .foregroundColor(selectedMood == mood.icon ? .primary : .secondary)
                             }
@@ -860,11 +863,12 @@ struct SingleGoalBurndownView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
+                        // Epic #37 story 37.1c: computed String rendered via Text(statusText).
                         let statusText: String = {
-                            if isTaperingOverload { return "Waarschuwing: Je traint te hard in je taper-fase! Neem rust." }
-                            if isGreen { return "Je ligt perfect op schema!" }
-                            if isOrange { return "Je ligt iets achter op schema." }
-                            return "Actie vereist! Je haalt het doel niet met dit (geplande) tempo."
+                            if isTaperingOverload { return String(localized: "Waarschuwing: Je traint te hard in je taper-fase! Neem rust.") }
+                            if isGreen { return String(localized: "Je ligt perfect op schema!") }
+                            if isOrange { return String(localized: "Je ligt iets achter op schema.") }
+                            return String(localized: "Actie vereist! Je haalt het doel niet met dit (geplande) tempo.")
                         }()
                         Text(statusText)
                             .font(.caption2)
@@ -1204,14 +1208,16 @@ struct DashboardView: View {
         let date = Date(timeIntervalSince1970: lastAnalysisTimestamp)
         let formatter = DateFormatter()
         formatter.locale = AppLanguage.currentLocale
+        // Epic #37 story 37.1c: the quoted literals inside the date format ('vandaag om') and
+        // the prefix below are localized via the String Catalog; HH:mm / d MMM are locale-driven.
         if Calendar.current.isDateInToday(date) {
-            formatter.dateFormat = "'vandaag om' HH:mm"
+            formatter.dateFormat = String(localized: "'vandaag om' HH:mm")
         } else if Calendar.current.isDateInYesterday(date) {
-            formatter.dateFormat = "'gisteren om' HH:mm"
+            formatter.dateFormat = String(localized: "'gisteren om' HH:mm")
         } else {
-            formatter.dateFormat = "d MMM 'om' HH:mm"
+            formatter.dateFormat = String(localized: "d MMM 'om' HH:mm")
         }
-        return "Laatste update: \(formatter.string(from: date))"
+        return String(localized: "Laatste update: \(formatter.string(from: date))")
     }
 
     // MARK: - Contextual TRIMP banner status (ACWR-based)
