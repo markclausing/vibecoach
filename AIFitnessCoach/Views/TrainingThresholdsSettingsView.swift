@@ -26,10 +26,12 @@ struct TrainingThresholdsSettingsView: View {
         case maxHR, restingHR, lthr, ftp
         var id: String { rawValue }
 
+        // Epic #37 story 37.1c: rendered via Text(kind.label) -> verbatim. "Rust HR" is the
+        // only Dutch label; the rest are technical abbreviations that fall back to themselves.
         var label: String {
             switch self {
             case .maxHR:      return "Max HR"
-            case .restingHR:  return "Rust HR"
+            case .restingHR:  return String(localized: "Rust HR")
             case .lthr:       return "LTHR"
             case .ftp:        return "FTP"
             }
@@ -53,10 +55,10 @@ struct TrainingThresholdsSettingsView: View {
 
         var helpText: String {
             switch self {
-            case .maxHR:      return "Hoogste hartslag tijdens een max-inspanning."
-            case .restingHR:  return "Gemiddelde hartslag in volledige rust (ochtend, voor opstaan)."
-            case .lthr:       return "Lactate Threshold HR — hoogste hartslag die je ~30 min volhoudt."
-            case .ftp:        return "Functional Threshold Power — vermogen dat je ~1 uur volhoudt."
+            case .maxHR:      return String(localized: "Hoogste hartslag tijdens een max-inspanning.")
+            case .restingHR:  return String(localized: "Gemiddelde hartslag in volledige rust (ochtend, voor opstaan).")
+            case .lthr:       return String(localized: "Lactate Threshold HR — hoogste hartslag die je ~30 min volhoudt.")
+            case .ftp:        return String(localized: "Functional Threshold Power — vermogen dat je ~1 uur volhoudt.")
             }
         }
 
@@ -182,7 +184,9 @@ struct TrainingThresholdsSettingsView: View {
         .padding(.horizontal)
     }
 
-    private func actionRow(icon: String, title: String, subtitle: String) -> some View {
+    // Epic #37 story 37.1c: title/subtitle as LocalizedStringKey so the literal (and ternary-of-
+    // literal) call sites localize via the catalog.
+    private func actionRow(icon: String, title: LocalizedStringKey, subtitle: LocalizedStringKey) -> some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .foregroundStyle(themeManager.primaryAccentColor)
@@ -241,7 +245,9 @@ struct TrainingThresholdsSettingsView: View {
 
     private func zoneList(title: String, items: [String]) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption.weight(.semibold))
+            // Epic #37 story 37.1c: title resolved via the catalog (handles both the computed
+            // heartRateMethodLabel and literal callers). items are zone data -> verbatim.
+            Text(LocalizedStringKey(title)).font(.caption.weight(.semibold))
                 .padding(.horizontal, 14)
             ForEach(items, id: \.self) { line in
                 Text(line).font(.caption.monospacedDigit())
@@ -296,10 +302,11 @@ struct TrainingThresholdsSettingsView: View {
         }
     }
 
+    // Epic #37 story 37.1c: rendered via Text(badge) -> verbatim, so localize here.
     private func sourceBadge(for source: ThresholdSource?) -> String? {
         switch source {
-        case .automatic:  return "Auto · uit HK-historie"
-        case .manual:     return "Handmatig"
+        case .automatic:  return String(localized: "Auto · uit HK-historie")
+        case .manual:     return String(localized: "Handmatig")
         case .strava:     return "Strava"
         case .none:       return nil
         }
@@ -324,10 +331,10 @@ struct TrainingThresholdsSettingsView: View {
         // after the save we detect the mismatch.
         let persisted = UserProfileService.cachedThreshold(forKey: kind.storageKey)
         if persisted?.value != intent?.value {
-            feedbackMessage = "\(kind.label) opslaan mislukt — probeer opnieuw."
+            feedbackMessage = String(localized: "\(kind.label) opslaan mislukt — probeer opnieuw.")
             AppLoggers.physiologicalThreshold.error("Round-trip-check faalde voor \(kind.label, privacy: .public)")
         } else {
-            feedbackMessage = "\(kind.label) bijgewerkt."
+            feedbackMessage = String(localized: "\(kind.label) bijgewerkt.")
         }
     }
 
@@ -344,9 +351,9 @@ struct TrainingThresholdsSettingsView: View {
                 run.result.lactateThresholdHR.map { "LTHR \(Int($0))" }
             ].compactMap { $0 }
             if detected.isEmpty {
-                feedbackMessage = "Te weinig HK-data om drempels te schatten — log nog wat trainingen en probeer opnieuw."
+                feedbackMessage = String(localized: "Te weinig HK-data om drempels te schatten — log nog wat trainingen en probeer opnieuw.")
             } else {
-                feedbackMessage = "Gedetecteerd uit \(run.workoutsAnalyzed) workouts + \(run.restingDaysAnalyzed) rust-dagen: \(detected.joined(separator: ", ")). Handmatige waarden zijn niet overschreven."
+                feedbackMessage = String(localized: "Gedetecteerd uit \(run.workoutsAnalyzed) workouts + \(run.restingDaysAnalyzed) rust-dagen: \(detected.joined(separator: ", ")). Handmatige waarden zijn niet overschreven.")
             }
         }
     }
@@ -365,15 +372,15 @@ struct TrainingThresholdsSettingsView: View {
                             forKey: UserProfileService.ftpKey
                         )
                         profile = UserProfileService.cachedProfile()
-                        feedbackMessage = "FTP \(ftp) W geïmporteerd uit Strava."
+                        feedbackMessage = String(localized: "FTP \(ftp) W geïmporteerd uit Strava.")
                     } else {
-                        feedbackMessage = "Strava heeft geen FTP in je profiel staan. Voeg 'm daar toe of vul 'm hier handmatig in."
+                        feedbackMessage = String(localized: "Strava heeft geen FTP in je profiel staan. Voeg 'm daar toe of vul 'm hier handmatig in.")
                     }
                 }
             } catch {
                 await MainActor.run {
                     isImportingFTP = false
-                    feedbackMessage = "Strava-import mislukt: \(error.localizedDescription)"
+                    feedbackMessage = String(localized: "Strava-import mislukt: \(error.localizedDescription)")
                 }
             }
         }

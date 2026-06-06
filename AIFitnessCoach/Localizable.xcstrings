@@ -5414,7 +5414,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "VISTA DE ZONAS"
+            "value": "VISTA PREVIA DE ZONAS"
           }
         }
       }
@@ -6999,6 +6999,512 @@
           "stringUnit": {
             "state": "translated",
             "value": "No vinculado"
+          }
+        }
+      }
+    },
+    "Rust HR": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resting HR"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruhe-HF"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FC en reposo"
+          }
+        }
+      }
+    },
+    "Hoogste hartslag tijdens een max-inspanning.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Highest heart rate during a max effort."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Höchste Herzfrequenz bei einer Maximalbelastung."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frecuencia cardíaca máxima durante un esfuerzo máximo."
+          }
+        }
+      }
+    },
+    "Gemiddelde hartslag in volledige rust (ochtend, voor opstaan).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Average heart rate at full rest (morning, before getting up)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durchschnittliche Herzfrequenz in völliger Ruhe (morgens, vor dem Aufstehen)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Frecuencia cardíaca media en reposo total (mañana, antes de levantarse)."
+          }
+        }
+      }
+    },
+    "Lactate Threshold HR — hoogste hartslag die je ~30 min volhoudt.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lactate Threshold HR — the highest heart rate you can sustain for ~30 min."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laktatschwellen-HF — höchste Herzfrequenz, die du ~30 Min. hältst."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FC de umbral de lactato: la frecuencia cardíaca más alta que mantienes ~30 min."
+          }
+        }
+      }
+    },
+    "Functional Threshold Power — vermogen dat je ~1 uur volhoudt.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Functional Threshold Power — the power you can sustain for ~1 hour."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Functional Threshold Power — Leistung, die du ~1 Stunde hältst."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Functional Threshold Power: la potencia que mantienes ~1 hora."
+          }
+        }
+      }
+    },
+    "HR-zones (Friel · LTHR-gebaseerd)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HR zones (Friel · LTHR-based)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HF-Zonen (Friel · LTHR-basiert)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zonas de FC (Friel · basadas en LTHR)"
+          }
+        }
+      }
+    },
+    "HR-zones (Karvonen · max + rest)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HR zones (Karvonen · max + rest)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HF-Zonen (Karvonen · max + Ruhe)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zonas de FC (Karvonen · máx + reposo)"
+          }
+        }
+      }
+    },
+    "Power-zones (Coggan)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Power zones (Coggan)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leistungszonen (Coggan)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zonas de potencia (Coggan)"
+          }
+        }
+      }
+    },
+    "Auto · uit HK-historie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto · from HK history"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto · aus HK-Verlauf"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto · del historial de HK"
+          }
+        }
+      }
+    },
+    "Handmatig": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manuell"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manual"
+          }
+        }
+      }
+    },
+    "%@ opslaan mislukt — probeer opnieuw.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to save %@ — try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ konnte nicht gespeichert werden — versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo guardar %@: inténtalo de nuevo."
+          }
+        }
+      }
+    },
+    "%@ bijgewerkt.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ updated."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ aktualisiert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ actualizado."
+          }
+        }
+      }
+    },
+    "Te weinig HK-data om drempels te schatten — log nog wat trainingen en probeer opnieuw.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too little HK data to estimate thresholds — log a few more workouts and try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zu wenig HK-Daten, um Schwellen zu schätzen — logge ein paar Trainings mehr und versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pocos datos de HK para estimar los umbrales: registra más entrenamientos e inténtalo de nuevo."
+          }
+        }
+      }
+    },
+    "FTP %lld W geïmporteerd uit Strava.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FTP %lld W imported from Strava."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FTP %lld W aus Strava importiert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FTP %lld W importado de Strava."
+          }
+        }
+      }
+    },
+    "Strava heeft geen FTP in je profiel staan. Voeg 'm daar toe of vul 'm hier handmatig in.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strava has no FTP in your profile. Add it there or enter it here manually."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strava hat keinen FTP in deinem Profil. Füge ihn dort hinzu oder gib ihn hier manuell ein."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strava no tiene FTP en tu perfil. Añádelo allí o introdúcelo aquí manualmente."
+          }
+        }
+      }
+    },
+    "Strava-import mislukt: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strava import failed: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strava-Import fehlgeschlagen: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error al importar de Strava: %@"
+          }
+        }
+      }
+    },
+    "Bezig met detecteren…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detecting…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erkennung läuft…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectando…"
+          }
+        }
+      }
+    },
+    "Detecteer uit HK historie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detect from HK history"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus HK-Verlauf erkennen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectar del historial de HK"
+          }
+        }
+      }
+    },
+    "Kijkt 6 maanden terug naar je workouts en rust-HR.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Looks back 6 months at your workouts and resting HR."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schaut 6 Monate auf deine Workouts und Ruhe-HF zurück."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisa 6 meses de tus entrenamientos y FC en reposo."
+          }
+        }
+      }
+    },
+    "Bezig met importeren…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importing…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import läuft…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importando…"
+          }
+        }
+      }
+    },
+    "Importeer FTP van Strava": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import FTP from Strava"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FTP aus Strava importieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar FTP de Strava"
+          }
+        }
+      }
+    },
+    "Gebruikt de FTP uit je Strava-profiel, indien ingevoerd.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses the FTP from your Strava profile, if set."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwendet den FTP aus deinem Strava-Profil, falls vorhanden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa el FTP de tu perfil de Strava, si está configurado."
+          }
+        }
+      }
+    },
+    "Gedetecteerd uit %lld workouts + %lld rust-dagen: %@. Handmatige waarden zijn niet overschreven.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detected from %1$lld workouts + %2$lld rest days: %3$@. Manual values were not overwritten."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aus %1$lld Workouts + %2$lld Ruhetagen erkannt: %3$@. Manuelle Werte wurden nicht überschrieben."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detectado a partir de %1$lld entrenamientos + %2$lld días de descanso: %3$@. Los valores manuales no se sobrescribieron."
           }
         }
       }
