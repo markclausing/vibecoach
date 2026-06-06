@@ -5,10 +5,10 @@
     "—": {},
     "**%@** was +%@%% boven je gemiddelde training (%@ TRIMP).": {
       "localizations": {
-        "nl": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "**%1$@** was +%2$@%% boven je gemiddelde training (%3$@ TRIMP)."
+            "state": "translated",
+            "value": "**%1$@** lag +%2$@%% über deinem Durchschnittstraining (%3$@ TRIMP)."
           }
         },
         "en": {
@@ -17,32 +17,32 @@
             "value": "**%1$@** was +%2$@%% above your average workout (%3$@ TRIMP)."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "**%1$@** lag +%2$@%% über deinem Durchschnittstraining (%3$@ TRIMP)."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "**%1$@** fue +%2$@%% por encima de tu entrenamiento medio (%3$@ TRIMP)."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "new",
+            "value": "**%1$@** was +%2$@%% boven je gemiddelde training (%3$@ TRIMP)."
           }
         }
       }
     },
     "**De Prijs:** In het rood (Zone 4-5) trainen scoort exponentieel hoger door verzuring en spierschade.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "**The Price:** Training in the red (Zone 4-5) scores exponentially higher due to acidosis and muscle damage."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "**Der Preis:** Training im roten Bereich (Zone 4-5) wird durch Übersäuerung und Muskelschäden exponentiell höher bewertet."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**The Price:** Training in the red (Zone 4-5) scores exponentially higher due to acidosis and muscle damage."
           }
         },
         "es": {
@@ -55,16 +55,16 @@
     },
     "**Hoge score:** Je zenuwstelsel is optimaal hersteld en klaar voor zware trainingsbelasting.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "**High score:** Your nervous system is optimally recovered and ready for heavy training load."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "**Hoher Score:** Dein Nervensystem ist optimal erholt und bereit für hohe Trainingsbelastung."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**High score:** Your nervous system is optimally recovered and ready for heavy training load."
           }
         },
         "es": {
@@ -77,16 +77,16 @@
     },
     "**HRV (50%):** Hoger dan jouw 7-daagse gemiddelde = klaar voor belasting. Meer dan 20% eronder = rode vlag voor overtraining.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "**HRV (50%):** Higher than your 7-day average = ready for load. More than 20% below = a red flag for overtraining."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "**HRV (50%):** Höher als dein 7-Tage-Durchschnitt = bereit für Belastung. Mehr als 20% darunter = Warnsignal für Übertraining."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**HRV (50%):** Higher than your 7-day average = ready for load. More than 20% below = a red flag for overtraining."
           }
         },
         "es": {
@@ -99,16 +99,16 @@
     },
     "**Intensiteit:** Je hartslag gemeten tegen je persoonlijke maximum.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "**Intensity:** Your heart rate measured against your personal maximum."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "**Intensität:** Deine Herzfrequenz gemessen an deinem persönlichen Maximum."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**Intensity:** Your heart rate measured against your personal maximum."
           }
         },
         "es": {
@@ -121,16 +121,16 @@
     },
     "**Lage score:** Signaal van je lichaam om gas terug te nemen en overtraining te voorkomen.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "**Low score:** A signal from your body to ease off and prevent overtraining."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "**Niedriger Score:** Ein Signal deines Körpers, kürzerzutreten und Übertraining zu vermeiden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**Low score:** A signal from your body to ease off and prevent overtraining."
           }
         },
         "es": {
@@ -143,16 +143,16 @@
     },
     "**Slaap (50%):** 8+ uur = vol hersteld. Onder de 5 uur = uitgeput zenuwstelsel.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "**Sleep (50%):** 8+ hours = fully recovered. Under 5 hours = exhausted nervous system."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "**Schlaf (50%):** 8+ Stunden = voll erholt. Unter 5 Stunden = erschöpftes Nervensystem."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**Sleep (50%):** 8+ hours = fully recovered. Under 5 hours = exhausted nervous system."
           }
         },
         "es": {
@@ -165,16 +165,16 @@
     },
     "**Volume:** De basis is de tijd die je sport.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "**Volume:** The basis is the time you spend on sport."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "**Volumen:** Die Basis ist die Zeit, die du Sport machst."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "**Volume:** The basis is the time you spend on sport."
           }
         },
         "es": {
@@ -198,16 +198,16 @@
     "/ 100": {},
     "/ dag": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "/ day"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "/ Tag"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "/ day"
           }
         },
         "es": {
@@ -282,16 +282,16 @@
     },
     "%@ dagen": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ days"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "%@ Tage"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ days"
           }
         },
         "es": {
@@ -304,16 +304,16 @@
     },
     "%@ dagen te gaan": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ days to go"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Noch %@ Tage"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ days to go"
           }
         },
         "es": {
@@ -326,16 +326,16 @@
     },
     "%@ modellen": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ models"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "%@ Modelle"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ models"
           }
         },
         "es": {
@@ -348,10 +348,10 @@
     },
     "%@: %@ /wk | Nodig: %@ /wk (%@)": {
       "localizations": {
-        "nl": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "%1$@: %2$@ /wk | Nodig: %3$@ /wk (%4$@)"
+            "state": "translated",
+            "value": "%1$@: %2$@ /Wo | Benötigt: %3$@ /Wo (%4$@)"
           }
         },
         "en": {
@@ -360,16 +360,16 @@
             "value": "%1$@: %2$@ /wk | Needed: %3$@ /wk (%4$@)"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@: %2$@ /Wo | Benötigt: %3$@ /Wo (%4$@)"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "%1$@: %2$@ /sem | Necesario: %3$@ /sem (%4$@)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "new",
+            "value": "%1$@: %2$@ /wk | Nodig: %3$@ /wk (%4$@)"
           }
         }
       }
@@ -391,16 +391,16 @@
     "• %@": {},
     "⚠️ Te hard in taper-fase! Neem rust.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚠️ Too hard in the taper phase! Take rest."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "⚠️ Zu hart in der Taper-Phase! Ruh dich aus."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⚠️ Too hard in the taper phase! Take rest."
           }
         },
         "es": {
@@ -414,13 +414,13 @@
     "🏁": {},
     "🏁 %@d": {
       "localizations": {
-        "en": {
+        "de": {
           "stringUnit": {
             "state": "translated",
             "value": "🏁 %@d"
           }
         },
-        "de": {
+        "en": {
           "stringUnit": {
             "state": "translated",
             "value": "🏁 %@d"
@@ -437,16 +437,16 @@
     "🏆": {},
     "3 dagen": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 days"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "3 Tage"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 days"
           }
         },
         "es": {
@@ -459,16 +459,16 @@
     },
     "14-DAAGSE TREND": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "14-DAY TREND"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "14-TAGE-TREND"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "14-DAY TREND"
           }
         },
         "es": {
@@ -483,16 +483,16 @@
     "112": {},
     "AANPASSING IN JE PLAN": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ADJUSTMENT TO YOUR PLAN"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "ANPASSUNG IN DEINEM PLAN"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ADJUSTMENT TO YOUR PLAN"
           }
         },
         "es": {
@@ -505,16 +505,16 @@
     },
     "Actief": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Active"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Aktiv"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Active"
           }
         },
         "es": {
@@ -527,16 +527,16 @@
     },
     "Afgeleid uit je trainingsgeschiedenis. Sync 1 jaar aan historie om de coach context te geven over je fitnessniveau.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Derived from your training history. Sync 1 year of history to give the coach context about your fitness level."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Abgeleitet aus deiner Trainingshistorie. Synchronisiere 1 Jahr Historie, um dem Coach Kontext zu deinem Fitnessniveau zu geben."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Derived from your training history. Sync 1 year of history to give the coach context about your fitness level."
           }
         },
         "es": {
@@ -573,16 +573,16 @@
     },
     "AI Provider": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI Provider"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "KI-Anbieter"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Provider"
           }
         },
         "es": {
@@ -595,16 +595,16 @@
     },
     "AI PROVIDER": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI PROVIDER"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "KI-ANBIETER"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI PROVIDER"
           }
         },
         "es": {
@@ -617,16 +617,16 @@
     },
     "API Sleutel": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "API Key"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "API-Schlüssel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API Key"
           }
         },
         "es": {
@@ -639,16 +639,16 @@
     },
     "App-data opnieuw opgebouwd": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "App data rebuilt"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "App-Daten neu aufgebaut"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App data rebuilt"
           }
         },
         "es": {
@@ -707,16 +707,16 @@
     },
     "Begrepen, sluit": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Got it, close"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Verstanden, schließen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got it, close"
           }
         },
         "es": {
@@ -729,16 +729,16 @@
     },
     "Beide bronnen syncen altijd. Je voorkeur bepaalt welke bron de coach als eerste aanspreekt voor de huidige status.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Both sources always sync. Your preference determines which source the coach consults first for the current status."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Beide Quellen synchronisieren immer. Deine Präferenz bestimmt, welche Quelle der Coach zuerst für den aktuellen Status heranzieht."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Both sources always sync. Your preference determines which source the coach consults first for the current status."
           }
         },
         "es": {
@@ -751,16 +751,16 @@
     },
     "Bekijk": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "View"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Ansehen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View"
           }
         },
         "es": {
@@ -773,16 +773,16 @@
     },
     "Bekijk het herstelplan": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "View the recovery plan"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Erholungsplan ansehen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View the recovery plan"
           }
         },
         "es": {
@@ -795,16 +795,16 @@
     },
     "Belasting": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Load"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Belastung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Load"
           }
         },
         "es": {
@@ -817,16 +817,16 @@
     },
     "Berekenen...": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Calculating..."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Berechnen..."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calculating..."
           }
         },
         "es": {
@@ -839,16 +839,16 @@
     },
     "Bij de update van %@ zijn enkele lokale instellingen opnieuw opgebouwd. Je workouts uit Apple Health en Strava zijn niet beïnvloed — controleer wel je doelen en eventuele blessures.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "During the update to %@ some local settings were rebuilt. Your workouts from Apple Health and Strava are unaffected — but do check your goals and any injuries."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Beim Update auf %@ wurden einige lokale Einstellungen neu aufgebaut. Deine Workouts aus Apple Health und Strava sind nicht betroffen — prüfe aber deine Ziele und etwaige Verletzungen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "During the update to %@ some local settings were rebuilt. Your workouts from Apple Health and Strava are unaffected — but do check your goals and any injuries."
           }
         },
         "es": {
@@ -861,16 +861,16 @@
     },
     "Bijsturing nodig": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adjustment needed"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Anpassung nötig"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjustment needed"
           }
         },
         "es": {
@@ -884,16 +884,16 @@
     "Blueprint": {},
     "Blueprint Voortgang": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Blueprint Progress"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Blueprint-Fortschritt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blueprint Progress"
           }
         },
         "es": {
@@ -930,16 +930,16 @@
     },
     "CHATGESCHIEDENIS": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CHAT HISTORY"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "CHATVERLAUF"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CHAT HISTORY"
           }
         },
         "es": {
@@ -952,16 +952,16 @@
     },
     "Circa %@ extra km/week voor het afstandsschema.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "About %@ extra km/week for the distance plan."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Etwa %@ zusätzliche km/Woche für den Distanzplan."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About %@ extra km/week for the distance plan."
           }
         },
         "es": {
@@ -997,16 +997,16 @@
     },
     "Coach analyseert de patronen…": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Coach is analysing the patterns…"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Coach analysiert die Muster…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coach is analysing the patterns…"
           }
         },
         "es": {
@@ -1019,16 +1019,16 @@
     },
     "Coach herberekent weekbelasting…": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Coach is recomputing the weekly load…"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Coach berechnet die Wochenbelastung neu…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coach is recomputing the weekly load…"
           }
         },
         "es": {
@@ -1041,16 +1041,16 @@
     },
     "Coach Insight": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Coach Insight"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Coach-Einblick"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coach Insight"
           }
         },
         "es": {
@@ -1063,16 +1063,16 @@
     },
     "Coach-analyse": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Coach analysis"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Coach-Analyse"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coach analysis"
           }
         },
         "es": {
@@ -1085,16 +1085,16 @@
     },
     "Controleer of de app toestemming heeft voor Workouts en Hartslag — anders blijft het Dashboard leeg.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Check that the app has permission for Workouts and Heart Rate — otherwise the Dashboard stays empty."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Prüfe, ob die App die Berechtigung für Workouts und Herzfrequenz hat — sonst bleibt das Dashboard leer."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check that the app has permission for Workouts and Heart Rate — otherwise the Dashboard stays empty."
           }
         },
         "es": {
@@ -1107,16 +1107,16 @@
     },
     "DAGEN": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DAYS"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "TAGE"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DAYS"
           }
         },
         "es": {
@@ -1129,16 +1129,16 @@
     },
     "De coach begint bij het primaire model. Bij overbelasting (503/429) schakelt hij automatisch over op het fallback-model.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The coach starts with the primary model. On overload (503/429) it automatically switches to the fallback model."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Der Coach beginnt mit dem primären Modell. Bei Überlastung (503/429) wechselt er automatisch zum Fallback-Modell."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The coach starts with the primary model. On overload (503/429) it automatically switches to the fallback model."
           }
         },
         "es": {
@@ -1151,16 +1151,16 @@
     },
     "De Vibe Score (0-100) is jouw dagelijkse lichaamsbatterij. We combineren je slaap van afgelopen nacht met je Heart Rate Variability (HRV) trend.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The Vibe Score (0-100) is your daily body battery. We combine last night's sleep with your Heart Rate Variability (HRV) trend."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Der Vibe Score (0-100) ist deine tägliche Körperbatterie. Wir kombinieren den Schlaf der letzten Nacht mit deinem Herzfrequenzvariabilitäts-Trend (HRV)."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Vibe Score (0-100) is your daily body battery. We combine last night's sleep with your Heart Rate Variability (HRV) trend."
           }
         },
         "es": {
@@ -1173,16 +1173,16 @@
     },
     "Deep Sync loopt op de achtergrond — kom over een paar minuten terug om de fysiologische details te zien.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deep Sync is running in the background — come back in a few minutes to see the physiological details."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Deep Sync läuft im Hintergrund — komm in ein paar Minuten zurück, um die physiologischen Details zu sehen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deep Sync is running in the background — come back in a few minutes to see the physiological details."
           }
         },
         "es": {
@@ -1195,13 +1195,13 @@
     },
     "Details": {
       "localizations": {
-        "en": {
+        "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Details"
           }
         },
-        "de": {
+        "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Details"
@@ -1217,16 +1217,16 @@
     },
     "DETAILS BIJ TIJDSTIP": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DETAILS BY TIME"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "DETAILS NACH ZEITPUNKT"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DETAILS BY TIME"
           }
         },
         "es": {
@@ -1239,16 +1239,16 @@
     },
     "DEZE WEEK · PLAN": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "THIS WEEK · PLAN"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "DIESE WOCHE · PLAN"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "THIS WEEK · PLAN"
           }
         },
         "es": {
@@ -1261,16 +1261,16 @@
     },
     "Doel toevoegen": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add goal"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Ziel hinzufügen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add goal"
           }
         },
         "es": {
@@ -1283,16 +1283,16 @@
     },
     "Doel TRIMP behaald!": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Goal TRIMP reached!"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Ziel-TRIMP erreicht!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Goal TRIMP reached!"
           }
         },
         "es": {
@@ -1305,16 +1305,16 @@
     },
     "Doeldatum is verstreken.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Target date has passed."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Zieldatum ist verstrichen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target date has passed."
           }
         },
         "es": {
@@ -1372,16 +1372,16 @@
     },
     "Duur: %@ min": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Duration: %@ min"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Dauer: %@ Min"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duration: %@ min"
           }
         },
         "es": {
@@ -1394,16 +1394,16 @@
     },
     "Eendaagse Race": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Single-day race"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Eintägiges Rennen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Single-day race"
           }
         },
         "es": {
@@ -1416,16 +1416,16 @@
     },
     "Eendaagse Tocht": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Single-day tour"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Eintägige Tour"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Single-day tour"
           }
         },
         "es": {
@@ -1438,16 +1438,16 @@
     },
     "Fase-Mijlpalen": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Phase Milestones"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Phasen-Meilensteine"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phase Milestones"
           }
         },
         "es": {
@@ -1460,16 +1460,16 @@
     },
     "Fysiologisch Profiel": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Physiological Profile"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Physiologisches Profil"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Physiological Profile"
           }
         },
         "es": {
@@ -1506,16 +1506,16 @@
     },
     "Geen HealthKit-data gevonden": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No HealthKit data found"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Keine HealthKit-Daten gefunden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No HealthKit data found"
           }
         },
         "es": {
@@ -1528,16 +1528,16 @@
     },
     "Geen recente Watch-data gevonden. We baseren je advies vandaag op je handmatige check-in.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No recent Watch data found. Today we base your advice on your manual check-in."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Keine aktuellen Watch-Daten gefunden. Heute basiert dein Rat auf deinem manuellen Check-in."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No recent Watch data found. Today we base your advice on your manual check-in."
           }
         },
         "es": {
@@ -1550,16 +1550,16 @@
     },
     "Geen verbinding": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No connection"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Keine Verbindung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No connection"
           }
         },
         "es": {
@@ -1572,16 +1572,16 @@
     },
     "Geen verlopen herinneringen.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No expired reminders."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Keine abgelaufenen Erinnerungen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No expired reminders."
           }
         },
         "es": {
@@ -1617,16 +1617,16 @@
     },
     "Gemini Modellen": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gemini Models"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Gemini-Modelle"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemini Models"
           }
         },
         "es": {
@@ -1637,18 +1637,41 @@
         }
       }
     },
-    "Gesynchroniseerd om %@": {
+    "Geslacht": {
+      "extractionState": "stale",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschlecht"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Synced at %@"
+            "value": "Sex"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sexo"
+          }
+        }
+      }
+    },
+    "Gesynchroniseerd om %@": {
+      "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Synchronisiert um %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced at %@"
           }
         },
         "es": {
@@ -1659,18 +1682,41 @@
         }
       }
     },
-    "Gewicht en lengte worden gesynchroniseerd naar HealthKit zodat het hele iOS-ecosysteem up-to-date blijft.": {
+    "Gewicht": {
+      "extractionState": "stale",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gewicht"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Weight and height are synced to HealthKit so the whole iOS ecosystem stays up to date."
+            "value": "Weight"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peso"
+          }
+        }
+      }
+    },
+    "Gewicht en lengte worden gesynchroniseerd naar HealthKit zodat het hele iOS-ecosysteem up-to-date blijft.": {
+      "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Gewicht und Größe werden mit HealthKit synchronisiert, damit das gesamte iOS-Ökosystem aktuell bleibt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weight and height are synced to HealthKit so the whole iOS ecosystem stays up to date."
           }
         },
         "es": {
@@ -1681,18 +1727,87 @@
         }
       }
     },
-    "Heel licht": {
+    "Goedemiddag": {
+      "extractionState": "stale",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guten Tag"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Very light"
+            "value": "Good afternoon"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buenas tardes"
+          }
+        }
+      }
+    },
+    "Goedemorgen": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guten Morgen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good morning"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buenos días"
+          }
+        }
+      }
+    },
+    "Goedenavond": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guten Abend"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Good evening"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buenas noches"
+          }
+        }
+      }
+    },
+    "Heel licht": {
+      "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Sehr leicht"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Very light"
           }
         },
         "es": {
@@ -1705,16 +1820,16 @@
     },
     "Herschrijf schema rondom verplaatste sessie%@": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rewrite plan around moved session%@"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Plan um verschobene Sitzung%@ neu schreiben"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rewrite plan around moved session%@"
           }
         },
         "es": {
@@ -1727,16 +1842,16 @@
     },
     "Herstart de app om de nieuwe taal volledig toe te passen.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Restart the app to fully apply the new language."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Starte die App neu, um die neue Sprache vollständig anzuwenden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restart the app to fully apply the new language."
           }
         },
         "es": {
@@ -1749,16 +1864,16 @@
     },
     "Herstel": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recovery"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Erholung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recovery"
           }
         },
         "es": {
@@ -1771,16 +1886,16 @@
     },
     "Herstelplan Actief": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recovery Plan Active"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Erholungsplan aktiv"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recovery Plan Active"
           }
         },
         "es": {
@@ -1793,16 +1908,16 @@
     },
     "Hervat om %@.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Resumes at %@."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Fortsetzung um %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumes at %@."
           }
         },
         "es": {
@@ -1815,16 +1930,16 @@
     },
     "Hoe ging je laatste training?": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "How was your last workout?"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Wie war dein letztes Training?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How was your last workout?"
           }
         },
         "es": {
@@ -1837,16 +1952,16 @@
     },
     "Hoe voel je je?": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "How do you feel?"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Wie fühlst du dich?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How do you feel?"
           }
         },
         "es": {
@@ -1859,16 +1974,16 @@
     },
     "Hoe voelen je klachten vandaag?": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "How do your symptoms feel today?"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Wie fühlen sich deine Beschwerden heute an?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How do your symptoms feel today?"
           }
         },
         "es": {
@@ -1881,16 +1996,16 @@
     },
     "Hoewel je weekdoel nog niet bereikt is, is rust nu de slimste stap.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Even though your weekly goal isn't met yet, rest is the smartest step now."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Auch wenn dein Wochenziel noch nicht erreicht ist, ist Ruhe jetzt der klügste Schritt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Even though your weekly goal isn't met yet, rest is the smartest step now."
           }
         },
         "es": {
@@ -1903,16 +2018,16 @@
     },
     "HRV 32 ms, –14 onder baseline. Ik verplaats je interval naar morgen.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "HRV 32 ms, –14 below baseline. I'm moving your interval to tomorrow."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "HRV 32 ms, –14 unter Baseline. Ich verschiebe dein Intervall auf morgen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HRV 32 ms, –14 below baseline. I'm moving your interval to tomorrow."
           }
         },
         "es": {
@@ -1925,16 +2040,16 @@
     },
     "Ik houd vast aan je **%@**": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I'm sticking to your **%@**"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Ich halte an deinem **%@** fest"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm sticking to your **%@**"
           }
         },
         "es": {
@@ -1947,16 +2062,16 @@
     },
     "Inspanning (RPE)": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Exertion (RPE)"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Anstrengung (RPE)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exertion (RPE)"
           }
         },
         "es": {
@@ -1992,16 +2107,16 @@
     },
     "Intensiteit: Zone %@": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Intensity: Zone %@"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Intensität: Zone %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intensity: Zone %@"
           }
         },
         "es": {
@@ -2012,18 +2127,41 @@
         }
       }
     },
-    "Je AI Coach is actief en klaar voor gebruik.": {
+    "jaar": {
+      "extractionState": "stale",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jahre"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your AI Coach is active and ready to use."
+            "value": "years"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "años"
+          }
+        }
+      }
+    },
+    "Je AI Coach is actief en klaar voor gebruik.": {
+      "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Dein KI-Coach ist aktiv und einsatzbereit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your AI Coach is active and ready to use."
           }
         },
         "es": {
@@ -2036,16 +2174,16 @@
     },
     "Je AI Coach slaapt": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your AI Coach is asleep"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Dein KI-Coach schläft"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your AI Coach is asleep"
           }
         },
         "es": {
@@ -2058,16 +2196,16 @@
     },
     "Je bent fysiologisch klaar voor dit doel!": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You're physiologically ready for this goal!"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Du bist physiologisch bereit für dieses Ziel!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're physiologically ready for this goal!"
           }
         },
         "es": {
@@ -2080,16 +2218,16 @@
     },
     "Je bent weer op de goede weg. Volg het schema van de coach om je doel te halen.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You're back on track. Follow the coach's plan to reach your goal."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Du bist wieder auf Kurs. Folge dem Plan des Coaches, um dein Ziel zu erreichen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're back on track. Follow the coach's plan to reach your goal."
           }
         },
         "es": {
@@ -2102,16 +2240,16 @@
     },
     "Je gesprekken gaan rechtstreeks naar je gekozen AI-provider — niet via onze servers. Je houdt zelf de controle over kosten, model en privacy.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your conversations go directly to your chosen AI provider — not through our servers. You stay in control of cost, model and privacy."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Deine Gespräche gehen direkt an deinen gewählten KI-Anbieter — nicht über unsere Server. Du behältst die Kontrolle über Kosten, Modell und Privatsphäre."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your conversations go directly to your chosen AI provider — not through our servers. You stay in control of cost, model and privacy."
           }
         },
         "es": {
@@ -2124,16 +2262,16 @@
     },
     "Je kunt de sleutel zelf later invoeren in Instellingen.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You can enter the key yourself later in Settings."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Du kannst den Schlüssel später selbst in den Einstellungen eingeben."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can enter the key yourself later in Settings."
           }
         },
         "es": {
@@ -2146,10 +2284,10 @@
     },
     "Je TRIMP deze week (%@) ligt achter op het weekdoel (%@). Pak de geplande trainingen op.": {
       "localizations": {
-        "nl": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "Je TRIMP deze week (%1$@) ligt achter op het weekdoel (%2$@). Pak de geplande trainingen op."
+            "state": "translated",
+            "value": "Dein TRIMP diese Woche (%1$@) liegt hinter dem Wochenziel (%2$@). Nimm die geplanten Trainings auf."
           }
         },
         "en": {
@@ -2158,26 +2296,26 @@
             "value": "Your TRIMP this week (%1$@) is behind the weekly goal (%2$@). Pick up the planned workouts."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dein TRIMP diese Woche (%1$@) liegt hinter dem Wochenziel (%2$@). Nimm die geplanten Trainings auf."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Tu TRIMP esta semana (%1$@) está por detrás del objetivo semanal (%2$@). Retoma los entrenamientos planificados."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Je TRIMP deze week (%1$@) ligt achter op het weekdoel (%2$@). Pak de geplande trainingen op."
           }
         }
       }
     },
     "Je Vibe Score is %@/100 — je lichaam is uitgeput. **%@** (TRIMP: %@) was zwaarder dan je herstel toelaat. Neem rust.": {
       "localizations": {
-        "nl": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "Je Vibe Score is %1$@/100 — je lichaam is uitgeput. **%2$@** (TRIMP: %3$@) was zwaarder dan je herstel toelaat. Neem rust."
+            "state": "translated",
+            "value": "Dein Vibe Score ist %1$@/100 — dein Körper ist erschöpft. **%2$@** (TRIMP: %3$@) war härter, als deine Erholung zulässt. Ruh dich aus."
           }
         },
         "en": {
@@ -2186,32 +2324,32 @@
             "value": "Your Vibe Score is %1$@/100 — your body is exhausted. **%2$@** (TRIMP: %3$@) was heavier than your recovery allows. Take rest."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dein Vibe Score ist %1$@/100 — dein Körper ist erschöpft. **%2$@** (TRIMP: %3$@) war härter, als deine Erholung zulässt. Ruh dich aus."
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Tu Vibe Score es %1$@/100 — tu cuerpo está agotado. **%2$@** (TRIMP: %3$@) fue más exigente de lo que tu recuperación permite. Descansa."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Je Vibe Score is %1$@/100 — je lichaam is uitgeput. **%2$@** (TRIMP: %3$@) was zwaarder dan je herstel toelaat. Neem rust."
           }
         }
       }
     },
     "Je Vibe Score staat op rood": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your Vibe Score is in the red"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Dein Vibe Score steht auf Rot"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Vibe Score is in the red"
           }
         },
         "es": {
@@ -2224,16 +2362,16 @@
     },
     "Je ziet zo een Apple-dialoog waarin je per type data toegang geeft.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You'll see an Apple dialog where you grant access per data type."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Du siehst gleich einen Apple-Dialog, in dem du den Zugriff pro Datentyp erteilst."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You'll see an Apple dialog where you grant access per data type."
           }
         },
         "es": {
@@ -2246,16 +2384,16 @@
     },
     "Jouw dagelijkse lichaamsbatterij (0-100)": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your daily body battery (0-100)"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Deine tägliche Körperbatterie (0-100)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your daily body battery (0-100)"
           }
         },
         "es": {
@@ -2268,16 +2406,16 @@
     },
     "Jouw Plan voor de komende 7 dagen": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your plan for the next 7 days"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Dein Plan für die nächsten 7 Tage"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your plan for the next 7 days"
           }
         },
         "es": {
@@ -2314,16 +2452,16 @@
     },
     "Jouw Trainingstraject": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your Training Journey"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Dein Trainingsweg"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Training Journey"
           }
         },
         "es": {
@@ -2336,16 +2474,16 @@
     },
     "Kies een nieuwe dag deze week. De coach respecteert je keuze in volgende suggesties.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose a new day this week. The coach respects your choice in future suggestions."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Wähle einen neuen Tag diese Woche. Der Coach respektiert deine Wahl in künftigen Vorschlägen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a new day this week. The coach respects your choice in future suggestions."
           }
         },
         "es": {
@@ -2358,16 +2496,16 @@
     },
     "Kleurintensiteit": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Colour intensity"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Farbintensität"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colour intensity"
           }
         },
         "es": {
@@ -2380,16 +2518,16 @@
     },
     "Kon live-lijst niet ophalen — fallback op ingebouwde modellen gebruikt. (%@)": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't fetch the live list — fell back to built-in models. (%@)"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Live-Liste konnte nicht geladen werden — Rückgriff auf eingebaute Modelle. (%@)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't fetch the live list — fell back to built-in models. (%@)"
           }
         },
         "es": {
@@ -2402,16 +2540,16 @@
     },
     "KORT": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SHORT"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "KURZ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SHORT"
           }
         },
         "es": {
@@ -2424,16 +2562,16 @@
     },
     "Laatste sync %@.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Last sync %@."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Letzte Synchronisierung %@."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last sync %@."
           }
         },
         "es": {
@@ -2444,18 +2582,41 @@
         }
       }
     },
-    "Leeftijd en geslacht worden gelezen uit Apple Gezondheid en zijn hier niet te bewerken. Gewicht en lengte schrijven we terug naar HealthKit.": {
+    "Leeftijd": {
+      "extractionState": "stale",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alter"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Age and sex are read from Apple Health and can't be edited here. Weight and height we write back to HealthKit."
+            "value": "Age"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edad"
+          }
+        }
+      }
+    },
+    "Leeftijd en geslacht worden gelezen uit Apple Gezondheid en zijn hier niet te bewerken. Gewicht en lengte schrijven we terug naar HealthKit.": {
+      "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Alter und Geschlecht werden aus Apple Health gelesen und sind hier nicht bearbeitbar. Gewicht und Größe schreiben wir zu HealthKit zurück."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Age and sex are read from Apple Health and can't be edited here. Weight and height we write back to HealthKit."
           }
         },
         "es": {
@@ -2468,16 +2629,16 @@
     },
     "Leeftijd en geslacht worden gelezen uit de iOS Gezondheid-app en zijn hier niet te bewerken.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Age and sex are read from the iOS Health app and can't be edited here."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Alter und Geschlecht werden aus der iOS-Health-App gelesen und sind hier nicht bearbeitbar."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Age and sex are read from the iOS Health app and can't be edited here."
           }
         },
         "es": {
@@ -2488,18 +2649,41 @@
         }
       }
     },
-    "Let op: Gezien je %@ was deze training extra belastend voor je herstel.": {
+    "Lengte": {
+      "extractionState": "stale",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Größe"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Note: given your %@, this workout was extra taxing on your recovery."
+            "value": "Height"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Altura"
+          }
+        }
+      }
+    },
+    "Let op: Gezien je %@ was deze training extra belastend voor je herstel.": {
+      "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Hinweis: Angesichts deines %@ war dieses Training besonders belastend für deine Erholung."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Note: given your %@, this workout was extra taxing on your recovery."
           }
         },
         "es": {
@@ -2534,16 +2718,16 @@
     },
     "Live lijst niet beschikbaar — %@. Ingebouwde lijst getoond.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Live list unavailable — %@. Showing built-in list."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Live-Liste nicht verfügbar — %@. Eingebaute Liste angezeigt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Live list unavailable — %@. Showing built-in list."
           }
         },
         "es": {
@@ -2556,16 +2740,16 @@
     },
     "Live opgehaald met je sleutel. Lukt dat niet, dan tonen we een ingebouwde lijst.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fetched live with your key. If that fails, we show a built-in list."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Live mit deinem Schlüssel geladen. Falls das fehlschlägt, zeigen wir eine eingebaute Liste."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetched live with your key. If that fails, we show a built-in list."
           }
         },
         "es": {
@@ -2578,16 +2762,16 @@
     },
     "Los dit op": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fix this"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Beheben"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fix this"
           }
         },
         "es": {
@@ -2600,16 +2784,16 @@
     },
     "Max HR, rust HR, LTHR en FTP. De coach gebruikt deze waarden om jouw zones te berekenen — anders gebruikt hij populatie-gemiddelden.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Max HR, resting HR, LTHR and FTP. The coach uses these values to compute your zones — otherwise it uses population averages."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Max. HF, Ruhe-HF, LTHR und FTP. Der Coach nutzt diese Werte, um deine Zonen zu berechnen — sonst verwendet er Bevölkerungsdurchschnitte."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max HR, resting HR, LTHR and FTP. The coach uses these values to compute your zones — otherwise it uses population averages."
           }
         },
         "es": {
@@ -2622,16 +2806,16 @@
     },
     "Maximaal": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Maximum"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Maximal"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum"
           }
         },
         "es": {
@@ -2644,16 +2828,16 @@
     },
     "Maximaal één bericht per doel per dag — alleen bij afwijkingen van je plan.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "At most one message per goal per day — only on deviations from your plan."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Höchstens eine Nachricht pro Ziel und Tag — nur bei Abweichungen von deinem Plan."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At most one message per goal per day — only on deviations from your plan."
           }
         },
         "es": {
@@ -2666,16 +2850,16 @@
     },
     "Meerdaagse Etappe": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Multi-day stage"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Mehrtägige Etappe"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Multi-day stage"
           }
         },
         "es": {
@@ -2688,16 +2872,16 @@
     },
     "MIJLPALEN & PROGNOSE": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "MILESTONES & FORECAST"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "MEILENSTEINE & PROGNOSE"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MILESTONES & FORECAST"
           }
         },
         "es": {
@@ -2710,16 +2894,16 @@
     },
     "Modellen ophalen…": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fetching models…"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Modelle werden geladen…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetching models…"
           }
         },
         "es": {
@@ -2732,16 +2916,16 @@
     },
     "Modellen van %@ ophalen met je sleutel…": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fetching %@ models with your key…"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "%@-Modelle mit deinem Schlüssel laden…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetching %@ models with your key…"
           }
         },
         "es": {
@@ -2776,16 +2960,16 @@
     },
     "Negeer": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ignore"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Ignorieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignore"
           }
         },
         "es": {
@@ -2798,16 +2982,16 @@
     },
     "Niet ingesteld": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Not set"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Nicht festgelegt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not set"
           }
         },
         "es": {
@@ -2820,16 +3004,16 @@
     },
     "Nog geen samples beschikbaar": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No samples available yet"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Noch keine Messwerte verfügbar"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No samples available yet"
           }
         },
         "es": {
@@ -2842,16 +3026,16 @@
     },
     "Nog geen schema voor deze week.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No plan for this week yet."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Noch kein Plan für diese Woche."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No plan for this week yet."
           }
         },
         "es": {
@@ -2864,16 +3048,16 @@
     },
     "Nog geen workouts gevonden — synchroniseer met HealthKit of Strava.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No workouts found yet — sync with HealthKit or Strava."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Noch keine Workouts gefunden — mit HealthKit oder Strava synchronisieren."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No workouts found yet — sync with HealthKit or Strava."
           }
         },
         "es": {
@@ -2910,16 +3094,16 @@
     },
     "nu": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "now"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "jetzt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "now"
           }
         },
         "es": {
@@ -2932,16 +3116,16 @@
     },
     "Nu": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Now"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Jetzt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Now"
           }
         },
         "es": {
@@ -2954,16 +3138,16 @@
     },
     "OF VRAAG": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "OR ASK"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "ODER FRAGE"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OR ASK"
           }
         },
         "es": {
@@ -2976,16 +3160,16 @@
     },
     "Omschrijving": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Description"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Beschreibung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Description"
           }
         },
         "es": {
@@ -2996,18 +3180,41 @@
         }
       }
     },
-    "Onthouden op %@": {
+    "Onbekend": {
+      "extractionState": "stale",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unbekannt"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Remembered on %@"
+            "value": "Unknown"
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconocido"
+          }
+        }
+      }
+    },
+    "Onthouden op %@": {
+      "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Gemerkt am %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remembered on %@"
           }
         },
         "es": {
@@ -3020,16 +3227,16 @@
     },
     "Open Chat": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open Chat"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Chat öffnen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Chat"
           }
         },
         "es": {
@@ -3042,16 +3249,16 @@
     },
     "Open de app opnieuw als je weer online bent.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reopen the app when you're back online."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Öffne die App erneut, sobald du wieder online bist."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reopen the app when you're back online."
           }
         },
         "es": {
@@ -3064,16 +3271,16 @@
     },
     "Open Instellingen": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open Settings"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Einstellungen öffnen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Settings"
           }
         },
         "es": {
@@ -3086,16 +3293,16 @@
     },
     "Opslaan": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Speichern"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
           }
         },
         "es": {
@@ -3108,16 +3315,16 @@
     },
     "Opslaan & Sync met HealthKit": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Save & Sync with HealthKit"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Speichern & mit HealthKit synchronisieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save & Sync with HealthKit"
           }
         },
         "es": {
@@ -3130,16 +3337,16 @@
     },
     "Opslaan…": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Saving…"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Speichern…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving…"
           }
         },
         "es": {
@@ -3176,16 +3383,16 @@
     },
     "Pas plan aan": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adjust plan"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Plan anpassen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adjust plan"
           }
         },
         "es": {
@@ -3198,16 +3405,16 @@
     },
     "Persoonlijke drempels die de coach gebruikt om jouw zones te berekenen. Laat ze leeg en de app gebruikt populatie-defaults (Tanaka voor max-HR, 60 BPM voor rust).": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Personal thresholds the coach uses to compute your zones. Leave them empty and the app uses population defaults (Tanaka for max HR, 60 BPM for rest)."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Persönliche Schwellen, die der Coach zur Berechnung deiner Zonen nutzt. Lass sie leer und die App verwendet Bevölkerungsstandards (Tanaka für max. HF, 60 BPM für Ruhe)."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal thresholds the coach uses to compute your zones. Leave them empty and the app uses population defaults (Tanaka for max HR, 60 BPM for rest)."
           }
         },
         "es": {
@@ -3220,16 +3427,16 @@
     },
     "Presteren / Zo snel mogelijk": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Perform / As fast as possible"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Leisten / So schnell wie möglich"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perform / As fast as possible"
           }
         },
         "es": {
@@ -3242,16 +3449,16 @@
     },
     "Probeer opnieuw": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Try again"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Erneut versuchen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
           }
         },
         "es": {
@@ -3264,16 +3471,16 @@
     },
     "Profiel ophalen via HealthKit…": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fetching profile via HealthKit…"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Profil über HealthKit laden…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetching profile via HealthKit…"
           }
         },
         "es": {
@@ -3286,16 +3493,16 @@
     },
     "Prognose": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Forecast"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Prognose"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forecast"
           }
         },
         "es": {
@@ -3308,16 +3515,16 @@
     },
     "Progressie & Prognoses": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Progress & Forecasts"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Fortschritt & Prognosen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Progress & Forecasts"
           }
         },
         "es": {
@@ -3330,16 +3537,16 @@
     },
     "RECENTE WORKOUTS": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RECENT WORKOUTS"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "LETZTE WORKOUTS"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RECENT WORKOUTS"
           }
         },
         "es": {
@@ -3352,16 +3559,16 @@
     },
     "Rustdag vandaag": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rest day today"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Heute Ruhetag"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rest day today"
           }
         },
         "es": {
@@ -3374,16 +3581,16 @@
     },
     "Sleep over de grafiek voor details op een specifiek moment": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drag across the chart for details at a specific moment"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Ziehe über das Diagramm für Details zu einem bestimmten Zeitpunkt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drag across the chart for details at a specific moment"
           }
         },
         "es": {
@@ -3396,16 +3603,16 @@
     },
     "Sleutel geconfigureerd": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Key configured"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Schlüssel konfiguriert"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key configured"
           }
         },
         "es": {
@@ -3418,16 +3625,16 @@
     },
     "Sleutel testen…": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Testing key…"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Schlüssel wird getestet…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testing key…"
           }
         },
         "es": {
@@ -3440,16 +3647,16 @@
     },
     "Sleutels worden lokaal versleuteld in de iOS Keychain opgeslagen.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keys are stored encrypted locally in the iOS Keychain."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Schlüssel werden lokal verschlüsselt im iOS-Schlüsselbund gespeichert."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keys are stored encrypted locally in the iOS Keychain."
           }
         },
         "es": {
@@ -3462,16 +3669,16 @@
     },
     "Sluit": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Close"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Schließen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
           }
         },
         "es": {
@@ -3484,13 +3691,13 @@
     },
     "Status": {
       "localizations": {
-        "en": {
+        "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Status"
           }
         },
-        "de": {
+        "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Status"
@@ -3506,16 +3713,16 @@
     },
     "Strava-limiet bereikt": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Strava limit reached"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Strava-Limit erreicht"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strava limit reached"
           }
         },
         "es": {
@@ -3528,16 +3735,16 @@
     },
     "Streefdatum": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Target date"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Zieldatum"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Target date"
           }
         },
         "es": {
@@ -3550,16 +3757,16 @@
     },
     "Swipe omlaag om opnieuw te proberen": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Swipe down to try again"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Zum erneuten Versuch nach unten wischen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe down to try again"
           }
         },
         "es": {
@@ -3643,16 +3850,16 @@
     },
     "Test deze sleutel": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Test this key"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Diesen Schlüssel testen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test this key"
           }
         },
         "es": {
@@ -3687,16 +3894,16 @@
     },
     "Tijd": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Time"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Zeit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time"
           }
         },
         "es": {
@@ -3709,16 +3916,16 @@
     },
     "Tijdlijn": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Timeline"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Zeitleiste"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timeline"
           }
         },
         "es": {
@@ -3731,16 +3938,16 @@
     },
     "Toepassen": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apply"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Anwenden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apply"
           }
         },
         "es": {
@@ -3753,16 +3960,16 @@
     },
     "Toestemming mislukt — je kunt het nu opnieuw proberen of later via Instellingen koppelen.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Permission failed — you can try again now or link later via Settings."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Berechtigung fehlgeschlagen — du kannst es jetzt erneut versuchen oder später über die Einstellungen verbinden."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission failed — you can try again now or link later via Settings."
           }
         },
         "es": {
@@ -3799,16 +4006,16 @@
     },
     "Trainingsvolume te hoog — neem rust.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Training volume too high — take rest."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Trainingsvolumen zu hoch — ruh dich aus."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Training volume too high — take rest."
           }
         },
         "es": {
@@ -3822,16 +4029,16 @@
     "TRIMP": {},
     "TRIMP meet de échte fysiologische impact van je training.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TRIMP measures the real physiological impact of your training."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "TRIMP misst die echte physiologische Wirkung deines Trainings."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TRIMP measures the real physiological impact of your training."
           }
         },
         "es": {
@@ -3844,16 +4051,16 @@
     },
     "TRIMP Score": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "TRIMP Score"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "TRIMP-Score"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TRIMP Score"
           }
         },
         "es": {
@@ -3866,16 +4073,16 @@
     },
     "Type": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Type"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Typ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Type"
           }
         },
         "es": {
@@ -3888,16 +4095,16 @@
     },
     "Type Evenement & Intentie": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Event Type & Intent"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Eventtyp & Absicht"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Event Type & Intent"
           }
         },
         "es": {
@@ -3910,16 +4117,16 @@
     },
     "Type Sport": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sport Type"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Sportart"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sport Type"
           }
         },
         "es": {
@@ -3932,16 +4139,16 @@
     },
     "Uiterlijk": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Appearance"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Darstellung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
           }
         },
         "es": {
@@ -3978,16 +4185,16 @@
     },
     "Uitlopen / Genieten": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Finish / Enjoy"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Ausklingen / Genießen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finish / Enjoy"
           }
         },
         "es": {
@@ -4000,16 +4207,16 @@
     },
     "vandaag": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "today"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "heute"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "today"
           }
         },
         "es": {
@@ -4022,16 +4229,16 @@
     },
     "Vandaag": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Today"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Heute"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Today"
           }
         },
         "es": {
@@ -4092,16 +4299,16 @@
     },
     "Verlopen": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expired"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Abgelaufen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Expired"
           }
         },
         "es": {
@@ -4114,16 +4321,16 @@
     },
     "Verouderd — score gewijzigd": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Outdated — score changed"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Veraltet — Score geändert"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outdated — score changed"
           }
         },
         "es": {
@@ -4136,19 +4343,13 @@
     },
     "Versie %@ (Build %@)": {
       "localizations": {
-        "nl": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Versie %1$@ (Build %2$@)"
-          }
-        },
-        "en": {
+        "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Version %@ (Build %@)"
           }
         },
-        "de": {
+        "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Version %@ (Build %@)"
@@ -4159,21 +4360,27 @@
             "state": "translated",
             "value": "Versión %@ (Build %@)"
           }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Versie %1$@ (Build %2$@)"
+          }
         }
       }
     },
     "Vertel de coach in de chat over je blessures, voorkeuren of doelen.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tell the coach in the chat about your injuries, preferences or goals."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Erzähle dem Coach im Chat von deinen Verletzungen, Vorlieben oder Zielen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tell the coach in the chat about your injuries, preferences or goals."
           }
         },
         "es": {
@@ -4186,16 +4393,16 @@
     },
     "Ververs": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Refresh"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Aktualisieren"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh"
           }
         },
         "es": {
@@ -4209,13 +4416,13 @@
     "Vibe Score": {},
     "VIBE SCORE": {
       "localizations": {
-        "en": {
+        "de": {
           "stringUnit": {
             "state": "translated",
             "value": "VIBE SCORE"
           }
         },
-        "de": {
+        "en": {
           "stringUnit": {
             "state": "translated",
             "value": "VIBE SCORE"
@@ -4231,16 +4438,16 @@
     },
     "Vibe Score op pauze": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vibe Score paused"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Vibe Score pausiert"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vibe Score paused"
           }
         },
         "es": {
@@ -4255,16 +4462,16 @@
     "VIBECOACH": {},
     "VibeCoach gebruikt jouw eigen API-sleutel om de AI te activeren. De sleutel wordt uitsluitend lokaal op dit apparaat opgeslagen en nooit gedeeld met derden.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "VibeCoach uses your own API key to activate the AI. The key is stored only locally on this device and never shared with third parties."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "VibeCoach verwendet deinen eigenen API-Schlüssel, um die KI zu aktivieren. Der Schlüssel wird ausschließlich lokal auf diesem Gerät gespeichert und nie an Dritte weitergegeben."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VibeCoach uses your own API key to activate the AI. The key is stored only locally on this device and never shared with third parties."
           }
         },
         "es": {
@@ -4277,16 +4484,16 @@
     },
     "VOEDING": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "NUTRITION"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "ERNÄHRUNG"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NUTRITION"
           }
         },
         "es": {
@@ -4299,16 +4506,16 @@
     },
     "Voeding & Hydratatie": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nutrition & Hydration"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Ernährung & Flüssigkeit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nutrition & Hydration"
           }
         },
         "es": {
@@ -4321,16 +4528,16 @@
     },
     "Voeg een nieuw fitnessdoel toe om je voortgang bij te houden.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Add a new fitness goal to track your progress."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Füge ein neues Fitnessziel hinzu, um deinen Fortschritt zu verfolgen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a new fitness goal to track your progress."
           }
         },
         "es": {
@@ -4343,16 +4550,16 @@
     },
     "Voer een API-sleutel in via de Instellingen om hem wakker te maken.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter an API key via Settings to wake it up."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Gib einen API-Schlüssel in den Einstellungen ein, um ihn aufzuwecken."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter an API key via Settings to wake it up."
           }
         },
         "es": {
@@ -4365,16 +4572,16 @@
     },
     "Voer je %@-sleutel in (en test 'm) om je beschikbare modellen live te laden. Tot dan tonen we een ingebouwde lijst.": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter your %@ key (and test it) to load your available models live. Until then we show a built-in list."
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Gib deinen %@-Schlüssel ein (und teste ihn), um deine verfügbaren Modelle live zu laden. Bis dahin zeigen wir eine eingebaute Liste."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter your %@ key (and test it) to load your available models live. Until then we show a built-in list."
           }
         },
         "es": {
@@ -4387,16 +4594,16 @@
     },
     "VOLTOOIDE DOELEN": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "COMPLETED GOALS"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "ABGESCHLOSSENE ZIELE"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "COMPLETED GOALS"
           }
         },
         "es": {
@@ -4409,16 +4616,16 @@
     },
     "Voorstel": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suggestion"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Vorschlag"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggestion"
           }
         },
         "es": {
@@ -4431,16 +4638,16 @@
     },
     "VOORTGANG DEZE FASE": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PROGRESS THIS PHASE"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "FORTSCHRITT DIESER PHASE"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PROGRESS THIS PHASE"
           }
         },
         "es": {
@@ -4453,16 +4660,16 @@
     },
     "Vraag waarom ›": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ask why ›"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Frag warum ›"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask why ›"
           }
         },
         "es": {
@@ -4475,16 +4682,16 @@
     },
     "Waarom je eigen sleutel?": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Why your own key?"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Warum dein eigener Schlüssel?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Why your own key?"
           }
         },
         "es": {
@@ -4497,10 +4704,10 @@
     },
     "WAT IK ONTHOU · %@ ACTIEVE · %@ VERLOPEN": {
       "localizations": {
-        "nl": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "WAT IK ONTHOU · %1$@ ACTIEVE · %2$@ VERLOPEN"
+            "state": "translated",
+            "value": "WAS ICH MIR MERKE · %1$@ AKTIV · %2$@ ABGELAUFEN"
           }
         },
         "en": {
@@ -4509,32 +4716,32 @@
             "value": "WHAT I REMEMBER · %1$@ ACTIVE · %2$@ EXPIRED"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WAS ICH MIR MERKE · %1$@ AKTIV · %2$@ ABGELAUFEN"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "LO QUE RECUERDO · %1$@ ACTIVOS · %2$@ VENCIDOS"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "new",
+            "value": "WAT IK ONTHOU · %1$@ ACTIEVE · %2$@ VERLOPEN"
           }
         }
       }
     },
     "WAT IK ZIE": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WHAT I SEE"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "WAS ICH SEHE"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WHAT I SEE"
           }
         },
         "es": {
@@ -4547,16 +4754,16 @@
     },
     "Wat is de Vibe Score?": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What is the Vibe Score?"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Was ist der Vibe Score?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is the Vibe Score?"
           }
         },
         "es": {
@@ -4569,16 +4776,16 @@
     },
     "Wat is TRIMP?": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What is TRIMP?"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "Was ist TRIMP?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What is TRIMP?"
           }
         },
         "es": {
@@ -4591,16 +4798,16 @@
     },
     "WEER": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WEATHER"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "WETTER"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WEATHER"
           }
         },
         "es": {
@@ -4613,10 +4820,10 @@
     },
     "Wind %@ km/u · %@%% neerslag": {
       "localizations": {
-        "nl": {
+        "de": {
           "stringUnit": {
-            "state": "new",
-            "value": "Wind %1$@ km/u · %2$@%% neerslag"
+            "state": "translated",
+            "value": "Wind %1$@ km/h · %2$@%% Niederschlag"
           }
         },
         "en": {
@@ -4625,32 +4832,32 @@
             "value": "Wind %1$@ km/h · %2$@%% precipitation"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wind %1$@ km/h · %2$@%% Niederschlag"
-          }
-        },
         "es": {
           "stringUnit": {
             "state": "translated",
             "value": "Viento %1$@ km/h · %2$@%% precipitación"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "new",
+            "value": "Wind %1$@ km/u · %2$@%% neerslag"
           }
         }
       }
     },
     "ZONE-PREVIEW": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ZONE PREVIEW"
-          }
-        },
         "de": {
           "stringUnit": {
             "state": "translated",
             "value": "ZONEN-VORSCHAU"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ZONE PREVIEW"
           }
         },
         "es": {
@@ -4661,200 +4868,530 @@
         }
       }
     },
-    "Goedemorgen": {
+    "API-sleutel": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Good morning"
+            "value": "API key"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guten Morgen"
+            "value": "API-Schlüssel"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Buenos días"
+            "value": "Clave API"
           }
         }
       }
     },
-    "Goedemiddag": {
+    "Beheer notificaties in iOS Instellingen": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Good afternoon"
+            "value": "Manage notifications in iOS Settings"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guten Tag"
+            "value": "Mitteilungen in den iOS-Einstellungen verwalten"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Buenas tardes"
+            "value": "Gestiona las notificaciones en Ajustes de iOS"
           }
         }
       }
     },
-    "Goedenavond": {
+    "Dagen sinds laatste training": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Good evening"
+            "value": "Days since last workout"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guten Abend"
+            "value": "Tage seit letztem Training"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Buenas noches"
+            "value": "Días desde el último entrenamiento"
           }
         }
       }
     },
-    "Leeftijd": {
+    "Forceer Achtergrond Sync": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Age"
+            "value": "Force Background Sync"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Alter"
+            "value": "Hintergrund-Sync erzwingen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Edad"
+            "value": "Forzar sincronización en segundo plano"
           }
         }
       }
     },
-    "Geslacht": {
+    "Gem. laatste 4 weken (HealthKit)": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sex"
+            "value": "Avg. last 4 weeks (HealthKit)"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Geschlecht"
+            "value": "Ø letzte 4 Wochen (HealthKit)"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sexo"
+            "value": "Prom. últimas 4 semanas (HealthKit)"
           }
         }
       }
     },
-    "Gewicht": {
+    "Geschatte conditiescore (Apple Watch)": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Weight"
+            "value": "Estimated fitness score (Apple Watch)"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gewicht"
+            "value": "Geschätzter Fitness-Score (Apple Watch)"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Peso"
+            "value": "Puntuación de forma estimada (Apple Watch)"
           }
         }
       }
     },
-    "Lengte": {
+    "Haal 1 jaar (365 dagen) op": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Height"
+            "value": "Fetch 1 year (365 days)"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Größe"
+            "value": "1 Jahr (365 Tage) abrufen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Altura"
+            "value": "Obtener 1 año (365 días)"
           }
         }
       }
     },
-    "jaar": {
+    "Herstel-indicator": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "years"
+            "value": "Recovery indicator"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jahre"
+            "value": "Erholungsindikator"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "años"
+            "value": "Indicador de recuperación"
           }
         }
       }
     },
-    "Onbekend": {
+    "Langste activiteit in 365 dagen": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unknown"
+            "value": "Longest activity in 365 days"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unbekannt"
+            "value": "Längste Aktivität in 365 Tagen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Desconocido"
+            "value": "Actividad más larga en 365 días"
+          }
+        }
+      }
+    },
+    "Persoonlijke zones": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal zones"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persönliche Zonen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zonas personales"
+          }
+        }
+      }
+    },
+    "Piekprestatie": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peak performance"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spitzenleistung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rendimiento máximo"
+          }
+        }
+      }
+    },
+    "Provider": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anbieter"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proveedor"
+          }
+        }
+      }
+    },
+    "Systeempermissies": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System permissions"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systemberechtigungen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permisos del sistema"
+          }
+        }
+      }
+    },
+    "Wekelijks volume": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly volume"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wöchentliches Volumen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volumen semanal"
+          }
+        }
+      }
+    },
+    "AI Coach": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Coach"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KI-Coach"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrenador IA"
+          }
+        }
+      }
+    },
+    "Model overbelast": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model overloaded"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modell überlastet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo sobrecargado"
+          }
+        }
+      }
+    },
+    "Onverwachte fout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unexpected error"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unerwarteter Fehler"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error inesperado"
+          }
+        }
+      }
+    },
+    "Overtrainingsrisico": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overtraining risk"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übertrainingsrisiko"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riesgo de sobreentrenamiento"
+          }
+        }
+      }
+    },
+    "Sleutel ongeldig": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key invalid"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schlüssel ungültig"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clave no válida"
+          }
+        }
+      }
+    },
+    "Sleutel werkt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key works"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schlüssel funktioniert"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La clave funciona"
+          }
+        }
+      }
+    },
+    "Aanvullend": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supplementary"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ergänzend"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complementario"
+          }
+        }
+      }
+    },
+    "Voorkeur": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferred"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bevorzugt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferido"
+          }
+        }
+      }
+    },
+    "Gekoppeld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbunden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vinculado"
+          }
+        }
+      }
+    },
+    "Beheer": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestionar"
           }
         }
       }

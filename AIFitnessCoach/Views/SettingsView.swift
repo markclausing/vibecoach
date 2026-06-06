@@ -924,12 +924,16 @@ struct SettingsRowV2: View {
                     .foregroundColor(isWarning ? .orange : iconColor)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                // Epic #37 story 37.1c: `title`/`subtitle` are `String` (call sites pass literals
+                // and computed values), so wrap them in `LocalizedStringKey` to resolve via the
+                // String Catalog at runtime. Brand names not in the catalog fall back unchanged.
+                // `value` stays verbatim — it's dynamic data (e.g. "76.0 kg").
+                Text(LocalizedStringKey(title))
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(isWarning ? .orange : .primary)
                 if let sub = subtitle {
-                    Text(sub)
+                    Text(LocalizedStringKey(sub))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
