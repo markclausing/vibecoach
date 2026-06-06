@@ -37,12 +37,14 @@ enum TrainingPhase: String, CaseIterable {
 
     /// Hard AI instruction the coach receives for this phase.
     /// Short focus description for the status badge on the dashboard.
+    /// Epic #37 story 37.1c: shown in the phase badge (phaseBadgeText) in the UI, not used in
+    /// prompts, so resolved via the String Catalog. The big prompt instructions below stay Dutch.
     var focusDescription: String {
         switch self {
-        case .baseBuilding: return "Aerobe basis leggen"
-        case .buildPhase:   return "Uithoudingsvermogen opbouwen"
-        case .peakPhase:    return "Race-intensiteit bereiken"
-        case .tapering:     return "Herstellen en scherp worden"
+        case .baseBuilding: return String(localized: "Aerobe basis leggen")
+        case .buildPhase:   return String(localized: "Uithoudingsvermogen opbouwen")
+        case .peakPhase:    return String(localized: "Race-intensiteit bereiken")
+        case .tapering:     return String(localized: "Herstellen en scherp worden")
         }
     }
 

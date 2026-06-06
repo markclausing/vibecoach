@@ -503,6 +503,29 @@
         }
       }
     },
+    "Aanvullend": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ergänzend"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supplementary"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complementario"
+          }
+        }
+      }
+    },
     "Actief": {
       "localizations": {
         "de": {
@@ -543,6 +566,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Derivado de tu historial de entrenamiento. Sincroniza 1 año de historial para dar contexto al entrenador sobre tu nivel de forma."
+          }
+        }
+      }
+    },
+    "AI Coach": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KI-Coach"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Coach"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrenador IA"
           }
         }
       }
@@ -627,6 +673,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "API Key"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clave API"
+          }
+        }
+      }
+    },
+    "API-sleutel": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API-Schlüssel"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API key"
           }
         },
         "es": {
@@ -723,6 +792,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Entendido, cerrar"
+          }
+        }
+      }
+    },
+    "Beheer": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwalten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestionar"
+          }
+        }
+      }
+    },
+    "Beheer notificaties in iOS Instellingen": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitteilungen in den iOS-Einstellungen verwalten"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage notifications in iOS Settings"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestiona las notificaciones en Ajustes de iOS"
           }
         }
       }
@@ -1127,6 +1242,29 @@
         }
       }
     },
+    "Dagen sinds laatste training": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tage seit letztem Training"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Days since last workout"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Días desde el último entrenamiento"
+          }
+        }
+      }
+    },
     "De coach begint bij het primaire model. Bij overbelasting (503/429) schakelt hij automatisch over op het fallback-model.": {
       "localizations": {
         "de": {
@@ -1458,6 +1596,29 @@
         }
       }
     },
+    "Forceer Achtergrond Sync": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrund-Sync erzwingen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Force Background Sync"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forzar sincronización en segundo plano"
+          }
+        }
+      }
+    },
     "Fysiologisch Profiel": {
       "localizations": {
         "de": {
@@ -1615,6 +1776,52 @@
         }
       }
     },
+    "Gekoppeld": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbunden"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vinculado"
+          }
+        }
+      }
+    },
+    "Gem. laatste 4 weken (HealthKit)": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ø letzte 4 Wochen (HealthKit)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avg. last 4 weeks (HealthKit)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prom. últimas 4 semanas (HealthKit)"
+          }
+        }
+      }
+    },
     "Gemini Modellen": {
       "localizations": {
         "de": {
@@ -1633,6 +1840,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Modelos Gemini"
+          }
+        }
+      }
+    },
+    "Geschatte conditiescore (Apple Watch)": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschätzter Fitness-Score (Apple Watch)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimated fitness score (Apple Watch)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puntuación de forma estimada (Apple Watch)"
           }
         }
       }
@@ -1796,6 +2026,29 @@
         }
       }
     },
+    "Haal 1 jaar (365 dagen) op": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 Jahr (365 Tage) abrufen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fetch 1 year (365 days)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obtener 1 año (365 días)"
+          }
+        }
+      }
+    },
     "Heel licht": {
       "localizations": {
         "de": {
@@ -1880,6 +2133,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recuperación"
+          }
+        }
+      }
+    },
+    "Herstel-indicator": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erholungsindikator"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recovery indicator"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indicador de recuperación"
           }
         }
       }
@@ -2582,6 +2858,29 @@
         }
       }
     },
+    "Langste activiteit in 365 dagen": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Längste Aktivität in 365 Tagen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Longest activity in 365 days"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actividad más larga en 365 días"
+          }
+        }
+      }
+    },
     "Leeftijd": {
       "extractionState": "stale",
       "localizations": {
@@ -2888,6 +3187,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "HITOS Y PRONÓSTICO"
+          }
+        }
+      }
+    },
+    "Model overbelast": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modell überlastet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model overloaded"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo sobrecargado"
           }
         }
       }
@@ -3225,6 +3547,29 @@
         }
       }
     },
+    "Onverwachte fout": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unerwarteter Fehler"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unexpected error"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error inesperado"
+          }
+        }
+      }
+    },
     "Open Chat": {
       "localizations": {
         "de": {
@@ -3357,6 +3702,29 @@
         }
       }
     },
+    "Overtrainingsrisico": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übertrainingsrisiko"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overtraining risk"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riesgo de sobreentrenamiento"
+          }
+        }
+      }
+    },
     "Overzicht": {
       "comment": "Tab bar item (dashboard)",
       "extractionState": "stale",
@@ -3421,6 +3789,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Umbrales personales que el entrenador usa para calcular tus zonas. Déjalos vacíos y la app usa valores por defecto de la población (Tanaka para FC máx., 60 BPM en reposo)."
+          }
+        }
+      }
+    },
+    "Persoonlijke zones": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persönliche Zonen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal zones"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zonas personales"
+          }
+        }
+      }
+    },
+    "Piekprestatie": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spitzenleistung"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peak performance"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rendimiento máximo"
           }
         }
       }
@@ -3535,6 +3949,29 @@
         }
       }
     },
+    "Provider": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anbieter"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proveedor"
+          }
+        }
+      }
+    },
     "RECENTE WORKOUTS": {
       "localizations": {
         "de": {
@@ -3623,6 +4060,29 @@
         }
       }
     },
+    "Sleutel ongeldig": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schlüssel ungültig"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key invalid"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clave no válida"
+          }
+        }
+      }
+    },
     "Sleutel testen…": {
       "localizations": {
         "de": {
@@ -3641,6 +4101,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Probando clave…"
+          }
+        }
+      }
+    },
+    "Sleutel werkt": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schlüssel funktioniert"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key works"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La clave funciona"
           }
         }
       }
@@ -3773,6 +4256,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Desliza hacia abajo para reintentar"
+          }
+        }
+      }
+    },
+    "Systeempermissies": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Systemberechtigungen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System permissions"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permisos del sistema"
           }
         }
       }
@@ -4614,6 +5120,29 @@
         }
       }
     },
+    "Voorkeur": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bevorzugt"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferred"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preferido"
+          }
+        }
+      }
+    },
     "Voorstel": {
       "localizations": {
         "de": {
@@ -4818,6 +5347,29 @@
         }
       }
     },
+    "Wekelijks volume": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wöchentliches Volumen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly volume"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volumen semanal"
+          }
+        }
+      }
+    },
     "Wind %@ km/u · %@%% neerslag": {
       "localizations": {
         "de": {
@@ -4868,530 +5420,464 @@
         }
       }
     },
-    "API-sleutel": {
+    "Drempel": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "API key"
+            "value": "Threshold"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "API-Schlüssel"
+            "value": "Schwelle"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clave API"
+            "value": "Umbral"
           }
         }
       }
     },
-    "Beheer notificaties in iOS Instellingen": {
+    "Tempo": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Manage notifications in iOS Settings"
+            "value": "Tempo"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mitteilungen in den iOS-Einstellungen verwalten"
+            "value": "Tempo"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gestiona las notificaciones en Ajustes de iOS"
+            "value": "Tempo"
           }
         }
       }
     },
-    "Dagen sinds laatste training": {
+    "Duurtraining": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Days since last workout"
+            "value": "Endurance"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tage seit letztem Training"
+            "value": "Ausdauer"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Días desde el último entrenamiento"
+            "value": "Resistencia"
           }
         }
       }
     },
-    "Forceer Achtergrond Sync": {
+    "Sociaal": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Force Background Sync"
+            "value": "Social"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hintergrund-Sync erzwingen"
+            "value": "Sozial"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Forzar sincronización en segundo plano"
+            "value": "Social"
           }
         }
       }
     },
-    "Gem. laatste 4 weken (HealthKit)": {
+    "Wedstrijd": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Avg. last 4 weeks (HealthKit)"
+            "value": "Race"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ø letzte 4 Wochen (HealthKit)"
+            "value": "Wettkampf"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prom. últimas 4 semanas (HealthKit)"
+            "value": "Competición"
           }
         }
       }
     },
-    "Geschatte conditiescore (Apple Watch)": {
+    "Hardlopen": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Estimated fitness score (Apple Watch)"
+            "value": "Running"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Geschätzter Fitness-Score (Apple Watch)"
+            "value": "Laufen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Puntuación de forma estimada (Apple Watch)"
+            "value": "Correr"
           }
         }
       }
     },
-    "Haal 1 jaar (365 dagen) op": {
+    "Wielrennen": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fetch 1 year (365 days)"
+            "value": "Cycling"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 Jahr (365 Tage) abrufen"
+            "value": "Radfahren"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Obtener 1 año (365 días)"
+            "value": "Ciclismo"
           }
         }
       }
     },
-    "Herstel-indicator": {
+    "Zwemmen": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recovery indicator"
+            "value": "Swimming"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Erholungsindikator"
+            "value": "Schwimmen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Indicador de recuperación"
+            "value": "Natación"
           }
         }
       }
     },
-    "Langste activiteit in 365 dagen": {
+    "Krachttraining": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Longest activity in 365 days"
+            "value": "Strength"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Längste Aktivität in 365 Tagen"
+            "value": "Krafttraining"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Actividad más larga en 365 días"
+            "value": "Fuerza"
           }
         }
       }
     },
-    "Persoonlijke zones": {
+    "Wandelen": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Personal zones"
+            "value": "Walking"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Persönliche Zonen"
+            "value": "Gehen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zonas personales"
+            "value": "Caminar"
           }
         }
       }
     },
-    "Piekprestatie": {
+    "Triatlon": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Peak performance"
+            "value": "Triathlon"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Spitzenleistung"
+            "value": "Triathlon"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rendimiento máximo"
+            "value": "Triatlón"
           }
         }
       }
     },
-    "Provider": {
+    "Anders": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Provider"
+            "value": "Other"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Anbieter"
+            "value": "Sonstiges"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Proveedor"
+            "value": "Otro"
           }
         }
       }
     },
-    "Systeempermissies": {
+    "Mos": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "System permissions"
+            "value": "Moss"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Systemberechtigungen"
+            "value": "Moos"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Permisos del sistema"
+            "value": "Musgo"
           }
         }
       }
     },
-    "Wekelijks volume": {
+    "Steen": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Weekly volume"
+            "value": "Stone"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wöchentliches Volumen"
+            "value": "Stein"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Volumen semanal"
+            "value": "Piedra"
           }
         }
       }
     },
-    "AI Coach": {
+    "Nevel": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "AI Coach"
+            "value": "Mist"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "KI-Coach"
+            "value": "Nebel"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Entrenador IA"
+            "value": "Niebla"
           }
         }
       }
     },
-    "Model overbelast": {
+    "Klei": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Model overloaded"
+            "value": "Clay"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Modell überlastet"
+            "value": "Ton"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Modelo sobrecargado"
+            "value": "Arcilla"
           }
         }
       }
     },
-    "Onverwachte fout": {
+    "Inkt": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unexpected error"
+            "value": "Ink"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Unerwarteter Fehler"
+            "value": "Tinte"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Error inesperado"
+            "value": "Tinta"
           }
         }
       }
     },
-    "Overtrainingsrisico": {
+    "Aerobe basis leggen": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Overtraining risk"
+            "value": "Build an aerobic base"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Übertrainingsrisiko"
+            "value": "Aerobe Basis aufbauen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Riesgo de sobreentrenamiento"
+            "value": "Construir una base aeróbica"
           }
         }
       }
     },
-    "Sleutel ongeldig": {
+    "Uithoudingsvermogen opbouwen": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Key invalid"
+            "value": "Build endurance"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Schlüssel ungültig"
+            "value": "Ausdauer aufbauen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Clave no válida"
+            "value": "Desarrollar la resistencia"
           }
         }
       }
     },
-    "Sleutel werkt": {
+    "Race-intensiteit bereiken": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Key works"
+            "value": "Reach race intensity"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Schlüssel funktioniert"
+            "value": "Wettkampfintensität erreichen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La clave funciona"
+            "value": "Alcanzar la intensidad de carrera"
           }
         }
       }
     },
-    "Aanvullend": {
+    "Herstellen en scherp worden": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Supplementary"
+            "value": "Recover and sharpen"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ergänzend"
+            "value": "Erholen und Form finden"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Complementario"
-          }
-        }
-      }
-    },
-    "Voorkeur": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preferred"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bevorzugt"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preferido"
-          }
-        }
-      }
-    },
-    "Gekoppeld": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connected"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verbunden"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vinculado"
-          }
-        }
-      }
-    },
-    "Beheer": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manage"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verwalten"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gestionar"
+            "value": "Recuperar y afinar"
           }
         }
       }

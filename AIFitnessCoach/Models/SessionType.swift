@@ -21,16 +21,18 @@ enum SessionType: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// Short Dutch name for UI context (Picker, badges).
+    /// Short name for UI context (Picker, badges).
+    /// Epic #37 story 37.1c: resolved via the String Catalog. Not used in prompts, so this is
+    /// UI-only. "VO₂max" has no catalog entry and falls back to itself.
     var displayName: String {
         switch self {
         case .vo2Max:    return "VO₂max"
-        case .threshold: return "Drempel"
-        case .tempo:     return "Tempo"
-        case .endurance: return "Duurtraining"
-        case .recovery:  return "Herstel"
-        case .social:    return "Sociaal"
-        case .race:      return "Wedstrijd"
+        case .threshold: return String(localized: "Drempel")
+        case .tempo:     return String(localized: "Tempo")
+        case .endurance: return String(localized: "Duurtraining")
+        case .recovery:  return String(localized: "Herstel")
+        case .social:    return String(localized: "Sociaal")
+        case .race:      return String(localized: "Wedstrijd")
         }
     }
 
