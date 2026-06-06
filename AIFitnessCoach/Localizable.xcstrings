@@ -2319,13 +2319,13 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ich halte an deinem **%@** fest"
+            "value": "Ich bleibe bei deinem **%@**"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "I'm sticking to your **%@**"
+            "value": "I'm sticking with your **%@**"
           }
         },
         "es": {
@@ -5204,7 +5204,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pregunta por qué ›"
+            "value": "¿Por qué? ›"
           }
         }
       }
@@ -5878,6 +5878,358 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recuperar y afinar"
+          }
+        }
+      }
+    },
+    "Geen data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No data"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Daten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin datos"
+          }
+        }
+      }
+    },
+    "Voorzichtig — Blessurerisico": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Careful — Injury risk"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vorsicht — Verletzungsrisiko"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuidado — Riesgo de lesión"
+          }
+        }
+      }
+    },
+    "Let op — Actieve Klachten": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attention — Active complaints"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achtung — Aktive Beschwerden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atención — Molestias activas"
+          }
+        }
+      }
+    },
+    "Optimaal hersteld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optimally recovered"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optimal erholt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recuperación óptima"
+          }
+        }
+      }
+    },
+    "Matig hersteld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moderately recovered"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mäßig erholt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recuperación moderada"
+          }
+        }
+      }
+    },
+    "Focus op herstel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focus on recovery"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fokus auf Erholung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Céntrate en la recuperación"
+          }
+        }
+      }
+    },
+    "Geen recente Watch-data. Baseer je dag op je gevoel.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No recent Watch data. Base your day on how you feel."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine aktuellen Watch-Daten. Richte deinen Tag nach deinem Gefühl."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin datos recientes del Watch. Guíate por cómo te sientes."
+          }
+        }
+      }
+    },
+    "HRV %lld ms boven baseline. Goede dag voor intensiteit.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HRV %lld ms above baseline. Good day for intensity."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HRV %lld ms über Baseline. Guter Tag für Intensität."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HRV %lld ms por encima de la línea base. Buen día para intensidad."
+          }
+        }
+      }
+    },
+    "HRV %lld ms. Houd de intensiteit gematigd.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HRV %lld ms. Keep the intensity moderate."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HRV %lld ms. Halte die Intensität moderat."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HRV %lld ms. Mantén la intensidad moderada."
+          }
+        }
+      }
+    },
+    "HRV %lld ms. Prioriteit: rust en herstel.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HRV %lld ms. Priority: rest and recovery."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HRV %lld ms. Priorität: Ruhe und Erholung."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HRV %lld ms. Prioridad: descanso y recuperación."
+          }
+        }
+      }
+    },
+    "uitstekend": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "excellent"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ausgezeichnet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "excelente"
+          }
+        }
+      }
+    },
+    "goed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "good"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "gut"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bueno"
+          }
+        }
+      }
+    },
+    "matig": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "moderate"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mäßig"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "moderado"
+          }
+        }
+      }
+    },
+    "te kort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "too short"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zu kurz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "demasiado corto"
+          }
+        }
+      }
+    },
+    "SLAAP": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SLEEP"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SCHLAF"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SUEÑO"
+          }
+        }
+      }
+    },
+    "RUST-HR": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "REST HR"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RUHE-HF"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FC REPOSO"
           }
         }
       }
