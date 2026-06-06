@@ -67,9 +67,13 @@ struct SettingsView: View {
     // both sources always sync, so the toggle is a preference — no longer an
     // exclusive "what do I sync" choice.
 
+    // Epic #37 story 37.1c: these subtitles render via SettingsRowV2 -> LocalizedStringKey(sub).
+    // Single-word returns ("Voorkeur"/"Aanvullend"/"Niet gekoppeld") resolve through that wrapper
+    // directly; the composite "· Live" variant is assembled from already-localized parts here.
     private var healthKitConnectionSubtitle: String {
-        guard isHealthKitLinked else { return "Niet gekoppeld" }
-        return selectedDataSource == .healthKit ? "Voorkeur · Live" : "Aanvullend · Live"
+        guard isHealthKitLinked else { return String(localized: "Niet gekoppeld") }
+        let pref = selectedDataSource == .healthKit ? String(localized: "Voorkeur") : String(localized: "Aanvullend")
+        return "\(pref) · Live"
     }
 
     private var stravaConnectionSubtitle: String {
@@ -796,12 +800,13 @@ struct SettingsView: View {
         return "\(p.ageYears) j · \(physSexLabel(p.sex)) · \(String(format: "%.0f", p.weightKg)) kg · \(String(format: "%.0f", p.heightCm)) cm"
     }
 
+    // Epic #37 story 37.1c: rendered as a SettingsRowV2 value (verbatim), so localize here.
     private func physSexLabel(_ sex: BiologicalSex) -> String {
         switch sex {
-        case .male:    return "Man"
-        case .female:  return "Vrouw"
-        case .other:   return "Divers"
-        case .unknown: return "Onbekend"
+        case .male:    return String(localized: "Man")
+        case .female:  return String(localized: "Vrouw")
+        case .other:   return String(localized: "Divers")
+        case .unknown: return String(localized: "Onbekend")
         }
     }
 
