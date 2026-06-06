@@ -67,9 +67,13 @@ struct SettingsView: View {
     // both sources always sync, so the toggle is a preference — no longer an
     // exclusive "what do I sync" choice.
 
+    // Epic #37 story 37.1c: these subtitles render via SettingsRowV2 -> LocalizedStringKey(sub).
+    // Single-word returns ("Voorkeur"/"Aanvullend"/"Niet gekoppeld") resolve through that wrapper
+    // directly; the composite "· Live" variant is assembled from already-localized parts here.
     private var healthKitConnectionSubtitle: String {
-        guard isHealthKitLinked else { return "Niet gekoppeld" }
-        return selectedDataSource == .healthKit ? "Voorkeur · Live" : "Aanvullend · Live"
+        guard isHealthKitLinked else { return String(localized: "Niet gekoppeld") }
+        let pref = selectedDataSource == .healthKit ? String(localized: "Voorkeur") : String(localized: "Aanvullend")
+        return "\(pref) · Live"
     }
 
     private var stravaConnectionSubtitle: String {
@@ -796,12 +800,13 @@ struct SettingsView: View {
         return "\(p.ageYears) j · \(physSexLabel(p.sex)) · \(String(format: "%.0f", p.weightKg)) kg · \(String(format: "%.0f", p.heightCm)) cm"
     }
 
+    // Epic #37 story 37.1c: rendered as a SettingsRowV2 value (verbatim), so localize here.
     private func physSexLabel(_ sex: BiologicalSex) -> String {
         switch sex {
-        case .male:    return "Man"
-        case .female:  return "Vrouw"
-        case .other:   return "Divers"
-        case .unknown: return "Onbekend"
+        case .male:    return String(localized: "Man")
+        case .female:  return String(localized: "Vrouw")
+        case .other:   return String(localized: "Divers")
+        case .unknown: return String(localized: "Onbekend")
         }
     }
 
@@ -924,12 +929,16 @@ struct SettingsRowV2: View {
                     .foregroundColor(isWarning ? .orange : iconColor)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                // Epic #37 story 37.1c: `title`/`subtitle` are `String` (call sites pass literals
+                // and computed values), so wrap them in `LocalizedStringKey` to resolve via the
+                // String Catalog at runtime. Brand names not in the catalog fall back unchanged.
+                // `value` stays verbatim — it's dynamic data (e.g. "76.0 kg").
+                Text(LocalizedStringKey(title))
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(isWarning ? .orange : .primary)
                 if let sub = subtitle {
-                    Text(sub)
+                    Text(LocalizedStringKey(sub))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -1139,7 +1148,7 @@ struct PhysicalProfileSection: View {
                     icon: "person.circle",
                     iconColor: .blue,
                     label: "Leeftijd",
-                    value: profile.map { "\($0.ageYears) jaar" } ?? "Onbekend",
+                    value: profile.map { "\($0.ageYears) " + String(localized: "jaar") } ?? String(localized: "Onbekend"),
                     isReadOnly: true
                 )
 
@@ -1148,7 +1157,7 @@ struct PhysicalProfileSection: View {
                     icon: "figure.stand",
                     iconColor: .indigo,
                     label: "Geslacht",
-                    value: profile.map { sexLabel($0.sex) } ?? "Onbekend",
+                    value: profile.map { sexLabel($0.sex) } ?? String(localized: "Onbekend"),
                     isReadOnly: true
                 )
 
@@ -1215,8 +1224,11 @@ struct PhysicalProfileSection: View {
 
     // MARK: - Sub-views
 
+    // Epic #37 story 37.1c: `label` is a `LocalizedStringKey` so the literal row labels
+    // (Leeftijd/Geslacht/…) resolve via the String Catalog; `value` stays `String` — it's
+    // dynamic data (e.g. "76.0 kg") that must render verbatim.
     /// Row for a read-only value (age, sex — come from HealthKit).
-    private func profileRow(icon: String, iconColor: Color, label: String, value: String, isReadOnly: Bool) -> some View {
+    private func profileRow(icon: String, iconColor: Color, label: LocalizedStringKey, value: String, isReadOnly: Bool) -> some View {
         HStack {
             Image(systemName: icon)
                 .foregroundStyle(iconColor)
@@ -1237,7 +1249,7 @@ struct PhysicalProfileSection: View {
     private func editableRow(
         icon: String,
         iconColor: Color,
-        label: String,
+        label: LocalizedStringKey,
         unit: String,
         binding: Binding<String>,
         source: UserPhysicalProfile.DataSource?

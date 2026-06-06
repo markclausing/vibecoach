@@ -21,7 +21,10 @@ enum SessionType: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// Short Dutch name for UI context (Picker, badges).
+    /// Short name for UI context (Picker, badges).
+    /// Epic #37 story 37.1c: NOT localized — this displayName is interpolated into coach prompts
+    /// (LastWorkoutContextFormatter, IntentExecutionContextFormatter, WorkoutHistoryContextBuilder),
+    /// so it stays Dutch for prompt stability until 37.4 splits the UI label from the prompt term.
     var displayName: String {
         switch self {
         case .vo2Max:    return "VO₂max"

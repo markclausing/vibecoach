@@ -12,14 +12,15 @@ enum Theme: String, Codable, CaseIterable {
 
     var id: String { rawValue }
 
+    // Epic #37 story 37.1c: theme-picker label resolved via the String Catalog.
     var displayName: String {
         switch self {
-        case .moss:   return "Mos"
-        case .stone:  return "Steen"
-        case .mist:   return "Nevel"
-        case .clay:   return "Klei"
+        case .moss:   return String(localized: "Mos")
+        case .stone:  return String(localized: "Steen")
+        case .mist:   return String(localized: "Nevel")
+        case .clay:   return String(localized: "Klei")
         case .sakura: return "Sakura"
-        case .ink:    return "Inkt"
+        case .ink:    return String(localized: "Inkt")
         }
     }
 

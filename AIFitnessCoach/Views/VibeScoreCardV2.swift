@@ -27,27 +27,30 @@ struct VibeScoreCardV2: View {
         return .red
     }
 
+    // Epic #37 story 37.1c: these computed labels render via Text(statusTitle) etc., which is
+    // verbatim. Resolve via the String Catalog with String(localized:). Interpolated numbers
+    // produce a %lld format key in the catalog.
     private var statusTitle: String {
-        if isLoading { return "Berekenen..." }
-        if isUnavailable { return "Vibe Score op pauze" }
-        guard let r = readiness else { return "Geen data" }
+        if isLoading { return String(localized: "Berekenen...") }
+        if isUnavailable { return String(localized: "Vibe Score op pauze") }
+        guard let r = readiness else { return String(localized: "Geen data") }
         switch injuryRiskLevel {
-        case .risk:    return "Voorzichtig — Blessurerisico"
-        case .caution: return "Let op — Actieve Klachten"
+        case .risk:    return String(localized: "Voorzichtig — Blessurerisico")
+        case .caution: return String(localized: "Let op — Actieve Klachten")
         case .safe:
-            if r.readinessScore >= 80 { return "Optimaal hersteld" }
-            if r.readinessScore >= 50 { return "Matig hersteld" }
-            return "Focus op herstel"
+            if r.readinessScore >= 80 { return String(localized: "Optimaal hersteld") }
+            if r.readinessScore >= 50 { return String(localized: "Matig hersteld") }
+            return String(localized: "Focus op herstel")
         }
     }
 
     private var statusDescription: String {
-        if isUnavailable { return "Geen recente Watch-data. Baseer je dag op je gevoel." }
+        if isUnavailable { return String(localized: "Geen recente Watch-data. Baseer je dag op je gevoel.") }
         guard let r = readiness else { return "" }
         let hrv = Int(r.hrv)
-        if r.readinessScore >= 80 { return "HRV \(hrv) ms boven baseline. Goede dag voor intensiteit." }
-        if r.readinessScore >= 50 { return "HRV \(hrv) ms. Houd de intensiteit gematigd." }
-        return "HRV \(hrv) ms. Prioriteit: rust en herstel."
+        if r.readinessScore >= 80 { return String(localized: "HRV \(hrv) ms boven baseline. Goede dag voor intensiteit.") }
+        if r.readinessScore >= 50 { return String(localized: "HRV \(hrv) ms. Houd de intensiteit gematigd.") }
+        return String(localized: "HRV \(hrv) ms. Prioriteit: rust en herstel.")
     }
 
     private func formatSleepMain(_ hours: Double) -> String {
@@ -57,10 +60,10 @@ struct VibeScoreCardV2: View {
     }
 
     private func sleepQualityLabel(_ hours: Double) -> String {
-        if hours >= 8 { return "uitstekend" }
-        if hours >= 7 { return "goed" }
-        if hours >= 6 { return "matig" }
-        return "te kort"
+        if hours >= 8 { return String(localized: "uitstekend") }
+        if hours >= 7 { return String(localized: "goed") }
+        if hours >= 6 { return String(localized: "matig") }
+        return String(localized: "te kort")
     }
 
     var body: some View {
@@ -199,7 +202,9 @@ private struct MetricColumnV2: View {
 
     var body: some View {
         VStack(spacing: 3) {
-            Text(label)
+            // Epic #37 story 37.1c: `label` is a String passed by the caller (e.g. "SLAAP"),
+            // so resolve via the catalog. Unit/value/detail stay verbatim (units + data).
+            Text(LocalizedStringKey(label))
                 .font(.caption2)
                 .fontWeight(.semibold)
                 .foregroundColor(.secondary)

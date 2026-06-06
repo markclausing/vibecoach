@@ -12,9 +12,19 @@ struct DashboardHeaderView: View {
         let hour = Calendar.current.component(.hour, from: Date())
         let firstName = userName.isEmpty ? nil : userName.components(separatedBy: " ").first
         let suffix = firstName.map { ", \($0)" } ?? ""
-        if hour < 12 { return "Goedemorgen\(suffix)" }
-        if hour < 18 { return "Goedemiddag\(suffix)" }
-        return "Goedenavond\(suffix)"
+        // Epic #37 story 37.1c: this is a computed String passed to `Text(greeting)`, which
+        // renders verbatim — so it can't pick up the String Catalog automatically. Use
+        // `String(localized:)` to resolve the greeting word in the active language; the name
+        // suffix is user data and stays as-is.
+        let word: String
+        if hour < 12 {
+            word = String(localized: "Goedemorgen")
+        } else if hour < 18 {
+            word = String(localized: "Goedemiddag")
+        } else {
+            word = String(localized: "Goedenavond")
+        }
+        return word + suffix
     }
 
     /// Builds the context line: "DONDERDAG 17 APR · BUILD PHASE · WK 2/5"

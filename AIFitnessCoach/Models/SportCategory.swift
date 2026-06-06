@@ -12,6 +12,9 @@ enum SportCategory: String, Codable, CaseIterable, Identifiable {
 
     var id: String { self.rawValue }
 
+    // Epic #37 story 37.1c: NOT localized — this displayName is interpolated into coach prompts
+    // (WorkoutHistoryContextBuilder, ChatViewModel goal context), so it stays Dutch for prompt
+    // stability until 37.4 splits the UI label from the prompt term.
     var displayName: String {
         switch self {
         case .running: return "Hardlopen"

@@ -269,28 +269,31 @@ struct GapAnalysisCardView: View {
     }
 
     /// Readable explanatory sentence below the date row.
+    /// Epic #37 story 37.1c: rendered via Text(projectionCaption(...)) -> verbatim. Resolve via the
+    /// String Catalog. The percentage is pre-formatted into a String and interpolated as %@ to keep
+    /// a literal "%" out of the generated format key.
     private func projectionCaption(_ projection: GoalProjection) -> String {
         let pct = Int((projection.observedGrowthRate * 100).rounded())
+        let pctStr = "\(pct)%"
         switch projection.status {
         case .alreadyPeaking:
-            return "Je piekbelasting is al bereikt. Vasthouden en binnenkort beginnen met taperen."
+            return String(localized: "Je piekbelasting is al bereikt. Vasthouden en binnenkort beginnen met taperen.")
         case .onTrack:
             let weeks = Int(abs(projection.weeksDelta).rounded())
-            return "Op basis van \(pct)% groei/week ben je \(weeks) week(en) eerder klaar dan gepland. Goed bezig!"
+            return String(localized: "Op basis van \(pctStr) groei/week ben je \(weeks) week(en) eerder klaar dan gepland. Goed bezig!")
         case .atRisk:
             let weeks = Int(abs(projection.weeksDelta).rounded())
-            return "Je groeit \(pct)% per week. Je loopt \(weeks) week(en) achter op de geplande piekdatum. Schroef het volume op."
+            return String(localized: "Je groeit \(pctStr) per week. Je loopt \(weeks) week(en) achter op de geplande piekdatum. Schroef het volume op.")
         case .catchUpNeeded:
             let weeks = Int(abs(projection.weeksDelta).rounded())
             if projection.hasCrossTrainingBonus {
-                return "Bottleneck: \(projection.blueprintType == .cyclingTour ? "fiets" : "hardloop")-volume. "
-                    + "Omdat je aerobe basis (TRIMP) sterk is, kunnen we dit gat de komende weken sneller dichten zodra je hersteld bent. "
-                    + "Nog \(weeks) week(en) bij te sturen — ruim op tijd."
+                let sportWord = projection.blueprintType == .cyclingTour ? String(localized: "fiets") : String(localized: "hardloop")
+                return String(localized: "Bottleneck: \(sportWord)-volume. Omdat je aerobe basis (TRIMP) sterk is, kunnen we dit gat de komende weken sneller dichten zodra je hersteld bent. Nog \(weeks) week(en) bij te sturen — ruim op tijd.")
             } else {
-                return "Je loopt \(weeks) week(en) achter, maar de racedag is nog ver genoeg weg voor een gerichte inhaalslag. Stap voor stap opbouwen."
+                return String(localized: "Je loopt \(weeks) week(en) achter, maar de racedag is nog ver genoeg weg voor een gerichte inhaalslag. Stap voor stap opbouwen.")
             }
         case .unreachable:
-            return "Zelfs met maximale wekelijkse groei is de piekbelasting niet haalbaar vóór de racedag. Bespreek dit met je coach."
+            return String(localized: "Zelfs met maximale wekelijkse groei is de piekbelasting niet haalbaar vóór de racedag. Bespreek dit met je coach.")
         }
     }
 
