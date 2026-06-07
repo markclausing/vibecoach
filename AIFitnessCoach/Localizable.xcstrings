@@ -1098,6 +1098,29 @@
         }
       }
     },
+    "Alles": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todo"
+          }
+        }
+      }
+    },
     "Anders": {
       "extractionState": "stale",
       "localizations": {
@@ -1822,6 +1845,29 @@
         }
       }
     },
+    "Coach analyseert schema...": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coach analysiert deinen Plan..."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coach is analysing your schedule..."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El coach está analizando tu plan..."
+          }
+        }
+      }
+    },
     "Coach herberekent weekbelasting…": {
       "localizations": {
         "de": {
@@ -1930,6 +1976,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Señales del coach, nada más."
+          }
+        }
+      }
+    },
+    "Context": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontext"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Context"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contexto"
           }
         }
       }
@@ -3041,6 +3110,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "PERFIL FISIOLÓGICO"
+          }
+        }
+      }
+    },
+    "Gebruiker": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Benutzer"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuario"
           }
         }
       }
@@ -4201,6 +4293,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Se reanuda a las %@."
+          }
+        }
+      }
+    },
+    "HISTORIE": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VERLAUF"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HISTORY"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HISTORIAL"
           }
         }
       }
@@ -7519,6 +7634,29 @@
         }
       }
     },
+    "PINS & CONTEXT": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PINS & KONTEXT"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PINS & CONTEXT"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "FIJADOS Y CONTEXTO"
+          }
+        }
+      }
+    },
     "Plan behaald": {
       "extractionState": "stale",
       "localizations": {
@@ -9447,6 +9585,29 @@
         }
       }
     },
+    "Vastgepind": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Angeheftet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinned"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fijado"
+          }
+        }
+      }
+    },
     "Verberg %lld eerdere berichten": {
       "extractionState": "stale",
       "localizations": {
@@ -10664,156 +10825,112 @@
         }
       }
     },
-    "Gebruiker": {
+    "Hele week bekijken": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "User"
+            "value": "View full week"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Benutzer"
+            "value": "Ganze Woche ansehen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Usuario"
+            "value": "Ver toda la semana"
           }
         }
       }
     },
-    "Coach analyseert schema...": {
+    "Minder": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Coach is analysing your schedule..."
+            "value": "Less"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Coach analysiert deinen Plan..."
+            "value": "Weniger"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El coach está analizando tu plan..."
+            "value": "Menos"
           }
         }
       }
     },
-    "PINS & CONTEXT": {
+    "RUST": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "PINS & CONTEXT"
+            "value": "REST"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "PINS & KONTEXT"
+            "value": "RUHE"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "FIJADOS Y CONTEXTO"
+            "value": "DESCANSO"
           }
         }
       }
     },
-    "HISTORIE": {
+    "Je trainingsbelasting is te hoog voor de taperingsfase.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "HISTORY"
+            "value": "Your training load is too high for the taper phase."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "VERLAUF"
+            "value": "Deine Trainingsbelastung ist zu hoch für die Taper-Phase."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "HISTORIAL"
+            "value": "Tu carga de entrenamiento es demasiado alta para la fase de taper."
           }
         }
       }
     },
-    "Vastgepind": {
+    "Je trainingsbelasting is %.0f TRIMP/week — het doel is %.0f.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pinned"
+            "value": "Your training load is %.0f TRIMP/week — the target is %.0f."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Angeheftet"
+            "value": "Deine Trainingsbelastung ist %.0f TRIMP/Woche — das Ziel ist %.0f."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Fijado"
-          }
-        }
-      }
-    },
-    "Alles": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "All"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Todo"
-          }
-        }
-      }
-    },
-    "Context": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Context"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kontext"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contexto"
+            "value": "Tu carga de entrenamiento es %.0f TRIMP/semana — el objetivo es %.0f."
           }
         }
       }

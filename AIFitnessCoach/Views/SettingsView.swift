@@ -77,8 +77,8 @@ struct SettingsView: View {
     }
 
     private var stravaConnectionSubtitle: String {
-        guard stravaAuthService.isAuthenticated else { return "Niet gekoppeld" }
-        return selectedDataSource == .strava ? "Voorkeur" : "Aanvullend"
+        guard stravaAuthService.isAuthenticated else { return String(localized: "Niet gekoppeld") }
+        return selectedDataSource == .strava ? String(localized: "Voorkeur") : String(localized: "Aanvullend")
     }
 
     /// Epic 44 Story 44.4: brief summary of the configured thresholds for the

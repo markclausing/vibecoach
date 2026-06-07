@@ -270,7 +270,7 @@ struct WeekTimelineView: View {
             }
         } label: {
             HStack(spacing: 4) {
-                Text(isExpanded ? "Minder" : "Hele week bekijken")
+                Text(isExpanded ? String(localized: "Minder") : String(localized: "Hele week bekijken"))
                     .font(.subheadline).fontWeight(.medium)
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                     .font(.caption).fontWeight(.semibold)
