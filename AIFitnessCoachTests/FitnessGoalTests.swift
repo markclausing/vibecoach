@@ -505,6 +505,32 @@ final class FitnessGoalTests: XCTestCase {
         XCTAssertEqual(weekday, 7, "sábado = weekday 7 (zaterdag).")
     }
 
+    func testSuggestedWorkout_ResolvedDate_ParsesLocalizedDateWithComma() {
+        // Epic #37 fix: the German coach returns "Sonntag, 7. Juni" — the first word "Sonntag,"
+        // carries a trailing comma. Without punctuation stripping the lookup failed, every
+        // workout fell back to today and the whole week collapsed onto a single day.
+        let workout = SuggestedWorkout(
+            dateOrDay: "Mittwoch, 10. Juni",
+            activityType: "Wielrennen",
+            suggestedDurationMinutes: 45,
+            targetTRIMP: 40,
+            description: "Test"
+        )
+        let weekday = Calendar.current.component(.weekday, from: workout.resolvedDate)
+        XCTAssertEqual(weekday, 4, "Mittwoch (met komma) = weekday 4.")
+    }
+
+    func testSuggestedWorkout_ResolvedDate_DistinctDaysDoNotCollapse() {
+        // Regression for the "week schedule shows only 1 day" bug: two different localized
+        // day strings must resolve to two different days.
+        let sunday = SuggestedWorkout(dateOrDay: "Sonntag, 7. Juni", activityType: "Rust",
+                                      suggestedDurationMinutes: 0, targetTRIMP: 0, description: "x")
+        let monday = SuggestedWorkout(dateOrDay: "Montag, 8. Juni", activityType: "Wielrennen",
+                                      suggestedDurationMinutes: 45, targetTRIMP: 40, description: "x")
+        XCTAssertNotEqual(sunday.resolvedDate, monday.resolvedDate,
+                          "Verschillende dagnamen mogen niet op dezelfde datum samenvallen.")
+    }
+
     func testSuggestedWorkout_ResolvedDate_ParsesCompoundDayString() {
         // "Maandag 21 apr" — alleen het eerste woord ("Maandag") wordt gebruikt voor de match.
         let workout = SuggestedWorkout(

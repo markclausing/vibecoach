@@ -131,7 +131,12 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         ]
 
         // Use only the first word so "Maandag 21 apr" is correctly recognised as "maandag".
-        let firstWord = dateOrDay.lowercased().components(separatedBy: .whitespaces).first ?? dateOrDay.lowercased()
+        // Epic #37 story 37.4 fix: strip punctuation so a localized format like the German
+        // "Sonntag, 7. Juni" (first word "Sonntag,") still matches "sonntag" in the map —
+        // otherwise every workout failed the lookup, fell back to `today` and the whole week
+        // collapsed onto a single day.
+        let firstWord = (dateOrDay.lowercased().components(separatedBy: .whitespaces).first ?? dateOrDay.lowercased())
+            .trimmingCharacters(in: .punctuationCharacters)
         guard let targetWeekday = dayMap[firstWord] else { return today }
 
         let todayWeekday = calendar.component(.weekday, from: today)
