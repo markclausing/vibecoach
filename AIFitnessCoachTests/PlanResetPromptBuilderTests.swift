@@ -34,7 +34,7 @@ final class PlanResetPromptBuilderTests: XCTestCase {
                       "De heilige-sectie moet bovenaan zodat de coach 'm niet kan missen")
         XCTAssertTrue(system.contains("Intervaltraining"))
         XCTAssertTrue(system.contains("TRIMP 90"))
-        XCTAssertTrue(user.contains("verplaatste sessie") && !user.contains("sessies"),
+        XCTAssertEqual(user, String(localized: "Herschrijf de rest van mijn week rondom de verplaatste sessie."),
                       "User-facing tekst moet enkelvoud gebruiken bij één swap")
     }
 
@@ -63,7 +63,7 @@ final class PlanResetPromptBuilderTests: XCTestCase {
 
         XCTAssertTrue(system.contains("Intervaltraining"))
         XCTAssertTrue(system.contains("Lange duurloop"))
-        XCTAssertTrue(user.contains("2 verplaatste sessies"),
+        XCTAssertEqual(user, String(localized: "Herschrijf de rest van mijn week rondom de \(2) verplaatste sessies."),
                       "User-facing tekst moet meervoud + telling gebruiken bij meerdere swaps")
     }
 

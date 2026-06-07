@@ -66,7 +66,7 @@ final class LastWorkoutContextFormatterTests: XCTestCase {
         )
         XCTAssertTrue(result.contains("Session type: Herstel"),
                       "Display-naam moet zichtbaar zijn — dat is waar de coach naar refereert")
-        XCTAssertTrue(result.contains("Actief herstel"),
+        XCTAssertTrue(result.contains("Active recovery"),
                       "Coaching-summary van het intent moet meekomen — architect-notitie: AI begrijpt tekstuele context beter dan label")
     }
 
@@ -83,8 +83,8 @@ final class LastWorkoutContextFormatterTests: XCTestCase {
         )
 
         XCTAssertNotEqual(recoverySummary, vo2Summary)
-        XCTAssertTrue(recoverySummary.contains("Actief herstel"))
-        XCTAssertTrue(vo2Summary.contains("Maximale aerobe stimulus"))
+        XCTAssertTrue(recoverySummary.contains("Active recovery"))
+        XCTAssertTrue(vo2Summary.contains("Maximum aerobic stimulus"))
     }
 
     func testNoSessionTypeOmitsBlockEntirely() {

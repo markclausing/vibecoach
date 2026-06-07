@@ -10983,6 +10983,446 @@
           }
         }
       }
+    },
+    "Ik heb je week opnieuw ingedeeld rondom je verplaatste sessies. Bekijk je overzicht.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I've rebuilt your week around your moved sessions. Check your overview."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich habe deine Woche um deine verschobenen Einheiten herum neu geplant. Sieh dir deine Übersicht an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "He reorganizado tu semana en torno a tus sesiones movidas. Revisa tu resumen."
+          }
+        }
+      }
+    },
+    "Los de achterstand op voor %@ en geef me een bijgestuurd schema.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make up the shortfall for %@ and give me an adjusted schedule."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hol den Rückstand für %@ auf und gib mir einen angepassten Plan."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recupera el retraso de %@ y dame un plan ajustado."
+          }
+        }
+      }
+    },
+    "Ik heb je herstelplan klaar! Bekijk je overzicht — het schema is bijgewerkt om je weer op schema te brengen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your recovery plan is ready! Check your overview — the schedule has been updated to get you back on track."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Erholungsplan ist fertig! Sieh dir deine Übersicht an — der Plan wurde aktualisiert, um dich wieder auf Kurs zu bringen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Tu plan de recuperación está listo! Revisa tu resumen: el plan se ha actualizado para volver a encarrilarte."
+          }
+        }
+      }
+    },
+    "Ik sla de geplande %@ op %@ over.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I'm skipping the planned %@ on %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich überspringe die geplante %@ am %@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voy a saltarme la %@ planificada del %@."
+          }
+        }
+      }
+    },
+    "Ik heb je schema bijgewerkt! Bekijk je overzicht voor het nieuwe plan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I've updated your schedule! Check your overview for the new plan."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich habe deinen Plan aktualisiert! Sieh dir die Übersicht für den neuen Plan an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡He actualizado tu plan! Revisa tu resumen para ver el nuevo plan."
+          }
+        }
+      }
+    },
+    "Ik kon geen recente trainingen vinden in HealthKit of je Strava account.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find any recent workouts in HealthKit or your Strava account."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich konnte keine aktuellen Workouts in HealthKit oder deinem Strava-Konto finden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude encontrar entrenamientos recientes en HealthKit ni en tu cuenta de Strava."
+          }
+        }
+      }
+    },
+    "Ik kon geen recente trainingen vinden. HealthKit fout: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't find any recent workouts. HealthKit error: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich konnte keine aktuellen Workouts finden. HealthKit-Fehler: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude encontrar entrenamientos recientes. Error de HealthKit: %@"
+          }
+        }
+      }
+    },
+    "Je bent niet ingelogd op Strava. Ga naar instellingen om te koppelen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're not logged in to Strava. Go to settings to connect."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du bist nicht bei Strava angemeldet. Geh zu den Einstellungen, um zu verbinden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No has iniciado sesión en Strava. Ve a ajustes para vincular."
+          }
+        }
+      }
+    },
+    "Ongeldig antwoord van de server.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid response from the server."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ungültige Antwort vom Server."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Respuesta no válida del servidor."
+          }
+        }
+      }
+    },
+    "Ik heb je schema bijgewerkt! Bekijk je overzicht.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I've updated your schedule! Check your overview."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich habe deinen Plan aktualisiert! Sieh dir deine Übersicht an."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡He actualizado tu plan! Revisa tu resumen."
+          }
+        }
+      }
+    },
+    "Ik kon het schema niet correct verwerken. Probeer het opnieuw.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't process the schedule correctly. Please try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich konnte den Plan nicht korrekt verarbeiten. Bitte versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude procesar el plan correctamente. Inténtalo de nuevo."
+          }
+        }
+      }
+    },
+    "Ik kon de reactie niet verwerken. Probeer het opnieuw.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I couldn't process the response. Please try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich konnte die Antwort nicht verarbeiten. Bitte versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude procesar la respuesta. Inténtalo de nuevo."
+          }
+        }
+      }
+    },
+    "Fout bij ophalen van data: ": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error fetching data: "
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fehler beim Abrufen der Daten: "
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error al obtener los datos: "
+          }
+        }
+      }
+    },
+    "Je Strava sessie is verlopen. Koppel opnieuw in de instellingen.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Strava session has expired. Reconnect in settings."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Strava-Sitzung ist abgelaufen. Verbinde dich erneut in den Einstellungen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu sesión de Strava ha caducado. Vuelve a vincularla en ajustes."
+          }
+        }
+      }
+    },
+    "Strava-limiet bereikt — hervat om %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strava limit reached — resumes at %@."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strava-Limit erreicht — wird um %@ fortgesetzt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Límite de Strava alcanzado: se reanuda a las %@."
+          }
+        }
+      }
+    },
+    "Netwerkfout (%@).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network error (%@)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Netzwerkfehler (%@)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error de red (%@)."
+          }
+        }
+      }
+    },
+    "Data onleesbaar (%@).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data unreadable (%@)."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daten unlesbar (%@)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datos ilegibles (%@)."
+          }
+        }
+      }
+    },
+    "Herschrijf de rest van mijn week rondom de verplaatste sessie.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rewrite the rest of my week around the moved session."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plane den Rest meiner Woche um die verschobene Einheit herum neu."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reescribe el resto de mi semana en torno a la sesión movida."
+          }
+        }
+      }
+    },
+    "Herschrijf mijn week vanaf vandaag.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rewrite my week from today."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plane meine Woche ab heute neu."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reescribe mi semana a partir de hoy."
+          }
+        }
+      }
+    },
+    "Herschrijf de rest van mijn week rondom de %lld verplaatste sessies.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rewrite the rest of my week around the %lld moved sessions."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plane den Rest meiner Woche um die %lld verschobenen Einheiten herum neu."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reescribe el resto de mi semana en torno a las %lld sesiones movidas."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

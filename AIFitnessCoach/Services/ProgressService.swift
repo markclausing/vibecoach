@@ -232,7 +232,7 @@ struct BlueprintGap {
             // Translate the abstract TRIMP number into a concrete time indication for the coach.
             // The coach MUST use the translation — never a bare TRIMP number without explanation.
             let hint = TRIMPTranslator.coachHint(extraTRIMPPerWeek, for: blueprintType)
-            lines.append("📈 VOLUME-BIJSTURING: Om het fase-tekort in te halen is \(hint) extra per week nodig. Vertaal dit altijd naar een concrete aanpassing van een bestaande training: bijv. 'verleng je zaterdag-rit met X minuten' of 'voeg een extra duurloop toe op dinsdag'.")
+            lines.append("📈 VOLUME ADJUSTMENT: To make up the phase shortfall, \(hint) extra per week is needed. Always translate this into a concrete change to an existing session: e.g. 'extend your Saturday ride by X minutes' or 'add an extra endurance run on Tuesday'.")
         }
         if isBehindOnKm, totalPhaseKmTarget > 0 {
             let extraKmPerWeek = weeksRemaining > 0 ? (kmGap / weeksRemaining) : 0

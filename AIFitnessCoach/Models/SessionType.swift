@@ -74,43 +74,43 @@ extension SessionType {
             return SessionIntent(
                 targetZoneRange: 5...5,
                 expectedRPERange: 8...10,
-                coachingSummary: "Maximale aerobe stimulus. Korte intervallen op zone 5 (>90% HRmax) met volledig herstel ertussen. Doel: VO₂max verhogen."
+                coachingSummary: "Maximum aerobic stimulus. Short intervals at zone 5 (>90% HRmax) with full recovery in between. Goal: raise VO₂max."
             )
         case .threshold:
             return SessionIntent(
                 targetZoneRange: 4...4,
                 expectedRPERange: 7...8,
-                coachingSummary: "Lactaat-drempel werk. Sustained zone 4 (88-92% HRmax) tussen 8 en 30 minuten. Doel: drempel-power omhoog."
+                coachingSummary: "Lactate-threshold work. Sustained zone 4 (88-92% HRmax) between 8 and 30 minutes. Goal: raise threshold power."
             )
         case .tempo:
             return SessionIntent(
                 targetZoneRange: 3...3,
                 expectedRPERange: 5...7,
-                coachingSummary: "Sub-threshold tempo (zone 3, 80-87% HRmax). Comfortabel hard, langer dan threshold. Bouwt aerobe capaciteit en mentale taaiheid."
+                coachingSummary: "Sub-threshold tempo (zone 3, 80-87% HRmax). Comfortably hard, longer than threshold. Builds aerobic capacity and mental toughness."
             )
         case .endurance:
             return SessionIntent(
                 targetZoneRange: 2...2,
                 expectedRPERange: 3...5,
-                coachingSummary: "Aerobe basis (zone 2, 65-78% HRmax). Lange sessie, kan praten. Doel: vetverbranding en mitochondriale dichtheid."
+                coachingSummary: "Aerobic base (zone 2, 65-78% HRmax). Long session, can hold a conversation. Goal: fat burning and mitochondrial density."
             )
         case .recovery:
             return SessionIntent(
                 targetZoneRange: 1...1,
                 expectedRPERange: 1...3,
-                coachingSummary: "Actief herstel (zone 1, <65% HRmax). Korte sessie, lage HR. Stimuleert circulatie zonder belasting toe te voegen."
+                coachingSummary: "Active recovery (zone 1, <65% HRmax). Short session, low HR. Stimulates circulation without adding load."
             )
         case .social:
             return SessionIntent(
                 targetZoneRange: 1...3,
                 expectedRPERange: 2...6,
-                coachingSummary: "Sociale sessie — intensiteit volgt het tempo van de groep, niet een fysiologisch doel. Beoordeel niet op zone-discipline maar op mentaal herstel."
+                coachingSummary: "Social session — intensity follows the group's pace, not a physiological goal. Don't judge on zone discipline but on mental recovery."
             )
         case .race:
             return SessionIntent(
                 targetZoneRange: 4...5,
                 expectedRPERange: 9...10,
-                coachingSummary: "Wedstrijd-effort. Alle-out volgens race-strategie. Niet meten met training-zones — dit is performance-uitvoering."
+                coachingSummary: "Race effort. All-out per race strategy. Don't measure with training zones — this is performance execution."
             )
         }
     }
