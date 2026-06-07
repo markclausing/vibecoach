@@ -51,13 +51,13 @@ enum TrainingPhase: String, CaseIterable {
     var aiInstruction: String {
         switch self {
         case .baseBuilding:
-            return "Huidige fase: Base Building (>12 weken tot evenement). Instructie: Focus uitsluitend op laag-intensief volume (Zone 1-2). Geen intervaltraining. Bouw de wekelijkse TRIMP geleidelijk op met max. 10% per week. Leg het aerobe fundament."
+            return "Current phase: Base Building (>12 weeks to event). Instruction: Focus exclusively on low-intensity volume (Zone 1-2). No interval training. Build weekly TRIMP gradually by max. 10% per week. Lay the aerobic foundation."
         case .buildPhase:
-            return "Huidige fase: Build Phase (4-12 weken tot evenement). Instructie: Verhoog zowel volume als intensiteit. Introduceer gecontroleerde intervaltraining (Zone 3-4). Wekelijkse TRIMP-stijging max. 12%. Afwisselen tussen belastingsweken en hersteldagen."
+            return "Current phase: Build Phase (4-12 weeks to event). Instruction: Increase both volume and intensity. Introduce controlled interval training (Zone 3-4). Weekly TRIMP increase max. 12%. Alternate between load weeks and recovery days."
         case .peakPhase:
-            return "Huidige fase: Peak Phase (2-4 weken tot evenement). Instructie: Maximale trainingsbelasting. Race-specifieke trainingen: tempo's op wedstrijdintensiteit. Hoge TRIMP, maar wel gecontroleerde hersteldagen inplannen. Dit is de laatste kans voor adaptatie."
+            return "Current phase: Peak Phase (2-4 weeks to event). Instruction: Maximum training load. Race-specific sessions: tempos at race intensity. High TRIMP, but still schedule controlled recovery days. This is the last chance for adaptation."
         case .tapering:
-            return "Huidige fase: Tapering (<2 weken tot evenement). KRITIEKE INSTRUCTIE: Verlaag het wekelijkse TRIMP-volume met minimaal 40%. Geen lange zware trainingen meer. Alleen korte, lichte sessies (max. 45 min) om de benen scherp te houden. De atleet is klaar — rust is nu de training."
+            return "Current phase: Tapering (<2 weeks to event). CRITICAL INSTRUCTION: Reduce the weekly TRIMP volume by at least 40%. No more long, heavy sessions. Only short, light sessions (max. 45 min) to keep the legs sharp. The athlete is ready — rest is now the training."
         }
     }
 
@@ -83,7 +83,7 @@ enum TrainingPhase: String, CaseIterable {
                 longestSessionPct: 0.40,
                 weeklyTrimpPct: 0.60,
                 sessionWindowWeeks: 4,
-                coaching: "We zitten in de **Base Building**-fase. Focus op laag-intensief volume en het leggen van het aerobe fundament. Geen intervaltraining — nog niet."
+                coaching: "We're in the **Base Building** phase. Focus on low-intensity volume and laying the aerobic foundation. No interval training — not yet."
             )
         case .buildPhase:
             // Build-up: 60% of the peak long run, 80% of the TRIMP target.
@@ -91,7 +91,7 @@ enum TrainingPhase: String, CaseIterable {
                 longestSessionPct: 0.60,
                 weeklyTrimpPct: 0.80,
                 sessionWindowWeeks: 3,
-                coaching: "We zitten in de **Build**-fase — het is tijd om de intensiteit op te schroeven. Voeg gecontroleerde intervaltrainingen toe en bouw de langste sessie geleidelijk op."
+                coaching: "We're in the **Build** phase — it's time to ramp up the intensity. Add controlled interval sessions and build the longest session gradually."
             )
         case .peakPhase:
             // Peak: 80% of the peak long run is required, hit the full TRIMP target.
@@ -99,7 +99,7 @@ enum TrainingPhase: String, CaseIterable {
                 longestSessionPct: 0.80,
                 weeklyTrimpPct: 1.00,
                 sessionWindowWeeks: 3,
-                coaching: "We zitten in de **Peak**-fase — maximale trainingsbelasting. Race-specifieke trainingen op wedstrijdintensiteit. Daarna volgt de taper."
+                coaching: "We're in the **Peak** phase — maximum training load. Race-specific sessions at race intensity. Then the taper follows."
             )
         case .tapering:
             // Taper: longest session AT MOST 50% of the peak long run (not too heavy!), TRIMP back to 60%.
@@ -109,7 +109,7 @@ enum TrainingPhase: String, CaseIterable {
                 longestSessionPct: 0.50,
                 weeklyTrimpPct: 0.60,
                 sessionWindowWeeks: 2,
-                coaching: "We zitten in de **Taper**-fase. Minder is meer — houd sessies kort en licht. De benen worden scherp door rust, niet door extra kilometers."
+                coaching: "We're in the **Taper** phase. Less is more — keep sessions short and light. The legs get sharp through rest, not extra kilometres."
             )
         }
     }
@@ -224,7 +224,7 @@ struct PeriodizationResult {
         let sessionUnit = blueprint.goalType == .cyclingTour ? "km rit" : "km loop"
         let sessionItem = MilestoneItem(
             label: "Langste sessie",
-            detail: "\(String(format: "%.0f", requiredSessionMeters / 1000)) \(sessionUnit) \(phase == .tapering ? "(max)" : "(min)") — \(criteria.sessionWindowWeeks) weken venster",
+            detail: "\(String(format: "%.0f", requiredSessionMeters / 1000)) \(sessionUnit) \(phase == .tapering ? "(max)" : "(min)") — \(criteria.sessionWindowWeeks) weeks window",
             current: longestRecentSessionMeters / 1000,
             required: requiredSessionMeters / 1000,
             isMet: meetsLongestSessionCriteria,
@@ -256,31 +256,31 @@ struct PeriodizationResult {
 
         var lines = [
             "═══ PERIODISERING: '\(goal.title)' ═══",
-            "Fase: \(phase.displayName) | \(weeksLeftStr) weken resterend",
+            "Phase: \(phase.displayName) | \(weeksLeftStr) weeks remaining",
             criteria.coaching,
             "",
             "SUCCESCRITERIA DEZE FASE:",
-            "\(sessionCheck) Langste sessie (afgelopen \(criteria.sessionWindowWeeks) weken): \(longestKm) km (eis: \(sessionLabel))",
-            "\(trimpCheck) Wekelijkse TRIMP: \(trimpActual) TRIMP/week (eis: \(phase == .tapering ? "≤" : "≥")\(trimpTarget))"
+            "\(sessionCheck) Longest session (past \(criteria.sessionWindowWeeks) weeks): \(longestKm) km (requirement: \(sessionLabel))",
+            "\(trimpCheck) Weekly TRIMP: \(trimpActual) TRIMP/week (requirement: \(phase == .tapering ? "≤" : "≥")\(trimpTarget))"
         ]
 
         // Compliment triggers — the coach MUST use this as the opening
         if meetsLongestSessionCriteria {
             lines.append("")
-            lines.append("🎉 COMPLIMENT TRIGGER: De langste-sessie-eis is behaald! Begin je antwoord met een oprecht compliment hierover. Benoem de specifieke afstand.")
+            lines.append("🎉 COMPLIMENT TRIGGER: The longest-session requirement has been met! Start your answer with a sincere compliment about it. Name the specific distance.")
         } else {
             let shortfallKm = String(format: "%.1f", max(0, requiredSessionMeters - longestRecentSessionMeters) / 1000)
             lines.append("")
-            lines.append("🚨 KRITIEKE MIJLPAAL ACHTERSTAND: De langste sessie is \(shortfallKm) km te kort voor de \(phase.displayName). Dit is de #1 prioriteit voor het schema deze week. Wees direct maar motiverend — noem de concrete doelafstand.")
+            lines.append("🚨 CRITICAL MILESTONE SHORTFALL: The longest session is \(shortfallKm) km short for the \(phase.displayName). This is the #1 priority for the schedule this week. Be direct but motivating — name the concrete target distance.")
         }
 
         if meetsWeeklyTrimpCriteria && phase != .tapering {
-            lines.append("🎉 COMPLIMENT TRIGGER: Het wekelijkse TRIMP-doel is behaald. Benoem dit als positief signaal van consistentie.")
+            lines.append("🎉 COMPLIMENT TRIGGER: The weekly TRIMP target has been met. Mention this as a positive sign of consistency.")
         }
 
         // Schedule-accountability duty on injury or adjustment
         lines.append("")
-        lines.append("SCHEMA-VERANTWOORDINGSPLICHT: Als je het schema aanpast (bijv. wegens blessure of overbelasting), MOET je expliciet uitleggen hoe de \(phase.displayName)-eis (\(sessionLabel)) nog steeds haalbaar blijft. Gebruik sportspecifieke alternatieven als de primaire sport tijdelijk niet kan. Bijv: 'Ik vervang je hardloopsessie door fietsen, maar de aerobe basis voor \(goal.title) bewaken we zo...'")
+        lines.append("SCHEDULE ACCOUNTABILITY: If you adjust the schedule (e.g. due to injury or overload), you MUST explicitly explain how the \(phase.displayName) requirement (\(sessionLabel)) is still achievable. Use sport-specific alternatives if the primary sport temporarily isn't possible. E.g.: 'I'm replacing your running session with cycling, but we'll safeguard the aerobic base for \(goal.title) this way...'")
 
         // Goal-intent section — always inject so the coach knows how to prioritise
         lines.append("")

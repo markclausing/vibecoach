@@ -134,26 +134,26 @@ struct PeriodizationEngine {
     // MARK: - Coaching Instruction Builders
 
     private static func completionInstruction(goal: FitnessGoal, vibeScore: Int, isMultiDay: Bool, stretchAllowed: Bool) -> String {
-        var lines = ["══ DOEL-INTENTIE: UITLOPEN / OVERLEVEN ══"]
+        var lines = ["══ GOAL INTENT: FINISH / SURVIVE ══"]
 
         if stretchAllowed, let stretchTime = goal.stretchGoalTime {
             let totalSec = Int(stretchTime)
             let hours    = totalSec / 3600
             let minutes  = (totalSec % 3600) / 60
-            let timeStr  = hours > 0 ? "\(hours)u\(String(format: "%02d", minutes))" : "\(minutes) min"
-            lines.append("Primaire intentie: FINISHEN — maar er is een doeltijd van \(timeStr) ingesteld.")
-            lines.append("VibeScore (\(vibeScore)) is hoog genoeg: Voeg maximaal 1 temposessie per week toe op doelpace. Basis blijft Zone 1-2; tempo is additioneel, niet leidend.")
+            let timeStr  = hours > 0 ? "\(hours)h\(String(format: "%02d", minutes))" : "\(minutes) min"
+            lines.append("Primary intent: FINISH — but a target time of \(timeStr) is set.")
+            lines.append("Vibe Score (\(vibeScore)) is high enough: add at most 1 tempo session per week at goal pace. The base stays Zone 1-2; tempo is additional, not leading.")
         } else {
-            lines.append("De gebruiker wil dit evenement uitlopen en veilig finishen — géén racestrategie.")
-            lines.append("INSTRUCTIE: Prioriteer Zone 1-2 (aerobe basis). GEEN lactaat-intervallen of tempo-blokken.")
-            lines.append("Schema-principe: duurvermogen > intensiteit. Lange, rustige trainingen staan centraal.")
+            lines.append("The user wants to finish this event safely — no race strategy.")
+            lines.append("INSTRUCTION: Prioritise Zone 1-2 (aerobic base). NO lactate intervals or tempo blocks.")
+            lines.append("Schedule principle: endurance > intensity. Long, easy sessions are central.")
         }
 
         if isMultiDay {
-            lines.append("FORMAAT — MEERDAAGSE ETAPPERIT: Verspreid de belasting over opeenvolgende dagen (bijv. Za + Zo back-to-back duurtraining). Verminder hoge intensiteit verder — gewenning aan accumulatievermoeidheid is het primaire doel.")
+            lines.append("FORMAT — MULTI-DAY STAGE TOUR: Spread the load across consecutive days (e.g. Sat + Sun back-to-back endurance). Reduce high intensity further — adapting to cumulative fatigue is the primary goal.")
         }
         if vibeScore < 65 {
-            lines.append("⚠️ LAGE VIBE SCORE (\(vibeScore)): Herstel staat deze week voorop. Verlaag volume met 20% en schrap elke intensieve sessie — completion staat op het spel als de sporter uitgeput aan de start staat.")
+            lines.append("⚠️ LOW VIBE SCORE (\(vibeScore)): Recovery comes first this week. Lower volume by 20% and cut every intense session — completion is at risk if the athlete starts exhausted.")
         }
         return lines.joined(separator: "\n")
     }
@@ -165,28 +165,28 @@ struct PeriodizationEngine {
         allowHighIntensity: Bool,
         isMultiDay: Bool
     ) -> String {
-        var lines = ["══ DOEL-INTENTIE: MAXIMALE PRESTATIE ══"]
+        var lines = ["══ GOAL INTENT: MAXIMUM PERFORMANCE ══"]
 
         if isMultiDay {
-            lines.append("FORMAAT — MEERDAAGSE ETAPPERIT: Verspreid de zware belasting over opeenvolgende dagen (Za + Zo back-to-back). Verlaag het aantal lactaat-intervallen t.o.v. een eendaagse race — duurvermogen en herstelsnelheid zijn hier doorslaggevend.")
+            lines.append("FORMAT — MULTI-DAY STAGE TOUR: Spread the heavy load across consecutive days (Sat + Sun back-to-back). Reduce the number of lactate intervals vs. a single-day race — endurance and recovery speed are decisive here.")
         }
 
         if !allowHighIntensity {
-            lines.append("⚠️ VIBE SCORE (\(vibeScore)) TE LAAG voor hoge intensiteit: Schrap tempo-intervallen en prioriteer herstel deze week. De prestatie wordt gered door nu rust te nemen, niet door door te bijten.")
+            lines.append("⚠️ VIBE SCORE (\(vibeScore)) TOO LOW for high intensity: Cut tempo intervals and prioritise recovery this week. Performance is saved by resting now, not by pushing through.")
         }
 
         if stretchPaceAllowed, let stretchTime = goal.stretchGoalTime {
             let totalSec = Int(stretchTime)
             let hours    = totalSec / 3600
             let minutes  = (totalSec % 3600) / 60
-            let timeStr  = hours > 0 ? "\(hours)u\(String(format: "%02d", minutes))" : "\(minutes) min"
-            lines.append("✅ DOELTIJD \(timeStr) — VibeScore (\(vibeScore)) is hoog genoeg: Voeg 1 temposessie per week toe op doelsnelheid. Bereken de doelpace en benoem dit expliciet in het schema ('tempo-blok op doelsnelheid').")
+            let timeStr  = hours > 0 ? "\(hours)h\(String(format: "%02d", minutes))" : "\(minutes) min"
+            lines.append("✅ TARGET TIME \(timeStr) — Vibe Score (\(vibeScore)) is high enough: add 1 tempo session per week at goal speed. Compute the goal pace and state it explicitly in the schedule ('tempo block at goal speed').")
         } else if let stretchTime = goal.stretchGoalTime {
             let totalSec = Int(stretchTime)
             let hours    = totalSec / 3600
             let minutes  = (totalSec % 3600) / 60
-            let timeStr  = hours > 0 ? "\(hours)u\(String(format: "%02d", minutes))" : "\(minutes) min"
-            lines.append("🔴 DOELTIJD \(timeStr) ingesteld maar VibeScore (\(vibeScore)) is te laag of taperfase actief: Val terug op PURE DUURTRAINING. Geen tempo-blokken op doelsnelheid — eerst herstellen, dan presteren.")
+            let timeStr  = hours > 0 ? "\(hours)h\(String(format: "%02d", minutes))" : "\(minutes) min"
+            lines.append("🔴 TARGET TIME \(timeStr) set but Vibe Score (\(vibeScore)) is too low or taper phase active: Fall back to PURE ENDURANCE. No tempo blocks at goal speed — recover first, then perform.")
         }
 
         return lines.joined(separator: "\n")
