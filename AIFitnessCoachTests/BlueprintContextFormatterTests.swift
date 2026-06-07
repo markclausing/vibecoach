@@ -56,7 +56,7 @@ final class BlueprintContextFormatterTests: XCTestCase {
         XCTAssertTrue(output.contains("(0/1 critical requirements met)"))
         XCTAssertTrue(output.contains("16 km duurloop"))
         XCTAssertTrue(output.contains("deadline:"))
-        XCTAssertTrue(output.contains("4 weken voor race"))
+        XCTAssertTrue(output.contains("4 weeks before race"))
     }
 
     func test_format_multipleResults_separatedByNewlines() {

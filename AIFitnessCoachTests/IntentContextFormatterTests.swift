@@ -61,7 +61,7 @@ final class IntentContextFormatterTests: XCTestCase {
         let r = makeResult(goal: goal, instruction: "Push tempo.")
         let output = IntentContextFormatter.format(results: [r])
         XCTAssertTrue(output.contains("Stretch Goal target time"))
-        XCTAssertTrue(output.contains("3 uur en 30 minuten"))
+        XCTAssertTrue(output.contains("3 hours and 30 minutes"))
     }
 
     func test_format_withSubHourStretchGoal_omitsHours() {
@@ -71,7 +71,7 @@ final class IntentContextFormatterTests: XCTestCase {
                                stretchGoalTime: 45 * 60) // 45 min
         let r = makeResult(goal: goal, instruction: "Push tempo.")
         let output = IntentContextFormatter.format(results: [r])
-        XCTAssertTrue(output.contains("45 minuten"))
+        XCTAssertTrue(output.contains("45 minutes"))
         XCTAssertFalse(output.contains("uur en"), "Sub-uur stretch tijd moet alleen minuten tonen.")
     }
 }
