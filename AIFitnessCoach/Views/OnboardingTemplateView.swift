@@ -53,9 +53,11 @@ struct OnboardingTemplateView<Content: View>: View {
                 .padding(.bottom, 28)
 
             // 2. Eyebrow + title + copy (left aligned, Dashboard style)
+            // Epic #37 story 37.1c: title/eyebrow/subtitle/button titles are String params (one
+            // call site passes a computed String), so resolve via the catalog at render time.
             VStack(alignment: .leading, spacing: 10) {
                 if let eyebrow {
-                    Text(eyebrow)
+                    Text(LocalizedStringKey(eyebrow))
                         .font(.caption)
                         .fontWeight(.semibold)
                         .kerning(1.2)
@@ -63,14 +65,14 @@ struct OnboardingTemplateView<Content: View>: View {
                         .foregroundColor(eyebrowColor ?? themeManager.primaryAccentColor)
                 }
 
-                Text(title)
+                Text(LocalizedStringKey(title))
                     .font(.system(size: 30, weight: .bold))
                     .foregroundColor(.primary)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let subtitle {
-                    Text(subtitle)
+                    Text(LocalizedStringKey(subtitle))
                         .font(.body)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.leading)
@@ -89,7 +91,7 @@ struct OnboardingTemplateView<Content: View>: View {
             // 4. Buttons at the bottom
             VStack(spacing: 10) {
                 Button(action: primaryAction) {
-                    Text(primaryButtonTitle)
+                    Text(LocalizedStringKey(primaryButtonTitle))
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
@@ -101,7 +103,7 @@ struct OnboardingTemplateView<Content: View>: View {
 
                 if let secondaryButtonTitle, let secondaryAction {
                     Button(action: secondaryAction) {
-                        Text(secondaryButtonTitle)
+                        Text(LocalizedStringKey(secondaryButtonTitle))
                             .font(.subheadline)
                             .fontWeight(.medium)
                             .frame(maxWidth: .infinity)

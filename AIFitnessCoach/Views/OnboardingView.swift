@@ -566,10 +566,11 @@ private struct HealthDataCard: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                // Epic #37 story 37.1c: title/subtitle are String params (Dutch literals) -> catalog.
+                Text(LocalizedStringKey(title))
                     .font(.headline)
                     .foregroundColor(.primary)
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.leading)

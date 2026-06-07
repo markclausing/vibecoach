@@ -138,7 +138,8 @@ private let suggestionChips = [
 
     private var coachPhaseLabel: String {
         let goal = goals.first(where: { !$0.isCompleted })
-        guard let phase = goal?.currentPhase else { return "Kent je plan" }
+        // Epic #37 story 37.1c: rendered via Text(phaseLabel) -> verbatim, so resolve via catalog.
+        guard let phase = goal?.currentPhase else { return String(localized: "Kent je plan") }
         let cal = Calendar.current
         let weeksRemaining = goal.flatMap { g -> Double? in
             guard g.targetDate > Date() else { return nil }
@@ -161,7 +162,7 @@ private let suggestionChips = [
             let target  = goal?.targetDate ?? Date()
             totalWeeks  = max(1, (cal.dateComponents([.weekOfYear], from: created, to: target).weekOfYear ?? 12) - 12)
         }
-        return "Kent je plan • \(phase.displayName) • wk \(weekInPhase)/\(totalWeeks)"
+        return String(localized: "Kent je plan • \(phase.displayName) • wk \(weekInPhase)/\(totalWeeks)")
     }
 
     // MARK: - Body
@@ -465,7 +466,7 @@ private let suggestionChips = [
                                 let result = ChatInputValidator.clamp(newValue)
                                 if result.didClamp {
                                     viewModel.inputText = result.clamped
-                                    inputTrimNotice = "Tekst ingekort tot \(ChatInputValidator.maxLength) tekens."
+                                    inputTrimNotice = String(localized: "Tekst ingekort tot \(ChatInputValidator.maxLength) tekens.")
                                     Task { @MainActor in
                                         try? await Task.sleep(nanoseconds: 3_000_000_000)
                                         inputTrimNotice = nil
@@ -906,8 +907,10 @@ struct SuggestionChipsView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(suggestions, id: \.self) { suggestion in
-                        Button { onTap(suggestion) } label: {
-                            Text(suggestion)
+                        // Epic #37 story 37.1c: chips are Dutch literals -> catalog. Send the
+                        // localized text so the sent message matches the displayed chip.
+                        Button { onTap(String(localized: String.LocalizationValue(suggestion))) } label: {
+                            Text(LocalizedStringKey(suggestion))
                                 .font(.caption)
                                 .foregroundColor(.primary)
                                 .padding(.horizontal, 14).padding(.vertical, 8)
@@ -1313,7 +1316,8 @@ struct InfoRowView: View {
             Image(systemName: icon)
                 .frame(width: 24)
                 .foregroundStyle(themeManager.primaryAccentColor.opacity(0.75))
-            Text(title)
+            // Epic #37 story 37.1c: title is a Dutch literal -> catalog; value is data.
+            Text(LocalizedStringKey(title))
                 .foregroundColor(.secondary)
             Spacer()
             Text(value)
@@ -1408,10 +1412,23 @@ struct WorkoutFuelingSectionView: View {
                 }
 
                 // Timing tips
+                // Epic #37 story 37.1c: phase + tips localized. Numbers are pre-formatted into
+                // Strings and interpolated as %@; the optional carbs clause is its own catalog key.
                 VStack(alignment: .leading, spacing: 4) {
-                    timingRow(phase: "Voor", tip: "Drink 400–600 ml water 2 uur voor de start")
-                    timingRow(phase: "Tijdens", tip: "Drink elk kwartier \(Int(interval.fluidMl.rounded())) ml\(plan.carbsGram > 20 ? "; neem elke 30 min een gelletje of \(Int(interval.carbsGram.rounded() * 2)) g koolhydraten" : "")")
-                    timingRow(phase: "Na", tip: "Herstel met \(Int((plan.totalCaloriesBurned * 0.25).rounded())) kcal (eiwitten + koolhydraten) binnen 30 min")
+                    timingRow(phase: "Voor", tip: String(localized: "Drink 400–600 ml water 2 uur voor de start"))
+                    timingRow(phase: "Tijdens", tip: {
+                        let fluidStr = "\(Int(interval.fluidMl.rounded()))"
+                        var tip = String(localized: "Drink elk kwartier \(fluidStr) ml")
+                        if plan.carbsGram > 20 {
+                            let carbsStr = "\(Int(interval.carbsGram.rounded() * 2))"
+                            tip += String(localized: "; neem elke 30 min een gelletje of \(carbsStr) g koolhydraten")
+                        }
+                        return tip
+                    }())
+                    timingRow(phase: "Na", tip: {
+                        let kcalStr = "\(Int((plan.totalCaloriesBurned * 0.25).rounded()))"
+                        return String(localized: "Herstel met \(kcalStr) kcal (eiwitten + koolhydraten) binnen 30 min")
+                    }())
                 }
                 .padding(.top, 4)
             }
@@ -1425,7 +1442,8 @@ struct WorkoutFuelingSectionView: View {
                 Text(value).fontWeight(.semibold)
             }
             .font(.subheadline)
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            // Epic #37 story 37.1c: label/phase are Dutch literals -> catalog; value is data.
+            Text(LocalizedStringKey(label)).font(.caption2).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
@@ -1435,7 +1453,7 @@ struct WorkoutFuelingSectionView: View {
 
     private func timingRow(phase: String, tip: String) -> some View {
         HStack(alignment: .top, spacing: 8) {
-            Text(phase)
+            Text(LocalizedStringKey(phase))
                 .font(.caption.weight(.semibold))
                 .frame(width: 46, alignment: .leading)
                 .foregroundStyle(.secondary)

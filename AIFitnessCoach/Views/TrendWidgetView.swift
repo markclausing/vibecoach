@@ -98,7 +98,8 @@ private struct TrendColumn: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(label)
+            // Epic #37 story 37.1c: label is a String param (Dutch literal) -> resolve via catalog.
+            Text(LocalizedStringKey(label))
                 .font(.caption2).fontWeight(.semibold)
                 .foregroundColor(.secondary).kerning(0.5)
 

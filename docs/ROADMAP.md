@@ -267,7 +267,7 @@ Authoritatieve coverage-meting in april 2026 toonde dat sleutel-services 0% dekk
 
 ---
 
-### ⏳ Epic #37: Internationalisatie & Engelstalige codebasis (NL + EN + DE + ES)
+### 🔄 Epic #37: Internationalisatie & Engelstalige codebasis (NL + EN + DE + ES)
 
 Twee samenhangende sporen, nu mét commitment en richting:
 1. **App meertalig** — Nederlands (huidige basis) + **Engels, Duits, Spaans**, met de localisatie-infra (`Localizable.xcstrings`) zó opgezet dat een extra taal louter een kolom vertalingen is.
@@ -286,6 +286,8 @@ Cijfers hieronder zijn opnieuw gemeten op de huidige codebase (mei 2026; 127 Swi
 | Notificatie-teksten (`ProactiveNotificationService`) | ~10 | gelocaliseerde keys |
 
 Pure-Swift helpers die nu strings teruggeven (formatters) krijgen een `Locale`/key-parameter i.p.v. inline NL-tekst. **Effort:** ~22–30u.
+
+**Gerealiseerd (✅, PR #291–#300):** String Catalog opgezet + taalkeuze in Settings (37.5) + locale-formattering (37.2) + runtime taalwissel (37.1a). Daarna de **`Text(String)`-sweep (37.1c)**: alle verbatim-renderende variabel-strings omgezet — `Text(LocalizedStringKey(var))` voor gedeelde rij/kaart-componenten, `String(localized:)` voor computed `-> String`-props. Gedekt: Settings, Dashboard, Goals, VibeScore, TrainingThresholds, GapAnalysis, WeekTimeline, WorkoutAnalysis, Onboarding, Sync/Blueprint/Trend-widgets, ChatView-coachkaarten + UI-only enums (Theme, phase-focus). ~482 catalog-keys EN/DE/ES. **Open:** sport-/sessie-type-namen (`SportCategory`/`SessionType.displayName`) + HR-zone + `GoalBlueprint.displayName` blijven bewust NL omdat ze in de coach-prompts geïnterpoleerd worden — die UI-vs-prompt-splitsing zit in **37.4**. UI-tests draaien sindsdien geforceerd in `nl` (`-testLanguage nl`) want de app is nu locale-gevoelig. Patroon + valkuilen vastgelegd in geheugen (`project_i18n_textvar_pattern`).
 
 #### 37.2 — Locale-aware datum/getal-formattering
 

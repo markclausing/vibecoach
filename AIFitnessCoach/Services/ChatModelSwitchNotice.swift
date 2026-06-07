@@ -22,9 +22,11 @@ enum ChatModelSwitchNotice {
         let fallbackChanged = !activeFallback.isEmpty && activeFallback != configuredFallback
         guard primaryChanged || fallbackChanged else { return nil }
 
+        // Epic #37 story 37.1c: banner shown in the UI, so resolve via the String Catalog. Model
+        // names interpolate as %@ (data). EN/DE keep the word "fallback" (asserted by tests).
         if primaryChanged {
-            return "Modelwissel gedetecteerd — het huidige antwoord komt nog van \(activePrimary). Je volgende vraag gebruikt \(configuredPrimary)."
+            return String(localized: "Modelwissel gedetecteerd — het huidige antwoord komt nog van \(activePrimary). Je volgende vraag gebruikt \(configuredPrimary).")
         }
-        return "Fallback-model gewijzigd — het huidige antwoord gebruikt nog \(activeFallback). Bij overbelasting valt de coach voortaan terug op \(configuredFallback)."
+        return String(localized: "Fallback-model gewijzigd — het huidige antwoord gebruikt nog \(activeFallback). Bij overbelasting valt de coach voortaan terug op \(configuredFallback).")
     }
 }
