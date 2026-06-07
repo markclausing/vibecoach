@@ -25,9 +25,16 @@ enum SymptomContextFormatter {
         let todayAll    = symptoms.filter { $0.date >= todayStart }
         let todayActive = todayAll.filter { $0.severity > 0 }
 
-        // Determine active injury preferences (not expired)
-        let injuryKeywords = ["kuit", "scheen", "shin", "rug", "rugpijn", "knie", "enkel",
-                              "blessure", "pijn", "klacht", "hand", "pols", "schouder"]
+        // Determine active injury preferences (not expired).
+        // Epic #37 story 37.4: body-part keywords are reused from the BodyArea enum (NL+EN+DE+ES
+        // union, single source of truth) and combined with general injury words in all four
+        // supported languages so a complaint typed in any language is detected.
+        let bodyPartKeywords = BodyArea.allCases.flatMap { $0.injuryKeywords }
+        let generalInjuryWords = ["blessure", "pijn", "klacht",
+                                  "injury", "pain", "hurt", "sore", "ache",
+                                  "verletzung", "schmerz", "weh",
+                                  "lesión", "lesion", "dolor", "molestia"]
+        let injuryKeywords = bodyPartKeywords + generalInjuryWords
         let activeInjuryPrefs = preferences.filter { pref in
             guard pref.expirationDate == nil || pref.expirationDate! > now else { return false }
             let text = pref.preferenceText.lowercased()

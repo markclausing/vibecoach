@@ -102,7 +102,7 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
     // MARK: - Calendar logic
 
     /// Computes the next calendar day matching `dateOrDay`.
-    /// Supports Dutch day names ("Maandag"…"Zondag"), English day names ("Monday"…"Sunday"),
+    /// Supports Dutch, English, German and Spanish day names (Epic #37 story 37.4),
     /// compound strings ("Maandag 21 apr") and ISO date strings ("2026-04-10").
     /// Today is treated as offset 0 — a day in the past gets +7 days.
     var resolvedDate: Date {
@@ -116,16 +116,18 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
             return calendar.startOfDay(for: parsed)
         }
 
-        // Map day names → weekday number (Calendar: 1=Sunday … 7=Saturday)
-        // Supports Dutch and English so Gemini fallback responses are also handled correctly.
+        // Map day names → weekday number (Calendar: 1=Sunday … 7=Saturday).
+        // Epic #37 story 37.4: Dutch + English + German + Spanish so the coach reply is parsed
+        // correctly in every supported language. Spanish accents are listed both with and
+        // without the diacritic (the model is inconsistent about "miércoles" vs "miercoles").
         let dayMap: [String: Int] = [
-            "zondag": 1, "sunday": 1,
-            "maandag": 2, "monday": 2,
-            "dinsdag": 3, "tuesday": 3,
-            "woensdag": 4, "wednesday": 4,
-            "donderdag": 5, "thursday": 5,
-            "vrijdag": 6, "friday": 6,
-            "zaterdag": 7, "saturday": 7
+            "zondag": 1, "sunday": 1, "sonntag": 1, "domingo": 1,
+            "maandag": 2, "monday": 2, "montag": 2, "lunes": 2,
+            "dinsdag": 3, "tuesday": 3, "dienstag": 3, "martes": 3,
+            "woensdag": 4, "wednesday": 4, "mittwoch": 4, "miércoles": 4, "miercoles": 4,
+            "donderdag": 5, "thursday": 5, "donnerstag": 5, "jueves": 5,
+            "vrijdag": 6, "friday": 6, "freitag": 6, "viernes": 6,
+            "zaterdag": 7, "saturday": 7, "samstag": 7, "sonnabend": 7, "sábado": 7, "sabado": 7
         ]
 
         // Use only the first word so "Maandag 21 apr" is correctly recognised as "maandag".
