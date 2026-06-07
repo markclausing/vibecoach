@@ -11,6 +11,11 @@ struct EditGoalView: View {
     @State private var hasStretchGoal: Bool
     @State private var stretchGoalPickerDate: Date
 
+    @State private var showDeleteConfirm = false
+    // Guards the onDisappear save: after deleting we must NOT write back to the
+    // (now removed) object, otherwise SwiftData would resurrect or crash on it.
+    @State private var isDeleting = false
+
     init(goal: FitnessGoal) {
         self.goal = goal
         if let stretchTime = goal.stretchGoalTime, stretchTime > 0 {
@@ -79,10 +84,35 @@ struct EditGoalView: View {
                 Toggle("Doel Behaald", isOn: $goal.isCompleted)
                 DatePicker("Streefdatum", selection: $goal.targetDate, displayedComponents: .date)
             }
+
+            Section {
+                Button(role: .destructive) {
+                    showDeleteConfirm = true
+                } label: {
+                    Label("Verwijder doel", systemImage: "trash")
+                }
+            }
         }
         .navigationTitle("Bewerk Doel")
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(
+            "Dit doel verwijderen?",
+            isPresented: $showDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Verwijderen", role: .destructive) {
+                isDeleting = true
+                modelContext.delete(goal)
+                try? modelContext.save()
+                dismiss()
+            }
+            Button("Annuleren", role: .cancel) { }
+        } message: {
+            Text("Dit verwijdert het doel en het bijbehorende schema definitief.")
+        }
         .onDisappear {
+            // Don't write back to a deleted goal.
+            guard !isDeleting else { return }
             goal.stretchGoalTime = hasStretchGoal ? stretchTimeInterval(from: stretchGoalPickerDate) : nil
             try? modelContext.save()
         }
