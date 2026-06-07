@@ -49,11 +49,42 @@ final class FitnessGoal {
     var intent: PrimaryIntent?
     var stretchGoalTime: TimeInterval?
 
+    /// Epic #55: number of consecutive event days for a multi-day event (e.g. 5 for a
+    /// 5-day stage tour). `nil`/≤1 = single-day. `targetDate` is the START day.
+    var eventDurationDays: Int?
+
     /// Safe fallback: always returns a valid EventFormat, even for records without a value.
     var resolvedFormat: EventFormat { format ?? .singleDayRace }
 
     /// Safe fallback: always returns a valid PrimaryIntent, even for records without a value.
     var resolvedIntent: PrimaryIntent { intent ?? .peakPerformance }
+
+    // MARK: - Multi-day event window (Epic #55)
+
+    /// Number of event days, clamped to ≥1. A `multiDayStage` without an explicit count
+    /// still behaves as a single day until the user sets a duration.
+    var resolvedEventDurationDays: Int { max(1, eventDurationDays ?? 1) }
+
+    /// Last day of the event. For a single-day event this equals `startOfDay(targetDate)`.
+    var eventEndDate: Date {
+        let start = Calendar.current.startOfDay(for: targetDate)
+        return Calendar.current.date(byAdding: .day, value: resolvedEventDurationDays - 1, to: start) ?? start
+    }
+
+    /// True when `date` falls within the event window `[startOfDay(targetDate) … eventEndDate]`.
+    func isEventDay(_ date: Date) -> Bool {
+        let day = Calendar.current.startOfDay(for: date)
+        return day >= Calendar.current.startOfDay(for: targetDate) && day <= eventEndDate
+    }
+
+    /// 1-based stage index for `date` within the event, or `nil` if `date` is outside the window.
+    func eventStageIndex(for date: Date) -> Int? {
+        guard isEventDay(date) else { return nil }
+        let start = Calendar.current.startOfDay(for: targetDate)
+        let day = Calendar.current.startOfDay(for: date)
+        let offset = Calendar.current.dateComponents([.day], from: start, to: day).day ?? 0
+        return offset + 1
+    }
 
     init(id: UUID = UUID(),
          title: String,
@@ -65,7 +96,8 @@ final class FitnessGoal {
          targetTRIMP: Double? = nil,
          format: EventFormat? = .singleDayRace,
          intent: PrimaryIntent? = .peakPerformance,
-         stretchGoalTime: TimeInterval? = nil) {
+         stretchGoalTime: TimeInterval? = nil,
+         eventDurationDays: Int? = nil) {
         self.id = id
         self.title = title
         self.details = details
@@ -77,6 +109,7 @@ final class FitnessGoal {
         self.format = format
         self.intent = intent
         self.stretchGoalTime = stretchGoalTime
+        self.eventDurationDays = eventDurationDays
     }
 
     /// Current training phase of this goal based on weeks remaining (Epic 16).

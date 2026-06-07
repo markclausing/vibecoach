@@ -193,6 +193,18 @@ Vijf-schermen flow in Serene/Mos-stijl. Elk scherm toont een 'live preview' (Vib
 
 ## Backlog
 
+### 🔄 Epic #55: Meerdaagse events first-class
+
+Een meerdaags doel (bv. "Fietsen van Arnhem naar Karlsruhe in 5 dagen") wordt nu met één `targetDate` gemodelleerd. Gevolg: de event-dagen zijn niet bekend bij de planner, het schema plant er gewoon door (krachttraining, andere-doel-sessies), en de "5 opeenvolgende tour-dagen" zijn nergens zichtbaar. Bovendien racet de coach het event omdat `resolvedFormat`/`resolvedIntent` terugvallen op `singleDayRace`/`peakPerformance` als die velden niet expliciet gezet zijn.
+
+**Afgestemd gedrag (juni 2026):** `targetDate` = **startdag**; event = `targetDate … +N-1`. Tour-dagen tonen als **etappe-entries** ("Etappe X/N") in het weekschema; **geen** andere training of vaste voorkeuren in dat venster (cross-goal-suppressie). Coach behandelt het als tour, niet als race.
+
+* **🔄 Story 55.1 — Datamodel + migratie + invoer.** `FitnessGoal.eventDurationDays: Int?` (1 = eendaags). Computed `eventEndDate`/`eventDateRange`/`isEventDay(_:)`. SchemaV4→V5 (lightweight, pure-addition-patroon zoals V3/V4) + container-bump + file-backed migratietest (§2.1). AddGoal/EditGoal: stepper "aantal dagen" bij format = Meerdaagse Etappe.
+* **⏳ Story 55.2 — Etappe-entries in het weekschema.** Event-dagen die in de getoonde week vallen renderen als "Etappe X/N — <titel>" (eigen icoon), i.p.v. coach-trainingen. Bron: app-side gesynthetiseerd (betrouwbaarder dan de AI erop vertrouwen).
+* **⏳ Story 55.3 — Prompt event-window + suppressie.** `[EVENT WINDOW: <data> ZIJN de etappes zelf — plan GEEN andere training en negeer vaste voorkeuren in dit venster]`; cross-goal-suppressie (andere-doel-basis + gym wijken). Plus: bevestig dat `format`/`intent` correct doorwerken (de "treats-as-race"-quick-win uit Epic #37-device-tests).
+
+**Effort:** ~10–16u.
+
 ### ✅ Epic #32: Deep-Dive Fysiologische Analyse
 
 Van gemiddelden naar granulaire fysiologische patronen. De coach leest het volledige verhaal uit de ruwe tijdreeksdata.
@@ -267,9 +279,9 @@ Authoritatieve coverage-meting in april 2026 toonde dat sleutel-services 0% dekk
 
 ---
 
-### 🔄 Epic #37: Internationalisatie & Engelstalige codebasis (NL + EN + DE + ES)
+### ✅ Epic #37: Internationalisatie & Engelstalige codebasis (NL + EN + DE + ES)
 
-**Status (juni 2026): functioneel afgerond.** De app is meertalig (NL/EN/DE/ES) en de hele codebase + coach-prompt zijn Engels. Gemerged: 37.1 t/m 37.6 (PR #291–#304, ~527 catalog-keys). **Resteert:** 37.7 (de 4 doc-files zelf naar Engels — déze update-ronde dekt de inhoudelijke synchronisatie, niet de taalswitch), 37.8 (testsuite-i18n: UI-tests draaien nu geforceerd in `nl`, een per-taal-pass is nog open) en **native DE/ES-review** van de vertalingen (toon/idioom). Architectuur: zie de Localization-sectie in `ARCHITECTURE.md` + het i18n-patroon in `CLAUDE.md`.
+**Afgesloten (juni 2026).** De app is meertalig (NL/EN/DE/ES) en de hele codebase + coach-prompt zijn Engels. Gemerged: 37.1 t/m 37.6 (PR #291–#306, ~530 catalog-keys) + verwijder-doelen & tap-to-edit-navigatie (#305). Architectuur: zie de Localization-sectie in `ARCHITECTURE.md` + het i18n-patroon in `CLAUDE.md`. **Bewust niet gedaan:** native DE/ES-vertaalreview (geen moedertaalspreker beschikbaar — vertalingen zijn LLM-gegenereerd en functioneel correct), 37.7 (doc-files zélf naar Engels; alleen inhoudelijk gesynchroniseerd, ROADMAP blijft NL als werktaal) en 37.8 (per-taal UI-test-pass; UI-tests draaien geforceerd in `nl`). Polish, geen blocker.
 
 Twee samenhangende sporen, nu mét commitment en richting:
 1. **App meertalig** — Nederlands (huidige basis) + **Engels, Duits, Spaans**, met de localisatie-infra (`Localizable.xcstrings`) zó opgezet dat een extra taal louter een kolom vertalingen is.

@@ -159,10 +159,10 @@ struct AIFitnessCoachApp: App {
             #endif
         }()
 
-        let schema = Schema(SchemaV4.models)
+        let schema = Schema(SchemaV5.models)
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isUITesting)
 
-        // First attempt: load existing store and run the migration chain (V1 → V2 → V3 → V4).
+        // First attempt: load existing store and run the migration chain (V1 → V2 → V3 → V4 → V5).
         do {
             return try ModelContainer(
                 for: schema,

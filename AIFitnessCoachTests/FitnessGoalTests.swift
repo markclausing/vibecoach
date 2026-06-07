@@ -505,6 +505,39 @@ final class FitnessGoalTests: XCTestCase {
         XCTAssertEqual(weekday, 7, "sábado = weekday 7 (zaterdag).")
     }
 
+    // MARK: - Epic #55: multi-day event window
+
+    func testFitnessGoal_EventWindow_SingleDayByDefault() {
+        let start = Calendar.current.startOfDay(for: Date())
+        let goal = FitnessGoal(title: "Race", targetDate: start)
+        XCTAssertEqual(goal.resolvedEventDurationDays, 1, "nil duration = single day")
+        XCTAssertEqual(Calendar.current.startOfDay(for: goal.eventEndDate), start)
+        XCTAssertTrue(goal.isEventDay(start))
+        XCTAssertFalse(goal.isEventDay(Calendar.current.date(byAdding: .day, value: 1, to: start)!))
+        XCTAssertEqual(goal.eventStageIndex(for: start), 1)
+    }
+
+    func testFitnessGoal_EventWindow_MultiDaySpansConsecutiveDays() {
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: Date())
+        let goal = FitnessGoal(title: "Arnhem → Karlsruhe", targetDate: start,
+                               format: .multiDayStage, eventDurationDays: 5)
+        let day3 = cal.date(byAdding: .day, value: 2, to: start)!
+        let day5 = cal.date(byAdding: .day, value: 4, to: start)!
+        let day6 = cal.date(byAdding: .day, value: 5, to: start)!
+
+        XCTAssertEqual(goal.resolvedEventDurationDays, 5)
+        XCTAssertEqual(cal.startOfDay(for: goal.eventEndDate), day5, "5-day event ends on start+4")
+        XCTAssertTrue(goal.isEventDay(start))
+        XCTAssertTrue(goal.isEventDay(day3))
+        XCTAssertTrue(goal.isEventDay(day5))
+        XCTAssertFalse(goal.isEventDay(day6), "day 6 is outside a 5-day window")
+        XCTAssertEqual(goal.eventStageIndex(for: start), 1)
+        XCTAssertEqual(goal.eventStageIndex(for: day3), 3)
+        XCTAssertEqual(goal.eventStageIndex(for: day5), 5)
+        XCTAssertNil(goal.eventStageIndex(for: day6))
+    }
+
     func testSuggestedWorkout_IsRestDay_DetectsZeroDurationAndMultilingualWords() {
         // Epic #37 story 37.3: the coach now localizes activityType, so rest detection must be
         // language-independent (duration signal + NL/EN/DE/ES words).

@@ -23,7 +23,7 @@ enum SchemaV2: VersionedSchema {
         [Symptom.self,
          DailyReadiness.self,
          WorkoutSample.self,
-         FitnessGoal.self,
+         SchemaV4.FitnessGoal.self,
          Self.ActivityRecord.self,
          UserPreference.self,
          UserConfiguration.self]
