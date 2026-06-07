@@ -27,7 +27,7 @@ enum VibeScoreContextFormatter {
         }
 
         let label: String
-        if r.readinessScore >= 80 { label = "Optimaal Hersteld" } else if r.readinessScore >= 50 { label = "Matig Hersteld" } else { label = "Slecht Hersteld — Rust prioriteit" }
+        if r.readinessScore >= 80 { label = "Optimally Recovered" } else if r.readinessScore >= 50 { label = "Moderately Recovered" } else { label = "Poorly Recovered — Rest priority" }
 
         let sleepH = Int(r.sleepHours)
         let sleepM = Int((r.sleepHours - Double(sleepH)) * 60)
@@ -38,19 +38,19 @@ enum VibeScoreContextFormatter {
         if totalStageMins > 0 {
             let deepRatio = Double(r.deepSleepMinutes) / Double(totalStageMins)
             let qualLabel: String = {
-                if deepRatio >= 0.20 { return "Uitstekend" }
-                if deepRatio >= 0.15 { return "Goed" }
-                if deepRatio >= 0.10 { return "Matig" }
-                return "Onvoldoende"
+                if deepRatio >= 0.20 { return "Excellent" }
+                if deepRatio >= 0.15 { return "Good" }
+                if deepRatio >= 0.10 { return "Moderate" }
+                return "Insufficient"
             }()
-            sleepQualityNote = " Slaapfases: diep \(r.deepSleepMinutes)m · REM \(r.remSleepMinutes)m · kern \(r.coreSleepMinutes)m (kwaliteit: \(qualLabel), \(String(format: "%.0f%%", deepRatio * 100)) diepe slaap)."
+            sleepQualityNote = " Sleep stages: deep \(r.deepSleepMinutes)m · REM \(r.remSleepMinutes)m · core \(r.coreSleepMinutes)m (quality: \(qualLabel), \(String(format: "%.0f%%", deepRatio * 100)) deep sleep)."
 
             // Give the coach an explicit instruction on poor deep sleep
             if deepRatio < 0.15 {
-                sleepQualityNote += " INSTRUCTIE: Benoem de slaapkwaliteit expliciet in je Insight ('Je hebt \(sleepH)u \(sleepM)m geslapen maar de diepe slaap was maar \(String(format: "%.0f%%", deepRatio * 100)) — herstel is daardoor minder effectief'). Houd de intensiteit dienovereenkomstig lager."
+                sleepQualityNote += " INSTRUCTION: Mention sleep quality explicitly in your Insight ('You slept \(sleepH)h \(sleepM)m but deep sleep was only \(String(format: "%.0f%%", deepRatio * 100)) — recovery is therefore less effective'). Keep the intensity correspondingly lower."
             }
         }
 
-        return "Vibe Score vandaag: \(r.readinessScore)/100 (\(label)). Slaap: \(sleepH)u \(sleepM)m. HRV: \(String(format: "%.1f", r.hrv)) ms.\(sleepQualityNote)"
+        return "Vibe Score today: \(r.readinessScore)/100 (\(label)). Sleep: \(sleepH)h \(sleepM)m. HRV: \(String(format: "%.1f", r.hrv)) ms.\(sleepQualityNote)"
     }
 }

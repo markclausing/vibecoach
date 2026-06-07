@@ -1,7 +1,7 @@
 import XCTest
 @testable import AIFitnessCoach
 
-/// Unit tests voor `UserOverrideContextFormatter`. Borgt dat handmatig verplaatste
+/// Unit tests voor `UserOverrideContextFormatter`. Borgt dat manually movede
 /// workouts in een eigen prompt-blok komen mét expliciete instructie aan de coach
 /// om de keuze te respecteren.
 final class UserOverrideContextFormatterTests: XCTestCase {
@@ -46,8 +46,8 @@ final class UserOverrideContextFormatterTests: XCTestCase {
 
         XCTAssertTrue(result.contains("USER_OVERRIDE"))
         XCTAssertTrue(result.contains("Intervallen"))
-        XCTAssertTrue(result.contains("KRITIEKE INSTRUCTIE"))
-        XCTAssertTrue(result.contains("Verschuif ze NIET terug"))
+        XCTAssertTrue(result.contains("CRITICAL INSTRUCTION"))
+        XCTAssertTrue(result.contains("Do NOT shift them back"))
     }
 
     func testIncludesNewDayLabelNotOriginalDateOrDay() {

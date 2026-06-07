@@ -32,9 +32,9 @@ final class LastWorkoutContextFormatterTests: XCTestCase {
         XCTAssertTrue(result.contains("Hardloopsessie"))
         XCTAssertTrue(result.contains("TRIMP: 142"))
         XCTAssertTrue(result.contains("RPE: 7/10"))
-        XCTAssertTrue(result.contains("Stemming: 🟢"))
+        XCTAssertTrue(result.contains("Mood: 🟢"))
         // Geen sessionType doorgegeven → blok mag GEEN sessie-type-suffix bevatten.
-        XCTAssertFalse(result.contains("Sessie-type:"))
+        XCTAssertFalse(result.contains("Session type:"))
     }
 
     func testTrimpUnknownWhenNil() {
@@ -42,7 +42,7 @@ final class LastWorkoutContextFormatterTests: XCTestCase {
             rpe: 5, mood: "😌", workoutName: "Wandeling", trimp: nil,
             startDate: date, sessionType: nil
         )
-        XCTAssertTrue(result.contains("TRIMP: onbekend"))
+        XCTAssertTrue(result.contains("TRIMP: unknown"))
     }
 
     func testRpeLabelClassification() {
@@ -51,10 +51,10 @@ final class LastWorkoutContextFormatterTests: XCTestCase {
         let zwaar = LastWorkoutContextFormatter.format(rpe: 8, mood: "😌", workoutName: "x", trimp: 50, startDate: date, sessionType: nil)
         let max = LastWorkoutContextFormatter.format(rpe: 10, mood: "😌", workoutName: "x", trimp: 50, startDate: date, sessionType: nil)
 
-        XCTAssertTrue(licht.contains("(licht (1-3))"))
-        XCTAssertTrue(matig.contains("(matig (4-6))"))
-        XCTAssertTrue(zwaar.contains("(zwaar (7-8))"))
-        XCTAssertTrue(max.contains("(maximaal (9-10))"))
+        XCTAssertTrue(licht.contains("(light (1-3))"))
+        XCTAssertTrue(matig.contains("(moderate (4-6))"))
+        XCTAssertTrue(zwaar.contains("(hard (7-8))"))
+        XCTAssertTrue(max.contains("(maximal (9-10))"))
     }
 
     // MARK: - Story 33.1b: SessionType injectie
@@ -64,7 +64,7 @@ final class LastWorkoutContextFormatterTests: XCTestCase {
             rpe: 3, mood: "😌", workoutName: "Easy run", trimp: 60,
             startDate: date, sessionType: .recovery
         )
-        XCTAssertTrue(result.contains("Sessie-type: Herstel"),
+        XCTAssertTrue(result.contains("Session type: Herstel"),
                       "Display-naam moet zichtbaar zijn — dat is waar de coach naar refereert")
         XCTAssertTrue(result.contains("Actief herstel"),
                       "Coaching-summary van het intent moet meekomen — architect-notitie: AI begrijpt tekstuele context beter dan label")
@@ -92,7 +92,7 @@ final class LastWorkoutContextFormatterTests: XCTestCase {
             rpe: 5, mood: "😌", workoutName: "x", trimp: 50,
             startDate: date, sessionType: nil
         )
-        XCTAssertFalse(result.contains("Sessie-type:"),
+        XCTAssertFalse(result.contains("Session type:"),
                        "Als de gebruiker geen type heeft (en classifier ook geen voorstel had), mag de prompt geen 'leeg' veld tonen — dat zou de AI zelf laten gokken")
     }
 }

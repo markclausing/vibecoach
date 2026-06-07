@@ -35,7 +35,7 @@ enum PreferencesContextFormatter {
         if !permanent.isEmpty {
             let lines = permanent.map { "- \($0.preferenceText)" }.joined(separator: "\n")
             output += """
-            [PINNED RULES (langlopend, gelden tenzij een tijdelijke voorkeur ze overruled):
+            [PINNED RULES (long-term, apply unless a temporary preference overrides them):
             \(lines)]
 
 
@@ -46,13 +46,13 @@ enum PreferencesContextFormatter {
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd"
             let lines = temporary.map { pref in
-                "- \(pref.preferenceText) (tijdelijk, geldt tot \(formatter.string(from: pref.expirationDate!)))"
+                "- \(pref.preferenceText) (temporary, valid until \(formatter.string(from: pref.expirationDate!)))"
             }.joined(separator: "\n")
             output += """
             [TEMPORARY PREFERENCES (override pinned rules for their duration):
             \(lines)
 
-            KRITIEKE INSTRUCTIE: Tijdens de looptijd van een tijdelijke voorkeur gaat deze BOVEN elke vastgepinde regel waar een conflict mee is. Voorbeeld: als 'op vakantie, alleen wandelen' actief is, plan je GEEN krachttraining of fietsritten in die periode — ook niet als er een vastgepinde di/do gym-regel staat.]
+            CRITICAL INSTRUCTION: While a temporary preference is active it takes precedence OVER any pinned rule it conflicts with. Example: if 'on holiday, walking only' is active, do NOT schedule strength training or bike rides in that period — not even if there is a pinned Tue/Thu gym rule.]
 
 
             """

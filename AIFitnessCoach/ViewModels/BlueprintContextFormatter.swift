@@ -17,16 +17,16 @@ enum BlueprintContextFormatter {
         for result in results {
             let weeksLeft = result.goal.weeksRemaining
             let weeksLeftStr = String(format: "%.1f", weeksLeft)
-            let statusLabel = result.isOnTrack ? "Op schema" : "Achter op schema"
-            lines.append("• Doel '\(result.goal.title)' (\(weeksLeftStr) weken resterend) — Blueprint: \(result.blueprint.goalType.displayName), \(statusLabel) (\(result.satisfiedCount)/\(result.totalCount) kritieke eisen behaald).")
+            let statusLabel = result.isOnTrack ? "On schedule" : "Behind schedule"
+            lines.append("• Goal '\(result.goal.title)' (\(weeksLeftStr) weeks remaining) — Blueprint: \(result.blueprint.goalType.displayName), \(statusLabel) (\(result.satisfiedCount)/\(result.totalCount) critical requirements met).")
 
             for milestone in result.milestones {
                 let check = milestone.isSatisfied ? "✅" : "❌"
                 let deadlineStr = DateFormatter.localizedString(from: milestone.deadline, dateStyle: .short, timeStyle: .none)
                 if milestone.isSatisfied {
-                    lines.append("  \(check) \(milestone.description) (behaald)")
+                    lines.append("  \(check) \(milestone.description) (met)")
                 } else {
-                    lines.append("  \(check) \(milestone.description) — deadline: \(deadlineStr) (\(milestone.weeksBefore) weken voor race)")
+                    lines.append("  \(check) \(milestone.description) — deadline: \(deadlineStr) (\(milestone.weeksBefore) weeks before race)")
                 }
             }
         }

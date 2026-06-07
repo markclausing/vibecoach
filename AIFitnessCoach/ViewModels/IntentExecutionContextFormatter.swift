@@ -31,19 +31,19 @@ enum IntentExecutionContextFormatter {
 
         case .match:
             return """
-            [ANALYSIS — INTENT vs EXECUTION (laatste workout):
-            Gepland: \(plannedActivity)\(trimpSuffix(plannedTRIMP)) → Uitgevoerd: \(actualActivityName)\(trimpSuffix(actualTRIMP)).
-            Resultaat: MATCH — type en belasting binnen marge. Geef de gebruiker een compliment over de discipline.]
+            [ANALYSIS — INTENT vs EXECUTION (last workout):
+            Planned: \(plannedActivity)\(trimpSuffix(plannedTRIMP)) → Executed: \(actualActivityName)\(trimpSuffix(actualTRIMP)).
+            Result: MATCH — type and load within margin. Compliment the user on their discipline.]
 
 
             """
 
         case .typeMismatch(let planned, let actual):
-            let actualLabel = actual?.displayName ?? "onbepaald type"
+            let actualLabel = actual?.displayName ?? "undetermined type"
             return """
-            [ANALYSIS — INTENT vs EXECUTION (laatste workout):
-            Gepland: \(plannedActivity) (sessie-type: \(planned.displayName)\(trimpSuffix(plannedTRIMP))) → Uitgevoerd: \(actualActivityName) (sessie-type: \(actualLabel)\(trimpSuffix(actualTRIMP))).
-            Resultaat: TYPE-MISMATCH — geplande sessie was \(planned.displayName) maar er is \(actualLabel) gedaan. Coach: signaleer dit alleen als het structureel wordt over de afgelopen 7 dagen. Eén afwijking is normaal (groep-tempo, vermoeidheid, weer); pas bij herhaling is het tijd om het schema te heroverwegen.]
+            [ANALYSIS — INTENT vs EXECUTION (last workout):
+            Planned: \(plannedActivity) (session type: \(planned.displayName)\(trimpSuffix(plannedTRIMP))) → Executed: \(actualActivityName) (session type: \(actualLabel)\(trimpSuffix(actualTRIMP))).
+            Result: TYPE-MISMATCH — planned session was \(planned.displayName) but \(actualLabel) was done. Coach: only flag this if it becomes structural over the past 7 days. One deviation is normal (group pace, fatigue, weather); only on repetition is it time to reconsider the schedule.]
 
 
             """
@@ -51,9 +51,9 @@ enum IntentExecutionContextFormatter {
         case .overload(let deltaPercent):
             let pct = String(format: "%+.0f", deltaPercent)
             return """
-            [ANALYSIS — INTENT vs EXECUTION (laatste workout):
-            Gepland: \(plannedActivity)\(trimpSuffix(plannedTRIMP)) → Uitgevoerd: \(actualActivityName)\(trimpSuffix(actualTRIMP)).
-            Resultaat: OVERLOAD (\(pct)% TRIMP boven plan). Coach: benoem dit voorzichtig — overload wordt in combinatie met lage Vibe Score een risicofactor. Stel zo nodig een lichte hersteldag voor in de komende 48 uur.]
+            [ANALYSIS — INTENT vs EXECUTION (last workout):
+            Planned: \(plannedActivity)\(trimpSuffix(plannedTRIMP)) → Executed: \(actualActivityName)\(trimpSuffix(actualTRIMP)).
+            Result: OVERLOAD (\(pct)% TRIMP above plan). Coach: mention this cautiously — overload combined with a low Vibe Score becomes a risk factor. If needed, propose a light recovery day in the next 48 hours.]
 
 
             """
@@ -61,9 +61,9 @@ enum IntentExecutionContextFormatter {
         case .underload(let deltaPercent):
             let pct = String(format: "%+.0f", deltaPercent)
             return """
-            [ANALYSIS — INTENT vs EXECUTION (laatste workout):
-            Gepland: \(plannedActivity)\(trimpSuffix(plannedTRIMP)) → Uitgevoerd: \(actualActivityName)\(trimpSuffix(actualTRIMP)).
-            Resultaat: UNDERLOAD (\(pct)% TRIMP onder plan). Coach: vraag of het een bewuste keuze was (vermoeidheid, tijdgebrek) of dat de gebruiker zich onzeker voelt over de intensiteit. Bied indien nodig een aangepaste compensatie-sessie aan in de week.]
+            [ANALYSIS — INTENT vs EXECUTION (last workout):
+            Planned: \(plannedActivity)\(trimpSuffix(plannedTRIMP)) → Executed: \(actualActivityName)\(trimpSuffix(actualTRIMP)).
+            Result: UNDERLOAD (\(pct)% TRIMP below plan). Coach: ask whether it was a deliberate choice (fatigue, lack of time) or whether the user feels unsure about the intensity. If needed, offer an adjusted compensation session during the week.]
 
 
             """
