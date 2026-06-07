@@ -383,8 +383,8 @@ class ChatViewModel: ObservableObject {
         return plan.workouts.compactMap { workout -> (Int, TrainingZone)? in
             let workoutDay = Calendar.current.startOfDay(for: workout.resolvedDate)
             guard workoutDay == targetDay else { return nil }
-            // No nutrition plan for rest days
-            guard workout.activityType.lowercased() != "rust" else { return nil }
+            // No nutrition plan for rest days (Epic #37: language-independent rest detection)
+            guard !workout.isRestDay else { return nil }
 
             // Estimate the zone based on heart-rate zone or description in the plan.
             let zoneText = (workout.heartRateZone ?? workout.description).lowercased()
@@ -471,8 +471,9 @@ class ChatViewModel: ObservableObject {
         let systemInstruction = ChatScopeInstruction.text + """
             LANGUAGE — ABSOLUTE RULE:
             Always reply to the user in \(replyLanguage). Every piece of user-facing text you produce
-            — your chat prose and the `motivation`, `description` and `reasoning` fields in the JSON —
-            MUST be written in \(replyLanguage), regardless of the language of these instructions. The
+            — your chat prose and the `motivation`, `description`, `reasoning` AND `activityType`
+            fields in the JSON — MUST be written in \(replyLanguage), regardless of the language of
+            these instructions (the Dutch example values below are illustrations only). The
             instructions below are in English for maintainability; your output to the user is always \(replyLanguage).
 
             You are a collaborative, thoughtful and proactive AI fitness coach.
@@ -550,7 +551,8 @@ class ChatViewModel: ObservableObject {
             - A TRIMP of 70-100 is a solid, demanding workout.
             - A TRIMP of 100-140 is a very hard workout, but on its own this is no sign of overtraining.
 
-            IMPORTANT: As soon as you plan or analyse a schedule or status for the next 7 days, your answer MUST contain a JSON object (optionally in a code block) that matches this structure:
+            IMPORTANT: As soon as you plan or analyse a schedule or status for the next 7 days, your answer MUST contain a JSON object (optionally in a code block) that matches this structure.
+            `dateOrDay` MUST be either a weekday name (in \(replyLanguage)) or an ISO date "YYYY-MM-DD" computed from [HUIDIGE DATUM] — never a relative term like "today"/"tomorrow", and add no extra words after the weekday. Structure:
             {
                 "motivation": "Write an empathetic, descriptive analysis of at most 3 sentences here, in \(replyLanguage). Start with a DIRECT response to the user's latest message (name the specific activity). Then explain the WHY behind your strategic choices. If you make a change to the schedule, confirm it explicitly ('Ik heb X verschoven naar Y omdat...'). If you resolved a double day by cancelling or moving a workout, always state it: 'Ik heb [training] van [dag] laten vervallen/verschoven naar [dag], zodat je alle focus kunt leggen op [behouden training].' Make the user feel the coach truly thinks along and truly listens.",
                 "workouts": [

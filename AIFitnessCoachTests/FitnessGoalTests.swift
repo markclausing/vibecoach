@@ -505,6 +505,34 @@ final class FitnessGoalTests: XCTestCase {
         XCTAssertEqual(weekday, 7, "sábado = weekday 7 (zaterdag).")
     }
 
+    func testSuggestedWorkout_IsRestDay_DetectsZeroDurationAndMultilingualWords() {
+        // Epic #37 story 37.3: the coach now localizes activityType, so rest detection must be
+        // language-independent (duration signal + NL/EN/DE/ES words).
+        let makeRest: (String, Int) -> SuggestedWorkout = { type, mins in
+            SuggestedWorkout(dateOrDay: "2026-06-08", activityType: type,
+                             suggestedDurationMinutes: mins, targetTRIMP: 0, description: "x")
+        }
+        XCTAssertTrue(makeRest("Wielrennen", 0).isRestDay, "0 minuten = rust, ongeacht type.")
+        XCTAssertTrue(makeRest("Rust", 0).isRestDay)
+        XCTAssertTrue(makeRest("Ruhe", 30).isRestDay, "Duits rust-woord moet herkend worden.")
+        XCTAssertTrue(makeRest("Descanso", 30).isRestDay, "Spaans rust-woord.")
+        XCTAssertTrue(makeRest("Rest day", 30).isRestDay)
+        XCTAssertFalse(makeRest("Radfahren", 45).isRestDay, "Een echte (Duitse) rit is geen rust.")
+    }
+
+    func testSuggestedWorkout_Kind_ClassifiesLocalizedActivityTypes() {
+        let make: (String, String?) -> SuggestedWorkout = { type, zone in
+            SuggestedWorkout(dateOrDay: "2026-06-08", activityType: type,
+                             suggestedDurationMinutes: 45, targetTRIMP: 40,
+                             description: "x", heartRateZone: zone)
+        }
+        XCTAssertEqual(make("Radfahren", "Zone 2").kind, .cycling, "Duits fietsen.")
+        XCTAssertEqual(make("Krafttraining", nil).kind, .strength, "Duits krachttraining.")
+        XCTAssertEqual(make("Indoor-Rolle", "Zone 2").kind, .cycling, "Turbo-trainer = fietsen.")
+        XCTAssertEqual(make("Natación", nil).kind, .swimming, "Spaans zwemmen.")
+        XCTAssertEqual(make("Grundlagenlauf", "Zone 2").kind, .endurance, "Duitse duurloop.")
+    }
+
     func testSuggestedWorkout_ResolvedDate_ParsesLocalizedDateWithComma() {
         // Epic #37 fix: the German coach returns "Sonntag, 7. Juni" — the first word "Sonntag,"
         // carries a trailing comma. Without punctuation stripping the lookup failed, every

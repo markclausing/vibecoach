@@ -1414,9 +1414,7 @@ struct DashboardView: View {
     private var todayPlanWorkoutName: String? {
         planManager.activePlan?.workouts
             .first {
-                Calendar.current.isDateInToday($0.resolvedDate) &&
-                !$0.activityType.lowercased().contains("rust") &&
-                $0.suggestedDurationMinutes > 0
+                Calendar.current.isDateInToday($0.resolvedDate) && !$0.isRestDay
             }
             .map { $0.activityType }
     }
