@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - IntentExecutionContextFormatter
 //
-// Builds the `[ANALYSIS — INTENT vs UITVOERING]` block in the coach prompt based on
+// Builds the `[ANALYSIS — INTENT vs EXECUTION]` block in the coach prompt based on
 // an `IntentExecutionVerdict`. Pure Swift, testable without ChatViewModel state.
 // This gives the coach one compact line block that lets it react proactively
 // ("I see your Tuesday tempo session became an endurance — everything ok?")
@@ -31,7 +31,7 @@ enum IntentExecutionContextFormatter {
 
         case .match:
             return """
-            [ANALYSIS — INTENT vs UITVOERING (laatste workout):
+            [ANALYSIS — INTENT vs EXECUTION (laatste workout):
             Gepland: \(plannedActivity)\(trimpSuffix(plannedTRIMP)) → Uitgevoerd: \(actualActivityName)\(trimpSuffix(actualTRIMP)).
             Resultaat: MATCH — type en belasting binnen marge. Geef de gebruiker een compliment over de discipline.]
 
@@ -41,7 +41,7 @@ enum IntentExecutionContextFormatter {
         case .typeMismatch(let planned, let actual):
             let actualLabel = actual?.displayName ?? "onbepaald type"
             return """
-            [ANALYSIS — INTENT vs UITVOERING (laatste workout):
+            [ANALYSIS — INTENT vs EXECUTION (laatste workout):
             Gepland: \(plannedActivity) (sessie-type: \(planned.displayName)\(trimpSuffix(plannedTRIMP))) → Uitgevoerd: \(actualActivityName) (sessie-type: \(actualLabel)\(trimpSuffix(actualTRIMP))).
             Resultaat: TYPE-MISMATCH — geplande sessie was \(planned.displayName) maar er is \(actualLabel) gedaan. Coach: signaleer dit alleen als het structureel wordt over de afgelopen 7 dagen. Eén afwijking is normaal (groep-tempo, vermoeidheid, weer); pas bij herhaling is het tijd om het schema te heroverwegen.]
 
@@ -51,7 +51,7 @@ enum IntentExecutionContextFormatter {
         case .overload(let deltaPercent):
             let pct = String(format: "%+.0f", deltaPercent)
             return """
-            [ANALYSIS — INTENT vs UITVOERING (laatste workout):
+            [ANALYSIS — INTENT vs EXECUTION (laatste workout):
             Gepland: \(plannedActivity)\(trimpSuffix(plannedTRIMP)) → Uitgevoerd: \(actualActivityName)\(trimpSuffix(actualTRIMP)).
             Resultaat: OVERLOAD (\(pct)% TRIMP boven plan). Coach: benoem dit voorzichtig — overload wordt in combinatie met lage Vibe Score een risicofactor. Stel zo nodig een lichte hersteldag voor in de komende 48 uur.]
 
@@ -61,7 +61,7 @@ enum IntentExecutionContextFormatter {
         case .underload(let deltaPercent):
             let pct = String(format: "%+.0f", deltaPercent)
             return """
-            [ANALYSIS — INTENT vs UITVOERING (laatste workout):
+            [ANALYSIS — INTENT vs EXECUTION (laatste workout):
             Gepland: \(plannedActivity)\(trimpSuffix(plannedTRIMP)) → Uitgevoerd: \(actualActivityName)\(trimpSuffix(actualTRIMP)).
             Resultaat: UNDERLOAD (\(pct)% TRIMP onder plan). Coach: vraag of het een bewuste keuze was (vermoeidheid, tijdgebrek) of dat de gebruiker zich onzeker voelt over de intensiteit. Bied indien nodig een aangepaste compensatie-sessie aan in de week.]
 

@@ -17,15 +17,15 @@ final class SymptomContextFormatterTests: XCTestCase {
         let s = Symptom(bodyArea: .calf, severity: 8, date: today)
         let output = SymptomContextFormatter.format(symptoms: [s], preferences: [])
         XCTAssertTrue(output.contains("Kuit: 8/10"))
-        XCTAssertTrue(output.contains("ACTIEVE BEPERKINGEN"))
-        XCTAssertTrue(output.contains("HARDLOPEN IS STRIKT VERBODEN"))
+        XCTAssertTrue(output.contains("ACTIVE CONSTRAINTS"))
+        XCTAssertTrue(output.contains("RUNNING IS STRICTLY FORBIDDEN"))
     }
 
     func test_format_kneeSeverity7_addsKneeHardConstraint() {
         let s = Symptom(bodyArea: .knee, severity: 7, date: today)
         let output = SymptomContextFormatter.format(symptoms: [s])
-        XCTAssertTrue(output.contains("HARD CONSTRAINT Knie"))
-        XCTAssertTrue(output.contains("Fietsen en zwemmen zijn veilig"))
+        XCTAssertTrue(output.contains("HARD CONSTRAINT Knee"))
+        XCTAssertTrue(output.contains("Cycling and swimming are safe"))
     }
 
     func test_format_lightCalfSeverity2_offersAlternative() {
@@ -43,8 +43,8 @@ final class SymptomContextFormatterTests: XCTestCase {
         let pref = UserPreference(preferenceText: "Last van mijn kuit deze week",
                                   isActive: true)
         let output = SymptomContextFormatter.format(symptoms: [s], preferences: [pref])
-        XCTAssertTrue(output.contains("HERSTELD"))
-        XCTAssertTrue(output.contains("HERSTEL MELDINGEN"))
+        XCTAssertTrue(output.contains("RECOVERED"))
+        XCTAssertTrue(output.contains("RECOVERY MESSAGES"))
     }
 
     func test_format_score0WithoutMatchingPref_returnsEmpty() {
@@ -60,7 +60,7 @@ final class SymptomContextFormatterTests: XCTestCase {
         let pref = UserPreference(preferenceText: "Rugklachten sinds vorige week",
                                   isActive: true)
         let output = SymptomContextFormatter.format(symptoms: [], preferences: [pref])
-        XCTAssertTrue(output.contains("score nog niet ingevuld"))
+        XCTAssertTrue(output.contains("score not entered"))
     }
 
     // MARK: - Expired prefs are filtered

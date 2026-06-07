@@ -61,21 +61,21 @@ enum SymptomContextFormatter {
             if s.severity > 5 {
                 switch s.bodyArea {
                 case .calf:
-                    constraintLines.append("🚫 HARD CONSTRAINT Kuit (\(s.severity)/10 > 5): HARDLOPEN IS STRIKT VERBODEN. Fietsen en zwemmen zijn toegestaan.")
+                    constraintLines.append("🚫 HARD CONSTRAINT Calf (\(s.severity)/10 > 5): RUNNING IS STRICTLY FORBIDDEN. Cycling and swimming are allowed.")
                 case .ankle:
-                    constraintLines.append("🚫 HARD CONSTRAINT Enkel (\(s.severity)/10 > 5): HARDLOPEN IS STRIKT VERBODEN. Fietsen is veilig.")
+                    constraintLines.append("🚫 HARD CONSTRAINT Ankle (\(s.severity)/10 > 5): RUNNING IS STRICTLY FORBIDDEN. Cycling is safe.")
                 case .back:
-                    constraintLines.append("🚫 HARD CONSTRAINT Rug (\(s.severity)/10 > 5): geen hardlopen of krachttraining. Fietsen (rechtop) en zwemmen zijn veilig.")
+                    constraintLines.append("🚫 HARD CONSTRAINT Back (\(s.severity)/10 > 5): no running or strength training. Cycling (upright) and swimming are safe.")
                 case .knee:
-                    constraintLines.append("🚫 HARD CONSTRAINT Knie (\(s.severity)/10 > 5): geen hardlopen of springen. Fietsen en zwemmen zijn veilig.")
+                    constraintLines.append("🚫 HARD CONSTRAINT Knee (\(s.severity)/10 > 5): no running or jumping. Cycling and swimming are safe.")
                 case .hand:
-                    constraintLines.append("🚫 HARD CONSTRAINT Hand (\(s.severity)/10 > 5): geen krachttraining of gewichtdragende oefeningen.")
+                    constraintLines.append("🚫 HARD CONSTRAINT Hand (\(s.severity)/10 > 5): no strength training or weight-bearing exercises.")
                 case .shoulder:
-                    constraintLines.append("🚫 HARD CONSTRAINT Schouder (\(s.severity)/10 > 5): geen zwemmen of push-oefeningen.")
+                    constraintLines.append("🚫 HARD CONSTRAINT Shoulder (\(s.severity)/10 > 5): no swimming or push exercises.")
                 }
             } else if s.severity > 0 && s.severity < 3 {
                 if s.bodyArea == .calf || s.bodyArea == .ankle {
-                    scoreLines.append("  ↳ Score < 3: voorzichtige hardloop-alternatieven bespreekbaar (kort, Zone 1, max 30 min).")
+                    scoreLines.append("  ↳ Score < 3: cautious running alternatives negotiable (short, Zone 1, max 30 min).")
                 }
             }
         }
@@ -89,9 +89,9 @@ enum SymptomContextFormatter {
             guard matchesPref else { continue }
             let areaName = s.bodyArea.rawValue
             recoveryLines.append(
-                "✅ HERSTELD (\(areaName): 0/10): De gebruiker is vandaag klachtenvrij voor \(areaName). " +
-                "INSTRUCTIE: Vier dit expliciet in je Insight ('Wat goed dat je \(areaName.lowercased())pijn op 0 staat!'). " +
-                "Normale belasting mag weer worden voorgesteld, maar adviseer een voorzichtige, stapsgewijze opbouw."
+                "✅ RECOVERED (\(areaName): 0/10): The user is complaint-free for \(areaName) today. " +
+                "INSTRUCTION: Celebrate this explicitly in your Insight ('Great that your \(areaName.lowercased()) is back to 0!'). " +
+                "Normal load may be proposed again, but advise a cautious, step-by-step build-up."
             )
         }
 
@@ -103,17 +103,17 @@ enum SymptomContextFormatter {
                 area.injuryKeywords.contains(where: { pref.preferenceText.lowercased().contains($0) })
             }
             if !alreadyTracked {
-                scoreLines.append("• \(pref.preferenceText) (score nog niet ingevuld vandaag — gebruik voorzichtigheid)")
+                scoreLines.append("• \(pref.preferenceText) (score not entered today — use caution)")
             }
         }
 
         // Combine in fixed order: scores → hard constraints → recovery messages
         var combined = scoreLines
         if !constraintLines.isEmpty {
-            combined += ["", "ACTIEVE BEPERKINGEN:"] + constraintLines
+            combined += ["", "ACTIVE CONSTRAINTS:"] + constraintLines
         }
         if !recoveryLines.isEmpty {
-            combined += ["", "HERSTEL MELDINGEN:"] + recoveryLines
+            combined += ["", "RECOVERY MESSAGES:"] + recoveryLines
         }
 
         // Empty context if there are only score-0 records without a matching preference

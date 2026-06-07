@@ -18,7 +18,7 @@ enum LastWorkoutContextFormatter {
     ///   - mood: Mood emoji or word, optional.
     ///   - workoutName: Name of the workout, fallback "Training".
     ///   - trimp: TRIMP score, optional ("onbekend" if nil).
-    ///   - startDate: Date of the workout, for the "[Type] van [Datum]" format.
+    ///   - startDate: Date of the workout, for the "[Type] from [Date]" format.
     ///   - sessionType: Optional — when present the label + intent is added.
     static func format(rpe: Int?,
                        mood: String?,

@@ -2,7 +2,7 @@ import XCTest
 @testable import AIFitnessCoach
 
 /// Epic #48 — `WorkoutInsightService.buildPrompt`. Borgt:
-///  • `[DOELEN-STATUS]` en `[PERIODISERING]` blokken verschijnen alleen wanneer
+///  • `[GOALS-STATUS]` en `[PERIODIZATION]` blokken verschijnen alleen wanneer
 ///    de bijbehorende context-velden niet-leeg zijn
 ///  • Bij geen patterns wordt de fallback-zin "Geen significante patronen
 ///    gedetecteerd…" gebruikt zodat de coach een positieve frame kan schrijven
@@ -39,20 +39,20 @@ final class WorkoutInsightServicePromptTests: XCTestCase {
 
     func testBuildPrompt_GoalsContextNil_BlockOmitted() {
         let prompt = service.buildPrompt(patterns: [], context: makeContext(goalsContext: nil))
-        XCTAssertFalse(prompt.contains("[DOELEN-STATUS]"),
-                       "Bij geen actief doel mag het DOELEN-STATUS-blok niet in de prompt staan")
+        XCTAssertFalse(prompt.contains("[GOALS-STATUS]"),
+                       "Bij geen actief doel mag het GOALS-STATUS-blok niet in de prompt staan")
     }
 
     func testBuildPrompt_GoalsContextEmpty_BlockOmitted() {
         let prompt = service.buildPrompt(patterns: [], context: makeContext(goalsContext: ""))
-        XCTAssertFalse(prompt.contains("[DOELEN-STATUS]"),
+        XCTAssertFalse(prompt.contains("[GOALS-STATUS]"),
                        "Lege string is functioneel hetzelfde als nil — blok niet renderen")
     }
 
     func testBuildPrompt_GoalsContextProvided_BlockIncluded() {
         let blueprint = "• Doel 'Marathon Rotterdam' (12.0 weken resterend) — Op schema (2/4 kritieke eisen behaald)."
         let prompt = service.buildPrompt(patterns: [], context: makeContext(goalsContext: blueprint))
-        XCTAssertTrue(prompt.contains("[DOELEN-STATUS]"))
+        XCTAssertTrue(prompt.contains("[GOALS-STATUS]"))
         XCTAssertTrue(prompt.contains("Marathon Rotterdam"),
                       "Prompt moet de doel-titel doorgeven aan de coach")
     }
@@ -61,13 +61,13 @@ final class WorkoutInsightServicePromptTests: XCTestCase {
 
     func testBuildPrompt_PeriodizationContextNil_BlockOmitted() {
         let prompt = service.buildPrompt(patterns: [], context: makeContext(periodizationContext: nil))
-        XCTAssertFalse(prompt.contains("[PERIODISERING]"))
+        XCTAssertFalse(prompt.contains("[PERIODIZATION]"))
     }
 
     func testBuildPrompt_PeriodizationContextProvided_BlockIncluded() {
         let phase = "Doel 'Marathon Rotterdam': Build-fase, TRIMP-target 450/week (huidig 380)."
         let prompt = service.buildPrompt(patterns: [], context: makeContext(periodizationContext: phase))
-        XCTAssertTrue(prompt.contains("[PERIODISERING]"))
+        XCTAssertTrue(prompt.contains("[PERIODIZATION]"))
         XCTAssertTrue(prompt.contains("Build-fase"))
     }
 
@@ -80,12 +80,12 @@ final class WorkoutInsightServicePromptTests: XCTestCase {
             goalsContext: bp,
             periodizationContext: phase
         ))
-        guard let goalsRange = prompt.range(of: "[DOELEN-STATUS]"),
-              let phaseRange = prompt.range(of: "[PERIODISERING]") else {
+        guard let goalsRange = prompt.range(of: "[GOALS-STATUS]"),
+              let phaseRange = prompt.range(of: "[PERIODIZATION]") else {
             return XCTFail("Beide blokken moeten aanwezig zijn")
         }
         XCTAssertLessThan(goalsRange.lowerBound, phaseRange.lowerBound,
-                          "DOELEN-STATUS moet vóór PERIODISERING staan voor consistente lees-volgorde")
+                          "GOALS-STATUS moet vóór PERIODIZATION staan voor consistente lees-volgorde")
     }
 
     // MARK: Geen patterns — Epic #47-fallback
@@ -112,7 +112,7 @@ final class WorkoutInsightServicePromptTests: XCTestCase {
             )
         )
         XCTAssertTrue(prompt.contains("Recovery events"))
-        XCTAssertTrue(prompt.contains("[DOELEN-STATUS]"))
+        XCTAssertTrue(prompt.contains("[GOALS-STATUS]"))
         XCTAssertTrue(prompt.contains("uitstekend"),
                       "Quality-label moet meekomen zodat de coach de juiste toon kan kiezen")
     }

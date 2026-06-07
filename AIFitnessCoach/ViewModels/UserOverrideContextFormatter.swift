@@ -30,7 +30,7 @@ enum UserOverrideContextFormatter {
         }.joined(separator: "\n")
 
         return """
-        [USER_OVERRIDE — handmatige planning-aanpassingen:
+        [USER_OVERRIDE — manual schedule adjustments:
         \(lines)
 
         KRITIEKE INSTRUCTIE: De gebruiker heeft deze sessies bewust naar een andere dag verplaatst. Verschuif ze NIET terug bij een volgende schema-suggestie. Respecteer de nieuwe planning als gegeven en pas je advies daarop aan.]

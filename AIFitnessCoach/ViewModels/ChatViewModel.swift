@@ -328,7 +328,7 @@ class ChatViewModel: ObservableObject {
 
     /// Epic Doel-Intenties: Writes the intent instructions per goal to the AppStorage cache.
     /// Gets called from ContentView (after cachePeriodizationStatus) so the AI receives a separate
-    /// [DOEL INTENTIES EN BENADERING] section with format, intent and VibeScore instructions.
+    /// [GOAL INTENTS AND APPROACH] section with format, intent and VibeScore instructions.
     func cacheIntentContext(_ results: [PeriodizationResult]) {
         intentContext = IntentContextFormatter.format(results: results)
     }
@@ -509,7 +509,7 @@ class ChatViewModel: ObservableObject {
             - Be strict but motivating — the coach stands beside the athlete, not above them.
 
             CRITICAL RULE — INJURY & SPORT INTERACTION:
-            The daily pain scores and constraints are SOLELY in the [ACTUELE KLACHTEN] context you receive at every interaction.
+            The daily pain scores and constraints are SOLELY in the [CURRENT COMPLAINTS] context you receive at every interaction.
             That block is the 'Single Source of Truth' — follow the HARD CONSTRAINTS in it strictly.
             - If a 🚫 HARD CONSTRAINT is present: ALWAYS adjust the schedule, name the constraint explicitly ('Gezien je kuitpijn van 7/10 plannen we GEEN hardloopsessies deze week').
             - If a ✅ HERSTELD message is present: celebrate it in your Insight and propose a careful build-up.
@@ -552,7 +552,7 @@ class ChatViewModel: ObservableObject {
             - A TRIMP of 100-140 is a very hard workout, but on its own this is no sign of overtraining.
 
             IMPORTANT: As soon as you plan or analyse a schedule or status for the next 7 days, your answer MUST contain a JSON object (optionally in a code block) that matches this structure.
-            `dateOrDay` MUST be either a weekday name (in \(replyLanguage)) or an ISO date "YYYY-MM-DD" computed from [HUIDIGE DATUM] — never a relative term like "today"/"tomorrow", and add no extra words after the weekday. Structure:
+            `dateOrDay` MUST be either a weekday name (in \(replyLanguage)) or an ISO date "YYYY-MM-DD" computed from [CURRENT DATE] — never a relative term like "today"/"tomorrow", and add no extra words after the weekday. Structure:
             {
                 "motivation": "Write an empathetic, descriptive analysis of at most 3 sentences here, in \(replyLanguage). Start with a DIRECT response to the user's latest message (name the specific activity). Then explain the WHY behind your strategic choices. If you make a change to the schedule, confirm it explicitly ('Ik heb X verschoven naar Y omdat...'). If you resolved a double day by cancelling or moving a workout, always state it: 'Ik heb [training] van [dag] laten vervallen/verschoven naar [dag], zodat je alle focus kunt leggen op [behouden training].' Make the user feel the coach truly thinks along and truly listens.",
                 "workouts": [
@@ -625,7 +625,7 @@ class ChatViewModel: ObservableObject {
                 planString += "(\(workout.suggestedDurationMinutes) min)"
             }
             if let trimp = workout.targetTRIMP {
-                planString += " [Doel TRIMP: \(trimp)]"
+                planString += " [Target TRIMP: \(trimp)]"
             }
             planString += "\n"
         }
@@ -633,7 +633,7 @@ class ChatViewModel: ObservableObject {
     }
 
     /// Generates a context-prefix string based on the given athletic profile.
-    /// Epic #44 story 44.6: builds the `[TRAININGSDREMPELS]` block based on the
+    /// Epic #44 story 44.6: builds the `[TRAINING THRESHOLDS]` block based on the
     /// cached physiological profile. Returns an empty string if no thresholds are set
     /// — then the coach keeps using its own population assumptions. With a
     /// set LTHR we report Friel zones (more precise for an athletic profile),
@@ -666,7 +666,7 @@ class ChatViewModel: ObservableObject {
             zonesLine = "- Zone 2 (endurance): \(z2.lowerBPM)-\(z2.upperBPM) BPM · Zone 3 (tempo): \(z3.lowerBPM)-\(z3.upperBPM) BPM"
         }
 
-        var block = "[TRAININGSDREMPELS (persoonlijk profiel):\n"
+        var block = "[TRAINING THRESHOLDS (persoonlijk profiel):\n"
         block += lines.joined(separator: "\n")
         if let zonesLine {
             block += "\n\(zonesLine)"
@@ -695,19 +695,19 @@ class ChatViewModel: ObservableObject {
         let now = Date()
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
-        prefix += "[HUIDIGE DATUM: Vandaag is het \(dateFormatter.string(from: now)). Use this for your calculations around 'expirationDate'.]\n\n"
+        prefix += "[CURRENT DATE: Vandaag is het \(dateFormatter.string(from: now)). Use this for your calculations around 'expirationDate'.]\n\n"
 
         // Epic 14.4: Inject the Vibe Score as hard context — the AI MUST follow this (see system instruction)
         if todayVibeScoreContext == VibeScoreContextFormatter.noVibeDataSentinel {
             // No Watch data available — give the coach an explicit instruction to communicate this correctly
-            prefix += "[HERSTELSTATUS VANDAAG: No objective biometric data is available (the user probably didn't wear the Apple Watch overnight). Rely fully on the Symptom Tracker scores and the planned goals. NEVER use phrases like 'Ik zie aan je HRV dat...' or 'Je biometrie geeft aan...'. Instead say: 'Omdat we vandaag geen Watch-data hebben, gaan we uit van je eigen gevoel en de ingevoerde scores.']\n\n"
+            prefix += "[RECOVERY STATUS TODAY: No objective biometric data is available (the user probably didn't wear the Apple Watch overnight). Rely fully on the Symptom Tracker scores and the planned goals. NEVER use phrases like 'Ik zie aan je HRV dat...' or 'Je biometrie geeft aan...'. Instead say: 'Omdat we vandaag geen Watch-data hebben, gaan we uit van je eigen gevoel en de ingevoerde scores.']\n\n"
         } else if !todayVibeScoreContext.isEmpty {
-            prefix += "[HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Follow the critical rule about Vibe Score authority strictly.]\n\n"
+            prefix += "[RECOVERY STATUS TODAY: \(todayVibeScoreContext) Follow the critical rule about Vibe Score authority strictly.]\n\n"
         }
 
         // Epic 18.1: Inject the subjective feedback (RPE + mood) of the last workout
         if !lastWorkoutFeedbackContext.isEmpty {
-            prefix += "[SUBJECTIEVE FEEDBACK LAATSTE WORKOUT: \(lastWorkoutFeedbackContext) Watch for discrepancies: if TRIMP is low but RPE ≥8, this is an early sign of overtraining or oncoming illness.]\n\n"
+            prefix += "[SUBJECTIVE FEEDBACK LAST WORKOUT: \(lastWorkoutFeedbackContext) Watch for discrepancies: if TRIMP is low but RPE ≥8, this is an early sign of overtraining or oncoming illness.]\n\n"
         }
 
         // Story 33.2a: manually moved workouts — coach must respect this.
@@ -723,7 +723,7 @@ class ChatViewModel: ObservableObject {
         // Epic 18: Inject the current pain scores per body area (updated daily)
         if !symptomContext.isEmpty {
             let symptomBlock = """
-            [ACTUELE KLACHTEN — SINGLE SOURCE OF TRUTH (updated daily by the user):
+            [CURRENT COMPLAINTS — SINGLE SOURCE OF TRUTH (updated daily by the user):
             \(symptomContext)
             Behaviour rules:
             1. 🚫 HARD CONSTRAINT present → follow the constraint strictly. Name the injury and the alternative explicitly.
@@ -750,7 +750,7 @@ class ChatViewModel: ObservableObject {
         // would make the prompt too busy.
         if !workoutPatternsContext.isEmpty {
             let patternsBlock = """
-            [FYSIOLOGISCHE PATRONEN IN RECENTE WORKOUTS:
+            [PHYSIOLOGICAL PATTERNS IN RECENT WORKOUTS:
             \(workoutPatternsContext)
             Behaviour rules:
             1. If the user asks about recent workouts, refer to these patterns where relevant — be concrete, not a list of technical terms.
@@ -768,14 +768,14 @@ class ChatViewModel: ObservableObject {
         // so the coach first reads the signal and then the details.
         if !workoutHistoryContext.isEmpty {
             let historyBlock = """
-            [RECENTE TRAINING — 14 DAGEN (newest first):
+            [RECENT TRAINING — 14 DAYS (newest first):
             \(workoutHistoryContext)
             Behaviour rules:
             1. Refer specifically to date + session type on every workout reference ("op 18 april in je tempo-rit met cardiac drift 8% …"). No vague terms like "recent".
             2. On ≥3 consecutive workouts with aerobic_decoupling or cardiac_drift: propose sub-LTHR work and motivate it with the specific data from this list.
             3. Use this data only on reflection/schedule questions/goal analysis — don't recite it unprompted in every turn.
-            4. Combine with [TRAININGSDREMPELS] for zone-correct interpretation of the average HR. Use the same zone terminology ("Zone 2"/"Z2", "Zone 3"/"Z3", "LTHR") — don't invent new labels.
-            5. Weigh this data against [ACTUELE KLACHTEN]. On an active injury: interpret patterns like cardiac_drift more cautiously (may be recovery fatigue, not a training need). Don't suggest volume increases if the user is recovering.]
+            4. Combine with [TRAINING THRESHOLDS] for zone-correct interpretation of the average HR. Use the same zone terminology ("Zone 2"/"Z2", "Zone 3"/"Z3", "LTHR") — don't invent new labels.
+            5. Weigh this data against [CURRENT COMPLAINTS]. On an active injury: interpret patterns like cardiac_drift more cautiously (may be recovery fatigue, not a training need). Don't suggest volume increases if the user is recovering.]
             """
             prefix += historyBlock + "\n\n"
         }
@@ -783,7 +783,7 @@ class ChatViewModel: ObservableObject {
         // Epic 21: Inject the 7-day weather forecast for outdoor-activities coaching
         if !weatherContext.isEmpty {
             let weatherBlock = """
-            [WEERSOMSTANDIGHEDEN KOMENDE 7 DAGEN (user's location):
+            [WEATHER CONDITIONS NEXT 7 DAYS (user's location):
             \(weatherContext)
             Behaviour rules:
             1. DAY-SWAP STRATEGY: If a day with ⚠️ SLECHT BUITENWEER has a key workout, look at the next 3 days. Is there a better day? Then EXPLICITLY swap days and state this in the `motivation` field.
@@ -802,11 +802,11 @@ class ChatViewModel: ObservableObject {
         let hasPeriodization  = !periodizationContext.isEmpty
 
         if hasBlueprintData {
-            prefix += "[SPORTWETENSCHAPPELIJKE EISEN (BLUEPRINT):\n\(blueprintContext)\nInstruction: ALWAYS check whether the user is on schedule for their critical workouts. If there is an outstanding (❌) requirement with an approaching deadline, make this explicit in your advice and schedule that workout.]\n\n"
+            prefix += "[SPORTS-SCIENCE REQUIREMENTS (BLUEPRINT):\n\(blueprintContext)\nInstruction: ALWAYS check whether the user is on schedule for their critical workouts. If there is an outstanding (❌) requirement with an approaching deadline, make this explicit in your advice and schedule that workout.]\n\n"
         }
 
         if hasPeriodization {
-            prefix += "[PERIODISERING — FASE, SUCCESCRITERIA & COACH-GEDRAG:\n\(periodizationContext)\n\nCoach behaviour rules for this context:\n1. COMPLIMENTS (🎉): If a COMPLIMENT TRIGGER is present, open your answer with it. Name the achievement.\n2. URGENCY (🚨): If a KRITIEKE MIJLPAAL ACHTERSTAND is present, be direct and motivating. Name the exact distance or TRIMP still missing, and plan it as the first priority in the schedule.\n3. SCHEDULE ADJUSTMENT: If you adjust the schedule, always explain how the phase requirements are still achievable despite the change (SCHEDULE ACCOUNTABILITY).]\n\n"
+            prefix += "[PERIODIZATION — PHASE, SUCCESS CRITERIA & COACH BEHAVIOUR:\n\(periodizationContext)\n\nCoach behaviour rules for this context:\n1. COMPLIMENTS (🎉): If a COMPLIMENT TRIGGER is present, open your answer with it. Name the achievement.\n2. URGENCY (🚨): If a KRITIEKE MIJLPAAL ACHTERSTAND is present, be direct and motivating. Name the exact distance or TRIMP still missing, and plan it as the first priority in the schedule.\n3. SCHEDULE ADJUSTMENT: If you adjust the schedule, always explain how the phase requirements are still achievable despite the change (SCHEDULE ACCOUNTABILITY).]\n\n"
         }
 
         // Epic Doel-Intenties: inject the intent and format instructions as a separate section.
@@ -814,7 +814,7 @@ class ChatViewModel: ObservableObject {
         // and whether stretch-pace trainings are safe based on the current VibeScore.
         if !intentContext.isEmpty {
             let intentBlock = """
-            [DOEL INTENTIES EN BENADERING — READ THIS BEFORE YOU BUILD THE SCHEDULE:
+            [GOAL INTENTS AND APPROACH — READ THIS BEFORE YOU BUILD THE SCHEDULE:
             \(intentContext)
 
             Binding coach rules:
@@ -829,7 +829,7 @@ class ChatViewModel: ObservableObject {
         // Epic 23 Sprint 1: Inject the gap analysis with TRIMPTranslator hints
         if !gapAnalysisContext.isEmpty {
             let gapBlock = """
-            [GAP ANALYSE — BLUEPRINT VS. WERKELIJKHEID (Epic 23):
+            [GAP ANALYSIS — BLUEPRINT VS. REALITY (Epic 23):
             \(gapAnalysisContext)
             Coach behaviour rules:
             1. TRIMP TRANSLATION (MANDATORY): If there is a 📈 VOLUME-BIJSTURING with an "X TRIMP ≈ +Y min …" hint, ALWAYS use that translation. NEVER state a bare TRIMP number without the accompanying time indication. Correct: "Je hebt deze week zo'n 8 TRIMP extra nodig — dat is ongeveer +4 minuten op je zaterdag-rit." Wrong: "Je hebt 8 TRIMP tekort."
@@ -862,7 +862,7 @@ class ChatViewModel: ObservableObject {
         if hasBlueprintData || hasPeriodization {
             print("━━━ 🧠 [Blueprint Context → Gemini] ━━━")
             if hasBlueprintData { print("[BLUEPRINT]\n\(blueprintContext)") }
-            if hasPeriodization { print("[PERIODISERING]\n\(periodizationContext)") }
+            if hasPeriodization { print("[PERIODIZATION]\n\(periodizationContext)") }
             print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         }
 
@@ -872,7 +872,7 @@ class ChatViewModel: ObservableObject {
             return (goal, phase)
         }
         if !activeGoalsWithPhase.isEmpty {
-            prefix += "[PERIODISERING — ACTIEVE TRAININGSFASES:\n"
+            prefix += "[PERIODIZATION — ACTIVE TRAINING PHASES:\n"
             for (goal, phase) in activeGoalsWithPhase {
                 let weeksLeft = goal.weeksRemaining(from: now)
                 let weeksLeftStr = String(format: "%.1f", weeksLeft)
@@ -919,7 +919,7 @@ class ChatViewModel: ObservableObject {
         }
 
         guard !prefix.isEmpty else { return "" }
-        prefix += "[VRAAG]: "
+        prefix += "[QUESTION]: "
         return prefix
     }
 

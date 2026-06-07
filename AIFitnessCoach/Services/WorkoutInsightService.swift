@@ -131,7 +131,7 @@ final class WorkoutInsightService {
     explanation. No weather block = the iPhone recorded no metadata and there were no
     coords to query Open-Meteo; fall back to generic assumptions.
 
-    **Cadence (Epic #52, running only):** With a `[CADENS]` block you see avg and/or
+    **Cadence (Epic #52, running only):** With a `[CADENCE]` block you see avg and/or
     peak cadence in steps per minute (spm). Use this as one signal for running
     efficiency and fatigue, not as a normative judgement — there is no universal
     "ideal" (athletes run anywhere between 160 and 200 spm depending on conditions and
@@ -144,7 +144,7 @@ final class WorkoutInsightService {
     - **peak - avg > 20 spm**: there was a sprint or surge; mentionable if there was
       also an HR spike or interval structure from the session type. Not if the user
       did an easy endurance run — then it was probably a traffic-light restart or similar.
-    No `[CADENS]` block = no cadence data; do NOT ask for it.
+    No `[CADENCE]` block = no cadence data; do NOT ask for it.
 
     Style: \(replyLanguage), second person, no jargon without explanation, no lists or markdown.
     End without "Als je vragen hebt..." clichés. **Never end with a question mark** —
@@ -398,12 +398,12 @@ final class WorkoutInsightService {
         // execution analysis without a goal link.
         if let goals = context.goalsContext, !goals.isEmpty {
             lines.append("")
-            lines.append("[DOELEN-STATUS]")
+            lines.append("[GOALS-STATUS]")
             lines.append(goals)
         }
         if let phase = context.periodizationContext, !phase.isEmpty {
             lines.append("")
-            lines.append("[PERIODISERING]")
+            lines.append("[PERIODIZATION]")
             lines.append(phase)
         }
 
@@ -418,7 +418,7 @@ final class WorkoutInsightService {
         let hasSnapshot = context.temperatureCelsius != nil || context.humidityPercent != nil
         if hasRange {
             lines.append("")
-            lines.append("[WEER TIJDENS WORKOUT — range]")
+            lines.append("[WEATHER DURING WORKOUT — range]")
             if let peak = context.peakTempCelsius, let avg = context.avgTempCelsius {
                 lines.append("- Temperature: peak \(Int(peak.rounded()))°C, avg \(Int(avg.rounded()))°C")
             } else if let peak = context.peakTempCelsius {
@@ -435,7 +435,7 @@ final class WorkoutInsightService {
             }
         } else if hasSnapshot {
             lines.append("")
-            lines.append("[WEER TIJDENS WORKOUT — snapshot]")
+            lines.append("[WEATHER DURING WORKOUT — snapshot]")
             if let temp = context.temperatureCelsius {
                 lines.append("- Temperature: \(Int(temp.rounded()))°C")
             }
@@ -448,7 +448,7 @@ final class WorkoutInsightService {
         // the two values — otherwise the block is silently dropped.
         if context.averageCadenceSPM != nil || context.peakCadenceSPM != nil {
             lines.append("")
-            lines.append("[CADENS]")
+            lines.append("[CADENCE]")
             if let avg = context.averageCadenceSPM {
                 lines.append("- Avg cadence: \(Int(avg.rounded())) spm")
             }
