@@ -59,11 +59,11 @@ enum PlanResetPromptBuilder {
 
         let userText: String
         if swappedWorkouts.count == 1 {
-            userText = "Herschrijf de rest van mijn week rondom de verplaatste sessie."
+            userText = String(localized: "Herschrijf de rest van mijn week rondom de verplaatste sessie.")
         } else if swappedWorkouts.isEmpty {
-            userText = "Herschrijf mijn week vanaf vandaag."
+            userText = String(localized: "Herschrijf mijn week vanaf vandaag.")
         } else {
-            userText = "Herschrijf de rest van mijn week rondom de \(swappedWorkouts.count) verplaatste sessies."
+            userText = String(localized: "Herschrijf de rest van mijn week rondom de \(swappedWorkouts.count) verplaatste sessies.")
         }
         return (systemText, userText)
     }

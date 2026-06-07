@@ -185,7 +185,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(mockModel.receivedParts.count, 1)
         if let firstPart = mockModel.receivedParts.first {
             let desc = String(describing: firstPart)
-            XCTAssertTrue(desc.contains("CONTEXT ATLEET:"), "Payload string naar AI mist de profiel prefix")
+            XCTAssertTrue(desc.contains("ATHLETE CONTEXT:"), "Payload string naar AI mist de profiel prefix")
             XCTAssertTrue(desc.contains("50.0 km"), "Payload string mist geparseerde piekprestatie")
             XCTAssertTrue(desc.contains("240 minutes per week"), "Payload string mist wekelijks volume (14400s / 60)")
             XCTAssertTrue(desc.contains(userText), "Payload string mist de daadwerkelijke user vraag")
@@ -280,7 +280,7 @@ final class ChatViewModelTests: XCTestCase {
     func testSkipWorkout_SendsCorrectMessageAndTriggersRecalculation() async {
         // Arrange: sendHiddenSystemMessage geeft de fallbackMessage terug als de mock-response geen geldige JSON is.
         // De echte AI retourneert JSON; de mock simuleert een niet-JSON response om de fallback te triggeren.
-        let expectedAIResponse = "Ik heb je schema bijgewerkt! Bekijk je overzicht voor het nieuwe plan."
+        let expectedAIResponse = String(localized: "Ik heb je schema bijgewerkt! Bekijk je overzicht voor het nieuwe plan.")
         mockModel.responseToReturn = "geen geldige json"
         mockModel.delay = 0.1
         viewModel.messages.removeAll()
@@ -304,7 +304,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.messages.count, 1)
         XCTAssertEqual(viewModel.messages.first?.role, .user)
         let sentMessageText = viewModel.messages.first?.text ?? ""
-        XCTAssertTrue(sentMessageText.contains("Ik sla de geplande Hardlopen op Morgen over."))
+        XCTAssertTrue(sentMessageText.contains(String(localized: "Ik sla de geplande \("Hardlopen") op \("Morgen") over.")))
 
         // Wacht op AI response
         try? await Task.sleep(nanoseconds: 200_000_000)
@@ -318,7 +318,7 @@ final class ChatViewModelTests: XCTestCase {
 
     func testRequestAlternativeWorkout_SendsCorrectMessageAndTriggersRecalculation() async {
         // Arrange: sendHiddenSystemMessage geeft de fallbackMessage terug als de mock-response geen geldige JSON is.
-        let expectedAIResponse = "Ik heb je schema bijgewerkt! Bekijk je overzicht voor het nieuwe plan."
+        let expectedAIResponse = String(localized: "Ik heb je schema bijgewerkt! Bekijk je overzicht voor het nieuwe plan.")
         mockModel.responseToReturn = "geen geldige json"
         mockModel.delay = 0.1
         viewModel.messages.removeAll()

@@ -240,7 +240,7 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             let windStr = String(format: "%.0f km/u", day.windSpeedKmh)
             var line    = "• \(dayName): \(day.conditionDescription), \(tempStr), neerslag \(rainStr), wind \(windStr)"
             if day.isRiskyForOutdoorTraining {
-                line += " ⚠️ SLECHT BUITENWEER"
+                line += " ⚠️ BAD OUTDOOR WEATHER"
             }
             lines.append(line)
         }

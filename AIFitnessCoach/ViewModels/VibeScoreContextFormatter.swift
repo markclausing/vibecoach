@@ -9,7 +9,7 @@ enum VibeScoreContextFormatter {
 
     /// Sentinel value indicating no Watch data was available today.
     /// Recognized in `buildContextPrefix` to give the coach the right instruction.
-    static let noVibeDataSentinel = "GEEN_BIOMETRISCHE_DATA"
+    static let noVibeDataSentinel = "NO_BIOMETRIC_DATA"
 
     /// Formats a `DailyReadiness` into a context string for the AI coach.
     /// Contains readinessScore + label, sleep hours, HRV, and — when available — sleep-stage

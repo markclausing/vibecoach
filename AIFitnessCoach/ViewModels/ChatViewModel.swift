@@ -152,7 +152,7 @@ class ChatViewModel: ObservableObject {
     /// detector output per workout). Complement to `workoutPatternsContext` (1-line
     /// pulse over 7 days): the pulse signals THAT something is up, this block gives the
     /// coach the specific evidence per workout so plan adjustments refer
-    /// to concrete sessions ("op 28 april reed je een tempo-rit met decoupling…").
+    /// to concrete sessions ("on 28 April you rode a tempo session with decoupling…").
     /// Gets filled from `DashboardView.refreshChatContextCaches()`.
     @AppStorage("vibecoach_workoutHistoryContext") var workoutHistoryContext: String = ""
 
@@ -283,7 +283,7 @@ class ChatViewModel: ObservableObject {
         sendHiddenSystemMessage(
             systemText: systemText,
             userText: userText,
-            fallbackMessage: "Ik heb je week opnieuw ingedeeld rondom je verplaatste sessies. Bekijk je overzicht.",
+            fallbackMessage: String(localized: "Ik heb je week opnieuw ingedeeld rondom je verplaatste sessies. Bekijk je overzicht."),
             contextProfile: contextProfile,
             activeGoals: activeGoals,
             activePreferences: activePreferences
@@ -335,7 +335,7 @@ class ChatViewModel: ObservableObject {
 
     /// Epic 23 Sprint 1: Writes the gap analysis (difference planned vs. realized) to the AppStorage cache.
     /// The coach uses this to give concrete adjustment advice:
-    /// "Je ligt X km achter op schema — deze week 15% meer volume om dat in te halen."
+    /// "You're X km behind schedule — 15% more volume this week to catch up."
     func cacheGapAnalysis(_ gaps: [BlueprintGap]) {
         guard !gaps.isEmpty else {
             gapAnalysisContext = ""
@@ -348,7 +348,7 @@ class ChatViewModel: ObservableObject {
 
     /// Epic 23 Sprint 2: Writes the future projection per goal to the AppStorage cache.
     /// The coach uses this to proactively warn if a goal is "At Risk" or "Unreachable":
-    /// "Op basis van je huidige tempo ben je pas in juli klaar voor de marathon."
+    /// "At your current pace you won't be ready for the marathon until July."
     func cacheProjections(_ projections: [GoalProjection]) {
         projectionContext = FutureProjectionService.buildCoachContext(from: projections)
     }
@@ -370,7 +370,7 @@ class ChatViewModel: ObservableObject {
             todayWorkouts: todayWorkouts,
             tomorrowWorkouts: tomorrowWorkouts
         )
-        print("🥗 [Nutrition] Context bijgewerkt: \(profile.coachSummary)")
+        print("🥗 [Nutrition] Context updated: \(profile.coachSummary)")
     }
 
     /// Extracts planned workouts (duration + zone) from the active plan for a relative day.
@@ -503,24 +503,24 @@ class ChatViewModel: ObservableObject {
             CRITICAL RULE — PERIODIZATION & PHASE COACHING (Sprint 17.2):
             For each goal you receive the current TrainingPhase, the success criteria and the achieved/outstanding status.
             Use this data ACTIVELY in your answers:
-            - COMPLIMENTS (🎉 COMPLIMENT TRIGGER): If a phase requirement is met, open your answer with a sincere, specific compliment. Name the achievement (e.g. 'Geweldig — je hebt afgelopen week een 28 km loop neergezet, exact wat de Build-fase vereist!').
-            - URGENCY (🚨 KRITIEKE MIJLPAAL ACHTERSTAND): If a critical requirement (e.g. the longest session) is not met, be direct but motivating. Name the exact distance or TRIMP still missing. Plan that milestone as the FIRST PRIORITY in the schedule.
-            - SCHEDULE ACCOUNTABILITY: If you adjust the schedule because of injury, overload or another reason, you MUST always explain how the phase requirements are still achievable despite the change. Example: 'Ik vervang je hardloopsessie door een lange fietsrit, maar de aerobe basis voor de Marathon Blueprint bewaken we zo: op zaterdag plannen we een 26 km duurloop zodra je kuit hersteld is.'
+            - COMPLIMENTS (🎉 COMPLIMENT TRIGGER): If a phase requirement is met, open your answer with a sincere, specific compliment. Name the achievement (e.g. 'Great — you put down a 28 km run last week, exactly what the Build phase requires!').
+            - URGENCY (🚨 CRITICAL MILESTONE SHORTFALL): If a critical requirement (e.g. the longest session) is not met, be direct but motivating. Name the exact distance or TRIMP still missing. Plan that milestone as the FIRST PRIORITY in the schedule.
+            - SCHEDULE ACCOUNTABILITY: If you adjust the schedule because of injury, overload or another reason, you MUST always explain how the phase requirements are still achievable despite the change. Example: 'I'm replacing your running session with a long bike ride, but we'll safeguard the aerobic base for the Marathon Blueprint like this: on Saturday we'll plan a 26 km endurance run once your calf has recovered.'
             - Be strict but motivating — the coach stands beside the athlete, not above them.
 
             CRITICAL RULE — INJURY & SPORT INTERACTION:
             The daily pain scores and constraints are SOLELY in the [CURRENT COMPLAINTS] context you receive at every interaction.
             That block is the 'Single Source of Truth' — follow the HARD CONSTRAINTS in it strictly.
-            - If a 🚫 HARD CONSTRAINT is present: ALWAYS adjust the schedule, name the constraint explicitly ('Gezien je kuitpijn van 7/10 plannen we GEEN hardloopsessies deze week').
-            - If a ✅ HERSTELD message is present: celebrate it in your Insight and propose a careful build-up.
-            - If an area has 'score nog niet ingevuld vandaag': be careful, but don't impose absolute bans.
+            - If a 🚫 HARD CONSTRAINT is present: ALWAYS adjust the schedule, name the constraint explicitly ('Given your calf pain of 7/10, we will NOT schedule any running sessions this week').
+            - If a ✅ RECOVERED message is present: celebrate it in your Insight and propose a careful build-up.
+            - If an area has 'score not entered today': be careful, but don't impose absolute bans.
             - Are there NO complaints listed? Then you may plan the schedule fully based on the blueprint and training phase.
 
             CRITICAL RULE — WEATHER-DRIVEN DAY PLANNING (Epic 21):
             You receive the 7-day weather forecast in the context. Use this ACTIVELY when creating or adjusting the schedule.
-            - ALWAYS look at the next 3 days. If a key workout (long ride, tempo run, interval) can't go outside today because of ⚠️ SLECHT BUITENWEER, but tomorrow or the day after the conditions are ideal, then EXPLICITLY propose swapping those days' workouts.
-            - ALWAYS state the day swap in the `motivation` field: "Ik zie dat het zaterdag 75% kans op regen heeft maar zondag helder en windstil is. Ik heb je 60 km duurrit naar zondag verplaatst en zet vandaag een kortere Zone 2-sessie van 45 min op de indoor trainer."
-            - If the hard key workout moves to tomorrow or the day after: DELIBERATELY lower the TRIMP for the current day so the athlete starts the key workout rested. Advise max. 40-50% of the normal daily target as a 'charge day'. State this: "Vandaag houden we je TRIMP laag zodat je morgen vers aan de start staat."
+            - ALWAYS look at the next 3 days. If a key workout (long ride, tempo run, interval) can't go outside today because of ⚠️ BAD OUTDOOR WEATHER, but tomorrow or the day after the conditions are ideal, then EXPLICITLY propose swapping those days' workouts.
+            - ALWAYS state the day swap in the `motivation` field: "I see Saturday has a 75% chance of rain but Sunday is clear and calm. I've moved your 60 km endurance ride to Sunday and put a shorter 45-min Zone 2 session on the indoor trainer today."
+            - If the hard key workout moves to tomorrow or the day after: DELIBERATELY lower the TRIMP for the current day so the athlete starts the key workout rested. Advise max. 40-50% of the normal daily target as a 'charge day'. State this: "Today we keep your TRIMP low so you start tomorrow fresh."
             - Wind speed > 30 km/h is specifically relevant for cycling: always advise moving to a less windy day if there's an alternative within the next 3 days.
             - If there's NO better day in the 3-day window: propose an indoor variant (trainer, swimming, strength training) with an explicit mention of the weather reason.
 
@@ -539,8 +539,8 @@ class ChatViewModel: ObservableObject {
 
             MANDATORY EXPLANATION on day conflicts:
             If you cancel or move a workout to avoid a double day, you MUST state this explicitly in the `motivation` field.
-            Use this exact template: "Ik heb de geplande [naam training] van [dag] laten vervallen / verschoven naar [nieuwe dag], zodat je alle focus kunt leggen op [behouden training]. [Optioneel: waarom die training de prioriteit had]."
-            Example: "Ik heb de geplande herstelrit van dinsdag laten vervallen, zodat je alle focus kunt leggen op je krachttraining. Fietsen staat vrijdag terug in het schema."
+            Use this exact template: "I've cancelled / moved the planned [session name] from [day] to [new day], so you can put all your focus on [retained session]. [Optional: why that session had priority]."
+            Example: "I've cancelled the planned recovery ride on Tuesday, so you can put all your focus on your strength training. Cycling returns to the schedule on Friday."
 
             CRITICAL CONSTRAINT — WALKING:
             Walking is allowed only as a recovery activity for injuries or a Vibe Score < 50.
@@ -554,27 +554,27 @@ class ChatViewModel: ObservableObject {
             IMPORTANT: As soon as you plan or analyse a schedule or status for the next 7 days, your answer MUST contain a JSON object (optionally in a code block) that matches this structure.
             `dateOrDay` MUST be either a weekday name (in \(replyLanguage)) or an ISO date "YYYY-MM-DD" computed from [CURRENT DATE] — never a relative term like "today"/"tomorrow", and add no extra words after the weekday. Structure:
             {
-                "motivation": "Write an empathetic, descriptive analysis of at most 3 sentences here, in \(replyLanguage). Start with a DIRECT response to the user's latest message (name the specific activity). Then explain the WHY behind your strategic choices. If you make a change to the schedule, confirm it explicitly ('Ik heb X verschoven naar Y omdat...'). If you resolved a double day by cancelling or moving a workout, always state it: 'Ik heb [training] van [dag] laten vervallen/verschoven naar [dag], zodat je alle focus kunt leggen op [behouden training].' Make the user feel the coach truly thinks along and truly listens.",
+                "motivation": "Write an empathetic, descriptive analysis of at most 3 sentences here, in \(replyLanguage). Start with a DIRECT response to the user's latest message (name the specific activity). Then explain the WHY behind your strategic choices. If you make a change to the schedule, confirm it explicitly ('I've moved X to Y because...'). If you resolved a double day by cancelling or moving a workout, always state it: 'I've cancelled/moved [session] from [day] to [day], so you can put all your focus on [retained session].' Make the user feel the coach truly thinks along and truly listens.",
                 "workouts": [
                     {
                         "dateOrDay": "Maandag",
                         "activityType": "Hardlopen",
                         "suggestedDurationMinutes": 45,
                         "targetTRIMP": 60,
-                        "description": "Herstel na de lange duurloop",
+                        "description": "Recovery after the long endurance run",
                         "heartRateZone": "Zone 2",
                         "targetPace": "5:30 min/km",
-                        "reasoning": "Zone 2 herstelloop om de aerobe basis te bewaken. TRIMP 60 = 75% van het wekelijkse Build-fase doel."
+                        "reasoning": "Zone 2 recovery run to safeguard the aerobic base. TRIMP 60 = 75% of the weekly Build-phase target."
                     }
                 ],
                 "newPreferences": [
                     {
-                        "text": "Ik heb last van mijn knie",
+                        "text": "My knee is bothering me",
                         "expirationDate": "2024-05-20"
                     }
                 ]
             }
-            Extra instruction for `reasoning` (Sprint 17.3): For EVERY workout, fill the `reasoning` field with a short, factual explanation (max. 1 sentence) of why this workout is in the schedule. Base it on the phase, the success criteria and the goal. Write it in \(replyLanguage); e.g. (Dutch illustration): "60 km = langste-sessie-eis (60%) in de Build-fase voor je fietsdoel." or "Zone 2 herstelloop om de aerobe basis te bewaken." NEVER leave this field empty.
+            Extra instruction for `reasoning` (Sprint 17.3): For EVERY workout, fill the `reasoning` field with a short, factual explanation (max. 1 sentence) of why this workout is in the schedule. Base it on the phase, the success criteria and the goal. Write it in \(replyLanguage); e.g. (Dutch illustration): "60 km = longest-session requirement (60%) in the Build phase for your cycling goal." or "Zone 2 recovery run to safeguard the aerobic base." NEVER leave this field empty.
 
             Extra instruction for `newPreferences`: If you notice the user passing a fixed rule, long-term preference, or temporary ailment/injury in their LATEST message, add to this array. Estimate whether the fact is permanent (such as a fixed sport day) or temporary (such as muscle soreness, a minor injury or a cramp). If it's temporary, compute a logical expiration date (e.g. 1 or 2 weeks from today) and return it in the JSON under `expirationDate` as a "YYYY-MM-DD" string. Leave `expirationDate` empty (null) for permanent rules. The `text` field stays in the user's own words (in their language). Don't repeat rules you already know.
             """
@@ -645,7 +645,7 @@ class ChatViewModel: ObservableObject {
             lines.append("- Max HR: \(Int(max.value)) BPM (\(thresholdSourceLabel(max.source)))")
         }
         if let rest = profile.restingHeartRate {
-            lines.append("- Rust HR: \(Int(rest.value)) BPM (\(thresholdSourceLabel(rest.source)))")
+            lines.append("- Resting HR: \(Int(rest.value)) BPM (\(thresholdSourceLabel(rest.source)))")
         }
         if let lthr = profile.lactateThresholdHR {
             lines.append("- LTHR: \(Int(lthr.value)) BPM (\(thresholdSourceLabel(lthr.source)))")
@@ -695,12 +695,12 @@ class ChatViewModel: ObservableObject {
         let now = Date()
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
-        prefix += "[CURRENT DATE: Vandaag is het \(dateFormatter.string(from: now)). Use this for your calculations around 'expirationDate'.]\n\n"
+        prefix += "[CURRENT DATE: Today is \(dateFormatter.string(from: now)). Use this for your calculations around 'expirationDate'.]\n\n"
 
         // Epic 14.4: Inject the Vibe Score as hard context — the AI MUST follow this (see system instruction)
         if todayVibeScoreContext == VibeScoreContextFormatter.noVibeDataSentinel {
             // No Watch data available — give the coach an explicit instruction to communicate this correctly
-            prefix += "[RECOVERY STATUS TODAY: No objective biometric data is available (the user probably didn't wear the Apple Watch overnight). Rely fully on the Symptom Tracker scores and the planned goals. NEVER use phrases like 'Ik zie aan je HRV dat...' or 'Je biometrie geeft aan...'. Instead say: 'Omdat we vandaag geen Watch-data hebben, gaan we uit van je eigen gevoel en de ingevoerde scores.']\n\n"
+            prefix += "[RECOVERY STATUS TODAY: No objective biometric data is available (the user probably didn't wear the Apple Watch overnight). Rely fully on the Symptom Tracker scores and the planned goals. NEVER use phrases like 'I can see from your HRV that...' or 'Your biometrics indicate...'. Instead say: 'Because we have no Watch data today, we'll go by your own feeling and the entered scores.']\n\n"
         } else if !todayVibeScoreContext.isEmpty {
             prefix += "[RECOVERY STATUS TODAY: \(todayVibeScoreContext) Follow the critical rule about Vibe Score authority strictly.]\n\n"
         }
@@ -727,7 +727,7 @@ class ChatViewModel: ObservableObject {
             \(symptomContext)
             Behaviour rules:
             1. 🚫 HARD CONSTRAINT present → follow the constraint strictly. Name the injury and the alternative explicitly.
-            2. ✅ HERSTELD present → open your Insight with a celebratory confirmation. Propose a careful build-up (e.g. 'Begin met 20 min Zone 1, bouw volgende week op naar normaal volume').
+            2. ✅ RECOVERED present → open your Insight with a celebratory confirmation. Propose a careful build-up (e.g. 'Begin met 20 min Zone 1, bouw volgende week op naar normaal volume').
             3. Score ≥7 → extra careful; consider a full rest day or an alternative sport.
             4. Score lower than yesterday → name this as a positive sign of recovery.]
             """
@@ -786,12 +786,12 @@ class ChatViewModel: ObservableObject {
             [WEATHER CONDITIONS NEXT 7 DAYS (user's location):
             \(weatherContext)
             Behaviour rules:
-            1. DAY-SWAP STRATEGY: If a day with ⚠️ SLECHT BUITENWEER has a key workout, look at the next 3 days. Is there a better day? Then EXPLICITLY swap days and state this in the `motivation` field.
+            1. DAY-SWAP STRATEGY: If a day with ⚠️ BAD OUTDOOR WEATHER has a key workout, look at the next 3 days. Is there a better day? Then EXPLICITLY swap days and state this in the `motivation` field.
             2. TRIMP PREPARATION: If the key workout moves to tomorrow or the day after, advise max. 40-50% TRIMP today as a 'charge day'. State this explicitly.
             3. Always be specific about percentages: not "het kan regenen" but "Zaterdag 72% neerslag → ik verplaats de 60 km naar zondag (5% neerslag, windstil)".
             4. Wind > 30 km/h = relevant for cycling. Always look for a less windy day if there is one.
             5. Temperature < 5°C or > 30°C → tip about clothing or hydration.
-            6. You don't need to mention good weather unless it's a bonus ("Zondag ziet er ideaal uit — perfect voor je lange rit").]
+            6. You don't need to mention good weather unless it's a bonus ("Sunday looks ideal — perfect for your long ride").]
             """
             prefix += weatherBlock + "\n\n"
         }
@@ -806,7 +806,7 @@ class ChatViewModel: ObservableObject {
         }
 
         if hasPeriodization {
-            prefix += "[PERIODIZATION — PHASE, SUCCESS CRITERIA & COACH BEHAVIOUR:\n\(periodizationContext)\n\nCoach behaviour rules for this context:\n1. COMPLIMENTS (🎉): If a COMPLIMENT TRIGGER is present, open your answer with it. Name the achievement.\n2. URGENCY (🚨): If a KRITIEKE MIJLPAAL ACHTERSTAND is present, be direct and motivating. Name the exact distance or TRIMP still missing, and plan it as the first priority in the schedule.\n3. SCHEDULE ADJUSTMENT: If you adjust the schedule, always explain how the phase requirements are still achievable despite the change (SCHEDULE ACCOUNTABILITY).]\n\n"
+            prefix += "[PERIODIZATION — PHASE, SUCCESS CRITERIA & COACH BEHAVIOUR:\n\(periodizationContext)\n\nCoach behaviour rules for this context:\n1. COMPLIMENTS (🎉): If a COMPLIMENT TRIGGER is present, open your answer with it. Name the achievement.\n2. URGENCY (🚨): If a CRITICAL MILESTONE SHORTFALL is present, be direct and motivating. Name the exact distance or TRIMP still missing, and plan it as the first priority in the schedule.\n3. SCHEDULE ADJUSTMENT: If you adjust the schedule, always explain how the phase requirements are still achievable despite the change (SCHEDULE ACCOUNTABILITY).]\n\n"
         }
 
         // Epic Doel-Intenties: inject the intent and format instructions as a separate section.
@@ -832,8 +832,8 @@ class ChatViewModel: ObservableObject {
             [GAP ANALYSIS — BLUEPRINT VS. REALITY (Epic 23):
             \(gapAnalysisContext)
             Coach behaviour rules:
-            1. TRIMP TRANSLATION (MANDATORY): If there is a 📈 VOLUME-BIJSTURING with an "X TRIMP ≈ +Y min …" hint, ALWAYS use that translation. NEVER state a bare TRIMP number without the accompanying time indication. Correct: "Je hebt deze week zo'n 8 TRIMP extra nodig — dat is ongeveer +4 minuten op je zaterdag-rit." Wrong: "Je hebt 8 TRIMP tekort."
-            2. TIE TO THE SCHEDULE: Always translate the adjustment into a change to an existing training day. E.g. "Verleng je dinsdag-duurloop met 5 minuten" or "Rij zaterdag 10 minuten langer door na de bekende route."
+            1. TRIMP TRANSLATION (MANDATORY): If there is a 📈 VOLUME ADJUSTMENT with an "X TRIMP ≈ +Y min …" hint, ALWAYS use that translation. NEVER state a bare TRIMP number without the accompanying time indication. Correct: "This week you need about 8 TRIMP extra — that's roughly +4 minutes on your Saturday ride." Wrong: "You're 8 TRIMP short."
+            2. TIE TO THE SCHEDULE: Always translate the adjustment into a change to an existing training day. E.g. "Extend your Tuesday endurance run by 5 minutes" or "Ride 10 minutes longer on Saturday along the familiar route."
             3. If there is a 🚴 KM-BIJSTURING: give a concrete weekly schedule with extra km per workout, not as an abstract total.
             4. If the athlete is ahead of schedule: compliment briefly and advise consistency — don't prescribe extra volume.
             5. Always tie it to the phase: adjusting in the Taper phase is undesirable — then advise NOT to make up the deficit but to continue with the tapering schedule.]
@@ -879,7 +879,7 @@ class ChatViewModel: ObservableObject {
                 // Compute the phase-corrected weekly target (linear baseline × multiplier)
                 let linearRate = goal.computedTargetTRIMP / max(0.1, weeksLeft)
                 let adjustedTarget = Int((linearRate * phase.multiplier).rounded())
-                prefix += "• Doel '\(goal.title)' (\(weeksLeftStr) weken resterend): \(phase.aiInstruction)\n"
+                prefix += "• Goal '\(goal.title)' (\(weeksLeftStr) weeks remaining): \(phase.aiInstruction)\n"
                 prefix += "  Mathematically adjusted weekly TRIMP target: \(adjustedTarget) TRIMP/week (multiplier: ×\(String(format: "%.2f", phase.multiplier))). Adhere strictly to this target.\n"
             }
             prefix += "]\n\n"
@@ -900,7 +900,7 @@ class ChatViewModel: ObservableObject {
             let peakDurationMin = p.peakDurationInSeconds / 60
             let weeklyVolumeMin = p.averageWeeklyVolumeInSeconds / 60
 
-            prefix += "[CONTEXT ATLEET: Has a peak performance of \(peakDistanceKm) km in \(peakDurationMin) minutes. Trains on average \(weeklyVolumeMin) minutes per week (avg. last 4 weeks), and last trained \(p.daysSinceLastTraining) days ago."
+            prefix += "[ATHLETE CONTEXT: Has a peak performance of \(peakDistanceKm) km in \(peakDurationMin) minutes. Trains on average \(weeklyVolumeMin) minutes per week (avg. last 4 weeks), and last trained \(p.daysSinceLastTraining) days ago."
 
             // SPRINT 6.3: Overtraining warning
             if p.isRecoveryNeeded {
@@ -948,10 +948,10 @@ class ChatViewModel: ObservableObject {
 
         // Epic 14.4: Inject the Vibe Score so the recovery plan respects the current recovery status
         if todayVibeScoreContext == VibeScoreContextFormatter.noVibeDataSentinel {
-            systemLines.append("HERSTELSTATUS VANDAAG: No Watch data available. Base the recovery plan on the Symptom Tracker scores and the user's own feeling.")
+            systemLines.append("RECOVERY STATUS TODAY: No Watch data available. Base the recovery plan on the Symptom Tracker scores and the user's own feeling.")
             systemLines.append("")
         } else if !todayVibeScoreContext.isEmpty {
-            systemLines.append("HERSTELSTATUS VANDAAG: \(todayVibeScoreContext) Adjust the intensity of the recovery plan STRICTLY to this score (see system instruction).")
+            systemLines.append("RECOVERY STATUS TODAY: \(todayVibeScoreContext) Adjust the intensity of the recovery plan STRICTLY to this score (see system instruction).")
             systemLines.append("")
         }
         for risk in atRiskGoals {
@@ -1001,12 +1001,12 @@ class ChatViewModel: ObservableObject {
 
         // The text the user sees in the chat (concise and understandable)
         let goalTitles = atRiskGoals.map { "'\($0.title)'" }.joined(separator: " en ")
-        let userFacingText = "Los de achterstand op voor \(goalTitles) en geef me een bijgestuurd schema."
+        let userFacingText = String(localized: "Los de achterstand op voor \(goalTitles) en geef me een bijgestuurd schema.")
 
         sendHiddenSystemMessage(
             systemText: systemPrompt,
             userText: userFacingText,
-            fallbackMessage: "Ik heb je herstelplan klaar! Bekijk je overzicht — het schema is bijgewerkt om je weer op schema te brengen.",
+            fallbackMessage: String(localized: "Ik heb je herstelplan klaar! Bekijk je overzicht — het schema is bijgewerkt om je weer op schema te brengen."),
             contextProfile: contextProfile,
             activeGoals: activeGoals,
             activePreferences: activePreferences
@@ -1016,7 +1016,7 @@ class ChatViewModel: ObservableObject {
     /// Handles rejecting (skipping) a specific suggested workout (Rest Day).
     func skipWorkout(_ workout: SuggestedWorkout, contextProfile: AthleticProfile? = nil, activeGoals: [FitnessGoal] = [], activePreferences: [UserPreference] = []) {
         let systemPrompt = "The user is skipping the workout '\(workout.activityType)' on \(workout.dateOrDay). Recompute the week and shift the load forward. IMPORTANT: In your JSON output always return the full 7-day schedule (including all unchanged other days), not just the adjusted day."
-        let userFacingText = "Ik sla de geplande \(workout.activityType) op \(workout.dateOrDay) over."
+        let userFacingText = String(localized: "Ik sla de geplande \(workout.activityType) op \(workout.dateOrDay) over.")
         sendHiddenSystemMessage(systemText: systemPrompt, userText: userFacingText, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
     }
 
@@ -1033,7 +1033,7 @@ class ChatViewModel: ObservableObject {
     private func sendHiddenSystemMessage(
         systemText: String,
         userText: String,
-        fallbackMessage: String = "Ik heb je schema bijgewerkt! Bekijk je overzicht voor het nieuwe plan.",
+        fallbackMessage: String = String(localized: "Ik heb je schema bijgewerkt! Bekijk je overzicht voor het nieuwe plan."),
         contextProfile: AthleticProfile? = nil,
         activeGoals: [FitnessGoal] = [],
         activePreferences: [UserPreference] = []
@@ -1234,9 +1234,9 @@ class ChatViewModel: ObservableObject {
                         await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
                         return
                     }
-                    print("⚠️ Geen of lege HealthKit workouts gevonden, terugvallen op Strava.")
+                    print("⚠️ No or empty HealthKit workouts found, falling back to Strava.")
                 } catch {
-                    print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
+                    print("⚠️ Error fetching HealthKit data (\(error.localizedDescription)), falling back to Strava.")
                 }
 
                 // Fallback to Strava
@@ -1285,21 +1285,21 @@ class ChatViewModel: ObservableObject {
             }
 
             if !isFallback {
-                print("⚠️ Geen of lege HealthKit workouts gevonden, terugvallen op Strava.")
+                print("⚠️ No or empty HealthKit workouts found, falling back to Strava.")
                 await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
             } else {
                 await MainActor.run {
-                    messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account."))
+                    messages.append(ChatMessage(role: .ai, text: String(localized: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account.")))
                     isFetchingWorkout = false
                 }
             }
         } catch {
             if !isFallback {
-                print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
+                print("⚠️ Error fetching HealthKit data (\(error.localizedDescription)), falling back to Strava.")
                 await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
             } else {
                 await MainActor.run {
-                    messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden. HealthKit fout: \(error.localizedDescription)"))
+                    messages.append(ChatMessage(role: .ai, text: String(localized: "Ik kon geen recente trainingen vinden. HealthKit fout: \(error.localizedDescription)")))
                     isFetchingWorkout = false
                 }
             }
@@ -1314,13 +1314,13 @@ class ChatViewModel: ObservableObject {
             if activities.isEmpty {
                 if !isFallback && selectedDataSource == .strava {
                     // Reverse Fallback: If Strava fails or is empty and Strava was the source, try HealthKit
-                    print("⚠️ Geen recente Strava activiteit gevonden. Reverse fallback naar HealthKit.")
+                    print("⚠️ No recent Strava activity found. Reverse fallback to HealthKit.")
                     await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
                     return
                 }
 
                 await MainActor.run {
-                    messages.append(ChatMessage(role: .ai, text: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account."))
+                    messages.append(ChatMessage(role: .ai, text: String(localized: "Ik kon geen recente trainingen vinden in HealthKit of je Strava account.")))
                     isFetchingWorkout = false
                 }
                 return
@@ -1353,18 +1353,18 @@ class ChatViewModel: ObservableObject {
                 return
             }
 
-            var errorMsg = "Fout bij ophalen van data: "
+            var errorMsg = String(localized: "Fout bij ophalen van data: ")
             switch error {
-            case .missingToken: errorMsg += "Je bent niet ingelogd op Strava. Ga naar instellingen om te koppelen."
-            case .unauthorized: errorMsg += "Je Strava sessie is verlopen. Koppel opnieuw in de instellingen."
+            case .missingToken: errorMsg += String(localized: "Je bent niet ingelogd op Strava. Ga naar instellingen om te koppelen.")
+            case .unauthorized: errorMsg += String(localized: "Je Strava sessie is verlopen. Koppel opnieuw in de instellingen.")
             case .rateLimited(let retryAfter):
                 let f = DateFormatter()
                 f.locale = AppLanguage.currentLocale
                 f.dateFormat = "HH:mm"
-                errorMsg += "Strava-limiet bereikt — hervat om \(f.string(from: retryAfter))."
-            case .networkError(let desc): errorMsg += "Netwerkfout (\(desc))."
-            case .decodingError(let desc): errorMsg += "Data onleesbaar (\(desc))."
-            case .invalidResponse: errorMsg += "Ongeldig antwoord van de server."
+                errorMsg += String(localized: "Strava-limiet bereikt — hervat om \(f.string(from: retryAfter)).")
+            case .networkError(let desc): errorMsg += String(localized: "Netwerkfout (\(desc)).")
+            case .decodingError(let desc): errorMsg += String(localized: "Data onleesbaar (\(desc)).")
+            case .invalidResponse: errorMsg += String(localized: "Ongeldig antwoord van de server.")
             }
             await MainActor.run {
                 messages.append(ChatMessage(role: .ai, text: errorMsg))
@@ -1537,7 +1537,7 @@ class ChatViewModel: ObservableObject {
                 // model; other errors (invalid key, blocked, network) fall
                 // straight through to the UI.
                 if AIProviderError.isOverload(error) {
-                    retryStatusMessage = "Model tijdelijk overbelast — overschakelen naar lichtere variant..."
+                    retryStatusMessage = String(localized: "Model tijdelijk overbelast — overschakelen naar lichtere variant...")
                     let fallbackModel = buildFallbackGenerativeModel()
                     do {
                         responseText = try await fallbackModel.generateContent(promptParts)
@@ -1603,7 +1603,7 @@ class ChatViewModel: ObservableObject {
                     // there is always a human confirmation in the chat.
                     let trimmedMotivation = plan.motivation.trimmingCharacters(in: .whitespacesAndNewlines)
                     motivationText = trimmedMotivation.isEmpty
-                        ? (fallbackMessage ?? "Ik heb je schema bijgewerkt! Bekijk je overzicht.")
+                        ? (fallbackMessage ?? String(localized: "Ik heb je schema bijgewerkt! Bekijk je overzicht."))
                         : trimmedMotivation
 
                     // Trigger callback if new preferences were found
@@ -1638,11 +1638,11 @@ class ChatViewModel: ObservableObject {
                         motivationText = fallback
                     } else {
                         // Regular chat: show the cleaned response (without markdown tags) as text
-                        motivationText = cleanedJSON.hasPrefix("{") ? "Ik kon het schema niet correct verwerken. Probeer het opnieuw." : cleanedJSON
+                        motivationText = cleanedJSON.hasPrefix("{") ? String(localized: "Ik kon het schema niet correct verwerken. Probeer het opnieuw.") : cleanedJSON
                     }
                 }
             } else {
-                motivationText = fallbackMessage ?? "Ik kon de reactie niet verwerken. Probeer het opnieuw."
+                motivationText = fallbackMessage ?? String(localized: "Ik kon de reactie niet verwerken. Probeer het opnieuw.")
             }
 
             messages.append(ChatMessage(role: .ai, text: motivationText, suggestedPlan: parsedPlan))

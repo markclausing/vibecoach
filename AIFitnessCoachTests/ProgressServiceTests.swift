@@ -310,7 +310,7 @@ final class ProgressServiceTests: XCTestCase {
             actualTRIMP: 100,
             weeksUntilTarget: 4
         )
-        XCTAssertTrue(gap.coachContext.contains("VOLUME-BIJSTURING"),
+        XCTAssertTrue(gap.coachContext.contains("VOLUME ADJUSTMENT"),
                       "Bij significante achterstand moet de coach-context een volume-instructie bevatten.")
     }
 
@@ -325,7 +325,7 @@ final class ProgressServiceTests: XCTestCase {
 
     func testBlueprintGap_CoachContext_OmitsBijsturingWhenOnTrack() {
         let gap = makeGap()
-        XCTAssertFalse(gap.coachContext.contains("VOLUME-BIJSTURING"))
+        XCTAssertFalse(gap.coachContext.contains("VOLUME ADJUSTMENT"))
         XCTAssertFalse(gap.coachContext.contains("KM-BIJSTURING"))
     }
 

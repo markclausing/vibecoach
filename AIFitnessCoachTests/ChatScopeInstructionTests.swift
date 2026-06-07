@@ -15,7 +15,7 @@ final class ChatScopeInstructionTests: XCTestCase {
     /// Verifieert dat de scope-regel expliciet "fitness-coach"-positionering
     /// noemt — dit is het kernsignaal voor het model.
     func testScopeMentionsFitnessCoach() {
-        XCTAssertTrue(ChatScopeInstruction.text.lowercased().contains("fitness-coach"))
+        XCTAssertTrue(ChatScopeInstruction.text.lowercased().contains("fitness coach"))
     }
 
     /// De instructie moet een EXPLICIETE weigerings-framing bevatten. Zonder
