@@ -1375,8 +1375,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 16,
-    "lastUpdated": "2026-05-30",
+    "docRevision": 17,
+    "lastUpdated": "2026-06-07",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -2462,6 +2462,17 @@
       "tags": [
         "epic-54"
       ]
+    },
+    {
+      "id": "AppLanguage",
+      "layer": "models",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Localization/AppLanguage.swift",
+      "description": "Single source of truth for the app language (NL/EN/DE/ES). Resolves the active Locale for both SwiftUI (.environment(\\.locale)) and pure-Swift readers (currentLocale / currentPromptLanguageName), backed by @AppStorage 'vibecoach_appLanguage'. .system follows the device; a specific choice writes an AppleLanguages bundle override (applied on next launch). promptLanguageName drives the coach's 'respond in {language}' directive.",
+      "uses": [],
+      "tags": [
+        "epic-37"
+      ]
     }
   ],
   "subsystems": [
@@ -2561,6 +2572,18 @@
       "epic": "Epic 46",
       "description": "GitHub Actions: SwiftLint + Unit Tests + UI Tests (sequential) + Coverage Report DAG. Plus CodeQL for Swift + Actions.",
       "modules": []
+    },
+    {
+      "id": "localization",
+      "title": "Localization & multilingual coach (Epic #37)",
+      "modules": [
+        "AppLanguage",
+        "ChatViewModel",
+        "ChatScopeInstruction",
+        "WorkoutInsightService",
+        "SettingsView"
+      ],
+      "description": "UI + AI coach in NL/EN/DE/ES. UI strings in Localizable.xcstrings (~527 keys); shared components render via Text(LocalizedStringKey(var)), computed props via String(localized:). The English coach prompt steers output language via a locale-dependent 'respond in {language}' directive (no per-language prompt copies). Prompt-interpolated enum values stay Dutch as the prompt term and are localized only at the View render site (UI-vs-prompt split). Detection logic (injuryKeywords, day-name parsing, rest/sport classification) is language-independent."
     }
   ],
   "flows": [
@@ -3495,7 +3518,8 @@
     "epic-50": "Open-Meteo historisch weer voor Garmin-only ritten",
     "epic-51": "User-feedback hardening — foutmeldingen, validatie & zichtbaarheid",
     "logging": "AppLoggers + privacy-modifiers",
-    "testing": "UITestMockEnvironment + GenerativeModelProtocol"
+    "testing": "UITestMockEnvironment + GenerativeModelProtocol",
+    "epic-37": "Internationalisatie (NL/EN/DE/ES) + Engelstalige codebase & coach-prompt"
   }
 }
 

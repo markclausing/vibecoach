@@ -231,3 +231,19 @@ Pure refactors without a structural change (rename within one file, force-unwrap
   3. Only on the second failure: `fatalError`. At that point something is fundamentally wrong (Application Support broken, schema corrupt) and bricking is correct behaviour.
 - Example: see `AIFitnessCoachApp.makeModelContainer()`. On migration failure the fallback removes the corrupt SQLite store + WAL/SHM sidecars and builds an empty V<latest> container, with a UserDefaults flag (`vibecoach_migrationFallbackAt`) as a hook for a future UI message.
 - HK + Strava data is always re-syncable via `TriggerAutoSync` once the app reopens; only `Symptom` and `UserPreference` are local-only. Accept that data-loss risk over a bricked app — an empty DB is restored in seconds, a crash loop is not recoverable without a reinstall.
+
+---
+
+## 13. Internationalisation (i18n) — Epic #37
+
+The app is multilingual (NL/EN/DE/ES). The codebase, comments and coach prompt are English; only translations and the coach's output language vary. See `docs/ARCHITECTURE.md` §13 for the full picture. Working rules:
+
+- **One source of truth for language:** `AppLanguage` (`Localization/AppLanguage.swift`), backed by `@AppStorage` key `vibecoach_appLanguage`. Views read it via `.environment(\.locale, …)`; pure-Swift code reads `AppLanguage.currentLocale` / `currentPromptLanguageName`. Never read `AppleLanguages` or `Locale.current` directly for app-language decisions.
+- **UI strings live in `Localizable.xcstrings`.** `Text("literal")` and `Text("literal \(interp)")` localise automatically. `Text(stringVariable)` / `Text(func())` render **verbatim** — for those:
+  - shared row/card components with a `String` param → `Text(LocalizedStringKey(param))`;
+  - computed `-> String` UI props → wrap returns in `String(localized:)`.
+- **Format keys:** pre-format numbers into a `String` and interpolate as `%@` rather than letting `\(Int)` become `%lld` — a `%lld`-vs-`%@` mismatch between the hand-authored catalog key and the runtime key silently falls back to the source language (only visible on device). `xcodebuild` does not extract keys back to the catalog; author them by hand and verify via the compiled `.lproj`.
+- **Prompt vs UI split:** values interpolated into the coach prompt (`SportCategory`/`SessionType.displayName`, `BodyArea.rawValue`/`severityLabel`, `GoalBlueprint.displayName`) stay **Dutch as the prompt term**; localise them only at the View render site via `LocalizedStringKey(value)`. The prompt body is English; output language is steered solely by the `respond in {language}` directive.
+- **Structural prompt markers** (`[CURRENT COMPLAINTS]`, `🚨 CRITICAL MILESTONE SHORTFALL`, …) must stay identical between every emitter (formatters/services) and the `systemInstruction` reference — renaming one side without the other breaks the coach's section lookup. Grep both sides after any change.
+- **Detection logic must be language-independent:** keyword/day-name/activity classification (`injuryKeywords`, `resolvedDate`, `isRestDay`/`kind`) covers NL+EN+DE+ES (+ the duration signal for rest), because the coach now writes `activityType`/dates in the user's language.
+- **Tests:** UI tests run forced in `nl` (`-testLanguage nl`). Unit tests asserting localised user-facing output compare against `String(localized:)` of the same key (locale-agnostic), not a hardcoded translation.
