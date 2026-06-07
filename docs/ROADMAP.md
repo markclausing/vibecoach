@@ -303,7 +303,15 @@ System-instruction in `ChatViewModel` (~90 regels) + ~19 context-formatters/prom
 
 **Effort:** ~12–16u (was 20–24u dankzij de één-prompt-aanpak).
 
-#### 37.4 — Taal-afhankelijke detectielogica
+#### 🔄 37.4 — Taal-afhankelijke detectielogica + UI-label-split
+
+**Gerealiseerd (✅, PR #301):**
+- **UI-label-split**: `SportCategory`/`SessionType.displayName`, `BodyArea.rawValue` en `severityLabel` blijven NL (prompt-gekoppeld / SwiftData-opslag), maar de View-render-sites resolven ze via `LocalizedStringKey` / `String.LocalizationValue` → de UI toont vertaald terwijl de prompt stabiel blijft. Sluit de bewuste gap uit 37.1c.
+- **`BodyArea.injuryKeywords`** → NL+EN+DE+ES-union (accenten met/zonder diacriet); `SymptomContextFormatter` hergebruikt die set (DRY) + meertalige algemene blessure-woorden.
+- **`SuggestedWorkout.resolvedDate`** → parseert nu ook Duitse + Spaanse dagnamen.
+- Tests: DE/ES-dagnaam-parsing (incl. accent-varianten) + meertalige keyword-dekking.
+
+**Open:** `BodyArea.severityLabel` blijft in de coach-*prompt* NL (alleen de UI-render is gelokaliseerd) — volledige prompt-taal valt onder 37.3.
 
 Productie-logica die op NL-woorden leunt, wordt per-taal:
 - **`BodyArea.injuryKeywords`** — blessure-keywords (`kuit`, `scheen`, …) → keyword-set per taal (NL/EN/DE/ES).
