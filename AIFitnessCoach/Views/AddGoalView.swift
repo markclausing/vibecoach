@@ -33,7 +33,9 @@ struct AddGoalView: View {
                 Section(header: Text("Type Sport")) {
                     Picker("Sport", selection: $sportCategory) {
                         ForEach(SportCategory.allCases) { category in
-                            Text(category.displayName).tag(category)
+                            // Epic #37 story 37.4: displayName stays Dutch for prompts; the UI
+                            // picker resolves it via the catalog.
+                            Text(LocalizedStringKey(category.displayName)).tag(category)
                         }
                     }
                 }

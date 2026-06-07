@@ -40,7 +40,8 @@ struct EditGoalView: View {
                     set: { goal.sportCategory = $0 }
                 )) {
                     ForEach(SportCategory.allCases) { category in
-                        Text(category.displayName).tag(category)
+                        // Epic #37 story 37.4: Dutch displayName resolved via catalog for the UI.
+                        Text(LocalizedStringKey(category.displayName)).tag(category)
                     }
                 }
             }
