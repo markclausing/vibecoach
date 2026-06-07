@@ -58,6 +58,26 @@ final class AppLanguageTests: XCTestCase {
         }
     }
 
+    // MARK: - promptLanguageName (story 37.3)
+
+    func testPromptLanguageName_SpecificLanguages_ReturnEnglishNames() {
+        XCTAssertEqual(AppLanguage.dutch.promptLanguageName, "Dutch")
+        XCTAssertEqual(AppLanguage.english.promptLanguageName, "English")
+        XCTAssertEqual(AppLanguage.german.promptLanguageName, "German")
+        XCTAssertEqual(AppLanguage.spanish.promptLanguageName, "Spanish")
+    }
+
+    func testPromptLanguageName_System_IsNonEmpty() {
+        // `.system` resolves to the device language's English name; the exact value depends on
+        // the test host locale, but it must never be empty (falls back to "English").
+        XCTAssertFalse(AppLanguage.system.promptLanguageName.isEmpty)
+    }
+
+    func testCurrentPromptLanguageName_FollowsStoredPreference() {
+        UserDefaults.standard.set(AppLanguage.german.rawValue, forKey: key)
+        XCTAssertEqual(AppLanguage.currentPromptLanguageName, "German")
+    }
+
     // MARK: - applyToBundleOverride (story 37.1)
 
     func testApplyToBundleOverride_SpecificLanguage_SetsAppleLanguages() {

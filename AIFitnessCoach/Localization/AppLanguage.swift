@@ -76,6 +76,31 @@ enum AppLanguage: String, CaseIterable, Identifiable {
         }
     }
 
+    // MARK: - Coach prompt language (Epic #37 story 37.3)
+
+    /// The language the AI coach should reply in, as an **English language name** for the prompt
+    /// directive (e.g. "Dutch", "German"). The system-instruction is English for maintainability;
+    /// only this directive steers the output language, so the coach's prose follows the user.
+    ///
+    /// `.system` resolves to the device language's English name — so the coach matches the user's
+    /// device even for languages the UI itself does not (yet) translate. Falls back to "English"
+    /// for an unknown code.
+    var promptLanguageName: String {
+        switch self {
+        case .dutch:   return "Dutch"
+        case .english: return "English"
+        case .german:  return "German"
+        case .spanish: return "Spanish"
+        case .system:
+            let code = Locale.current.language.languageCode?.identifier ?? "en"
+            return Locale(identifier: "en").localizedString(forLanguageCode: code) ?? "English"
+        }
+    }
+
+    /// The coach reply language for the currently selected preference. Read by the prompt
+    /// builders (`ChatViewModel`, `WorkoutInsightService`, `ChatScopeInstruction`).
+    static var currentPromptLanguageName: String { current.promptLanguageName }
+
     // MARK: - Runtime bundle override
 
     /// `UserDefaults` key that overrides the app's localization at launch. SwiftUI loads the

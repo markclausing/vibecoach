@@ -505,6 +505,60 @@ final class FitnessGoalTests: XCTestCase {
         XCTAssertEqual(weekday, 7, "sábado = weekday 7 (zaterdag).")
     }
 
+    func testSuggestedWorkout_IsRestDay_DetectsZeroDurationAndMultilingualWords() {
+        // Epic #37 story 37.3: the coach now localizes activityType, so rest detection must be
+        // language-independent (duration signal + NL/EN/DE/ES words).
+        let makeRest: (String, Int) -> SuggestedWorkout = { type, mins in
+            SuggestedWorkout(dateOrDay: "2026-06-08", activityType: type,
+                             suggestedDurationMinutes: mins, targetTRIMP: 0, description: "x")
+        }
+        XCTAssertTrue(makeRest("Wielrennen", 0).isRestDay, "0 minuten = rust, ongeacht type.")
+        XCTAssertTrue(makeRest("Rust", 0).isRestDay)
+        XCTAssertTrue(makeRest("Ruhe", 30).isRestDay, "Duits rust-woord moet herkend worden.")
+        XCTAssertTrue(makeRest("Descanso", 30).isRestDay, "Spaans rust-woord.")
+        XCTAssertTrue(makeRest("Rest day", 30).isRestDay)
+        XCTAssertFalse(makeRest("Radfahren", 45).isRestDay, "Een echte (Duitse) rit is geen rust.")
+    }
+
+    func testSuggestedWorkout_Kind_ClassifiesLocalizedActivityTypes() {
+        let make: (String, String?) -> SuggestedWorkout = { type, zone in
+            SuggestedWorkout(dateOrDay: "2026-06-08", activityType: type,
+                             suggestedDurationMinutes: 45, targetTRIMP: 40,
+                             description: "x", heartRateZone: zone)
+        }
+        XCTAssertEqual(make("Radfahren", "Zone 2").kind, .cycling, "Duits fietsen.")
+        XCTAssertEqual(make("Krafttraining", nil).kind, .strength, "Duits krachttraining.")
+        XCTAssertEqual(make("Indoor-Rolle", "Zone 2").kind, .cycling, "Turbo-trainer = fietsen.")
+        XCTAssertEqual(make("Natación", nil).kind, .swimming, "Spaans zwemmen.")
+        XCTAssertEqual(make("Grundlagenlauf", "Zone 2").kind, .endurance, "Duitse duurloop.")
+    }
+
+    func testSuggestedWorkout_ResolvedDate_ParsesLocalizedDateWithComma() {
+        // Epic #37 fix: the German coach returns "Sonntag, 7. Juni" — the first word "Sonntag,"
+        // carries a trailing comma. Without punctuation stripping the lookup failed, every
+        // workout fell back to today and the whole week collapsed onto a single day.
+        let workout = SuggestedWorkout(
+            dateOrDay: "Mittwoch, 10. Juni",
+            activityType: "Wielrennen",
+            suggestedDurationMinutes: 45,
+            targetTRIMP: 40,
+            description: "Test"
+        )
+        let weekday = Calendar.current.component(.weekday, from: workout.resolvedDate)
+        XCTAssertEqual(weekday, 4, "Mittwoch (met komma) = weekday 4.")
+    }
+
+    func testSuggestedWorkout_ResolvedDate_DistinctDaysDoNotCollapse() {
+        // Regression for the "week schedule shows only 1 day" bug: two different localized
+        // day strings must resolve to two different days.
+        let sunday = SuggestedWorkout(dateOrDay: "Sonntag, 7. Juni", activityType: "Rust",
+                                      suggestedDurationMinutes: 0, targetTRIMP: 0, description: "x")
+        let monday = SuggestedWorkout(dateOrDay: "Montag, 8. Juni", activityType: "Wielrennen",
+                                      suggestedDurationMinutes: 45, targetTRIMP: 40, description: "x")
+        XCTAssertNotEqual(sunday.resolvedDate, monday.resolvedDate,
+                          "Verschillende dagnamen mogen niet op dezelfde datum samenvallen.")
+    }
+
     func testSuggestedWorkout_ResolvedDate_ParsesCompoundDayString() {
         // "Maandag 21 apr" — alleen het eerste woord ("Maandag") wordt gebruikt voor de match.
         let workout = SuggestedWorkout(

@@ -293,7 +293,11 @@ Pure-Swift helpers die nu strings teruggeven (formatters) krijgen een `Locale`/k
 
 **28** plekken met hardcoded `Locale(identifier: "nl_NL")` → device- óf gekozen locale. Datumnamen, getallen en eenheden volgen de actieve taal. **Effort:** ~4–6u.
 
-#### 37.3 — Meertalige AI-coach (kritiek pad, maar verlicht)
+#### 🔄 37.3 — Meertalige AI-coach (kritiek pad, maar verlicht)
+
+**Gerealiseerd (✅, PR #302):** `AppLanguage.promptLanguageName` (Engelse taalnaam voor de directive; `.system` → device-taal). De hardcoded "reply in Dutch"-directieven in `ChatViewModel` (system-instruction + JSON-veld-instructies), `WorkoutInsightService` en `ChatScopeInstruction` vervangen door een dynamische `\(replyLanguage)`. Instructie-bodies blijven Engels; alléén de directive stuurt de output-taal. `systemInstruction`/`text` zijn nu computed zodat de taal op call-time gelezen wordt. +3 tests; prompt-test-classes groen (37). **Open:** de statische context-labels/bracket-tokens (`[ACTUELE KLACHTEN]`, HARD-CONSTRAINT-prose in `SymptomContextFormatter`) zijn nog NL — naar Engels valt samen met **37.6** (het model leest ze prima, dus geen functioneel blocker).
+
+
 
 System-instruction in `ChatViewModel` (~90 regels) + ~19 context-formatters/prompt-bouwers + ~34 `Nederlands`/`nl_NL`-referenties. Aanpak conform het kern-inzicht:
 - System-instruction + statische context-labels **naar Engels** (valt samen met 37.6).

@@ -125,8 +125,8 @@ struct NutritionService {
     /// Computes the fueling plan for a `SuggestedWorkout` based on the cached profile.
     /// Returns `nil` for rest days or workouts without a duration.
     static func fuelingPlan(for workout: SuggestedWorkout, profile: UserPhysicalProfile) -> WorkoutFuelingPlan? {
-        guard workout.suggestedDurationMinutes > 0,
-              workout.activityType.lowercased() != "rust" else { return nil }
+        // Epic #37: language-independent rest detection (covers 0-min and localized rest words).
+        guard !workout.isRestDay else { return nil }
         return fuelingPlan(
             durationMinutes: workout.suggestedDurationMinutes,
             zone: zone(for: workout),

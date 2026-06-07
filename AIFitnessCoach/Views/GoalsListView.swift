@@ -320,8 +320,8 @@ struct GoalsListView: View {
                     .font(.subheadline).fontWeight(.semibold)
                     .foregroundColor(.orange)
                 Text(risk.isTaperingOverload
-                     ? "Je trainingsbelasting is te hoog voor de taperingsfase."
-                     : String(format: "Je trainingsbelasting is %.0f TRIMP/week — het doel is %.0f.", risk.currentWeeklyRate, risk.requiredWeeklyRate))
+                     ? String(localized: "Je trainingsbelasting is te hoog voor de taperingsfase.")
+                     : String(format: String(localized: "Je trainingsbelasting is %.0f TRIMP/week — het doel is %.0f."), risk.currentWeeklyRate, risk.requiredWeeklyRate))
                     .font(.caption)
                     .foregroundColor(.secondary)
                 HStack(spacing: 12) {

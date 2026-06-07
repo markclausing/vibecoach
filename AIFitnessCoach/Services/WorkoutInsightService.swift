@@ -50,9 +50,13 @@ final class WorkoutInsightService {
     /// unexpectedly high HR triggers a cautionary tone.
     /// Epic #52 update: hard rule that the analysis never ends with a question —
     /// this view has no chat function, so any open question would hang unanswered.
-    private static let systemInstruction: String = """
-    LANGUAGE — ABSOLUTE RULE: Write your entire analysis in Dutch (Nederlands), second person.
-    The instructions below are in English for maintainability; your output to the user is always Dutch.
+    /// Epic #37 story 37.3: computed so the reply-language directive reflects the current
+    /// language preference at call time. The instruction body stays English (maintainability).
+    private static var systemInstruction: String {
+        let replyLanguage = AppLanguage.currentPromptLanguageName
+        return """
+    LANGUAGE — ABSOLUTE RULE: Write your entire analysis in \(replyLanguage), second person.
+    The instructions below are in English for maintainability; your output to the user is always \(replyLanguage).
 
     You are a sports-physiology analyst who interprets patterns in a workout.
 
@@ -142,10 +146,11 @@ final class WorkoutInsightService {
       did an easy endurance run — then it was probably a traffic-light restart or similar.
     No `[CADENS]` block = no cadence data; do NOT ask for it.
 
-    Style: Dutch, second person, no jargon without explanation, no lists or markdown.
+    Style: \(replyLanguage), second person, no jargon without explanation, no lists or markdown.
     End without "Als je vragen hebt..." clichés. **Never end with a question mark** —
     this view has no chat. Close with a conclusion or observation.
     """
+    }
 
     private let primaryFactory: () -> GenerativeModelProtocol?
     private let fallbackFactory: () -> GenerativeModelProtocol?

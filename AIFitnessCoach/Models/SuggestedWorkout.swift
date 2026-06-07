@@ -131,7 +131,12 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         ]
 
         // Use only the first word so "Maandag 21 apr" is correctly recognised as "maandag".
-        let firstWord = dateOrDay.lowercased().components(separatedBy: .whitespaces).first ?? dateOrDay.lowercased()
+        // Epic #37 story 37.4 fix: strip punctuation so a localized format like the German
+        // "Sonntag, 7. Juni" (first word "Sonntag,") still matches "sonntag" in the map —
+        // otherwise every workout failed the lookup, fell back to `today` and the whole week
+        // collapsed onto a single day.
+        let firstWord = (dateOrDay.lowercased().components(separatedBy: .whitespaces).first ?? dateOrDay.lowercased())
+            .trimmingCharacters(in: .punctuationCharacters)
         guard let targetWeekday = dayMap[firstWord] else { return today }
 
         let todayWeekday = calendar.component(.weekday, from: today)
@@ -162,6 +167,47 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         let label = formatter.string(from: displayDate)
         return label.prefix(1).uppercased() + label.dropFirst()
     }
+}
+
+// MARK: - Language-independent activity classification (Epic #37 story 37.3)
+
+extension SuggestedWorkout {
+    /// Coarse activity classification for icons, badges and rest logic. Independent of the
+    /// language the coach wrote `activityType` in — now that the coach localizes activityType
+    /// (e.g. German "Radfahren"/"Ruhe"), string matching must cover NL+EN+DE+ES, and rest also
+    /// uses the duration signal (0 min = rest) which is fully language-neutral.
+    enum Kind { case rest, interval, strength, cycling, swimming, endurance, longRun, running }
+
+    /// Rest = zero planned load, or an activityType that reads as "rest" in any supported language.
+    var isRestDay: Bool {
+        if suggestedDurationMinutes == 0 { return true }
+        return Self.matches(activityType, Self.restWords)
+    }
+
+    var kind: Kind {
+        if isRestDay { return .rest }
+        let t = activityType.lowercased()
+        let zone = (heartRateZone ?? "").lowercased()
+        if Self.matches(t, Self.intervalWords) || zone.contains("z4") || zone.contains("zone 4") { return .interval }
+        if Self.matches(t, Self.strengthWords) { return .strength }
+        if Self.matches(t, Self.cyclingWords) { return .cycling }
+        if Self.matches(t, Self.swimmingWords) { return .swimming }
+        if Self.matches(t, Self.longWords) { return .longRun }
+        if Self.matches(t, Self.enduranceWords) || zone.contains("z2") || zone.contains("zone 2") { return .endurance }
+        return .running
+    }
+
+    private static func matches(_ text: String, _ words: [String]) -> Bool {
+        let l = text.lowercased()
+        return words.contains { l.contains($0) }
+    }
+    private static let restWords     = ["rust", "rest", "ruhe", "descanso"]
+    private static let intervalWords = ["interval", "intervall", "intervalo"]
+    private static let strengthWords = ["kracht", "strength", "kraft", "fuerza", "gym"]
+    private static let cyclingWords  = ["fiets", "wielren", "rit", "cycl", "rad", "ciclis", "bici", "rolle"]
+    private static let swimmingWords = ["zwem", "swim", "schwimm", "nataci"]
+    private static let longWords     = ["lang", "long", "lange", "larga", "largo"]
+    private static let enduranceWords = ["duur", "endurance", "ausdauer", "resistencia", "grundlag", "dauer"]
 }
 
 /// Structure to receive, via JSON, a new memory including an optional expiry date.

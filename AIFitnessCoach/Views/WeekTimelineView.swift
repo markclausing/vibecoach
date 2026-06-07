@@ -48,7 +48,7 @@ struct WeekTimelineView: View {
 
     private func isRestDay(_ workout: SuggestedWorkout?) -> Bool {
         guard let w = workout else { return false }
-        return w.activityType.lowercased().contains("rust") || w.suggestedDurationMinutes == 0
+        return w.isRestDay
     }
 
     private var todayWorkout: SuggestedWorkout? {
@@ -270,7 +270,7 @@ struct WeekTimelineView: View {
             }
         } label: {
             HStack(spacing: 4) {
-                Text(isExpanded ? "Minder" : "Hele week bekijken")
+                Text(isExpanded ? String(localized: "Minder") : String(localized: "Hele week bekijken"))
                     .font(.subheadline).fontWeight(.medium)
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                     .font(.caption).fontWeight(.semibold)
@@ -306,22 +306,28 @@ private struct TodaySummaryRow: View {
 
     @EnvironmentObject var themeManager: ThemeManager
 
+    // Epic #37 story 37.3: classify via the language-independent `kind` so a localized
+    // activityType (e.g. German "Radfahren") still maps to the right icon/badge.
     private var icon: String {
-        let t = workout.activityType.lowercased()
-        if t.contains("interval") || t.contains("z4") { return "bolt.fill" }
-        if t.contains("kracht") { return "dumbbell.fill" }
-        if t.contains("fiets") || t.contains("rit") { return "figure.outdoor.cycle" }
-        if t.contains("rust") { return "moon.fill" }
-        return "waveform.path.ecg"
+        switch workout.kind {
+        case .rest:     return "moon.fill"
+        case .interval: return "bolt.fill"
+        case .strength: return "dumbbell.fill"
+        case .cycling:  return "figure.outdoor.cycle"
+        case .swimming: return "figure.pool.swim"
+        case .endurance, .longRun, .running: return "waveform.path.ecg"
+        }
     }
 
     private var badgeLabel: String {
-        let t = workout.activityType.lowercased()
-        if t.contains("interval") { return "INTERVAL" }
-        if t.contains("duur") || t.contains("z2") || t.contains("rit") { return "DUUR" }
-        if t.contains("kracht") { return "KRACHT" }
-        if t.contains("rust") { return "RUST" }
-        return workout.heartRateZone?.uppercased() ?? ""
+        switch workout.kind {
+        case .interval:            return String(localized: "INTERVAL")
+        case .strength:            return String(localized: "KRACHT")
+        case .rest:                return String(localized: "RUST")
+        case .longRun:             return String(localized: "LANGE DUUR")
+        case .endurance, .cycling: return String(localized: "DUUR")
+        case .swimming, .running:  return workout.heartRateZone?.uppercased() ?? ""
+        }
     }
 
     // Epic #37 story 37.1c: rendered via Text(todayLabel) -> verbatim. The "VANDAAG" prefix is
@@ -424,10 +430,11 @@ struct DayCircleView: View {
     private var subIcon: String {
         if isRest { return "moon.fill" }
         guard let w = workout else { return "minus" }
-        let type = w.activityType.lowercased()
-        if type.contains("interval") || type.contains("z4") { return "bolt.fill" }
-        if type.contains("kracht") { return "dumbbell.fill" }
-        return "waveform.path.ecg"
+        switch w.kind {
+        case .interval: return "bolt.fill"
+        case .strength: return "dumbbell.fill"
+        default:        return "waveform.path.ecg"
+        }
     }
 
     var body: some View {
@@ -482,7 +489,7 @@ struct WorkoutDayRowView: View {
     @EnvironmentObject var themeManager: ThemeManager
 
     private var isRest: Bool {
-        workout.activityType.lowercased().contains("rust") || workout.suggestedDurationMinutes == 0
+        workout.isRestDay
     }
 
     private var dayLabel: (abbrev: String, number: String) {
@@ -492,12 +499,14 @@ struct WorkoutDayRowView: View {
     }
 
     private var workoutIcon: String {
-        let t = workout.activityType.lowercased()
-        if isRest { return "moon.fill" }
-        if t.contains("interval") || t.contains("z4") { return "bolt.fill" }
-        if t.contains("kracht") { return "dumbbell.fill" }
-        if t.contains("fiets") || t.contains("rit") { return "figure.outdoor.cycle" }
-        return "waveform.path.ecg"
+        switch workout.kind {
+        case .rest:     return "moon.fill"
+        case .interval: return "bolt.fill"
+        case .strength: return "dumbbell.fill"
+        case .cycling:  return "figure.outdoor.cycle"
+        case .swimming: return "figure.pool.swim"
+        case .endurance, .longRun, .running: return "waveform.path.ecg"
+        }
     }
 
     private var subtitle: String {
@@ -593,15 +602,16 @@ struct TrainingDetailSheet: View {
         return f.string(from: workout.displayDate).uppercased()
     }
 
-    // Epic #37 story 37.1c: rendered via Text(activityBadge) -> verbatim, so localize the badge
-    // words. The activityType matching below runs against the raw Dutch plan strings (data).
+    // Epic #37 story 37.3: classify via the language-independent `kind`, then localize the badge.
     private var activityBadge: String {
-        let t = workout.activityType.lowercased()
-        if t.contains("interval") { return String(localized: "INTERVAL") }
-        if t.contains("duur") || t.contains("rit") || t.contains("z2") { return String(localized: "DUUR") }
-        if t.contains("kracht") { return String(localized: "KRACHT") }
-        if t.contains("lang") { return String(localized: "LANGE DUUR") }
-        return workout.heartRateZone?.uppercased() ?? String(localized: "TRAINING")
+        switch workout.kind {
+        case .interval:            return String(localized: "INTERVAL")
+        case .strength:            return String(localized: "KRACHT")
+        case .rest:                return String(localized: "RUST")
+        case .longRun:             return String(localized: "LANGE DUUR")
+        case .endurance, .cycling: return String(localized: "DUUR")
+        case .swimming, .running:  return workout.heartRateZone?.uppercased() ?? String(localized: "TRAINING")
+        }
     }
 
     private var subtitle: String {
@@ -628,7 +638,7 @@ struct TrainingDetailSheet: View {
         let duration = workout.suggestedDurationMinutes
         let isIntense = workout.heartRateZone?.lowercased().contains("4") == true
                      || workout.heartRateZone?.lowercased().contains("5") == true
-                     || workout.activityType.lowercased().contains("interval")
+                     || workout.kind == .interval
         let isLong = duration >= 90
 
         if isLong {
@@ -761,7 +771,7 @@ struct TrainingDetailSheet: View {
         if f.isRiskyForOutdoorTraining { return String(localized: "Overweeg een alternatieve indoor training.") }
         if f.highCelsius > 25 { return String(localized: "Warm — extra hydratatie aanbevolen.") }
         if f.windSpeedKmh < 20 && f.precipitationProbability < 0.2 {
-            let isCycling = workout.activityType.lowercased().contains("fiets") || workout.activityType.lowercased().contains("rit")
+            let isCycling = workout.kind == .cycling
             return isCycling ? String(localized: "Prima fietsweer.") : String(localized: "Prima trainingsweer.")
         }
         return String(localized: "Controleer het weer voor vertrek.")

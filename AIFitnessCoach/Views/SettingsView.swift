@@ -77,8 +77,8 @@ struct SettingsView: View {
     }
 
     private var stravaConnectionSubtitle: String {
-        guard stravaAuthService.isAuthenticated else { return "Niet gekoppeld" }
-        return selectedDataSource == .strava ? "Voorkeur" : "Aanvullend"
+        guard stravaAuthService.isAuthenticated else { return String(localized: "Niet gekoppeld") }
+        return selectedDataSource == .strava ? String(localized: "Voorkeur") : String(localized: "Aanvullend")
     }
 
     /// Epic 44 Story 44.4: brief summary of the configured thresholds for the
@@ -345,7 +345,7 @@ struct SettingsView: View {
                                     .foregroundColor(themeManager.primaryAccentColor)
                             }
                             VStack(alignment: .leading, spacing: 3) {
-                                Text(userName.isEmpty ? "Gebruiker" : userName)
+                                Text(userName.isEmpty ? String(localized: "Gebruiker") : userName)
                                     .font(.headline)
                                 Text(demographicsLine)
                                     .font(.caption)
@@ -1901,8 +1901,14 @@ struct PreferencesListView: View {
     enum MemorySegment { case pins, history }
     enum MemoryTypeFilter: CaseIterable {
         case all, injury, preference, context
+        // Epic #37: filter-chip labels resolved via the catalog (rendered as Text("\(label) · \(count)")).
         var label: String {
-            switch self { case .all: "Alles"; case .injury: "Blessure"; case .preference: "Voorkeur"; case .context: "Context" }
+            switch self {
+            case .all:        String(localized: "Alles")
+            case .injury:     String(localized: "Blessure")
+            case .preference: String(localized: "Voorkeur")
+            case .context:    String(localized: "Context")
+            }
         }
         var icon: String {
             switch self { case .all: "square.grid.2x2"; case .injury: "exclamationmark.triangle"; case .preference: "star"; case .context: "info.circle" }
@@ -1937,7 +1943,8 @@ struct PreferencesListView: View {
 
                     // ── Header (Epic 34 Sprint 2: avatar icon without functionality removed)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("WAT IK ONTHOU · \(activePreferences.count) ACTIEVE · \(historicPreferences.count) VERLOPEN")
+                        // Epic #37: counts pre-formatted as String → %@ key matches the catalog.
+                        Text("WAT IK ONTHOU · \("\(activePreferences.count)") ACTIEVE · \("\(historicPreferences.count)") VERLOPEN")
                             .font(.caption).fontWeight(.semibold)
                             .foregroundColor(.secondary).kerning(0.4)
                         Text("Geheugen")
@@ -1953,7 +1960,7 @@ struct PreferencesListView: View {
                         ForEach([MemorySegment.pins, .history], id: \.self) { seg in
                             let isSelected = selectedSegment == seg
                             Button { withAnimation(.easeInOut(duration: 0.2)) { selectedSegment = seg } } label: {
-                                Text(seg == .pins ? "PINS & CONTEXT" : "HISTORIE")
+                                Text(seg == .pins ? String(localized: "PINS & CONTEXT") : String(localized: "HISTORIE"))
                                     .font(.caption).fontWeight(.semibold).kerning(0.3)
                                     .foregroundColor(isSelected ? .primary : .secondary)
                                     .frame(maxWidth: .infinity)
@@ -2092,12 +2099,13 @@ private func memoryType(for text: String) -> PreferencesListView.MemoryTypeFilte
     return .context
 }
 
+// Epic #37: badge labels resolved via the catalog (rendered verbatim on the pin cards).
 private func memoryTypeStyle(for text: String) -> (label: String, color: Color, icon: String) {
     switch memoryType(for: text) {
-    case .injury:     return ("Blessure", .orange, "exclamationmark.triangle")
-    case .preference: return ("Voorkeur", Color(red: 0.3, green: 0.55, blue: 0.3), "star")
-    case .context:    return ("Context", Color(red: 0.35, green: 0.55, blue: 0.85), "info.circle")
-    case .all:        return ("Context", Color(red: 0.35, green: 0.55, blue: 0.85), "info.circle")
+    case .injury:     return (String(localized: "Blessure"), .orange, "exclamationmark.triangle")
+    case .preference: return (String(localized: "Voorkeur"), Color(red: 0.3, green: 0.55, blue: 0.3), "star")
+    case .context:    return (String(localized: "Context"), Color(red: 0.35, green: 0.55, blue: 0.85), "info.circle")
+    case .all:        return (String(localized: "Context"), Color(red: 0.35, green: 0.55, blue: 0.85), "info.circle")
     }
 }
 

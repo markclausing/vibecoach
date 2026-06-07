@@ -1414,9 +1414,7 @@ struct DashboardView: View {
     private var todayPlanWorkoutName: String? {
         planManager.activePlan?.workouts
             .first {
-                Calendar.current.isDateInToday($0.resolvedDate) &&
-                !$0.activityType.lowercased().contains("rust") &&
-                $0.suggestedDurationMinutes > 0
+                Calendar.current.isDateInToday($0.resolvedDate) && !$0.isRestDay
             }
             .map { $0.activityType }
     }
@@ -1496,7 +1494,12 @@ struct DashboardView: View {
                     case .overreached(let name, _, let chronic, let pct, let injury):
                         DashboardBannerView(icon: "exclamationmark.triangle.fill", color: .orange) {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("**\(name)** was +\(pct)% boven je gemiddelde training (\(chronic) TRIMP).")
+                                // Epic #37: pre-format Ints as String so the generated format key
+                                // uses %@ (not %lld) and matches the catalog entry — otherwise the
+                                // lookup misses and the banner falls back to Dutch on device.
+                                let pctStr = "\(pct)"
+                                let chronicStr = "\(chronic)"
+                                Text("**\(name)** was +\(pctStr)% boven je gemiddelde training (\(chronicStr) TRIMP).")
                                     .font(.caption)
                                 if let inj = injury {
                                     Text("Let op: Gezien je \(inj) was deze training extra belastend voor je herstel.")
@@ -1509,12 +1512,18 @@ struct DashboardView: View {
                         }
                     case .lowVibeHighLoad(let name, let vibe, let actual):
                         DashboardBannerView(icon: "exclamationmark.triangle.fill", color: .orange) {
-                            Text("Je Vibe Score is \(vibe)/100 — je lichaam is uitgeput. **\(name)** (TRIMP: \(actual)) was zwaarder dan je herstel toelaat. Neem rust.")
+                            // Epic #37: pre-format Ints as String → %@ key matches the catalog.
+                            let vibeStr = "\(vibe)"
+                            let actualStr = "\(actual)"
+                            Text("Je Vibe Score is \(vibeStr)/100 — je lichaam is uitgeput. **\(name)** (TRIMP: \(actualStr)) was zwaarder dan je herstel toelaat. Neem rust.")
                                 .font(.caption)
                         }
                     case .behindOnPlan(let current, let target):
                         DashboardBannerView(icon: "info.circle.fill", color: themeManager.primaryAccentColor) {
-                            Text("Je TRIMP deze week (\(current)) ligt achter op het weekdoel (\(target)). Pak de geplande trainingen op.")
+                            // Epic #37: pre-format Ints as String → %@ key matches the catalog.
+                            let currentStr = "\(current)"
+                            let targetStr = "\(target)"
+                            Text("Je TRIMP deze week (\(currentStr)) ligt achter op het weekdoel (\(targetStr)). Pak de geplande trainingen op.")
                                 .font(.caption)
                         }
                     case .none:
@@ -1526,7 +1535,7 @@ struct DashboardView: View {
                         HStack(spacing: 8) {
                             ProgressView().controlSize(.small)
                             Text(viewModel.retryStatusMessage.isEmpty
-                                 ? "Coach analyseert schema..."
+                                 ? String(localized: "Coach analyseert schema...")
                                  : viewModel.retryStatusMessage)
                                 .font(.caption)
                                 .foregroundColor(viewModel.retryStatusMessage.isEmpty ? .secondary : .orange)
