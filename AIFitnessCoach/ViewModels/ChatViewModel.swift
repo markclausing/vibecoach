@@ -405,7 +405,7 @@ class ChatViewModel: ObservableObject {
     /// The SymptomTracker is the 'Single Source of Truth' for injury status:
     /// - Score > 0 → active complaint, with constraint rules based on severity
     /// - Score == 0 → recovered, replaces any still-active UserPreference text
-    /// - No score filled in + active UserPreference → show as 'onbekend, score nog niet ingevuld'
+    /// - No score filled in + active UserPreference → show as 'unknown, score not entered yet'
     func cacheSymptomContext(_ symptoms: [Symptom], preferences: [UserPreference] = []) {
         symptomContext = SymptomContextFormatter.format(symptoms: symptoms, preferences: preferences)
 
