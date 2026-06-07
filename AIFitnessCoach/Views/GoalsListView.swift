@@ -98,8 +98,11 @@ struct GoalsListView: View {
                             .padding(.horizontal)
                     } else {
                         ForEach(uncompletedGoals) { goal in
-                            activeGoalCard(goal)
-                                .padding(.bottom, 24)
+                            NavigationLink(value: goal) {
+                                activeGoalCard(goal)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.bottom, 24)
                         }
                         if !completedGoals.isEmpty {
                             alternativeGoalsSection
@@ -110,6 +113,9 @@ struct GoalsListView: View {
                 }
             }
             .accessibilityIdentifier("GoalsScrollView")
+            .navigationDestination(for: FitnessGoal.self) { goal in
+                EditGoalView(goal: goal)
+            }
             .onScrollGeometryChange(for: Bool.self) { geometry in
                 geometry.contentOffset.y > 4
             } action: { _, newValue in
@@ -436,8 +442,11 @@ struct GoalsListView: View {
 
             VStack(spacing: 8) {
                 ForEach(completedGoals) { goal in
-                    completedGoalRow(goal)
-                        .accessibilityIdentifier("GoalRow_\(goal.title)")
+                    NavigationLink(value: goal) {
+                        completedGoalRow(goal)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("GoalRow_\(goal.title)")
                 }
             }
             .padding(.horizontal)
