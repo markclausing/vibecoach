@@ -2378,11 +2378,14 @@ private struct SymptomAreaRow: View {
                 Image(systemName: area.icon)
                     .foregroundColor(severityColor)
                     .frame(width: 20)
-                Text(area.rawValue)
+                // Epic #37 story 37.4: BodyArea.rawValue / severityLabel stay Dutch (rawValue is
+                // the SwiftData storage value; severityLabel feeds the coach prompt). The UI
+                // resolves both via the catalog.
+                Text(LocalizedStringKey(area.rawValue))
                     .font(.subheadline)
                     .fontWeight(.medium)
                 Spacer()
-                Text("\(severity)/10 — \(BodyArea.severityLabel(severity))")
+                Text("\(severity)/10 — \(String(localized: String.LocalizationValue(BodyArea.severityLabel(severity))))")
                     .font(.caption)
                     .foregroundColor(severityColor)
                     .monospacedDigit()

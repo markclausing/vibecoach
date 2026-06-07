@@ -13,14 +13,17 @@ enum BodyArea: String, CaseIterable, Codable {
     case ankle     = "Enkel"
 
     /// Keywords in UserPreference texts that indicate a complaint in this area.
+    /// Epic #37 story 37.4: now a NL + EN + DE + ES union so injury detection works on free
+    /// text the user typed in any supported language. Matching is `contains` on lowercased
+    /// text; Spanish/German accents are listed with and without the diacritic.
     var injuryKeywords: [String] {
         switch self {
-        case .calf:     return ["kuit", "scheen", "shin"]
-        case .hand:     return ["hand", "pols", "vinger"]
-        case .back:     return ["rug", "rugpijn", "back pain"]
-        case .knee:     return ["knie"]
-        case .shoulder: return ["schouder"]
-        case .ankle:    return ["enkel"]
+        case .calf:     return ["kuit", "scheen", "shin", "calf", "wade", "schienbein", "pantorrilla", "gemelo", "espinilla"]
+        case .hand:     return ["hand", "pols", "vinger", "wrist", "finger", "handgelenk", "mano", "muñeca", "muneca", "dedo"]
+        case .back:     return ["rug", "rugpijn", "back", "back pain", "rücken", "rucken", "rückenschmerz", "espalda", "lumbago"]
+        case .knee:     return ["knie", "knee", "rodilla"]
+        case .shoulder: return ["schouder", "shoulder", "schulter", "hombro"]
+        case .ankle:    return ["enkel", "ankle", "knöchel", "knochel", "fußgelenk", "fussgelenk", "tobillo"]
         }
     }
 

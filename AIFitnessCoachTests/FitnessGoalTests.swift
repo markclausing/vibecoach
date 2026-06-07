@@ -202,6 +202,25 @@ final class FitnessGoalTests: XCTestCase {
         }
     }
 
+    func testBodyArea_InjuryKeywords_CoverAllSupportedLanguages() {
+        // Epic #37 story 37.4: each area must be detectable from free text in NL + EN + DE + ES.
+        // Spot-check one representative keyword per language per area.
+        let expectations: [BodyArea: [String]] = [
+            .calf:     ["kuit", "calf", "wade", "pantorrilla"],
+            .hand:     ["hand", "wrist", "handgelenk", "mano"],
+            .back:     ["rug", "back", "rücken", "espalda"],
+            .knee:     ["knie", "knee", "rodilla"],
+            .shoulder: ["schouder", "shoulder", "schulter", "hombro"],
+            .ankle:    ["enkel", "ankle", "knöchel", "tobillo"]
+        ]
+        for (area, keywords) in expectations {
+            for keyword in keywords {
+                XCTAssertTrue(area.injuryKeywords.contains(keyword),
+                              "\(area) mist meertalig keyword '\(keyword)'.")
+            }
+        }
+    }
+
     func testBodyArea_Icons_AreNonEmptyAndUnique() {
         let icons = BodyArea.allCases.map(\.icon)
         for icon in icons { XCTAssertFalse(icon.isEmpty) }
@@ -444,6 +463,46 @@ final class FitnessGoalTests: XCTestCase {
         )
         let weekday = Calendar.current.component(.weekday, from: workout.resolvedDate)
         XCTAssertEqual(weekday, 6, "Friday = weekday 6.")
+    }
+
+    func testSuggestedWorkout_ResolvedDate_ParsesGermanDayName() {
+        // Epic #37 story 37.4: German day names must parse so a German coach reply schedules
+        // on the right day.
+        let workout = SuggestedWorkout(
+            dateOrDay: "Mittwoch",
+            activityType: "Laufen",
+            suggestedDurationMinutes: 45,
+            targetTRIMP: 40,
+            description: "Test"
+        )
+        let weekday = Calendar.current.component(.weekday, from: workout.resolvedDate)
+        XCTAssertEqual(weekday, 4, "Mittwoch = weekday 4 (woensdag).")
+    }
+
+    func testSuggestedWorkout_ResolvedDate_ParsesSpanishDayNameWithAccent() {
+        // Epic #37 story 37.4: accented Spanish day name.
+        let workout = SuggestedWorkout(
+            dateOrDay: "Miércoles",
+            activityType: "Correr",
+            suggestedDurationMinutes: 45,
+            targetTRIMP: 40,
+            description: "Test"
+        )
+        let weekday = Calendar.current.component(.weekday, from: workout.resolvedDate)
+        XCTAssertEqual(weekday, 4, "Miércoles = weekday 4 (woensdag).")
+    }
+
+    func testSuggestedWorkout_ResolvedDate_ParsesSpanishDayNameWithoutAccent() {
+        // Epic #37 story 37.4: the model is inconsistent about diacritics — "sabado" must also work.
+        let workout = SuggestedWorkout(
+            dateOrDay: "sabado",
+            activityType: "Correr",
+            suggestedDurationMinutes: 60,
+            targetTRIMP: 50,
+            description: "Test"
+        )
+        let weekday = Calendar.current.component(.weekday, from: workout.resolvedDate)
+        XCTAssertEqual(weekday, 7, "sábado = weekday 7 (zaterdag).")
     }
 
     func testSuggestedWorkout_ResolvedDate_ParsesCompoundDayString() {

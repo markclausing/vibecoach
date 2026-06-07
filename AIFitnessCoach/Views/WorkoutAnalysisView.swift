@@ -910,7 +910,9 @@ struct WorkoutAnalysisView: View {
                 Button {
                     setSessionType(type)
                 } label: {
-                    Label(type.displayName, systemImage: type.icon)
+                    // Epic #37 story 37.4: SessionType.displayName stays Dutch for prompts; the
+                    // UI menu resolves it via the catalog.
+                    Label(LocalizedStringKey(type.displayName), systemImage: type.icon)
                 }
             }
             Divider()
@@ -925,7 +927,7 @@ struct WorkoutAnalysisView: View {
                 if let type = activity.sessionType {
                     Image(systemName: type.icon)
                         .font(.caption)
-                    Text(type.displayName)
+                    Text(LocalizedStringKey(type.displayName))
                         .font(.caption).fontWeight(.medium)
                 } else {
                     Image(systemName: "questionmark.circle")
