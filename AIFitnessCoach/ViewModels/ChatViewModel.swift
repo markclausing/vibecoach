@@ -1236,7 +1236,7 @@ class ChatViewModel: ObservableObject {
                     }
                     print("⚠️ No or empty HealthKit workouts found, falling back to Strava.")
                 } catch {
-                    print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
+                    print("⚠️ Error fetching HealthKit data (\(error.localizedDescription)), falling back to Strava.")
                 }
 
                 // Fallback to Strava
@@ -1295,7 +1295,7 @@ class ChatViewModel: ObservableObject {
             }
         } catch {
             if !isFallback {
-                print("⚠️ Fout bij ophalen HealthKit data (\(error.localizedDescription)), terugvallen op Strava.")
+                print("⚠️ Error fetching HealthKit data (\(error.localizedDescription)), falling back to Strava.")
                 await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
             } else {
                 await MainActor.run {
@@ -1537,7 +1537,7 @@ class ChatViewModel: ObservableObject {
                 // model; other errors (invalid key, blocked, network) fall
                 // straight through to the UI.
                 if AIProviderError.isOverload(error) {
-                    retryStatusMessage = "Model tijdelijk overbelast — overschakelen naar lichtere variant..."
+                    retryStatusMessage = String(localized: "Model tijdelijk overbelast — overschakelen naar lichtere variant...")
                     let fallbackModel = buildFallbackGenerativeModel()
                     do {
                         responseText = try await fallbackModel.generateContent(promptParts)
