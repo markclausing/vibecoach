@@ -134,9 +134,14 @@ struct GoalsListView: View {
             HStack {
                 let activeCount = uncompletedGoals.count
                 let cmpCount    = completedGoals.count
+                // Epic #37: localized via the catalog. Counts pre-formatted as String (-> %@ key);
+                // the Dutch singular/plural suffix logic is dropped — these uppercase counter
+                // labels read fine in the plural form across languages.
+                let activeStr = "\(activeCount)"
+                let cmpStr    = "\(cmpCount)"
                 Text(activeCount == 0
-                     ? "GEEN DOELEN"
-                     : "\(activeCount) ACTIE\(activeCount == 1 ? "F" : "VE") • \(cmpCount) VOLTOOID\(cmpCount == 1 ? "" : "E")")
+                     ? String(localized: "GEEN DOELEN")
+                     : String(localized: "\(activeStr) ACTIEVE • \(cmpStr) VOLTOOIDE"))
                     .font(.caption).fontWeight(.semibold)
                     .foregroundColor(.secondary).kerning(0.5)
                 Spacer()

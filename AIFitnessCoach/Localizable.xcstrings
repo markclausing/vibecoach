@@ -4072,6 +4072,29 @@
         }
       }
     },
+    "Hele week bekijken": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ganze Woche ansehen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "View full week"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver toda la semana"
+          }
+        }
+      }
+    },
     "Herschrijf schema rondom verplaatste sessie%@": {
       "localizations": {
         "de": {
@@ -5130,6 +5153,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ya has alcanzado tu carga máxima. Mantenla y empieza pronto el taper."
+          }
+        }
+      }
+    },
+    "Je trainingsbelasting is %.0f TRIMP/week — het doel is %.0f.": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Trainingsbelastung ist %.0f TRIMP/Woche — das Ziel ist %.0f."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your training load is %.0f TRIMP/week — the target is %.0f."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu carga de entrenamiento es %.0f TRIMP/semana — el objetivo es %.0f."
+          }
+        }
+      }
+    },
+    "Je trainingsbelasting is te hoog voor de taperingsfase.": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Trainingsbelastung ist zu hoch für die Taper-Phase."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your training load is too high for the taper phase."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu carga de entrenamiento es demasiado alta para la fase de taper."
           }
         }
       }
@@ -6430,6 +6499,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "HITOS Y PRONÓSTICO"
+          }
+        }
+      }
+    },
+    "Minder": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weniger"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Less"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menos"
           }
         }
       }
@@ -7992,6 +8084,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Espalda"
+          }
+        }
+      }
+    },
+    "RUST": {
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RUHE"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "REST"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DESCANSO"
           }
         }
       }
@@ -10825,112 +10940,46 @@
         }
       }
     },
-    "Hele week bekijken": {
+    "GEEN DOELEN": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "View full week"
+            "value": "NO GOALS"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ganze Woche ansehen"
+            "value": "KEINE ZIELE"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ver toda la semana"
+            "value": "SIN OBJETIVOS"
           }
         }
       }
     },
-    "Minder": {
+    "%@ ACTIEVE • %@ VOLTOOIDE": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Less"
+            "value": "%@ ACTIVE • %@ COMPLETED"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Weniger"
+            "value": "%@ AKTIV • %@ ABGESCHLOSSEN"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Menos"
-          }
-        }
-      }
-    },
-    "RUST": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "REST"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RUHE"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "DESCANSO"
-          }
-        }
-      }
-    },
-    "Je trainingsbelasting is te hoog voor de taperingsfase.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your training load is too high for the taper phase."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deine Trainingsbelastung ist zu hoch für die Taper-Phase."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu carga de entrenamiento es demasiado alta para la fase de taper."
-          }
-        }
-      }
-    },
-    "Je trainingsbelasting is %.0f TRIMP/week — het doel is %.0f.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your training load is %.0f TRIMP/week — the target is %.0f."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deine Trainingsbelastung ist %.0f TRIMP/Woche — das Ziel ist %.0f."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu carga de entrenamiento es %.0f TRIMP/semana — el objetivo es %.0f."
+            "value": "%@ ACTIVOS • %@ COMPLETADOS"
           }
         }
       }
