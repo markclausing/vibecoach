@@ -26,7 +26,7 @@ final class IntentExecutionContextFormatterTests: XCTestCase {
             plannedTRIMP: 100, actualTRIMP: 105
         )
         XCTAssertTrue(result.contains("MATCH"))
-        XCTAssertTrue(result.contains("compliment"),
+        XCTAssertTrue(result.contains("Compliment"),
                       "Bij match hoort een expliciete compliment-trigger — anders gaat de coach die kans missen")
         XCTAssertTrue(result.contains("Duurloop"))
     }
@@ -42,7 +42,7 @@ final class IntentExecutionContextFormatterTests: XCTestCase {
         XCTAssertTrue(result.contains("Tempo"))
         XCTAssertTrue(result.contains("Duurtraining"),
                       "Display-naam van .endurance is 'Duurtraining' — coach moet die termen kennen")
-        XCTAssertTrue(result.contains("structureel"),
+        XCTAssertTrue(result.contains("structural"),
                       "Caveat tegen overreageren bij eenmalige afwijking moet erin — anders zeurt de coach over één tempo-rit")
     }
 
@@ -55,7 +55,7 @@ final class IntentExecutionContextFormatterTests: XCTestCase {
             plannedTRIMP: 90, actualTRIMP: 60
         )
         XCTAssertTrue(result.contains("VO₂max"))
-        XCTAssertTrue(result.contains("onbepaald type"),
+        XCTAssertTrue(result.contains("undetermined type"),
                       "Bij onbekend actual-type moet dat expliciet — anders verzint de coach iets")
     }
 
@@ -69,7 +69,7 @@ final class IntentExecutionContextFormatterTests: XCTestCase {
         XCTAssertTrue(result.contains("OVERLOAD"))
         XCTAssertTrue(result.contains("+23%") || result.contains("+22%"),
                       "Delta-percent moet zichtbaar — coach moet kunnen zeggen 'je trainde 23% zwaarder'")
-        XCTAssertTrue(result.contains("hersteldag") || result.contains("herstel"),
+        XCTAssertTrue(result.contains("recovery day") || result.contains("recovery"),
                       "Bij overload hoort een herstel-suggestie als kompas voor de coach")
     }
 
@@ -82,7 +82,7 @@ final class IntentExecutionContextFormatterTests: XCTestCase {
         )
         XCTAssertTrue(result.contains("UNDERLOAD"))
         XCTAssertTrue(result.contains("-22%"))
-        XCTAssertTrue(result.contains("compensatie") || result.contains("aangepast"),
+        XCTAssertTrue(result.contains("compensation") || result.contains("adjusted"),
                       "Bij underload moet de coach iets concreets kunnen aanbieden — niet alleen vaststellen")
     }
 

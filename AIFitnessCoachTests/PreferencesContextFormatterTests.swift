@@ -30,12 +30,12 @@ final class PreferencesContextFormatterTests: XCTestCase {
         let permanent = UserPreference(preferenceText: "Krachttraining elke di/do in de gym", expirationDate: nil)
         let result = PreferencesContextFormatter.format(activePreferences: [permanent], now: now)
 
-        XCTAssertTrue(result.contains("VASTGEPINDE REGELS"),
+        XCTAssertTrue(result.contains("PINNED RULES"),
                       "Permanente voorkeuren moeten in het VASTGEPINDE-blok staan")
         XCTAssertTrue(result.contains("Krachttraining elke di/do in de gym"))
-        XCTAssertFalse(result.contains("KRITIEKE INSTRUCTIE"),
+        XCTAssertFalse(result.contains("CRITICAL INSTRUCTION"),
                        "Zonder tijdelijke voorkeur is een prioriteit-instructie overbodig — anders zwaait de coach met een loze waarschuwing")
-        XCTAssertFalse(result.contains("TIJDELIJKE VOORKEUREN"))
+        XCTAssertFalse(result.contains("TEMPORARY PREFERENCES"))
     }
 
     func testOnlyTemporaryProducesTemporaryBlockWithCriticalInstruction() {
@@ -43,13 +43,13 @@ final class PreferencesContextFormatterTests: XCTestCase {
                                   expirationDate: tomorrow())
         let result = PreferencesContextFormatter.format(activePreferences: [temp], now: now)
 
-        XCTAssertTrue(result.contains("TIJDELIJKE VOORKEUREN"))
+        XCTAssertTrue(result.contains("TEMPORARY PREFERENCES"))
         XCTAssertTrue(result.contains("Op vakantie in Rome"))
-        XCTAssertTrue(result.contains("KRITIEKE INSTRUCTIE"),
+        XCTAssertTrue(result.contains("CRITICAL INSTRUCTION"),
                       "Tijdelijke voorkeuren moeten altijd vergezeld zijn van de override-instructie")
-        XCTAssertTrue(result.contains("(tijdelijk, geldt tot"),
+        XCTAssertTrue(result.contains("(temporary, valid until"),
                       "De einddatum moet zichtbaar zijn voor de coach")
-        XCTAssertFalse(result.contains("VASTGEPINDE REGELS"))
+        XCTAssertFalse(result.contains("PINNED RULES"))
     }
 
     // MARK: - Beide
@@ -62,17 +62,17 @@ final class PreferencesContextFormatterTests: XCTestCase {
 
         let result = PreferencesContextFormatter.format(activePreferences: [permanent, temp], now: now)
 
-        XCTAssertTrue(result.contains("VASTGEPINDE REGELS"))
-        XCTAssertTrue(result.contains("TIJDELIJKE VOORKEUREN"))
-        XCTAssertTrue(result.contains("KRITIEKE INSTRUCTIE"))
+        XCTAssertTrue(result.contains("PINNED RULES"))
+        XCTAssertTrue(result.contains("TEMPORARY PREFERENCES"))
+        XCTAssertTrue(result.contains("CRITICAL INSTRUCTION"))
         XCTAssertTrue(result.contains("Krachttraining elke di/do"))
         XCTAssertTrue(result.contains("Op vakantie in Rome"))
 
         // Volgorde: vastgepind eerst, daarna tijdelijk + instructie. Dat zorgt dat het
         // laatste wat de coach 'leest' over preferences de override-regel is — meest
         // recente context weegt sterker in LLM-attention.
-        let pinnedRange = result.range(of: "VASTGEPINDE REGELS")!
-        let temporaryRange = result.range(of: "TIJDELIJKE VOORKEUREN")!
+        let pinnedRange = result.range(of: "PINNED RULES")!
+        let temporaryRange = result.range(of: "TEMPORARY PREFERENCES")!
         XCTAssertLessThan(pinnedRange.lowerBound, temporaryRange.lowerBound,
                           "Vastgepind moet vóór tijdelijk staan zodat de override-regel de laatste boodschap is")
     }

@@ -41,7 +41,7 @@ final class IntentContextFormatterTests: XCTestCase {
         let output = IntentContextFormatter.format(results: [r])
         XCTAssertTrue(output.contains("Berlin Marathon"))
         XCTAssertTrue(output.contains("Build Phase: opbouwen."))
-        XCTAssertFalse(output.contains("TOERTOCHT"), "SingleDayRace mag geen toertocht-waarschuwing krijgen.")
+        XCTAssertFalse(output.contains("TOUR"), "SingleDayRace mag geen toertocht-waarschuwing krijgen.")
     }
 
     func test_format_multiDayStage_addsTouristNotice() {
@@ -50,7 +50,7 @@ final class IntentContextFormatterTests: XCTestCase {
                                format: .multiDayStage)
         let r = makeResult(goal: goal, instruction: "Bouw aerobe basis.")
         let output = IntentContextFormatter.format(results: [r])
-        XCTAssertTrue(output.contains("TOERTOCHT, geen race"))
+        XCTAssertTrue(output.contains("TOUR, not a race"))
     }
 
     func test_format_withStretchGoal_addsReadableTime() {
@@ -60,8 +60,8 @@ final class IntentContextFormatterTests: XCTestCase {
                                stretchGoalTime: 3 * 3600 + 30 * 60) // 3u30
         let r = makeResult(goal: goal, instruction: "Push tempo.")
         let output = IntentContextFormatter.format(results: [r])
-        XCTAssertTrue(output.contains("Stretch Goal Doeltijd"))
-        XCTAssertTrue(output.contains("3 uur en 30 minuten"))
+        XCTAssertTrue(output.contains("Stretch Goal target time"))
+        XCTAssertTrue(output.contains("3 hours and 30 minutes"))
     }
 
     func test_format_withSubHourStretchGoal_omitsHours() {
@@ -71,7 +71,7 @@ final class IntentContextFormatterTests: XCTestCase {
                                stretchGoalTime: 45 * 60) // 45 min
         let r = makeResult(goal: goal, instruction: "Push tempo.")
         let output = IntentContextFormatter.format(results: [r])
-        XCTAssertTrue(output.contains("45 minuten"))
+        XCTAssertTrue(output.contains("45 minutes"))
         XCTAssertFalse(output.contains("uur en"), "Sub-uur stretch tijd moet alleen minuten tonen.")
     }
 }

@@ -7,7 +7,7 @@ struct EditGoalView: View {
 
     @Bindable var goal: FitnessGoal
 
-    // Stretch goal: lokale state zodat de DatePicker altijd een geldige Date krijgt
+    // Stretch goal: local state so the DatePicker always gets a valid Date
     @State private var hasStretchGoal: Bool
     @State private var stretchGoalPickerDate: Date
 

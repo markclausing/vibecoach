@@ -18,7 +18,7 @@ enum LastWorkoutContextFormatter {
     ///   - mood: Mood emoji or word, optional.
     ///   - workoutName: Name of the workout, fallback "Training".
     ///   - trimp: TRIMP score, optional ("onbekend" if nil).
-    ///   - startDate: Date of the workout, for the "[Type] van [Datum]" format.
+    ///   - startDate: Date of the workout, for the "[Type] from [Date]" format.
     ///   - sessionType: Optional — when present the label + intent is added.
     static func format(rpe: Int?,
                        mood: String?,
@@ -40,16 +40,16 @@ enum LastWorkoutContextFormatter {
             nameStr = baseName
         }
 
-        let trimpStr = trimp.map { String(format: "%.0f", $0) } ?? "onbekend"
+        let trimpStr = trimp.map { String(format: "%.0f", $0) } ?? "unknown"
         let rpeLabel: String
         switch rpe {
-        case 1...3: rpeLabel = "licht (1-3)"
-        case 4...6: rpeLabel = "matig (4-6)"
-        case 7...8: rpeLabel = "zwaar (7-8)"
-        default:    rpeLabel = "maximaal (9-10)"
+        case 1...3: rpeLabel = "light (1-3)"
+        case 4...6: rpeLabel = "moderate (4-6)"
+        case 7...8: rpeLabel = "hard (7-8)"
+        default:    rpeLabel = "maximal (9-10)"
         }
 
-        var line = "Laatste workout: '\(nameStr)', TRIMP: \(trimpStr), RPE: \(rpe)/10 (\(rpeLabel)), Stemming: \(mood)."
+        var line = "Last workout: '\(nameStr)', TRIMP: \(trimpStr), RPE: \(rpe)/10 (\(rpeLabel)), Mood: \(mood)."
 
         // Story 33.1b: add session type + intent so the coach can tune its tone.
         // We pass the textual intent — not just the label — because 'recovery' on
@@ -57,7 +57,7 @@ enum LastWorkoutContextFormatter {
         // architect note on this was explicit.
         if let sessionType {
             let intent = sessionType.intent
-            line += " Sessie-type: \(sessionType.displayName) — \(intent.coachingSummary)"
+            line += " Session type: \(sessionType.displayName) — \(intent.coachingSummary)"
         }
 
         return line

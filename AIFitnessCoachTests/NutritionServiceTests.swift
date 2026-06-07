@@ -320,7 +320,7 @@ final class NutritionServiceTests: XCTestCase {
             todayWorkouts: [],
             tomorrowWorkouts: []
         )
-        XCTAssertTrue(context.contains("[VOEDING & FYSIOLOGIE]"),
+        XCTAssertTrue(context.contains("[NUTRITION & PHYSIOLOGY]"),
                       "Coach context moet de sectie-header bevatten.")
         XCTAssertTrue(context.contains("BMR"),
                       "Coach context moet 'BMR' bevatten.")

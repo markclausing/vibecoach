@@ -27,21 +27,21 @@ final class VibeScoreContextFormatterTests: XCTestCase {
     func test_format_highScore_labelsOptimaalHersteld() {
         let r = DailyReadiness(date: .init(), sleepHours: 8.0, hrv: 60.0, readinessScore: 85)
         let result = VibeScoreContextFormatter.format(readiness: r, previousValue: "")
-        XCTAssertTrue(result.contains("Optimaal Hersteld"), "Score ≥ 80 hoort 'Optimaal Hersteld' te zijn.")
+        XCTAssertTrue(result.contains("Optimally Recovered"), "Score ≥ 80 hoort 'Optimally Recovered' te zijn.")
         XCTAssertTrue(result.contains("85/100"))
     }
 
     func test_format_midScore_labelsMatigHersteld() {
         let r = DailyReadiness(date: .init(), sleepHours: 7.0, hrv: 50.0, readinessScore: 65)
         let result = VibeScoreContextFormatter.format(readiness: r, previousValue: "")
-        XCTAssertTrue(result.contains("Matig Hersteld"))
+        XCTAssertTrue(result.contains("Moderately Recovered"))
     }
 
     func test_format_lowScore_labelsSlechtHersteld() {
         let r = DailyReadiness(date: .init(), sleepHours: 5.0, hrv: 30.0, readinessScore: 40)
         let result = VibeScoreContextFormatter.format(readiness: r, previousValue: "")
-        XCTAssertTrue(result.contains("Slecht Hersteld"))
-        XCTAssertTrue(result.contains("Rust prioriteit"))
+        XCTAssertTrue(result.contains("Poorly Recovered"))
+        XCTAssertTrue(result.contains("Rest priority"))
     }
 
     // MARK: - Sleep formatting
@@ -49,7 +49,7 @@ final class VibeScoreContextFormatterTests: XCTestCase {
     func test_format_sleepHoursAndMinutes() {
         let r = DailyReadiness(date: .init(), sleepHours: 7.5, hrv: 55.0, readinessScore: 75)
         let result = VibeScoreContextFormatter.format(readiness: r, previousValue: "")
-        XCTAssertTrue(result.contains("7u 30m"), "7.5 uur slaap → 7u 30m. Kreeg: \(result)")
+        XCTAssertTrue(result.contains("7h 30m"), "7.5 uur slaap → 7h 30m. Kreeg: \(result)")
     }
 
     // MARK: - Sleep stages
@@ -58,23 +58,23 @@ final class VibeScoreContextFormatterTests: XCTestCase {
         let r = DailyReadiness(date: .init(), sleepHours: 8.0, hrv: 60.0, readinessScore: 85,
                                deepSleepMinutes: 90, remSleepMinutes: 110, coreSleepMinutes: 200)
         let result = VibeScoreContextFormatter.format(readiness: r, previousValue: "")
-        // 90 / 400 = 22.5% → "Uitstekend"
-        XCTAssertTrue(result.contains("Uitstekend"))
-        XCTAssertFalse(result.contains("INSTRUCTIE:"), "Bij goede slaap geen extra instructie.")
+        // 90 / 400 = 22.5% → "Excellent"
+        XCTAssertTrue(result.contains("Excellent"))
+        XCTAssertFalse(result.contains("INSTRUCTION:"), "Bij goede slaap geen extra instructie.")
     }
 
     func test_format_withPoorDeepSleep_addsCoachInstruction() {
         let r = DailyReadiness(date: .init(), sleepHours: 7.0, hrv: 55.0, readinessScore: 70,
                                deepSleepMinutes: 30, remSleepMinutes: 100, coreSleepMinutes: 270)
-        // 30 / 400 = 7.5% → "Onvoldoende" + INSTRUCTIE
+        // 30 / 400 = 7.5% → "Insufficient" + INSTRUCTIE
         let result = VibeScoreContextFormatter.format(readiness: r, previousValue: "")
-        XCTAssertTrue(result.contains("Onvoldoende"))
-        XCTAssertTrue(result.contains("INSTRUCTIE:"))
+        XCTAssertTrue(result.contains("Insufficient"))
+        XCTAssertTrue(result.contains("INSTRUCTION:"))
     }
 
     func test_format_withoutStageData_omitsQualityNote() {
         let r = DailyReadiness(date: .init(), sleepHours: 7.0, hrv: 50.0, readinessScore: 70)
         let result = VibeScoreContextFormatter.format(readiness: r, previousValue: "")
-        XCTAssertFalse(result.contains("Slaapfases:"), "Zonder stage-data geen slaapfase-blok.")
+        XCTAssertFalse(result.contains("Sleep stages:"), "Zonder stage-data geen slaapfase-blok.")
     }
 }

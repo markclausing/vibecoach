@@ -28,10 +28,10 @@ final class BlueprintContextFormatterTests: XCTestCase {
         let output = BlueprintContextFormatter.format(results: [result])
         XCTAssertTrue(output.contains("Marathon Amsterdam"))
         XCTAssertTrue(output.contains("Marathon"))           // blueprint displayName
-        XCTAssertTrue(output.contains("Op schema"))
-        XCTAssertTrue(output.contains("(2/2 kritieke eisen behaald)"))
-        XCTAssertTrue(output.contains("28 km duurloop (behaald)"))
-        XCTAssertTrue(output.contains("32 km duurloop (behaald)"))
+        XCTAssertTrue(output.contains("On schedule"))
+        XCTAssertTrue(output.contains("(2/2 critical requirements met)"))
+        XCTAssertTrue(output.contains("28 km duurloop (met)"))
+        XCTAssertTrue(output.contains("32 km duurloop (met)"))
     }
 
     func test_format_resultBehind_showsOpenMilestoneWithDeadline() {
@@ -52,11 +52,11 @@ final class BlueprintContextFormatterTests: XCTestCase {
         )
 
         let output = BlueprintContextFormatter.format(results: [result])
-        XCTAssertTrue(output.contains("Achter op schema"), "Verstreken open milestone hoort 'Achter op schema' te triggeren. Output: \(output)")
-        XCTAssertTrue(output.contains("(0/1 kritieke eisen behaald)"))
+        XCTAssertTrue(output.contains("Behind schedule"), "Verstreken open milestone hoort 'Behind schedule' te triggeren. Output: \(output)")
+        XCTAssertTrue(output.contains("(0/1 critical requirements met)"))
         XCTAssertTrue(output.contains("16 km duurloop"))
         XCTAssertTrue(output.contains("deadline:"))
-        XCTAssertTrue(output.contains("4 weken voor race"))
+        XCTAssertTrue(output.contains("4 weeks before race"))
     }
 
     func test_format_multipleResults_separatedByNewlines() {

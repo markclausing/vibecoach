@@ -20,7 +20,7 @@ enum IntentContextFormatter {
                 // Explicit tour context: the coach must NOT reason as for a race
                 let format = result.goal.resolvedFormat
                 if format == .multiDayStage || format == .singleDayTour {
-                    text += "\n⚠️ LET OP: Dit is een TOERTOCHT, geen race. Beoordeel de voortgang op basis van rustig touren, comfort en meerdaags duurvermogen, NIET op race-snelheid."
+                    text += "\n⚠️ NOTE: This is a TOUR, not a race. Judge progress on relaxed touring, comfort and multi-day endurance, NOT on race speed."
                 }
 
                 // Explicit stretch-goal target time in readable format
@@ -28,8 +28,8 @@ enum IntentContextFormatter {
                     let totalSec = Int(stretchTime)
                     let hours    = totalSec / 3600
                     let minutes  = (totalSec % 3600) / 60
-                    let timeStr  = hours > 0 ? "\(hours) uur en \(minutes) minuten" : "\(minutes) minuten"
-                    text += "\n✅ Stretch Goal Doeltijd: \(timeStr). Bouw af en toe tempo-oefeningen in het schema in om deze snelheid op te bouwen, mits de actuele VibeScore / herstel dit toelaat."
+                    let timeStr  = hours > 0 ? "\(hours) hours and \(minutes) minutes" : "\(minutes) minutes"
+                    text += "\n✅ Stretch Goal target time: \(timeStr). Occasionally build tempo sessions into the schedule to develop this speed, provided the current Vibe Score / recovery allows it."
                 }
 
                 return text

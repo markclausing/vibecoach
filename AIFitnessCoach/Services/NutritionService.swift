@@ -155,7 +155,7 @@ struct NutritionService {
 
     // MARK: - Coach prompt block
 
-    /// Builds the `[VOEDING & FYSIOLOGIE]` block for the AI prompt.
+    /// Builds the `[NUTRITION & PHYSIOLOGY]` block for the AI prompt.
     /// Contains BMR, profile summary and fueling plans for today and tomorrow.
     static func buildCoachContext(
         profile: UserPhysicalProfile,
@@ -164,7 +164,7 @@ struct NutritionService {
     ) -> String {
         let bmr = Int(calculateBMR(profile: profile).rounded())
         var lines = [String]()
-        lines.append("[VOEDING & FYSIOLOGIE]")
+        lines.append("[NUTRITION & PHYSIOLOGY]")
         lines.append("Physiological profile: \(profile.coachSummary)")
         lines.append("Basal metabolic rate (BMR): ~\(bmr) kcal/day")
 

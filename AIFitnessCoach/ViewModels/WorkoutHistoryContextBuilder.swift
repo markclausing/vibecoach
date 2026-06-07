@@ -3,12 +3,12 @@ import Foundation
 // MARK: - Epic 45 Story 45.1: WorkoutHistoryContextBuilder
 //
 // Pure-Swift helper that turns a list of pre-fetched workout entries into a
-// 1-line-per-workout prompt block for the coach (`[RECENTE TRAINING — 14 DAGEN]`).
+// 1-line-per-workout prompt block for the coach (`[RECENT TRAINING — 14 DAYS]`).
 // Like `LastWorkoutContextFormatter` and `WorkoutPatternFormatter`: no AppStorage,
 // no SwiftData, no HealthKit. The caller (DashboardView) does the async sample fetch
 // and passes `WorkoutEntry` DTOs — the builder itself is synchronous and testable.
 //
-// The builder produces only the data lines. The [RECENTE TRAINING — 14 DAGEN…]
+// The builder produces only the data lines. The [RECENT TRAINING — 14 DAYS…]
 // header and behaviour rules are wrapped around the output in
 // `ChatViewModel.buildContextPrefix` — same split as with
 // `WorkoutPatternFormatter.chatContextLine`, so prompt-engineering choices stay
@@ -32,7 +32,7 @@ enum WorkoutHistoryContextBuilder {
         let patterns: [WorkoutPattern] // detector output, can be empty
     }
 
-    /// Builds the body of the [RECENTE TRAINING — 14 DAGEN] block. One line per
+    /// Builds the body of the [RECENT TRAINING — 14 DAYS] block. One line per
     /// workout, sorted newest→oldest (chat reading order: "what now" → "trend").
     /// Empty array → `""` so the caller can skip the whole block.
     static func build(entries: [WorkoutEntry]) -> String {

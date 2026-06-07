@@ -26,14 +26,14 @@ enum UserOverrideContextFormatter {
         let lines = swapped.map { workout -> String in
             let dayLabel = formatter.string(from: workout.displayDate)
             let capitalized = dayLabel.prefix(1).uppercased() + dayLabel.dropFirst()
-            return "- '\(workout.activityType)' staat nu op \(capitalized) (handmatig verplaatst door de gebruiker)"
+            return "- '\(workout.activityType)' is now on \(capitalized) (manually moved by the user)"
         }.joined(separator: "\n")
 
         return """
-        [USER_OVERRIDE — handmatige planning-aanpassingen:
+        [USER_OVERRIDE — manual schedule adjustments:
         \(lines)
 
-        KRITIEKE INSTRUCTIE: De gebruiker heeft deze sessies bewust naar een andere dag verplaatst. Verschuif ze NIET terug bij een volgende schema-suggestie. Respecteer de nieuwe planning als gegeven en pas je advies daarop aan.]
+        CRITICAL INSTRUCTION: The user deliberately moved these sessions to another day. Do NOT shift them back in a future schedule suggestion. Respect the new schedule as given and adjust your advice accordingly.]
 
 
         """
