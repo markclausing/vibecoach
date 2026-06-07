@@ -269,6 +269,8 @@ Authoritatieve coverage-meting in april 2026 toonde dat sleutel-services 0% dekk
 
 ### 🔄 Epic #37: Internationalisatie & Engelstalige codebasis (NL + EN + DE + ES)
 
+**Status (juni 2026): functioneel afgerond.** De app is meertalig (NL/EN/DE/ES) en de hele codebase + coach-prompt zijn Engels. Gemerged: 37.1 t/m 37.6 (PR #291–#304, ~527 catalog-keys). **Resteert:** 37.7 (de 4 doc-files zelf naar Engels — déze update-ronde dekt de inhoudelijke synchronisatie, niet de taalswitch), 37.8 (testsuite-i18n: UI-tests draaien nu geforceerd in `nl`, een per-taal-pass is nog open) en **native DE/ES-review** van de vertalingen (toon/idioom). Architectuur: zie de Localization-sectie in `ARCHITECTURE.md` + het i18n-patroon in `CLAUDE.md`.
+
 Twee samenhangende sporen, nu mét commitment en richting:
 1. **App meertalig** — Nederlands (huidige basis) + **Engels, Duits, Spaans**, met de localisatie-infra (`Localizable.xcstrings`) zó opgezet dat een extra taal louter een kolom vertalingen is.
 2. **Codebasis volledig Engelstalig** — alle code-comments, alle vier doc-files (README, ARCHITECTURE, ROADMAP, CLAUDE.md) én de in-code prompt-teksten naar Engels.
@@ -293,7 +295,7 @@ Pure-Swift helpers die nu strings teruggeven (formatters) krijgen een `Locale`/k
 
 **28** plekken met hardcoded `Locale(identifier: "nl_NL")` → device- óf gekozen locale. Datumnamen, getallen en eenheden volgen de actieve taal. **Effort:** ~4–6u.
 
-#### 🔄 37.3 — Meertalige AI-coach (kritiek pad, maar verlicht)
+#### ✅ 37.3 — Meertalige AI-coach (kritiek pad, maar verlicht)
 
 **Gerealiseerd (✅, PR #302):** `AppLanguage.promptLanguageName` (Engelse taalnaam voor de directive; `.system` → device-taal). De hardcoded "reply in Dutch"-directieven in `ChatViewModel` (system-instruction + JSON-veld-instructies), `WorkoutInsightService` en `ChatScopeInstruction` vervangen door een dynamische `\(replyLanguage)`. Instructie-bodies blijven Engels; alléén de directive stuurt de output-taal. `systemInstruction`/`text` zijn nu computed zodat de taal op call-time gelezen wordt. +3 tests; prompt-test-classes groen (37). **Open:** de statische context-labels/bracket-tokens (`[ACTUELE KLACHTEN]`, HARD-CONSTRAINT-prose in `SymptomContextFormatter`) zijn nog NL — naar Engels valt samen met **37.6** (het model leest ze prima, dus geen functioneel blocker).
 
@@ -307,7 +309,7 @@ System-instruction in `ChatViewModel` (~90 regels) + ~19 context-formatters/prom
 
 **Effort:** ~12–16u (was 20–24u dankzij de één-prompt-aanpak).
 
-#### 🔄 37.4 — Taal-afhankelijke detectielogica + UI-label-split
+#### ✅ 37.4 — Taal-afhankelijke detectielogica + UI-label-split
 
 **Gerealiseerd (✅, PR #301):**
 - **UI-label-split**: `SportCategory`/`SessionType.displayName`, `BodyArea.rawValue` en `severityLabel` blijven NL (prompt-gekoppeld / SwiftData-opslag), maar de View-render-sites resolven ze via `LocalizedStringKey` / `String.LocalizationValue` → de UI toont vertaald terwijl de prompt stabiel blijft. Sluit de bewuste gap uit 37.1c.
@@ -328,16 +330,13 @@ Productie-logica die op NL-woorden leunt, wordt per-taal:
 
 In-app taalkiezer die de device-locale overruled (default: device-locale, geen forced switch voor bestaande gebruikers). Propageert via `@Environment(\.locale)` + AppStorage; vraagt mogelijk een state-reload. **Effort:** ~6–8u.
 
-#### 37.6 — Code-comments → Engels
+#### ✅ 37.6 — Code-comments + prompt-content → Engels
 
-| Metric | Aantal |
-|---|---|
-| Totaal comment-regels | **5.077** |
-| Geschat % Nederlands | ~85% (~4.300 regels) |
-| `// MARK:`-kopjes met NL/Epic-refs | tientallen |
-| Variabel-/functienamen | al Engels (Swift-conventie) |
+**Gerealiseerd (✅, PR #303 + #304):**
+- **Deel 1 (#303)** — prompt-*context-laag*: alle ~24 structurele bracket-tokens (`[ACTUELE KLACHTEN]`→`[CURRENT COMPLAINTS]`, …) consistent NL→EN op élke emit- én referentie-site, plus de prose van alle 9 context-formatters. Resterende code-comments → Engels.
+- **Deel 2 (#304)** — coach-*core*-prompt: `ChatViewModel` systemInstruction-voorbeelden/inline-instructies, `PeriodizationEngine` + `TrainingPhase` periodisering-prose, `SessionType.coachingSummary`, sentinel, markers. **Latente bug-fix onderweg:** door de emitters te vertalen ontstonden marker-mismatches (systemInstruction zocht nog naar NL-markers terwijl de emitters Engels waren) — alle markers nu gesynchroniseerd. User-facing chat-/fallback-/error-berichten → `String(localized:)` (de gebruiker ziet ze).
 
-LLM-geassisteerd per file, in behapbare batches om git-blame-vervuiling te spreiden. **Geen runtime-impact** (review-only risico). **Effort:** ~30–40u.
+De volledige prompt is nu Engels; de output-taal wordt enkel via de `respond in {language}`-directive (37.3) gestuurd. Variabel-/functienamen waren al Engels (Swift-conventie).
 
 #### 37.7 — Documentatie → Engels + projectregels omdraaien
 
@@ -350,6 +349,21 @@ UI-tests gebruiken nu hardcoded NL-assertions (`"Goedemorgen…"`, `"Doelen"`). 
 #### Vertaalproductie
 
 EN/DE/ES-vertalingen van ~291 UI-strings + notificaties: LLM-geassisteerd genereren in de xcstrings, daarna **native review** voor DE + ES (toon/idioom). **Effort:** ~16–24u.
+
+#### Tijdens device-testing gevonden & opgelost (✅)
+
+Naast de geplande stories kwamen er via Duitse device-tests concrete bugs/gaps boven die meteen zijn gefixt:
+- **Weekschema klapte samen op 1 dag** (#302): de Duitse coach gaf dagnamen als "Sonntag, 7. Juni"; `resolvedDate` faalde op de komma → alle workouts vielen terug op vandaag. Fix: leestekens strippen + DE/ES-dagnamen.
+- **`activityType` bleef Nederlands** in een Duitse UI (#302): coach instrueren activityType in de gebruikerstaal te schrijven + taal-onafhankelijke `SuggestedWorkout.isRestDay`/`.kind`-classificatie (rust/sport-icoon/badge werken nu in elke taal).
+- **Format-key-mismatch** in Dashboard-banners (#302): catalog-keys met `%@` terwijl Int-interpolatie `%lld` genereerde → NL-fallback. Fix: getallen als String pre-formatten (`%@`).
+- **Doelen verwijderen** (#305): er was geen manier om een doel te verwijderen — destructieve knop + bevestiging in `EditGoalView`.
+
+#### ⏳ Backlog: meerdaagse events first-class
+
+Een meerdaags doel (bv. "Fietsen van Arnhem naar Karlsruhe in 5 dagen") wordt nu met één `targetDate` gemodelleerd; de event-dagen zijn niet gereserveerd en niet zichtbaar. Gewenst gedrag (afgestemd):
+- `FitnessGoal.eventDurationDays` (start = `targetDate`, event = `targetDate … +N-1`) — vereist schema-migratie (§2.1).
+- Event-dagen als **etappe-entries** in het weekschema ("Etappe X/N"); **geen** andere training of vaste voorkeuren in dat venster (cross-goal-suppressie).
+- Coach-prompt: `[EVENT WINDOW: … ZIJN de etappes zelf]`. **Effort:** ~10–16u.
 
 #### Effort-overzicht
 

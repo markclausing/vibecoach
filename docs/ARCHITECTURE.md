@@ -306,3 +306,40 @@ Besides the pin, the coach receives via `WorkoutInsightService.InsightContext.re
 ### Tradeoff vs. cardiac drift
 
 Workouts without a pause no longer get an HR-recovery signal. That is correct behaviour, but it means the `cardiacDrift` detector (HR rise between half 1 and 2 at equal intensity) is now the only HR-only fatigue layer for continuous rides. That is deliberate: drift works on the actual physiological signal of Z1-Z3 aerobic work and is meaningful on continuous effort, while recovery can only be measured physiologically correctly during rest windows.
+
+## 13. Localization & multilingual coach (Epic #37)
+
+The app UI and the AI coach are multilingual — **NL, EN, DE, ES**. The codebase, code comments and the coach prompt are English; only translations and the coach's *output language* vary.
+
+### Language preference — `AppLanguage`
+
+`Localization/AppLanguage.swift` is the single source of truth. It resolves the active `Locale` for two readers that can't share state:
+- **SwiftUI views** get it via `.environment(\.locale, …)` injected at the app root.
+- **Pure-Swift services / prompt builders** read `AppLanguage.currentLocale` / `AppLanguage.currentPromptLanguageName`, backed by the same `@AppStorage` key (`vibecoach_appLanguage`).
+
+Default is `.system` (follow the device). Picking a specific language writes an `AppleLanguages` override (`applyToBundleOverride`) so the bundle loads the matching `.lproj` on the next launch — hence the Settings picker shows a relaunch note (iOS reads `AppleLanguages` once at launch; `.environment(\.locale, …)` only steers date/number formatting, not String-Catalog lookup).
+
+### UI strings — `Localizable.xcstrings`
+
+A single String Catalog (source language `nl`, columns en/de/es, ~527 keys). Two render patterns, because `Text("literal")` and `Text("literal \(interp)")` localize automatically but `Text(stringVariable)` renders **verbatim**:
+- **Shared row/card components** with a `String` parameter → render via `Text(LocalizedStringKey(param))` (one fix localizes all call sites; brand names fall back to themselves).
+- **Computed `-> String` UI props** → wrap returns in `String(localized:)`.
+- **Numeric interpolation in a format key**: pre-format the number into a `String` and interpolate as `%@`, so the generated catalog key avoids `%lld`-vs-`%@` mismatches that silently fall back to the source language.
+
+`xcodebuild` does not write extracted keys back to the catalog (only an Xcode IDE build does); keys for the runtime-key patterns above are hand-authored and verified via the compiled `.lproj`.
+
+### Multilingual coach — `respond in {language}`
+
+The system instruction is **English** for maintainability; a single locale-dependent directive (`AppLanguage.currentPromptLanguageName`, e.g. "German") steers the output language. We do **not** maintain per-language prompt copies — the generated prose (and `motivation`/`description`/`reasoning`/`activityType` JSON fields) come back in the user's language, the English instruction body stays fixed. `ChatViewModel.systemInstruction`, `ChatScopeInstruction.text` and `WorkoutInsightService.systemInstruction` are computed so the language is read at call time.
+
+### UI-vs-prompt split
+
+Enum display values that are **interpolated into the coach prompt** (`SportCategory`/`SessionType.displayName`, `BodyArea.rawValue`/`severityLabel`, `GoalBlueprint.displayName`) deliberately stay Dutch as the prompt term, while the **View render sites** localize them via `LocalizedStringKey(value)`. This keeps the prompt structurally stable while the UI shows the translated term. Structural prompt markers (`[CURRENT COMPLAINTS]`, `🚨 CRITICAL MILESTONE SHORTFALL`, …) must match between every emitter (formatters/services) and the `systemInstruction` reference — a rename in one place without the other breaks the coach's section lookup.
+
+### Language-independent detection
+
+Free-text and coach-output classification can't assume Dutch: `BodyArea.injuryKeywords` (NL+EN+DE+ES union), `SuggestedWorkout.resolvedDate` (day-name parsing incl. localized formats like "Sonntag, 7. Juni" — punctuation-stripped), and `SuggestedWorkout.isRestDay`/`.kind` (rest + sport classification via multilingual keywords + the duration signal) all work across the supported languages.
+
+### Tests
+
+The app is now locale-sensitive, so UI tests run forced in Dutch (`-testLanguage nl`). Unit tests that assert localized user-facing output compare against `String(localized:)` of the same key (locale-agnostic) rather than a hardcoded translation.

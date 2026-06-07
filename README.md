@@ -16,16 +16,16 @@ VibeCoach is **production-ready** as a personal iOS fitness coach. The core feat
 
 **CI:** 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) on `macos-latest`, plus a CodeQL scan of Swift + Actions workflows. Test suite: **61% combined coverage on testable code** (Models 80%, Services 59%, ViewModels 59%) + 43% on `Views/` via UI tests.
 
-**Recently completed:** Epic #54 (dynamic per-provider model catalog — live `/v1/models` directly with the BYOK key, chat-filtered), #53 (multi-provider BYOK — OpenAI, Claude & Mistral alongside Gemini: provider-agnostic client layer, per-provider keys & models, validation & onboarding), #52 (sharper workout analysis — hourly weather range, question-free coach prompt, running cadence chart with cross-source HK fallback), #46 (CI pipeline & DAG + SwiftLint integration), #45 (per-workout context in coach prompt), #44 (personal HR zones & FTP), #42 (always-on dual-source sync), #41 (single-record-of-truth dedupe), #40 (Strava power-stream ingest), #32 (deep-dive physiological analysis). A tech-debt track runs in parallel: SwiftData V1→V4 migrations, file splits of large modules, logger discipline, DST-safe date math.
+**Recently completed:** Epic #37 (internationalisation — multilingual UI & AI coach in NL/EN/DE/ES via a String Catalog + runtime language picker; the AI coach replies in the user's language via a `respond in {language}` directive; the whole codebase and coach prompt are now English; ~527 catalog keys), #54 (dynamic per-provider model catalog — live `/v1/models` directly with the BYOK key, chat-filtered), #53 (multi-provider BYOK — OpenAI, Claude & Mistral alongside Gemini: provider-agnostic client layer, per-provider keys & models, validation & onboarding), #52 (sharper workout analysis — hourly weather range, question-free coach prompt, running cadence chart with cross-source HK fallback), #46 (CI pipeline & DAG + SwiftLint integration), #45 (per-workout context in coach prompt), #44 (personal HR zones & FTP), #42 (always-on dual-source sync), #41 (single-record-of-truth dedupe), #40 (Strava power-stream ingest), #32 (deep-dive physiological analysis). A tech-debt track runs in parallel: SwiftData V1→V4 migrations, file splits of large modules, logger discipline, DST-safe date math.
 
-**Next pickup:** no active sprint pinned. Open follow-ups in [`docs/ROADMAP.md`](docs/ROADMAP.md): internationalisation + English codebase (Epic #37), TestFlight deploy (46.B1), semver versioning (46.B6), Strict Concurrency `Complete` (39.3), force-unwrap audit. New Epics only come up when there is concrete pain.
+**Next pickup:** no active sprint pinned. Open follow-ups in [`docs/ROADMAP.md`](docs/ROADMAP.md): Epic #37 tail (native DE/ES translation review, per-language UI-test pass 37.8), first-class multi-day events, TestFlight deploy (46.B1), semver versioning (46.B6), Strict Concurrency `Complete` (39.3), force-unwrap audit. New Epics only come up when there is concrete pain.
 
 **More info:**
 - Full history and backlog → [`docs/ROADMAP.md`](docs/ROADMAP.md)
 - Architecture (Dual Engine, dual-source pipeline, BYOK, CI) → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - Project rules for AI assistants → [`CLAUDE.md`](CLAUDE.md)
 
-> **Languages:** the codebase is migrating to English (code comments + documentation); Swift variables already follow English Swift conventions. Multi-language UI/AI (NL + EN + DE + ES) and the full English-codebase migration are tracked as Epic #37 in the roadmap.
+> **Languages:** the UI and AI coach are multilingual — **NL, EN, DE, ES** — selectable in Settings (default: device language). The codebase, code comments and coach prompt are **English**; the coach replies in the user's language via a runtime `respond in {language}` directive. See the Localization section in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Remaining (Epic #37 tail): native DE/ES translation review + the doc files themselves to English.
 
 ---
 
