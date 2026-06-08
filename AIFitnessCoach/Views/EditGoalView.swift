@@ -90,7 +90,10 @@ struct EditGoalView: View {
 
             Section(header: Text("Status")) {
                 Toggle("Doel Behaald", isOn: $goal.isCompleted)
-                DatePicker("Streefdatum", selection: $goal.targetDate, displayedComponents: .date)
+                // Epic #55: for a multi-day event `targetDate` is the START day, so label it
+                // "Startdatum" (matching AddGoalView). For single-day goals it stays the target date.
+                DatePicker(goal.resolvedFormat == .multiDayStage ? "Startdatum" : "Streefdatum",
+                           selection: $goal.targetDate, displayedComponents: .date)
             }
 
             Section {
