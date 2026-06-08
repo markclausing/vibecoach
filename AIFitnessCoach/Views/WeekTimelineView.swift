@@ -7,6 +7,9 @@ struct WeekTimelineView: View {
     let currentWeekTRIMP: Double
     let weeklyTRIMPTarget: Double
     var weeklyForecast: [DayForecast] = []
+    /// Epic #55 story 55.2: active goals, used to synthesize multi-day event stage
+    /// entries ("Etappe X/N") that replace coach trainings on event days.
+    var eventGoals: [FitnessGoal] = []
     var onSkipWorkout: ((SuggestedWorkout) -> Void)?
     var onAlternativeWorkout: ((SuggestedWorkout) -> Void)?
     /// Story 33.2b: callback for "Herschrijf schema" — Dashboard wires this to
@@ -51,15 +54,22 @@ struct WeekTimelineView: View {
         return w.isRestDay
     }
 
-    private var todayWorkout: SuggestedWorkout? {
-        planWorkout(for: Calendar.current.startOfDay(for: Date()))
+    private var todayEntry: WeekDayEntry? {
+        entry(for: Calendar.current.startOfDay(for: Date()))
     }
 
-    private var weekRows: [(date: Date, workout: SuggestedWorkout)] {
-        currentWeekDays.compactMap { date in
-            guard let w = planWorkout(for: date) else { return nil }
-            return (date, w)
-        }
+    /// Epic #55 story 55.2: per-day entries — coach workouts merged with synthesized
+    /// multi-day event stage entries (stages take precedence on event days).
+    private var weekEntries: [(date: Date, entry: WeekDayEntry)] {
+        WeekScheduleBuilder.entries(
+            for: currentWeekDays,
+            workouts: plan?.workouts ?? [],
+            eventGoals: eventGoals
+        )
+    }
+
+    private func entry(for date: Date) -> WeekDayEntry? {
+        weekEntries.first { Calendar.current.isDate($0.date, inSameDayAs: date) }?.entry
     }
 
     private var daysRemaining: Int {
@@ -76,7 +86,7 @@ struct WeekTimelineView: View {
             }
             circleTimeline
 
-            if weekRows.isEmpty {
+            if weekEntries.isEmpty {
                 emptyPlanCard
             } else {
                 mainCard
@@ -147,11 +157,13 @@ struct WeekTimelineView: View {
     private var circleTimeline: some View {
         HStack(spacing: 0) {
             ForEach(currentWeekDays, id: \.self) { date in
+                let dayEntry = entry(for: date)
                 DayCircleView(
                     date: date,
-                    workout: planWorkout(for: date),
+                    workout: dayEntry?.workout,
                     hasActivity: hasActivity(on: date),
-                    isRest: isRestDay(planWorkout(for: date))
+                    isRest: isRestDay(dayEntry?.workout),
+                    stageIndex: dayEntry?.stage?.stageIndex
                 )
                 .frame(maxWidth: .infinity)
             }
@@ -183,7 +195,8 @@ struct WeekTimelineView: View {
 
     private var collapsedTodayRow: some View {
         Group {
-            if let workout = todayWorkout {
+            switch todayEntry {
+            case .workout(let workout):
                 Button { selectedWorkout = workout } label: {
                     TodaySummaryRow(
                         workout: workout,
@@ -193,7 +206,17 @@ struct WeekTimelineView: View {
                     )
                 }
                 .buttonStyle(.plain)
-            } else {
+            case .stage(let stage):
+                // Epic #55 story 55.2: today is an event day — show the stage, not a training.
+                StageDayRowView(
+                    date: Calendar.current.startOfDay(for: Date()),
+                    stage: stage,
+                    isToday: true,
+                    forecast: weeklyForecast.first {
+                        Calendar.current.isDate($0.date, inSameDayAs: Date())
+                    }
+                )
+            case .none:
                 HStack {
                     Image(systemName: "moon.fill")
                         .foregroundColor(.secondary)
@@ -210,20 +233,32 @@ struct WeekTimelineView: View {
 
     private var expandedList: some View {
         VStack(spacing: 0) {
-            ForEach(Array(weekRows.enumerated()), id: \.offset) { index, row in
-                let isLast = index == weekRows.count - 1
-                WorkoutDayRowView(
-                    date: row.date,
-                    workout: row.workout,
-                    isToday: Calendar.current.isDateInToday(row.date),
-                    isCompleted: hasActivity(on: row.date),
-                    forecast: weeklyForecast.first {
-                        Calendar.current.isDate($0.date, inSameDayAs: row.date)
-                    },
-                    onTap: { selectedWorkout = row.workout },
-                    onSkip: { onSkipWorkout?(row.workout) },
-                    onAlternative: { onAlternativeWorkout?(row.workout) }
-                )
+            ForEach(Array(weekEntries.enumerated()), id: \.offset) { index, row in
+                let isLast = index == weekEntries.count - 1
+                switch row.entry {
+                case .workout(let workout):
+                    WorkoutDayRowView(
+                        date: row.date,
+                        workout: workout,
+                        isToday: Calendar.current.isDateInToday(row.date),
+                        isCompleted: hasActivity(on: row.date),
+                        forecast: weeklyForecast.first {
+                            Calendar.current.isDate($0.date, inSameDayAs: row.date)
+                        },
+                        onTap: { selectedWorkout = workout },
+                        onSkip: { onSkipWorkout?(workout) },
+                        onAlternative: { onAlternativeWorkout?(workout) }
+                    )
+                case .stage(let stage):
+                    StageDayRowView(
+                        date: row.date,
+                        stage: stage,
+                        isToday: Calendar.current.isDateInToday(row.date),
+                        forecast: weeklyForecast.first {
+                            Calendar.current.isDate($0.date, inSameDayAs: row.date)
+                        }
+                    )
+                }
                 if !isLast { Divider().padding(.leading, 72) }
             }
         }
@@ -412,12 +447,15 @@ struct DayCircleView: View {
     let workout: SuggestedWorkout?
     let hasActivity: Bool
     let isRest: Bool
+    /// Epic #55 story 55.2: 1-based stage number when this day is a multi-day event day.
+    var stageIndex: Int?
 
     @EnvironmentObject var themeManager: ThemeManager
 
     private var isToday: Bool { Calendar.current.isDateInToday(date) }
     private var isPast: Bool { date < Calendar.current.startOfDay(for: Date()) }
     private var isCompleted: Bool { isPast && hasActivity }
+    private var isStage: Bool { stageIndex != nil }
 
     private var dayAbbrev: String {
         let f = DateFormatter(); f.locale = AppLanguage.currentLocale; f.dateFormat = "EEE"
@@ -428,6 +466,7 @@ struct DayCircleView: View {
     }
 
     private var subIcon: String {
+        if isStage { return "flag.checkered" }
         if isRest { return "moon.fill" }
         guard let w = workout else { return "minus" }
         switch w.kind {
@@ -469,7 +508,9 @@ struct DayCircleView: View {
 
             Image(systemName: subIcon)
                 .font(.system(size: 9))
-                .foregroundColor(isRest ? .secondary : (isToday ? themeManager.primaryAccentColor : .secondary))
+                .foregroundColor(isStage
+                                 ? themeManager.primaryAccentColor
+                                 : (isRest ? .secondary : (isToday ? themeManager.primaryAccentColor : .secondary)))
         }
     }
 }
@@ -572,6 +613,83 @@ struct WorkoutDayRowView: View {
                 Button { onAlternative?() } label: { Label("Alternatief", systemImage: "arrow.2.squarepath") }
             }
         }
+    }
+
+    private func weatherIconFor(_ f: DayForecast) -> String {
+        if f.precipitationProbability > 0.6 { return "cloud.rain.fill" }
+        if f.precipitationProbability > 0.3 { return "cloud.drizzle.fill" }
+        if f.windSpeedKmh > 30 { return "wind" }
+        return "sun.max.fill"
+    }
+}
+
+// MARK: - StageDayRowView (Epic #55 story 55.2)
+
+/// A single multi-day event day in the week list, rendered as "Etappe X/N" with the
+/// event title instead of a coach training. Non-interactive: the event window is fixed,
+/// there is nothing to swap or open. Visually distinct via the accent-coloured flag icon.
+struct StageDayRowView: View {
+    let date: Date
+    let stage: EventStageEntry
+    let isToday: Bool
+    var forecast: DayForecast?
+
+    @EnvironmentObject var themeManager: ThemeManager
+
+    private var dayLabel: (abbrev: String, number: String) {
+        let a = DateFormatter(); a.locale = AppLanguage.currentLocale; a.dateFormat = "EEE"
+        let n = DateFormatter(); n.dateFormat = "d"
+        return (a.string(from: date).prefix(2).uppercased(), n.string(from: date))
+    }
+
+    // Epic #37 §13: pre-format the numbers as String so the catalog key stays "%@/%@"
+    // (avoids the %lld-vs-%@ mismatch that silently falls back to the source language).
+    private var stageLabel: String {
+        let index = String(stage.stageIndex)
+        let total = String(stage.totalStages)
+        return String(localized: "Etappe \(index)/\(total)")
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(spacing: 1) {
+                Text(dayLabel.abbrev)
+                    .font(.system(size: 10, weight: .medium)).foregroundColor(.secondary)
+                Text(dayLabel.number)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(isToday ? themeManager.primaryAccentColor : .primary)
+            }
+            .frame(width: 28)
+
+            ZStack {
+                Circle()
+                    .fill(themeManager.primaryAccentColor.opacity(isToday ? 0.18 : 0.12))
+                    .frame(width: 36, height: 36)
+                Image(systemName: "flag.checkered")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(themeManager.primaryAccentColor)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(stageLabel)
+                    .font(.subheadline).fontWeight(.semibold)
+                    .foregroundColor(themeManager.primaryAccentColor)
+                // User-entered free text (the goal title) — render verbatim, not localized.
+                Text(stage.goalTitle)
+                    .font(.caption).foregroundColor(.secondary).lineLimit(1)
+            }
+
+            Spacer()
+
+            if let f = forecast {
+                HStack(spacing: 3) {
+                    Image(systemName: weatherIconFor(f)).font(.caption).foregroundColor(.secondary)
+                    Text("\(Int(f.highCelsius))°").font(.caption).foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 11)
+        .background(isToday ? themeManager.primaryAccentColor.opacity(0.07) : Color(.systemBackground))
     }
 
     private func weatherIconFor(_ f: DayForecast) -> String {
