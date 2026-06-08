@@ -193,6 +193,18 @@ Vijf-schermen flow in Serene/Mos-stijl. Elk scherm toont een 'live preview' (Vib
 
 ## Backlog
 
+### 🔄 Epic #56: Locatie-bewuste weersvoorspelling voor meerdaagse routes
+
+Het weer op het dashboard kwam altijd van de **apparaat-locatie** (thuis). Voor een meerdaagse tocht (bv. "Fietsen van Arnhem naar Karlsruhe in 5 dagen") wil je per etappedag een **redelijke inschatting** van het weer op de plek waar je dan ongeveer bent — niet thuis. De route wordt automatisch uit de doeltitel/-notities afgeleid; per etappe interpoleren we de locatie langs de route. Geen GPS-precisie, wel "waar ben ik die dag ongeveer".
+
+**Afgestemd (juni 2026):** route-extractie **automatisch uit titel/subtekst** (LLM-vrij: heuristische parser + `CLGeocoder`); per-etappe-weer **eerst alleen in de UI** (coach-prompt-injectie als eventuele latere story). Geen schema-migratie — route + plaatsnamen worden app-side gecachet (UserDefaults, titel als invalidatie).
+
+* **🔄 Story 56.1 — Route-extractie + geocoding.** `RouteParser` (pure-Swift, NL/EN/DE/ES): haalt start/eind-plaatsnamen uit "van X naar Y"-achtige titels (twee-pass om de gulzige ES-connector "a" te ontwijken). `CLGeocoder` → coördinaten. `EventRoute`/`GeoCoordinate` value-types; `FitnessGoal.routeSourceText` als bron + cache-key. 13 unit tests in `RouteParserTests`.
+* **🔄 Story 56.2 — Per-etappe-interpolatie + weer.** `StageLocationInterpolator` (pure-Swift, great-circle slerp: dag 1 = start, dag N = eind). `OpenMeteoForecastClient` (herbruikbare Open-Meteo-fetch op willekeurige coördinaten; WMO-mapping gecentraliseerd, `WeatherManager` delegeert). `StageWeatherService` (`@MainActor` `ObservableObject`): resolve route (gecachet) → interpoleer per etappe → fetch forecast → reverse-geocode plaatsnaam (gecachet), met 16-daagse horizon + sessie-throttle. 7 unit tests in `StageLocationInterpolatorTests`.
+* **🔄 Story 56.3 — UI.** `StageDayRowView` toont de etappe-locatie-forecast + "≈ <plaats>"-label (fallback naar thuisweer als er geen route is). `WeekTimelineView` krijgt `stageWeather: [Date: StageWeather]`; `DashboardView` houdt de `StageWeatherService` en refresht op appear.
+
+**Effort:** ~6–10u. **Out of scope (mogelijke vervolgstories):** etappe-weer in de coach-prompt; expliciete route-velden in de doel-editor; per-etappe-afstanden.
+
 ### 🔄 Epic #55: Meerdaagse events first-class
 
 Een meerdaags doel (bv. "Fietsen van Arnhem naar Karlsruhe in 5 dagen") wordt nu met één `targetDate` gemodelleerd. Gevolg: de event-dagen zijn niet bekend bij de planner, het schema plant er gewoon door (krachttraining, andere-doel-sessies), en de "5 opeenvolgende tour-dagen" zijn nergens zichtbaar. Bovendien racet de coach het event omdat `resolvedFormat`/`resolvedIntent` terugvallen op `singleDayRace`/`peakPerformance` als die velden niet expliciet gezet zijn.

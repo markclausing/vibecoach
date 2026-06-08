@@ -1123,6 +1123,9 @@ struct DashboardView: View {
     @State private var dashboardRestingHR: Double?
     @State private var dashboardVO2Max: Double?
 
+    // Epic #56: location-aware per-stage weather for multi-day events.
+    @StateObject private var stageWeatherService = StageWeatherService()
+
     // Epic 17: BlueprintChecker results for all active goals
     /// Used in the background for coaching context; full UI follows in Sprint 17.3.
     private var blueprintResults: [BlueprintCheckResult] {
@@ -1611,6 +1614,8 @@ struct DashboardView: View {
                         weeklyForecast: WeatherManager.shared.weeklyForecast,
                         // Epic #55 story 55.2: synthesize multi-day event stage entries.
                         eventGoals: Array(goals),
+                        // Epic #56: location-aware per-stage forecasts along the event route.
+                        stageWeather: stageWeatherService.stageWeather,
                         onSkipWorkout: { workout in
                             refreshProfileContext()
                             viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
@@ -1726,6 +1731,9 @@ struct DashboardView: View {
                 // Epic #55 story 55.3: write the multi-day event-window block(s) so the coach
                 // suppresses other training in the event window and plans post-event recovery.
                 viewModel.cacheEventWindow(Array(goals))
+                // Epic #56: resolve routes + fetch per-stage forecasts for multi-day events.
+                let eventGoalsSnapshot = Array(goals)
+                Task { await stageWeatherService.refresh(goals: eventGoalsSnapshot) }
                 // Epic 23 Sprint 1: Write the gap analysis to the AI prompt cache
                 // so the coach knows how much TRIMP/km the athlete is behind on the linear schedule.
                 let gapResults = ProgressService.analyzeGaps(for: Array(goals), activities: Array(activities))

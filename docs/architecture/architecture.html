@@ -1375,7 +1375,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 19,
+    "docRevision": 20,
     "lastUpdated": "2026-06-08",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
@@ -1892,6 +1892,59 @@
       ],
       "tags": [
         "epic-55"
+      ]
+    },
+    {
+      "id": "RouteParser",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/RouteParser.swift",
+      "description": "Epic #56: pure-Swift, multilingual (NL/EN/DE/ES) extraction of (start, end) place names from a goal's free text ('van X naar Y'). Two-pass to avoid the greedy Spanish 'a' connector. Feeds CLGeocoder.",
+      "uses": [],
+      "tags": [
+        "epic-56"
+      ]
+    },
+    {
+      "id": "StageLocationInterpolator",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/StageLocationInterpolator.swift",
+      "description": "Epic #56: pure-Swift great-circle (slerp) interpolation of the approximate per-stage coordinate (day 1 = start, day N = end).",
+      "uses": [
+        "EventRoute"
+      ],
+      "tags": [
+        "epic-56"
+      ]
+    },
+    {
+      "id": "OpenMeteoForecastClient",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/OpenMeteoForecastClient.swift",
+      "description": "Epic #56: reusable Open-Meteo /v1/forecast daily fetch for arbitrary coordinates -> [DayForecast]. Owns the WMO->Dutch condition mapping (single source of truth; WeatherManager delegates).",
+      "uses": [
+        "WeatherManager"
+      ],
+      "tags": [
+        "epic-56"
+      ]
+    },
+    {
+      "id": "StageWeatherService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/StageWeatherService.swift",
+      "description": "Epic #56: @MainActor ObservableObject orchestrating location-aware per-stage weather for multi-day events: resolve route (RouteParser + CLGeocoder, cached), interpolate per stage, fetch forecast (OpenMeteoForecastClient), reverse-geocode place name. Exposes [Date: StageWeather] for the week schedule.",
+      "uses": [
+        "RouteParser",
+        "StageLocationInterpolator",
+        "OpenMeteoForecastClient",
+        "FitnessGoal"
+      ],
+      "tags": [
+        "epic-56"
       ]
     },
     {

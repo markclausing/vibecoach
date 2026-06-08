@@ -10,6 +10,8 @@ struct WeekTimelineView: View {
     /// Epic #55 story 55.2: active goals, used to synthesize multi-day event stage
     /// entries ("Etappe X/N") that replace coach trainings on event days.
     var eventGoals: [FitnessGoal] = []
+    /// Epic #56: per-date location-aware forecast for event stage days (keyed by start-of-day).
+    var stageWeather: [Date: StageWeather] = [:]
     var onSkipWorkout: ((SuggestedWorkout) -> Void)?
     var onAlternativeWorkout: ((SuggestedWorkout) -> Void)?
     /// Story 33.2b: callback for "Herschrijf schema" — Dashboard wires this to
@@ -214,7 +216,8 @@ struct WeekTimelineView: View {
                     isToday: true,
                     forecast: weeklyForecast.first {
                         Calendar.current.isDate($0.date, inSameDayAs: Date())
-                    }
+                    },
+                    stageWeather: stageWeather[Calendar.current.startOfDay(for: Date())]
                 )
             case .none:
                 HStack {
@@ -256,7 +259,8 @@ struct WeekTimelineView: View {
                         isToday: Calendar.current.isDateInToday(row.date),
                         forecast: weeklyForecast.first {
                             Calendar.current.isDate($0.date, inSameDayAs: row.date)
-                        }
+                        },
+                        stageWeather: stageWeather[Calendar.current.startOfDay(for: row.date)]
                     )
                 }
                 if !isLast { Divider().padding(.leading, 72) }
@@ -632,9 +636,15 @@ struct StageDayRowView: View {
     let date: Date
     let stage: EventStageEntry
     let isToday: Bool
+    /// Home-location forecast (fallback).
     var forecast: DayForecast?
+    /// Epic #56: forecast + place name at the stage's approximate location along the route.
+    var stageWeather: StageWeather?
 
     @EnvironmentObject var themeManager: ThemeManager
+
+    /// Prefer the location-aware stage forecast; fall back to the home forecast.
+    private var displayForecast: DayForecast? { stageWeather?.forecast ?? forecast }
 
     private var dayLabel: (abbrev: String, number: String) {
         let a = DateFormatter(); a.locale = AppLanguage.currentLocale; a.dateFormat = "EEE"
@@ -681,10 +691,17 @@ struct StageDayRowView: View {
 
             Spacer()
 
-            if let f = forecast {
-                HStack(spacing: 3) {
-                    Image(systemName: weatherIconFor(f)).font(.caption).foregroundColor(.secondary)
-                    Text("\(Int(f.highCelsius))°").font(.caption).foregroundColor(.secondary)
+            if let f = displayForecast {
+                VStack(alignment: .trailing, spacing: 1) {
+                    HStack(spacing: 3) {
+                        Image(systemName: weatherIconFor(f)).font(.caption).foregroundColor(.secondary)
+                        Text("\(Int(f.highCelsius))°").font(.caption).foregroundColor(.secondary)
+                    }
+                    // Epic #56: the approximate location this forecast is for ("≈ Emmerich").
+                    if let place = stageWeather?.placeName, !place.isEmpty {
+                        Text("≈ \(place)")
+                            .font(.system(size: 10)).foregroundColor(.secondary).lineLimit(1)
+                    }
                 }
             }
         }

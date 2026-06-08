@@ -70,6 +70,12 @@ final class FitnessGoal {
     /// Epic #55 story 55.3: a multi-day event without an explicit intent defaults to
     /// `.completion` (you finish a multi-day tour, you don't "peak" across it). An
     /// explicitly chosen intent is always respected.
+    /// Epic #56: the free text route extraction reads from — the title plus any notes.
+    /// Also the cache-invalidation key: change the text and the resolved route is recomputed.
+    var routeSourceText: String {
+        [title, details ?? ""].joined(separator: " ").trimmingCharacters(in: .whitespaces)
+    }
+
     var resolvedIntent: PrimaryIntent {
         if let intent { return intent }
         return resolvedEventDurationDays > 1 ? .completion : .peakPerformance
