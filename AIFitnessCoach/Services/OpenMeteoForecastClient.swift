@@ -26,7 +26,7 @@ enum OpenMeteoForecastClient {
         guard let url = components.url else { throw URLError(.badURL) }
 
         let (data, _) = try await URLSession.shared.data(from: url)
-        let response = try JSONDecoder().decode(Response.self, from: data)
+        let response = try JSONDecoder().decode(OpenMeteoForecastResponse.self, from: data)
         return parse(response.daily)
     }
 
@@ -61,7 +61,7 @@ enum OpenMeteoForecastClient {
 
     // MARK: - Decoding
 
-    private static func parse(_ daily: DailyData) -> [DayForecast] {
+    private static func parse(_ daily: OpenMeteoForecastDaily) -> [DayForecast] {
         let dateParser = DateFormatter()
         dateParser.dateFormat = "yyyy-MM-dd"
         dateParser.locale = Locale(identifier: "en_US_POSIX")
@@ -86,24 +86,26 @@ enum OpenMeteoForecastClient {
             )
         }
     }
+}
 
-    private struct Response: Decodable { let daily: DailyData }
+// MARK: - Open-Meteo decoding models (file-level to keep nesting shallow)
 
-    private struct DailyData: Decodable {
-        let time: [String]
-        let temperature2mMax: [Double?]
-        let temperature2mMin: [Double?]
-        let precipitationProbabilityMax: [Double?]
-        let windSpeed10mMax: [Double?]
-        let weatherCode: [Int?]
+private struct OpenMeteoForecastResponse: Decodable { let daily: OpenMeteoForecastDaily }
 
-        enum CodingKeys: String, CodingKey {
-            case time
-            case temperature2mMax            = "temperature_2m_max"
-            case temperature2mMin            = "temperature_2m_min"
-            case precipitationProbabilityMax = "precipitation_probability_max"
-            case windSpeed10mMax             = "wind_speed_10m_max"
-            case weatherCode                 = "weather_code"
-        }
+private struct OpenMeteoForecastDaily: Decodable {
+    let time: [String]
+    let temperature2mMax: [Double?]
+    let temperature2mMin: [Double?]
+    let precipitationProbabilityMax: [Double?]
+    let windSpeed10mMax: [Double?]
+    let weatherCode: [Int?]
+
+    enum CodingKeys: String, CodingKey {
+        case time
+        case temperature2mMax            = "temperature_2m_max"
+        case temperature2mMin            = "temperature_2m_min"
+        case precipitationProbabilityMax = "precipitation_probability_max"
+        case windSpeed10mMax             = "wind_speed_10m_max"
+        case weatherCode                 = "weather_code"
     }
 }

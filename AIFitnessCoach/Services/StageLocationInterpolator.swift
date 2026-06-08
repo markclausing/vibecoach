@@ -42,7 +42,7 @@ enum StageLocationInterpolator {
         // Coincident (or numerically tiny) → fall back to linear to avoid /sin(δ).
         guard δ > 1e-9 else {
             return GeoCoordinate(
-                latitude:  start.latitude  + (end.latitude  - start.latitude)  * t,
+                latitude: start.latitude + (end.latitude - start.latitude) * t,
                 longitude: start.longitude + (end.longitude - start.longitude) * t
             )
         }
