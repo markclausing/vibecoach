@@ -251,28 +251,9 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: - WMO weather codes → Dutch description
     // WMO code definition: https://open-meteo.com/en/docs (section "Weather variable descriptions")
 
+    // Epic #56: the WMO→Dutch mapping now lives in `OpenMeteoForecastClient` (single
+    // source of truth, shared with the per-stage forecast fetch). Delegate to it.
     private func wmoDescription(_ code: Int) -> String {
-        switch code {
-        case 0:          return "Helder"
-        case 1:          return "Overwegend helder"
-        case 2:          return "Gedeeltelijk bewolkt"
-        case 3:          return "Bewolkt"
-        case 45, 48:     return "Mistig"
-        case 51, 53:     return "Lichte motregen"
-        case 55:         return "Dichte motregen"
-        case 56, 57:     return "Bevriezende motregen"
-        case 61, 63:     return "Lichte regen"
-        case 65:         return "Zware regen"
-        case 66, 67:     return "Bevriezende regen"
-        case 71, 73:     return "Lichte sneeuw"
-        case 75:         return "Zware sneeuw"
-        case 77:         return "Sneeuwkorrels"
-        case 80, 81:     return "Regenbuien"
-        case 82:         return "Zware regenbuien"
-        case 85, 86:     return "Sneeuwbuien"
-        case 95:         return "Onweer"
-        case 96, 99:     return "Onweer met hagel"
-        default:         return "Wisselvallig"
-        }
+        OpenMeteoForecastClient.conditionDescription(forWMOCode: code)
     }
 }
