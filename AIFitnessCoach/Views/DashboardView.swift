@@ -1609,6 +1609,8 @@ struct DashboardView: View {
                         currentWeekTRIMP: currentWeekTRIMP,
                         weeklyTRIMPTarget: weeklyTRIMPTarget,
                         weeklyForecast: WeatherManager.shared.weeklyForecast,
+                        // Epic #55 story 55.2: synthesize multi-day event stage entries.
+                        eventGoals: Array(goals),
                         onSkipWorkout: { workout in
                             refreshProfileContext()
                             viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)

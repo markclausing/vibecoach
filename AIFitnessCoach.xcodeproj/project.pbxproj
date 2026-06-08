@@ -160,6 +160,8 @@
 		D1A4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift */; };
 		D5A4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5B4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift */; };
 		D6A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift */; };
+		AAB4F7B2D6E8F0A1B2C3D555 /* WeekScheduleBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB4F7B2D6E8F0A1B2C3D556 /* WeekScheduleBuilder.swift */; };
+		AAB4F7B2D6E8F0A1B2C3D557 /* WeekScheduleBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB4F7B2D6E8F0A1B2C3D558 /* WeekScheduleBuilderTests.swift */; };
 		D7A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetectorTests.swift */; };
 		D8C4F7B2D6E8F0A1B2C3D405 /* PauseDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8C4F7B2D6E8F0A1B2C3D405 /* PauseDetector.swift */; };
 		D9C4F7B2D6E8F0A1B2C3D405 /* PauseDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9C4F7B2D6E8F0A1B2C3D405 /* PauseDetectorTests.swift */; };
@@ -368,6 +370,8 @@
 		E1B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivityDeduplicatorTests.swift; sourceTree = "<group>"; };
 		E5B4F7B2D6E8F0A1B2C3D405 /* SmartIngestRaceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SmartIngestRaceTests.swift; sourceTree = "<group>"; };
 		E6B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutPatternDetector.swift; sourceTree = "<group>"; };
+		AAB4F7B2D6E8F0A1B2C3D556 /* WeekScheduleBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeekScheduleBuilder.swift; sourceTree = "<group>"; };
+		AAB4F7B2D6E8F0A1B2C3D558 /* WeekScheduleBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeekScheduleBuilderTests.swift; sourceTree = "<group>"; };
 		E7B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutPatternDetectorTests.swift; sourceTree = "<group>"; };
 		E8C4F7B2D6E8F0A1B2C3D405 /* PauseDetector.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PauseDetector.swift; sourceTree = "<group>"; };
 		E9C4F7B2D6E8F0A1B2C3D405 /* PauseDetectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PauseDetectorTests.swift; sourceTree = "<group>"; };
@@ -536,6 +540,7 @@
 				D5D0060102D006010100D002 /* SchemaMigrationV2ToV3Tests.swift */,
 				D5D0080102D008010100D002 /* SchemaMigrationV3ToV4Tests.swift */,
 				D5D0080102D008010100D006 /* SchemaMigrationV4ToV5Tests.swift */,
+				AAB4F7B2D6E8F0A1B2C3D558 /* WeekScheduleBuilderTests.swift */,
 				D571DD54D0004D0004D0004D /* CalendarDSTSafeTests.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */,
@@ -670,6 +675,7 @@
 				E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */,
 				E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */,
 				E6B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift */,
+				AAB4F7B2D6E8F0A1B2C3D556 /* WeekScheduleBuilder.swift */,
 				E8C4F7B2D6E8F0A1B2C3D405 /* PauseDetector.swift */,
 				E8B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift */,
 				E45A4502D6E8F0A1B2C3D405 /* HealthKitPermissionTypes.swift */,
@@ -996,6 +1002,7 @@
 				D5D0060101D006010100D001 /* SchemaMigrationV2ToV3Tests.swift in Sources */,
 				D5D0080101D008010100D001 /* SchemaMigrationV3ToV4Tests.swift in Sources */,
 				D5D0080101D008010100D005 /* SchemaMigrationV4ToV5Tests.swift in Sources */,
+				AAB4F7B2D6E8F0A1B2C3D557 /* WeekScheduleBuilderTests.swift in Sources */,
 				D571DD53C0003C0003C0003C /* CalendarDSTSafeTests.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* TrainingPhaseTests.swift in Sources */,
@@ -1169,6 +1176,7 @@
 				D2A4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift in Sources */,
 				D4A4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift in Sources */,
 				D6A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift in Sources */,
+				AAB4F7B2D6E8F0A1B2C3D555 /* WeekScheduleBuilder.swift in Sources */,
 				D8C4F7B2D6E8F0A1B2C3D405 /* PauseDetector.swift in Sources */,
 				D8A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift in Sources */,
 				DAA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift in Sources */,
