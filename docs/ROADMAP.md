@@ -199,11 +199,40 @@ Een meerdaags doel (bv. "Fietsen van Arnhem naar Karlsruhe in 5 dagen") wordt nu
 
 **Afgestemd gedrag (juni 2026):** `targetDate` = **startdag**; event = `targetDate … +N-1`. Tour-dagen tonen als **etappe-entries** ("Etappe X/N") in het weekschema; **geen** andere training of vaste voorkeuren in dat venster (cross-goal-suppressie). Coach behandelt het als tour, niet als race.
 
-* **🔄 Story 55.1 — Datamodel + migratie + invoer.** `FitnessGoal.eventDurationDays: Int?` (1 = eendaags). Computed `eventEndDate`/`eventDateRange`/`isEventDay(_:)`. SchemaV4→V5 (lightweight, pure-addition-patroon zoals V3/V4) + container-bump + file-backed migratietest (§2.1). AddGoal/EditGoal: stepper "aantal dagen" bij format = Meerdaagse Etappe.
-* **⏳ Story 55.2 — Etappe-entries in het weekschema.** Event-dagen die in de getoonde week vallen renderen als "Etappe X/N — <titel>" (eigen icoon), i.p.v. coach-trainingen. Bron: app-side gesynthetiseerd (betrouwbaarder dan de AI erop vertrouwen).
-* **⏳ Story 55.3 — Prompt event-window + suppressie.** `[EVENT WINDOW: <data> ZIJN de etappes zelf — plan GEEN andere training en negeer vaste voorkeuren in dit venster]`; cross-goal-suppressie (andere-doel-basis + gym wijken). Plus: bevestig dat `format`/`intent` correct doorwerken (de "treats-as-race"-quick-win uit Epic #37-device-tests).
+* **🔄 Story 55.1 — Datamodel + migratie + invoer (PR #307, branch `feature/epic-55-multiday-events`, CI ROOD — zie handoff).** `FitnessGoal.eventDurationDays: Int?` (1 = eendaags). Computed `resolvedEventDurationDays`/`eventEndDate`/`isEventDay(_:)`/`eventStageIndex(for:)`. SchemaV4→V5 (lightweight, pure-addition) + container-bump in `AIFitnessCoachApp.makeModelContainer()` naar `SchemaV5.models` + file-backed migratietest (§2.1). AddGoal/EditGoal: stepper "Aantal dagen" + conditionele "Startdatum"-header bij format = Meerdaagse Etappe.
+* **⏳ Story 55.2 — Etappe-entries in het weekschema.** Event-dagen die in de getoonde week vallen renderen als "Etappe X/N — <titel>" (eigen icoon), i.p.v. coach-trainingen. Bron: app-side gesynthetiseerd (betrouwbaarder dan de AI erop vertrouwen). Hooks staan al klaar: `goal.isEventDay(_:)` + `goal.eventStageIndex(for:)`.
+* **⏳ Story 55.3 — Prompt event-window + suppressie.** `[EVENT WINDOW: <data> ZIJN de etappes zelf — plan GEEN andere training en negeer vaste voorkeuren in dit venster]`; cross-goal-suppressie (andere-doel-basis + gym wijken). Plus: bevestig dat `format`/`intent` correct doorwerken (de "treats-as-race"-quick-win uit Epic #37-device-tests). Let op: `resolvedFormat`/`resolvedIntent` vallen terug op `.singleDayRace`/`.peakPerformance` bij nil — dáár zit de "racet-het-event"-bug.
 
-**Effort:** ~10–16u.
+**Effort:** ~10–16u (55.1 grotendeels af; resterend werk is de CI-crash + 55.2 + 55.3).
+
+#### 🛑 Handoff / stand van zaken (8 juni 2026) — BLOKKER op 55.1
+
+De code van 55.1 is functioneel klaar en is on-device gebouwd, **maar PR #307 staat CI-rood en mag niet gemerged worden tot dat opgelost is.**
+
+**Wat af is (op branch `feature/epic-55-multiday-events`, commit `5c52090`):**
+- `Models/FitnessGoal.swift`: `eventDurationDays: Int?` + init-param + computed helpers (`resolvedEventDurationDays`, `eventEndDate`, `isEventDay(_:)`, `eventStageIndex(for:)`).
+- `Models/SchemaV5.swift` (NIEUW): `enum SchemaV5: VersionedSchema`, versie (5,0,0), `models` verwijst naar de live types (incl. live `FitnessGoal.self` mét `eventDurationDays`).
+- `Models/SchemaV4.swift` (HERSCHREVEN): bevat nu een geneste `@Model final class FitnessGoal` **snapshot** (V4-vorm, zónder `eventDurationDays`), entity-naam blijft `FitnessGoal`. `models` gebruikt `Self.FitnessGoal.self`. Reden: zonder eigen snapshot kreeg V4 dezelfde checksum als V5 → CoreData-crash "Duplicate version checksums detected".
+- `Models/SchemaV1/V2/V3.swift`: elk `FitnessGoal.self` → `SchemaV4.FitnessGoal.self` herwezen.
+- `Models/AppMigrationPlan.swift`: `schemas` += `SchemaV5.self`; `stages` += `migrateV4toV5 = MigrationStage.lightweight(fromVersion: SchemaV4.self, toVersion: SchemaV5.self)`.
+- `AIFitnessCoachApp.swift`: `Schema(SchemaV5.models)`.
+- `Views/AddGoalView.swift` + `Views/EditGoalView.swift`: stepper "Aantal dagen" (2…21) bij `.multiDayStage`; AddGoal-datumheader wordt "Startdatum".
+- `AIFitnessCoachTests/SchemaMigrationV4ToV5Tests.swift` (NIEUW): file-backed V4→V5 seed-test (3 tests, **slaagt in isolatie**).
+- `AIFitnessCoachTests/FitnessGoalTests.swift`: event-window-tests toegevoegd (**slaagt in isolatie**, 54 tests).
+- `project.pbxproj`: SchemaV5.swift + SchemaMigrationV4ToV5Tests.swift toegevoegd (§9-procedure), skip-worktree weer aan.
+
+**De blokker:** CI-job **Unit Tests** faalt op run `27103747462` met exit 65 ná "Executed 286 tests, with 0 failures" — dus een **reproduceerbare crash (signaal, geen assertion-failure)**, niet runner-flakiness. Lokaal komt de full-suite er met restarts doorheen (≈950 started / 948 passed), CI stopt fataal rond 286.
+
+**Al uitgesloten:**
+- Géén duplicate-checksum-probleem: de 4 migratie-testklassen initialiseren elk het volledige `AppMigrationPlan` en slagen in isolatie.
+- `MigrationFallbackStoreTests` slaagt in isolatie (5 tests) — niet de crasher (en het is puur UserDefaults-datumlogica).
+- `SchemaMigrationV4ToV5Tests` + `FitnessGoalTests` slagen in isolatie.
+
+**Hoofdverdachte (nog te bevestigen):** de **dubbele `FitnessGoal`-entity** in één testproces. Er bestaan nu twee `@Model`-klassen met entity-naam `FitnessGoal`: de live `FitnessGoal` én de geneste `SchemaV4.FitnessGoal`-snapshot. Een test die een `ModelContainer`/`Schema` bouwt met de **live** `FitnessGoal` (bv. `FitnessDataServiceTests` ~regel 400: `Schema([ActivityRecord.self, FitnessGoal.self])`) terwijl elders de migratie-snapshot is geladen, kan in hetzelfde proces een entity-naam-collision geven → crash. NB: voor `ActivityRecord` bestaat exact hetzelfde patroon (live + `SchemaV3.ActivityRecord`-snapshot) en dát crasht níét — dus óf de verdenking klopt niet, óf er is een subtiel verschil (bv. de unieke `id`-constraint, of een test die specifiek de live `FitnessGoal` + migratieplan combineert).
+
+**Volgende concrete stap voor de nieuwe sessie:** draai de container-bouwende testklassen mét live `FitnessGoal` in isolatie om de crashende test te vinden — begin bij `FitnessDataServiceTests` (regel ~400) en andere klassen die `FitnessGoal.self` direct in een `Schema`/`ModelContainer` stoppen. Vergelijk daarna exact hoe `SchemaV3.ActivityRecord` naast de live `ActivityRecord` wél probleemloos coëxisteert in de testsuite, en spiegel die aanpak voor `FitnessGoal`. Als de crash niet door de dubbele entity komt: haal de exacte crash-signatuur uit het xcresult-bundle (§6 CI-discipline: `xcrun xcresulttool get test-results activities --test-id <id>`) i.p.v. alleen de samenvattingsregel.
+
+**Losse eindjes (niet door gebruiker bevestigd):** twee verlaten remote branches `origin/feature/epic-37-locale-formatting` en `origin/feature/epic-37-strings-batch1` mogen mogelijk verwijderd worden.
 
 ### ✅ Epic #32: Deep-Dive Fysiologische Analyse
 
