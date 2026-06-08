@@ -54,7 +54,16 @@ struct EditGoalView: View {
             Section(header: Text("Type Evenement & Intentie")) {
                 Picker("Evenement", selection: Binding<EventFormat>(
                     get: { goal.resolvedFormat },
-                    set: { goal.format = $0 }
+                    set: { newFormat in
+                        goal.format = newFormat
+                        // Epic #55: a multi-day stage event must always carry a valid day
+                        // count (≥2). Without it `resolvedEventDurationDays` stays 1, so the
+                        // goal is NOT recognised as multi-day — no stage entries in the week
+                        // schedule and no [EVENT WINDOW] block in the coach prompt.
+                        if newFormat == .multiDayStage, (goal.eventDurationDays ?? 0) < 2 {
+                            goal.eventDurationDays = 5
+                        }
+                    }
                 )) {
                     Text("Eendaagse Race").tag(EventFormat.singleDayRace)
                     Text("Eendaagse Tocht").tag(EventFormat.singleDayTour)
@@ -90,7 +99,10 @@ struct EditGoalView: View {
 
             Section(header: Text("Status")) {
                 Toggle("Doel Behaald", isOn: $goal.isCompleted)
-                DatePicker("Streefdatum", selection: $goal.targetDate, displayedComponents: .date)
+                // Epic #55: for a multi-day event `targetDate` is the START day, so label it
+                // "Startdatum" (matching AddGoalView). For single-day goals it stays the target date.
+                DatePicker(goal.resolvedFormat == .multiDayStage ? "Startdatum" : "Streefdatum",
+                           selection: $goal.targetDate, displayedComponents: .date)
             }
 
             Section {
@@ -103,6 +115,14 @@ struct EditGoalView: View {
         }
         .navigationTitle("Bewerk Doel")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // Epic #55: backfill the day count for an existing multi-day goal that lacks one
+            // (e.g. created before Epic #55, or format switched without touching the stepper).
+            // Otherwise it is silently not treated as multi-day (no stage entries / event window).
+            if goal.resolvedFormat == .multiDayStage, (goal.eventDurationDays ?? 0) < 2 {
+                goal.eventDurationDays = 5
+            }
+        }
         .confirmationDialog(
             "Dit doel verwijderen?",
             isPresented: $showDeleteConfirm,
