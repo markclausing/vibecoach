@@ -54,10 +54,26 @@ final class FitnessGoal {
     var eventDurationDays: Int?
 
     /// Safe fallback: always returns a valid EventFormat, even for records without a value.
-    var resolvedFormat: EventFormat { format ?? .singleDayRace }
+    ///
+    /// Epic #55 story 55.3: a goal with `eventDurationDays > 1` is by definition a
+    /// multi-day stage event, so it is treated as `.multiDayStage` regardless of a
+    /// missing/legacy `format`. Without this guard a multi-day event with `format == nil`
+    /// fell back to `.singleDayRace` — the coach then "raced" the event instead of
+    /// treating it as a tour.
+    var resolvedFormat: EventFormat {
+        if resolvedEventDurationDays > 1 { return .multiDayStage }
+        return format ?? .singleDayRace
+    }
 
     /// Safe fallback: always returns a valid PrimaryIntent, even for records without a value.
-    var resolvedIntent: PrimaryIntent { intent ?? .peakPerformance }
+    ///
+    /// Epic #55 story 55.3: a multi-day event without an explicit intent defaults to
+    /// `.completion` (you finish a multi-day tour, you don't "peak" across it). An
+    /// explicitly chosen intent is always respected.
+    var resolvedIntent: PrimaryIntent {
+        if let intent { return intent }
+        return resolvedEventDurationDays > 1 ? .completion : .peakPerformance
+    }
 
     // MARK: - Multi-day event window (Epic #55)
 
