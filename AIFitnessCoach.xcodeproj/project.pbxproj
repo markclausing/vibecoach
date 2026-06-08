@@ -59,10 +59,12 @@
 		D5D0020101D002010100D001 /* SchemaV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0020102D002010100D002 /* SchemaV2.swift */; };
 		D5D0040101D004010100D001 /* SchemaV3.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0040102D004010100D002 /* SchemaV3.swift */; };
 		D5D0070101D007010100D001 /* SchemaV4.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0070102D007010100D002 /* SchemaV4.swift */; };
+		D5D0070101D007010100D005 /* SchemaV5.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0070102D007010100D006 /* SchemaV5.swift */; };
 		D5D0030101D003010100D001 /* AppMigrationPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0030102D003010100D002 /* AppMigrationPlan.swift */; };
 		D5D0050101D005010100D001 /* SchemaMigrationV1ToV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0050102D005010100D002 /* SchemaMigrationV1ToV2Tests.swift */; };
 		D5D0060101D006010100D001 /* SchemaMigrationV2ToV3Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0060102D006010100D002 /* SchemaMigrationV2ToV3Tests.swift */; };
 		D5D0080101D008010100D001 /* SchemaMigrationV3ToV4Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0080102D008010100D002 /* SchemaMigrationV3ToV4Tests.swift */; };
+		D5D0080101D008010100D005 /* SchemaMigrationV4ToV5Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0080102D008010100D006 /* SchemaMigrationV4ToV5Tests.swift */; };
 		5566778899001122334455EE /* WeatherManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6677889900112233445566FF /* WeatherManagerTests.swift */; };
 		5DBFDEDC67859D1105BB9DE5 /* MockGenerativeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */; };
 		626955C541119438634E5B32 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = 1DFC6E046AA02E4CF8689D9C /* GoogleGenerativeAI */; };
@@ -344,10 +346,12 @@
 		D5D0020102D002010100D002 /* SchemaV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaV2.swift; sourceTree = "<group>"; };
 		D5D0040102D004010100D002 /* SchemaV3.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaV3.swift; sourceTree = "<group>"; };
 		D5D0070102D007010100D002 /* SchemaV4.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaV4.swift; sourceTree = "<group>"; };
+		D5D0070102D007010100D006 /* SchemaV5.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaV5.swift; sourceTree = "<group>"; };
 		D5D0030102D003010100D002 /* AppMigrationPlan.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppMigrationPlan.swift; sourceTree = "<group>"; };
 		D5D0050102D005010100D002 /* SchemaMigrationV1ToV2Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaMigrationV1ToV2Tests.swift; sourceTree = "<group>"; };
 		D5D0060102D006010100D002 /* SchemaMigrationV2ToV3Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaMigrationV2ToV3Tests.swift; sourceTree = "<group>"; };
 		D5D0080102D008010100D002 /* SchemaMigrationV3ToV4Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaMigrationV3ToV4Tests.swift; sourceTree = "<group>"; };
+		D5D0080102D008010100D006 /* SchemaMigrationV4ToV5Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaMigrationV4ToV5Tests.swift; sourceTree = "<group>"; };
 		CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockGenerativeModel.swift; sourceTree = "<group>"; };
 		CC01DD02EE03FF04AA05BB06 /* WeekTimelineView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeekTimelineView.swift; sourceTree = "<group>"; };
 		CE4D1D9B3991F419262E294E /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -531,6 +535,7 @@
 				D5D0050102D005010100D002 /* SchemaMigrationV1ToV2Tests.swift */,
 				D5D0060102D006010100D002 /* SchemaMigrationV2ToV3Tests.swift */,
 				D5D0080102D008010100D002 /* SchemaMigrationV3ToV4Tests.swift */,
+				D5D0080102D008010100D006 /* SchemaMigrationV4ToV5Tests.swift */,
 				D571DD54D0004D0004D0004D /* CalendarDSTSafeTests.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */,
@@ -736,6 +741,7 @@
 				D5D0020102D002010100D002 /* SchemaV2.swift */,
 				D5D0040102D004010100D002 /* SchemaV3.swift */,
 				D5D0070102D007010100D002 /* SchemaV4.swift */,
+				D5D0070102D007010100D006 /* SchemaV5.swift */,
 				D5D0030102D003010100D002 /* AppMigrationPlan.swift */,
 				D5A0010102A001010100A002 /* Symptom.swift */,
 				D5A0020102A002010100A002 /* UserPreference.swift */,
@@ -989,6 +995,7 @@
 				D5D0050101D005010100D001 /* SchemaMigrationV1ToV2Tests.swift in Sources */,
 				D5D0060101D006010100D001 /* SchemaMigrationV2ToV3Tests.swift in Sources */,
 				D5D0080101D008010100D001 /* SchemaMigrationV3ToV4Tests.swift in Sources */,
+				D5D0080101D008010100D005 /* SchemaMigrationV4ToV5Tests.swift in Sources */,
 				D571DD53C0003C0003C0003C /* CalendarDSTSafeTests.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* TrainingPhaseTests.swift in Sources */,
@@ -1050,6 +1057,7 @@
 				D5D0020101D002010100D001 /* SchemaV2.swift in Sources */,
 				D5D0040101D004010100D001 /* SchemaV3.swift in Sources */,
 				D5D0070101D007010100D001 /* SchemaV4.swift in Sources */,
+				D5D0070101D007010100D005 /* SchemaV5.swift in Sources */,
 				D5D0030101D003010100D001 /* AppMigrationPlan.swift in Sources */,
 				E767E8F495D10156A93BCC15 /* ContentView.swift in Sources */,
 				E541659C316B9F8EBCCD6AA3 /* ChatMessage.swift in Sources */,

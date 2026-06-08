@@ -61,6 +61,14 @@ struct EditGoalView: View {
                     Text("Meerdaagse Etappe").tag(EventFormat.multiDayStage)
                 }
 
+                // Epic #55: event duration for a multi-day stage event.
+                if goal.resolvedFormat == .multiDayStage {
+                    Stepper("Aantal dagen: \(goal.resolvedEventDurationDays)", value: Binding<Int>(
+                        get: { goal.resolvedEventDurationDays },
+                        set: { goal.eventDurationDays = $0 }
+                    ), in: 2...21)
+                }
+
                 Picker("Doel", selection: Binding<PrimaryIntent>(
                     get: { goal.resolvedIntent },
                     set: { goal.intent = $0 }

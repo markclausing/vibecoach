@@ -63,7 +63,13 @@ final class SchemaMigrationV2ToV3Tests: XCTestCase {
 
         try seedV2Store { ctx in
             // Eén goal — dit was het kritieke verlies-pad in het mei-2026 incident.
-            ctx.insert(FitnessGoal(
+            // Epic #55: `FitnessGoal` heeft sinds V5 (eventDurationDays als pure
+            // addition op V5) óók een schema-snapshot — net als ActivityRecord sinds
+            // V4. De V2/V3-schema's registreren daarom de entity "FitnessGoal" via de
+            // `SchemaV4.FitnessGoal`-snapshot. Seed/fetch in een V2/V3-store moet dus
+            // dat snapshot-type gebruiken; de live class fetchen tegen een snapshot-
+            // geregistreerde container crasht met "Failed to cast model ... FitnessGoal".
+            ctx.insert(SchemaV4.FitnessGoal(
                 title: "Marathon Rotterdam",
                 targetDate: goalDate,
                 sportCategory: .running
@@ -88,7 +94,7 @@ final class SchemaMigrationV2ToV3Tests: XCTestCase {
         }
 
         let container = try openV3Store()
-        let goals = try container.mainContext.fetch(FetchDescriptor<FitnessGoal>())
+        let goals = try container.mainContext.fetch(FetchDescriptor<SchemaV4.FitnessGoal>())
         let prefs = try container.mainContext.fetch(FetchDescriptor<UserPreference>())
         let activities = try container.mainContext.fetch(FetchDescriptor<SchemaV3.ActivityRecord>())
 

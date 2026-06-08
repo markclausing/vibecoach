@@ -32,12 +32,21 @@ import SwiftData
 enum AppMigrationPlan: SchemaMigrationPlan {
 
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self]
     }
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2, migrateV2toV3, migrateV3toV4]
+        [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5]
     }
+
+    // MARK: - V4 → V5: pure addition (multi-day event duration on FitnessGoal)
+
+    /// Epic #55: pure addition of `FitnessGoal.eventDurationDays: Int?`. Existing
+    /// records get `nil` (= single-day behaviour). `.lightweight` is sufficient.
+    static let migrateV4toV5 = MigrationStage.lightweight(
+        fromVersion: SchemaV4.self,
+        toVersion: SchemaV5.self
+    )
 
     // MARK: - V2 → V3: pure addition (weather metadata on ActivityRecord)
 

@@ -60,7 +60,11 @@ final class SchemaMigrationV3ToV4Tests: XCTestCase {
         let goalDate = Date().addingTimeInterval(60 * 60 * 24 * 90)
 
         try seedV3Store { ctx in
-            ctx.insert(FitnessGoal(
+            // Epic #55: `FitnessGoal` heeft sinds V5 een schema-snapshot. De
+            // V4-store registreert de entity "FitnessGoal" via `SchemaV4.FitnessGoal`,
+            // dus seed/fetch moet dat snapshot-type gebruiken (live class → cast-crash).
+            // ActivityRecord blijft de live class: V4 registreert die ongewijzigd.
+            ctx.insert(SchemaV4.FitnessGoal(
                 title: "Marathon Rotterdam",
                 targetDate: goalDate,
                 sportCategory: .running
@@ -80,7 +84,7 @@ final class SchemaMigrationV3ToV4Tests: XCTestCase {
         }
 
         let container = try openV4Store()
-        let goals = try container.mainContext.fetch(FetchDescriptor<FitnessGoal>())
+        let goals = try container.mainContext.fetch(FetchDescriptor<SchemaV4.FitnessGoal>())
         let prefs = try container.mainContext.fetch(FetchDescriptor<UserPreference>())
         let activities = try container.mainContext.fetch(FetchDescriptor<ActivityRecord>())
 

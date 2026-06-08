@@ -193,6 +193,39 @@ Vijf-schermen flow in Serene/Mos-stijl. Elk scherm toont een 'live preview' (Vib
 
 ## Backlog
 
+### 🔄 Epic #55: Meerdaagse events first-class
+
+Een meerdaags doel (bv. "Fietsen van Arnhem naar Karlsruhe in 5 dagen") wordt nu met één `targetDate` gemodelleerd. Gevolg: de event-dagen zijn niet bekend bij de planner, het schema plant er gewoon door (krachttraining, andere-doel-sessies), en de "5 opeenvolgende tour-dagen" zijn nergens zichtbaar. Bovendien racet de coach het event omdat `resolvedFormat`/`resolvedIntent` terugvallen op `singleDayRace`/`peakPerformance` als die velden niet expliciet gezet zijn.
+
+**Afgestemd gedrag (juni 2026):** `targetDate` = **startdag**; event = `targetDate … +N-1`. Tour-dagen tonen als **etappe-entries** ("Etappe X/N") in het weekschema; **geen** andere training of vaste voorkeuren in dat venster (cross-goal-suppressie). Coach behandelt het als tour, niet als race.
+
+* **🔄 Story 55.1 — Datamodel + migratie + invoer (PR #307, branch `feature/epic-55-multiday-events`, CI GROEN — blokker opgelost, zie handoff).** `FitnessGoal.eventDurationDays: Int?` (1 = eendaags). Computed `resolvedEventDurationDays`/`eventEndDate`/`isEventDay(_:)`/`eventStageIndex(for:)`. SchemaV4→V5 (lightweight, pure-addition) + container-bump in `AIFitnessCoachApp.makeModelContainer()` naar `SchemaV5.models` + file-backed migratietest (§2.1). AddGoal/EditGoal: stepper "Aantal dagen" + conditionele "Startdatum"-header bij format = Meerdaagse Etappe.
+* **⏳ Story 55.2 — Etappe-entries in het weekschema.** Event-dagen die in de getoonde week vallen renderen als "Etappe X/N — <titel>" (eigen icoon), i.p.v. coach-trainingen. Bron: app-side gesynthetiseerd (betrouwbaarder dan de AI erop vertrouwen). Hooks staan al klaar: `goal.isEventDay(_:)` + `goal.eventStageIndex(for:)`.
+* **⏳ Story 55.3 — Prompt event-window + suppressie.** `[EVENT WINDOW: <data> ZIJN de etappes zelf — plan GEEN andere training en negeer vaste voorkeuren in dit venster]`; cross-goal-suppressie (andere-doel-basis + gym wijken). Plus: bevestig dat `format`/`intent` correct doorwerken (de "treats-as-race"-quick-win uit Epic #37-device-tests). Let op: `resolvedFormat`/`resolvedIntent` vallen terug op `.singleDayRace`/`.peakPerformance` bij nil — dáár zit de "racet-het-event"-bug.
+
+**Effort:** ~10–16u (55.1 af incl. CI-fix; resterend werk is 55.2 + 55.3).
+
+#### ✅ Handoff / stand van zaken (8 juni 2026) — 55.1 CI-blokker OPGELOST
+
+De code van 55.1 is functioneel klaar, on-device gebouwd, en **PR #307 staat nu CI-groen** (volledige `AIFitnessCoachTests`-suite lokaal: 950 tests, 0 failures, één proces, geen restarts).
+
+**Root cause van de crash (gereproduceerd + gefixt):** `SwiftData/ModelContext.swift:712: Fatal error: Failed to cast model AIFitnessCoach.FitnessGoal … to FitnessGoal`. De crashende tests waren niet de nieuwe V4→V5-test maar `SchemaMigrationV2ToV3Tests` + `…V3ToV4Tests`: die deden hun `FitnessGoal`-`insert`/`fetch` nog met de **live** class, terwijl `FitnessGoal` sinds Epic #55 (net als `ActivityRecord` sinds Epic #52) een geneste schema-snapshot `SchemaV4.FitnessGoal` heeft. De V2/V3/V4-schema's registreren de entity "FitnessGoal" via die snapshot, dus een fetch+cast naar de live class tegen zo'n container crasht. In isolatie bleef het verborgen; in combinatie met klassen die elders de live `FitnessGoal`-entity binden (bv. `FitnessDataServiceTests`) sloeg het toe (proces-globale entity-class-binding). De `ActivityRecord`-regels in dezelfde tests gebruikten al correct `SchemaV2/V3.ActivityRecord` — die les was alleen nog niet doorgetrokken naar `FitnessGoal`.
+
+**Fix (commit op deze branch):** in `SchemaMigrationV2ToV3Tests` + `SchemaMigrationV3ToV4Tests` de `FitnessGoal`-`insert` en `fetch` omgezet naar het snapshot-type `SchemaV4.FitnessGoal`, exact volgens het bestaande ActivityRecord-precedent (CLAUDE.md §2.1). Geen productiecode geraakt — puur testcode.
+
+**Wat 55.1 oplevert (branch `feature/epic-55-multiday-events`):**
+- `Models/FitnessGoal.swift`: `eventDurationDays: Int?` + init-param + computed helpers (`resolvedEventDurationDays`, `eventEndDate`, `isEventDay(_:)`, `eventStageIndex(for:)`).
+- `Models/SchemaV5.swift` (NIEUW): `enum SchemaV5: VersionedSchema` (5,0,0), `models` → live types incl. live `FitnessGoal.self` mét `eventDurationDays`.
+- `Models/SchemaV4.swift` (HERSCHREVEN): geneste `@Model final class FitnessGoal` **snapshot** (V4-vorm, zónder `eventDurationDays`), entity-naam blijft `FitnessGoal`; voorkomt de "Duplicate version checksums"-crash.
+- `Models/SchemaV1/V2/V3.swift`: elk `FitnessGoal.self` → `SchemaV4.FitnessGoal.self`.
+- `Models/AppMigrationPlan.swift`: `schemas` += `SchemaV5.self`; `stages` += `MigrationStage.lightweight(V4→V5)`.
+- `AIFitnessCoachApp.swift`: `Schema(SchemaV5.models)`.
+- `Views/AddGoalView.swift` + `Views/EditGoalView.swift`: stepper "Aantal dagen" (2…21) bij `.multiDayStage`; AddGoal-datumheader → "Startdatum".
+- `AIFitnessCoachTests/SchemaMigrationV4ToV5Tests.swift` (NIEUW) + event-window-tests in `FitnessGoalTests.swift`.
+- `project.pbxproj`: SchemaV5.swift + SchemaMigrationV4ToV5Tests.swift toegevoegd (§9-procedure).
+
+**Losse eindjes (niet door gebruiker bevestigd):** twee verlaten remote branches `origin/feature/epic-37-locale-formatting` en `origin/feature/epic-37-strings-batch1` mogen mogelijk verwijderd worden.
+
 ### ✅ Epic #32: Deep-Dive Fysiologische Analyse
 
 Van gemiddelden naar granulaire fysiologische patronen. De coach leest het volledige verhaal uit de ruwe tijdreeksdata.
@@ -267,9 +300,9 @@ Authoritatieve coverage-meting in april 2026 toonde dat sleutel-services 0% dekk
 
 ---
 
-### 🔄 Epic #37: Internationalisatie & Engelstalige codebasis (NL + EN + DE + ES)
+### ✅ Epic #37: Internationalisatie & Engelstalige codebasis (NL + EN + DE + ES)
 
-**Status (juni 2026): functioneel afgerond.** De app is meertalig (NL/EN/DE/ES) en de hele codebase + coach-prompt zijn Engels. Gemerged: 37.1 t/m 37.6 (PR #291–#304, ~527 catalog-keys). **Resteert:** 37.7 (de 4 doc-files zelf naar Engels — déze update-ronde dekt de inhoudelijke synchronisatie, niet de taalswitch), 37.8 (testsuite-i18n: UI-tests draaien nu geforceerd in `nl`, een per-taal-pass is nog open) en **native DE/ES-review** van de vertalingen (toon/idioom). Architectuur: zie de Localization-sectie in `ARCHITECTURE.md` + het i18n-patroon in `CLAUDE.md`.
+**Afgesloten (juni 2026).** De app is meertalig (NL/EN/DE/ES) en de hele codebase + coach-prompt zijn Engels. Gemerged: 37.1 t/m 37.6 (PR #291–#306, ~530 catalog-keys) + verwijder-doelen & tap-to-edit-navigatie (#305). Architectuur: zie de Localization-sectie in `ARCHITECTURE.md` + het i18n-patroon in `CLAUDE.md`. **Bewust niet gedaan:** native DE/ES-vertaalreview (geen moedertaalspreker beschikbaar — vertalingen zijn LLM-gegenereerd en functioneel correct), 37.7 (doc-files zélf naar Engels; alleen inhoudelijk gesynchroniseerd, ROADMAP blijft NL als werktaal) en 37.8 (per-taal UI-test-pass; UI-tests draaien geforceerd in `nl`). Polish, geen blocker.
 
 Twee samenhangende sporen, nu mét commitment en richting:
 1. **App meertalig** — Nederlands (huidige basis) + **Engels, Duits, Spaans**, met de localisatie-infra (`Localizable.xcstrings`) zó opgezet dat een extra taal louter een kolom vertalingen is.

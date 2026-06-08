@@ -13,6 +13,8 @@ struct AddGoalView: View {
     // Epic Doel-Intenties
     @State private var eventFormat: EventFormat = .singleDayRace
     @State private var primaryIntent: PrimaryIntent = .peakPerformance
+    // Epic #55: number of consecutive event days (only used for a multi-day stage event).
+    @State private var eventDurationDays: Int = 5
     @State private var hasStretchGoal: Bool = false
     @State private var stretchGoalPickerDate: Date = Calendar.current.startOfDay(for: Date()).addingTimeInterval(3 * 3600) // standaard 3:00
 
@@ -47,6 +49,10 @@ struct AddGoalView: View {
                         Text("Meerdaagse Etappe").tag(EventFormat.multiDayStage)
                     }
 
+                    if eventFormat == .multiDayStage {
+                        Stepper("Aantal dagen: \(eventDurationDays)", value: $eventDurationDays, in: 2...21)
+                    }
+
                     Picker("Doel", selection: $primaryIntent) {
                         Text("Uitlopen / Genieten").tag(PrimaryIntent.completion)
                         Text("Presteren / Zo snel mogelijk").tag(PrimaryIntent.peakPerformance)
@@ -63,7 +69,7 @@ struct AddGoalView: View {
                     }
                 }
 
-                Section(header: Text("Streefdatum")) {
+                Section(header: Text(eventFormat == .multiDayStage ? "Startdatum" : "Streefdatum")) {
                     DatePicker("Datum", selection: $targetDate, displayedComponents: .date)
                 }
             }
@@ -104,7 +110,8 @@ struct AddGoalView: View {
             sportCategory: sportCategory,
             format: eventFormat,
             intent: primaryIntent,
-            stretchGoalTime: stretchTime
+            stretchGoalTime: stretchTime,
+            eventDurationDays: eventFormat == .multiDayStage ? eventDurationDays : nil
         )
 
         // Determine the Target TRIMP asynchronously via AI or fallback
