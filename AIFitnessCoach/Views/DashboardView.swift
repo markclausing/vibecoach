@@ -1723,6 +1723,9 @@ struct DashboardView: View {
                 // Epic Doel-Intenties: write the intent instructions to the separate cache
                 // so the coach receives a targeted [DOEL INTENTIES EN BENADERING] section.
                 viewModel.cacheIntentContext(periodizationResults)
+                // Epic #55 story 55.3: write the multi-day event-window block(s) so the coach
+                // suppresses other training in the event window and plans post-event recovery.
+                viewModel.cacheEventWindow(Array(goals))
                 // Epic 23 Sprint 1: Write the gap analysis to the AI prompt cache
                 // so the coach knows how much TRIMP/km the athlete is behind on the linear schedule.
                 let gapResults = ProgressService.analyzeGaps(for: Array(goals), activities: Array(activities))

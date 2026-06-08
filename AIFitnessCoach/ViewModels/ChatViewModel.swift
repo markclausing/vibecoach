@@ -164,6 +164,11 @@ class ChatViewModel: ObservableObject {
     /// Contains the generated coachingInstruction per goal (format, intent, VibeScore adjustment).
     @AppStorage("vibecoach_intentContext") private var intentContext: String = ""
 
+    /// Epic #55 story 55.3: Cache of the multi-day event-window block(s). Tells the coach
+    /// which dates ARE the event itself (no other training, fixed preferences suspended,
+    /// cross-goal suppression) and to plan recovery right after.
+    @AppStorage("vibecoach_eventWindowContext") private var eventWindowContext: String = ""
+
     /// Epic 23 Sprint 2: Cache of the future projection per goal (Future Projection Engine).
     /// Answers the question: "When does the athlete reach the Peak Phase based on his growth rate?"
     /// Gets filled via `cacheProjections(_:)` from GoalsListView and injected into the AI prompt.
@@ -331,6 +336,13 @@ class ChatViewModel: ObservableObject {
     /// [GOAL INTENTS AND APPROACH] section with format, intent and VibeScore instructions.
     func cacheIntentContext(_ results: [PeriodizationResult]) {
         intentContext = IntentContextFormatter.format(results: results)
+    }
+
+    /// Epic #55 story 55.3: Writes the multi-day event-window block(s) to the AI prompt cache.
+    /// Called from DashboardView so every coach interaction knows which dates are the event
+    /// itself — and to suppress other training + plan post-event recovery.
+    func cacheEventWindow(_ goals: [FitnessGoal]) {
+        eventWindowContext = EventWindowContextFormatter.format(goals: goals)
     }
 
     /// Epic 23 Sprint 1: Writes the gap analysis (difference planned vs. realized) to the AppStorage cache.
@@ -824,6 +836,12 @@ class ChatViewModel: ObservableObject {
             4. VIBE SCORE OVERRIDE: If a VibeScore < 65 is mentioned, recovery has absolute priority — drop intensive elements regardless of the rest of the plan.]
             """
             prefix += intentBlock + "\n\n"
+        }
+
+        // Epic #55 story 55.3: multi-day event window — the event days ARE the training;
+        // suppress other sessions + fixed preferences in the window and plan recovery after.
+        if !eventWindowContext.isEmpty {
+            prefix += eventWindowContext + "\n\n"
         }
 
         // Epic 23 Sprint 1: Inject the gap analysis with TRIMPTranslator hints

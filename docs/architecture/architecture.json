@@ -6,7 +6,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 18,
+    "docRevision": 19,
     "lastUpdated": "2026-06-08",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
@@ -1116,6 +1116,19 @@
       "uses": [],
       "tags": [
         "epic-37"
+      ]
+    },
+    {
+      "id": "EventWindowContextFormatter",
+      "layer": "viewmodels",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/ViewModels/EventWindowContextFormatter.swift",
+      "description": "Epic #55 story 55.3: pure-Swift formatter that injects an [EVENT WINDOW] block per multi-day event — no other training / fixed preferences in the window, cross-goal suppression, and post-event recovery. Cached via ChatViewModel.cacheEventWindow.",
+      "uses": [
+        "FitnessGoal"
+      ],
+      "tags": [
+        "epic-55"
       ]
     }
   ],
