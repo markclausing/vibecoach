@@ -193,6 +193,27 @@ Vijf-schermen flow in Serene/Mos-stijl. Elk scherm toont een 'live preview' (Vib
 
 ## Backlog
 
+### 🔄 Epic #57: RPE-check-in vereenvoudigen — één-tik inspanning + gevoel
+
+De post-workout check-in (`PostWorkoutCheckinCard` in `DashboardView.swift`) vraagt nu om een **RPE-slider 1–10** (ankers "Heel licht"/"Maximaal") plus een **aparte mood-rij** (Rustig/Goed/Sterk/Pijn/Uitgeput) en een losse "Opslaan"-knop. Probleem (user-feedback juni 2026): een kaal getal tussen 1 en 10 is onduidelijk — je moet raden wat een "6" betekent — en de twee aparte vragen + opslaan-knop maken een snelle check-in omslachtig. Downstream brengt `LastWorkoutContextFormatter` de RPE tóch al terug tot vier categorieën (light 1–3 / moderate 4–6 / hard 7–8 / maximal 9–10), dus de fijnmazige schaal voegt voor de coach weinig toe.
+
+**Afgestemd ontwerp (juni 2026):** vervang slider + losse mood door **één rij holistische keuzeknoppen** (praat-test als anker), één tik = klaar. Elke knop mapt onderhuids naar een `(rpe: Int, mood: String)`-paar, zodat `ActivityRecord` (`rpe: Int?` + `mood: String?`) ongewijzigd blijft → **geen schema-migratie** (§2.1) en **geen coach-prompt-wijziging** (de overtraining-discrepantie-check, `LastWorkoutContextFormatter` en `SessionType.expectedRPERange` blijven werken op het opgeslagen getal). De "Pijn / klacht"-keuze blijft een eigen optie omdat dat het belangrijkste blessure-/veiligheidssignaal voor de coach is. De "Negeer"-knop (sentinel `rpe = 0`) blijft staan.
+
+De vijf opties + onderhuidse mapping:
+
+| Knop | Omschrijving (praat-test) | rpe | mood |
+|---|---|---|---|
+| 🟢 Makkelijk | "Kon makkelijk doorpraten" | 2 | Goed |
+| 🟡 Lekker gewerkt | "Stevig, maar voelde goed" | 5 | Sterk |
+| 🟠 Zwaar | "Flink afgezien, praten lukte amper" | 8 | Uitgeput |
+| 🔴 Leeg / uitgeput | "Kon echt niet meer" | 9 | Uitgeput |
+| 🩹 Pijn / klacht | "Er deed iets zeer" | 5 | Pijn |
+
+* **🔄 Story 57.1 — UI-herontwerp `PostWorkoutCheckinCard`.** Slider + aparte mood-rij + losse "Opslaan"-knop verwijderd; in plaats daarvan één verticale lijst van vijf holistische opties (icoon + label + praat-test-omschrijving, kleur op niveau). Eén tik → `saveFeedback(_:)` zet `activity.rpe`/`activity.mood` en roept `onSaved` direct aan; de card verdwijnt zodra `recentUncheckedActivity` nil wordt. Nieuw value-type `WorkoutCheckinOption` (`DashboardView.swift`, AppStorage-vrij, §6) is de enige bron van waarheid voor de mapping. "Negeer"-pad (sentinel `rpe = 0`) ongewijzigd. Accessibility: `RPESlider`/`RPEOpslaanButton` vervallen, per optie een `RPEOption_<id>`-identifier (easy/good/hard/empty/pain). UI-tests (`AIFitnessCoachUITests` + `OnboardingE2ETests`) op de nieuwe identifiers omgezet.
+* **🔄 Story 57.2 — i18n.** Negen nieuwe label- + omschrijving-strings in `Localizable.xcstrings` (NL/EN/DE/ES); "Zwaar" bestond al en wordt hergebruikt (uniek JSON-key). Verouderde keys ("Inspanning (RPE)", "Heel licht", "Maximaal", losse mood-labels) blijven als onschadelijke `stale`-entries staan i.p.v. handmatig uit het 11k-regels-bestand te verwijderen — Xcode markeert ongebruikte keys vanzelf als stale.
+
+**Verwacht effort:** ~2–4u. **Out of scope:** datamodel-uitbreiding (extra gevoel-axis), terugschrijven naar HealthKit, historische check-ins migreren, mood als leesbaar woord i.p.v. SF-Symbol-naam in de coach-prompt (bewust ongewijzigd gelaten). **Open punt:** definitieve emoji/labels kunnen na on-device review nog schuiven.
+
 ### ✅ Epic #56: Locatie-bewuste weersvoorspelling voor meerdaagse routes
 
 Het weer op het dashboard kwam altijd van de **apparaat-locatie** (thuis). Voor een meerdaagse tocht (bv. "Fietsen van Arnhem naar Karlsruhe in 5 dagen") wil je per etappedag een **redelijke inschatting** van het weer op de plek waar je dan ongeveer bent — niet thuis. De route wordt automatisch uit de doeltitel/-notities afgeleid; per etappe interpoleren we de locatie langs de route. Geen GPS-precisie, wel "waar ben ik die dag ongeveer".

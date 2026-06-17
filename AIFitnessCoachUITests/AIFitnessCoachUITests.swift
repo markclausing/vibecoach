@@ -133,29 +133,29 @@ final class AIFitnessCoachUITests: XCTestCase {
     // MARK: - RPE Check-in Kaart
 
     @MainActor
-    func testRPECheckinCard_WhenVisible_HasSliderAndSaveButton() throws {
+    func testRPECheckinCard_WhenVisible_HasOptionButtons() throws {
         XCTAssertTrue(waitForDashboard(), "Dashboard laadt niet — test kan niet verder.")
 
         let checkinCard = app.otherElements["RPECheckinCard"]
         guard checkinCard.waitForExistence(timeout: 2) else { return }
 
-        XCTAssertTrue(app.sliders["RPESlider"].exists, "RPESlider ontbreekt in de check-in kaart.")
-        let saveButton = app.buttons["RPEOpslaanButton"]
-        XCTAssertTrue(saveButton.exists, "Opslaan-knop (RPEOpslaanButton) ontbreekt.")
-        XCTAssertFalse(saveButton.isEnabled, "Opslaan-knop is al enabled zonder stemmingsselectie.")
+        // Epic #57: the slider + separate mood row + save button are replaced by one row of
+        // holistic option buttons; one tap saves. Verify the option buttons are present.
+        XCTAssertTrue(app.buttons["RPEOption_easy"].exists, "Optieknop 'Makkelijk' ontbreekt.")
+        XCTAssertTrue(app.buttons["RPEOption_hard"].exists, "Optieknop 'Zwaar' ontbreekt.")
+        XCTAssertTrue(app.buttons["RPEOption_pain"].exists, "Optieknop 'Pijn / klacht' ontbreekt.")
     }
 
     @MainActor
-    func testRPECheckinCard_WhenVisible_SliderIsInteractable() throws {
+    func testRPECheckinCard_WhenVisible_OptionIsTappable() throws {
         XCTAssertTrue(waitForDashboard(), "Dashboard laadt niet — test kan niet verder.")
 
         let checkinCard = app.otherElements["RPECheckinCard"]
         guard checkinCard.waitForExistence(timeout: 2) else { return }
 
-        let rpeSlider = app.sliders["RPESlider"]
-        guard rpeSlider.exists else { return }
-        rpeSlider.adjust(toNormalizedSliderPosition: 0.8)
-        XCTAssertTrue(rpeSlider.isEnabled, "RPESlider is niet bedienbaar.")
+        let option = app.buttons["RPEOption_good"]
+        guard option.exists else { return }
+        XCTAssertTrue(option.isEnabled, "Optieknop is niet bedienbaar.")
     }
 
     // MARK: - Launch Performance
