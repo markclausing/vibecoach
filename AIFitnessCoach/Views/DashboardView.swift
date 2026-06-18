@@ -540,23 +540,28 @@ struct PostWorkoutCheckinCard: View {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(option.label)
                                     .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.primary)
+                                    .fontWeight(.semibold)
+                                    // Fixed dark text: the option cards use a white background
+                                    // (below), so .primary would vanish in dark mode.
+                                    .foregroundColor(.black)
                                 Text(option.detail)
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Color(white: 0.45))
                             }
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Color(white: 0.6))
                         }
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 12)
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 14)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.gray.opacity(0.25), lineWidth: 1)
+                        // White card with a soft drop shadow so each option reads as a
+                        // distinct, tappable element against the card's material background.
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white)
+                                .shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
                         )
                     }
                     .buttonStyle(.plain)
