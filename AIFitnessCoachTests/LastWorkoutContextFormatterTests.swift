@@ -57,6 +57,31 @@ final class LastWorkoutContextFormatterTests: XCTestCase {
         XCTAssertTrue(max.contains("(maximal (9-10))"))
     }
 
+    // MARK: - Epic #57 follow-up: leesbare mood in plaats van SF-Symbol-naam
+
+    func testMoodIconNameMappedToReadableWord() {
+        // De check-in slaat de mood op als SF-Symbol-naam; de coach hoort een woord te zien.
+        let good = LastWorkoutContextFormatter.format(rpe: 5, mood: "checkmark.circle.fill", workoutName: "x", trimp: 50, startDate: date, sessionType: nil)
+        let strong = LastWorkoutContextFormatter.format(rpe: 5, mood: "bolt.fill", workoutName: "x", trimp: 50, startDate: date, sessionType: nil)
+        let exhausted = LastWorkoutContextFormatter.format(rpe: 9, mood: "zzz", workoutName: "x", trimp: 50, startDate: date, sessionType: nil)
+        let pain = LastWorkoutContextFormatter.format(rpe: 5, mood: "bandage.fill", workoutName: "x", trimp: 50, startDate: date, sessionType: nil)
+        let calm = LastWorkoutContextFormatter.format(rpe: 2, mood: "moon.fill", workoutName: "x", trimp: 50, startDate: date, sessionType: nil)
+
+        XCTAssertTrue(good.contains("Mood: good."))
+        XCTAssertTrue(strong.contains("Mood: strong."))
+        XCTAssertTrue(exhausted.contains("Mood: exhausted."))
+        XCTAssertTrue(pain.contains("Mood: in pain."))
+        XCTAssertTrue(calm.contains("Mood: calm."))
+        // De raw icon-naam mag NIET meer in de prompt staan.
+        XCTAssertFalse(pain.contains("bandage.fill"))
+    }
+
+    func testUnknownMoodPassesThroughUnchanged() {
+        // Legacy/onbekende waarden (oude emoji-moods) blijven ongewijzigd — geen dataverlies.
+        let result = LastWorkoutContextFormatter.format(rpe: 5, mood: "🥵", workoutName: "x", trimp: 50, startDate: date, sessionType: nil)
+        XCTAssertTrue(result.contains("Mood: 🥵."))
+    }
+
     // MARK: - Story 33.1b: SessionType injectie
 
     func testIncludesSessionTypeAndIntentWhenProvided() {
