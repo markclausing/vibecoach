@@ -373,3 +373,123 @@ struct ProgressService {
         return (start, end)
     }
 }
+
+// MARK: - Epic #60: Per-phase milestone timeline
+
+extension ProgressService {
+
+    /// Builds the per-phase timeline (all four phases at once) for one goal: date windows,
+    /// targets and milestones. Works with or without a blueprint — blueprint-less goals get a
+    /// generic weekly-TRIMP target and no km milestones. Pure Swift (§6); `now` is injectable
+    /// for tests.
+    static func phaseTimeline(for goal: FitnessGoal,
+                              activities: [ActivityRecord],
+                              now: Date = Date(),
+                              calendar: Calendar = .current) -> PhaseTimeline {
+        let windows = PhaseWindowCalculator.windows(for: goal, calendar: calendar)
+
+        let blueprintType = BlueprintChecker.detectBlueprintType(for: goal)
+        let blueprint = blueprintType.map { BlueprintChecker.blueprint(for: $0) }
+        let targetSport: SportCategory? = blueprintType.map {
+            switch $0 {
+            case .marathon, .halfMarathon: return .running
+            case .cyclingTour:             return .cycling
+            }
+        }
+
+        // Deadline-based milestones, bucketed below into the phase whose window contains them.
+        let milestoneStatuses = BlueprintChecker.check(goal: goal, activities: activities)?.milestones ?? []
+
+        let summaries: [PhaseSummary] = windows.map { window in
+            let status: PhaseStatus = now < window.start ? .future
+                                    : (now > window.end ? .past : .current)
+            let windowEnd = min(now, window.end)   // only count what has happened so far
+            let criteria = window.phase.successCriteria
+
+            var targets: [PhaseTarget] = []
+
+            if let blueprint, let targetSport {
+                // 1) Longest session target (taper: a maximum, not a minimum).
+                let requiredMeters = blueprint.minLongRunDistance * criteria.longestSessionPct
+                let longestKm: Double? = status == .future ? nil : {
+                    let longest = activities
+                        .filter { $0.sportCategory == targetSport
+                            && $0.startDate >= window.start && $0.startDate <= windowEnd }
+                        .map { $0.distance }
+                        .max() ?? 0
+                    return longest / 1000.0
+                }()
+                targets.append(PhaseTarget(
+                    id: "\(window.phase.rawValue)_session",
+                    label: "Langste sessie",
+                    current: longestKm,
+                    required: requiredMeters / 1000.0,
+                    unit: "km",
+                    isInverted: window.phase == .tapering
+                ))
+
+                // 2) Weekly TRIMP target.
+                let weeklyTrimpReq = blueprint.weeklyTrimpTarget * criteria.weeklyTrimpPct
+                targets.append(PhaseTarget(
+                    id: "\(window.phase.rawValue)_trimp",
+                    label: "Wekelijkse belasting",
+                    current: averageWeeklyTRIMP(activities, from: window.start, to: windowEnd, status: status, calendar: calendar),
+                    required: weeklyTrimpReq,
+                    unit: "TRIMP",
+                    isInverted: window.phase == .tapering
+                ))
+            } else {
+                // Fallback for goals without a blueprint: only a generic weekly-TRIMP target,
+                // phase-corrected with the same multiplier the planner uses.
+                let baseWeekly = goal.computedTargetTRIMP / max(1.0, goal.totalDays / 7.0)
+                targets.append(PhaseTarget(
+                    id: "\(window.phase.rawValue)_trimp",
+                    label: "Wekelijkse belasting",
+                    current: averageWeeklyTRIMP(activities, from: window.start, to: windowEnd, status: status, calendar: calendar),
+                    required: baseWeekly * window.phase.multiplier,
+                    unit: "TRIMP",
+                    isInverted: window.phase == .tapering
+                ))
+            }
+
+            let milestones = milestoneStatuses
+                .filter { assignedPhase(for: $0.deadline, windows: windows) == window.phase }
+                .map { PhaseMilestone(id: $0.id, description: $0.description, targetDate: $0.deadline,
+                                      isSatisfied: $0.isSatisfied, satisfiedByDate: $0.satisfiedByDate) }
+
+            return PhaseSummary(
+                phase: window.phase,
+                start: window.start,
+                end: window.end,
+                weekCount: window.weekCount,
+                status: status,
+                targets: targets,
+                milestones: milestones
+            )
+        }
+
+        return PhaseTimeline(goalID: goal.id, phases: summaries)
+    }
+
+    /// Average weekly TRIMP achieved within a phase window so far (nil for future phases).
+    private static func averageWeeklyTRIMP(_ activities: [ActivityRecord],
+                                           from start: Date,
+                                           to end: Date,
+                                           status: PhaseStatus,
+                                           calendar: Calendar) -> Double? {
+        guard status != .future else { return nil }
+        let weeks = max(1.0, calendar.fractionalWeeks(from: start, to: end))
+        let total = activities
+            .filter { $0.startDate >= start && $0.startDate <= end }
+            .compactMap { $0.trimp }
+            .reduce(0, +)
+        return total / weeks
+    }
+
+    /// Assigns a deadline to the first phase window whose end is on/after it; falls back to the
+    /// last window. Keeps every milestone visible under exactly one phase.
+    private static func assignedPhase(for deadline: Date, windows: [PhaseWindow]) -> TrainingPhase? {
+        if let match = windows.first(where: { deadline <= $0.end }) { return match.phase }
+        return windows.last?.phase
+    }
+}
