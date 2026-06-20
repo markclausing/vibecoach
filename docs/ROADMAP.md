@@ -816,16 +816,48 @@ Idee voor een toekomstige Epic — nog niet uitgewerkt. Strava heeft [wijziginge
 
 ### ⏳ Epic #60: Mijlpaal-inzicht per fase in de Doelen-view (uitklapbaar)
 
-Idee voor een toekomstige Epic — nog niet uitgewerkt. De gebruiker wil meer **inzicht in de fasering van een doel**: op welke datum welke mijlpaal bereikt moet zijn. De Doelen-view toont nu wel de fases, maar de mijlpaal-informatie is beperkt en niet per fase uit te klappen. Doel: per fase (Base/Build/Peak/Taper) tonen welke targets + streefdatums erbij horen, idealiter in een **uitklapmechanisme per fase** (collapsed = fasenaam + voortgang; expanded = targets, datums, voortgang, sleuteltrainingen).
+Idee voor een toekomstige Epic — technisch uitgewerkt, nog niet ingepland. De gebruiker wil concreter zien **wat hij wanneer moet halen** per trainingsfase: op welke datum welke mijlpaal/target. De Doelen-view toont de fases nu als een compacte balk + een timeline met vier hardgecodeerde overgangspunten, maar geen per-fase targets en geen uitklap. Doel: per fase (Base/Build/Peak/Taper) datumbereik + targets + sleuteltrainingen + status tonen, in een **`DisclosureGroup` per fase** (dicht = fasenaam + datumbereik + statusindicator; open = targets, streefdatums, voortgang, essential workouts).
 
-**Huidige stand in de code (grounding):**
-- **Fases zijn er al**, maar worden *on-the-fly* berekend: `TrainingPhase` (`Models/TrainingPhase.swift`) met vier fases + `successCriteria`; fase-datums via `ProgressService.phaseDateRange()` (`Services/ProgressService.swift` ~r346) — maar `BlueprintGap` levert alleen de **huidige** fase met start/eind (~r82-150).
-- **Mijlpalen bestaan deels**: `GoalBlueprint.essentialWorkouts` (`Models/GoalBlueprint.swift`) met `mustCompleteByWeeksBefore`-deadlines → `MilestoneStatus` (satisfied/deadline). Maar deze zijn **deadline-gebaseerd, niet aan een fase gekoppeld**.
-- **De Doelen-view** (`Views/GoalsListView.swift`) toont al een **fasenbalk** (alle vier fases als segmenten, ~r261-319) en een mijlpalen-timeline (`milestonesForGoal()` ~r577-597) met **vier hardgecodeerde** punten (fase-overgangen + racedag) via `GoalMilestoneItem`/`MilestoneTimelineRow` (~r620-674). **Geen** uitklap per fase en **geen** fase-specifieke targetdetails.
+#### Huidige stand in de code (grounding)
 
-**Wat er ontbreekt / te bouwen:**
-1. **Alle-fases-tegelijk berekenen** (niet alleen de huidige): `ProgressService.phaseDateRange()` publiek/herbruikbaar maken en een "multi-phase"-overzicht opleveren — per fase: datumbereik, week-aantal, `successCriteria`-targets, en voortgang-tot-nu (TRIMP/km/langste sessie, hergebruik `BlueprintGap`-logica).
-2. **Mijlpalen aan fases koppelen**: `essentialWorkouts` (en hun deadlines) onder de juiste fase plaatsen, zodat per fase zichtbaar is "haal X km tegen datum Y" met satisfied/pending-status.
-3. **Uitklap-UI per fase**: een nieuwe component (bv. `PhaseMilestonesView`) met `DisclosureGroup` per fase. Collapsed: fasenaam + datumbereik + voortgangsbalk; expanded: targets + streefdatums + status + sleuteltrainingen. Vervangt/verrijkt de huidige `milestonesSection` in `GoalsListView`.
+- **Fase-definitie** — `TrainingPhase` (`Models/TrainingPhase.swift`): vier cases, elk met `multiplier` (1.00/1.15/1.30/0.60), `successCriteria` → `PhaseSuccessCriteria` (`longestSessionPct`, `weeklyTrimpPct`, `sessionWindowWeeks`). `TrainingPhase.calculate(weeksRemaining:)` (r65-72) bepaalt de fase via vaste week-grenzen (<2 taper, 2–4 peak, 4–12 build, ≥12 base).
+- **Fase-datums + voortgang (alleen huidige fase)** — `ProgressService` (`Services/ProgressService.swift`): `BlueprintGap` (r82-243) houdt `currentPhase` + `phaseStartDate/EndDate` + cumulatieve TRIMP/km (required/actual, lineair geïnterpoleerd). `phaseDateRange(phase:targetDate:goalCreatedAt:)` (r346-374, **private**) berekent per fase een [start,eind] met **vaste offsets** (-12/-4/-2 weken t.o.v. `targetDate`). `analyzeGap` (r259-338) bouwt dit alleen voor de **huidige** fase en alleen als er een blueprint is.
+- **Mijlpalen (deadline-gebaseerd, niet fase-gekoppeld)** — `BlueprintChecker.check(goal:activities:)` (`Services/BlueprintChecker.swift` r118-151) → `[MilestoneStatus]` met `deadline` (= `targetDate − mustCompleteByWeeksBefore`), `isSatisfied`, `satisfiedByDate`. Bron: `GoalBlueprint.essentialWorkouts` (`Models/GoalBlueprint.swift`).
+- **View** — `GoalsListView.swift`: `phaseSegments(for:)` (r539-552) rendert de balk met een **week-budget** (taper 2 / peak 2 / build ≤8 / base = rest), `milestonesForGoal(_:)` (r577-597) maakt 4 hardcoded `GoalMilestoneItem`s, gerenderd door `MilestoneTimelineRow` (r630-674). `PhaseProgressCard` (r676+) toont voortgangsbalken. **`DisclosureGroup` wordt nergens in de codebase gebruikt** — dit wordt de eerste.
 
-**Open punten:** (a) **berekend vs. opgeslagen** — fases/mijlpalen blijven liefst *computed* (geen schema-migratie, §2.1) tenzij de gebruiker handmatig mijlpalen wil kunnen toevoegen/aanpassen (dan wél een `@Model`); (b) blueprints bestaan nu alleen voor marathon/halve marathon/fietstour — doelen zonder blueprint hebben geen `essentialWorkouts`, dus de view heeft een **fallback** nodig (alleen fase-datums + generieke TRIMP/km-targets); (c) i18n van de nieuwe labels (§13); (d) hoeveel detail in collapsed-staat zonder de kaart te overladen. **Pickup-trigger:** gebruiker wil concreter zien "wat moet ik wanneer halen" per fase.
+#### ⚠️ Belangrijkste technische bevinding: twee divergerende fase-modellen
+
+De **balk** (`phaseSegments`, week-budget vanaf `goal.totalDays`) en de **service** (`phaseDateRange`, vaste −12/−4/−2-offsets) gebruiken **verschillende** fase-vensters. Voor een doel >16 weken komt dat ongeveer overeen, maar voor een **kort doel** (bijv. 8 weken) lopen ze uiteen: `phaseDateRange` legt "base" dan vóór `createdAt` (geclampt) terwijl `phaseSegments` base/build comprimeert. Een per-fase-uitklap die naast de balk staat moet dezelfde datums tonen → **één gedeelde bron van waarheid voor fase-vensters is een harde vereiste** van deze Epic, anders spreken balk en lijst elkaar tegen.
+
+#### Voorgestelde architectuur
+
+**Datalaag (computed, géén schema-migratie — §2.1).** Nieuwe pure value-types (AppStorage-vrij, §6):
+- `PhaseSummary`: `phase: TrainingPhase`, `dateRange: ClosedRange<Date>`, `weekCount: Int`, `status: PhaseStatus` (`.past`/`.current`/`.future`), `targets: [PhaseTarget]`, `milestones: [PhaseMilestone]`.
+- `PhaseTarget`: `label`, `current: Double?`, `required: Double`, `unit`, `isInverted: Bool` (taper: lager = beter, hergebruik `MilestoneItem.isInverted`-logica), `progress`.
+- `PhaseMilestone`: afgeleid van `MilestoneStatus` — `description`, `targetDate`, `isSatisfied`, `satisfiedByDate`.
+- `PhaseTimeline`: `[PhaseSummary]` voor één doel.
+
+**Servicelaag.** `ProgressService.phaseTimeline(for goal:activities:) -> PhaseTimeline`:
+1. **Unificeer het fase-venster**: extraheer de week-budget-logica uit `phaseSegments` naar een gedeelde helper (bijv. `PhaseWindowCalculator`) die zowel de balk als de timeline voedt; maak `phaseDateRange` daar onderdeel van of vervang het. Dit lost de divergentie hierboven op.
+2. Per fase: datumbereik + `weekCount`; `status` via vergelijking met `Date()`; targets via `PhaseSuccessCriteria` (`longestSessionPct × blueprint.minLongRunDistance`, `weeklyTrimpPct × blueprint.weeklyTrimpTarget`) + cumulatieve TRIMP/km (her­gebruik de interpolatie uit `analyzeGap` — extraheer naar een helper zodat huidige fase en timeline dezelfde cijfers geven).
+3. **Mijlpalen bucketen**: `BlueprintChecker.check(...)`-`MilestoneStatus`'en in de juiste `PhaseSummary` plaatsen op basis van in welk fase-venster hun `deadline` valt.
+4. **Voortgang alleen waar zinvol**: `.past`/`.current` tonen actual vs. required; `.future` toont alleen targets (geen "0% behaald"-ruis).
+
+**Viewlaag.** Nieuwe component `PhaseMilestonesView(timeline:)`:
+- `DisclosureGroup` per `PhaseSummary`, `@State private var expandedPhases: Set<TrainingPhase>` met de **huidige fase default open**.
+- Collapsed header: fasekleur-dot (`TrainingPhase.color`) + `displayName` + datumbereik + week-aantal + statusindicator (✅ afgerond / "week 3/8" voor current / 🔒 toekomst).
+- Expanded: target-rijen (hergebruik `PhaseProgressCard`) + mijlpaal-rijen (streefdatum + satisfied-vinkje, stijl van `MilestoneTimelineRow`). Taper-targets labelen als "(max)".
+- Integratie: vervang `milestonesSection(goal:periResult:)` (r415-432) door deze component; behoud `phaseSegments`-balk als compact overzicht erboven (nu wél consistent door de gedeelde helper).
+
+#### Story-uitsplitsing
+
+* **⏳ Story 60.1 — Service + value-types + venster-unificatie.** `PhaseTimeline`/`PhaseSummary`/`PhaseTarget`/`PhaseMilestone` + `ProgressService.phaseTimeline(...)`; gedeelde `PhaseWindowCalculator` als enige bron voor fase-vensters (balk + timeline). Interpolatie-helper extraheren uit `analyzeGap`. Unit tests: fase-bucketing van mijlpalen, status-bepaling (past/current/future), taper-inversie, korte-doel-compressie (de divergentie-regressie), blueprint-loze fallback.
+* **⏳ Story 60.2 — UI `PhaseMilestonesView`.** `DisclosureGroup` per fase, huidige fase default open, integratie in `GoalsListView`, balk consistent gemaakt. Happy-path UI-test (uitklappen + targets zichtbaar).
+* **⏳ Story 60.3 — i18n + edge cases + on-device.** Catalog-keys NL/EN/DE/ES (§13; fasenamen blijven Engels = `displayName`, datums pre-formatted als `%@`), taper "(max)"-labels, lege/fallback-staten, on-device validatie (§6 view-laag).
+
+#### Open punten / besluiten
+
+- **Computed vs. opgeslagen**: alles blijft *computed* (geen `@Model`, geen migratie). Pas een `@Model` overwegen als de gebruiker mijlpalen handmatig wil toevoegen/aanpassen — buiten deze scope.
+- **Blueprint-loze doelen**: `detectBlueprintType` geeft `nil` voor doelen zonder marathon/halve-marathon/fietstour-keyword → geen `essentialWorkouts`/km-targets. Fallback: toon de vier fases met datums + generieke wekelijkse TRIMP-target (`computedTargetTRIMP`), zonder per-mijlpaal km-targets.
+- **Detail-dichtheid**: collapsed bewust minimaal houden (geen kaart-overload); detail pas bij uitklappen.
+- **Pickup-trigger**: gebruiker wil concreter zien "wat moet ik wanneer halen" per fase.
