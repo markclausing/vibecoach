@@ -246,9 +246,9 @@ struct GoalsListView: View {
                 progressThisPhaseSection(gap: gap, periResult: periResult, goal: goal)
             }
 
-            // ── Milestones & prognose
+            // ── Milestones per phase (Epic #60: collapsible, all phases at once)
             Divider()
-            milestonesSection(goal: goal, periResult: periResult)
+            PhaseMilestonesView(timeline: ProgressService.phaseTimeline(for: goal, activities: Array(activities)))
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -410,27 +410,6 @@ struct GoalsListView: View {
         .padding(16)
     }
 
-    // MARK: - Milestones & Prognose
-
-    private func milestonesSection(goal: FitnessGoal, periResult: PeriodizationResult?) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("MIJLPALEN & PROGNOSE")
-                .font(.caption).fontWeight(.semibold)
-                .foregroundColor(.secondary).kerning(0.5)
-
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(milestonesForGoal(goal), id: \.label) { milestone in
-                    MilestoneTimelineRow(
-                        item: milestone,
-                        accentColor: themeManager.primaryAccentColor,
-                        isLast: milestone.label == milestonesForGoal(goal).last?.label
-                    )
-                }
-            }
-        }
-        .padding(16)
-    }
-
     // MARK: - Alternative Goals Section
 
     private var alternativeGoalsSection: some View {
@@ -536,19 +515,11 @@ struct GoalsListView: View {
         }
     }
 
+    // Epic #60: derive the bar segments from the same PhaseWindowCalculator the per-phase
+    // milestone list uses, so the bar and the list can never disagree (previously this used a
+    // local week budget while ProgressService used fixed -12/-4/-2 offsets).
     private func phaseSegments(for goal: FitnessGoal) -> [(phase: TrainingPhase, weeks: Int)] {
-        let totalWeeks = max(6, Int(goal.totalDays / 7.0))
-        let taperW = 2
-        let peakW  = 2
-        let buildW = min(8, max(0, totalWeeks - 4))
-        let baseW  = max(0, totalWeeks - buildW - peakW - taperW)
-
-        var segments: [(TrainingPhase, Int)] = []
-        if baseW  > 0 { segments.append((.baseBuilding, baseW))  }
-        if buildW > 0 { segments.append((.buildPhase, buildW)) }
-        segments.append((.peakPhase, peakW))
-        segments.append((.tapering, taperW))
-        return segments
+        PhaseWindowCalculator.windows(for: goal).map { (phase: $0.phase, weeks: $0.weekCount) }
     }
 
     private func nextPhaseStartLabel(for goal: FitnessGoal) -> String? {
@@ -574,28 +545,6 @@ struct GoalsListView: View {
         }
     }
 
-    private func milestonesForGoal(_ goal: FitnessGoal) -> [GoalMilestoneItem] {
-        let cal = Calendar.current
-        let df  = DateFormatter()
-        df.dateFormat = "d MMM"
-        df.locale = AppLanguage.currentLocale
-        let now = Date()
-
-        var items: [GoalMilestoneItem] = []
-
-        let baseEnd  = cal.date(byAdding: .weekOfYear, value: -12, to: goal.targetDate)!
-        let peakStart = cal.date(byAdding: .weekOfYear, value: -4, to: goal.targetDate)!
-        let taperStart = cal.date(byAdding: .weekOfYear, value: -2, to: goal.targetDate)!
-
-        if baseEnd > goal.createdAt {
-            items.append(GoalMilestoneItem(date: df.string(from: baseEnd), label: "Base Phase afgerond", isCompleted: now >= baseEnd))
-        }
-        items.append(GoalMilestoneItem(date: df.string(from: peakStart), label: "Build Phase doelen", isCompleted: now >= peakStart))
-        items.append(GoalMilestoneItem(date: df.string(from: taperStart), label: "Peak Phase bereikt", isCompleted: now >= taperStart))
-        items.append(GoalMilestoneItem(date: df.string(from: goal.targetDate), label: "Race dag 🏁", isCompleted: now >= goal.targetDate))
-        return items
-    }
-
     private func requestRecoveryPlan() {
         let riskInfos = atRiskGoals.map { status in
             let w = max(0.1, status.goal.weeksRemaining)
@@ -614,62 +563,6 @@ struct GoalsListView: View {
         )
         recoveryPlanTimestamp = Date().timeIntervalSince1970
         appState.selectedTab = .coach
-    }
-}
-
-// MARK: - GoalMilestoneItem
-
-private struct GoalMilestoneItem {
-    let date: String
-    let label: String
-    let isCompleted: Bool
-}
-
-// MARK: - MilestoneTimelineRow
-
-private struct MilestoneTimelineRow: View {
-    let item: GoalMilestoneItem
-    let accentColor: Color
-    let isLast: Bool
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(spacing: 0) {
-                ZStack {
-                    Circle()
-                        .fill(item.isCompleted ? accentColor : Color(.systemFill))
-                        .frame(width: 24, height: 24)
-                    if item.isCompleted {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.white)
-                    } else {
-                        Circle()
-                            .stroke(Color(.systemFill), lineWidth: 2)
-                            .frame(width: 24, height: 24)
-                    }
-                }
-                if !isLast {
-                    Rectangle()
-                        .fill(Color(.systemFill))
-                        .frame(width: 2, height: 32)
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.date)
-                    .font(.caption2).fontWeight(.semibold)
-                    .foregroundColor(item.isCompleted ? accentColor : .secondary)
-                // Epic #37 story 37.1c: milestone label resolved via the catalog (item.date is
-                // a pre-formatted date string and stays verbatim).
-                Text(LocalizedStringKey(item.label))
-                    .font(.caption)
-                    .foregroundColor(item.isCompleted ? .primary : .secondary)
-            }
-            .padding(.top, 4)
-
-            Spacer()
-        }
     }
 }
 
