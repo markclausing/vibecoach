@@ -49,7 +49,7 @@ enum LastWorkoutContextFormatter {
         default:    rpeLabel = "maximal (9-10)"
         }
 
-        var line = "Last workout: '\(nameStr)', TRIMP: \(trimpStr), RPE: \(rpe)/10 (\(rpeLabel)), Mood: \(mood)."
+        var line = "Last workout: '\(nameStr)', TRIMP: \(trimpStr), RPE: \(rpe)/10 (\(rpeLabel)), Mood: \(readableMood(mood))."
 
         // Story 33.1b: add session type + intent so the coach can tune its tone.
         // We pass the textual intent — not just the label — because 'recovery' on
@@ -61,5 +61,21 @@ enum LastWorkoutContextFormatter {
         }
 
         return line
+    }
+
+    /// Epic #57 follow-up: the mood is persisted on `ActivityRecord` as the SF Symbol
+    /// name of the chosen check-in option (e.g. "bandage.fill"). For the coach prompt we
+    /// translate it to a readable English word so the AI gets "Mood: in pain" instead of
+    /// the raw icon name. Unknown / legacy values (older emoji moods) pass through
+    /// unchanged so no historical data is lost.
+    private static func readableMood(_ raw: String) -> String {
+        switch raw {
+        case "checkmark.circle.fill": return "good"
+        case "bolt.fill":             return "strong"
+        case "zzz":                   return "exhausted"
+        case "bandage.fill":          return "in pain"
+        case "moon.fill":             return "calm"     // legacy mood option
+        default:                      return raw
+        }
     }
 }

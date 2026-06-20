@@ -264,17 +264,10 @@ final class OnboardingE2ETests: XCTestCase {
         let rpeCard = app.otherElements["RPECheckinCard"]
         guard rpeCard.waitForExistence(timeout: 2) else { return }
 
-        let rpeSlider = app.sliders["RPESlider"]
-        XCTAssertTrue(rpeSlider.exists, "RPESlider ontbreekt in de check-in kaart.")
-        rpeSlider.adjust(toNormalizedSliderPosition: 0.7)
-
-        let moodButtons = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'MoodButton'"))
-        if moodButtons.count > 0 { moodButtons.firstMatch.tap() } else { rpeCard.buttons.firstMatch.tap() }
-
-        let saveRpeButton = app.buttons["RPEOpslaanButton"]
-        XCTAssertTrue(saveRpeButton.exists, "RPEOpslaanButton ontbreekt.")
-        XCTAssertTrue(saveRpeButton.isEnabled, "Opslaan-knop niet actief na RPE + stemming.")
-        saveRpeButton.tap()
+        // Epic #57: a single tap on a holistic option saves the check-in and dismisses the card.
+        let option = app.buttons["RPEOption_good"]
+        XCTAssertTrue(option.exists, "Optieknop ontbreekt in de check-in kaart.")
+        option.tap()
 
         XCTAssertFalse(rpeCard.waitForExistence(timeout: 3), "RPE Check-in kaart blijft zichtbaar na opslaan.")
     }
