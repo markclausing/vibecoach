@@ -345,3 +345,23 @@ Free-text and coach-output classification can't assume Dutch: `BodyArea.injuryKe
 ### Tests
 
 The app is now locale-sensitive, so UI tests run forced in Dutch (`-testLanguage nl`). Unit tests that assert localized user-facing output compare against `String(localized:)` of the same key (locale-agnostic) rather than a hardcoded translation.
+
+---
+
+## 14. Per-phase milestones in the Goals view (Epic #60)
+
+The Goals view shows, per training phase (Base / Build / Peak / Taper), the date window plus the targets and milestones that belong to it, in a collapsible `DisclosureGroup` per phase (the current phase opens by default). All of this is **computed** — no new `@Model`, no schema migration.
+
+### Single source of truth for phase windows
+
+Previously two pieces of code computed phase boundaries independently and could diverge for short goals: the segmented phase bar (`GoalsListView.phaseSegments`, a week budget) and `ProgressService.phaseDateRange` (fixed −12/−4/−2-week offsets). Epic #60 introduces **`PhaseWindowCalculator`** (`Models/PhaseTimeline.swift`, pure-Swift, AppStorage-free) as the single source: a week budget (taper 2 / peak 2 / build ≤8 / base = rest) anchored to `targetDate` and walking backwards, clamped to `createdAt`. Both the bar and the per-phase list now read from it, so they can never contradict each other.
+
+### Computation & value types
+
+`ProgressService.phaseTimeline(for:activities:now:)` returns a `PhaseTimeline` = `[PhaseSummary]`. Per phase it derives: the date window + week count, a `PhaseStatus` (`.past` / `.current` / `.future`, from `now` vs. the window), the `PhaseTarget`s (longest session + weekly TRIMP from `TrainingPhase.successCriteria`, with taper inversion), and the `PhaseMilestone`s — `BlueprintChecker` essential-workout deadlines bucketed into the phase whose window contains them. `.future` phases show targets only (no "0% achieved" noise); blueprint-less goals fall back to a single generic weekly-TRIMP target. `PhaseMilestonesView` renders this; it replaces the earlier four-point milestone timeline.
+
+**Scope boundary:** the coach-prompt path (`BlueprintGap.currentPhase` via `TrainingPhase.calculate`) was deliberately left untouched — only the view layer is unified. Fully unifying the prompt path is a possible follow-up.
+
+## 15. Readable mood in the coach context (Epic #57)
+
+The post-workout check-in persists `mood` on `ActivityRecord` as the chosen option's SF Symbol name (e.g. `bandage.fill`). `LastWorkoutContextFormatter.readableMood(_:)` translates that to a readable English word (good / strong / exhausted / in pain / calm) before injecting it into the coach context, so the prompt reads `Mood: in pain` instead of the raw icon name. Unknown/legacy values (older emoji moods) pass through unchanged.

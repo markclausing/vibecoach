@@ -1375,8 +1375,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 20,
-    "lastUpdated": "2026-06-08",
+    "docRevision": 21,
+    "lastUpdated": "2026-06-21",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -2551,6 +2551,85 @@
       ],
       "tags": [
         "epic-55"
+      ]
+    },
+    {
+      "id": "ProgressService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/ProgressService.swift",
+      "description": "Gap-analyse en per-fase timeline voor doelen. BlueprintGap berekent cumulatieve TRIMP/km-achterstand binnen de huidige fase; analyzeGaps levert at-risk-doelen. Epic #60: phaseTimeline(for:activities:now:) bouwt alle vier fases met targets (langste sessie + wekelijkse TRIMP, taper-inversie) en bucket blueprint-mijlpalen per fase. Bevat ook TRIMPTranslator (TRIMP -> leesbare tijd/afstand).",
+      "uses": [
+        "FitnessGoal",
+        "ActivityRecord",
+        "TrainingPhase",
+        "GoalBlueprint",
+        "BlueprintChecker",
+        "PhaseTimeline",
+        "PhaseWindowCalculator"
+      ],
+      "tags": [
+        "epic-23",
+        "epic-36",
+        "epic-60"
+      ]
+    },
+    {
+      "id": "PhaseTimeline",
+      "layer": "models",
+      "kind": "model",
+      "file": "AIFitnessCoach/Models/PhaseTimeline.swift",
+      "description": "Epic #60 computed value-types (geen @Model, geen migratie): PhaseTimeline/PhaseSummary/PhaseTarget/PhaseMilestone/PhaseWindow/PhaseStatus. Beschrijven per doel elke trainingsfase met datumbereik, status (past/current/future), targets en mijlpalen voor de uitklapbare Doelen-view.",
+      "uses": [
+        "TrainingPhase"
+      ],
+      "tags": [
+        "epic-60"
+      ]
+    },
+    {
+      "id": "PhaseWindowCalculator",
+      "layer": "models",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Models/PhaseTimeline.swift",
+      "description": "Epic #60 enige bron van waarheid voor fase-vensters (week-budget: taper 2 / peak 2 / build <=8 / base = rest, ge-anchored op targetDate). Voedt zowel de fasenbalk (GoalsListView.phaseSegments) als de per-fase mijlpalenlijst, zodat die niet meer divergeren. Pure-Swift, AppStorage-vrij.",
+      "uses": [
+        "TrainingPhase",
+        "FitnessGoal"
+      ],
+      "tags": [
+        "epic-60"
+      ]
+    },
+    {
+      "id": "PhaseMilestonesView",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/PhaseMilestonesView.swift",
+      "description": "Epic #60 uitklapbare per-fase mijlpalen in de Doelen-view: een DisclosureGroup per fase (huidige fase default open). Dicht = fasekleur-dot + naam + datumbereik + status; open = target-rijen met voortgangsbalk (taper '(max)') + mijlpaal-rijen met streefdatum + satisfied-vinkje. Vervangt de oude vier-punts-timeline.",
+      "uses": [
+        "PhaseTimeline",
+        "ProgressService",
+        "ThemeManager",
+        "AppLanguage"
+      ],
+      "tags": [
+        "epic-60"
+      ]
+    },
+    {
+      "id": "LastWorkoutContextFormatter",
+      "layer": "viewmodels",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/ViewModels/LastWorkoutContextFormatter.swift",
+      "description": "Bouwt het 'laatste workout'-blok voor de coach-context: RPE-categorie (light/moderate/hard/maximal), TRIMP, sessietype-intent. Epic #57: readableMood(_:) mapt de mood SF-Symbol-naam naar een leesbaar Engels woord (good/strong/exhausted/in pain/calm). Pure-Swift, AppStorage-vrij.",
+      "uses": [
+        "SessionType"
+      ],
+      "tags": [
+        "epic-18",
+        "epic-33",
+        "epic-57"
       ]
     }
   ],
