@@ -117,6 +117,22 @@ Every PR that adds functionality **must** update all relevant files — not just
 - **`docs/ARCHITECTURE.md`** — if the feature introduces a new architectural choice (new service layer, sync pipeline, security pattern) or changes an existing section. Pure refactors without an architectural change need nothing here.
 - **`CLAUDE.md`** — only if the feature establishes a new permanent pattern (testing policy, date handling, logger discipline). One-off Epic work does not belong here — that goes in the ROADMAP.
 
+### Definition of Done — doc checklist (BLOCKING, every feature/epic PR)
+
+Docs are part of the change, not a follow-up. Before a feature/epic PR is opened **and again before its final commit**, walk this checklist explicitly — in the PR body's test plan, tick what applies and state "n/a" for the rest, so a skipped item is a visible decision, not an oversight:
+
+- [ ] **ROADMAP status flipped.** The PR *is* the merge (squash & merge follows immediately), so set the Epic heading **and every implemented story** to ✅ in this PR — never leave merged work at 🔄/⏳. Add the `**Gemerged via PR #N. Effort:** …` closing line. (Use the PR number; if not yet known, add it in the final commit.) Add the next logical ⏳ goal if the epic opens one.
+- [ ] **architecture.json + .html synced** — see the hard trigger below. This is the single most-forgotten item; check it every time.
+- [ ] **ARCHITECTURE.md** — new section (or edit) if an architectural concept was introduced; else n/a.
+- [ ] **README.md** — only if core-features or the "Recently completed" line is affected; else n/a.
+- [ ] **CLAUDE.md** — only if a new permanent pattern was established; else n/a.
+
+### Hard trigger for the derived artefacts
+
+**If this PR added, removed, or renamed any top-level type in `AIFitnessCoach/` that is a building block** — a `Service`, `@Model`, SwiftUI `View`, ViewModel/`formatter`, `parser`, `store`, `calculator`/pure helper, `validator`, migration, or external client — **then `architecture.json` + `architecture.html` MUST change in the same PR.** No exceptions, even for a type added to an existing file (Epic #60's `PhaseTimeline`/`PhaseWindowCalculator` lived in one new file; `ProgressService` had existed for many epics yet was never registered — both are exactly the drift this rule prevents). Follow the 5 steps under "Architecture visualisation" below. Pure refactors with no new/removed building block (rename within a file, force-unwrap fix, logger cleanup) are exempt.
+
+**Quick self-audit when in doubt or at epic close:** list the top-level type declarations you touched and confirm each building-block type has a matching `id` in `architecture.json` (`grep '"id":' docs/architecture/architecture.json`). A missing entry = drift to fix now.
+
 ### Statuses in the ROADMAP
 
 - ✅ done, merged on `main`
@@ -180,7 +196,7 @@ Pure refactors without a structural change (rename within one file, force-unwrap
   3. The user pulls and tests (for feature branches, on device)
   4. Feedback → make fixes on the **same** branch (push updates the existing PR automatically)
   5. Satisfied → the user does a **squash & merge** to main (the assistant does not merge)
-  6. At the start of the next sprint: delete merged branches locally and remote
+  6. After a merge / at the start of the next sprint: delete merged branches locally and remote **and verify the docs landed** — the merged Epic + its stories show ✅ in `docs/ROADMAP.md`, and any new building-block type is registered in `architecture.json` (§7 Definition-of-Done). Fix drift immediately via a docs-only commit to `main` (allowed, §7); don't defer it.
 - PR discipline:
   - **One fix per PR** — no piggybacked refactors or "while-I-was-at-it" changes
   - Always link the source in the PR description: CodeQL alert ID, issue number, crash report, or user report
