@@ -103,7 +103,7 @@ Four files together carry the project state. Each has its own scope; **no overla
 
 | File | Scope | Who reads it | Rule of thumb for length |
 |---|---|---|---|
-| **`README.md`** | High-level "what is this and where is the info" | New reader / GitHub visitor | Current Status < 1 screen |
+| **`README.md`** | Product showcase (what is this + what it does for you + how to build it) on top, then a short technical summary that points to the info | New reader / GitHub visitor / potential user | Showcase may be long, but the **technical-summary block** ("Under the hood": status, stack, CI, recently-completed) stays < 1 screen — detail stays in ROADMAP/ARCHITECTURE |
 | **`docs/ROADMAP.md`** | Epic history + active & planned stories (✅ / 🔄 / ⏳) + backlog | Whoever wants to know "what have we done and what's coming" | ~3-15 lines per Epic; all detail in there |
 | **`docs/ARCHITECTURE.md`** | Per architecture layer, explaining "how does this work and why" | Whoever wants to understand the code and the reasons behind choices | A section per concept with code pointers |
 | **`CLAUDE.md`** | Fixed rules & patterns for working on this codebase | AI assistant + new collaborators | Stable; only update when a rule changes |
@@ -112,7 +112,7 @@ Four files together carry the project state. Each has its own scope; **no overla
 
 Every PR that adds functionality **must** update all relevant files — not just one of the four:
 
-- **`README.md`** — only touch it if the feature shows up in the "core features" bullet list or requires a "Recently completed" line update. Otherwise: leave it alone (prevents the overview from going stale).
+- **`README.md`** — touch it only if the feature is significant enough to warrant a **showcase feature block** (screenshot slot in `docs/screenshots/` + a "what you get" benefit line) or it changes the short "Under the hood" technical summary / "Recently completed" line. Keep the technical summary terse; don't let the showcase drift into ROADMAP-level detail. Otherwise: leave it alone (prevents the overview from going stale).
 - **`docs/ROADMAP.md`** — Epic status ⏳ → 🔄 → ✅, tick off sub-stories, update the "Effort realised" + "Status" line. When starting a new Epic: create a new section with rationale + sub-stories.
 - **`docs/ARCHITECTURE.md`** — if the feature introduces a new architectural choice (new service layer, sync pipeline, security pattern) or changes an existing section. Pure refactors without an architectural change need nothing here.
 - **`CLAUDE.md`** — only if the feature establishes a new permanent pattern (testing policy, date handling, logger discipline). One-off Epic work does not belong here — that goes in the ROADMAP.
