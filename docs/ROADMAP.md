@@ -798,7 +798,7 @@ De `README.md` was **ontwikkelaar-gericht** (status, tech stack, setup); een nie
 
 **Besluiten op de open punten:** (a) screenshots leven in de repo (`docs/screenshots/`, kleine placeholders nu); (b) **EN-only** set "hero"-schermen i.p.v. per-taal — minder onderhoudslast; (c) toon **nuchter**, geen marketing-superlatieven; (d) §7 aangepast i.p.v. de showcase af te splitsen — alles in de README, alleen het techniekblok kort.
 
-**Effort:** ~2–3u. **Out of scope:** echte screenshots maken (vereist on-device captures door de maintainer), per-taal screenshot-sets, externe image-hosting, badges/shields.
+**PR #315. Effort:** ~2–3u. **Out of scope:** echte screenshots maken (vereist on-device captures door de maintainer), per-taal screenshot-sets, externe image-hosting, badges/shields.
 
 ### ⏳ Epic #59: Strava Developer Program-wijzigingen — compliance & continuïteit
 
