@@ -2,7 +2,7 @@
 
 This file describes the main technical building blocks. For project rules and conventions, see [CLAUDE.md](../CLAUDE.md). For delivered features, see [ROADMAP.md](ROADMAP.md).
 
-> **Interactive overview:** open [`architecture/architecture.html`](architecture/architecture.html) in a browser for a clickable version of this document (modules, dependencies, flows). The accompanying [`architecture.json`](architecture/architecture.json) contains the same data machine-readable for AI agents.
+> **Interactive overview:** [**open the rendered viewer**](https://htmlpreview.github.io/?https://github.com/markclausing/vibecoach/blob/main/docs/architecture/architecture.html) for a clickable version of this document (modules, dependencies, flows). GitHub displays `.html` files as source, so that link renders [`architecture/architecture.html`](architecture/architecture.html) via htmlpreview; opening the file directly in a local browser works too. The accompanying [`architecture.json`](architecture/architecture.json) contains the same data machine-readable for AI agents.
 >
 > Both files are **derived** from this `ARCHITECTURE.md` + the codebase — they version along with the app via `meta.appVersion` (= `CFBundleShortVersionString`) and their own `meta.docRevision`. When changing this file or the module layer in `AIFitnessCoach/`, they must be updated in the same commit. See [CLAUDE.md §7 — Architecture visualisation](../CLAUDE.md#architecture-visualisation-derived-artefacts) for the update protocol.
 

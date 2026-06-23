@@ -131,7 +131,7 @@ A short technical summary; the full picture lives in the linked docs (no duplica
 **Dig deeper:**
 
 - 🏗️ Architecture (Dual Engine, dual-source pipeline, BYOK, CI) → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- 🗺️ Interactive architecture viewer → [`docs/architecture/architecture.html`](docs/architecture/architecture.html)
+- 🗺️ Interactive architecture viewer → **[open rendered](https://htmlpreview.github.io/?https://github.com/markclausing/vibecoach/blob/main/docs/architecture/architecture.html)** (GitHub shows `.html` as source, so this opens it via htmlpreview) · [source](docs/architecture/architecture.html)
 - 📜 Epic history & backlog → [`docs/ROADMAP.md`](docs/ROADMAP.md)
 - 🤖 Rules for AI assistants & contributors → [`CLAUDE.md`](CLAUDE.md)
 
