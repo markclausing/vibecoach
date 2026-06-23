@@ -124,7 +124,7 @@ Docs are part of the change, not a follow-up. Before a feature/epic PR is opened
 - [ ] **ROADMAP status flipped.** The PR *is* the merge (squash & merge follows immediately), so set the Epic heading **and every implemented story** to ✅ in this PR — never leave merged work at 🔄/⏳. Add the `**Gemerged via PR #N. Effort:** …` closing line. (Use the PR number; if not yet known, add it in the final commit.) Add the next logical ⏳ goal if the epic opens one.
 - [ ] **architecture.json + .html synced** — see the hard trigger below. This is the single most-forgotten item; check it every time.
 - [ ] **ARCHITECTURE.md** — new section (or edit) if an architectural concept was introduced; else n/a.
-- [ ] **README.md** — only if core-features or the "Recently completed" line is affected; else n/a.
+- [ ] **README.md** — only if core-features or the "Recently completed" line is affected, **or a showcase view changed / a significant user-facing view was added** (see the showcase trigger below); else n/a.
 - [ ] **CLAUDE.md** — only if a new permanent pattern was established; else n/a.
 
 ### Hard trigger for the derived artefacts
@@ -132,6 +132,29 @@ Docs are part of the change, not a follow-up. Before a feature/epic PR is opened
 **If this PR added, removed, or renamed any top-level type in `AIFitnessCoach/` that is a building block** — a `Service`, `@Model`, SwiftUI `View`, ViewModel/`formatter`, `parser`, `store`, `calculator`/pure helper, `validator`, migration, or external client — **then `architecture.json` + `architecture.html` MUST change in the same PR.** No exceptions, even for a type added to an existing file (Epic #60's `PhaseTimeline`/`PhaseWindowCalculator` lived in one new file; `ProgressService` had existed for many epics yet was never registered — both are exactly the drift this rule prevents). Follow the 5 steps under "Architecture visualisation" below. Pure refactors with no new/removed building block (rename within a file, force-unwrap fix, logger cleanup) are exempt.
 
 **Quick self-audit when in doubt or at epic close:** list the top-level type declarations you touched and confirm each building-block type has a matching `id` in `architecture.json` (`grep '"id":' docs/architecture/architecture.json`). A missing entry = drift to fix now.
+
+### Hard trigger for the README showcase (Epic #58)
+
+The root `README.md` is a **product showcase**: a hero + eight feature blocks, each backed by a screenshot in `docs/screenshots/`. These blocks map to specific views:
+
+| Screenshot slot | View / surface |
+|---|---|
+| `00-hero` | Dashboard (full screen) |
+| `01-vibe-score` | Vibe Score card (`VibeScoreCardV2`) |
+| `02-proactive-coaching` | Proactive notification / red banner + recovery plan |
+| `03-coach-chat` | Coach tab (chat) |
+| `04-workout-deepdive` | `WorkoutAnalysisView` (annotated chart + pattern chips) |
+| `05-goals-phases` | Goals view (phase `DisclosureGroup` / `PhaseMilestonesView`) |
+| `06-multiday-weather` | Week schedule with stage entries + per-stage weather |
+| `07-dual-source-sync` | Data-source settings / source badge |
+| `08-language-privacy` | Settings → language picker |
+
+**If this PR significantly changes the look or behaviour of a view in that table, OR adds a significant new user-facing view/feature, then in the same PR you MUST:**
+
+1. **Update the README** — revise the relevant feature block's copy + "what you get" line, or add a new feature block (+ a new `docs/screenshots/NN-<slug>.png` slot + a row in `docs/screenshots/README.md`) for a new surface.
+2. **Remind the maintainer to capture the screenshot.** A screenshot is a **manual on-device capture by the maintainer** — the assistant cannot take it. So in the PR body's test plan add an explicit unchecked maintainer task, e.g. `- [ ] Maintainer: replace docs/screenshots/04-workout-deepdive.png with a fresh capture`, and call it out in the closing message. Never silently leave a stale screenshot next to changed UI, and never substitute a generated/placeholder image for a real capture.
+
+"Significant" = a visible redesign, a new card/section, a renamed/restructured screen, or a brand-new view — not a copy tweak, a colour nudge, or a bugfix with no visual change. When unsure, flag it: a one-line "screenshot may need refreshing" note costs nothing.
 
 ### Statuses in the ROADMAP
 
