@@ -102,8 +102,6 @@ The whole UI and the AI coach speak **Dutch, English, German or Spanish** — se
 
 <br clear="left">
 
-> **Screenshots above are placeholders.** They render from [`docs/screenshots/`](docs/screenshots/) — swap them for real captures using the same file names (see the [screenshot guide](docs/screenshots/README.md)).
-
 ---
 
 ## Under the hood
