@@ -1,73 +1,163 @@
+<div align="center">
+
 # VibeCoach
 
-An iOS app (SwiftUI + SwiftData) that acts as a personal, smart fitness coach. The app combines Apple HealthKit, Strava and AI (Gemini / OpenAI / Claude / Mistral) to dynamically and proactively adjust training schedules.
+<img src="docs/screenshots/00-hero.png" width="280" alt="VibeCoach dashboard">
+
+**A personal, physiologically-aware fitness coach for iOS.**
+
+VibeCoach combines Apple HealthKit, Strava and your choice of AI model (Gemini · OpenAI · Claude · Mistral) to read how your body is actually responding — and adjust your training before you over- or under-do it.
+
+</div>
 
 ---
 
-## 🚀 Current Status
+## Why VibeCoach
 
-VibeCoach is **production-ready** as a personal iOS fitness coach. The core features:
+Most training apps log what you did. VibeCoach reads what it *means*: it scores your readiness from sleep and HRV, recognises fatigue patterns inside a single workout, and only speaks up when something is off — always with a concrete plan, never just a red dot.
 
-- **Physiologically correct coaching** — Vibe Score (readiness), personal HR zones + FTP, and a pattern detector that recognises aerobic decoupling, cardiac drift, cadence fade and slow HR recovery in workout data.
-- **Dual-source data** — HealthKit and Strava run always-on side by side; smart-ingest and automatic dedupe prevent a poorer record (HK without power) from overwriting a richer record (Strava with power).
-- **Contextual intelligence** — Open-Meteo weather, sleep-stage analysis, injury-aware planning.
-- **BYOK AI (multi-provider)** — Gemini, OpenAI, Claude or Mistral; each provider its own key (Keychain) + live-fetched model selection, behind one provider-agnostic client layer.
-- **Proactive & privacy-first** — Management by Exception (only warn on deviations), HealthKit data stays on-device.
-
-**CI:** 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) on `macos-latest`, plus a CodeQL scan of Swift + Actions workflows. Test suite: **61% combined coverage on testable code** (Models 80%, Services 59%, ViewModels 59%) + 43% on `Views/` via UI tests.
-
-**Recently completed:** Epic #60 (per-phase milestone insight in the Goals view — each training phase shows its date range, targets and milestones in a collapsible section; a single `PhaseWindowCalculator` feeds both the phase bar and the list so they never diverge), #57 (simplified post-workout RPE check-in — the 1–10 slider + separate mood row replaced by one tap on a holistic effort option, mapped to an `(rpe, mood)` pair so the coach context is unchanged), #56 (location-aware per-stage weather — a multi-day route gets a forecast at each stage's approximate location, derived from the goal title via a parser + geocoding + great-circle interpolation), #55 (multi-day events first-class — stage entries in the week schedule, event-window suppression + post-event recovery in the coach prompt, "treats-as-race" fix), #37 (internationalisation — multilingual UI & AI coach in NL/EN/DE/ES via a String Catalog + runtime language picker; the AI coach replies in the user's language via a `respond in {language}` directive; the whole codebase and coach prompt are now English; ~527 catalog keys), #54 (dynamic per-provider model catalog — live `/v1/models` directly with the BYOK key, chat-filtered), #53 (multi-provider BYOK — OpenAI, Claude & Mistral alongside Gemini: provider-agnostic client layer, per-provider keys & models, validation & onboarding), #52 (sharper workout analysis — hourly weather range, question-free coach prompt, running cadence chart with cross-source HK fallback), #46 (CI pipeline & DAG + SwiftLint integration), #45 (per-workout context in coach prompt), #44 (personal HR zones & FTP), #42 (always-on dual-source sync), #41 (single-record-of-truth dedupe), #40 (Strava power-stream ingest), #32 (deep-dive physiological analysis). A tech-debt track runs in parallel: SwiftData V1→V5 migrations, file splits of large modules, logger discipline, DST-safe date math.
-
-**Next pickup:** no active sprint pinned. Open follow-ups in [`docs/ROADMAP.md`](docs/ROADMAP.md): Epic #37 tail (native DE/ES translation review, per-language UI-test pass 37.8), first-class multi-day events, TestFlight deploy (46.B1), semver versioning (46.B6), Strict Concurrency `Complete` (39.3), force-unwrap audit. New Epics only come up when there is concrete pain.
-
-**More info:**
-- Full history and backlog → [`docs/ROADMAP.md`](docs/ROADMAP.md)
-- Architecture (Dual Engine, dual-source pipeline, BYOK, CI) → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- Project rules for AI assistants → [`CLAUDE.md`](CLAUDE.md)
-
-> **Languages:** the UI and AI coach are multilingual — **NL, EN, DE, ES** — selectable in Settings (default: device language). The codebase, code comments and coach prompt are **English**; the coach replies in the user's language via a runtime `respond in {language}` directive. See the Localization section in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Remaining (Epic #37 tail): native DE/ES translation review + the doc files themselves to English.
+It runs entirely on your own data and your own AI key. HealthKit stays on device; the AI key lives in the Keychain; nothing is sold or shared.
 
 ---
 
-## 🛠 Installation & Setup
+## What it does for you
 
-1. Open `AIFitnessCoach.xcodeproj` in Xcode.
-2. In the project folder, copy `Secrets-template.swift` to `Secrets.swift`.
-3. Fill in your own values in `Secrets.swift` (`stravaClientID`, `stravaProxyBaseURL`, `stravaProxyToken`). The Strava `client_secret` is not in the app — it lives as a Cloudflare Worker Secret in the [vibecoach-proxy](https://github.com/markclausing/vibecoach-proxy) repo.
-4. Select a simulator or physical iPhone and press Run (Cmd+R).
+### 🟢 Vibe Score — know if today is a green light
 
-> For Apple HealthKit, testing on a physical device is recommended.
+<img src="docs/screenshots/01-vibe-score.png" width="230" align="right" alt="Vibe Score card">
+
+A single 0–100 readiness score, computed locally from your sleep (including deep/REM stages) and your HRV measured against your own 7-day baseline. It sits at the top of the dashboard and is fed into every coaching decision.
+
+**What you get:** one glance tells you whether to push or to back off — grounded in your physiology, not a generic calendar.
+
+<br clear="right">
+
+### 🔔 Proactive coaching — it warns you, not nags you
+
+<img src="docs/screenshots/02-proactive-coaching.png" width="230" align="left" alt="Proactive coaching banner">
+
+VibeCoach follows *Management by Exception*: it stays quiet when things are fine and only reaches out on a real deviation — training too hard while you're under-recovered, or sitting still while a goal slips into the red. A red status **always** comes with an AI-generated recovery plan.
+
+**What you get:** no notification spam — just a timely heads-up with a fix, when it actually matters.
+
+<br clear="left">
+
+### 💬 AI coach in your pocket — bring your own model
+
+<img src="docs/screenshots/03-coach-chat.png" width="230" align="right" alt="AI coach chat">
+
+Chat with a coach that already knows your readiness, recent workouts, goals and training phase. Pick your provider — **Gemini, OpenAI, Claude or Mistral** — with your own key and your own model selection, behind one provider-agnostic layer.
+
+**What you get:** real, context-aware advice in your language, with full control over which AI you trust and what it costs.
+
+<br clear="right">
+
+### 📈 Workout deep-dive — the story behind the numbers
+
+<img src="docs/screenshots/04-workout-deepdive.png" width="230" align="left" alt="Workout analysis with pattern detection">
+
+Beyond averages: VibeCoach reads the raw time-series of a workout and detects aerobic decoupling, cardiac drift, cadence fade and slow HR recovery — annotated right on the chart, with a short AI synthesis of what they mean together.
+
+**What you get:** you find out *why* a session felt hard — heat, fatigue, going too deep — instead of guessing.
+
+<br clear="left">
+
+### 🎯 Goals in phases — what to hit, and when
+
+<img src="docs/screenshots/05-goals-phases.png" width="230" align="right" alt="Goals with training phases">
+
+Each goal is broken into training phases (Base · Build · Peak · Taper). Every phase shows its date range, targets and key milestones in a collapsible section, so you always know what you should reach by when.
+
+**What you get:** a clear, dated path to your event — not one distant finish line.
+
+<br clear="right">
+
+### 🗺️ Multi-day events & weather along the route
+
+<img src="docs/screenshots/06-multiday-weather.png" width="230" align="left" alt="Multi-day event with per-stage weather">
+
+Planning a multi-day tour (e.g. "Cycle from Arnhem to Karlsruhe in 5 days")? VibeCoach models it as stage days in your week schedule, suppresses conflicting training in that window, and shows a weather forecast for roughly *where you'll be each day* — derived from the route in your goal title.
+
+**What you get:** an event plan that respects the actual days on the road, with weather that matches your location, not your couch.
+
+<br clear="left">
+
+### 🔄 Dual-source sync — HealthKit + Strava, no double counting
+
+<img src="docs/screenshots/07-dual-source-sync.png" width="230" align="right" alt="Dual-source sync">
+
+HealthKit and Strava run side by side, always on. Smart-ingest and automatic dedupe make sure a richer record (Strava with power) is never overwritten by a poorer one (HealthKit without power) for the same activity.
+
+**What you get:** one clean training history, automatically, whichever app you started the workout in.
+
+<br clear="right">
+
+### 🌍 Your language, your data
+
+<img src="docs/screenshots/08-language-privacy.png" width="230" align="left" alt="Language and privacy settings">
+
+The whole UI and the AI coach speak **Dutch, English, German or Spanish** — selectable in Settings (default: your device language). And it's privacy-first by design: HealthKit data never leaves the device, AI keys live in the Keychain, and the Strava secret lives in a Cloudflare Worker, never in the app.
+
+**What you get:** a coach that talks to you naturally, on data that stays yours.
+
+<br clear="left">
+
+> **Screenshots above are placeholders.** They render from [`docs/screenshots/`](docs/screenshots/) — swap them for real captures using the same file names (see the [screenshot guide](docs/screenshots/README.md)).
 
 ---
 
-## Tech Stack
+## Under the hood
+
+A short technical summary; the full picture lives in the linked docs (no duplication — see [`CLAUDE.md`](CLAUDE.md) §7).
 
 | Layer | Choice |
 |------|-------|
-| **Platform** | iOS 17+ (macOS + Xcode required to build) |
-| **UI** | SwiftUI + SwiftData |
-| **AI** | BYOK multi-provider — Gemini (default), OpenAI, Claude or Mistral; per-provider key + model |
-| **Data** | Apple HealthKit (HRV, sleep + sleep stages, workouts) + optional Strava OAuth2 via Cloudflare Worker |
-| **Weather** | Open-Meteo API (free, no API key) via CoreLocation + URLSession |
-| **Background** | `HKObserverQuery` (Engine A) + `BGAppRefreshTask` (Engine B) |
-| **Testing** | XCTest unit tests + XCUITest UI tests — **61% combined coverage on testable code** (Models 80%, Services 59%, ViewModels 59%) + 43% on `Views/` via UI tests |
-| **Version control** | GitHub |
+| **Platform** | iOS 17+ (macOS + Xcode 16 required to build) |
+| **UI & data** | SwiftUI + SwiftData (strict enums — `SportCategory`, `EventFormat`, `TrainingPhase` — no raw strings) |
+| **AI** | BYOK multi-provider — Gemini (default), OpenAI, Claude or Mistral; per-provider key + live-fetched model catalog |
+| **Health data** | Apple HealthKit (HRV, sleep + stages, workouts) + optional Strava OAuth2 via a Cloudflare Worker |
+| **Weather** | Open-Meteo API (free, no key) via CoreLocation + URLSession |
+| **Background** | `HKObserverQuery` (Engine A: reacts to new workouts) + `BGAppRefreshTask` (Engine B: daily inactivity check) |
+| **Testing** | XCTest + XCUITest — **61% combined coverage on testable code** (Models 80%, Services 59%, ViewModels 59%) + 43% on `Views/` via UI tests |
+
+**Core principles**
+
+- **Management by Exception** — only warn on deviations; a red status always ships with an AI recovery plan.
+- **Privacy-first** — HealthKit on device, AI keys in Keychain, Strava secret in the Worker.
+- **Type-safe** — SwiftData with strict enums; external data mapped to enums at the front door.
+
+**CI:** a 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) on `macos-latest`, plus a CodeQL scan of Swift + Actions workflows.
+
+**Recently completed:** Epic #60 (per-phase milestone insight in the Goals view), #57 (one-tap post-workout RPE check-in), #56 (location-aware per-stage weather), #55 (multi-day events first-class), #37 (internationalisation NL/EN/DE/ES), #53/#54 (multi-provider BYOK + dynamic model catalog), #32 (deep-dive physiological analysis). Full history and backlog → [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+**Dig deeper:**
+
+- 🏗️ Architecture (Dual Engine, dual-source pipeline, BYOK, CI) → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+- 🗺️ Interactive architecture viewer → [`docs/architecture/architecture.html`](docs/architecture/architecture.html)
+- 📜 Epic history & backlog → [`docs/ROADMAP.md`](docs/ROADMAP.md)
+- 🤖 Rules for AI assistants & contributors → [`CLAUDE.md`](CLAUDE.md)
 
 ---
 
-## Core Principles
+## Build & run it yourself
 
-- **Management by Exception:** the app does not warn on good behaviour — only on deviations. A red status always comes together with an AI-generated recovery plan.
-- **Privacy-first:** HealthKit data stays on device. AI keys in Keychain. Strava secret in the Cloudflare Worker.
-- **Type-safe:** SwiftData with strict enums (`SportCategory`, `EventFormat`, `TrainingPhase`). No raw strings.
+VibeCoach is open source. To run your own build:
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the Dual Engine and proxy architecture.
+1. **Requirements:** macOS with **Xcode 16**, and an **iPhone on iOS 17+** (a physical device is strongly recommended — HealthKit is limited in the simulator).
+2. **Clone & open** `AIFitnessCoach.xcodeproj` in Xcode.
+3. **Secrets:** copy `Secrets-template.swift` to `Secrets.swift` and fill in your values (`stravaClientID`, `stravaProxyBaseURL`, `stravaProxyToken`). Strava is **optional** — without it the app runs HealthKit-only. The Strava `client_secret` is never in the app; it lives as a Cloudflare Worker secret in [vibecoach-proxy](https://github.com/markclausing/vibecoach-proxy).
+4. **Build & run** on your device or a simulator (Cmd+R).
+5. **Add your AI key:** open **Settings → AI provider**, pick a provider (Gemini / OpenAI / Claude / Mistral) and paste your own API key. The key is stored in the Keychain. The coach is inactive until a key is set.
+6. *(Optional)* **Connect Strava** from Settings to add a second data source alongside HealthKit.
 
----
+**Run the tests:** select the `AIFitnessCoach` scheme and press Cmd+U, or build from the command line with `xcodebuild test`. Unit tests cover the pure-Swift logic in `Services/`, `Models/` and `ViewModels/`; UI tests cover the happy-path flows. See [`CLAUDE.md`](CLAUDE.md) §6 for the testing policy.
 
-## Testing Push Notifications in the Simulator
+### Developer notes
 
-To test local push notifications in the iOS Simulator: create a `test-push.apns` file and drag it onto the running simulator (drag & drop).
+<details>
+<summary>Testing local push notifications in the simulator</summary>
+
+Create a `test-push.apns` file and drag it onto the running simulator:
 
 ```json
 {
@@ -84,15 +174,17 @@ To test local push notifications in the iOS Simulator: create a `test-push.apns`
 }
 ```
 
-> The `type` value must be on the M-08 whitelist (`goalRisk` or `recovery_plan`), otherwise the notification is silently ignored.
+The `type` value must be on the M-08 whitelist (`goalRisk` or `recovery_plan`), otherwise the notification is silently ignored.
+
+</details>
 
 ---
 
-## Contributing & Workflow
+## Contributing & workflow
 
 See [`CLAUDE.md`](CLAUDE.md) for the full rules. In short:
 
 - Every code change goes through a branch + PR — never directly on `main`.
 - Branch names: `feature/epic-{nr}-...`, `fix/...`, `security/...`, `ci/...`, `chore/...`.
-- One fix per PR. README updates belong in the same commit.
-- Every new feature gets XCTest coverage; happy paths get an XCUITest.
+- One fix per PR. Docs belong in the same commit as the feature.
+- New features get XCTest coverage; happy paths get an XCUITest.
