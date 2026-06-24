@@ -863,3 +863,22 @@ De **balk** (`phaseSegments`, week-budget vanaf `goal.totalDays`) en de **servic
 - **Blueprint-loze doelen**: `detectBlueprintType` geeft `nil` voor doelen zonder marathon/halve-marathon/fietstour-keyword → geen `essentialWorkouts`/km-targets. Fallback: toon de vier fases met datums + generieke wekelijkse TRIMP-target (`computedTargetTRIMP`), zonder per-mijlpaal km-targets.
 - **Detail-dichtheid**: collapsed bewust minimaal houden (geen kaart-overload); detail pas bij uitklappen.
 - **Pickup-trigger**: gebruiker wil concreter zien "wat moet ik wanneer halen" per fase.
+
+### ⏳ Epic #61: Security hardening — privacy & opslag-discipline (review-opvolging)
+
+Opvolging van een volledige security-review van de codebase (juni 2026: multi-agent statische review per beveiligingsdimensie, elke bevinding adversarieel + handmatig geverifieerd). De review bevestigde een **gezonde uitgangspositie**: geen kritieke of hoge bevindingen en geen op afstand misbruikbare zwakheden. TLS is correct afgedwongen (geen cert-validatie-footguns), OAuth loopt via de OS-geharde API mét CSRF-bescherming, secrets staan niet in de git-historie en API-sleutels leven in de Keychain. De op te volgen punten zitten vrijwel allemaal in **bescherming van gezondheidsdata in rust en observability-discipline** — lokaal van aard, geen ervan op afstand bereikbaar, en stuk voor stuk goedkoop te verhelpen.
+
+> 🔒 **Detail bewust buiten de repo.** De concrete locaties, ernst-inschaling en herstelaanwijzingen staan in een apart rapport **buiten** de repository (`~/Development/vibecoach-security-review-2026-06-24.md`) — **niet committen**. Deze ROADMAP-omschrijving en de stories blijven op hardening-*doel*-niveau, zodat de planning zelf geen aanvalskaart wordt. Werk elke story uit aan de hand van dat externe rapport.
+
+Prioriteit: vier punten met de hoogste prioriteit (gezondheidsdata in rust + log-hygiëne), daarnaast een reeks lager-geprioriteerde hardening- en onderhoudspunten. Een aantal review-punten is **bewust geaccepteerd** en valt buiten scope: de gedeelde proxy-token-aanpak (gedocumenteerd als `C-01`) en de migratie-fallback die in het uiterste geval lokale data kan wissen (§12) — beide weloverwogen trade-offs die we hier niet heropenen.
+
+**Stories (allemaal ⏳ — nog niet opgepakt):**
+
+* **⏳ Story 61.1 — Log-hygiëne (§11) afdwingen.** Verwijder debug-logging van gevoelige context uit release-builds en breng álle logging in lijn met §11: geen `print()` in `Services/`/`Models/`/`ViewModels/`, expliciete privacy-modifiers op gebruikersdata, en de losse `Logger`-instanties centraliseren in `AppLoggers`. *Hoogste prioriteit, kleine ingreep.*
+* **⏳ Story 61.2 — Credential-opslag device-only maken.** Stel voor alle in de Keychain bewaarde tokens en sleutels de device-only toegankelijkheidsklasse in, zodat ze niet via back-ups of toestel-herstel buiten het apparaat kunnen belanden. Eén-regel-ingreep in `KeychainService`; de waarden zijn opnieuw af te leiden bij een schone install. *Hoogste prioriteit.*
+* **⏳ Story 61.3 — Gezondheidsdata in rust beschermen.** Zet een expliciete file-protection-klasse op de lokale opslag, verplaats gecachte gevoelige context uit onbeschermde voorkeuren naar de beschermde opslag, en voeg een opschoon-/retentiebeleid toe (wissen bij uitloggen/reset/bron-ontkoppeling). *Hoogste prioriteit; computed-only, raakt §2.1 niet.*
+* **⏳ Story 61.4 — Veiligheidsvalidatie rond de AI-coach.** Valideer/begrens door het model voorgestelde trainingsparameters in code (los van de prompt) vóór opslag en weergave, en saneer extern-gesynchroniseerde vrije tekst voordat die in de prompt belandt. Defense-in-depth — sluit aan op de fysiologische guardrails uit Epic 13.
+* **⏳ Story 61.5 — Afhankelijkheid- & build-hygiëne.** Plan de migratie weg van de niet-langer-onderhouden AI-SDK (revisie-pin handhaven tot dan, upstream-advisories volgen), zet de test-only bypasses achter `#if DEBUG` (§6), en voeg expliciete netwerk-timeouts + defensieve parse-grenzen toe.
+* **⏳ Story 61.6 — Locatie-privacy consistent maken.** Pas dezelfde coördinaat-afronding toe op álle weer-paden, zodat de privacy-marge niet afhangt van één losse accuraatheid-instelling.
+
+**Pickup-trigger:** opvolging van de security-review; pak 61.1–61.3 eerst op (kleine, lokale ingrepen met directe privacy-winst). **Doc-discipline:** elke story die een building-block-type toevoegt of wijzigt synct `architecture.json` + `.html` (§7); `CLAUDE.md` alleen aanraken als een story een permanent patroon vastlegt (bijv. een nieuwe validator-helper).
