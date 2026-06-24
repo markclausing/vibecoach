@@ -46,7 +46,7 @@ enum PHIContextCache {
         "vibecoach_intentExecutionContext",
         "vibecoach_profileUpdateNote",
         // ProactiveNotificationService risk cache — at-risk goal titles are PHI.
-        "vibecoach_atRiskGoalTitles",
+        "vibecoach_atRiskGoalTitles"
     ]
 
     /// Removes every cleartext PHI context cache plus the per-workout AI insight
