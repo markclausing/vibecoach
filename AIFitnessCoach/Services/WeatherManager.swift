@@ -160,8 +160,10 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         isLoading = true
         defer { isLoading = false }
 
-        let lat = location.coordinate.latitude
-        let lon = location.coordinate.longitude
+        // L-5: round to 0.1° before the request so privacy never depends on
+        // CLLocationManager.desiredAccuracy (single source of truth: CoordinatePrivacy).
+        let lat = CoordinatePrivacy.round(location.coordinate.latitude)
+        let lon = CoordinatePrivacy.round(location.coordinate.longitude)
 
         // Open-Meteo free endpoint — no API key required.
         // daily parameters: temperature (min/max), precipitation probability, wind speed, weather code.
