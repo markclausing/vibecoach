@@ -137,7 +137,7 @@ struct SettingsView: View {
         do {
             self.athleticProfile = try profileManager.calculateProfile(context: modelContext)
         } catch {
-            print("Fout bij berekenen atletisch profiel: \(error)")
+            AppLoggers.athleticProfileManager.error("Athletic profile calculation failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -1328,7 +1328,6 @@ struct PhysicalProfileSection: View {
             "Ik heb je profiel bijgewerkt naar \(loaded.ageYears) jaar; je dagelijkse energiebehoefte (BMR) is nu ~\(bmr) kcal/dag." \
             Pas voedings- en trainingsadviezen hierop aan.
             """
-            print("📣 [ProfileSection] Profielwijziging gedetecteerd — coach-note geschreven voor leeftijd \(loaded.ageYears)j, BMR ~\(bmr) kcal")
         }
 
         await MainActor.run {

@@ -653,12 +653,6 @@ struct SingleGoalBurndownView: View {
         let now = Date()
         let targetTRIMP = goal.computedTargetTRIMP
 
-        // SPRINT 12.4 DEBUG: Print all raw database records before we filter
-        print("🔍 RAW DB DUMP VOOR DOEL: \(goal.title)")
-        for record in activities {
-            print("   Raw DB Record: \(record.name) - Category: '\(record.sportCategory.rawValue)' - Date: \(record.startDate)")
-        }
-
         // SPRINT 12.5 & 12.6 & 12.7: Watertight Training Block Constraint (16-week macrocycle) using Calendar
         // Anchor point is *today*, so we always include the actual physiological base (base-building)
         // even when the goal still lies far in the future.
@@ -678,11 +672,6 @@ struct SingleGoalBurndownView: View {
 
             return record.sportCategory == goalCategory
         }.sorted(by: { $0.startDate < $1.startDate })
-
-        print("🛡️ Goal: \(goal.title) | Block Start: \(trainingBlockStartDate) | Aantal activities in block: \(relevantActivities.count)")
-        for record in relevantActivities.prefix(3) {
-             print("   -> \(record.name) (\(record.sportCategory.displayName)) on \(record.startDate)")
-        }
 
         // SPRINT 12.4: Determine the effective start point of the chart (may lie in the past)
         // Redefine effectiveStartDate: look at the list of filtered relevantActivities.
@@ -1313,7 +1302,7 @@ struct DashboardView: View {
         do {
             self.currentProfile = try profileManager.calculateProfile(context: modelContext)
         } catch {
-            print("Kon profiel niet laden in DashboardView: \(error)")
+            AppLoggers.dashboard.error("Profile load failed in DashboardView: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -1900,10 +1889,10 @@ struct DashboardView: View {
         do {
             let removed = try await ActivityDeduplicator.runDedupe(in: modelContext, store: store)
             if removed > 0 {
-                print("🧹 Auto-dedupe: \(removed) duplicate ActivityRecord(s) verwijderd")
+                AppLoggers.dashboard.info("Auto-dedupe: removed \(removed, privacy: .public) duplicate ActivityRecord(s)")
             }
         } catch {
-            print("⚠️ Auto-dedupe faalde: \(error.localizedDescription)")
+            AppLoggers.dashboard.error("Auto-dedupe failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -1929,10 +1918,10 @@ struct DashboardView: View {
                 maxHeartRate: maxHR
             )
             if updated > 0 {
-                print("🏷️ Session-rerun: \(updated) record(s) opnieuw geclassificeerd")
+                AppLoggers.dashboard.info("Session-rerun: \(updated, privacy: .public) record(s) reclassified")
             }
         } catch {
-            print("⚠️ Session-rerun faalde: \(error.localizedDescription)")
+            AppLoggers.dashboard.error("Session-rerun failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -1965,7 +1954,7 @@ struct DashboardView: View {
                 )
             } catch {
                 // One error (404, 429 rate-limit, decode failure) does not block the batch.
-                print("⚠️ Strava-stream backfill faalde voor \(activity.id): \(error.localizedDescription)")
+                AppLoggers.dashboard.warning("Strava-stream backfill failed for activity \(activity.id, privacy: .private): \(error.localizedDescription, privacy: .public)")
             }
             // 100ms throttle — Strava's rate limit is 100 req/15min; for 10 calls
             // we have ample time, the throttle is deliberately cautious + cooperative cancel.
@@ -1997,7 +1986,7 @@ struct DashboardView: View {
         isVibeScoreUnavailable = false
         defer { isVibeScoreLoading = false }
 
-        print("🏃 [VibeScore] Auto-berekening gestart")
+        AppLoggers.dashboard.debug("Vibe Score auto-calculation started")
 
         let hkManager = HealthKitManager()
 
@@ -2012,7 +2001,7 @@ struct DashboardView: View {
             }
             group.addTask {
                 try? await Task.sleep(nanoseconds: 5_000_000_000)
-                print("⏱️ [VibeScore] Time-out stap 1 na 5 seconden")
+                AppLoggers.dashboard.notice("Vibe Score step 1 timed out after 5 seconds")
                 return nil
             }
             for await result in group { group.cancelAll(); return result }
@@ -2022,7 +2011,7 @@ struct DashboardView: View {
         guard let (sleep, baseline, stages) = step1,
               let sleepHours  = sleep,
               let hrvBaseline = baseline else {
-            print("⚠️ [VibeScore] Onvoldoende slaap/baseline data — kaart wordt op 'niet beschikbaar' gezet")
+            AppLoggers.dashboard.notice("Insufficient sleep/baseline data — Vibe Score set to unavailable")
             isVibeScoreUnavailable = true
             viewModel.cacheVibeScoreUnavailable()
             return
@@ -2035,7 +2024,7 @@ struct DashboardView: View {
         let restingHR: Double?  = await restingHRTask
 
         guard let currentHRV else {
-            print("⚠️ [VibeScore] Geen HRV-data — kaart wordt op 'niet beschikbaar' gezet")
+            AppLoggers.dashboard.notice("No HRV data — Vibe Score set to unavailable")
             isVibeScoreUnavailable = true
             viewModel.cacheVibeScoreUnavailable()
             return
@@ -2049,7 +2038,8 @@ struct DashboardView: View {
         )
 
         let stagesLog = stages.map { "diep: \($0.deepMinutes)m, REM: \($0.remMinutes)m, kern: \($0.coreMinutes)m, ratio: \(String(format: "%.0f%%", $0.deepRatio * 100))" } ?? "geen stage-data"
-        print("✅ [VibeScore] Score berekend: \(score)/100 (slaap: \(String(format: "%.1f", sleepHours))u, HRV: \(String(format: "%.1f", currentHRV))ms, \(stagesLog))")
+        // HRV/sleep are §11 .private PHI; the score itself is non-identifying.
+        AppLoggers.dashboard.debug("Vibe Score \(score, privacy: .public)/100 (sleep: \(sleepHours, privacy: .private)h, HRV: \(currentHRV, privacy: .private)ms, \(stagesLog, privacy: .private))")
 
         // Upsert: overwrite an existing record for today or create a new one
         let todayStart   = Calendar.current.startOfDay(for: Date())

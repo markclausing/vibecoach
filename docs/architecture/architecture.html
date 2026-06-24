@@ -1375,8 +1375,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 21,
-    "lastUpdated": "2026-06-21",
+    "docRevision": 22,
+    "lastUpdated": "2026-06-24",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -1787,7 +1787,8 @@
       "description": "OAuth2 with the Cloudflare Worker proxy. No client_secret in the IPA — only a shared X-Client-Token. CSRF protection via a random `state` UUID.",
       "uses": [
         "TokenStore",
-        "NetworkSession"
+        "NetworkSession",
+        "PHIContextCache"
       ],
       "tags": [
         "security-c01",
@@ -1995,6 +1996,21 @@
       ]
     },
     {
+      "id": "PHIContextCache",
+      "layer": "services",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Services/PHIContextCache.swift",
+      "description": "Central purge of the cleartext UserDefaults/@AppStorage caches that hold derived health context (Vibe Score, symptoms, workout history, nutrition, at-risk goal titles). Re-derivable from the file-protected store, so cleared on data-source disconnect/logout to keep stale PHI out of unprotected preferences (review M-2 minimum bar + L-9). Pure helper: UserDefaults injected (§6).",
+      "uses": [
+        "WorkoutInsightCache"
+      ],
+      "tags": [
+        "epic-61",
+        "security-m2",
+        "security-l9"
+      ]
+    },
+    {
       "id": "HistoricalWeatherService",
       "layer": "services",
       "kind": "service",
@@ -2107,10 +2123,11 @@
       "layer": "services",
       "kind": "service",
       "file": "AIFitnessCoach/Services/KeychainService.swift",
-      "description": "Wrapper around kSecClassGenericPassword. Service name `VibeCoach_UserAIKey`.",
+      "description": "Wrapper around kSecClassGenericPassword. Stores Strava tokens + BYOK API keys with kSecAttrAccessibleWhenUnlockedThisDeviceOnly (M-4: device-only, excluded from backups/restore).",
       "uses": [],
       "tags": [
-        "security-c02"
+        "security-c02",
+        "security-m4"
       ]
     },
     {

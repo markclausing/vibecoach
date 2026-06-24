@@ -270,7 +270,7 @@ struct OnboardingView: View {
         do {
             try modelContext.save()
         } catch {
-            print("⚠️ UserConfiguration save mislukt: \(error.localizedDescription)")
+            AppLoggers.userProfile.error("UserConfiguration save failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

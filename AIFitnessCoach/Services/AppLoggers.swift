@@ -43,4 +43,27 @@ enum AppLoggers {
 
     /// `WorkoutInsightService` AI-call failures.
     static let workoutInsight = Logger(subsystem: subsystem, category: "WorkoutInsightService")
+
+    /// Coach chat / prompt assembly (`ChatViewModel`). Assembled prompt + raw
+    /// model response are the entire PHI corpus → always `.private`; only
+    /// framework error codes and non-identifying status flags are `.public`.
+    static let coach = Logger(subsystem: subsystem, category: "ChatViewModel")
+
+    /// Active training-plan mutations (`TrainingPlanManager`).
+    static let trainingPlan = Logger(subsystem: subsystem, category: "TrainingPlanManager")
+
+    /// Local proactive-notification delivery callbacks (`AppDelegate`).
+    /// Notification titles/payloads can carry goal titles → `.private`.
+    static let notifications = Logger(subsystem: subsystem, category: "Notifications")
+
+    /// 30-day Deep Sync orchestrator (`DeepSyncService`). Workout UUIDs → `.private`.
+    static let deepSync = Logger(subsystem: subsystem, category: "DeepSync")
+
+    /// Per-workout sample ingest (`WorkoutSampleService`). Workout UUIDs → `.private`.
+    static let workoutSamples = Logger(subsystem: subsystem, category: "WorkoutSamples")
+
+    /// Dashboard-level orchestration diagnostics: auto-sync, dedupe, session
+    /// reclassification, Vibe Score calculation. Sample values (HRV/sleep) and
+    /// activity ids → `.private`; counters and framework errors → `.public`.
+    static let dashboard = Logger(subsystem: subsystem, category: "Dashboard")
 }

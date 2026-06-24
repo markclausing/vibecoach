@@ -144,7 +144,7 @@ All other payloads are silently ignored — both in `willPresent` and `didReceiv
 - `os.Logger` with subsystem `com.markclausing.aifitnesscoach`, a category per service (`FitnessDataService`, `ProactiveNotificationService`, ...).
 - PII and identifiers (user tokens, device tokens, sample values) are tagged with `privacy: .private`.
 - APNs device-token printing is behind `#if DEBUG` with only the last 6 characters.
-- Goal: a full `print` migration to `os.Logger`. Phase 1 covers the two largest services; the rest follows in follow-up PRs.
+- All loggers are centralised in `AppLoggers` (Epic #61: no loose `Logger(...)` per service). Every release-reachable `print()` in `Services/`/`Models/`/`ViewModels/`/app-entry has been migrated to an `AppLoggers` call with an explicit `privacy:` modifier; the assembled coach prompt and raw model response are never logged verbatim (only a non-identifying length signal). The only remaining `print()`s are `#if DEBUG`-gated view diagnostics that do not ship.
 
 ---
 
@@ -365,3 +365,13 @@ Previously two pieces of code computed phase boundaries independently and could 
 ## 15. Readable mood in the coach context (Epic #57)
 
 The post-workout check-in persists `mood` on `ActivityRecord` as the chosen option's SF Symbol name (e.g. `bandage.fill`). `LastWorkoutContextFormatter.readableMood(_:)` translates that to a readable English word (good / strong / exhausted / in pain / calm) before injecting it into the coach context, so the prompt reads `Mood: in pain` instead of the raw icon name. Unknown/legacy values (older emoji moods) pass through unchanged.
+
+---
+
+## 16. Data-at-rest hardening (Epic #61)
+
+Follow-up to a full security review. The app is local-first and single-user; the review found no critical/high or remotely-exploitable issues, so this work tightens the **data-at-rest** boundary around health data (PHI) and credentials. Concrete locations and severities live in a report kept **outside** the repository.
+
+- **Device-only credentials.** `KeychainService` stores all secrets (Strava access/refresh/expiry tokens + BYOK API keys) with `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`, so they require an unlocked device **and** never leave it — excluded from encrypted backups and device-restore. All secrets are re-derivable on a fresh install, so device-only storage costs the user nothing.
+- **Explicit store protection.** `AIFitnessCoachApp.applyFileProtection(at:)` sets `NSFileProtectionCompleteUnlessOpen` on the SwiftData store + its WAL/SHM sidecars after a successful container init (both the normal and the fresh-DB fallback path). `.completeUnlessOpen` keeps the store encrypted while the device is locked yet lets the background HealthKit observer (Engine A) keep writing to an already-open file. Best-effort by design (§12): a failure is logged and never blocks launch; on the simulator it is effectively a no-op.
+- **PHI cache purge.** The coach prompt is assembled from derived health context cached as cleartext in `UserDefaults`/`@AppStorage` for speed. `PHIContextCache.purge(_:)` (a pure, `UserDefaults`-injected helper) clears every such key plus the `WorkoutInsightCache` on data-source disconnect/logout, so stale PHI does not linger in unprotected preferences. The caches re-derive on the next dashboard refresh. Full relocation of these caches into the protected store is a planned follow-up (Epic #61 backlog).
