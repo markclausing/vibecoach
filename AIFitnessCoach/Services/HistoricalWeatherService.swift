@@ -374,7 +374,7 @@ extension HistoricalWeatherService {
             if let t = temp { record.temperatureCelsius = t }
             if let h = humidity { record.humidityPercent = h }
         } catch {
-            AppLoggers.weather.error("Open-Meteo fetch faalde voor activity \(activity.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            AppLoggers.weather.error("Open-Meteo fetch faalde voor activity \(activity.id, privacy: .private): \(error.localizedDescription, privacy: .public)")
         }
     }
 }

@@ -26,11 +26,8 @@ class TrainingPlanManager: ObservableObject {
         if let encoded = try? JSONEncoder().encode(sorted) {
             latestSuggestedPlanData = encoded
         }
-        // Debug: show the chronological order after sorting
-        print("📅 [TrainingPlan] Gesorteerde volgorde na update:")
-        sorted.workouts.forEach { workout in
-            print("   \(workout.dateOrDay) → displayDate: \(workout.displayDate)")
-        }
+        // Debug: confirm the update without dumping per-workout schedule detail.
+        AppLoggers.trainingPlan.debug("Plan updated: \(sorted.workouts.count, privacy: .public) workouts (sorted chronologically)")
     }
 
     /// Returns a new SuggestedTrainingPlan with workouts sorted by `displayDate`

@@ -21,7 +21,8 @@ import os.log
 //     (#fix-workout-samples-loading — previously the legacy completion flag blocked
 //     every run after the first backfill).
 
-private let log = Logger(subsystem: "com.markclausing.aifitnesscoach", category: "DeepSync")
+// §11: loggers are centralised in `AppLoggers` (no loose per-service `Logger`).
+private let log = AppLoggers.deepSync
 
 /// Abstraction over `WorkoutSampleIngestService` so the orchestrator is unit-testable
 /// without touching a real HealthKit.
@@ -151,7 +152,7 @@ final class DeepSyncService: ObservableObject {
                 } catch {
                     // One failing workout must not block the rest — unmarked
                     // UUIDs are automatically retried on the next run.
-                    log.error("Skipping workout \(workout.uuid, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    log.error("Skipping workout \(workout.uuid, privacy: .private): \(error.localizedDescription, privacy: .public)")
                 }
                 status = .syncing(processed: i + 1, total: pending.count)
             }

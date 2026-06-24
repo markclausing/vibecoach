@@ -31,7 +31,7 @@ struct AppTabHostView: View {
     /// choice. Cross-source duplicates are caught by `ActivityDeduplicator.smartInsert`.
     private func performAutoSync() {
         guard !isAutoSyncing else {
-            print("⚠️ Auto-sync overgeslagen: vorige sync is nog actief")
+            AppLoggers.fitnessDataService.notice("Auto-sync skipped: a previous sync is still active")
             return
         }
         isAutoSyncing = true
@@ -70,7 +70,7 @@ struct AppTabHostView: View {
             // the auth status supports it.
             UserDefaults.standard.set(0, forKey: "vibecoach_lastHKWorkoutsCount")
             syncStatusStore.recordHKError(error)
-            print("Auto-sync HealthKit gefaald: \(error.localizedDescription)")
+            AppLoggers.fitnessDataService.error("Auto-sync HealthKit failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -85,7 +85,7 @@ struct AppTabHostView: View {
         do {
             try await HealthKitManager.shared.requestPermissionsForCriticalNotDetermined()
         } catch {
-            print("HealthKit-retrigger gefaald: \(error.localizedDescription)")
+            AppLoggers.fitnessDataService.error("HealthKit permission retrigger failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -138,7 +138,7 @@ struct AppTabHostView: View {
             // without a Strava connection (Epic #51-F1).
         } catch {
             syncStatusStore.recordStravaError(error)
-            print("Auto-sync Strava gefaald: \(error.localizedDescription)")
+            AppLoggers.fitnessDataService.error("Auto-sync Strava failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 

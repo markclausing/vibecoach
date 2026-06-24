@@ -10,7 +10,8 @@ import os.log
 //   2. `WorkoutSampleIngestService`: HealthKit fetch via `HKQuantitySeriesSampleQuery` + resampling to 5s.
 //   3. Per-workout idempotent flow: wipe + insert so re-syncs never produce duplicates.
 
-private let log = Logger(subsystem: "com.markclausing.aifitnesscoach", category: "WorkoutSamples")
+// §11: loggers are centralised in `AppLoggers` (no loose per-service `Logger`).
+private let log = AppLoggers.workoutSamples
 
 // MARK: - Storage (ModelActor)
 
@@ -129,7 +130,7 @@ final class WorkoutSampleIngestService {
             )
         }
 
-        log.info("Ingested \(combined.count, privacy: .public) samples for workout \(workoutUUID, privacy: .public)")
+        log.info("Ingested \(combined.count, privacy: .public) samples for workout \(workoutUUID, privacy: .private)")
         try await store.replaceSamples(combined, forWorkoutUUID: workoutUUID)
     }
 

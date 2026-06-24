@@ -24,8 +24,14 @@ final class KeychainService: TokenStore {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: service,
             kSecValueData as String: tokenData,
-            // Stored data is only accessible while the device is unlocked.
-            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlocked
+            // M-4: device-only accessibility. The item is readable only while the
+            // device is unlocked AND never leaves this device — it is excluded from
+            // encrypted backups and from a restore onto another device. All secrets
+            // stored here (Strava access/refresh/expiry tokens + BYOK API keys) are
+            // re-derivable on a fresh install (re-auth Strava, re-enter the key), so
+            // device-only storage costs the user nothing and removes the long-lived
+            // refresh token + billable key from backups entirely.
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
         ]
 
         let status = SecItemAdd(addQuery as CFDictionary, nil)

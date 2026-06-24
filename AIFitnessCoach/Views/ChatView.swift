@@ -56,7 +56,7 @@ struct ChatView: View {
         do {
             self.currentProfile = try profileManager.calculateProfile(context: modelContext)
         } catch {
-            print("Kon profiel niet laden in ChatView: \(error)")
+            AppLoggers.userProfile.error("Profile load failed in ChatView: \(error.localizedDescription, privacy: .public)")
         }
     }
 

@@ -313,7 +313,7 @@ struct WorkoutAnalysisView: View {
                 startDate: activity.startDate, endDate: end
             )
         } catch {
-            AppLoggers.weather.error("Hourly weer-range fetch faalde voor activity \(activity.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            AppLoggers.weather.error("Hourly weer-range fetch faalde voor activity \(activity.id, privacy: .private): \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }

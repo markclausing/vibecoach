@@ -178,7 +178,9 @@
 		D8A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift */; };
 		D9A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift */; };
 		DAA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift */; };
+		F11DCACE610000000000B001 /* PHIContextCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A001 /* PHIContextCache.swift */; };
 		DBA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift */; };
+		F11DCACE610000000000B002 /* PHIContextCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A002 /* PHIContextCacheTests.swift */; };
 		DCA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */; };
 		DDA4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift */; };
 		DEA4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEB4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift */; };
@@ -402,7 +404,9 @@
 		E8B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutPatternFormatter.swift; sourceTree = "<group>"; };
 		E9B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutPatternFormatterTests.swift; sourceTree = "<group>"; };
 		EAB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightCache.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A001 /* PHIContextCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PHIContextCache.swift; sourceTree = "<group>"; };
 		EBB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightCacheTests.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A002 /* PHIContextCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PHIContextCacheTests.swift; sourceTree = "<group>"; };
 		ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightService.swift; sourceTree = "<group>"; };
 		EDB4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HeartRateZoneCalculator.swift; sourceTree = "<group>"; };
 		EEB4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PowerZoneCalculator.swift; sourceTree = "<group>"; };
@@ -611,6 +615,7 @@
 				ECCAF7B2D6E8F0A1B2C3D405 /* HistoricalWeatherServiceTests.swift */,
 				E9B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift */,
 				EBB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift */,
+				F11DCACE610000000000A002 /* PHIContextCacheTests.swift */,
 				F0C4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculatorTests.swift */,
 				F1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift */,
 				F2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift */,
@@ -714,6 +719,7 @@
 				E45A4502D6E8F0A1B2C3D405 /* HealthKitPermissionTypes.swift */,
 				E45A4503D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluator.swift */,
 				EAB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift */,
+				F11DCACE610000000000A001 /* PHIContextCache.swift */,
 				ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */,
 				EDB4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift */,
 				EEB4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift */,
@@ -1086,6 +1092,7 @@
 				DCCAF7B2D6E8F0A1B2C3D405 /* HistoricalWeatherServiceTests.swift in Sources */,
 				D9A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatterTests.swift in Sources */,
 				DBA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift in Sources */,
+				F11DCACE610000000000B002 /* PHIContextCacheTests.swift in Sources */,
 				E0C4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculatorTests.swift in Sources */,
 				E1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift in Sources */,
 				E2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift in Sources */,
@@ -1228,6 +1235,7 @@
 				D8C4F7B2D6E8F0A1B2C3D405 /* PauseDetector.swift in Sources */,
 				D8A4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift in Sources */,
 				DAA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift in Sources */,
+				F11DCACE610000000000B001 /* PHIContextCache.swift in Sources */,
 				DCA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift in Sources */,
 				DDA4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift in Sources */,
 				DEA4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift in Sources */,

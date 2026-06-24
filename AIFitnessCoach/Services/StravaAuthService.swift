@@ -183,6 +183,10 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
             try tokenStore.deleteToken(forService: "StravaRefreshToken")
             try tokenStore.deleteToken(forService: "StravaTokenExpiresAt")
             self.isAuthenticated = false
+            // Story 61.3 (L-9): disconnecting a data source clears the cleartext
+            // PHI prompt-context caches so stale health data does not linger in
+            // unprotected UserDefaults. They re-derive on the next refresh.
+            PHIContextCache.purge()
         } catch {
             self.authError = "Kon niet uitloggen (Keychain fout)"
         }

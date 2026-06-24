@@ -93,12 +93,14 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         let userInfo = notification.request.content.userInfo
         guard Self.isAllowedNotificationPayload(userInfo) else {
-            // M-08: unknown payload — no banner, no sound.
-            print("🚫 Notificatie met onbekende payload genegeerd (willPresent): \(userInfo)")
+            // M-08: unknown payload — no banner, no sound. Do not log the raw
+            // payload (may carry user data); recording that it was ignored is enough.
+            AppLoggers.notifications.notice("Ignored notification with unknown payload (willPresent)")
             completionHandler([])
             return
         }
-        print("🔔 Notificatie ontvangen in de voorgrond: \(notification.request.content.title)")
+        // The title can contain a goal title (PHI) → .private.
+        AppLoggers.notifications.info("Foreground notification presented: \(notification.request.content.title, privacy: .private)")
         // Show the notification as a banner (and play a sound)
         completionHandler([.banner, .sound])
     }
@@ -108,12 +110,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         let userInfo = response.notification.request.content.userInfo
 
-        print("📱 Gebruiker heeft op notificatie getikt!")
+        AppLoggers.notifications.info("User tapped a notification")
 
         // M-08: check the whitelist first. For unknown payloads we do
         // nothing — no navigation, no side effects.
         guard Self.isAllowedNotificationPayload(userInfo) else {
-            print("🚫 Notificatie met onbekende payload genegeerd (didReceive): \(userInfo)")
+            AppLoggers.notifications.notice("Ignored notification with unknown payload (didReceive)")
             completionHandler()
             return
         }
@@ -121,7 +123,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         if let type = userInfo["type"] as? String, type == "goalRisk" || type == "recovery_plan" {
             // SPRINT 13.2 / Epic 23: Proactive coach notification — open the Goals tab
             // where the recovery plan banner is shown.
-            print("  ➡️ Proactieve notificatie (\(type)) — Doelen tab openen")
+            AppLoggers.notifications.info("Proactive notification (\(type, privacy: .public)) — opening Goals tab")
             Task { @MainActor in
                 AppNavigationState.shared.selectedTab = .goals
             }
@@ -164,11 +166,14 @@ struct AIFitnessCoachApp: App {
 
         // First attempt: load existing store and run the migration chain (V1 → V2 → V3 → V4 → V5).
         do {
-            return try ModelContainer(
+            let container = try ModelContainer(
                 for: schema,
                 migrationPlan: AppMigrationPlan.self,
                 configurations: config
             )
+            // M-3: harden the on-disk health store with an explicit protection class.
+            if !isUITesting { applyFileProtection(at: config.url) }
+            return container
         } catch {
             AppLoggers.fitnessDataService.error("""
                 ModelContainer-init met migratieplan faalde: \
@@ -188,11 +193,37 @@ struct AIFitnessCoachApp: App {
         }
 
         do {
-            return try ModelContainer(for: schema, configurations: config)
+            let container = try ModelContainer(for: schema, configurations: config)
+            // M-3: apply the same protection class to the freshly-rebuilt store.
+            if !isUITesting { applyFileProtection(at: config.url) }
+            return container
         } catch {
             // Unrecoverable: even a fresh DB fails. Crashing is correct behaviour then —
             // something is fundamentally wrong with the Application Support directory or the schema.
             fatalError("ModelContainer-init faalde ook ná fresh-DB-fallback: \(error)")
+        }
+    }
+
+    /// M-3: applies an explicit data-protection class to the SwiftData store and
+    /// its WAL/SHM sidecars. `.completeUnlessOpen` keeps the file encrypted at
+    /// rest while the device is locked, yet lets the background HealthKit observer
+    /// (Engine A) keep writing to an already-open store. On the simulator this is
+    /// effectively a no-op; it is enforced on device. Best-effort by design — a
+    /// failure here must never block app launch, so we log via the defensive
+    /// pattern (§12) and continue.
+    private static func applyFileProtection(at storeURL: URL) {
+        let basePath = storeURL.path
+        for suffix in ["", "-wal", "-shm"] {
+            let path = basePath + suffix
+            guard FileManager.default.fileExists(atPath: path) else { continue }
+            do {
+                try FileManager.default.setAttributes(
+                    [.protectionKey: FileProtectionType.completeUnlessOpen],
+                    ofItemAtPath: path
+                )
+            } catch {
+                AppLoggers.fitnessDataService.error("Kon file-protection niet zetten op store-bestand: \(error.localizedDescription, privacy: .public)")
+            }
         }
     }
 

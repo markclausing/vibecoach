@@ -382,7 +382,7 @@ class ChatViewModel: ObservableObject {
             todayWorkouts: todayWorkouts,
             tomorrowWorkouts: tomorrowWorkouts
         )
-        print("🥗 [Nutrition] Context updated: \(profile.coachSummary)")
+        AppLoggers.coach.debug("Nutrition context updated: \(profile.coachSummary, privacy: .private)")
     }
 
     /// Extracts planned workouts (duration + zone) from the active plan for a relative day.
@@ -421,10 +421,9 @@ class ChatViewModel: ObservableObject {
     func cacheSymptomContext(_ symptoms: [Symptom], preferences: [UserPreference] = []) {
         symptomContext = SymptomContextFormatter.format(symptoms: symptoms, preferences: preferences)
 
-        // Debug: print the full injury section that goes to Gemini
-        print("━━━ 🩺 [Injury Section → Gemini] ━━━")
-        print(symptomContext)
-        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        // Debug: the full injury section that goes to the coach is PHI — log it
+        // only at .debug level with .private redaction (stripped in release).
+        AppLoggers.coach.debug("Injury section → coach: \(self.symptomContext, privacy: .private)")
     }
 
     /// SPRINT 13.4: Returns the most recently stored coach insight (from AppStorage).
@@ -876,12 +875,13 @@ class ChatViewModel: ObservableObject {
             profileUpdateNote = ""
         }
 
-        // Debug: print the full blueprint and periodization context that goes to Gemini
-        if hasBlueprintData || hasPeriodization {
-            print("━━━ 🧠 [Blueprint Context → Gemini] ━━━")
-            if hasBlueprintData { print("[BLUEPRINT]\n\(blueprintContext)") }
-            if hasPeriodization { print("[PERIODIZATION]\n\(periodizationContext)") }
-            print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        // Debug: blueprint/periodization context is PHI — log only at .debug
+        // level with .private redaction (stripped in release).
+        if hasBlueprintData {
+            AppLoggers.coach.debug("Blueprint context → coach: \(self.blueprintContext, privacy: .private)")
+        }
+        if hasPeriodization {
+            AppLoggers.coach.debug("Periodization context → coach: \(self.periodizationContext, privacy: .private)")
         }
 
         // Epic 16: Inject the training phase per active goal — the AI MUST follow the phase instructions strictly
@@ -1252,9 +1252,9 @@ class ChatViewModel: ObservableObject {
                         await sendPromptToAI(uiPrompt: uiPrompt, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences)
                         return
                     }
-                    print("⚠️ No or empty HealthKit workouts found, falling back to Strava.")
+                    AppLoggers.coach.notice("No or empty HealthKit workouts found, falling back to Strava.")
                 } catch {
-                    print("⚠️ Error fetching HealthKit data (\(error.localizedDescription)), falling back to Strava.")
+                    AppLoggers.coach.warning("Error fetching HealthKit data (\(error.localizedDescription, privacy: .public)), falling back to Strava.")
                 }
 
                 // Fallback to Strava
@@ -1303,7 +1303,7 @@ class ChatViewModel: ObservableObject {
             }
 
             if !isFallback {
-                print("⚠️ No or empty HealthKit workouts found, falling back to Strava.")
+                AppLoggers.coach.notice("No or empty HealthKit workouts found, falling back to Strava.")
                 await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
             } else {
                 await MainActor.run {
@@ -1313,7 +1313,7 @@ class ChatViewModel: ObservableObject {
             }
         } catch {
             if !isFallback {
-                print("⚠️ Error fetching HealthKit data (\(error.localizedDescription)), falling back to Strava.")
+                AppLoggers.coach.warning("Error fetching HealthKit data (\(error.localizedDescription, privacy: .public)), falling back to Strava.")
                 await fetchStravaRecentActivities(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
             } else {
                 await MainActor.run {
@@ -1332,7 +1332,7 @@ class ChatViewModel: ObservableObject {
             if activities.isEmpty {
                 if !isFallback && selectedDataSource == .strava {
                     // Reverse Fallback: If Strava fails or is empty and Strava was the source, try HealthKit
-                    print("⚠️ No recent Strava activity found. Reverse fallback to HealthKit.")
+                    AppLoggers.coach.notice("No recent Strava activity found. Reverse fallback to HealthKit.")
                     await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
                     return
                 }
@@ -1366,7 +1366,7 @@ class ChatViewModel: ObservableObject {
 
         } catch let error as FitnessDataError {
             if !isFallback && selectedDataSource == .strava {
-                print("⚠️ Strava API fout (\(error)). Reverse fallback naar HealthKit.")
+                AppLoggers.coach.warning("Strava API error (\(error.localizedDescription, privacy: .public)). Reverse fallback to HealthKit.")
                 await fetchHealthKitRecentWorkouts(days: days, contextProfile: contextProfile, activeGoals: activeGoals, activePreferences: activePreferences, isFallback: true)
                 return
             }
@@ -1536,7 +1536,9 @@ class ChatViewModel: ObservableObject {
                 promptParts.append(.imageData(imageData, mimeType: "image/jpeg"))
             }
 
-            print("DEBUG PROMPT: \(text)")
+            // M-1: the assembled prompt is the entire PHI corpus — never log its
+            // content. Log only a non-identifying length signal for debugging.
+            AppLoggers.coach.debug("Prompt assembled (\(text.count, privacy: .public) chars)")
 
             // Waterfall: primary model first. On 503/429 (overload) we silently
             // switch to the fallback model — lighter by default, more often available
@@ -1602,8 +1604,9 @@ class ChatViewModel: ObservableObject {
                 return
             }
 
-            // Handle the successful response
-            print("DEBUG RAW RESPONSE: \(responseText ?? "nil")")
+            // Handle the successful response. M-1: the raw model response can echo
+            // PHI — log only a non-identifying length signal, never the content.
+            AppLoggers.coach.debug("Raw model response received (\(responseText?.count ?? 0, privacy: .public) chars)")
 
             // Use the robust JSON extractor: strip markdown and pull out the JSON object
             let cleanedJSON = Self.extractCleanJSON(from: responseText ?? "{}")
@@ -1651,7 +1654,7 @@ class ChatViewModel: ObservableObject {
                     // JSON parsing failed: use the fallbackMessage if it was provided
                     // (e.g. on recovery plan or skip-workout calls), so raw JSON is never visible in the chat.
                     // For regular chat messages we show the cleaned text (prose without JSON blocks).
-                    print("⚠️ JSON-parsing mislukt: \(error.localizedDescription)")
+                    AppLoggers.coach.warning("JSON parsing failed: \(error.localizedDescription, privacy: .public)")
                     if let fallback = fallbackMessage {
                         motivationText = fallback
                     } else {
