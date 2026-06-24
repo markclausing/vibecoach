@@ -43,8 +43,9 @@ final class HistoricalWeatherService {
     }
 
     /// Privacy rounding: GPS coords are rounded to 0.1° (~11km) before the API
-    /// call. Test injection can override this value for edge cases.
-    static let privacyRoundingDegrees: Double = 0.1
+    /// call. Single source of truth lives in `CoordinatePrivacy` (Story 61.6) so
+    /// every weather path rounds identically.
+    static let privacyRoundingDegrees: Double = CoordinatePrivacy.roundingDegrees
 
     /// Workouts older than this number of days go via the archive API; newer ones
     /// via the forecast API with `past_days`. Open-Meteo's archive has a lag of
@@ -219,8 +220,7 @@ final class HistoricalWeatherService {
     // MARK: - Helpers (internal for test visibility)
 
     static func roundForPrivacy(_ degrees: Double) -> Double {
-        let factor = privacyRoundingDegrees
-        return (degrees / factor).rounded() * factor
+        CoordinatePrivacy.round(degrees)
     }
 
     static func extractHourValues(from response: OpenMeteoHourlyResponse,

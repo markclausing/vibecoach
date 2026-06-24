@@ -15,10 +15,14 @@ enum OpenMeteoForecastClient {
     /// One daily forecast entry per day, starting today, at the given coordinate.
     /// - Parameter days: number of forecast days (Open-Meteo free tier supports up to 16).
     static func fetchDailyForecast(latitude: Double, longitude: Double, days: Int = 16) async throws -> [DayForecast] {
+        // L-5: round to 0.1° (~11 km) so the request never carries street-level
+        // precision (single source of truth: CoordinatePrivacy).
+        let roundedLat = CoordinatePrivacy.round(latitude)
+        let roundedLon = CoordinatePrivacy.round(longitude)
         var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
         components.queryItems = [
-            URLQueryItem(name: "latitude", value: String(format: "%.4f", latitude)),
-            URLQueryItem(name: "longitude", value: String(format: "%.4f", longitude)),
+            URLQueryItem(name: "latitude", value: String(format: "%.4f", roundedLat)),
+            URLQueryItem(name: "longitude", value: String(format: "%.4f", roundedLon)),
             URLQueryItem(name: "daily", value: "temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,weather_code"),
             URLQueryItem(name: "timezone", value: "auto"),
             URLQueryItem(name: "forecast_days", value: String(min(max(days, 1), 16)))

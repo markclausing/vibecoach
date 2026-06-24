@@ -6,7 +6,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 23,
+    "docRevision": 24,
     "lastUpdated": "2026-06-24",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
@@ -558,7 +558,8 @@
       "file": "AIFitnessCoach/Services/OpenMeteoForecastClient.swift",
       "description": "Epic #56: reusable Open-Meteo /v1/forecast daily fetch for arbitrary coordinates -> [DayForecast]. Owns the WMO->Dutch condition mapping (single source of truth; WeatherManager delegates).",
       "uses": [
-        "WeatherManager"
+        "WeatherManager",
+        "CoordinatePrivacy"
       ],
       "tags": [
         "epic-56"
@@ -669,6 +670,18 @@
       ]
     },
     {
+      "id": "CoordinatePrivacy",
+      "layer": "services",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Services/CoordinatePrivacy.swift",
+      "description": "Single source of truth for coordinate privacy: rounds GPS/geocoded lat-lon to 0.1° (~11km) before any weather request, so the privacy margin is explicit and no longer depends on CLLocationManager.desiredAccuracy (review L-5). Pure (§6). Used by WeatherManager, OpenMeteoForecastClient and HistoricalWeatherService.",
+      "uses": [],
+      "tags": [
+        "epic-61",
+        "security-l5"
+      ]
+    },
+    {
       "id": "HistoricalWeatherService",
       "layer": "services",
       "kind": "service",
@@ -676,7 +689,8 @@
       "description": "Queries Open-Meteo (archive or forecast with past_days) for Strava records without iPhone presence. GPS rounded to 0.1° for privacy.",
       "uses": [
         "NetworkSession",
-        "ActivityRecord"
+        "ActivityRecord",
+        "CoordinatePrivacy"
       ],
       "tags": [
         "epic-50"
@@ -689,7 +703,8 @@
       "file": "AIFitnessCoach/Services/WeatherManager.swift",
       "description": "Realtime weather via Open-Meteo + CoreLocation for dashboard context.",
       "uses": [
-        "NetworkSession"
+        "NetworkSession",
+        "CoordinatePrivacy"
       ]
     },
     {

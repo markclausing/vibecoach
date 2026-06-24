@@ -181,10 +181,12 @@
 		F11DCACE610000000000B001 /* PHIContextCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A001 /* PHIContextCache.swift */; };
 		F11DCACE610000000000B003 /* TrainingPlanSafetyValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A003 /* TrainingPlanSafetyValidator.swift */; };
 		F11DCACE610000000000B004 /* PromptInputSanitizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A004 /* PromptInputSanitizer.swift */; };
+		F11DCACE610000000000B007 /* CoordinatePrivacy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A007 /* CoordinatePrivacy.swift */; };
 		DBA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift */; };
 		F11DCACE610000000000B002 /* PHIContextCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A002 /* PHIContextCacheTests.swift */; };
 		F11DCACE610000000000B005 /* TrainingPlanSafetyValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A005 /* TrainingPlanSafetyValidatorTests.swift */; };
 		F11DCACE610000000000B006 /* PromptInputSanitizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A006 /* PromptInputSanitizerTests.swift */; };
+		F11DCACE610000000000B008 /* CoordinatePrivacyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A008 /* CoordinatePrivacyTests.swift */; };
 		DCA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */; };
 		DDA4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift */; };
 		DEA4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEB4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift */; };
@@ -411,8 +413,10 @@
 		F11DCACE610000000000A001 /* PHIContextCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PHIContextCache.swift; sourceTree = "<group>"; };
 		F11DCACE610000000000A003 /* TrainingPlanSafetyValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrainingPlanSafetyValidator.swift; sourceTree = "<group>"; };
 		F11DCACE610000000000A004 /* PromptInputSanitizer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptInputSanitizer.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A007 /* CoordinatePrivacy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoordinatePrivacy.swift; sourceTree = "<group>"; };
 		F11DCACE610000000000A005 /* TrainingPlanSafetyValidatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrainingPlanSafetyValidatorTests.swift; sourceTree = "<group>"; };
 		F11DCACE610000000000A006 /* PromptInputSanitizerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PromptInputSanitizerTests.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A008 /* CoordinatePrivacyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoordinatePrivacyTests.swift; sourceTree = "<group>"; };
 		EBB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightCacheTests.swift; sourceTree = "<group>"; };
 		F11DCACE610000000000A002 /* PHIContextCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PHIContextCacheTests.swift; sourceTree = "<group>"; };
 		ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightService.swift; sourceTree = "<group>"; };
@@ -626,6 +630,7 @@
 				F11DCACE610000000000A002 /* PHIContextCacheTests.swift */,
 				F11DCACE610000000000A005 /* TrainingPlanSafetyValidatorTests.swift */,
 				F11DCACE610000000000A006 /* PromptInputSanitizerTests.swift */,
+				F11DCACE610000000000A008 /* CoordinatePrivacyTests.swift */,
 				F0C4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculatorTests.swift */,
 				F1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift */,
 				F2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift */,
@@ -732,6 +737,7 @@
 				F11DCACE610000000000A001 /* PHIContextCache.swift */,
 				F11DCACE610000000000A003 /* TrainingPlanSafetyValidator.swift */,
 				F11DCACE610000000000A004 /* PromptInputSanitizer.swift */,
+				F11DCACE610000000000A007 /* CoordinatePrivacy.swift */,
 				ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */,
 				EDB4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift */,
 				EEB4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift */,
@@ -1107,6 +1113,7 @@
 				F11DCACE610000000000B002 /* PHIContextCacheTests.swift in Sources */,
 				F11DCACE610000000000B005 /* TrainingPlanSafetyValidatorTests.swift in Sources */,
 				F11DCACE610000000000B006 /* PromptInputSanitizerTests.swift in Sources */,
+				F11DCACE610000000000B008 /* CoordinatePrivacyTests.swift in Sources */,
 				E0C4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculatorTests.swift in Sources */,
 				E1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift in Sources */,
 				E2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift in Sources */,
@@ -1252,6 +1259,7 @@
 				F11DCACE610000000000B001 /* PHIContextCache.swift in Sources */,
 				F11DCACE610000000000B003 /* TrainingPlanSafetyValidator.swift in Sources */,
 				F11DCACE610000000000B004 /* PromptInputSanitizer.swift in Sources */,
+				F11DCACE610000000000B007 /* CoordinatePrivacy.swift in Sources */,
 				DCA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift in Sources */,
 				DDA4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift in Sources */,
 				DEA4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift in Sources */,
