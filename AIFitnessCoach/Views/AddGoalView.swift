@@ -118,7 +118,15 @@ struct AddGoalView: View {
         Task {
             // Sprint 26.1: skip the Gemini network call in UI-test mode
             // so the goal is saved immediately without network latency.
-            if ProcessInfo.processInfo.arguments.contains("-UITesting") {
+            // L-6: gate behind #if DEBUG so the bypass cannot exist in a shipped build.
+            let isUITesting: Bool = {
+                #if DEBUG
+                return ProcessInfo.processInfo.arguments.contains("-UITesting")
+                #else
+                return false
+                #endif
+            }()
+            if isUITesting {
                 newGoal.targetTRIMP = fallbackTRIMP(for: targetDate)
             } else {
                 do {

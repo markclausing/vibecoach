@@ -25,6 +25,11 @@ enum StravaRateLimitParser {
     /// parseable. Strava's 15-min window is a safe upper bound.
     static let defaultCooldownSeconds: TimeInterval = 15 * 60
 
+    /// I-8: upper bound on a *server-controlled* cooldown. A malicious or buggy
+    /// `Retry-After` (huge delta-seconds or a far-future date) must not be able to
+    /// pin the client in a multi-day lockout — clamp to 24 h.
+    static let maxCooldownSeconds: TimeInterval = 24 * 60 * 60
+
     /// Computes the time at which the client may resume.
     /// - Parameters:
     ///   - headers: `HTTPURLResponse.allHeaderFields` — case-insensitive lookup
@@ -41,17 +46,20 @@ enum StravaRateLimitParser {
 
         let trimmed = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Variant 1: delta-seconds — a pure integer.
+        let maxResume = now.addingTimeInterval(maxCooldownSeconds)
+
+        // Variant 1: delta-seconds — a pure integer. Clamped to maxCooldownSeconds.
         if let seconds = TimeInterval(trimmed), seconds >= 0 {
-            return now.addingTimeInterval(seconds)
+            return min(now.addingTimeInterval(seconds), maxResume)
         }
 
         // Variant 2: HTTP date (RFC 7231 §7.1.1.1).
         if let date = httpDateFormatter.date(from: trimmed) {
             // Protection against clock skew: a date in the past must not let the
             // cooldown expire immediately — use the default then so we don't
-            // land right back in the retry storm.
-            return date > now ? date : now.addingTimeInterval(defaultCooldownSeconds)
+            // land right back in the retry storm. Far-future dates are clamped.
+            let resolved = date > now ? date : now.addingTimeInterval(defaultCooldownSeconds)
+            return min(resolved, maxResume)
         }
 
         return now.addingTimeInterval(defaultCooldownSeconds)

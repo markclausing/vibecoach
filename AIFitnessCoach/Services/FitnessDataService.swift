@@ -12,6 +12,15 @@ actor FitnessDataService {
     private let session: NetworkSession
     private let rateLimitStore: StravaRateLimitStore
 
+    /// L-4: explicit per-request timeout so a hung Strava connection can't pin a
+    /// spinner / starve a background-refresh window for the default 60 s.
+    private static let requestTimeout: TimeInterval = 30
+
+    /// I-8: hard backstop on the pagination loop. With `per_page = 200` this caps a
+    /// single fetch at 10 000 activities — far above any real history — so a
+    /// malicious/buggy server that never returns an empty page can't loop forever.
+    private static let maxPages = 50
+
     // Dependency injection for token storage, network sessions and the
     // rate-limit cooldown window (Epic #51-F2).
     init(tokenStore: TokenStore = KeychainService.shared,
@@ -68,6 +77,7 @@ actor FitnessDataService {
             }
 
             var request = URLRequest(url: url)
+            request.timeoutInterval = Self.requestTimeout
             request.httpMethod = "POST"
             request.addValue("application/json", forHTTPHeaderField: "Content-Type")
             request.addValue(Secrets.stravaProxyToken, forHTTPHeaderField: "X-Client-Token")
@@ -115,6 +125,7 @@ actor FitnessDataService {
         }
 
         var request = URLRequest(url: url)
+        request.timeoutInterval = Self.requestTimeout
         request.httpMethod = "GET"
         request.addValue("Bearer \(stravaToken)", forHTTPHeaderField: "Authorization")
 
@@ -149,6 +160,7 @@ actor FitnessDataService {
         }
 
         var request = URLRequest(url: url)
+        request.timeoutInterval = Self.requestTimeout
         request.httpMethod = "GET"
         request.addValue("Bearer \(stravaToken)", forHTTPHeaderField: "Authorization")
 
@@ -187,6 +199,7 @@ actor FitnessDataService {
         }
 
         var request = URLRequest(url: url)
+        request.timeoutInterval = Self.requestTimeout
         request.httpMethod = "GET"
         request.addValue("Bearer \(stravaToken)", forHTTPHeaderField: "Authorization")
 
@@ -225,6 +238,7 @@ actor FitnessDataService {
         }
 
         var request = URLRequest(url: url)
+        request.timeoutInterval = Self.requestTimeout
         request.httpMethod = "GET"
         request.addValue("Bearer \(stravaToken)", forHTTPHeaderField: "Authorization")
 
@@ -270,11 +284,18 @@ actor FitnessDataService {
         let decoder = JSONDecoder()
 
         while true {
+            // I-8: hard backstop so a server that never returns an empty page
+            // can't loop forever. Logged, not silent (truncation is visible).
+            if page > Self.maxPages {
+                AppLoggers.fitnessDataService.notice("Strava pagination hit the page cap (\(Self.maxPages, privacy: .public)) — stopping; history may be truncated")
+                break
+            }
             guard let url = URL(string: "https://www.strava.com/api/v3/athlete/activities?before=\(beforeTime)&after=\(afterTime)&page=\(page)&per_page=\(perPage)") else {
                 throw FitnessDataError.networkError("Ongeldige URL voor history fetch")
             }
 
             var request = URLRequest(url: url)
+            request.timeoutInterval = Self.requestTimeout
             request.httpMethod = "GET"
             request.addValue("Bearer \(stravaToken)", forHTTPHeaderField: "Authorization")
 
@@ -325,11 +346,18 @@ actor FitnessDataService {
 
         // Pagination loop (keep going until an empty page comes back)
         while true {
+            // I-8: hard backstop so a server that never returns an empty page
+            // can't loop forever. Logged, not silent (truncation is visible).
+            if page > Self.maxPages {
+                AppLoggers.fitnessDataService.notice("Strava pagination hit the page cap (\(Self.maxPages, privacy: .public)) — stopping; history may be truncated")
+                break
+            }
             guard let url = URL(string: "https://www.strava.com/api/v3/athlete/activities?before=\(beforeTime)&after=\(afterTime)&page=\(page)&per_page=\(perPage)") else {
                 throw FitnessDataError.networkError("Ongeldige URL voor history fetch")
             }
 
             var request = URLRequest(url: url)
+            request.timeoutInterval = Self.requestTimeout
             request.httpMethod = "GET"
             request.addValue("Bearer \(stravaToken)", forHTTPHeaderField: "Authorization")
 

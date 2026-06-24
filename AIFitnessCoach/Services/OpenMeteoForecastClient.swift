@@ -29,7 +29,9 @@ enum OpenMeteoForecastClient {
         ]
         guard let url = components.url else { throw URLError(.badURL) }
 
-        let (data, _) = try await URLSession.shared.data(from: url)
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 30  // L-4: avoid a hung weather spinner (default is 60s)
+        let (data, _) = try await URLSession.shared.data(for: request)
         let response = try JSONDecoder().decode(OpenMeteoForecastResponse.self, from: data)
         return parse(response.daily)
     }

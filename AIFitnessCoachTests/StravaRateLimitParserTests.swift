@@ -98,4 +98,30 @@ final class StravaRateLimitParserTests: XCTestCase {
                        StravaRateLimitParser.defaultCooldownSeconds,
                        accuracy: 0.001)
     }
+
+    // MARK: I-8 — server-controlled cooldown is clamped
+
+    func testHugeDeltaSecondsIsClampedToMax() {
+        // A malicious/buggy header asking for ~115 days must clamp to 24 h.
+        let headers: [AnyHashable: Any] = ["Retry-After": "9999999"]
+        let result = StravaRateLimitParser.retryAfter(headers: headers, now: fixedNow)
+        XCTAssertEqual(result.timeIntervalSince(fixedNow),
+                       StravaRateLimitParser.maxCooldownSeconds,
+                       accuracy: 0.001)
+    }
+
+    func testFarFutureHTTPDateIsClampedToMax() {
+        // A date years in the future clamps to the 24 h ceiling.
+        let headers: [AnyHashable: Any] = ["Retry-After": "Wed, 06 May 2099 12:53:20 GMT"]
+        let result = StravaRateLimitParser.retryAfter(headers: headers, now: fixedNow)
+        XCTAssertEqual(result.timeIntervalSince(fixedNow),
+                       StravaRateLimitParser.maxCooldownSeconds,
+                       accuracy: 1.0)
+    }
+
+    func testSecondsJustUnderMaxAreNotClamped() {
+        let headers: [AnyHashable: Any] = ["Retry-After": "3600"] // 1 h < 24 h
+        let result = StravaRateLimitParser.retryAfter(headers: headers, now: fixedNow)
+        XCTAssertEqual(result.timeIntervalSince(fixedNow), 3600, accuracy: 0.001)
+    }
 }

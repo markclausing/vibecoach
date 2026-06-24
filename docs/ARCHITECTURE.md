@@ -385,3 +385,14 @@ The coach's physiological safety limits (session length, week-over-week progress
 
 - **Plan parameter clamps.** `TrainingPlanSafetyValidator.sanitize(_:)` (pure value-in/value-out, §6) clamps each model-proposed workout's `suggestedDurationMinutes` (`0…600`) and `targetTRIMP` (`0…1000`) into physiologically-plausible bounds and reports how many were clamped. It runs at the single `TrainingPlanManager.updatePlan` chokepoint — through which AI-proposed, merged (`mergeReplannedPlan`) and user-moved (`moveWorkout`) plans all pass — so no out-of-range value is ever persisted or displayed regardless of the prompt. It clamps rather than rejecting, so one bad field never discards an otherwise-usable week.
 - **Untrusted free-text sanitisation.** `PromptInputSanitizer.sanitizeExternalText(_:)` neutralises externally-sourced labels (most notably Strava `activity.name`, which connected devices/third-party apps can set) before they are interpolated into the prompt: control characters and newlines become spaces (no fake instruction lines), whitespace runs collapse, length is capped, and blank input yields a neutral placeholder. Applied at the workout-history interpolation site; the model's structured output is already rendered verbatim (not as markdown) and only persisted, never executed.
+
+---
+
+## 18. Network & build robustness (Epic #61)
+
+Story 61.5 hardens the external-request and build surface without changing behaviour for well-behaved servers.
+
+- **Request timeouts.** Every Strava `URLRequest` in `FitnessDataService` (including the token refresh) and the live/per-stage weather requests (`WeatherManager`, `OpenMeteoForecastClient`) set an explicit `timeoutInterval = 30 s`, so a hung connection can't pin a spinner or starve a background-refresh window for the 60 s default. `HistoricalWeatherService` keeps the default — its fetch goes through the injectable `WeatherURLFetcher` test seam and is not on a latency-critical path.
+- **Pagination backstop.** The two Strava activity-pagination loops (`while true` until an empty page) gain a `maxPages = 50` cap (10 000 activities at `per_page = 200`), so a server that never returns an empty page can't loop forever. Hitting the cap is **logged**, not silent — truncation is visible.
+- **Clamped server-controlled cooldown.** `StravaRateLimitParser` clamps a parsed `Retry-After` (delta-seconds or HTTP date) to a 24 h ceiling, so a malicious/buggy header can't pin the client in a multi-day lockout.
+- **Test bypasses are DEBUG-only.** The `-UITesting` launch-argument bypasses in `ChatView` (API-key gate) and `AddGoalView` (network skip) are wrapped in `#if DEBUG`, matching `AIFitnessCoachApp.makeModelContainer()`, so the code path cannot exist in a shipped binary.
