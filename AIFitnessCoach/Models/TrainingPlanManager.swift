@@ -20,8 +20,16 @@ class TrainingPlanManager: ObservableObject {
     }
 
     /// Updates the plan, sorts chronologically, publishes the change and saves to AppStorage.
+    /// Story 61.4 (L-2): every plan — whether AI-proposed, merged or user-moved —
+    /// passes through the code-side safety validator here (the single chokepoint),
+    /// so out-of-range model parameters are clamped before they are ever persisted
+    /// or displayed, independent of the prompt guardrails.
     func updatePlan(_ newPlan: SuggestedTrainingPlan) {
-        let sorted = sorted(newPlan)
+        let validated = TrainingPlanSafetyValidator.sanitize(newPlan)
+        if validated.clampedCount > 0 {
+            AppLoggers.trainingPlan.notice("Clamped out-of-range parameters on \(validated.clampedCount, privacy: .public) model-proposed workout(s)")
+        }
+        let sorted = sorted(validated.plan)
         self.activePlan = sorted
         if let encoded = try? JSONEncoder().encode(sorted) {
             latestSuggestedPlanData = encoded

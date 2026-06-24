@@ -1375,7 +1375,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 22,
+    "docRevision": 23,
     "lastUpdated": "2026-06-24",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
@@ -1662,7 +1662,8 @@
         "SymptomContextFormatter",
         "UserOverrideContextFormatter",
         "PlanResetPromptBuilder",
-        "AIModelFactory"
+        "AIModelFactory",
+        "PromptInputSanitizer"
       ]
     },
     {
@@ -2011,6 +2012,32 @@
       ]
     },
     {
+      "id": "TrainingPlanSafetyValidator",
+      "layer": "services",
+      "kind": "validator",
+      "file": "AIFitnessCoach/Services/TrainingPlanSafetyValidator.swift",
+      "description": "Code-side safety bounds on model-proposed training plans (L-2/LLM09). Clamps suggestedDurationMinutes (≤600m) and targetTRIMP (≤1000, negatives→0) before persistence/display, independent of the prompt guardrails. Pure value-in/value-out (§6); runs at the single TrainingPlanManager.updatePlan chokepoint.",
+      "uses": [
+        "SuggestedWorkout"
+      ],
+      "tags": [
+        "epic-61",
+        "security-l2"
+      ]
+    },
+    {
+      "id": "PromptInputSanitizer",
+      "layer": "services",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Services/PromptInputSanitizer.swift",
+      "description": "Sanitizes externally-sourced free text (e.g. Strava activity.name) before it enters the coach prompt (L-1/LLM01 prompt-injection): strips control chars/newlines, collapses whitespace, caps length, placeholder for blank. Pure (§6).",
+      "uses": [],
+      "tags": [
+        "epic-61",
+        "security-l1"
+      ]
+    },
+    {
       "id": "HistoricalWeatherService",
       "layer": "services",
       "kind": "service",
@@ -2352,7 +2379,8 @@
       "description": "Single Source of Truth for the active 7-day schedule. Consumed by Dashboard, Goals and Coach.",
       "uses": [
         "SuggestedWorkout",
-        "FitnessGoal"
+        "FitnessGoal",
+        "TrainingPlanSafetyValidator"
       ],
       "tags": [
         "epic-11"

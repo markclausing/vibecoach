@@ -1200,7 +1200,10 @@ class ChatViewModel: ObservableObject {
                 }
 
                 for workout in dailyWorkouts {
-                    lines.append("- \(dayName): \(workout.durationMinutes) min \(workout.name) (TRIMP: \(workout.trimp))")
+                    // L-1: the workout name is external free text (Strava/HK) — sanitize
+                    // before it enters the prompt (prompt-injection defense-in-depth).
+                    let safeName = PromptInputSanitizer.sanitizeExternalText(workout.name)
+                    lines.append("- \(dayName): \(workout.durationMinutes) min \(safeName) (TRIMP: \(workout.trimp))")
                 }
             } else {
                 emptyDaysStreak.append(displayDay)
