@@ -132,8 +132,8 @@ struct GeminiRestClient: GenerativeModelProtocol, RealAIProviderClient {
             body["generationConfig"] = ["response_mime_type": "application/json"]
         }
 
-        // The API key goes in the query string — same mechanism as the SDK used.
-        let urlString = Self.baseURL + modelName + ":generateContent?key=" + apiKey
+        // Auth via header (not query param) so the key stays out of URLs and access logs.
+        let urlString = Self.baseURL + modelName + ":generateContent"
         guard let url = URL(string: urlString) else {
             throw AIProviderError.http(status: 0, message: "Invalid Gemini URL")
         }
@@ -141,6 +141,7 @@ struct GeminiRestClient: GenerativeModelProtocol, RealAIProviderClient {
         request.httpMethod = "POST"
         request.timeoutInterval = timeout
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "x-goog-api-key")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await session.data(for: request)
