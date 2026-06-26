@@ -1375,7 +1375,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 25,
+    "docRevision": 26,
     "lastUpdated": "2026-06-26",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
@@ -2587,12 +2587,27 @@
       "kind": "service",
       "layer": "services",
       "file": "AIFitnessCoach/Services/AIModelFactory.swift",
-      "description": "Provider-agnostic client factory (Epic #53). Routes per AIProvider to RealGenerativeModel (Gemini adapter), OpenAICompatibleModelClient (OpenAI + Mistral, /v1/chat/completions) or AnthropicModelClient (/v1/messages). Encapsulates system-instruction placement, JSON mode and HTTP error mapping (AIProviderHTTP.validate → AIProviderError).",
+      "description": "Provider-agnostic client factory (Epic #53, Story 61.8). Routes per AIProvider to GeminiRestClient (Gemini v1beta REST, replaces generative-ai-swift SDK), OpenAICompatibleModelClient (OpenAI + Mistral, /v1/chat/completions) or AnthropicModelClient (/v1/messages). Encapsulates system-instruction placement, JSON mode and HTTP error mapping (AIProviderHTTP.validate → AIProviderError).",
       "uses": [
         "GenerativeModelProtocol"
       ],
       "tags": [
         "epic-53"
+      ]
+    },
+    {
+      "id": "GeminiRestClient",
+      "kind": "service",
+      "layer": "services",
+      "file": "AIFitnessCoach/Services/AIModelFactory.swift",
+      "description": "Story 61.8 — pure URLSession REST client for Gemini API v1beta /generateContent. Replaces the deprecated generative-ai-swift SDK (CWE-1104). Implements GenerativeModelProtocol + RealAIProviderClient. Auth: x-goog-api-key header (key stays out of URL/access logs). JSON mode: generationConfig.response_mime_type. Image: inline_data parts. Custom validateGemini() maps HTTP 400 INVALID_ARGUMENT to AIProviderError.authenticationFailed.",
+      "uses": [
+        "GenerativeModelProtocol",
+        "AIProviderError"
+      ],
+      "tags": [
+        "epic-61",
+        "security"
       ]
     },
     {
