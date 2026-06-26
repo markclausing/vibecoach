@@ -32,12 +32,21 @@ import SwiftData
 enum AppMigrationPlan: SchemaMigrationPlan {
 
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self, SchemaV6.self]
     }
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5]
+        [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6]
     }
+
+    // MARK: - V5 → V6: pure addition (CoachContextCache — PHI prompt-context in protected storage)
+
+    /// Story 61.7: adds `CoachContextCache` (new table). Existing records are untouched.
+    /// `.lightweight` is sufficient for a new @Model with no changes to existing tables.
+    static let migrateV5toV6 = MigrationStage.lightweight(
+        fromVersion: SchemaV5.self,
+        toVersion: SchemaV6.self
+    )
 
     // MARK: - V4 → V5: pure addition (multi-day event duration on FitnessGoal)
 

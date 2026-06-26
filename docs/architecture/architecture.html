@@ -1375,8 +1375,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
-    "docRevision": 24,
-    "lastUpdated": "2026-06-24",
+    "docRevision": 25,
+    "lastUpdated": "2026-06-26",
     "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -1649,7 +1649,7 @@
       "layer": "viewmodels",
       "kind": "viewmodel",
       "file": "AIFitnessCoach/ViewModels/ChatViewModel.swift",
-      "description": "Orchestrates the AI call: builds the prompt blocks via the formatters, reads the key from the Keychain, streams the response. Test bypass via GenerativeModelProtocol.",
+      "description": "Orchestrates the AI call: builds the prompt blocks via the formatters, reads the key from the Keychain, streams the response. Test bypass via GenerativeModelProtocol. Story 61.7: 17 PHI context strings moved from cleartext UserDefaults to CoachContextCache (SwiftData, file-protected). Configured with modelContext via configure(with:) on first view appear.",
       "uses": [
         "GenerativeModelProtocol",
         "UserAPIKeyStore",
@@ -1663,7 +1663,8 @@
         "UserOverrideContextFormatter",
         "PlanResetPromptBuilder",
         "AIModelFactory",
-        "PromptInputSanitizer"
+        "PromptInputSanitizer",
+        "CoachContextCache"
       ]
     },
     {
@@ -1785,11 +1786,12 @@
       "layer": "services",
       "kind": "service",
       "file": "AIFitnessCoach/Services/StravaAuthService.swift",
-      "description": "OAuth2 with the Cloudflare Worker proxy. No client_secret in the IPA — only a shared X-Client-Token. CSRF protection via a random `state` UUID.",
+      "description": "OAuth2 with the Cloudflare Worker proxy. No client_secret in the IPA — only a shared X-Client-Token. CSRF protection via a random `state` UUID. Story 61.7: logout(modelContext:) clears both UserDefaults PHI keys and CoachContextCache (SwiftData) on disconnect.",
       "uses": [
         "TokenStore",
         "NetworkSession",
-        "PHIContextCache"
+        "PHIContextCache",
+        "CoachContextCache"
       ],
       "tags": [
         "security-c01",
@@ -2002,14 +2004,29 @@
       "layer": "services",
       "kind": "helper",
       "file": "AIFitnessCoach/Services/PHIContextCache.swift",
-      "description": "Central purge of the cleartext UserDefaults/@AppStorage caches that hold derived health context (Vibe Score, symptoms, workout history, nutrition, at-risk goal titles). Re-derivable from the file-protected store, so cleared on data-source disconnect/logout to keep stale PHI out of unprotected preferences (review M-2 minimum bar + L-9). Pure helper: UserDefaults injected (§6).",
+      "description": "Central purge of the remaining cleartext UserDefaults caches (latestSuggestedPlanData, latestCoachInsight, atRiskGoalTitles). Story 61.7: the 17 ChatViewModel PHI context strings moved to CoachContextCache (SwiftData); purgeSwiftData(from:) covers that side. Pure helper: UserDefaults injected (§6).",
       "uses": [
-        "WorkoutInsightCache"
+        "WorkoutInsightCache",
+        "CoachContextCache"
       ],
       "tags": [
         "epic-61",
         "security-m2",
         "security-l9"
+      ]
+    },
+    {
+      "id": "CoachContextCache",
+      "layer": "models",
+      "kind": "model",
+      "file": "AIFitnessCoach/Models/CoachContextCache.swift",
+      "description": "SwiftData @Model (singleton) storing the 17 PHI prompt-context strings that previously lived as cleartext in UserDefaults/@AppStorage. Inherits NSFileProtectionCompleteUnlessOpen from the container (Story 61.3). Loaded and created lazily via ChatViewModel.configure(with:). clearAll() resets on Strava disconnect.",
+      "uses": [],
+      "tags": [
+        "epic-61",
+        "security-m2",
+        "swiftdata",
+        "phi"
       ]
     },
     {

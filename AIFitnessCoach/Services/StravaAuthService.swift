@@ -1,5 +1,6 @@
 import Foundation
 import AuthenticationServices
+import SwiftData
 
 @MainActor
 class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresentationContextProviding {
@@ -177,16 +178,20 @@ class StravaAuthService: NSObject, ObservableObject, ASWebAuthenticationPresenta
         }
     }
 
-    func logout() {
+    func logout(modelContext: ModelContext? = nil) {
         do {
             try tokenStore.deleteToken(forService: "StravaToken")
             try tokenStore.deleteToken(forService: "StravaRefreshToken")
             try tokenStore.deleteToken(forService: "StravaTokenExpiresAt")
             self.isAuthenticated = false
-            // Story 61.3 (L-9): disconnecting a data source clears the cleartext
-            // PHI prompt-context caches so stale health data does not linger in
-            // unprotected UserDefaults. They re-derive on the next refresh.
+            // Story 61.3 (L-9): clear remaining cleartext PHI caches in UserDefaults.
             PHIContextCache.purge()
+            // Story 61.7: also clear the SwiftData PHI context cache so the
+            // protected store is wiped too. Caller (SettingsView) passes its
+            // modelContext; nil is a no-op (e.g. in unit tests).
+            if let ctx = modelContext {
+                PHIContextCache.purgeSwiftData(from: ctx)
+            }
         } catch {
             self.authError = "Kon niet uitloggen (Keychain fout)"
         }

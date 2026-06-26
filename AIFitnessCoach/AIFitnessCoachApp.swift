@@ -161,10 +161,10 @@ struct AIFitnessCoachApp: App {
             #endif
         }()
 
-        let schema = Schema(SchemaV5.models)
+        let schema = Schema(SchemaV6.models)
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isUITesting)
 
-        // First attempt: load existing store and run the migration chain (V1 → V2 → V3 → V4 → V5).
+        // First attempt: load existing store and run the migration chain (V1 → V2 → … → V6).
         do {
             let container = try ModelContainer(
                 for: schema,
@@ -184,7 +184,7 @@ struct AIFitnessCoachApp: App {
                 """)
         }
 
-        // Fallback: remove the corrupt store and build an empty V4 container.
+        // Fallback: remove the corrupt store and build an empty V6 container.
         // During UI tests we run in-memory (`isStoredInMemoryOnly`), so no
         // file cleanup is needed — skip that step in that case.
         if !isUITesting {

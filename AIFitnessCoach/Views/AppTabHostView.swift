@@ -197,6 +197,9 @@ struct AppTabHostView: View {
         }
         .onAppear {
             sharedChatViewModel.setTrainingPlanManager(planManager)
+            // Story 61.7: inject the SwiftData context so the PHI prompt-context
+            // caches load from the protected store instead of UserDefaults.
+            sharedChatViewModel.configure(with: modelContext)
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("TriggerAutoSync"))) { _ in
             performAutoSync()
