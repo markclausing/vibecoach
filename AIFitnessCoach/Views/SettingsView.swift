@@ -671,7 +671,7 @@ struct SettingsView: View {
                             // show the old message.
                             stravaAuthService.authError = nil
                             if stravaAuthService.isAuthenticated {
-                                stravaAuthService.logout()
+                                stravaAuthService.logout(modelContext: modelContext)
                             } else {
                                 stravaAuthService.authenticate()
                             }

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import SwiftData
 import Combine
 
 /// The viewmodel that tracks the chat state and handles actions.
@@ -86,6 +87,36 @@ class ChatViewModel: ObservableObject {
     private let healthKitManager: HealthKitManager
     private let fitnessCalculator: PhysiologicalCalculatorProtocol
 
+    // MARK: - Story 61.7: PHI context cache in SwiftData (protected storage)
+    //
+    // The 17 prompt-context strings that used to live in @AppStorage (cleartext
+    // UserDefaults/Library/Preferences) now live in a `CoachContextCache` SwiftData
+    // record that inherits `NSFileProtectionCompleteUnlessOpen` from the container
+    // (Story 61.3).  Access is through computed properties so the rest of the class
+    // does not need to change.  The cache is loaded lazily on the first call to
+    // `configure(with:)`, which AppTabHostView invokes on `.task`.
+
+    private var contextCache: CoachContextCache?
+    private var configuredModelContext: ModelContext?
+
+    /// Injects the SwiftData model context and loads (or creates) the singleton
+    /// `CoachContextCache` record.  Call once from the view hierarchy — subsequent
+    /// calls are no-ops.  All context properties below return `""` / `0` until this
+    /// has been called, which is safe because they are only read when building a
+    /// prompt (a user action that cannot happen before the view appears).
+    func configure(with context: ModelContext) {
+        guard configuredModelContext == nil else { return }
+        configuredModelContext = context
+        let existing = (try? context.fetch(FetchDescriptor<CoachContextCache>()))?.first
+        if let existing {
+            contextCache = existing
+        } else {
+            let cache = CoachContextCache()
+            context.insert(cache)
+            contextCache = cache
+        }
+    }
+
     // Read the user's preference regarding the primary data source (Sprint 7.4)
     @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
 
@@ -112,85 +143,111 @@ class ChatViewModel: ObservableObject {
     /// Stored insights/motivation from the coach to highlight on the dashboard
     @AppStorage("latestCoachInsight") private var latestCoachInsight: String = ""
 
-    /// Epic 14.4: Cache of today's Vibe Score for injection into AI prompts.
-    /// Gets filled from DashboardView (on onAppear) so the AI always knows the current
-    /// recovery status — even without direct SwiftData access in ChatViewModel.
-    @AppStorage("vibecoach_todayVibeScoreContext") private var todayVibeScoreContext: String = ""
+    // MARK: - PHI context computed properties (Story 61.7)
+    // Backed by CoachContextCache in SwiftData (NSFileProtectionCompleteUnlessOpen).
+    // Fall back to "" / 0 before configure(with:) is called — safe, see comment above.
 
-    /// Epic 18.1: Cache of the subjective feedback (RPE + mood) of the last workout.
-    /// Gets filled from DashboardView as soon as an ActivityRecord has a rating.
-    @AppStorage("vibecoach_lastWorkoutFeedbackContext") private var lastWorkoutFeedbackContext: String = ""
+    /// Epic 14.4: today's Vibe Score for injection into AI prompts.
+    private var todayVibeScoreContext: String {
+        get { contextCache?.todayVibeScoreContext ?? "" }
+        set { contextCache?.todayVibeScoreContext = newValue }
+    }
 
-    /// Epic 17: Cache of the active blueprint status per goal for injection into AI prompts.
-    /// Contains open and satisfied critical workouts so the coach can adjust accordingly.
-    @AppStorage("vibecoach_blueprintContext") private var blueprintContext: String = ""
+    /// Epic 18.1: RPE + mood of the last workout.
+    private var lastWorkoutFeedbackContext: String {
+        get { contextCache?.lastWorkoutFeedbackContext ?? "" }
+        set { contextCache?.lastWorkoutFeedbackContext = newValue }
+    }
 
-    /// Epic 17.1: Cache of the PeriodizationEngine status per goal.
-    /// Contains the current training phase + success criteria + progress for targeted phase coaching.
-    @AppStorage("vibecoach_periodizationContext") private var periodizationContext: String = ""
+    /// Epic 17: active blueprint status per goal.
+    private var blueprintContext: String {
+        get { contextCache?.blueprintContext ?? "" }
+        set { contextCache?.blueprintContext = newValue }
+    }
+
+    /// Epic 17.1: PeriodizationEngine status per goal.
+    private var periodizationContext: String {
+        get { contextCache?.periodizationContext ?? "" }
+        set { contextCache?.periodizationContext = newValue }
+    }
 
     /// Timestamp of the last successful coach analysis (Unix timestamp).
-    /// Used to automatically refresh on a new day.
-    @AppStorage("vibecoach_lastAnalysisTimestamp") var lastAnalysisTimestamp: Double = 0
+    var lastAnalysisTimestamp: Double {
+        get { contextCache?.lastAnalysisTimestamp ?? 0 }
+        set { contextCache?.lastAnalysisTimestamp = newValue }
+    }
 
-    /// Epic 18: Cache of the daily symptom scores — pain figures per body area.
-    @AppStorage("vibecoach_symptomContext") private var symptomContext: String = ""
+    /// Epic 18: daily symptom scores — pain per body area.
+    private var symptomContext: String {
+        get { contextCache?.symptomContext ?? "" }
+        set { contextCache?.symptomContext = newValue }
+    }
 
-    /// Epic 21: Cache of the 7-day weather forecast — gets filled by WeatherManager.
-    /// Gets injected into the AI prompt so the coach takes outdoor activities into account.
-    @AppStorage("vibecoach_weatherContext") var weatherContext: String = ""
+    /// Epic 21: 7-day weather forecast for outdoor training advice.
+    var weatherContext: String {
+        get { contextCache?.weatherContext ?? "" }
+        set { contextCache?.weatherContext = newValue }
+    }
 
-    /// Epic 32 Story 32.3c: cache of significant physiological patterns in recent
-    /// workouts (decoupling, drift, cadence-fade, slow HR recovery). Gets filled
-    /// from `DashboardView.refreshWorkoutPatternsContext()` based on the
-    /// `WorkoutSample` data of the past 7 days, so the coach can proactively
-    /// talk about it in a chat turn.
-    @AppStorage("vibecoach_workoutPatternsContext") var workoutPatternsContext: String = ""
+    /// Epic 32 Story 32.3c: physiological patterns in recent workouts.
+    var workoutPatternsContext: String {
+        get { contextCache?.workoutPatternsContext ?? "" }
+        set { contextCache?.workoutPatternsContext = newValue }
+    }
 
-    /// Epic 45 Story 45.3: richer per-workout context over the past 14 days
-    /// (date, sport, sessionType, duration, TRIMP, avg HR, optionally power, and
-    /// detector output per workout). Complement to `workoutPatternsContext` (1-line
-    /// pulse over 7 days): the pulse signals THAT something is up, this block gives the
-    /// coach the specific evidence per workout so plan adjustments refer
-    /// to concrete sessions ("on 28 April you rode a tempo session with decoupling…").
-    /// Gets filled from `DashboardView.refreshChatContextCaches()`.
-    @AppStorage("vibecoach_workoutHistoryContext") var workoutHistoryContext: String = ""
+    /// Epic 45 Story 45.3: per-workout detail over the past 14 days.
+    var workoutHistoryContext: String {
+        get { contextCache?.workoutHistoryContext ?? "" }
+        set { contextCache?.workoutHistoryContext = newValue }
+    }
 
-    /// Epic 23 Sprint 1: Cache of the gap analysis per active goal.
-    /// Contains the difference between expected and actual TRIMP/km at this moment in the preparation.
-    @AppStorage("vibecoach_gapAnalysisContext") private var gapAnalysisContext: String = ""
+    /// Epic 23 Sprint 1: gap analysis per active goal.
+    private var gapAnalysisContext: String {
+        get { contextCache?.gapAnalysisContext ?? "" }
+        set { contextCache?.gapAnalysisContext = newValue }
+    }
 
-    /// Epic Doel-Intenties: Cache of the intent instructions per active goal.
-    /// Contains the generated coachingInstruction per goal (format, intent, VibeScore adjustment).
-    @AppStorage("vibecoach_intentContext") private var intentContext: String = ""
+    /// Epic Doel-Intenties: intent instructions per goal.
+    private var intentContext: String {
+        get { contextCache?.intentContext ?? "" }
+        set { contextCache?.intentContext = newValue }
+    }
 
-    /// Epic #55 story 55.3: Cache of the multi-day event-window block(s). Tells the coach
-    /// which dates ARE the event itself (no other training, fixed preferences suspended,
-    /// cross-goal suppression) and to plan recovery right after.
-    @AppStorage("vibecoach_eventWindowContext") private var eventWindowContext: String = ""
+    /// Epic #55 story 55.3: multi-day event-window blocks.
+    private var eventWindowContext: String {
+        get { contextCache?.eventWindowContext ?? "" }
+        set { contextCache?.eventWindowContext = newValue }
+    }
 
-    /// Epic 23 Sprint 2: Cache of the future projection per goal (Future Projection Engine).
-    /// Answers the question: "When does the athlete reach the Peak Phase based on his growth rate?"
-    /// Gets filled via `cacheProjections(_:)` from GoalsListView and injected into the AI prompt.
-    @AppStorage("vibecoach_projectionContext") private var projectionContext: String = ""
+    /// Epic 23 Sprint 2: future projection per goal.
+    private var projectionContext: String {
+        get { contextCache?.projectionContext ?? "" }
+        set { contextCache?.projectionContext = newValue }
+    }
 
-    /// Epic 24 Sprint 1: Cache of the physiological profile + nutrition plan for today/tomorrow.
-    /// Gets filled via `refreshNutritionContext()` and injected into every AI prompt.
-    @AppStorage("vibecoach_nutritionContext") private var nutritionContext: String = ""
+    /// Epic 24 Sprint 1: physiological profile + nutrition plan.
+    private var nutritionContext: String {
+        get { contextCache?.nutritionContext ?? "" }
+        set { contextCache?.nutritionContext = newValue }
+    }
 
-    /// Story 33.2a: cache of manually moved workouts (`isSwapped == true`)
-    /// so the coach knows in every prompt which sessions the user deliberately
-    /// shifted and does not force them back in subsequent suggestions.
-    @AppStorage("vibecoach_userOverrideContext") private var userOverrideContext: String = ""
+    /// Story 33.2a: manually moved workouts (isSwapped == true).
+    private var userOverrideContext: String {
+        get { contextCache?.userOverrideContext ?? "" }
+        set { contextCache?.userOverrideContext = newValue }
+    }
 
-    /// Story 33.4: cache of the Intent-vs-Execution analysis for the most recent workout.
-    /// Empty string = no recent comparable workout (no plan match, or insufficient data).
-    @AppStorage("vibecoach_intentExecutionContext") private var intentExecutionContext: String = ""
+    /// Story 33.4: Intent-vs-Execution analysis for the most recent workout.
+    private var intentExecutionContext: String {
+        get { contextCache?.intentExecutionContext ?? "" }
+        set { contextCache?.intentExecutionContext = newValue }
+    }
 
-    /// Epic 24 Sprint 3: One-time coach notice on a detected profile change (e.g. age).
-    /// Gets written by `PhysicalProfileSection` and injected into the next AI prompt.
-    /// Gets cleared after the prompt is built so the notice appears only once.
-    @AppStorage("vibecoach_profileUpdateNote") var profileUpdateNote: String = ""
+    /// Epic 24 Sprint 3: one-time coach notice on a detected profile change.
+    var profileUpdateNote: String {
+        get { contextCache?.profileUpdateNote ?? "" }
+        set { contextCache?.profileUpdateNote = newValue }
+    }
 
     /// Callback to send new preferences to the View so they get stored in SwiftData.
     var onNewPreferencesDetected: (([ExtractedPreference]) -> Void)?
