@@ -1168,8 +1168,9 @@ struct DashboardView: View {
             .max(by: { $0.startDate < $1.startDate })
     }
 
-    /// Timestamp of the last successful coach analysis — mirrored from ChatViewModel.
-    @AppStorage("vibecoach_lastAnalysisTimestamp") private var lastAnalysisTimestamp: Double = 0
+    /// Reads directly from viewModel (backed by CoachContextCache SwiftData since Story 61.7).
+    /// @AppStorage("vibecoach_lastAnalysisTimestamp") was a stale mirror that no longer updated.
+    private var lastAnalysisTimestamp: Double { viewModel.lastAnalysisTimestamp }
 
     // Epic 34.1: V2.0 Fit & Finish — material overlay on the status bar once the
     // user scrolls, so content does not slide visibly under the clock/battery.
