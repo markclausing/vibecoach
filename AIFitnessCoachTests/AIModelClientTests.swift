@@ -269,9 +269,12 @@ final class AIModelClientTests: XCTestCase {
         XCTAssertFalse(AIProviderError.isOverload(AIProviderError.authenticationFailed))
     }
 
-    func testIsOverload_StringContaining429_True() {
+    // Story 61.8: isOverload() no longer does string-matching on SDK error descriptions.
+    // All four providers throw AIProviderError.overloaded directly, so an arbitrary
+    // Error that happens to contain "503" in its description is not an overload.
+    func testIsOverload_ArbitraryErrorWithOverloadString_False() {
         struct FakeSDKError: Error { let d = "internalError(503)" }
-        XCTAssertTrue(AIProviderError.isOverload(FakeSDKError()))
+        XCTAssertFalse(AIProviderError.isOverload(FakeSDKError()))
     }
 
     func testIsOverload_PlainError_False() {
