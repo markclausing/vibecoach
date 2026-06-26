@@ -185,7 +185,15 @@ private let suggestionChips = [
                 // is not always reliably honoured on the GitHub runner — bypass the
                 // gate then so the Coach UI renders and the mock LLM (`UITestMockGenerativeModel`)
                 // does the work. Production remains fully dependent on `hasAPIKey`.
-                let isUITesting = ProcessInfo.processInfo.arguments.contains("-UITesting")
+                // L-6: the bypass exists only in DEBUG builds, so the path cannot
+                // be present in a shipped binary (matches makeModelContainer's pattern).
+                let isUITesting: Bool = {
+                    #if DEBUG
+                    return ProcessInfo.processInfo.arguments.contains("-UITesting")
+                    #else
+                    return false
+                    #endif
+                }()
                 if !viewModel.hasAPIKey && !isUITesting {
                     NoAPIKeyView()
                 } else {
