@@ -51,47 +51,27 @@ final class ChatErrorMessageMapperTests: XCTestCase {
         )
     }
 
-    // MARK: - GenerateContentError-mapping (via type-name-string)
+    // MARK: - AIProviderError-mapping
 
-    /// Faux-class met dezelfde naam als het Gemini-SDK-type. De mapper matcht
-    /// op `String(describing: type(of: error))` zodat we de echte SDK niet
-    /// hoeven te koppelen in deze test.
-    private final class GenerateContentError_PromptBlocked: Error {
-        var localizedDescription: String { "promptBlocked: safety filter" }
+    func testAIProviderOverloadedMapsToProviderOverloaded() {
+        let msg = ChatErrorMessageMapper.userFacingMessage(for: AIProviderError.overloaded)
+        XCTAssertEqual(msg, ChatErrorMessageMapper.providerOverloaded)
     }
 
-    private final class GenerateContentError_InvalidAPIKey: Error {
-        var localizedDescription: String { "invalidAPIKey: missing api key" }
-    }
-
-    private final class GenerateContentError_InternalError: Error {
-        var localizedDescription: String { "internalError 503 overload" }
-    }
-
-    private final class GenerateContentError_Generic: Error {
-        var localizedDescription: String { "something else" }
-    }
-
-    func testPromptBlockedMapsToScopeAwareMessage() {
-        let msg = ChatErrorMessageMapper.userFacingMessage(for: GenerateContentError_PromptBlocked())
-        XCTAssertEqual(msg, ChatErrorMessageMapper.promptBlocked)
-        XCTAssertTrue(msg.contains("veiligheidsfilters"))
-    }
-
-    func testInvalidAPIKeyDirectsUserToSettings() {
-        let msg = ChatErrorMessageMapper.userFacingMessage(for: GenerateContentError_InvalidAPIKey())
+    func testAIProviderAuthFailedMapsToInvalidAPIKey() {
+        let msg = ChatErrorMessageMapper.userFacingMessage(for: AIProviderError.authenticationFailed)
         XCTAssertEqual(msg, ChatErrorMessageMapper.invalidAPIKey)
         XCTAssertTrue(msg.contains("Instellingen"))
     }
 
-    func testInternalErrorMapsToProviderOverloaded() {
-        let msg = ChatErrorMessageMapper.userFacingMessage(for: GenerateContentError_InternalError())
-        XCTAssertEqual(msg, ChatErrorMessageMapper.providerOverloaded)
-        XCTAssertTrue(msg.contains("30"))
+    func testAIProviderContentBlockedMapsToPromptBlocked() {
+        let msg = ChatErrorMessageMapper.userFacingMessage(for: AIProviderError.contentBlocked)
+        XCTAssertEqual(msg, ChatErrorMessageMapper.promptBlocked)
+        XCTAssertTrue(msg.contains("veiligheidsfilters"))
     }
 
-    func testGenericGenerateContentErrorFallsBackToProviderGeneric() {
-        let msg = ChatErrorMessageMapper.userFacingMessage(for: GenerateContentError_Generic())
+    func testAIProviderHTTPMapsToProviderGeneric() {
+        let msg = ChatErrorMessageMapper.userFacingMessage(for: AIProviderError.http(status: 500, message: "boom"))
         XCTAssertEqual(msg, ChatErrorMessageMapper.providerGeneric)
     }
 

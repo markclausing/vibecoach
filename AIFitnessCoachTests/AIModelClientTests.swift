@@ -292,7 +292,7 @@ final class AIModelClientTests: XCTestCase {
         XCTAssertTrue(anthropic is AnthropicModelClient)
 
         let gemini = AIModelFactory.makeModel(provider: .gemini, modelName: "gemini-flash-latest", systemInstruction: "", jsonMode: true, timeout: 10, apiKey: "k")
-        XCTAssertTrue(gemini is RealGenerativeModel)
+        XCTAssertTrue(gemini is GeminiRestClient)
     }
 
     // MARK: - Epic #54: ProviderModelListService

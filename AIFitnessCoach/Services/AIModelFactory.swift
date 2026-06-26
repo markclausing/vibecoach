@@ -1,12 +1,16 @@
 import Foundation
-import GoogleGenerativeAI
 
 // MARK: - Epic #53: Multi-provider client factory
 //
 // This file contains the provider-client subsystem: one `AIModelFactory` that,
 // based on the chosen `AIProvider`, returns a `GenerativeModelProtocol`-conforming client,
-// plus the concrete clients (Gemini via the official SDK, OpenAI/Mistral
+// plus the concrete clients (Gemini via a direct REST client, OpenAI/Mistral
 // via one OpenAI-compatible REST client, and Anthropic via the Messages API).
+//
+// Story 61.8: removed the `google/generative-ai-swift` SDK (deprecated, unmaintained
+// upstream — CWE-1104/L-3). Gemini now uses `GeminiRestClient`, a direct
+// REST client matching the pattern of the OpenAI/Anthropic/Mistral clients.
+// The single external dependency is gone; all providers speak the same pure URLSession path.
 //
 // The types live together because they share one responsibility (send a prompt to
 // a provider and return the text). Per-provider differences — system-instruction
@@ -38,12 +42,13 @@ enum AIModelFactory {
     ) -> GenerativeModelProtocol {
         switch provider {
         case .gemini:
-            return makeGeminiModel(
+            return GeminiRestClient(
                 modelName: modelName,
                 systemInstruction: systemInstruction,
                 jsonMode: jsonMode,
                 timeout: timeout,
-                apiKey: apiKey
+                apiKey: apiKey,
+                session: session
             )
         case .openAI:
             return OpenAICompatibleModelClient(
@@ -77,55 +82,135 @@ enum AIModelFactory {
         }
     }
 
-    private static func makeGeminiModel(
-        modelName: String,
-        systemInstruction: String,
-        jsonMode: Bool,
-        timeout: TimeInterval,
-        apiKey: String
-    ) -> GenerativeModelProtocol {
-        let config = jsonMode
-            ? GenerationConfig(responseMIMEType: "application/json")
-            : GenerationConfig()
-        let options = RequestOptions(timeout: timeout)
-        let systemContent = systemInstruction.isEmpty
-            ? nil
-            : ModelContent(role: "system", parts: [.text(systemInstruction)])
-        let googleModel = GenerativeModel(
-            name: modelName,
-            apiKey: apiKey,
-            generationConfig: config,
-            systemInstruction: systemContent,
-            requestOptions: options
-        )
-        return RealGenerativeModel(model: googleModel)
+}
+
+// MARK: - Gemini REST client (Story 61.8 — replaces google/generative-ai-swift SDK)
+
+/// Direct REST client for the Gemini `generateContent` API (v1beta).
+///
+/// Matches the pattern of `OpenAICompatibleModelClient` and `AnthropicModelClient`:
+/// pure URLSession, injectable session for tests, all errors through `AIProviderError`.
+///
+/// Auth: `?key=` query param (the SDK also used this path).
+/// JSON mode: `generationConfig.response_mime_type = "application/json"`.
+/// Image: `inline_data` part with `mime_type` + base64 `data`.
+struct GeminiRestClient: GenerativeModelProtocol, RealAIProviderClient {
+
+    private static let baseURL = "https://generativelanguage.googleapis.com/v1beta/models/"
+
+    let modelName: String
+    let systemInstruction: String
+    let jsonMode: Bool
+    let timeout: TimeInterval
+    let apiKey: String
+    var session: URLSession = .shared
+
+    func generateContent(_ parts: [AIPromptPart]) async throws -> String? {
+        let (text, images) = AIPromptPartSplitter.split(parts)
+
+        // Build the parts array for the single user turn.
+        var contentParts: [[String: Any]] = []
+        if !text.isEmpty {
+            contentParts.append(["text": text])
+        }
+        for image in images {
+            contentParts.append([
+                "inline_data": [
+                    "mime_type": image.mimeType,
+                    "data": image.data.base64EncodedString()
+                ]
+            ])
+        }
+
+        var body: [String: Any] = [
+            "contents": [["role": "user", "parts": contentParts]]
+        ]
+        if !systemInstruction.isEmpty {
+            body["system_instruction"] = ["parts": [["text": systemInstruction]]]
+        }
+        if jsonMode {
+            body["generationConfig"] = ["response_mime_type": "application/json"]
+        }
+
+        // The API key goes in the query string — same mechanism as the SDK used.
+        let urlString = Self.baseURL + modelName + ":generateContent?key=" + apiKey
+        guard let url = URL(string: urlString) else {
+            throw AIProviderError.http(status: 0, message: "Invalid Gemini URL")
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = timeout
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await session.data(for: request)
+        try validateGemini(response, data: data)
+
+        guard let decoded = try? JSONDecoder().decode(GeminiResponse.self, from: data) else {
+            throw AIProviderError.decodingFailed
+        }
+        // Empty candidates = safety block.
+        guard let candidate = decoded.candidates?.first else {
+            throw AIProviderError.contentBlocked
+        }
+        let responseText = candidate.content.parts.compactMap { $0.text }.joined()
+        guard !responseText.isEmpty else { throw AIProviderError.emptyResponse }
+        return responseText
+    }
+
+    // MARK: - Gemini-specific HTTP validation
+
+    private func validateGemini(_ response: URLResponse, data: Data) throws {
+        guard let http = response as? HTTPURLResponse else { return }
+        switch http.statusCode {
+        case 200..<300:
+            return
+        case 429, 503, 529:
+            throw AIProviderError.overloaded
+        case 401, 403:
+            throw AIProviderError.authenticationFailed
+        case 400:
+            // Gemini returns 400 with INVALID_ARGUMENT for bad/missing API keys.
+            let errorBody = try? JSONDecoder().decode(GeminiErrorResponse.self, from: data)
+            if errorBody?.error.status == "INVALID_ARGUMENT"
+                || errorBody?.error.status == "PERMISSION_DENIED" {
+                throw AIProviderError.authenticationFailed
+            }
+            throw AIProviderError.http(status: 400, message: errorBody?.error.message)
+        default:
+            throw AIProviderError.http(
+                status: http.statusCode,
+                message: String(data: data, encoding: .utf8).map { String($0.prefix(200)) }
+            )
+        }
     }
 }
 
-// MARK: - Gemini adapter
+// MARK: - Gemini response decoding
 
-/// Wrapper around the official `GoogleGenerativeAI.GenerativeModel` that implements
-/// the SDK-independent `GenerativeModelProtocol` by mapping the neutral
-/// `AIPromptPart` array to `ModelContent.Part`.
-public struct RealGenerativeModel: GenerativeModelProtocol, RealAIProviderClient {
-    private let model: GenerativeModel
+private struct GeminiResponse: Decodable {
+    let candidates: [GeminiCandidate]?
+}
 
-    public init(model: GenerativeModel) {
-        self.model = model
-    }
+private struct GeminiCandidate: Decodable {
+    let content: GeminiContent
+    let finishReason: String?
+}
 
-    public func generateContent(_ parts: [AIPromptPart]) async throws -> String? {
-        let sdkParts: [ModelContent.Part] = parts.map { part in
-            switch part {
-            case .text(let text):
-                return .text(text)
-            case .imageData(let data, let mimeType):
-                return .data(mimetype: mimeType, data)
-            }
-        }
-        let modelContent = ModelContent(role: "user", parts: sdkParts)
-        let response = try await model.generateContent([modelContent])
-        return response.text
+private struct GeminiContent: Decodable {
+    let parts: [GeminiPart]
+}
+
+private struct GeminiPart: Decodable {
+    let text: String?
+}
+
+private struct GeminiErrorResponse: Decodable {
+    let error: GeminiAPIError
+    struct GeminiAPIError: Decodable {
+        let code: Int?
+        let message: String?
+        let status: String?
     }
 }
 

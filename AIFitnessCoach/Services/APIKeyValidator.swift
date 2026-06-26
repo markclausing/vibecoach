@@ -1,5 +1,4 @@
 import Foundation
-import GoogleGenerativeAI
 
 /// Result of a minimal validation ping on a user-entered
 /// Gemini API key. We distinguish the scenarios the UI must react to differently:
@@ -64,10 +63,12 @@ struct APIKeyValidator {
 
     /// Maps an arbitrary Swift `Error` to an `APIKeyValidationResult`.
     /// Exposed separately so unit tests can validate the error classification
-    /// without making a real Gemini call — `ping(...)` itself cannot be
-    /// tested without a network due to its direct `GenerativeModel` init.
+    /// without making a real network call.
+    ///
+    /// Story 61.8: `GenerateContentError` (Gemini SDK) removed — all Gemini errors
+    /// now come through `AIProviderError` from `GeminiRestClient`.
     static func classify(_ error: Error) -> APIKeyValidationResult {
-        // Epic #53: our own provider error from the OpenAI/Claude/Mistral REST clients.
+        // All four providers (Gemini/OpenAI/Anthropic/Mistral) throw AIProviderError.
         if let providerError = error as? AIProviderError {
             switch providerError {
             case .authenticationFailed:
@@ -78,18 +79,6 @@ struct APIKeyValidator {
                 return .unknown("HTTP \(status)\(message.map { ": \($0)" } ?? "")")
             case .contentBlocked, .emptyResponse, .decodingFailed:
                 return .unknown(String(describing: providerError))
-            }
-        }
-
-        if let generateError = error as? GenerateContentError {
-            switch generateError {
-            case .invalidAPIKey:
-                return .invalidKey
-            case .internalError:
-                // 503/429 — rate-limited / overload.
-                return .rateLimited
-            default:
-                return .unknown(generateError.localizedDescription)
             }
         }
 
