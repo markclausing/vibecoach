@@ -1375,9 +1375,9 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 26,
-    "lastUpdated": "2026-06-26",
-    "versioningPolicy": "appVersion follows CFBundleShortVersionString in Info.plist. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1).",
+    "docRevision": 27,
+    "lastUpdated": "2026-06-27",
+    "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
     "ui": "SwiftUI",
@@ -3063,6 +3063,33 @@
           "action": "On failure: log + delete the corrupt store + fresh V3 + UserDefaults flag for a UI message"
         }
       ]
+    },
+    {
+      "id": "release",
+      "name": "Release & Versioning (Epic #63)",
+      "trigger": "Push to main (continuous) + maintainer merging the Release PR (cut)",
+      "steps": [
+        {
+          "module": "maintainer",
+          "action": "Squash & merge a feature PR with a Conventional-Commit title (feat: / fix: / …)"
+        },
+        {
+          "module": "release-please",
+          "action": "On push to main: recompute the next semver from commit titles since the last tag; create/update the rolling Release PR 'chore(main): release X.Y.Z' + changelog"
+        },
+        {
+          "module": "maintainer",
+          "action": "When ready to ship: merge the Release PR — this is the only moment the marketing version moves"
+        },
+        {
+          "module": "release-please",
+          "action": "Create git tag vX.Y.Z + GitHub Release + update .release-please-manifest.json"
+        },
+        {
+          "module": "Build Phase",
+          "action": "Subsequent builds stamp CFBundleShortVersionString from git describe --tags (fallback: source Info.plist). CFBundleVersion keeps auto-incrementing per commit independently."
+        }
+      ]
     }
   ],
   "styleGuide": {
@@ -3314,7 +3341,7 @@
     ]
   },
   "ci": {
-    "summary": "GitHub Actions runs two workflows on every push to `main` and every PR: `iOS CI` (4-job DAG) and `CodeQL Security Analysis` (Swift + Actions matrix). A concurrency group per branch cancels older in-flight runs on force-push.",
+    "summary": "GitHub Actions runs three workflows: `iOS CI` (4-job DAG) and `CodeQL Security Analysis` (Swift + Actions matrix) on every push to `main` and every PR, plus `release-please` (Epic #63) on push to `main` that maintains a Release PR and cuts semver tags + GitHub Releases from Conventional Commits. A concurrency group per branch cancels older in-flight runs on force-push.",
     "docRef": "docs/ARCHITECTURE.md#11",
     "platform": "GitHub Actions",
     "workflows": [
@@ -3340,6 +3367,16 @@
         ],
         "runner": "matrix (macos-latest for swift, ubuntu-latest for actions)",
         "description": "Two parallel matrix cells: Swift on macOS with manual xcodebuild, Actions language on Ubuntu (10× cheaper) for YAML static analysis."
+      },
+      {
+        "id": "release-please",
+        "name": "release-please",
+        "file": ".github/workflows/release-please.yml",
+        "triggers": [
+          "push:main"
+        ],
+        "runner": "ubuntu-latest",
+        "description": "Epic #63 story 63.6 — maintains a rolling Release PR ('chore(main): release X.Y.Z') from Conventional-Commit titles; merging it cuts the vX.Y.Z tag + GitHub Release + changelog. Scoped contents:write + pull-requests:write so the test pipeline stays least-privilege. Config: release-please-config.json (release-type simple) + .release-please-manifest.json. The app build stamps CFBundleShortVersionString from the latest tag. See ARCHITECTURE.md#11."
       }
     ],
     "jobs": [

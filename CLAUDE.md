@@ -238,6 +238,18 @@ Pure refactors without a structural change (rename within one file, force-unwrap
 - **Non-releasing types** (no version bump, still valid): `docs:` · `chore:` · `ci:` · `test:` · `refactor:` · `build:` · `perf:` · `style:`.
 - **Because we squash & merge (§8 step 5), the PR _title_ becomes the single commit subject on `main`** — so the **PR title** is what release-please parses. Always give the PR a valid Conventional-Commit title; the per-commit subjects on the branch matter less once squashed. This is already the de-facto style here — 63.6 just makes it load-bearing, so a malformed subject silently misses a release bump.
 
+### 8.2 How a release is cut (in practice)
+
+Two version numbers move on different clocks (see `docs/ARCHITECTURE.md#11`):
+
+- **Build number** (`CFBundleVersion`) — auto-increments **every commit** (`git rev-list --count HEAD`, Build Phase). Never touched by hand.
+- **Marketing version** (`CFBundleShortVersionString`, semver) — moves **only when a release is cut**, in two stages:
+
+1. **Proposed continuously (automatic).** Each push to `main` re-runs `release-please`, which keeps a rolling **Release PR** (`chore(main): release X.Y.Z`) up to date — accumulating the changelog and recomputing the next version from the Conventional-Commit titles since the last release. Nothing is released yet; it is a standing proposal that grows.
+2. **Cut the release (manual, maintainer).** **Merge the Release PR.** That creates the git tag `vX.Y.Z` + a GitHub Release with the changelog. From then on, builds stamp `X.Y.Z` as the marketing version (the Build Phase reads `git describe --tags`).
+
+So: merge feature PRs whenever; they pile into one Release PR. The version only goes up — and by how much (the highest of patch/minor/major among the collected commits) — at the moment **you** merge that Release PR. If only non-releasing commits (`docs:`/`chore:`/`ci:`/…) landed, release-please opens no Release PR and the version stays put.
+
 ---
 
 ## 9. Xcode Project Management (`project.pbxproj`)

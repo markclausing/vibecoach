@@ -266,6 +266,24 @@ A matrix with two languages, each on the right runner:
 
 Both workflows have `concurrency: ${{ github.workflow }}-${{ github.ref }}` with `cancel-in-progress: true` — force-pushes on a PR branch cancel older in-flight runs. Saves runner minutes and prevents rollup confusion.
 
+### Release automation & versioning (Epic #63, story 63.6)
+
+The app carries **two** version numbers on different clocks:
+
+| Number | Key | Source | Moves when |
+|---|---|---|---|
+| **Build number** | `CFBundleVersion` | `git rev-list --count HEAD` (Build Phase) | **every commit** — monotonic, never hand-edited |
+| **Marketing version** | `CFBundleShortVersionString` | the latest git tag (`git describe --tags`, Build Phase) | **only when a release is cut** (see below) |
+
+A third workflow, **`release-please`** (`.github/workflows/release-please.yml`, `googleapis/release-please-action@v4`), automates the marketing version as **semver**. It is scoped to `contents: write` + `pull-requests: write` so the test pipeline stays least-privilege; config lives in `release-please-config.json` (`release-type: simple`) + `.release-please-manifest.json` (the current version, seeded at `2.0.0`).
+
+**Two-stage flow — the version only moves on a deliberate merge:**
+
+1. **Continuous proposal.** Every push to `main` re-runs release-please, which maintains a rolling **Release PR** titled `chore(main): release X.Y.Z`. It recomputes the next version from the [Conventional-Commit](https://www.conventionalcommits.org/) titles accumulated since the last release (`fix:` → patch, `feat:` → minor, `feat!:`/`BREAKING CHANGE:` → major; `docs:`/`chore:`/`ci:`/… → no bump), taking the **highest** bump present, and keeps the changelog in that PR up to date. Nothing is released yet.
+2. **Cut.** Merging the Release PR creates the tag `vX.Y.Z` + a GitHub Release with the changelog. From then on, builds stamp `X.Y.Z` (the Build Phase reads the tag; it falls back to the source `Info.plist` value for tag-less local/CI builds, so the source plist stays clean and `MARKETING_VERSION` in `project.pbxproj` is never mutated — it keeps its `skip-worktree` flag, §9).
+
+Because we **squash & merge** (CLAUDE.md §8 step 5), the **PR title** becomes the single commit subject release-please parses — so a valid Conventional-Commit PR title is what drives the bump. Feature PRs pile into one Release PR; the maintainer decides *when* to cut by merging it. Prerequisite (one-off): the repo setting *Actions → "Allow GitHub Actions to create and approve pull requests"* must be on so `GITHUB_TOKEN` can open the Release PR.
+
 ---
 
 ## 12. HR recovery via pause detection (Epic #47)
