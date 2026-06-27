@@ -66,11 +66,20 @@ struct AddGoalView: View {
                             selection: $stretchGoalPickerDate,
                             displayedComponents: .hourAndMinute
                         )
+                        if let warning = stretchWarning {
+                            Label(warning, systemImage: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
                     }
                 }
 
                 Section(header: Text(eventFormat == .multiDayStage ? "Startdatum" : "Streefdatum")) {
-                    DatePicker("Datum", selection: $targetDate, displayedComponents: .date)
+                    // Epic #62 story 62.1: forward-bound to the minimum lead time so a new goal
+                    // can't be created with a past / too-soon target date.
+                    DatePicker("Datum", selection: $targetDate,
+                               in: GoalFormValidator.earliestTargetDate()...,
+                               displayedComponents: .date)
                 }
             }
             .navigationTitle("Nieuw Doel")
@@ -90,10 +99,24 @@ struct AddGoalView: View {
                             Text("Opslaan")
                         }
                     }
-                    .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+                    .disabled(!GoalFormValidator.isTitleValid(title)
+                              || !GoalFormValidator.isTargetDateValid(targetDate)
+                              || isSaving)
                     .accessibilityIdentifier("GoalSaveButton")
                 }
             }
+        }
+    }
+
+    /// Epic #62 story 62.1: inline plausibility hint for the stretch (target finish) time.
+    private var stretchWarning: String? {
+        guard hasStretchGoal else { return nil }
+        let seconds = stretchTimeInterval(from: stretchGoalPickerDate)
+        switch GoalFormValidator.stretchTimePlausibility(seconds: seconds, sport: sportCategory) {
+        case .ok:      return nil
+        case .zero:    return String(localized: "Stel een streeftijd in of zet de schakelaar uit.")
+        case .tooFast: return String(localized: "Die streeftijd lijkt erg snel voor deze sport — klopt dat?")
+        case .tooSlow: return String(localized: "Die streeftijd lijkt erg lang voor deze sport — klopt dat?")
         }
     }
 
@@ -104,7 +127,7 @@ struct AddGoalView: View {
         let stretchTime: TimeInterval? = hasStretchGoal ? stretchTimeInterval(from: stretchGoalPickerDate) : nil
 
         let newGoal = FitnessGoal(
-            title: title,
+            title: GoalFormValidator.sanitizedTitle(title),
             details: finalDetails,
             targetDate: targetDate,
             sportCategory: sportCategory,

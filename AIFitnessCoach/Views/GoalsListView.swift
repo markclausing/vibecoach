@@ -114,7 +114,9 @@ struct GoalsListView: View {
             }
             .accessibilityIdentifier("GoalsScrollView")
             .navigationDestination(for: FitnessGoal.self) { goal in
-                EditGoalView(goal: goal)
+                // Epic #62 story 62.1: clear the goal-derived coach context on delete so the
+                // coach stops referencing a goal that no longer exists.
+                EditGoalView(goal: goal, onDeleted: { viewModel.clearGoalDerivedContext() })
             }
             .onScrollGeometryChange(for: Bool.self) { geometry in
                 geometry.contentOffset.y > 4

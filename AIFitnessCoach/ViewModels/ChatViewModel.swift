@@ -422,6 +422,19 @@ class ChatViewModel: ObservableObject {
         projectionContext = FutureProjectionService.buildCoachContext(from: projections)
     }
 
+    /// Epic #62 story 62.1: clears every goal-derived prompt-context cache immediately after a
+    /// goal is deleted, so the coach can't keep referencing a goal that no longer exists. The
+    /// remaining goals' context is rebuilt on the next `DashboardView` appear (the standard
+    /// refresh path), so this is a safe "forget now, re-derive on next visit" — no stale residue.
+    func clearGoalDerivedContext() {
+        blueprintContext = ""
+        periodizationContext = ""
+        intentContext = ""
+        eventWindowContext = ""
+        gapAnalysisContext = ""
+        projectionContext = ""
+    }
+
     /// Epic 24 Sprint 1: Fetches the physiological profile via HealthKit and computes the nutrition plan
     /// for today's and tomorrow's workouts based on the active training plan.
     /// Result gets cached in AppStorage and injected into every AI prompt.

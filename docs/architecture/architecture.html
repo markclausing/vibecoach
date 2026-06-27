@@ -1375,7 +1375,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 27,
+    "docRevision": 28,
     "lastUpdated": "2026-06-27",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
@@ -2065,6 +2065,45 @@
       "tags": [
         "epic-61",
         "security-l5"
+      ]
+    },
+    {
+      "id": "GoalFormValidator",
+      "layer": "services",
+      "kind": "validator",
+      "file": "AIFitnessCoach/Services/GoalFormValidator.swift",
+      "description": "Epic #62 story 62.1 — pure-Swift, UI-free validation for the goal create/edit form: enforces a target date at least minimumLeadDays (7) out (earliestTargetDate/isTargetDateValid, Calendar-based §3), trims the title (sanitizedTitle), and classifies a stretch (target finish) time per sport against plausibleFinishRange (StretchTimePlausibility). Returns value types; the View owns the copy.",
+      "uses": [
+        "SportCategory"
+      ],
+      "tags": [
+        "epic-62"
+      ]
+    },
+    {
+      "id": "APIKeyInputValidator",
+      "layer": "services",
+      "kind": "validator",
+      "file": "AIFitnessCoach/Services/APIKeyInputValidator.swift",
+      "description": "Epic #62 story 62.2 — pure-Swift hardening for the BYOK key field: sanitize() strips all whitespace/newlines from a paste, inferredProvider()/isProviderMismatch() detect a key whose prefix (sk-ant- / sk- / AIza) belongs to a different provider than selected. Never guesses on an unrecognised prefix (no Mistral false positives).",
+      "uses": [
+        "AIProvider"
+      ],
+      "tags": [
+        "epic-62"
+      ]
+    },
+    {
+      "id": "APIKeyTestStatusStore",
+      "layer": "services",
+      "kind": "store",
+      "file": "AIFitnessCoach/Services/APIKeyTestStatusStore.swift",
+      "description": "Epic #62 story 62.2 — persists the 'key works' verdict per provider so it survives a provider switch + app restart. Stores only a SHA256 fingerprint of the key (§11 privacy), never the key. UserDefaults-injected (§6).",
+      "uses": [
+        "AIProvider"
+      ],
+      "tags": [
+        "epic-62"
       ]
     },
     {
