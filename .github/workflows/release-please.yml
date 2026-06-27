@@ -1,0 +1,41 @@
+name: release-please
+
+# Maintains a rolling "Release PR" on main. Merging that PR creates the git tag
+# (vX.Y.Z) + a GitHub Release with a generated changelog. The bump (patch/minor/
+# major) is derived from Conventional Commits since the last tag:
+#   fix:  -> patch · feat: -> minor · feat!: / "BREAKING CHANGE:" -> major.
+# See ROADMAP Epic #63 story 63.6 + CLAUDE.md §8. The app build stamps
+# CFBundleShortVersionString from the latest tag (Run Script Build Phase, §9).
+#
+# Maintainer prerequisite (one-off): Settings → Actions → General → "Allow
+# GitHub Actions to create and approve pull requests" must be enabled, otherwise
+# GITHUB_TOKEN cannot open the Release PR. Note: PRs opened by GITHUB_TOKEN do
+# not themselves trigger other workflows (the Release PR's CI is skipped) — an
+# accepted trade-off; the code on main was already validated by ios-tests.yml.
+
+on:
+  push:
+    branches:
+      - main
+
+# Scoped to THIS workflow only — the test pipeline (ios-tests.yml) stays
+# least-privilege (contents: read). release-please needs to push tags/releases
+# and open/maintain its Release PR.
+permissions:
+  contents: write
+  pull-requests: write
+
+# Avoid overlapping release runs racing on the same Release PR.
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Uses the default file names release-please-config.json
+          # + .release-please-manifest.json in the repo root.

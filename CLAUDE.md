@@ -229,6 +229,15 @@ Pure refactors without a structural change (rename within one file, force-unwrap
   - Public CodeQL alerts → the regular `security/` branch + PR flow is sufficient
   - Real exploitable vulnerabilities in production → use a **private GitHub Security Advisory** + private fork, publish only after the fix
 
+### 8.1 Conventional Commits (load-bearing for release automation — Epic #63 story 63.6)
+
+`release-please` (`.github/workflows/release-please.yml`) derives the next semver bump and the changelog from commit messages, so commit subjects **must** follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `type(optional-scope): summary` — e.g. `feat: per-stage weather`, `fix: vibe-score nil crash`, `docs: translate ROADMAP`.
+- **Releasing types:** `fix:` → patch, `feat:` → minor, `feat!:` / `fix!:` / a `BREAKING CHANGE:` footer → major.
+- **Non-releasing types** (no version bump, still valid): `docs:` · `chore:` · `ci:` · `test:` · `refactor:` · `build:` · `perf:` · `style:`.
+- **Because we squash & merge (§8 step 5), the PR _title_ becomes the single commit subject on `main`** — so the **PR title** is what release-please parses. Always give the PR a valid Conventional-Commit title; the per-commit subjects on the branch matter less once squashed. This is already the de-facto style here — 63.6 just makes it load-bearing, so a malformed subject silently misses a release bump.
+
 ---
 
 ## 9. Xcode Project Management (`project.pbxproj`)
