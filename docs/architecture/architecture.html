@@ -3807,9 +3807,9 @@
       ${rev ? `<span class="version-rev">· ${rev}</span>` : ''}
     `;
     pill.title = [
-      `App-versie: ${v} (${DATA.meta.appVersionSource || 'Info.plist'})`,
-      DATA.meta.docRevision ? `Doc-revisie: ${DATA.meta.docRevision}` : null,
-      updated ? `Laatst bijgewerkt: ${updated}` : null,
+      `App version: ${v} (${DATA.meta.appVersionSource || 'Info.plist'})`,
+      DATA.meta.docRevision ? `Doc revision: ${DATA.meta.docRevision}` : null,
+      updated ? `Last updated: ${updated}` : null,
       DATA.meta.versioningPolicy ? `\n${DATA.meta.versioningPolicy}` : null
     ].filter(Boolean).join('\n');
   })();
@@ -3962,7 +3962,7 @@
       layerStack.appendChild(card);
     });
     if (!layerStack.children.length) {
-      layerStack.innerHTML = `<div class="detail-empty"><p>Geen modules voor deze filter.</p></div>`;
+      layerStack.innerHTML = `<div class="detail-empty"><p>No modules for this filter.</p></div>`;
     }
   }
 
@@ -4294,7 +4294,7 @@
       }
     }
 
-    // Principes (hergebruik principle-grid styling)
+    // Principles (reuse principle-grid styling)
     if (A.principles && A.principles.length) {
       const section = document.createElement('div');
       section.className = 'qa-section';
@@ -4349,7 +4349,7 @@
         if (w.steps) {
           body += `<ol class="wf-step-list">${w.steps.map(s => `<li>${escape(s)}</li>`).join('')}</ol>`;
         } else if (w.items) {
-          body += `<table class="wf-table"><thead><tr><th>Patroon</th><th>Gebruik</th></tr></thead><tbody>${
+          body += `<table class="wf-table"><thead><tr><th>Pattern</th><th>Usage</th></tr></thead><tbody>${
             w.items.map(i => `<tr><td>${escape(i.pattern)}</td><td>${escape(i.use)}</td></tr>`).join('')
           }</tbody></table>`;
         } else if (w.matrix) {
@@ -4439,12 +4439,12 @@
         </div>` : ''}
       ${usesList ? `
         <div class="detail-section">
-          <div class="detail-label">Gebruikt (${(m.uses || []).length})</div>
+          <div class="detail-label">Uses (${(m.uses || []).length})</div>
           <div class="detail-list">${usesList}</div>
         </div>` : ''}
       ${usedBy ? `
         <div class="detail-section">
-          <div class="detail-label">Gebruikt door (${(dependents[activeModule] || []).length})</div>
+          <div class="detail-label">Used by (${(dependents[activeModule] || []).length})</div>
           <div class="detail-list">${usedBy}</div>
         </div>` : ''}
     `;
