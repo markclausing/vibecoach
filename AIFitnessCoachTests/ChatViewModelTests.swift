@@ -1,7 +1,6 @@
 import XCTest
 import UIKit
 @testable import AIFitnessCoach
-import GoogleGenerativeAI
 
 @MainActor
 final class ChatViewModelTests: XCTestCase {
@@ -452,7 +451,7 @@ final class ChatViewModelTests: XCTestCase {
         // maakt een `GenerativeModel` met dezelfde API-sleutel, dus die zou ook
         // falen — maar voor deze code-pad geldt: we mogen nooit een fallback proberen.
         viewModel.inputText = "Hoe ga ik mijn doel halen?"
-        mockModel.errorToThrow = GenerateContentError.invalidAPIKey(message: "API key not valid.")
+        mockModel.errorToThrow = AIProviderError.authenticationFailed
         mockModel.delay = 0.05
         viewModel.messages.removeAll()
 

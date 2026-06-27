@@ -41,18 +41,14 @@ public enum AIProviderError: Error, Equatable {
 
 extension AIProviderError {
     /// True if an error is a temporary overload and it makes sense to try the
-    /// fallback model. Recognizes both our own `.overloaded` and the Gemini-SDK
-    /// `GenerateContentError.internalError` (via string representation, so this
-    /// module doesn't need `import GoogleGenerativeAI`).
+    /// fallback model. Story 61.8: simplified — all four providers now throw
+    /// `.overloaded` directly from their REST clients; the old Gemini-SDK
+    /// string-matching fallback is no longer needed.
     public static func isOverload(_ error: Error) -> Bool {
-        if let providerError = error as? AIProviderError, providerError == .overloaded {
-            return true
+        if let providerError = error as? AIProviderError {
+            return providerError == .overloaded
         }
-        let description = String(describing: error).lowercased()
-        return description.contains("internalerror")
-            || description.contains("503")
-            || description.contains("429")
-            || description.contains("529")
+        return false
     }
 }
 

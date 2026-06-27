@@ -330,9 +330,8 @@ final class WorkoutInsightService {
     }
 
     /// Detects SwiftUI/URLSession task cancellation in all the forms we encounter:
-    /// a raw `CancellationError`, `URLError.cancelled`, or a `URLError.cancelled`
-    /// wrapped inside `GenerateContentError.internalError(underlying:)`. We check
-    /// `String(describing:)` as a last-resort net for the wrapped case.
+    /// a raw `CancellationError`, `URLError.cancelled`, or the Code=-999 string
+    /// representation as a last-resort net for wrapped cancellations.
     private static func isCancellation(_ error: Error) -> Bool {
         if error is CancellationError { return true }
         if let urlError = error as? URLError, urlError.code == .cancelled { return true }

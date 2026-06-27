@@ -67,9 +67,7 @@
 		D5D0080101D008010100D005 /* SchemaMigrationV4ToV5Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0080102D008010100D006 /* SchemaMigrationV4ToV5Tests.swift */; };
 		5566778899001122334455EE /* WeatherManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6677889900112233445566FF /* WeatherManagerTests.swift */; };
 		5DBFDEDC67859D1105BB9DE5 /* MockGenerativeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */; };
-		626955C541119438634E5B32 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = 1DFC6E046AA02E4CF8689D9C /* GoogleGenerativeAI */; };
 		6D21D46EBFDA3ABDB67ECDBF /* GoalsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D92F0B029D6902862CF50631 /* GoalsListView.swift */; };
-		73F9568829F48D139CC06AB6 /* GoogleGenerativeAI in Frameworks */ = {isa = PBXBuildFile; productRef = DDF501EC97778A185B48B142 /* GoogleGenerativeAI */; };
 		75D1A92071CFBE1BA9750D59 /* Secrets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984AC8DD2D26E4CA3247251E /* Secrets.swift */; };
 		7C2EEDEF6E1CCAB9FE856BED /* StravaTokenResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6902F6A369E69FC0F8BC5C /* StravaTokenResponse.swift */; };
 		7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */; };
@@ -514,7 +512,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				E6E8BD3E3A715A18D4957878 /* Foundation.framework in Frameworks */,
-				626955C541119438634E5B32 /* GoogleGenerativeAI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -523,7 +520,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				D9D6946898CF838A86E276DC /* Foundation.framework in Frameworks */,
-				73F9568829F48D139CC06AB6 /* GoogleGenerativeAI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -897,7 +893,6 @@
 			);
 			name = AIFitnessCoach;
 			packageProductDependencies = (
-				1DFC6E046AA02E4CF8689D9C /* GoogleGenerativeAI */,
 			);
 			productName = AIFitnessCoach;
 			productReference = 5D2117400251372FC1E5F512 /* AIFitnessCoach.app */;
@@ -941,7 +936,6 @@
 			);
 			name = AIFitnessCoachTests;
 			packageProductDependencies = (
-				DDF501EC97778A185B48B142 /* GoogleGenerativeAI */,
 			);
 			productName = AIFitnessCoachTests;
 			productReference = 07262F9AE3513E421E9B387F /* AIFitnessCoachTests.xctest */;
@@ -976,7 +970,6 @@
 			);
 			mainGroup = 5E2E25462E75CD2AA9086296;
 			packageReferences = (
-				0F29A922938A67769695405C /* XCRemoteSwiftPackageReference "generative-ai-swift" */,
 			);
 			productRefGroup = 12C5691C1D9812D6840FF85F /* Products */;
 			projectDirPath = "";
@@ -1613,29 +1606,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		0F29A922938A67769695405C /* XCRemoteSwiftPackageReference "generative-ai-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/google/generative-ai-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.5.4;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		1DFC6E046AA02E4CF8689D9C /* GoogleGenerativeAI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0F29A922938A67769695405C /* XCRemoteSwiftPackageReference "generative-ai-swift" */;
-			productName = GoogleGenerativeAI;
-		};
-		DDF501EC97778A185B48B142 /* GoogleGenerativeAI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 0F29A922938A67769695405C /* XCRemoteSwiftPackageReference "generative-ai-swift" */;
-			productName = GoogleGenerativeAI;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E842B198C5FE9662C7F3830B /* Project object */;
 }

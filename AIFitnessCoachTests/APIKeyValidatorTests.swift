@@ -1,5 +1,4 @@
 import XCTest
-import GoogleGenerativeAI
 @testable import AIFitnessCoach
 
 /// Epic #36 sub-task 36.3 — dekt de BYOK API-sleutel validatie. De daadwerkelijke
@@ -37,35 +36,6 @@ final class APIKeyValidatorTests: XCTestCase {
         guard case .unknown = APIKeyValidator.classify(AIProviderError.http(status: 500, message: "boom")) else {
             return XCTFail("HTTP 500 hoort .unknown te zijn.")
         }
-    }
-
-    // MARK: - classify: GenerateContentError-paden
-
-    func testClassify_InvalidAPIKey_ReturnsInvalidKey() {
-        let error: GenerateContentError = .invalidAPIKey(message: "API key not valid")
-        XCTAssertEqual(APIKeyValidator.classify(error), .invalidKey)
-    }
-
-    func testClassify_InternalError_ReturnsRateLimited() {
-        // .internalError wraps een onderliggende fout (503/429 van Google).
-        // De wrapper-fout zelf maakt niet uit voor de classificatie.
-        let underlying = NSError(domain: "GeminiTest", code: 503, userInfo: nil)
-        let error = GenerateContentError.internalError(underlying: underlying)
-        XCTAssertEqual(APIKeyValidator.classify(error), .rateLimited,
-                       "503/429 hoort als rateLimited te classificeren — sleutel kan geldig zijn.")
-    }
-
-    func testClassify_PromptBlocked_ReturnsUnknown() {
-        // `promptBlocked` heeft een associated value (`response`) — voor de
-        // classificatie irrelevant; we verifiëren alleen de default-tak.
-        // Het resultaat moet `.unknown` zijn met een niet-lege beschrijving.
-        let blockedError = GenerateContentError.promptBlocked(response: GenerateContentResponse(candidates: []))
-        let result = APIKeyValidator.classify(blockedError)
-        guard case .unknown(let message) = result else {
-            return XCTFail("Verwachtte .unknown, kreeg \(result)")
-        }
-        XCTAssertFalse(message.isEmpty,
-                       "Voor unknown-paden moet er een (verkorte) beschrijving worden meegegeven.")
     }
 
     // MARK: - classify: URLError-paden (netwerk)
