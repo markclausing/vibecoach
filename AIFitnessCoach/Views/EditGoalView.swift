@@ -9,7 +9,7 @@ struct EditGoalView: View {
 
     /// Epic #62 story 62.1: invoked right after a successful delete so the host can clear the
     /// goal-derived coach context (no stale prompt references to a removed goal).
-    var onDeleted: (() -> Void)? = nil
+    var onDeleted: (() -> Void)?
 
     // Stretch goal: local state so the DatePicker always gets a valid Date
     @State private var hasStretchGoal: Bool
@@ -20,8 +20,9 @@ struct EditGoalView: View {
     // (now removed) object, otherwise SwiftData would resurrect or crash on it.
     @State private var isDeleting = false
 
-    init(goal: FitnessGoal) {
+    init(goal: FitnessGoal, onDeleted: (() -> Void)? = nil) {
         self.goal = goal
+        self.onDeleted = onDeleted
         if let stretchTime = goal.stretchGoalTime, stretchTime > 0 {
             _hasStretchGoal = State(initialValue: true)
             let midnight = Calendar.current.startOfDay(for: Date())

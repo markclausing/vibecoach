@@ -22,8 +22,8 @@ enum APIKeyInputValidator {
     static func inferredProvider(forKey key: String) -> AIProvider? {
         let k = sanitize(key)
         if k.hasPrefix("sk-ant-") { return .anthropic }
-        if k.hasPrefix("sk-")     { return .openAI }
-        if k.hasPrefix("AIza")    { return .gemini }
+        if k.hasPrefix("sk-") { return .openAI }
+        if k.hasPrefix("AIza") { return .gemini }
         return nil
     }
 
