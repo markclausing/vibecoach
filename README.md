@@ -126,13 +126,14 @@ A short technical summary; the full picture lives in the linked docs (no duplica
 
 **CI:** a 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) on `macos-latest`, plus a CodeQL scan of Swift + Actions workflows.
 
-**Recently completed:** Epic #60 (per-phase milestone insight in the Goals view), #57 (one-tap post-workout RPE check-in), #56 (location-aware per-stage weather), #55 (multi-day events first-class), #37 (internationalisation NL/EN/DE/ES), #53/#54 (multi-provider BYOK + dynamic model catalog), #32 (deep-dive physiological analysis). Full history and backlog → [`docs/ROADMAP.md`](docs/ROADMAP.md).
+**Recently completed:** Epic #60 (per-phase milestone insight in the Goals view), #57 (one-tap post-workout RPE check-in), #56 (location-aware per-stage weather), #55 (multi-day events first-class), #37 (internationalisation NL/EN/DE/ES), #53/#54 (multi-provider BYOK + dynamic model catalog), #32 (deep-dive physiological analysis). Open work → [`docs/ROADMAP.md`](docs/ROADMAP.md) · full history → [`docs/ROADMAP-archive.md`](docs/ROADMAP-archive.md).
 
 **Dig deeper:**
 
 - 🏗️ Architecture (Dual Engine, dual-source pipeline, BYOK, CI) → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - 🗺️ Interactive architecture viewer → **[open rendered](https://htmlpreview.github.io/?https://github.com/markclausing/vibecoach/blob/main/docs/architecture/architecture.html)** (GitHub shows `.html` as source, so this opens it via htmlpreview) · [source](docs/architecture/architecture.html)
-- 📜 Epic history & backlog → [`docs/ROADMAP.md`](docs/ROADMAP.md)
+- 🗒️ Open & planned work → [`docs/ROADMAP.md`](docs/ROADMAP.md) (lean live plan)
+- 📜 Full epic history → [`docs/ROADMAP-archive.md`](docs/ROADMAP-archive.md) (completed epics, append-only)
 - 🤖 Rules for AI assistants & contributors → [`CLAUDE.md`](CLAUDE.md)
 
 ---
