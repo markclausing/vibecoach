@@ -124,7 +124,7 @@ A short technical summary; the full picture lives in the linked docs (no duplica
 - **Privacy-first** — HealthKit on device, AI keys in Keychain, Strava secret in the Worker.
 - **Type-safe** — SwiftData with strict enums; external data mapped to enums at the front door.
 
-**CI:** a 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) on `macos-latest`, plus a CodeQL scan of Swift + Actions workflows.
+**CI:** a 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) on `macos-latest`, plus a CodeQL scan of Swift + Actions workflows and a `release-please` workflow that cuts semver tags + GitHub Releases from Conventional Commits.
 
 **Recently completed:** Epic #60 (per-phase milestone insight in the Goals view), #57 (one-tap post-workout RPE check-in), #56 (location-aware per-stage weather), #55 (multi-day events first-class), #37 (internationalisation NL/EN/DE/ES), #53/#54 (multi-provider BYOK + dynamic model catalog), #32 (deep-dive physiological analysis). Open work → [`docs/ROADMAP.md`](docs/ROADMAP.md) · full history → [`docs/ROADMAP-archive.md`](docs/ROADMAP-archive.md).
 
