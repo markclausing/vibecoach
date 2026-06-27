@@ -1451,6 +1451,10 @@ struct AIProviderSettingsView: View {
     @State private var keyHelpURL: IdentifiableURL?
     private let providerModelListService = ProviderModelListService()
 
+    /// Epic #62 story 62.2: persists the "key works" verdict per provider so it survives a
+    /// provider switch and an app restart (stores only a SHA256 fingerprint of the key).
+    private let testStatusStore = APIKeyTestStatusStore()
+
     private var selectedProvider: AIProvider {
         AIProvider(rawValue: providerRaw) ?? .gemini
     }
@@ -1493,6 +1497,16 @@ struct AIProviderSettingsView: View {
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     .accessibilityIdentifier("APIKeyField")
+
+                // Epic #62 story 62.2: warn when the pasted key's prefix belongs to a different
+                // provider (e.g. an sk-… OpenAI key under Gemini) — a common cause of "invalid key".
+                if APIKeyInputValidator.isProviderMismatch(key: apiKey, selected: selectedProvider) {
+                    Label("Deze sleutel lijkt van een andere provider. Controleer of je provider en sleutel bij elkaar horen.",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                        .accessibilityIdentifier("APIKeyProviderMismatchWarning")
+                }
             }
 
             // Status indicator
@@ -1609,19 +1623,31 @@ struct AIProviderSettingsView: View {
         // C-02: Keychain-linked load/save around the SecureField.
         .onAppear {
             apiKey = UserAPIKeyStore.read(for: selectedProvider)
+            // Epic #62 story 62.2: restore a previously persisted "key works" verdict.
+            restoreTestVerdict()
             loadCustomModels()
             loadModelCatalog()
             loadProviderModels()
         }
         .onChange(of: apiKey) { _, newValue in
-            UserAPIKeyStore.write(newValue, for: selectedProvider)
+            // Epic #62 story 62.2: auto-trim a pasted key — stray spaces/newlines otherwise
+            // cause a silent auth failure. Re-enter once with the clean value, then persist.
+            let clean = APIKeyInputValidator.sanitize(newValue)
+            if clean != newValue {
+                apiKey = clean
+                return
+            }
+            UserAPIKeyStore.write(clean, for: selectedProvider)
+            // The verdict is only valid for the exact validated key — re-derive for the current one.
+            restoreTestVerdict()
         }
         .onChange(of: providerRaw) { _, _ in
             // Epic #53: on a provider switch, show the key + model choice from the new
-            // provider slot + reset the test status (old result expires).
+            // provider slot. Epic #62 story 62.2: restore the persisted verdict for that
+            // provider's key instead of always resetting to idle.
             apiKey = UserAPIKeyStore.read(for: selectedProvider)
             loadCustomModels()
-            testState = .idle
+            restoreTestVerdict()
             // Epic #54: fetch the live model list of the new provider.
             loadProviderModels()
         }
@@ -1855,9 +1881,10 @@ struct AIProviderSettingsView: View {
 
         testState = .testing
         testedKey = trimmed
+        let provider = selectedProvider
 
         Task {
-            let result = await APIKeyValidator.validate(trimmed, provider: selectedProvider)
+            let result = await APIKeyValidator.validate(trimmed, provider: provider)
             await MainActor.run {
                 switch result {
                 case .valid:            testState = .valid
@@ -1866,7 +1893,27 @@ struct AIProviderSettingsView: View {
                 case .network:          testState = .network
                 case .unknown(let msg): testState = .unknown(msg)
                 }
+                // Epic #62 story 62.2: persist a positive verdict (survives provider switch +
+                // app restart); clear it on a definitive rejection. Transient states
+                // (rateLimited/network) leave any earlier verdict untouched.
+                switch result {
+                case .valid:      testStatusStore.markValidated(key: trimmed, for: provider)
+                case .invalidKey: testStatusStore.clear(for: provider)
+                default:          break
+                }
             }
+        }
+    }
+
+    /// Epic #62 story 62.2: shows a persisted "key works" verdict when the current key matches
+    /// the last one validated for this provider; otherwise resets to idle (unless mid-test).
+    private func restoreTestVerdict() {
+        let clean = APIKeyInputValidator.sanitize(apiKey)
+        if testStatusStore.isValidated(key: clean, for: selectedProvider) {
+            testedKey = clean
+            testState = .valid
+        } else if testState != .testing {
+            testState = .idle
         }
     }
 }

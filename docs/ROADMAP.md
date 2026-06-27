@@ -25,8 +25,8 @@ Consolidation of the open stories that were left hanging in two otherwise-comple
 
 **Stories** (each its own PR):
 
-* **⏳ 62.1 — Create & manage goals (was 51.B):** enforce a goal date at least +7 days out, realistic stretch times per sport, title trim on save, and soft-delete so a removed goal leaves no stale coach context behind.
-* **⏳ 62.2 — AI provider & API key (was 51.D):** auto-trim whitespace on paste, prefix detection that warns about a key from the wrong provider (e.g. `sk-` under Gemini), and test-key feedback that persists across a provider switch or app restart.
+* **✅ 62.1 — Create & manage goals (was 51.B):** `GoalFormValidator` (pure-Swift, §6) enforces a target date ≥ +7 days (AddGoal/EditGoal date pickers forward-bound + Save gated + inline warning), trims the title on save, and flags an implausible stretch (target finish) time per sport via `plausibleFinishRange`. "Soft-delete" is interpreted as *no stale coach context*: deleting a goal calls the new `ChatViewModel.clearGoalDerivedContext()` (cleared caches re-derive from the remaining goals on the next Dashboard appear) — **not** a DB soft-delete flag, which would mean a schema migration + filtering every `@Query` and contradict the "smallest surface" framing. 12 unit tests in `GoalFormValidatorTests`. **PR #325.**
+* **✅ 62.2 — AI provider & API key (was 51.D):** `APIKeyInputValidator` (pure-Swift) auto-trims a pasted key (all whitespace/newlines) and detects a wrong-provider prefix (`sk-ant-`/`sk-`/`AIza`) → inline warning. `APIKeyTestStatusStore` (UserDefaults-injected, §6) persists the "key works" verdict per provider as a SHA256 fingerprint (§11) so it survives a provider switch + app restart. 18 unit tests across `APIKeyInputValidatorTests` + `APIKeyTestStatusStoreTests`. **PR #325.**
 * **⏳ 62.3 — Onboarding & permissions (was 51.E):** HealthKit as a required step (not silently skippable), notifications explicitly optional, a status banner when a permission was skipped, detection of access revoked after the fact, and a permission-status overview in Settings.
 * **⏳ 62.4 — Data sync — remaining paths (was 51.F3/F4/F6):** HealthKit per-type permission handling, making a weather error non-blocking with a retry marker instead of a hard interruption, and captive-portal detection (online but behind a login portal).
 * **⏳ 62.5 — Proactive coach (background) (was 51.G):** a status row in Settings showing whether Engine A/B is running, a notification-permission pre-check before registration, and visibility of a registration error instead of a silent failure.
@@ -34,7 +34,7 @@ Consolidation of the open stories that were left hanging in two otherwise-comple
 
 **Pickup trigger:** a concrete unhappy flow that hits a user (a goal with a date in the past, a wrongly pasted key, or confusion about which permissions are active), or the wish to enforce concurrency discipline before a Swift 6 upgrade.
 
-**Suggested order:** start with 62.1 + 62.2 (form validation, smallest surface, direct user benefit), then 62.3 + 62.5 (permission visibility), then 62.4 (sync edge paths), and 62.6 as a standalone concurrency PR whenever it suits.
+**Suggested order:** 62.1 + 62.2 (form validation) ✅ done; next 62.3 + 62.5 (permission visibility), then 62.4 (sync edge paths), and 62.6 as a standalone concurrency PR whenever it suits.
 
 ---
 
