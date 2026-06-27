@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VibeCoach — Architectuur</title>
+<title>VibeCoach — Architecture</title>
 <style>
   :root {
     --primary: #4D804D;
@@ -193,8 +193,8 @@
     gap: 0;
     min-height: calc(100vh - 60px);
   }
-  /* Detail-panel is alleen relevant op de Lagen-view (klikbare module-graph).
-     Op andere views verbergen we het + collapsen we de grid naar 2 kolommen. */
+  /* Detail panel is only relevant on the Layers view (clickable module graph).
+     On other views we hide it + collapse the grid to 2 columns. */
   .layout:not([data-view="layers"]) {
     grid-template-columns: 260px 1fr;
   }
@@ -1252,13 +1252,13 @@
   <div class="brand">
     <span class="brand-dot"></span>
     <span>VibeCoach</span>
-    <span class="brand-sub">Architectuur</span>
+    <span class="brand-sub">Architecture</span>
     <span class="version-pill" id="versionPill" title=""></span>
   </div>
   <nav class="tabs">
-    <button class="tab active" data-view="overview">Overzicht</button>
-    <button class="tab" data-view="layers">Lagen</button>
-    <button class="tab" data-view="subsystems">Subsystemen</button>
+    <button class="tab active" data-view="overview">Overview</button>
+    <button class="tab" data-view="layers">Layers</button>
+    <button class="tab" data-view="subsystems">Subsystems</button>
     <button class="tab" data-view="flows">Flows</button>
     <button class="tab" data-view="testing">Tests</button>
     <button class="tab" data-view="ci">CI</button>
@@ -1267,17 +1267,17 @@
   <div class="topbar-spacer"></div>
   <div class="controls">
     <div class="theme-picker" id="themePicker"></div>
-    <button class="icon-btn" id="modeToggle" title="Wissel licht/donker">◐</button>
+    <button class="icon-btn" id="modeToggle" title="Toggle light/dark">◐</button>
   </div>
 </header>
 
 <div class="layout" data-view="overview">
   <aside class="sidebar">
     <div class="side-group">
-      <input class="search-input" id="searchInput" type="search" placeholder="Zoek modules, services...">
+      <input class="search-input" id="searchInput" type="search" placeholder="Search modules, services...">
     </div>
     <div class="side-group">
-      <h3 class="side-title">Lagen</h3>
+      <h3 class="side-title">Layers</h3>
       <div id="layerFilters"></div>
     </div>
     <div class="side-group">
@@ -1285,7 +1285,7 @@
       <div class="chip-list" id="tagFilters"></div>
     </div>
     <div class="side-group">
-      <h3 class="side-title">Bron</h3>
+      <h3 class="side-title">Source</h3>
       <div class="detail-file" style="margin-top:8px"><a id="jsonLink" href="architecture.json" style="color:inherit;text-decoration:none">architecture.json</a></div>
     </div>
   </aside>
@@ -1299,7 +1299,7 @@
       </div>
       <div id="principles" class="principle-grid"></div>
       <div class="view-header" style="margin-top:12px">
-        <h2 class="view-title" style="font-size:18px">Subsystemen</h2>
+        <h2 class="view-title" style="font-size:18px">Subsystems</h2>
       </div>
       <div id="overviewSubsystems" class="subsystem-grid"></div>
     </section>
@@ -1307,8 +1307,8 @@
     <!-- Layers -->
     <section class="view" id="view-layers">
       <div class="view-header">
-        <h1 class="view-title">Lagen</h1>
-        <p class="view-sub">Klik een module voor details. Andere modules dimmen, verbonden modules lichten op.</p>
+        <h1 class="view-title">Layers</h1>
+        <p class="view-sub">Click a module for details. Other modules dim, connected modules highlight.</p>
       </div>
       <div id="layerStack" class="layer-stack"></div>
     </section>
@@ -1316,8 +1316,8 @@
     <!-- Subsystems -->
     <section class="view" id="view-subsystems">
       <div class="view-header">
-        <h1 class="view-title">Subsystemen</h1>
-        <p class="view-sub">Cross-cutting concerns die meerdere lagen overspannen.</p>
+        <h1 class="view-title">Subsystems</h1>
+        <p class="view-sub">Cross-cutting concerns spanning multiple layers.</p>
       </div>
       <div id="subsystems" class="subsystem-grid"></div>
     </section>
@@ -1326,7 +1326,7 @@
     <section class="view" id="view-flows">
       <div class="view-header">
         <h1 class="view-title">Flows</h1>
-        <p class="view-sub">Step-by-step ketens — van trigger tot effect.</p>
+        <p class="view-sub">Step-by-step chains — from trigger to effect.</p>
       </div>
       <div id="flows" class="flow-grid"></div>
     </section>
@@ -1334,7 +1334,7 @@
     <!-- Testing -->
     <section class="view" id="view-testing">
       <div class="view-header">
-        <h1 class="view-title">Test-strategie</h1>
+        <h1 class="view-title">Testing strategy</h1>
         <p class="view-sub" id="testingSummary"></p>
       </div>
       <div id="testingContent"></div>
@@ -1352,7 +1352,7 @@
     <!-- Agent -->
     <section class="view" id="view-agent">
       <div class="view-header">
-        <h1 class="view-title">Agent-strategie</h1>
+        <h1 class="view-title">Agent strategy</h1>
         <p class="view-sub" id="agentSummary"></p>
       </div>
       <div id="agentContent"></div>
@@ -1361,7 +1361,7 @@
 
   <aside class="detail-panel" id="detailPanel">
     <div class="detail-empty">
-      <p>Klik op een module om details en afhankelijkheden te zien.</p>
+      <p>Click a module to see details and dependencies.</p>
     </div>
   </aside>
 </div>
@@ -1374,10 +1374,10 @@
     "bundleIdentifier": "com.markclausing.aifitnesscoach",
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
-    "buildNumberSource": "git rev-list --count HEAD (gezet door Build Phase script in project.pbxproj)",
+    "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
     "docRevision": 26,
     "lastUpdated": "2026-06-26",
-    "versioningPolicy": "appVersion volgt CFBundleShortVersionString in Info.plist. docRevision bumpt bij iedere architectuur-relevante wijziging (zie CLAUDE.md §7.1).",
+    "versioningPolicy": "appVersion follows CFBundleShortVersionString in Info.plist. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1).",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
     "ui": "SwiftUI",
@@ -1398,27 +1398,27 @@
     {
       "id": "management-by-exception",
       "title": "Management by Exception",
-      "description": "De app waarschuwt nooit bij goed gedrag — alleen bij afwijkingen (te zwaar of te licht trainen). Een rode status komt altijd samen met een AI-gegenereerd herstelplan."
+      "description": "The app never alerts on good behaviour — only on deviations (training too hard or too light). A red status always comes with an AI-generated recovery plan."
     },
     {
       "id": "privacy-first",
       "title": "Privacy-first",
-      "description": "HealthKit-data blijft on-device. AI-sleutels in Keychain. Strava client_secret in een Cloudflare Worker, nooit in de IPA."
+      "description": "HealthKit data stays on-device. AI keys in Keychain. Strava client_secret in a Cloudflare Worker, never in the IPA."
     },
     {
       "id": "type-safety",
       "title": "Type-safe domain model",
-      "description": "SwiftData met strict enums (SportCategory, EventFormat, TrainingPhase). Ruwe externe data wordt bij de voordeur gemapt vóór persistentie."
+      "description": "SwiftData with strict enums (SportCategory, EventFormat, TrainingPhase). Raw external data is mapped at the front door before persistence."
     },
     {
       "id": "byok",
       "title": "Bring Your Own Key",
-      "description": "De gebruiker brengt zijn eigen API-sleutel (Gemini / OpenAI / Anthropic). Geen Secrets-fallback, geen backend AI-proxy."
+      "description": "The user brings their own API key (Gemini / OpenAI / Anthropic). No Secrets fallback, no backend AI proxy."
     },
     {
       "id": "dual-engine",
-      "title": "Proactief zonder open app",
-      "description": "Twee onafhankelijke achtergrond-triggers — Engine A reageert op actie (nieuwe workout), Engine B op inactie. Volledig lokaal, geen APNs in de proactieve flow."
+      "title": "Proactive without an open app",
+      "description": "Two independent background triggers — Engine A reacts to action (new workout), Engine B to inaction. Fully local, no APNs in the proactive flow."
     }
   ],
   "layers": [
@@ -1426,37 +1426,37 @@
       "id": "app",
       "name": "App-bootstrap",
       "order": 0,
-      "description": "Entry-point, ModelContainer-init, AppDelegate, AppNavigationState. Routeert tussen Onboarding en de tab-host."
+      "description": "Entry-point, ModelContainer-init, AppDelegate, AppNavigationState. Routes between Onboarding and the tab host."
     },
     {
       "id": "views",
       "name": "Views (SwiftUI)",
       "order": 1,
-      "description": "Schermen + componenten. Lezen state via @EnvironmentObject (ThemeManager, AppNavigationState, TrainingPlanManager) en queryen SwiftData via @Query."
+      "description": "Screens + components. Read state via @EnvironmentObject (ThemeManager, AppNavigationState, TrainingPlanManager) and query SwiftData via @Query."
     },
     {
       "id": "viewmodels",
       "name": "ViewModels & Formatters",
       "order": 2,
-      "description": "Pure-Swift context-builders en prompt-formatters die voor de AI-coach de juiste blokken samenstellen (blueprint, intent, history, vibe, preferences)."
+      "description": "Pure-Swift context-builders and prompt-formatters that assemble the right blocks for the AI coach (blueprint, intent, history, vibe, preferences)."
     },
     {
       "id": "services",
       "name": "Services",
       "order": 3,
-      "description": "Domeinlogica: HealthKit-sync, Strava OAuth, fysiologische berekeningen, periodisering, pattern-detectie, weer. Pure-Swift waar mogelijk (testbaar zonder UI)."
+      "description": "Domain logic: HealthKit sync, Strava OAuth, physiological calculations, periodisation, pattern detection, weather. Pure-Swift where possible (testable without UI)."
     },
     {
       "id": "models",
       "name": "Models (SwiftData @Model)",
       "order": 4,
-      "description": "Persistent domain types + schema-snapshots (SchemaV1/V2/V3) + migratieplan."
+      "description": "Persistent domain types + schema snapshots (SchemaV1/V2/V3) + migration plan."
     },
     {
       "id": "external",
       "name": "External Systems",
       "order": 5,
-      "description": "Apple-frameworks (HealthKit, BGTaskScheduler), Strava API via Cloudflare Worker-proxy, Open-Meteo, en drie AI-providers."
+      "description": "Apple frameworks (HealthKit, BGTaskScheduler), Strava API via Cloudflare Worker proxy, Open-Meteo, and three AI providers."
     }
   ],
   "modules": [
@@ -2600,7 +2600,7 @@
       "kind": "service",
       "layer": "services",
       "file": "AIFitnessCoach/Services/AIModelFactory.swift",
-      "description": "Story 61.8 — pure URLSession REST client for Gemini API v1beta /generateContent. Replaces the deprecated generative-ai-swift SDK (CWE-1104). Implements GenerativeModelProtocol + RealAIProviderClient. Auth: ?key= query param. JSON mode: generationConfig.response_mime_type. Image: inline_data parts. Custom validateGemini() maps HTTP 400 INVALID_ARGUMENT to AIProviderError.authenticationFailed.",
+      "description": "Story 61.8 — pure URLSession REST client for Gemini API v1beta /generateContent. Replaces the deprecated generative-ai-swift SDK (CWE-1104). Implements GenerativeModelProtocol + RealAIProviderClient. Auth: x-goog-api-key header (key stays out of URL/access logs). JSON mode: generationConfig.response_mime_type. Image: inline_data parts. Custom validateGemini() maps HTTP 400 INVALID_ARGUMENT to AIProviderError.authenticationFailed.",
       "uses": [
         "GenerativeModelProtocol",
         "AIProviderError"
@@ -2650,7 +2650,7 @@
       "layer": "services",
       "kind": "service",
       "file": "AIFitnessCoach/Services/ProgressService.swift",
-      "description": "Gap-analyse en per-fase timeline voor doelen. BlueprintGap berekent cumulatieve TRIMP/km-achterstand binnen de huidige fase; analyzeGaps levert at-risk-doelen. Epic #60: phaseTimeline(for:activities:now:) bouwt alle vier fases met targets (langste sessie + wekelijkse TRIMP, taper-inversie) en bucket blueprint-mijlpalen per fase. Bevat ook TRIMPTranslator (TRIMP -> leesbare tijd/afstand).",
+      "description": "Gap analysis and per-phase timeline for goals. BlueprintGap calculates the cumulative TRIMP/km shortfall within the current phase; analyzeGaps returns at-risk goals. Epic #60: phaseTimeline(for:activities:now:) builds all four phases with targets (longest session + weekly TRIMP, taper inversion) and buckets blueprint milestones per phase. Also contains TRIMPTranslator (TRIMP → readable duration/distance).",
       "uses": [
         "FitnessGoal",
         "ActivityRecord",
@@ -2671,7 +2671,7 @@
       "layer": "models",
       "kind": "model",
       "file": "AIFitnessCoach/Models/PhaseTimeline.swift",
-      "description": "Epic #60 computed value-types (geen @Model, geen migratie): PhaseTimeline/PhaseSummary/PhaseTarget/PhaseMilestone/PhaseWindow/PhaseStatus. Beschrijven per doel elke trainingsfase met datumbereik, status (past/current/future), targets en mijlpalen voor de uitklapbare Doelen-view.",
+      "description": "Epic #60 computed value-types (no @Model, no migration): PhaseTimeline/PhaseSummary/PhaseTarget/PhaseMilestone/PhaseWindow/PhaseStatus. Describe each training phase per goal with date range, status (past/current/future), targets and milestones for the expandable Goals view.",
       "uses": [
         "TrainingPhase"
       ],
@@ -2684,7 +2684,7 @@
       "layer": "models",
       "kind": "helper",
       "file": "AIFitnessCoach/Models/PhaseTimeline.swift",
-      "description": "Epic #60 enige bron van waarheid voor fase-vensters (week-budget: taper 2 / peak 2 / build <=8 / base = rest, ge-anchored op targetDate). Voedt zowel de fasenbalk (GoalsListView.phaseSegments) als de per-fase mijlpalenlijst, zodat die niet meer divergeren. Pure-Swift, AppStorage-vrij.",
+      "description": "Epic #60 single source of truth for phase windows (week budget: taper 2 / peak 2 / build ≤8 / base = rest, anchored on targetDate). Feeds both the phase bar (GoalsListView.phaseSegments) and the per-phase milestone list, so they no longer diverge. Pure-Swift, AppStorage-free.",
       "uses": [
         "TrainingPhase",
         "FitnessGoal"
@@ -2698,7 +2698,7 @@
       "layer": "views",
       "kind": "view",
       "file": "AIFitnessCoach/Views/PhaseMilestonesView.swift",
-      "description": "Epic #60 uitklapbare per-fase mijlpalen in de Doelen-view: een DisclosureGroup per fase (huidige fase default open). Dicht = fasekleur-dot + naam + datumbereik + status; open = target-rijen met voortgangsbalk (taper '(max)') + mijlpaal-rijen met streefdatum + satisfied-vinkje. Vervangt de oude vier-punts-timeline.",
+      "description": "Epic #60 expandable per-phase milestones in the Goals view: a DisclosureGroup per phase (current phase open by default). Collapsed = phase colour dot + name + date range + status; expanded = target rows with progress bar (taper '(max)') + milestone rows with due date + satisfied checkmark. Replaces the old four-point timeline.",
       "uses": [
         "PhaseTimeline",
         "ProgressService",
@@ -2714,7 +2714,7 @@
       "layer": "viewmodels",
       "kind": "formatter",
       "file": "AIFitnessCoach/ViewModels/LastWorkoutContextFormatter.swift",
-      "description": "Bouwt het 'laatste workout'-blok voor de coach-context: RPE-categorie (light/moderate/hard/maximal), TRIMP, sessietype-intent. Epic #57: readableMood(_:) mapt de mood SF-Symbol-naam naar een leesbaar Engels woord (good/strong/exhausted/in pain/calm). Pure-Swift, AppStorage-vrij.",
+      "description": "Builds the 'last workout' block for the coach context: RPE category (light/moderate/hard/maximal), TRIMP, session type intent. Epic #57: readableMood(_:) maps the mood SF Symbol name to a readable English word (good/strong/exhausted/in pain/calm). Pure-Swift, AppStorage-free.",
       "uses": [
         "SessionType"
       ],
@@ -2974,7 +2974,7 @@
     },
     {
       "id": "chat-coach",
-      "name": "Chat met AI-Coach",
+      "name": "Chat with AI Coach",
       "trigger": "User sends a message in ChatView",
       "steps": [
         {
@@ -3032,7 +3032,7 @@
     },
     {
       "id": "byok-migration",
-      "name": "BYOK Migratie (eenmalig)",
+      "name": "BYOK Migration (one-time)",
       "trigger": "First launch after the C-02 update",
       "steps": [
         {
@@ -3047,7 +3047,7 @@
     },
     {
       "id": "schema-migration",
-      "name": "SwiftData Schema-migratie",
+      "name": "SwiftData Schema Migration",
       "trigger": "App launch with an old DB version",
       "steps": [
         {
@@ -3069,7 +3069,7 @@
     "themes": [
       {
         "id": "moss",
-        "displayName": "Mos",
+        "displayName": "Moss",
         "primaryLight": "#4D804D",
         "primaryDark": "#85BC85",
         "backgroundLight": "#F2F7EF",
@@ -3078,7 +3078,7 @@
       },
       {
         "id": "stone",
-        "displayName": "Steen",
+        "displayName": "Stone",
         "primaryLight": "#78736D",
         "primaryDark": "#B3ABA1",
         "backgroundLight": "#F5F2EF",
@@ -3087,7 +3087,7 @@
       },
       {
         "id": "mist",
-        "displayName": "Nevel",
+        "displayName": "Mist",
         "primaryLight": "#618AAD",
         "primaryDark": "#94BCDB",
         "backgroundLight": "#F0F5FA",
@@ -3096,7 +3096,7 @@
       },
       {
         "id": "clay",
-        "displayName": "Klei",
+        "displayName": "Clay",
         "primaryLight": "#AD6642",
         "primaryDark": "#D69970",
         "backgroundLight": "#FAF2EB",
@@ -3114,7 +3114,7 @@
       },
       {
         "id": "ink",
-        "displayName": "Inkt",
+        "displayName": "Ink",
         "primaryLight": "#384775",
         "primaryDark": "#859ED1",
         "backgroundLight": "#F2F2FA",
@@ -3123,40 +3123,40 @@
       }
     ],
     "iconSet": "SF Symbols, hierarchical rendering (SereneIconStyle)",
-    "haptics": "UIImpactFeedbackGenerator (.medium) bij key-bevestigingen",
-    "language": "Nederlands voor UI/prompts/comments; Engels voor Swift-identifiers",
-    "philosophy": "Serene Visual Overhaul (Epic 29) — zachte gradients, hierarchical SF Symbols, vaste 6-thema-palet"
+    "haptics": "UIImpactFeedbackGenerator (.medium) on key confirmations",
+    "language": "Dutch for UI/prompts/comments; English for Swift identifiers",
+    "philosophy": "Serene Visual Overhaul (Epic 29) — soft gradients, hierarchical SF Symbols, fixed 6-theme palette"
   },
   "testing": {
-    "summary": "Pure-Swift logica in Services/Models/ViewModels-helpers krijgt unit-test-dekking; happy-path UI-flows via XCUITest. Bewust niet alles: triviale getters, view-laag-orchestratie zonder injection-seam, en simulator-sandbox-onhaalbare frameworks blijven ongetest.",
-    "docRef": "CLAUDE.md §6 — Testbeleid",
+    "summary": "Pure-Swift logic in Services/Models/ViewModels helpers gets unit-test coverage; happy-path UI flows via XCUITest. Deliberately not everything: trivial getters, view-layer orchestration without an injection seam, and simulator-sandbox-unreachable frameworks remain untested.",
+    "docRef": "CLAUDE.md §6 — Testing Policy",
     "policy": [
       {
         "id": "test-yes",
-        "title": "Wat WEL testen",
+        "title": "What TO test",
         "items": [
-          "Pure-Swift logica in Services/, Models/, ViewModels/-helpers (classifiers, calculators, formatters, schedulers)",
-          "Schema-migraties met file-backed seed-stores (in-memory werkt niet voor migratie-paden)",
-          "Domeinregels met edge cases: HR-zone-grenzen, blessure-keyword-detectie, DST-overgangen, dedupe-heuristieken",
-          "Happy-path UI-flows via XCUITest: onboarding, navigatie naar elke tab, doel aanmaken"
+          "Pure-Swift logic in Services/, Models/, ViewModels/ helpers (classifiers, calculators, formatters, schedulers)",
+          "Schema migrations with file-backed seed stores (in-memory does not work for migration paths)",
+          "Domain rules with edge cases: HR-zone boundaries, injury-keyword detection, DST transitions, dedupe heuristics",
+          "Happy-path UI flows via XCUITest: onboarding, navigation to each tab, creating a goal"
         ]
       },
       {
         "id": "test-no",
-        "title": "Wat NIET testen",
+        "title": "What NOT to test",
         "items": [
-          "Triviale getters/setters of SwiftData-boilerplate",
-          "View-laag-orchestratie zonder clean injection-seam (concurrent sync, async let-flows)",
-          "iOS-framework-zaken die in simulator-sandbox niet werken (Keychain entitlements, BGTaskScheduler-timing)"
+          "Trivial getters/setters or SwiftData boilerplate",
+          "View-layer orchestration without a clean injection seam (concurrent sync, async let flows)",
+          "iOS framework things that do not work in the simulator sandbox (Keychain entitlements, BGTaskScheduler timing)"
         ]
       },
       {
         "id": "testability",
-        "title": "Testbaarheid borgen",
+        "title": "Safeguarding testability",
         "items": [
-          "Pure-Swift helpers AppStorage-/UserDefaults-vrij houden — caller injecteert state via parameters",
-          "Mocking voor UI-tests via UITestMockEnvironment.setup() (gegated op -UITesting + #if DEBUG)",
-          "Test-only bypasses in productie-code alleen achter -UITesting-check + comment"
+          "Keep pure-Swift helpers free of AppStorage/UserDefaults — caller injects state via parameters",
+          "Mocking for UI tests via UITestMockEnvironment.setup() (gated on -UITesting + #if DEBUG)",
+          "Test-only bypasses in production code only behind a -UITesting check + comment"
         ]
       }
     ],
@@ -3168,15 +3168,15 @@
         "fileCount": 62,
         "framework": "XCTest",
         "execution": "xcodebuild test -only-testing:AIFitnessCoachTests -enableCodeCoverage YES",
-        "description": "Pure-Swift-tests met file-backed SwiftData-stores waar nodig. Geen netwerk — alle externe calls vervangen door MockNetworkSession / MockGenerativeModel / MockTokenStore.",
+        "description": "Pure-Swift tests with file-backed SwiftData stores where needed. No network — all external calls replaced by MockNetworkSession / MockGenerativeModel / MockTokenStore.",
         "highlights": [
-          "ActivityDeduplicatorTests — smart-ingest 3-laagse check (source-id, ±5s cross-source, rijkdom-heuristiek)",
-          "PauseDetectorTests — peak-anchored 90s window, minimumPauseSeconds=45, 10-actieve-samples-pre-check",
-          "WorkoutPatternDetectorTests — HR-zone-gegate decoupling, drift, cadence fade, recovery",
-          "SchemaMigrationV1ToV2Tests + V2ToV3Tests — file-backed seed-stores als migratie-vangnet",
-          "CalendarDSTSafeTests — date-math zonder TimeInterval-bugs over zomertijd",
-          "KeychainServiceTests — round-trip + service-naam-isolatie",
-          "ProactiveNotificationServiceTests — Engine A/B cooldown-logic"
+          "ActivityDeduplicatorTests — smart-ingest 3-layer check (source-id, ±5s cross-source, richness heuristic)",
+          "PauseDetectorTests — peak-anchored 90s window, minimumPauseSeconds=45, 10-active-samples pre-check",
+          "WorkoutPatternDetectorTests — HR-zone-gated decoupling, drift, cadence fade, recovery",
+          "SchemaMigrationV1ToV2Tests + V2ToV3Tests — file-backed seed stores as migration safety net",
+          "CalendarDSTSafeTests — date math without TimeInterval bugs across daylight saving",
+          "KeychainServiceTests — round-trip + service-name isolation",
+          "ProactiveNotificationServiceTests — Engine A/B cooldown logic"
         ]
       },
       {
@@ -3186,13 +3186,13 @@
         "fileCount": 5,
         "framework": "XCUITest",
         "execution": "xcodebuild test -only-testing:AIFitnessCoachUITests -parallel-testing-enabled NO",
-        "description": "Sequentieel op CI om xctrunner-clone-flakiness te vermijden (Epic 46.4). UITestMockEnvironment injecteert dummy API-key + weersdata + UITestMockGenerativeModel zodat views renderen zonder live API-calls.",
+        "description": "Sequential on CI to avoid xctrunner-clone flakiness (Epic 46.4). UITestMockEnvironment injects a dummy API key + weather data + UITestMockGenerativeModel so views render without live API calls.",
         "highlights": [
-          "AIFitnessCoachUITests — TabBar-navigatie + Dashboard happy-path",
-          "AIFitnessCoachUITestsLaunchTests — launch-screenshot voor App Store",
-          "AIModelPickerUITests — E2E coverage van de model-picker (gestart via -UITestOpenAICoachConfig shortcut)",
-          "GoalsUITests — doel aanmaken / bewerken / verwijderen",
-          "OnboardingE2ETests — 4-pagina TabView-flow met permissie-knoppen"
+          "AIFitnessCoachUITests — TabBar navigation + Dashboard happy path",
+          "AIFitnessCoachUITestsLaunchTests — launch screenshot for the App Store",
+          "AIModelPickerUITests — E2E coverage of the model picker (launched via -UITestOpenAICoachConfig shortcut)",
+          "GoalsUITests — create / edit / delete a goal",
+          "OnboardingE2ETests — 4-page TabView flow with permission buttons"
         ]
       },
       {
@@ -3201,7 +3201,7 @@
         "target": "AIFitnessCoachTests",
         "fileCount": 2,
         "framework": "XCTest + file-backed ModelContainer",
-        "description": "Verplicht bij élke @Model-wijziging (CLAUDE.md §2.1). Test minstens (1) dat FitnessGoal/UserPreference de migratie overleven en (2) dat nieuwe velden schrijfbaar zijn na migratie.",
+        "description": "Mandatory for every @Model change (CLAUDE.md §2.1). Tests at minimum (1) that FitnessGoal/UserPreference survive the migration and (2) that new fields are writable after migration.",
         "highlights": [
           "SchemaMigrationV1ToV2Tests",
           "SchemaMigrationV2ToV3Tests"
@@ -3232,7 +3232,7 @@
         ]
       },
       {
-        "title": "Schema & migratie",
+        "title": "Schema & migration",
         "modules": [
           "AppMigrationPlan",
           "SchemaV1",
@@ -3252,32 +3252,32 @@
     "infrastructure": [
       {
         "id": "GenerativeModelProtocol",
-        "purpose": "Injection-seam voor de AI-call. Productie levert Gemini/OpenAI/Anthropic, tests leveren MockGenerativeModel of UITestMockGenerativeModel.",
+        "purpose": "Injection seam for the AI call. Production delivers Gemini/OpenAI/Anthropic; tests deliver MockGenerativeModel or UITestMockGenerativeModel.",
         "file": "AIFitnessCoach/ViewModels/GenerativeModelProtocol.swift"
       },
       {
         "id": "MockGenerativeModel",
-        "purpose": "Unit-test mock — geprogrammeerde responses per prompt.",
+        "purpose": "Unit-test mock — programmed responses per prompt.",
         "file": "AIFitnessCoachTests/MockGenerativeModel.swift"
       },
       {
         "id": "MockTokenStore",
-        "purpose": "Vervangt KeychainService in tests die OAuth-flow raken.",
+        "purpose": "Replaces KeychainService in tests that touch the OAuth flow.",
         "file": "AIFitnessCoachTests/MockTokenStore.swift"
       },
       {
         "id": "MockNetworkSession",
-        "purpose": "Stub voor URLSession — programmable per host/path. Voorkomt netwerk-IO in unit-tests.",
+        "purpose": "URLSession stub — programmable per host/path. Prevents network I/O in unit tests.",
         "file": "AIFitnessCoachTests/Mocks/MockNetworkSession.swift"
       },
       {
         "id": "UITestMockEnvironment",
-        "purpose": "Bootstrap voor XCUITest: schrijft dummy API-key in Keychain, fake weather + periodisation, en swapt de generative model. Gegated op -UITesting + #if DEBUG.",
+        "purpose": "Bootstrap for XCUITest: writes a dummy API key to Keychain, fake weather + periodisation context, and swaps the generative model. Gated on -UITesting + #if DEBUG.",
         "file": "AIFitnessCoach/Services/UITestMockEnvironment.swift"
       }
     ],
     "coverage": {
-      "summary": "61% combined coverage op testable code. Coverage is signal, geen KPI — `Views/` blijft beperkt door SwiftUI-testbaarheid en wordt apart gerapporteerd.",
+      "summary": "61% combined coverage on testable code. Coverage is signal, not a KPI — `Views/` stays limited by SwiftUI testability and is reported separately.",
       "tool": "scripts/coverage-report.py (max-merge per file over unit-tests + ui-tests xcresults)",
       "byDirectory": [
         {
@@ -3300,21 +3300,21 @@
     },
     "lessonsLearned": [
       {
-        "title": "UI-tests sequentieel op CI",
-        "body": "Parallel-clones triggeren `ipc/mig server died` op GitHub macos-latest-runners (Epic 46.4 root-cause). `-parallel-testing-enabled NO` op CI, lokaal blijft scheme-config parallel voor snelheid."
+        "title": "Run UI tests sequentially on CI",
+        "body": "Parallel clones trigger `ipc/mig server died` on GitHub macos-latest runners (Epic 46.4 root cause). `-parallel-testing-enabled NO` on CI; locally the scheme config stays parallel for speed."
       },
       {
-        "title": "Eerst xcresult inspecteren, dan op runner-flakiness wijzen",
-        "body": "`xcrun xcresulttool get test-results activities --test-id <id>` levert vaak test-code-bugs (verborgen NavigationBar, te-korte timeouts) als oorzaak — niet de runner."
+        "title": "Inspect the xcresult first, then blame the runner",
+        "body": "`xcrun xcresulttool get test-results activities --test-id <id>` often reveals test-code bugs (hidden NavigationBar, too-short timeouts) as the cause — not the runner."
       },
       {
-        "title": "In-memory stores werken niet voor migratie-tests",
-        "body": "Migration plan vereist een V<N>-store-bestand om vanaf te starten. File-backed seed-store is verplicht in SchemaMigration*Tests."
+        "title": "In-memory stores do not work for migration tests",
+        "body": "The migration plan requires a V<N> store file to start from. A file-backed seed store is mandatory in SchemaMigration*Tests."
       }
     ]
   },
   "ci": {
-    "summary": "GitHub Actions draait twee workflows op elke push naar `main` en elke PR: `iOS CI` (4-job DAG) en `CodeQL Security Analysis` (Swift + Actions matrix). Concurrency-groep per branch cancelt oudere in-flight runs bij force-push.",
+    "summary": "GitHub Actions runs two workflows on every push to `main` and every PR: `iOS CI` (4-job DAG) and `CodeQL Security Analysis` (Swift + Actions matrix). A concurrency group per branch cancels older in-flight runs on force-push.",
     "docRef": "docs/ARCHITECTURE.md#11",
     "platform": "GitHub Actions",
     "workflows": [
@@ -3327,7 +3327,7 @@
           "pull_request:main"
         ],
         "runner": "macos-latest",
-        "description": "Lint + Unit Tests + UI Tests + Coverage Report als DAG. Coverage draait pas als beide test-jobs klaar zijn (of als alleen unit-tests slagen — UI-bundle is dan optioneel)."
+        "description": "Lint + Unit Tests + UI Tests + Coverage Report as a DAG. Coverage only runs when both test jobs are done (or when only unit tests pass — the UI bundle is then optional)."
       },
       {
         "id": "codeql",
@@ -3338,8 +3338,8 @@
           "pull_request:main",
           "schedule:weekly"
         ],
-        "runner": "matrix (macos-latest voor swift, ubuntu-latest voor actions)",
-        "description": "Twee parallelle matrix-cellen: Swift op macOS met manuele xcodebuild, Actions-taal op Ubuntu (10× goedkoper) voor YAML-statische-analyse."
+        "runner": "matrix (macos-latest for swift, ubuntu-latest for actions)",
+        "description": "Two parallel matrix cells: Swift on macOS with manual xcodebuild, Actions language on Ubuntu (10× cheaper) for YAML static analysis."
       }
     ],
     "jobs": [
@@ -3349,7 +3349,7 @@
         "workflow": "ios-ci",
         "needs": [],
         "runner": "macos-latest",
-        "description": "swiftlint --strict op .swiftlint.yml. 938→0 violations baseline; 1 nieuwe violation breekt CI. github-actions-logging reporter geeft inline annotations op het PR-diff.",
+        "description": "swiftlint --strict on .swiftlint.yml. 938→0 violations baseline; 1 new violation breaks CI. github-actions-logging reporter gives inline annotations on the PR diff.",
         "duration": "~30s"
       },
       {
@@ -3358,7 +3358,7 @@
         "workflow": "ios-ci",
         "needs": [],
         "runner": "macos-latest",
-        "description": "xcodebuild test -only-testing:AIFitnessCoachTests -enableCodeCoverage YES. xcresult-bundle als artifact (7d retentie).",
+        "description": "xcodebuild test -only-testing:AIFitnessCoachTests -enableCodeCoverage YES. xcresult bundle as artifact (7d retention).",
         "artifacts": [
           "unit-tests-xcresult"
         ]
@@ -3371,7 +3371,7 @@
           "unit-tests"
         ],
         "runner": "macos-latest",
-        "description": "Sequentieel (-parallel-testing-enabled NO) om xctrunner-clone-crashes te vermijden. Boot simulator + bootstatus vóór xcodebuild voor SpringBoard-warmup. xcresult + CoreSimulator-logs als artifacts (14d retentie).",
+        "description": "Sequential (-parallel-testing-enabled NO) to avoid xctrunner-clone crashes. Boot simulator + check bootstatus before xcodebuild for SpringBoard warmup. xcresult + CoreSimulator logs as artifacts (14d retention).",
         "artifacts": [
           "ui-tests-xcresult",
           "coresimulator-logs"
@@ -3386,7 +3386,7 @@
           "ui-tests"
         ],
         "runner": "macos-latest",
-        "description": "Mergt beide xcresults per-file (max-coverage) via scripts/coverage-report.py. Genereert per-directory markdown met aggregaten (Testable / Views / Totaal). Draait ook bij rode UI-tests-job — dan single-bundle modus.",
+        "description": "Merges both xcresults per-file (max-coverage) via scripts/coverage-report.py. Generates per-directory markdown with aggregates (Testable / Views / Total). Also runs when the UI-tests job is red — single-bundle mode then.",
         "artifacts": [
           "coverage-report"
         ]
@@ -3397,7 +3397,7 @@
         "workflow": "codeql",
         "needs": [],
         "runner": "macos-latest",
-        "description": "Manuele `xcodebuild clean build` + codeql-action analyze. Build-mode `manual` omdat autobuild faalt op SwiftData-projecten."
+        "description": "Manual `xcodebuild clean build` + codeql-action analyze. Build mode `manual` because autobuild fails on SwiftData projects."
       },
       {
         "id": "codeql-actions",
@@ -3405,248 +3405,248 @@
         "workflow": "codeql",
         "needs": [],
         "runner": "ubuntu-latest",
-        "description": "Pure YAML-statische-analyse op `.github/workflows/*.yml`. Detecteert untrusted-input-injection, niet-gepinde actions, secret-leakage. Geen build nodig — 10× goedkoper dan macOS-runner."
+        "description": "Pure YAML static analysis on `.github/workflows/*.yml`. Detects untrusted-input injection, unpinned actions, secret leakage. No build needed — 10× cheaper than a macOS runner."
       }
     ],
     "envSetup": [
       {
         "step": "Setup Dummy Secrets",
-        "detail": "`cp AIFitnessCoach/Secrets-template.swift AIFitnessCoach/Secrets.swift` — zodat het project compileert zonder echte sleutels."
+        "detail": "`cp AIFitnessCoach/Secrets-template.swift AIFitnessCoach/Secrets.swift` — so the project compiles without real keys."
       },
       {
-        "step": "Dynamische simulator-ID",
-        "detail": "`xcrun simctl list devices available | grep iPhone | ...` — geen hardcoded model-namen, werkt over Xcode-updates heen."
+        "step": "Dynamic simulator ID",
+        "detail": "`xcrun simctl list devices available | grep iPhone | ...` — no hardcoded model names, works across Xcode updates."
       },
       {
         "step": "CFBundleVersion via Build Phase",
-        "detail": "Run-Script Build Phase zet CFBundleVersion op `git rev-list --count HEAD` — lokaal en in CI, geen handmatige bumps."
+        "detail": "Run-Script Build Phase sets CFBundleVersion to `git rev-list --count HEAD` — locally and in CI, no manual bumps."
       }
     ],
-    "concurrency": "concurrency: ${{ github.workflow }}-${{ github.ref }} met cancel-in-progress: true op beide workflows. Force-pushes op een PR-branch cancelen oudere in-flight runs.",
+    "concurrency": "concurrency: ${{ github.workflow }}-${{ github.ref }} with cancel-in-progress: true on both workflows. Force-pushes on a PR branch cancel older in-flight runs.",
     "node24OptIn": "FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true env-var anticipeert GitHub's Node 24-migratie (2026-06-02)."
   },
   "agent": {
-    "summary": "VibeCoach wordt mede ontwikkeld door een AI-assistent (Claude Code, Opus 4.7). De agent volgt het beleid in CLAUDE.md, gebruikt een persistent memory-systeem voor user-context, en handhaaft de documentatie-discipline (§7) waardoor architectuur, roadmap en deze viewer mee evolueren met de code.",
+    "summary": "VibeCoach is co-developed by an AI assistant (Claude Code, Opus 4.7). The agent follows the policy in CLAUDE.md, uses a persistent memory system for user context, and maintains the documentation discipline (§7) so that architecture, roadmap, and this viewer evolve with the code.",
     "system": {
       "tool": "Claude Code (CLI + IDE-integratie)",
       "model": "claude-opus-4-7",
       "rulesFile": "CLAUDE.md",
       "memoryFile": "~/.claude/projects/-Users-.../memory/MEMORY.md",
-      "philosophy": "Proactieve doc-updates zonder toestemming vragen; samenvatten + cache-vriendelijk werken; bij Epic-overgangen oude regels opruimen."
+      "philosophy": "Proactive doc updates without asking permission; summarise + cache-friendly work; clean up stale rules at Epic transitions."
     },
     "principles": [
       {
         "id": "agent-management-by-exception",
-        "title": "Management by Exception (ook voor de agent)",
-        "description": "De agent waarschuwt of vraagt alleen bij afwijkingen — niet bij elke trivial choice. Acties met blast-radius (destructive git, force-push, shared infra) krijgen wel expliciete confirmation."
+        "title": "Management by Exception (for the agent too)",
+        "description": "The agent only alerts or asks on deviations — not on every trivial choice. Actions with blast radius (destructive git, force-push, shared infra) do get explicit confirmation."
       },
       {
         "id": "agent-doc-autonomy",
-        "title": "Autonoom context-management",
-        "description": "Bij nieuwe architectuur, structureel opgeloste bug, of nieuwe project-standaard: update direct in de juiste doc-file zonder toestemming. Zie CLAUDE.md §0."
+        "title": "Autonomous context management",
+        "description": "On a new architecture choice, a structurally fixed bug, or a new project standard: update the right doc file directly without asking permission. See CLAUDE.md §0."
       },
       {
         "id": "agent-pr-discipline",
-        "title": "Eén fix per PR",
-        "description": "Geen meeliftende refactors. Link altijd de bron (CodeQL alert, issue, crash-report). Regression-test toevoegen waar haalbaar."
+        "title": "One fix per PR",
+        "description": "No piggybacked refactors. Always link the source (CodeQL alert, issue, crash report). Add a regression test where feasible."
       },
       {
         "id": "agent-dutch",
-        "title": "Nederlands, tenzij anders",
-        "description": "Antwoorden + comments in het Nederlands. Code-identifiers in het Engels (Swift-conventie). Beknopt — geen onnodige samenvattingen."
+        "title": "Dutch, unless stated otherwise",
+        "description": "Replies + comments in Dutch. Code identifiers in English (Swift convention). Concise — no unnecessary summaries."
       }
     ],
     "rules": [
       {
         "id": "datamodel",
         "section": "§2 + §2.1",
-        "title": "SwiftData Strictness + Migratie-protocol",
-        "summary": "Type-safe enums, no raw strings. Élke @Model-wijziging vereist een schema-snapshot + MigrationStage + file-backed migratie-test — óók pure additions.",
+        "title": "SwiftData Strictness + Migration Protocol",
+        "summary": "Type-safe enums, no raw strings. Every @Model change requires a schema snapshot + MigrationStage + file-backed migration test — including pure additions.",
         "highlights": [
-          "Snapshot oude schema in Models/SchemaV<N>.swift; nested @Model-types houden dezelfde unqualified naam",
-          "Voor pure additions: MigrationStage.lightweight(from:to:) volstaat",
-          "Type-changes (String → enum): willMigrate + didMigrate capture/restore",
-          "Bump container-init in AIFitnessCoachApp.makeModelContainer() naar nieuwe SchemaV<M>.models",
-          "Test verplicht: FitnessGoal + UserPreference overleven migratie + nieuwe velden schrijfbaar"
+          "Snapshot old schema in Models/SchemaV<N>.swift; nested @Model types keep the same unqualified name",
+          "For pure additions: MigrationStage.lightweight(from:to:) is sufficient",
+          "Type changes (String → enum): willMigrate + didMigrate capture/restore",
+          "Bump container-init in AIFitnessCoachApp.makeModelContainer() to the new SchemaV<M>.models",
+          "Mandatory test: FitnessGoal + UserPreference survive migration + new fields writable"
         ]
       },
       {
         "id": "time",
         "section": "§3",
-        "title": "Tijd & Datum",
-        "summary": "Nooit TimeInterval-math voor periodes. Altijd Calendar.current.date(byAdding:to:). Base-building berekent vanaf Date(), niet targetDate.",
+        "title": "Time & Date",
+        "summary": "Never use TimeInterval math for periods. Always use Calendar.current.date(byAdding:to:). Base-building calculates from Date(), not targetDate.",
         "highlights": [
-          "TimeInterval × 86400 → bugs met zomertijd en schrikkeljaren",
-          "Calendar werkt correct over DST-grenzen"
+          "TimeInterval × 86400 → bugs with daylight saving and leap years",
+          "Calendar works correctly across DST boundaries"
         ]
       },
       {
         "id": "background",
         "section": "§4",
         "title": "Dual Engine Architecture",
-        "summary": "Engine A (HKObserverQuery) reageert op actie, Engine B (BGAppRefreshTask) op inactie. ProactiveNotificationService is de singleton voor beide.",
+        "summary": "Engine A (HKObserverQuery) reacts to action, Engine B (BGAppRefreshTask) to inaction. ProactiveNotificationService is the singleton for both.",
         "highlights": [
-          "Cooldown: max 1 proactieve notificatie per doel per 24u",
-          "Risicodata gecached in UserDefaults vanuit DashboardView (onAppear + na refresh)"
+          "Cooldown: max 1 proactive notification per goal per 24h",
+          "Risk data cached in UserDefaults from DashboardView (onAppear + after refresh)"
         ]
       },
       {
         "id": "swiftui",
         "section": "§5",
-        "title": "SwiftUI & iOS Stijlregels",
-        "summary": "Eén top-level type per bestand. Soft cap ±500 LOC per Swift-file. Standaard iOS-componenten — simpel, modern, native.",
+        "title": "SwiftUI & iOS Style Rules",
+        "summary": "One top-level type per file. Soft cap ±500 LOC per Swift file. Standard iOS components — simple, modern, native.",
         "highlights": [
-          "Bij @Model-classes is één-per-file verplicht",
-          "Complexe logica via comments in het Nederlands",
-          "Pure file-splits zonder semantische wijzigingen zijn altijd veilig"
+          "For @Model classes, one-per-file is mandatory",
+          "Complex logic explained via comments in English",
+          "Pure file splits without semantic changes are always safe"
         ]
       },
       {
         "id": "testing",
         "section": "§6",
-        "title": "Testbeleid",
-        "summary": "Pure-Swift logica + edge cases + happy-path UI. NIET: triviale getters, view-orchestratie zonder injection-seam, simulator-onhaalbare frameworks.",
+        "title": "Testing Policy",
+        "summary": "Pure-Swift logic + edge cases + happy-path UI. NOT: trivial getters, view orchestration without an injection seam, simulator-unreachable frameworks.",
         "highlights": [
-          "Pure-Swift helpers AppStorage-/UserDefaults-vrij houden",
-          "UI-tests sequentieel op CI (-parallel-testing-enabled NO)",
-          "Coverage is signal, geen KPI",
-          "Bij UI-test-failures eerst xcresult inspecteren"
+          "Keep pure-Swift helpers free of AppStorage/UserDefaults",
+          "Run UI tests sequentially on CI (-parallel-testing-enabled NO)",
+          "Coverage is signal, not a KPI",
+          "On UI-test failures, inspect xcresult first"
         ]
       },
       {
         "id": "docs",
         "section": "§7",
-        "title": "Documentatie-Discipline",
-        "summary": "Vier source-of-truth files (README, ROADMAP, ARCHITECTURE, CLAUDE) + twee afgeleide artefacten (architecture.html + .json). Geen overlap, geen duplicatie.",
+        "title": "Documentation Discipline",
+        "summary": "Four source-of-truth files (README, ROADMAP, ARCHITECTURE, CLAUDE) + two derived artefacts (architecture.html + .json). No overlap, no duplication.",
         "highlights": [
-          "Elke feature-PR update relevante docs in dezelfde commit",
-          "ROADMAP-statussen: ✅ ⟶ 🔄 ⟶ ⏳",
-          "Pure docs-only PR's mogen direct op main",
-          "Architectuur-viewer wordt mee-bijgewerkt bij module-laag-wijzigingen (§7 Architectuur-visualisatie)"
+          "Every feature PR updates relevant docs in the same commit",
+          "ROADMAP statuses: ✅ ⟶ 🔄 ⟶ ⏳",
+          "Pure docs-only PRs may go directly to main",
+          "Architecture viewer is kept in sync on every module-layer change (§7 Architecture visualisation)"
         ]
       },
       {
         "id": "git",
         "section": "§8",
         "title": "Git Workflow",
-        "summary": "Branch + PR — nooit direct op main. Branchnaam-conventies per type. Assistent maakt PR direct na eerste push aan, mergt niet.",
+        "summary": "Branch + PR — never directly on main. Branch-name conventions per type. Assistant creates the PR right after the first push; does not merge.",
         "highlights": [
           "feature/epic-{nr}-..., fix/..., hotfix/..., security/..., ci/..., chore/..., docs/...",
-          "Eén fix per PR, geen meeliftende refactors",
-          "Squash & merge — door de gebruiker, niet de agent",
-          "Nooit --no-verify of force-push naar main"
+          "One fix per PR, no piggybacked refactors",
+          "Squash & merge — done by the user, not the agent",
+          "Never --no-verify or force-push to main"
         ]
       },
       {
         "id": "xcodeproj",
         "section": "§9",
-        "title": "Xcode Project Beheer",
-        "summary": "project.pbxproj heeft skip-worktree aan. Nieuwe Swift-files vereisen handmatige toevoeging aan PBXFileReference + BuildFile + PBXGroup + PBXSourcesBuildPhase.",
+        "title": "Xcode Project Management",
+        "summary": "project.pbxproj has skip-worktree set. New Swift files require manual addition to PBXFileReference + BuildFile + PBXGroup + PBXSourcesBuildPhase.",
         "highlights": [
-          "Vergeet je dit: CI-build faalt met 'cannot find X in scope'",
-          "Tijdelijk skip-worktree uitschakelen, stagen, committen, weer aanzetten"
+          "Skip this step: CI build fails with 'cannot find X in scope'",
+          "Temporarily disable skip-worktree, stage, commit, re-enable"
         ]
       },
       {
         "id": "logging",
         "section": "§11",
         "title": "Logger & Privacy",
-        "summary": "Geen print() in Services/Models/ViewModels. AppLoggers.<categorie>.<level>(...) met expliciete privacy-modifiers voor user-data.",
+        "summary": "No print() in Services/Models/ViewModels. AppLoggers.<category>.<level>(...) with explicit privacy modifiers for user data.",
         "highlights": [
-          "privacy: .private — HRV, slaap, TRIMP, leeftijd, doeltitels, UUIDs, tokens, RPE/mood",
-          "privacy: .public — framework-foutcodes, tellers, niet-identificerende status-flags",
-          "Géén losse static let logger per service — centraliseer in AppLoggers"
+          "privacy: .private — HRV, sleep, TRIMP, age, goal titles, UUIDs, tokens, RPE/mood",
+          "privacy: .public — framework error codes, counters, non-identifying status flags",
+          "No loose static let logger per service — centralise in AppLoggers"
         ]
       },
       {
         "id": "defensive-init",
         "section": "§12",
-        "title": "Defensieve App-Init",
-        "summary": "Op het kritieke launch-pad: nooit fatalError als eerste catch. Probeer → log + fallback → pas bij tweede falen fatalError.",
+        "title": "Defensive App Init",
+        "summary": "On the critical launch path: never fatalError as the first catch. Try → log + fallback → only on second failure fatalError.",
         "highlights": [
-          "Bij migratie-falen: verwijder corrupte SQLite-store + WAL/SHM-sidecars",
-          "UserDefaults-flag (vibecoach_migrationFallbackAt) als haakje voor UI-melding",
-          "HK + Strava-data zijn re-syncbaar — data-loss-risico acceptabel boven brick"
+          "On migration failure: remove corrupt SQLite store + WAL/SHM sidecars",
+          "UserDefaults flag (vibecoach_migrationFallbackAt) as hook for a UI message",
+          "HK + Strava data are re-syncable — data-loss risk is acceptable over a bricked app"
         ]
       }
     ],
     "workflows": [
       {
         "id": "branch-types",
-        "title": "Branchnaam-conventies",
+        "title": "Branch-name conventions",
         "items": [
           {
-            "pattern": "feature/epic-{nr}-{korte-beschrijving}",
-            "use": "Nieuwe epics/sprints"
+            "pattern": "feature/epic-{nr}-{short-description}",
+            "use": "New epics/sprints"
           },
           {
-            "pattern": "fix/{korte-beschrijving}",
-            "use": "Reguliere bugfixes"
+            "pattern": "fix/{short-description}",
+            "use": "Regular bugfixes"
           },
           {
-            "pattern": "hotfix/{korte-beschrijving}",
-            "use": "Productie-kritiek, fast-track merge"
+            "pattern": "hotfix/{short-description}",
+            "use": "Production-critical, fast-track merge"
           },
           {
-            "pattern": "security/{alert-id-of-beschrijving}",
-            "use": "Security-fixes"
+            "pattern": "security/{alert-id-or-description}",
+            "use": "Security fixes"
           },
           {
-            "pattern": "ci/{korte-beschrijving}",
-            "use": "Workflow/pipeline-wijzigingen"
+            "pattern": "ci/{short-description}",
+            "use": "Workflow/pipeline changes"
           },
           {
-            "pattern": "chore/{korte-beschrijving}",
-            "use": "Tech-debt, refactors zonder gedragswijziging"
+            "pattern": "chore/{short-description}",
+            "use": "Tech debt, refactors without behaviour change"
           },
           {
-            "pattern": "docs/{korte-beschrijving}",
-            "use": "Pure documentatie-updates (zeldzaam)"
+            "pattern": "docs/{short-description}",
+            "use": "Pure documentation updates (rarely needed)"
           }
         ]
       },
       {
         "id": "pr-flow",
-        "title": "PR-flow per branch",
+        "title": "PR flow per branch",
         "steps": [
-          "Branch aanmaken → code bouwen → pushen",
-          "Assistent maakt PR direct via `gh pr create` (titel uit branch-naam, body met Summary + Test plan)",
-          "Gebruiker pulled en test (feature-branches op device)",
-          "Feedback → fixes op dezelfde branch (push update bestaande PR)",
-          "Tevreden → gebruiker doet squash & merge",
-          "Volgende sprint: verwijder gemergte branches lokaal + remote"
+          "Create branch → build code → push",
+          "Assistant creates PR immediately via `gh pr create` (title from branch name, body with Summary + Test plan)",
+          "User pulls and tests (feature branches on device)",
+          "Feedback → fixes on the same branch (push updates the existing PR)",
+          "Satisfied → user does squash & merge",
+          "Next sprint: delete merged branches locally + remote"
         ]
       },
       {
         "id": "doc-update-protocol",
-        "title": "Doc-update-protocol per PR-type",
+        "title": "Doc update protocol per PR type",
         "matrix": [
           {
-            "trigger": "Nieuwe Epic of grote feature",
+            "trigger": "New Epic or major feature",
             "files": [
               "ROADMAP.md",
-              "ARCHITECTURE.md (indien nieuwe keuze)",
+              "ARCHITECTURE.md (if new architectural choice)",
               "architecture.json + .html"
             ]
           },
           {
-            "trigger": "Bugfix / refactor zonder structuur-wijziging",
+            "trigger": "Bugfix / refactor without structural change",
             "files": []
           },
           {
-            "trigger": "Nieuwe service / @Model / @StateObject",
+            "trigger": "New service / @Model / @StateObject",
             "files": [
               "architecture.json + .html (bump docRevision)"
             ]
           },
           {
-            "trigger": "Nieuwe permanente regel",
+            "trigger": "New permanent rule",
             "files": [
               "CLAUDE.md"
             ]
           },
           {
-            "trigger": "Schema-migratie",
+            "trigger": "Schema migration",
             "files": [
               "SchemaV<N>.swift snapshot",
               "AppMigrationPlan.swift",
@@ -3662,8 +3662,8 @@
         "id": "schema-pure-add",
         "date": "2026-05",
         "epic": "Epic #49",
-        "incident": "Twee optionele velden toegevoegd aan ActivityRecord zónder schema-bump. SwiftData's lightweight inference werkt anders bij een explicit migrationPlan — container-init faalde, fallback wiste FitnessGoal + UserPreference (lokaal-only).",
-        "rule": "Verplicht bij élke @Model-wijziging — óók pure additions — een SchemaV<N>-snapshot + MigrationStage. Geen uitzonderingen meer.",
+        "incident": "Two optional fields added to ActivityRecord without a schema bump. SwiftData's lightweight inference behaves differently with an explicit migrationPlan — container-init failed; fallback wiped FitnessGoal + UserPreference (local-only).",
+        "rule": "Mandatory for every @Model change — including pure additions — a SchemaV<N> snapshot + MigrationStage. No more exceptions.",
         "rulesAffected": [
           "§2.1"
         ]
@@ -3672,8 +3672,8 @@
         "id": "xcuitest-parallel",
         "date": "2026",
         "epic": "Epic 46.4",
-        "incident": "XCUITest faalde flaky op GitHub macos-latest met `ipc/mig server died`. Root-cause: parallelle xctrunner-clones (\"Clone 2 of iPhone 16 Pro\") crashen onder load.",
-        "rule": "UI-tests op CI sequentieel draaien (`-parallel-testing-enabled NO`). Bij failures eerst xcresult-activity-log inspecteren vóór op runner-flakiness te wijzen — vaker zit het in test-code (verborgen NavBar, te-korte timeouts).",
+        "incident": "XCUITest failed flakily on GitHub macos-latest with `ipc/mig server died`. Root cause: parallel xctrunner clones ('Clone 2 of iPhone 16 Pro') crash under load.",
+        "rule": "Run UI tests sequentially on CI (`-parallel-testing-enabled NO`). On failures, inspect the xcresult activity log first before blaming runner flakiness — more often it is test-code bugs (hidden NavBar, too-short timeouts).",
         "rulesAffected": [
           "§6 CI-discipline"
         ]
@@ -3682,8 +3682,8 @@
         "id": "hr-recovery-window",
         "date": "2026",
         "epic": "Epic #47",
-        "incident": "Globale piek + meet HR exact 60s later. Bij continue rides was de gebruiker 60s na de piek alweer aan het trappen, dus een visuele dip van 40 BPM tijdens een korte stop kwam als '4 BPM drop' uit de detector.",
-        "rule": "HR-recovery alleen meten tijdens gedetecteerde pauzes (power<5 + cadence<5 voor ≥45s). Peak-anchored 90s window i.p.v. 60s vanaf pauze-start — vagale HRR-fase loopt tot ~90s, abrupte stop piekt nog 5-15s na stop voor 'ie begint te dalen.",
+        "incident": "Global peak + measure HR exactly 60s later. On continuous rides the user was already pedalling 60s after the peak, so a visual dip of 40 BPM during a short stop came out as a '4 BPM drop' from the detector.",
+        "rule": "Measure HR recovery only during detected pauses (power<5 + cadence<5 for ≥45s). Peak-anchored 90s window instead of 60s from pause start — the vagal HRR phase runs to ~90s; an abrupt stop peaks 5-15s after the stop before it starts dropping.",
         "rulesAffected": [
           "Architecture §12"
         ]
@@ -3692,8 +3692,8 @@
         "id": "logger-duplicates",
         "date": "2025",
         "epic": "Logger-cleanup",
-        "incident": "Drie duplicate `static let logger = Logger(...)` declaraties in verschillende services liepen uit de hand — verschillende subsystem-strings, sommige zonder privacy-modifiers.",
-        "rule": "Centraliseer in AppLoggers — één logger per categorie, privacy-modifiers verplicht voor user-data. Géén static let logger per service.",
+        "incident": "Three duplicate `static let logger = Logger(...)` declarations in different services got out of hand — different subsystem strings, some without privacy modifiers.",
+        "rule": "Centralise in AppLoggers — one logger per category, privacy modifiers mandatory for user data. No static let logger per service.",
         "rulesAffected": [
           "§11"
         ]
@@ -3702,8 +3702,8 @@
         "id": "strava-secret-leak",
         "date": "Security audit",
         "epic": "C-01",
-        "incident": "Strava client_secret zat hardcoded in Secrets.swift — uit de IPA te extraheren door elke gebruiker die de binary kon openen.",
-        "rule": "OAuth-flow via een Cloudflare Worker-proxy met het secret als Worker Secret. Client authenticeert met shared X-Client-Token + random state-UUID (CSRF).",
+        "incident": "Strava client_secret was hardcoded in Secrets.swift — extractable from the IPA by any user who could open the binary.",
+        "rule": "OAuth flow via a Cloudflare Worker proxy with the secret as a Worker Secret. Client authenticates with a shared X-Client-Token + random state UUID (CSRF).",
         "rulesAffected": [
           "Architecture §2"
         ]
@@ -3712,8 +3712,8 @@
         "id": "smart-ingest",
         "date": "2026",
         "epic": "Epic #41",
-        "incident": "Een armere HK-record overschreef regelmatig een rijker Strava-record met deviceWatts wanneer de syncs in de verkeerde volgorde binnenkwamen. Handmatige 'Verwijder Dubbele Activiteiten'-knop in Settings was de workaround.",
-        "rule": "Smart-ingest aan de voordeur: drie-laagse check (source-id idempotent → ±5s cross-source vergelijk → reguliere insert) bij alle ingest-paden. Handmatige knop verwijderd — auto-dedupe + smart-ingest dekken beide kanten.",
+        "incident": "A leaner HK record regularly overwrote a richer Strava record with deviceWatts when syncs arrived in the wrong order. A manual 'Remove Duplicate Activities' button in Settings was the workaround.",
+        "rule": "Smart-ingest at the front door: three-layer check (source-id idempotent → ±5s cross-source comparison → regular insert) at all ingest paths. Manual button removed — auto-dedupe + smart-ingest cover both sides.",
         "rulesAffected": [
           "Architecture §9"
         ]
@@ -3722,8 +3722,8 @@
         "id": "apns-deeplink-vector",
         "date": "M-08",
         "epic": "Security mitigation",
-        "incident": "APNs-payload met willekeurige `activityId` kon de app navigeren — potentiele social-engineering-vector.",
-        "rule": "Whitelist in AppDelegate.isAllowedNotificationPayload(_:) — alleen `goalRisk` en `recovery_plan` payloads. Alle andere stil genegeerd, in willPresent én didReceive.",
+        "incident": "An APNs payload with an arbitrary `activityId` could navigate the app — a potential social-engineering vector.",
+        "rule": "Whitelist in AppDelegate.isAllowedNotificationPayload(_:) — only `goalRisk` and `recovery_plan` payloads. All others silently ignored, in both willPresent and didReceive.",
         "rulesAffected": [
           "Architecture §5"
         ]
@@ -3732,8 +3732,8 @@
         "id": "fatalerror-launch",
         "date": "2026",
         "epic": "Defensive-init",
-        "incident": "ModelContainer-init met migration plan kon falen en de app brickte tot reinstall. Crash-loop omdat fatalError de eerste catch was.",
-        "rule": "Op het kritieke launch-pad: probeer → log + fallback (verwijder corrupte store) → pas bij tweede falen fatalError. HK + Strava-data zijn re-syncbaar; data-loss-risico is acceptabel boven brick.",
+        "incident": "ModelContainer-init with a migration plan could fail and brick the app until reinstall. A crash loop because fatalError was the first catch.",
+        "rule": "On the critical launch path: try → log + fallback (remove corrupt store) → only on second failure fatalError. HK + Strava data are re-syncable; data-loss risk is acceptable over a bricked app.",
         "rulesAffected": [
           "§12"
         ]
@@ -3743,33 +3743,33 @@
   "tags": {
     "engine-a": "HKObserverQuery-driven proactive notifications",
     "engine-b": "BGAppRefreshTask-driven inaction trigger",
-    "security-c01": "Strava client_secret naar Cloudflare Worker",
-    "security-c02": "AI API-key uit UserDefaults naar Keychain",
-    "security-h01": "CSRF-state UUID op OAuth-callback",
-    "m-08": "Notificatie-payload whitelist",
-    "epic-11": "TrainingPlanManager als Single Source of Truth",
-    "epic-13": "Proactieve Coach & Background Sync",
+    "security-c01": "Strava client_secret moved to Cloudflare Worker",
+    "security-c02": "AI API key moved from UserDefaults to Keychain",
+    "security-h01": "CSRF state UUID on OAuth callback",
+    "m-08": "Notification payload whitelist",
+    "epic-11": "TrainingPlanManager as Single Source of Truth",
+    "epic-13": "Proactive Coach & Background Sync",
     "epic-14": "Vibe Score (HRV + sleep readiness)",
     "epic-14b": "Injury-Impact Matrix",
-    "epic-16": "Dynamische Periodisering & Macrocycli",
+    "epic-16": "Dynamic Periodisation & Macrocycles",
     "epic-17": "Goal-Specific Blueprints",
     "epic-29": "Serene Visual Overhaul (themes)",
-    "epic-31": "V2.0 Onboarding-flow",
-    "epic-32": "Workout Pattern Detection + samples-pijplijn",
+    "epic-31": "V2.0 Onboarding flow",
+    "epic-32": "Workout Pattern Detection + samples pipeline",
     "epic-40": "Strava power-stream ingest",
     "epic-41": "Single-record-of-truth dedupe",
     "epic-42": "Always-on dual-source sync",
-    "epic-44": "Persoonlijke HR-zones & FTP",
-    "epic-45": "Per-workout context in coach-prompt",
+    "epic-44": "Personal HR zones & FTP",
+    "epic-45": "Per-workout context in coach prompt",
     "epic-46": "CI Pipeline + SwiftLint",
-    "epic-47": "HR-recovery via pauze-detectie",
-    "epic-48": "Coach-analyse koppelt aan doelen + periodisering",
-    "epic-49": "HK weather-metadata in Coach-analyse",
-    "epic-50": "Open-Meteo historisch weer voor Garmin-only ritten",
-    "epic-51": "User-feedback hardening — foutmeldingen, validatie & zichtbaarheid",
-    "logging": "AppLoggers + privacy-modifiers",
+    "epic-47": "HR recovery via pause detection",
+    "epic-48": "Coach analysis linked to goals + periodisation",
+    "epic-49": "HK weather metadata in coach analysis",
+    "epic-50": "Open-Meteo historical weather for Garmin-only rides",
+    "epic-51": "User-feedback hardening — error messages, validation & visibility",
+    "logging": "AppLoggers + privacy modifiers",
     "testing": "UITestMockEnvironment + GenerativeModelProtocol",
-    "epic-37": "Internationalisatie (NL/EN/DE/ES) + Engelstalige codebase & coach-prompt"
+    "epic-37": "Internationalisation (NL/EN/DE/ES) + English codebase & coach prompt"
   }
 }
 
@@ -3807,9 +3807,9 @@
       ${rev ? `<span class="version-rev">· ${rev}</span>` : ''}
     `;
     pill.title = [
-      `App-versie: ${v} (${DATA.meta.appVersionSource || 'Info.plist'})`,
-      DATA.meta.docRevision ? `Doc-revisie: ${DATA.meta.docRevision}` : null,
-      updated ? `Laatst bijgewerkt: ${updated}` : null,
+      `App version: ${v} (${DATA.meta.appVersionSource || 'Info.plist'})`,
+      DATA.meta.docRevision ? `Doc revision: ${DATA.meta.docRevision}` : null,
+      updated ? `Last updated: ${updated}` : null,
       DATA.meta.versioningPolicy ? `\n${DATA.meta.versioningPolicy}` : null
     ].filter(Boolean).join('\n');
   })();
@@ -3962,7 +3962,7 @@
       layerStack.appendChild(card);
     });
     if (!layerStack.children.length) {
-      layerStack.innerHTML = `<div class="detail-empty"><p>Geen modules voor deze filter.</p></div>`;
+      layerStack.innerHTML = `<div class="detail-empty"><p>No modules for this filter.</p></div>`;
     }
   }
 
@@ -4294,7 +4294,7 @@
       }
     }
 
-    // Principes (hergebruik principle-grid styling)
+    // Principles (reuse principle-grid styling)
     if (A.principles && A.principles.length) {
       const section = document.createElement('div');
       section.className = 'qa-section';
@@ -4349,7 +4349,7 @@
         if (w.steps) {
           body += `<ol class="wf-step-list">${w.steps.map(s => `<li>${escape(s)}</li>`).join('')}</ol>`;
         } else if (w.items) {
-          body += `<table class="wf-table"><thead><tr><th>Patroon</th><th>Gebruik</th></tr></thead><tbody>${
+          body += `<table class="wf-table"><thead><tr><th>Pattern</th><th>Usage</th></tr></thead><tbody>${
             w.items.map(i => `<tr><td>${escape(i.pattern)}</td><td>${escape(i.use)}</td></tr>`).join('')
           }</tbody></table>`;
         } else if (w.matrix) {
@@ -4404,7 +4404,7 @@
   const detailPanel = document.getElementById('detailPanel');
   function renderDetail() {
     if (!activeModule) {
-      detailPanel.innerHTML = `<div class="detail-empty"><p>Klik op een module om details en afhankelijkheden te zien.</p></div>`;
+      detailPanel.innerHTML = `<div class="detail-empty"><p>Click a module to see details and dependencies.</p></div>`;
       return;
     }
     const m = moduleById[activeModule];
@@ -4439,12 +4439,12 @@
         </div>` : ''}
       ${usesList ? `
         <div class="detail-section">
-          <div class="detail-label">Gebruikt (${(m.uses || []).length})</div>
+          <div class="detail-label">Uses (${(m.uses || []).length})</div>
           <div class="detail-list">${usesList}</div>
         </div>` : ''}
       ${usedBy ? `
         <div class="detail-section">
-          <div class="detail-label">Gebruikt door (${(dependents[activeModule] || []).length})</div>
+          <div class="detail-label">Used by (${(dependents[activeModule] || []).length})</div>
           <div class="detail-list">${usedBy}</div>
         </div>` : ''}
     `;
