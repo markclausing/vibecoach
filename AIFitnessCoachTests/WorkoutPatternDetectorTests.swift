@@ -186,8 +186,8 @@ final class WorkoutPatternDetectorTests: XCTestCase {
         }
         XCTAssertEqual(pattern.kind, .aerobicDecoupling)
         XCTAssertEqual(pattern.severity, .significant)
-        XCTAssertTrue(pattern.detail.contains("vermogen"),
-                      "Detail moet 'vermogen' vermelden bij power-based decoupling, kreeg: \(pattern.detail)")
+        XCTAssertTrue(pattern.detail.contains("power"),
+                      "Detail moet 'power' vermelden bij power-based decoupling, kreeg: \(pattern.detail)")
     }
 
     func testAerobicDecoupling_FallsBackToSpeedWhenNoPower() {
@@ -197,8 +197,8 @@ final class WorkoutPatternDetectorTests: XCTestCase {
         guard let pattern = WorkoutPatternDetector.detectAerobicDecoupling(in: samples) else {
             return XCTFail("Verwacht speed-based decoupling-patroon")
         }
-        XCTAssertTrue(pattern.detail.contains("tempo"),
-                      "Detail moet 'tempo' vermelden bij speed-fallback, kreeg: \(pattern.detail)")
+        XCTAssertTrue(pattern.detail.contains("pace"),
+                      "Detail moet 'pace' vermelden bij speed-fallback, kreeg: \(pattern.detail)")
     }
 
     func testAerobicDecoupling_NoIntensityData_ReturnsNil() {
@@ -316,8 +316,8 @@ final class WorkoutPatternDetectorTests: XCTestCase {
         }
         XCTAssertEqual(pattern.kind, .heartRateRecovery)
         XCTAssertEqual(pattern.severity, .significant)
-        XCTAssertTrue(pattern.detail.contains("pauze"),
-                      "Detail moet 'pauze' vermelden, niet 'piek'")
+        XCTAssertTrue(pattern.detail.contains("pause"),
+                      "Detail moet 'pause' vermelden, niet 'piek'")
     }
 
     func testHRRecovery_ModerateRecoveryInPause_ReturnsModerate() {

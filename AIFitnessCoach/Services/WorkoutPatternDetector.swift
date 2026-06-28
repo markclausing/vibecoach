@@ -107,12 +107,12 @@ enum WorkoutPatternDetector {
         guard let halves = splitInHalves(samples) else { return nil }
         if isSteadyEffort(samples, value: { $0.power }),
            let pattern = decoupling(firstHalf: halves.first, secondHalf: halves.second,
-                                    intensity: { $0.power }, label: "vermogen") {
+                                    intensity: { $0.power }, label: "power") {
             return pattern
         }
         if isSteadyEffort(samples, value: { $0.speed }),
            let pattern = decoupling(firstHalf: halves.first, secondHalf: halves.second,
-                                    intensity: { $0.speed }, label: "tempo") {
+                                    intensity: { $0.speed }, label: "pace") {
             return pattern
         }
         return nil
@@ -152,7 +152,7 @@ enum WorkoutPatternDetector {
             return .mild
         }()
         let range = samplesStart(firstHalf) ... samplesEnd(secondHalf)
-        let detail = String(format: "Aerobic decoupling: HR steeg %.1f%% sneller dan %@ in de tweede helft", driftPct, label)
+        let detail = String(format: "Aerobic decoupling: HR rose %.1f%% faster than %@ in the second half", driftPct, label)
         return WorkoutPattern(kind: .aerobicDecoupling, severity: severity, range: range, value: driftPct, detail: detail)
     }
 
@@ -200,7 +200,7 @@ enum WorkoutPatternDetector {
             return .mild
         }()
         let range = samplesStart(halves.first) ... samplesEnd(halves.second)
-        let detail = String(format: "Cardiac drift: HR-gemiddelde steeg %.1f%% van helft 1 naar helft 2", driftPct)
+        let detail = String(format: "Cardiac drift: average HR rose %.1f%% from half 1 to half 2", driftPct)
         return WorkoutPattern(kind: .cardiacDrift, severity: severity, range: range, value: driftPct, detail: detail)
     }
 
@@ -227,7 +227,7 @@ enum WorkoutPatternDetector {
             return .mild
         }()
         let range = samplesStart(firstQuarter) ... samplesEnd(lastQuarter)
-        let detail = String(format: "Cadence-fade: %.0f → %.0f (%.0f-eenheden daling tussen begin en eind)", firstAvg, lastAvg, drop)
+        let detail = String(format: "Cadence fade: %.0f → %.0f (%.0f-unit drop between start and end)", firstAvg, lastAvg, drop)
         return WorkoutPattern(kind: .cadenceFade, severity: severity, range: range, value: drop, detail: detail)
     }
 
@@ -272,7 +272,7 @@ enum WorkoutPatternDetector {
         let dropInt = Int(worst.event.drop.rounded())
         let durationStr = formatDuration(worst.event.durationSeconds)
         let goodThreshold = Int((refHR * hrRecoveryGoodRatio).rounded())
-        let detail = "HR-recovery: \(dropInt) BPM drop in pauze van \(durationStr) (richtwaarde >\(goodThreshold) BPM)"
+        let detail = "HR-recovery: \(dropInt) BPM drop in a pause of \(durationStr) (reference >\(goodThreshold) BPM)"
         return WorkoutPattern(
             kind: .heartRateRecovery,
             severity: worst.severity,

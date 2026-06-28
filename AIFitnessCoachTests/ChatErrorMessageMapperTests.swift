@@ -60,14 +60,14 @@ final class ChatErrorMessageMapperTests: XCTestCase {
 
     func testAIProviderAuthFailedMapsToInvalidAPIKey() {
         let msg = ChatErrorMessageMapper.userFacingMessage(for: AIProviderError.authenticationFailed)
+        // Locale-agnostic (§13): the messages are now localised, so compare against the same
+        // key rather than a language-specific substring.
         XCTAssertEqual(msg, ChatErrorMessageMapper.invalidAPIKey)
-        XCTAssertTrue(msg.contains("Instellingen"))
     }
 
     func testAIProviderContentBlockedMapsToPromptBlocked() {
         let msg = ChatErrorMessageMapper.userFacingMessage(for: AIProviderError.contentBlocked)
         XCTAssertEqual(msg, ChatErrorMessageMapper.promptBlocked)
-        XCTAssertTrue(msg.contains("veiligheidsfilters"))
     }
 
     func testAIProviderHTTPMapsToProviderGeneric() {

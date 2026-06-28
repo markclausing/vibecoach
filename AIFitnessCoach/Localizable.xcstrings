@@ -369,9 +369,6 @@
         }
       }
     },
-    "%@ / 10" : {
-
-    },
     "%@ %@" : {
       "localizations" : {
         "nl" : {
@@ -662,6 +659,9 @@
         }
       }
     },
+    "≈ %@" : {
+
+    },
     "⚠️ Te hard in taper-fase! Neem rust." : {
       "localizations" : {
         "de" : {
@@ -877,6 +877,7 @@
       }
     },
     "Aantal dagen: %lld" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1240,6 +1241,7 @@
       }
     },
     "Annuleren" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2281,6 +2283,50 @@
         }
       }
     },
+    "De AI-provider gaf een onverwachte fout terug. Probeer het opnieuw." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der KI-Anbieter hat einen unerwarteten Fehler zurückgegeben. Versuche es erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI provider returned an unexpected error. Try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El proveedor de IA devolvió un error inesperado. Inténtalo de nuevo."
+          }
+        }
+      }
+    },
+    "De AI-provider is tijdelijk overbelast. Wacht 30 seconden en probeer opnieuw." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der KI-Anbieter ist vorübergehend überlastet. Warte 30 Sekunden und versuche es erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI provider is temporarily overloaded. Wait 30 seconds and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El proveedor de IA está temporalmente sobrecargado. Espera 30 segundos e inténtalo de nuevo."
+          }
+        }
+      }
+    },
     "De coach begint bij het primaire model. Bij overbelasting (503/429) schakelt hij automatisch over op het fallback-model." : {
       "localizations" : {
         "de" : {
@@ -2299,6 +2345,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "El entrenador empieza con el modelo principal. En caso de sobrecarga (503/429) cambia automáticamente al modelo de reserva."
+          }
+        }
+      }
+    },
+    "De verbinding met de AI-provider is te traag. Probeer het over een paar seconden opnieuw." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Verbindung zum KI-Anbieter ist zu langsam. Versuche es in ein paar Sekunden erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The connection to the AI provider is too slow. Try again in a few seconds."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La conexión con el proveedor de IA es demasiado lenta. Inténtalo de nuevo en unos segundos."
           }
         }
       }
@@ -2482,7 +2550,30 @@
         }
       }
     },
+    "Dit bericht is geblokkeerd door de veiligheidsfilters van de AI. Herformuleer je vraag of focus op je training/herstel." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Nachricht wurde von den Sicherheitsfiltern der KI blockiert. Formuliere deine Frage um oder konzentriere dich auf dein Training/deine Erholung."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This message was blocked by the AI's safety filters. Rephrase your question or focus on your training/recovery."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este mensaje fue bloqueado por los filtros de seguridad de la IA. Reformula tu pregunta o céntrate en tu entrenamiento/recuperación."
+          }
+        }
+      }
+    },
     "Dit doel verwijderen?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3003,6 +3094,7 @@
       }
     },
     "Er deed iets zeer" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3020,6 +3112,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Algo me dolía"
+          }
+        }
+      }
+    },
+    "Er ging iets mis bij het versturen. Probeer het opnieuw." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beim Senden ist etwas schiefgelaufen. Versuche es erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Something went wrong while sending. Try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algo salió mal al enviar. Inténtalo de nuevo."
           }
         }
       }
@@ -3162,6 +3276,7 @@
       }
     },
     "Flink afgezien, praten lukte amper" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3504,6 +3619,28 @@
         }
       }
     },
+    "Geen internet — controleer je verbinding en probeer opnieuw." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Internet – überprüfe deine Verbindung und versuche es erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No internet — check your connection and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin conexión a internet: comprueba tu conexión e inténtalo de nuevo."
+          }
+        }
+      }
+    },
     "Geen pijn" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3636,6 +3773,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sin conexión con %@. Inténtalo de nuevo desde Ajustes."
+          }
+        }
+      }
+    },
+    "Geen verbinding met de AI-provider. Controleer of je internet werkt (VPN, captive portal?) en probeer opnieuw." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Verbindung zum KI-Anbieter. Prüfe, ob dein Internet funktioniert (VPN, Captive Portal?), und versuche es erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Can't reach the AI provider. Check that your internet works (VPN, captive portal?) and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se puede conectar con el proveedor de IA. Comprueba que tu internet funciona (¿VPN, portal cautivo?) e inténtalo de nuevo."
           }
         }
       }
@@ -4327,6 +4486,7 @@
       }
     },
     "Heel licht" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4734,6 +4894,7 @@
       }
     },
     "Hoe voel je je?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5304,6 +5465,7 @@
       }
     },
     "Inspanning (RPE)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5456,6 +5618,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu entrenador IA está dormido"
+          }
+        }
+      }
+    },
+    "Je API-sleutel werkt niet meer. Open Instellingen → AI Coach Configuratie om hem opnieuw in te voeren." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein API-Schlüssel funktioniert nicht mehr. Öffne Einstellungen → KI-Coach-Konfiguration, um ihn erneut einzugeben."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your API key no longer works. Open Settings → AI Coach Configuration to enter it again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu clave de API ya no funciona. Abre Ajustes → Configuración del coach de IA para volver a introducirla."
           }
         }
       }
@@ -6197,6 +6381,7 @@
       }
     },
     "Kon echt niet meer" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6241,6 +6426,7 @@
       }
     },
     "Kon makkelijk doorpraten" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6627,6 +6813,7 @@
       }
     },
     "Leeg / uitgeput" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6649,6 +6836,7 @@
       }
     },
     "Lekker gewerkt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6942,6 +7130,7 @@
       }
     },
     "Makkelijk" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7101,6 +7290,7 @@
       }
     },
     "Maximaal" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7213,6 +7403,7 @@
       }
     },
     "MIJLPALEN & PROGNOSE" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7326,6 +7517,7 @@
       }
     },
     "Model tijdelijk overbelast — overschakelen naar lichtere variant..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7523,6 +7715,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Error de red (%@)."
+          }
+        }
+      }
+    },
+    "Netwerkprobleem — controleer je verbinding en probeer opnieuw." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Netzwerkproblem – überprüfe deine Verbindung und versuche es erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network problem — check your connection and try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problema de red: comprueba tu conexión e inténtalo de nuevo."
           }
         }
       }
@@ -8091,6 +8305,28 @@
         }
       }
     },
+    "Opnieuw proberen" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut versuchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Try again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reintentar"
+          }
+        }
+      }
+    },
     "Opslaan" : {
       "localizations" : {
         "de" : {
@@ -8548,6 +8784,7 @@
       }
     },
     "Pijn / klacht" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9386,6 +9623,7 @@
       }
     },
     "Startdatum" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9476,6 +9714,7 @@
       }
     },
     "Stevig, maar voelde goed" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9612,6 +9851,7 @@
       }
     },
     "Streefdatum" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10937,6 +11177,7 @@
       }
     },
     "Verwijder doel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10959,6 +11200,7 @@
       }
     },
     "Verwijderen" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10976,6 +11218,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Eliminar"
+          }
+        }
+      }
+    },
+    "Verzoek geannuleerd. Stuur je bericht opnieuw als je een antwoord wilt." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anfrage abgebrochen. Sende deine Nachricht erneut, wenn du eine Antwort möchtest."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Request cancelled. Send your message again if you want a reply."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solicitud cancelada. Envía tu mensaje de nuevo si quieres una respuesta."
           }
         }
       }
@@ -11783,6 +12047,7 @@
       }
     },
     "Wekelijkse belasting" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
