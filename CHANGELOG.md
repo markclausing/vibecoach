@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.2.0](https://github.com/markclausing/vibecoach/compare/v2.1.0...v2.2.0) (2026-06-28)
+
+
+### Features
+
+* harden goal & API-key forms (Epic [#62](https://github.com/markclausing/vibecoach/issues/62) stories 62.1 + 62.2) ([#325](https://github.com/markclausing/vibecoach/issues/325)) ([265f1c5](https://github.com/markclausing/vibecoach/commit/265f1c55944b3c04ba427a4cb2fb7cc4b0048839))
+* permission & background-engine visibility (Epic [#62](https://github.com/markclausing/vibecoach/issues/62) stories 62.3 + 62.5) ([#327](https://github.com/markclausing/vibecoach/issues/327)) ([f27c899](https://github.com/markclausing/vibecoach/commit/f27c899bda0bbda93e8ba7eb6100343b11c6dc48))
+* sync edge-path handling — captive portal, weather retry, HK per-type (Epic [#62](https://github.com/markclausing/vibecoach/issues/62) story 62.4) ([#329](https://github.com/markclausing/vibecoach/issues/329)) ([0f234e8](https://github.com/markclausing/vibecoach/commit/0f234e8ffd9cdb31a637c632fdebd2eb16890706))
+
+
+### Bug Fixes
+
+* localise AI-error messages + Englishize workout-pattern detail strings (i18n leftovers) ([#328](https://github.com/markclausing/vibecoach/issues/328)) ([b01b2aa](https://github.com/markclausing/vibecoach/commit/b01b2aa8b185b985430f5ff92de7f50bf8604800))
+
 ## [2.1.0](https://github.com/markclausing/vibecoach/compare/v2.0.0...v2.1.0) (2026-06-27)
 
 
