@@ -30,6 +30,7 @@
 		3500FFEECC00AA05BB02CC03 /* AIModelCatalogServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */; };
 		3600AABBCC00DD01EE02FF03 /* PeriodizationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3600AABBCC00DD02EE02FF03 /* PeriodizationEngineTests.swift */; };
 		3603AABBCC00DD03EE03FF03 /* APIKeyValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */; };
+		F6632D04CCD52636D6A429EC /* PermissionStatusEvaluatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A67E6FEBD4F9ED84A5B994 /* PermissionStatusEvaluatorTests.swift */; };
 		7C758BC555B8BC761151BE55 /* APIKeyTestStatusStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB0B78BF14DD3EEF2188CED /* APIKeyTestStatusStoreTests.swift */; };
 		8CC8AB6BFDA319D00DCEEF44 /* APIKeyInputValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E225F9E10348DDE89C9CFE /* APIKeyInputValidatorTests.swift */; };
 		C49877E2B2527CE54AD7DDA8 /* GoalFormValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C3F8F4306ED47637487A9BB /* GoalFormValidatorTests.swift */; };
@@ -38,6 +39,8 @@
 		3606AABBCC00DD07EE05FF05 /* KeychainServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3606AABBCC00DD08EE05FF05 /* KeychainServiceTests.swift */; };
 		48E3320BE9BDAC79B8060EEE /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136CF190D3B3F2D63ADC3225 /* KeychainService.swift */; };
 		48E3320CE9BDAC79B8060EEE /* APIKeyValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */; };
+		CCE75583101B706F651FA97B /* PermissionStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B408F736C85A65022704AE9 /* PermissionStatusView.swift */; };
+		CB348817FD7156B9F08F9334 /* PermissionStatusEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0646F367262AB5EBE7CC6D /* PermissionStatusEvaluator.swift */; };
 		5524A859C0253917E06C2790 /* APIKeyTestStatusStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE50630131CF375BCA5A21A /* APIKeyTestStatusStore.swift */; };
 		3D772A6B7CB3C3E233C3786B /* APIKeyInputValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF94C6F48AA3187AD06B9821 /* APIKeyInputValidator.swift */; };
 		981A09830FB5BE7522B82C9C /* GoalFormValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDF1ADFB18FBFE38E56F903C /* GoalFormValidator.swift */; };
@@ -273,6 +276,8 @@
 		0DE3DDF83AB44095AF4FA0CE /* MockNetworkSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockNetworkSession.swift; sourceTree = "<group>"; };
 		136CF190D3B3F2D63ADC3225 /* KeychainService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyValidator.swift; sourceTree = "<group>"; };
+		8B408F736C85A65022704AE9 /* PermissionStatusView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionStatusView.swift; sourceTree = "<group>"; };
+		5A0646F367262AB5EBE7CC6D /* PermissionStatusEvaluator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionStatusEvaluator.swift; sourceTree = "<group>"; };
 		5FE50630131CF375BCA5A21A /* APIKeyTestStatusStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyTestStatusStore.swift; sourceTree = "<group>"; };
 		EF94C6F48AA3187AD06B9821 /* APIKeyInputValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyInputValidator.swift; sourceTree = "<group>"; };
 		EDF1ADFB18FBFE38E56F903C /* GoalFormValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalFormValidator.swift; sourceTree = "<group>"; };
@@ -304,6 +309,7 @@
 		3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelCatalogServiceTests.swift; sourceTree = "<group>"; };
 		3600AABBCC00DD02EE02FF03 /* PeriodizationEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PeriodizationEngineTests.swift; sourceTree = "<group>"; };
 		3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyValidatorTests.swift; sourceTree = "<group>"; };
+		91A67E6FEBD4F9ED84A5B994 /* PermissionStatusEvaluatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionStatusEvaluatorTests.swift; sourceTree = "<group>"; };
 		1EB0B78BF14DD3EEF2188CED /* APIKeyTestStatusStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyTestStatusStoreTests.swift; sourceTree = "<group>"; };
 		F8E225F9E10348DDE89C9CFE /* APIKeyInputValidatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyInputValidatorTests.swift; sourceTree = "<group>"; };
 		2C3F8F4306ED47637487A9BB /* GoalFormValidatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalFormValidatorTests.swift; sourceTree = "<group>"; };
@@ -612,6 +618,7 @@
 				3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */,
 				3100FFEECC00AA08BB02CC03 /* OnboardingPersistenceTests.swift */,
 				3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */,
+				91A67E6FEBD4F9ED84A5B994 /* PermissionStatusEvaluatorTests.swift */,
 				1EB0B78BF14DD3EEF2188CED /* APIKeyTestStatusStoreTests.swift */,
 				F8E225F9E10348DDE89C9CFE /* APIKeyInputValidatorTests.swift */,
 				2C3F8F4306ED47637487A9BB /* GoalFormValidatorTests.swift */,
@@ -694,6 +701,8 @@
 				B81B710B2F8D65A80062BC61 /* UITestMockEnvironment.swift */,
 				136CF190D3B3F2D63ADC3225 /* KeychainService.swift */,
 				136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */,
+				8B408F736C85A65022704AE9 /* PermissionStatusView.swift */,
+				5A0646F367262AB5EBE7CC6D /* PermissionStatusEvaluator.swift */,
 				5FE50630131CF375BCA5A21A /* APIKeyTestStatusStore.swift */,
 				EF94C6F48AA3187AD06B9821 /* APIKeyInputValidator.swift */,
 				EDF1ADFB18FBFE38E56F903C /* GoalFormValidator.swift */,
@@ -1101,6 +1110,7 @@
 				3500FFEECC00AA05BB02CC03 /* AIModelCatalogServiceTests.swift in Sources */,
 				3100FFEECC00AA07BB02CC03 /* OnboardingPersistenceTests.swift in Sources */,
 				3603AABBCC00DD03EE03FF03 /* APIKeyValidatorTests.swift in Sources */,
+				F6632D04CCD52636D6A429EC /* PermissionStatusEvaluatorTests.swift in Sources */,
 				7C758BC555B8BC761151BE55 /* APIKeyTestStatusStoreTests.swift in Sources */,
 				8CC8AB6BFDA319D00DCEEF44 /* APIKeyInputValidatorTests.swift in Sources */,
 				C49877E2B2527CE54AD7DDA8 /* GoalFormValidatorTests.swift in Sources */,
@@ -1209,6 +1219,8 @@
 				FF10AA20BB30CC40DD50EE60 /* AppTabHostView.swift in Sources */,
 				48E3320BE9BDAC79B8060EEE /* KeychainService.swift in Sources */,
 				48E3320CE9BDAC79B8060EEE /* APIKeyValidator.swift in Sources */,
+				CCE75583101B706F651FA97B /* PermissionStatusView.swift in Sources */,
+				CB348817FD7156B9F08F9334 /* PermissionStatusEvaluator.swift in Sources */,
 				5524A859C0253917E06C2790 /* APIKeyTestStatusStore.swift in Sources */,
 				3D772A6B7CB3C3E233C3786B /* APIKeyInputValidator.swift in Sources */,
 				981A09830FB5BE7522B82C9C /* GoalFormValidator.swift in Sources */,

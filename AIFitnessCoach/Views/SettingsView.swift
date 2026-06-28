@@ -330,6 +330,20 @@ struct SettingsView: View {
                         )
                     }
                     .padding(.horizontal)
+                    .padding(.bottom, 12)
+
+                    // Epic #62 stories 62.3 + 62.5: one place to see permission + background-engine status.
+                    settingsCard {
+                        NavigationLink(destination: PermissionStatusView()) {
+                            SettingsRowV2(
+                                icon: "checklist",
+                                iconColor: themeManager.primaryAccentColor,
+                                title: "Toestemmingen & achtergrond",
+                                subtitle: "Health, notificaties en de coach-engines",
+                                hasChevron: true
+                            )
+                        }.buttonStyle(.plain)
+                    }
                     .padding(.bottom, 24)
 
                     // ── JOUW PROFIEL

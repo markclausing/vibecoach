@@ -29,6 +29,19 @@ final class ProactiveNotificationService {
     private let lastNotificationKey  = "vibecoach_lastProactiveNotificationDate"
     private let lastWorkoutDateKey   = "vibecoach_lastWorkoutDate"
 
+    // Epic #62 story 62.5: persisted engine state so the Settings overview can show whether
+    // each background engine actually armed (or why it didn't) instead of a silent failure.
+    static let engineAActiveKey  = "vibecoach_engineABackgroundActive"
+    static let engineAErrorKey   = "vibecoach_engineALastError"
+    static let engineBScheduledKey = "vibecoach_engineBScheduled"
+    static let engineBErrorKey   = "vibecoach_engineBLastError"
+
+    /// Read-only accessors for the Settings overview (Epic #62 story 62.5).
+    static var engineABackgroundActive: Bool { UserDefaults.standard.bool(forKey: engineAActiveKey) }
+    static var engineALastError: String? { UserDefaults.standard.string(forKey: engineAErrorKey) }
+    static var engineBScheduled: Bool { UserDefaults.standard.bool(forKey: engineBScheduledKey) }
+    static var engineBLastError: String? { UserDefaults.standard.string(forKey: engineBErrorKey) }
+
     private init() {}
 
     // MARK: - Engine A: Action Trigger (HKObserverQuery + enableBackgroundDelivery)
@@ -60,10 +73,18 @@ final class ProactiveNotificationService {
 
         // Enable background delivery: iOS wakes the app on every new workout
         healthStore.enableBackgroundDelivery(for: workoutType, frequency: .immediate) { success, error in
+            // Epic #62 story 62.5: persist the outcome so the Settings overview reflects the
+            // real arming state instead of assuming Engine A runs just because we called setup.
             if success {
+                UserDefaults.standard.set(true, forKey: Self.engineAActiveKey)
+                UserDefaults.standard.removeObject(forKey: Self.engineAErrorKey)
                 AppLoggers.proactiveNotification.info("Engine A: HealthKit achtergrondlevering actief")
-            } else if let error = error {
-                AppLoggers.proactiveNotification.error("Engine A: Achtergrondlevering mislukt — \(error.localizedDescription, privacy: .public)")
+            } else {
+                UserDefaults.standard.set(false, forKey: Self.engineAActiveKey)
+                if let error = error {
+                    UserDefaults.standard.set(error.localizedDescription, forKey: Self.engineAErrorKey)
+                    AppLoggers.proactiveNotification.error("Engine A: Achtergrondlevering mislukt — \(error.localizedDescription, privacy: .public)")
+                }
             }
         }
     }
@@ -210,8 +231,14 @@ final class ProactiveNotificationService {
 
         do {
             try BGTaskScheduler.shared.submit(request)
+            // Epic #62 story 62.5: record success so Settings can show Engine B as scheduled.
+            UserDefaults.standard.set(true, forKey: Self.engineBScheduledKey)
+            UserDefaults.standard.removeObject(forKey: Self.engineBErrorKey)
             AppLoggers.proactiveNotification.info("Engine B: Dagelijkse achtergrondcheck ingepland")
         } catch {
+            // Make the registration failure visible instead of swallowing it (L/§12).
+            UserDefaults.standard.set(false, forKey: Self.engineBScheduledKey)
+            UserDefaults.standard.set(error.localizedDescription, forKey: Self.engineBErrorKey)
             AppLoggers.proactiveNotification.error("Engine B: Inplannen mislukt — \(error.localizedDescription, privacy: .public)")
         }
     }
