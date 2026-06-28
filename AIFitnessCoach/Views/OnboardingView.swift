@@ -32,6 +32,8 @@ struct OnboardingView: View {
     @State private var currentStep: Int = 1
     @State private var healthKitState: PermissionState = .idle
     @State private var notificationsState: PermissionState = .idle
+    /// Epic #62 story 62.3: skipping HealthKit must be a conscious choice, not a silent tap.
+    @State private var showHealthKitSkipConfirm = false
 
     private let totalSteps = 5
 
@@ -51,6 +53,16 @@ struct OnboardingView: View {
         .tabViewStyle(.page(indexDisplayMode: .never))
         .background(Color(.secondarySystemBackground).ignoresSafeArea())
         .animation(.easeInOut(duration: 0.25), value: currentStep)
+        // Epic #62 story 62.3: HealthKit is the basis for the Vibe Score, so skipping it is an
+        // explicit confirmation rather than a silent secondary tap. Notifications stay freely optional.
+        .confirmationDialog("Apple Health overslaan?",
+                            isPresented: $showHealthKitSkipConfirm,
+                            titleVisibility: .visible) {
+            Button("Toch overslaan", role: .destructive) { advance() }
+            Button("Terug", role: .cancel) { }
+        } message: {
+            Text("Zonder Apple Health kan VibeCoach je Vibe Score en herstel niet berekenen. Je kunt het later koppelen via Instellingen.")
+        }
     }
 
     // MARK: - Step 1: Welcome
@@ -120,7 +132,7 @@ struct OnboardingView: View {
             primaryButtonTitle: primaryTitle(for: healthKitState, grantLabel: "Koppel Apple Health"),
             primaryAction: handleHealthKitAction,
             secondaryButtonTitle: "Nu niet, later in Instellingen",
-            secondaryAction: advance
+            secondaryAction: { showHealthKitSkipConfirm = true }
         )
     }
 
