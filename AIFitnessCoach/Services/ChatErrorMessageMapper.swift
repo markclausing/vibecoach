@@ -64,33 +64,48 @@ enum ChatErrorMessageMapper {
 
     // MARK: - Fixed texts
 
-    static let networkOffline =
-        "Geen internet — controleer je verbinding en probeer opnieuw."
+    // Epic #37 / i18n follow-up: these user-facing messages are shown verbatim (chat bubble +
+    // dashboard banner), so they go through the String Catalog. Computed so the language is
+    // resolved at call time. The Dutch literal is the catalog key (sourceLanguage = nl);
+    // EN/DE/ES translations live in Localizable.xcstrings.
 
-    static let networkHostUnreachable =
-        "Geen verbinding met de AI-provider. Controleer of je internet werkt (VPN, captive portal?) en probeer opnieuw."
+    static var networkOffline: String {
+        String(localized: "Geen internet — controleer je verbinding en probeer opnieuw.")
+    }
 
-    static let networkTimeout =
-        "De verbinding met de AI-provider is te traag. Probeer het over een paar seconden opnieuw."
+    static var networkHostUnreachable: String {
+        String(localized: "Geen verbinding met de AI-provider. Controleer of je internet werkt (VPN, captive portal?) en probeer opnieuw.")
+    }
 
-    static let networkUnknown =
-        "Netwerkprobleem — controleer je verbinding en probeer opnieuw."
+    static var networkTimeout: String {
+        String(localized: "De verbinding met de AI-provider is te traag. Probeer het over een paar seconden opnieuw.")
+    }
 
-    static let requestCancelled =
-        "Verzoek geannuleerd. Stuur je bericht opnieuw als je een antwoord wilt."
+    static var networkUnknown: String {
+        String(localized: "Netwerkprobleem — controleer je verbinding en probeer opnieuw.")
+    }
 
-    static let promptBlocked =
-        "Dit bericht is geblokkeerd door de veiligheidsfilters van de AI. Herformuleer je vraag of focus op je training/herstel."
+    static var requestCancelled: String {
+        String(localized: "Verzoek geannuleerd. Stuur je bericht opnieuw als je een antwoord wilt.")
+    }
 
-    static let invalidAPIKey =
-        "Je API-sleutel werkt niet meer. Open Instellingen → AI Coach Configuratie om hem opnieuw in te voeren."
+    static var promptBlocked: String {
+        String(localized: "Dit bericht is geblokkeerd door de veiligheidsfilters van de AI. Herformuleer je vraag of focus op je training/herstel.")
+    }
 
-    static let providerOverloaded =
-        "De AI-provider is tijdelijk overbelast. Wacht 30 seconden en probeer opnieuw."
+    static var invalidAPIKey: String {
+        String(localized: "Je API-sleutel werkt niet meer. Open Instellingen → AI Coach Configuratie om hem opnieuw in te voeren.")
+    }
 
-    static let providerGeneric =
-        "De AI-provider gaf een onverwachte fout terug. Probeer het opnieuw."
+    static var providerOverloaded: String {
+        String(localized: "De AI-provider is tijdelijk overbelast. Wacht 30 seconden en probeer opnieuw.")
+    }
 
-    static let generic =
-        "Er ging iets mis bij het versturen. Probeer het opnieuw."
+    static var providerGeneric: String {
+        String(localized: "De AI-provider gaf een onverwachte fout terug. Probeer het opnieuw.")
+    }
+
+    static var generic: String {
+        String(localized: "Er ging iets mis bij het versturen. Probeer het opnieuw.")
+    }
 }
