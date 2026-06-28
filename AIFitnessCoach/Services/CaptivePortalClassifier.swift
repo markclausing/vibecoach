@@ -10,10 +10,12 @@ import Foundation
 /// would return JSON. Framework-free (§6) so the network layer passes in the raw facts.
 enum CaptivePortalClassifier {
 
-    /// Markers that strongly indicate an HTML login/splash page rather than an API payload.
+    /// Portal-specific markers (beyond the bare `<html>` tag) that indicate a login/splash page
+    /// rather than an API payload or a plain HTML error page. Deliberately excludes generic
+    /// structural tags (`<html>`, `<title>`) — those alone would flag any HTML error response.
     private static let portalMarkers = [
-        "<html", "<!doctype html", "<title", "login", "sign in", "wi-fi", "hotspot",
-        "captive", "portal", "terms of use", "accept", "<form"
+        "login", "log in", "sign in", "wi-fi", "wifi", "hotspot",
+        "captive", "portal", "terms of use", "<form"
     ]
 
     /// True when a response that *should* have been JSON instead looks like a captive-portal
