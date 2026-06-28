@@ -671,6 +671,7 @@
 			children = (
 				DA86D03EE20341A8CB8173EE /* ChatView.swift */,
 				BDF699C6B7148ACD66E857D7 /* AddGoalView.swift */,
+				8B408F736C85A65022704AE9 /* PermissionStatusView.swift */,
 				203C295EF5D568151B5D1BEF /* EditGoalView.swift */,
 				CE4D1D9B3991F419262E294E /* SettingsView.swift */,
 				DD88EE22FF4433AA66BB9955 /* OnboardingView.swift */,
@@ -701,7 +702,6 @@
 				B81B710B2F8D65A80062BC61 /* UITestMockEnvironment.swift */,
 				136CF190D3B3F2D63ADC3225 /* KeychainService.swift */,
 				136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */,
-				8B408F736C85A65022704AE9 /* PermissionStatusView.swift */,
 				5A0646F367262AB5EBE7CC6D /* PermissionStatusEvaluator.swift */,
 				5FE50630131CF375BCA5A21A /* APIKeyTestStatusStore.swift */,
 				EF94C6F48AA3187AD06B9821 /* APIKeyInputValidator.swift */,
