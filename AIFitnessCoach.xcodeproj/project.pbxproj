@@ -30,6 +30,7 @@
 		3500FFEECC00AA05BB02CC03 /* AIModelCatalogServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */; };
 		3600AABBCC00DD01EE02FF03 /* PeriodizationEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3600AABBCC00DD02EE02FF03 /* PeriodizationEngineTests.swift */; };
 		3603AABBCC00DD03EE03FF03 /* APIKeyValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */; };
+		16AB4034474B0D2FAE870DA3 /* SyncEdgePathHelpersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4865366C889C0D1CE91A8BFC /* SyncEdgePathHelpersTests.swift */; };
 		F6632D04CCD52636D6A429EC /* PermissionStatusEvaluatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A67E6FEBD4F9ED84A5B994 /* PermissionStatusEvaluatorTests.swift */; };
 		7C758BC555B8BC761151BE55 /* APIKeyTestStatusStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EB0B78BF14DD3EEF2188CED /* APIKeyTestStatusStoreTests.swift */; };
 		8CC8AB6BFDA319D00DCEEF44 /* APIKeyInputValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E225F9E10348DDE89C9CFE /* APIKeyInputValidatorTests.swift */; };
@@ -39,6 +40,9 @@
 		3606AABBCC00DD07EE05FF05 /* KeychainServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3606AABBCC00DD08EE05FF05 /* KeychainServiceTests.swift */; };
 		48E3320BE9BDAC79B8060EEE /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136CF190D3B3F2D63ADC3225 /* KeychainService.swift */; };
 		48E3320CE9BDAC79B8060EEE /* APIKeyValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */; };
+		39AC710217B748AA3EE80E58 /* HealthKitPermissionAudit.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE55E081F0611A0FD4776101 /* HealthKitPermissionAudit.swift */; };
+		15BB50750803FD8A0CF77860 /* WeatherRetryPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87B271FD10E4D9911EE0019B /* WeatherRetryPolicy.swift */; };
+		C458ABDF182EEFDE498EDF10 /* CaptivePortalClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCEB39214C89DE213C19B419 /* CaptivePortalClassifier.swift */; };
 		CCE75583101B706F651FA97B /* PermissionStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B408F736C85A65022704AE9 /* PermissionStatusView.swift */; };
 		CB348817FD7156B9F08F9334 /* PermissionStatusEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A0646F367262AB5EBE7CC6D /* PermissionStatusEvaluator.swift */; };
 		5524A859C0253917E06C2790 /* APIKeyTestStatusStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE50630131CF375BCA5A21A /* APIKeyTestStatusStore.swift */; };
@@ -276,6 +280,9 @@
 		0DE3DDF83AB44095AF4FA0CE /* MockNetworkSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockNetworkSession.swift; sourceTree = "<group>"; };
 		136CF190D3B3F2D63ADC3225 /* KeychainService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
 		136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyValidator.swift; sourceTree = "<group>"; };
+		BE55E081F0611A0FD4776101 /* HealthKitPermissionAudit.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthKitPermissionAudit.swift; sourceTree = "<group>"; };
+		87B271FD10E4D9911EE0019B /* WeatherRetryPolicy.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeatherRetryPolicy.swift; sourceTree = "<group>"; };
+		CCEB39214C89DE213C19B419 /* CaptivePortalClassifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CaptivePortalClassifier.swift; sourceTree = "<group>"; };
 		8B408F736C85A65022704AE9 /* PermissionStatusView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionStatusView.swift; sourceTree = "<group>"; };
 		5A0646F367262AB5EBE7CC6D /* PermissionStatusEvaluator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionStatusEvaluator.swift; sourceTree = "<group>"; };
 		5FE50630131CF375BCA5A21A /* APIKeyTestStatusStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyTestStatusStore.swift; sourceTree = "<group>"; };
@@ -309,6 +316,7 @@
 		3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelCatalogServiceTests.swift; sourceTree = "<group>"; };
 		3600AABBCC00DD02EE02FF03 /* PeriodizationEngineTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PeriodizationEngineTests.swift; sourceTree = "<group>"; };
 		3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyValidatorTests.swift; sourceTree = "<group>"; };
+		4865366C889C0D1CE91A8BFC /* SyncEdgePathHelpersTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SyncEdgePathHelpersTests.swift; sourceTree = "<group>"; };
 		91A67E6FEBD4F9ED84A5B994 /* PermissionStatusEvaluatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PermissionStatusEvaluatorTests.swift; sourceTree = "<group>"; };
 		1EB0B78BF14DD3EEF2188CED /* APIKeyTestStatusStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyTestStatusStoreTests.swift; sourceTree = "<group>"; };
 		F8E225F9E10348DDE89C9CFE /* APIKeyInputValidatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIKeyInputValidatorTests.swift; sourceTree = "<group>"; };
@@ -618,6 +626,7 @@
 				3500FFEECC00AA06BB02CC03 /* AIModelCatalogServiceTests.swift */,
 				3100FFEECC00AA08BB02CC03 /* OnboardingPersistenceTests.swift */,
 				3603AABBCC00DD04EE03FF03 /* APIKeyValidatorTests.swift */,
+				4865366C889C0D1CE91A8BFC /* SyncEdgePathHelpersTests.swift */,
 				91A67E6FEBD4F9ED84A5B994 /* PermissionStatusEvaluatorTests.swift */,
 				1EB0B78BF14DD3EEF2188CED /* APIKeyTestStatusStoreTests.swift */,
 				F8E225F9E10348DDE89C9CFE /* APIKeyInputValidatorTests.swift */,
@@ -702,6 +711,9 @@
 				B81B710B2F8D65A80062BC61 /* UITestMockEnvironment.swift */,
 				136CF190D3B3F2D63ADC3225 /* KeychainService.swift */,
 				136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */,
+				BE55E081F0611A0FD4776101 /* HealthKitPermissionAudit.swift */,
+				87B271FD10E4D9911EE0019B /* WeatherRetryPolicy.swift */,
+				CCEB39214C89DE213C19B419 /* CaptivePortalClassifier.swift */,
 				5A0646F367262AB5EBE7CC6D /* PermissionStatusEvaluator.swift */,
 				5FE50630131CF375BCA5A21A /* APIKeyTestStatusStore.swift */,
 				EF94C6F48AA3187AD06B9821 /* APIKeyInputValidator.swift */,
@@ -1110,6 +1122,7 @@
 				3500FFEECC00AA05BB02CC03 /* AIModelCatalogServiceTests.swift in Sources */,
 				3100FFEECC00AA07BB02CC03 /* OnboardingPersistenceTests.swift in Sources */,
 				3603AABBCC00DD03EE03FF03 /* APIKeyValidatorTests.swift in Sources */,
+				16AB4034474B0D2FAE870DA3 /* SyncEdgePathHelpersTests.swift in Sources */,
 				F6632D04CCD52636D6A429EC /* PermissionStatusEvaluatorTests.swift in Sources */,
 				7C758BC555B8BC761151BE55 /* APIKeyTestStatusStoreTests.swift in Sources */,
 				8CC8AB6BFDA319D00DCEEF44 /* APIKeyInputValidatorTests.swift in Sources */,
@@ -1219,6 +1232,9 @@
 				FF10AA20BB30CC40DD50EE60 /* AppTabHostView.swift in Sources */,
 				48E3320BE9BDAC79B8060EEE /* KeychainService.swift in Sources */,
 				48E3320CE9BDAC79B8060EEE /* APIKeyValidator.swift in Sources */,
+				39AC710217B748AA3EE80E58 /* HealthKitPermissionAudit.swift in Sources */,
+				15BB50750803FD8A0CF77860 /* WeatherRetryPolicy.swift in Sources */,
+				C458ABDF182EEFDE498EDF10 /* CaptivePortalClassifier.swift in Sources */,
 				CCE75583101B706F651FA97B /* PermissionStatusView.swift in Sources */,
 				CB348817FD7156B9F08F9334 /* PermissionStatusEvaluator.swift in Sources */,
 				5524A859C0253917E06C2790 /* APIKeyTestStatusStore.swift in Sources */,

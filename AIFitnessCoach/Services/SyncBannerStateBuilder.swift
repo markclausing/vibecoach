@@ -16,6 +16,9 @@ import Foundation
 
 enum SyncBannerState: Equatable {
     case offline(lastSyncAt: Date?)
+    /// Epic #62 story 62.4: online but behind a captive portal — explains every sub-error,
+    /// so it sits just below true offline in priority.
+    case captivePortal
     case rateLimited(until: Date)
     case stravaError(SyncErrorCategory)
     case healthKitError(SyncErrorCategory)
@@ -32,6 +35,12 @@ enum SyncBannerStateBuilder {
                       now: Date = Date()) -> SyncBannerState? {
         if snapshot.isOffline {
             return .offline(lastSyncAt: snapshot.lastAnySyncSuccessAt)
+        }
+
+        // Epic #62 story 62.4: online but intercepted by a captive portal — surface that
+        // specifically, otherwise the user sees confusing per-source errors while "connected".
+        if snapshot.isCaptivePortal {
+            return .captivePortal
         }
 
         if let until = snapshot.stravaRateLimitedUntil, until > now {

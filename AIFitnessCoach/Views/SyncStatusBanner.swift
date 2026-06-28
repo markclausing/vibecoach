@@ -88,6 +88,17 @@ struct SyncStatusBanner: View {
                     }
                 }
             }
+        case .captivePortal:
+            // Epic #62 story 62.4: online but behind a login portal.
+            DashboardBannerView(icon: "wifi.exclamationmark", color: .orange) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Inlogportaal gedetecteerd")
+                        .font(.subheadline.bold())
+                    Text("Je bent verbonden met een netwerk dat eerst een login vraagt. Open je browser om in te loggen, daarna synct VibeCoach weer.")
+                        .font(.caption)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         case .rateLimited(let until):
             DashboardBannerView(icon: "hourglass", color: .orange) {
                 VStack(alignment: .leading, spacing: 4) {

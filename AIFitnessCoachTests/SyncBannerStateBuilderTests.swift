@@ -31,6 +31,26 @@ final class SyncBannerStateBuilderTests: XCTestCase {
         XCTAssertNil(SyncBannerStateBuilder.state(from: snap, now: now))
     }
 
+    // MARK: Captive portal (Epic #62 story 62.4)
+
+    func testCaptivePortalOutranksRateLimitAndErrors() {
+        var snap = emptySnapshot()
+        snap.isCaptivePortal = true
+        snap.stravaRateLimitedUntil = now.addingTimeInterval(300)
+        snap.lastHKError = .other
+        snap.lastHKErrorAt = now.addingTimeInterval(-10)
+        XCTAssertEqual(SyncBannerStateBuilder.state(from: snap, now: now), .captivePortal)
+    }
+
+    func testOfflineOutranksCaptivePortal() {
+        var snap = emptySnapshot()
+        snap.isOffline = true
+        snap.isCaptivePortal = true
+        guard case .offline = SyncBannerStateBuilder.state(from: snap, now: now) else {
+            return XCTFail("Offline moet captive portal verslaan")
+        }
+    }
+
     // MARK: Offline wint van alles
 
     func testOfflineOutranksRateLimit() {

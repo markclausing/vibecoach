@@ -64,6 +64,9 @@ enum SyncErrorCategory: String, Codable, Equatable {
 /// no UserDefaults — the caller builds it and hands it to the builder.
 struct SyncStatusSnapshot: Equatable {
     var isOffline: Bool
+    /// Epic #62 story 62.4: device is associated to a network but a captive portal intercepts
+    /// requests (online-but-can't-reach). Defaulted so existing constructions stay valid.
+    var isCaptivePortal: Bool = false
     var stravaRateLimitedUntil: Date?
     var lastStravaError: SyncErrorCategory?
     var lastStravaErrorAt: Date?
@@ -94,7 +97,13 @@ struct SyncStatusStore {
         static let lastHKErrorCategory     = "vibecoach_lastHKErrorCategory"
         static let lastHKErrorAt           = "vibecoach_lastHKErrorAt"
         static let dismissedRateLimitUntil = "vibecoach_dismissedRateLimitUntil"
+        static let captivePortalDetectedAt = "vibecoach_captivePortalDetectedAt"
     }
+
+    /// Epic #62 story 62.4: a captive-portal detection is only "live" for this window, so the
+    /// banner clears itself once the user logs in to the portal and traffic flows again (the
+    /// next successful sync also clears it explicitly).
+    static let captivePortalValidity: TimeInterval = 3 * 60
 
     private let defaults: UserDefaults
     private let rateLimitStore: StravaRateLimitStore
@@ -144,11 +153,30 @@ struct SyncStatusStore {
         defaults.removeObject(forKey: Keys.lastHKErrorAt)
     }
 
+    // MARK: Captive portal (Epic #62 story 62.4)
+
+    /// Records that a request came back as a captive-portal page (see `CaptivePortalClassifier`).
+    func markCaptivePortal(at date: Date = Date()) {
+        defaults.set(date.timeIntervalSince1970, forKey: Keys.captivePortalDetectedAt)
+    }
+
+    /// Clears the captive-portal marker — called on any successful sync (traffic flows again).
+    func clearCaptivePortal() {
+        defaults.removeObject(forKey: Keys.captivePortalDetectedAt)
+    }
+
+    /// True when a captive portal was detected within the validity window.
+    func isCaptivePortalActive(now: Date = Date()) -> Bool {
+        guard let at = readDate(key: Keys.captivePortalDetectedAt) else { return false }
+        return now.timeIntervalSince(at) < Self.captivePortalValidity
+    }
+
     // MARK: Snapshot
 
     func snapshot(isOffline: Bool, now: Date = Date()) -> SyncStatusSnapshot {
         SyncStatusSnapshot(
             isOffline: isOffline,
+            isCaptivePortal: isCaptivePortalActive(now: now),
             stravaRateLimitedUntil: rateLimitStore.currentCooldown(now: now),
             lastStravaError: readErrorCategory(key: Keys.lastStravaErrorCategory),
             lastStravaErrorAt: readDate(key: Keys.lastStravaErrorAt),
