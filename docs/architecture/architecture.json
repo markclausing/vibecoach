@@ -6,7 +6,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 29,
+    "docRevision": 30,
     "lastUpdated": "2026-06-27",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
@@ -704,6 +704,39 @@
       "kind": "helper",
       "file": "AIFitnessCoach/Services/PermissionStatusEvaluator.swift",
       "description": "Epic #62 stories 62.3/62.5 — pure-Swift mapping of raw permission + background-engine facts to a display status (AccessLevel granted/partial/denied/notRequested, EngineStatus active/failed/inactive) for the Settings overview. HealthKit read-grant is unverifiable, so it combines 'critical types asked?' with Epic #38's last workout count ('asked but zero' = partial). Framework-free (§6).",
+      "uses": [],
+      "tags": [
+        "epic-62"
+      ]
+    },
+    {
+      "id": "CaptivePortalClassifier",
+      "layer": "services",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Services/CaptivePortalClassifier.swift",
+      "description": "Epic #62 story 62.4 (51.F6) — pure-Swift: flags a captive-portal HTML login page returned where a JSON API was expected (looksLikeCaptivePortal on content-type/body/redirect). No HTTP-204 probe / ATS exception needed; the network layer passes the response it already got. Used by WeatherManager → SyncStatusStore → SyncBannerStateBuilder (.captivePortal).",
+      "uses": [],
+      "tags": [
+        "epic-62"
+      ]
+    },
+    {
+      "id": "WeatherRetryPolicy",
+      "layer": "services",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Services/WeatherRetryPolicy.swift",
+      "description": "Epic #62 story 62.4 (51.F4) — pure-Swift: throttles automatic weather re-fetch after a failure (5-min cooldown) so a missing forecast is non-blocking and Open-Meteo isn't hammered on every appear. WeatherManager records/clears the failure timestamp.",
+      "uses": [],
+      "tags": [
+        "epic-62"
+      ]
+    },
+    {
+      "id": "HealthKitPermissionAudit",
+      "layer": "services",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Services/HealthKitPermissionAudit.swift",
+      "description": "Epic #62 story 62.4 (51.F3) — pure-Swift: maps unavailable critical HealthKit signals (workouts/heartRate/hrv/activeEnergy) to the app features that degrade (schedule/intensityZones/vibeScore/loadEstimate). Surfaced in PermissionStatusView; only .notDetermined is reliable for read types.",
       "uses": [],
       "tags": [
         "epic-62"

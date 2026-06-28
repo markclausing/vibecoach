@@ -118,6 +118,14 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     /// Requests location permission and starts fetching the weather.
     /// If permission is already granted, a location update is requested directly.
     func requestWeatherIfNeeded() {
+        // Epic #62 story 62.4: after a failure, wait out the cooldown before auto-retrying so we
+        // don't hammer Open-Meteo on every dashboard appear. Non-blocking — the app works without
+        // a forecast, and a stale forecast (if any) stays visible meanwhile.
+        guard WeatherRetryPolicy.shouldRetry(lastFailureAt: Self.lastWeatherFailureAt) else {
+            AppLoggers.weather.debug("Weer-fetch overgeslagen — binnen retry-cooldown na een fout")
+            return
+        }
+
         let status = locationManager.authorizationStatus
         switch status {
         case .notDetermined:
@@ -184,18 +192,55 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         do {
             var request = URLRequest(url: url)
             request.timeoutInterval = 30  // L-4: avoid a hung weather spinner (default is 60s)
-            let (data, _) = try await URLSession.shared.data(for: request)
-            let response  = try JSONDecoder().decode(OpenMeteoResponse.self, from: data)
-            weeklyForecast = parseForecast(from: response.daily)
+            let (data, urlResponse) = try await URLSession.shared.data(for: request)
+            do {
+                let decoded = try JSONDecoder().decode(OpenMeteoResponse.self, from: data)
+                weeklyForecast = parseForecast(from: decoded.daily)
 
-            let context = buildAIContext()
-            onWeatherUpdated?(context)
-            AppLoggers.weather.info("\(self.weeklyForecast.count, privacy: .public) dag(en) weerdata geladen via Open-Meteo")
-
+                let context = buildAIContext()
+                onWeatherUpdated?(context)
+                errorMessage = nil
+                AppLoggers.weather.info("\(self.weeklyForecast.count, privacy: .public) dag(en) weerdata geladen via Open-Meteo")
+                // Epic #62 story 62.4: success clears the retry marker + any captive-portal flag.
+                Self.recordWeatherSuccess()
+            } catch {
+                // We DID get a response but it isn't JSON — a captive portal hands back an HTML
+                // login page instead. Flag it so the dashboard shows the right banner (62.4).
+                let http = urlResponse as? HTTPURLResponse
+                let contentType = http?.value(forHTTPHeaderField: "Content-Type")
+                let bodySlice = String(data: data.prefix(2048), encoding: .utf8) ?? ""
+                if CaptivePortalClassifier.looksLikeCaptivePortal(contentType: contentType, body: bodySlice) {
+                    SyncStatusStore().markCaptivePortal()
+                    AppLoggers.weather.error("Weerdata-fetch kreeg een captive-portal-pagina i.p.v. JSON")
+                }
+                Self.recordWeatherFailure()
+                errorMessage = error.localizedDescription
+            }
         } catch {
+            // Transport-level failure (offline/timeout) — non-blocking; mark for a throttled retry.
+            Self.recordWeatherFailure()
             errorMessage = error.localizedDescription
             AppLoggers.weather.error("Fetch faalde: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    // MARK: - Epic #62 story 62.4: non-blocking weather retry marker
+
+    private static let weatherFailureKey = "vibecoach_lastWeatherFailureAt"
+
+    /// Timestamp of the last failed weather fetch, or `nil` after a success.
+    static var lastWeatherFailureAt: Date? {
+        let t = UserDefaults.standard.double(forKey: weatherFailureKey)
+        return t > 0 ? Date(timeIntervalSince1970: t) : nil
+    }
+
+    private static func recordWeatherFailure() {
+        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: weatherFailureKey)
+    }
+
+    private static func recordWeatherSuccess() {
+        UserDefaults.standard.removeObject(forKey: weatherFailureKey)
+        SyncStatusStore().clearCaptivePortal()
     }
 
     // MARK: - Parser

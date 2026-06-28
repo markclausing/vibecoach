@@ -15,6 +15,8 @@ struct PermissionStatusView: View {
     @State private var engineB: PermissionStatusEvaluator.EngineStatus = .inactive
     @State private var engineAError: String?
     @State private var engineBError: String?
+    /// Epic #62 story 62.4: features that degrade because a critical HealthKit signal was never granted.
+    @State private var hkDegradedFeatures: [HealthKitPermissionAudit.DegradedFeature] = []
 
     var body: some View {
         Form {
@@ -26,6 +28,12 @@ struct PermissionStatusView: View {
                     level: healthKitLevel,
                     action: healthKitLevel == .granted ? nil : .openSettings
                 )
+                // Epic #62 story 62.4: spell out what a missing HealthKit signal costs.
+                if !hkDegradedFeatures.isEmpty {
+                    Label("Hierdoor mis je: \(degradedFeaturesText)", systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
                 permissionRow(
                     icon: "bell.badge.fill",
                     title: "Notificaties",
@@ -132,6 +140,37 @@ struct PermissionStatusView: View {
         }
     }
 
+    // MARK: - Degraded-features (Epic #62 story 62.4)
+
+    /// The critical HealthKit signals that were never asked (reliable for read types, unlike a
+    /// post-grant denial which HealthKit hides). Maps each to its `CriticalSignal`.
+    private static func missingCriticalSignals(in store: HKHealthStore) -> Set<HealthKitPermissionAudit.CriticalSignal> {
+        let pairs: [(HKObjectType?, HealthKitPermissionAudit.CriticalSignal)] = [
+            (.workoutType(), .workouts),
+            (HKQuantityType.quantityType(forIdentifier: .heartRate), .heartRate),
+            (HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN), .hrv),
+            (HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned), .activeEnergy)
+        ]
+        var missing: Set<HealthKitPermissionAudit.CriticalSignal> = []
+        for (type, signal) in pairs where type.map({ store.authorizationStatus(for: $0) }) == .notDetermined {
+            missing.insert(signal)
+        }
+        return missing
+    }
+
+    private var degradedFeaturesText: String {
+        hkDegradedFeatures.map(Self.label(for:)).joined(separator: ", ")
+    }
+
+    private static func label(for feature: HealthKitPermissionAudit.DegradedFeature) -> String {
+        switch feature {
+        case .schedule:       return String(localized: "trainingsschema")
+        case .intensityZones: return String(localized: "intensiteitszones")
+        case .vibeScore:      return String(localized: "Vibe Score")
+        case .loadEstimate:   return String(localized: "belastingsschatting")
+        }
+    }
+
     // MARK: - Actions
 
     private func perform(_ action: RowAction) {
@@ -162,6 +201,12 @@ struct PermissionStatusView: View {
             lastWorkoutCount: lastWorkoutCount
         )
         healthKitLevel = hkLevel
+
+        // Epic #62 story 62.4: which features degrade because a critical signal was never granted.
+        // Only `.notDetermined` is reliable for read types (HealthKit hides read-grant state).
+        let missingSignals = Self.missingCriticalSignals(in: store)
+        hkDegradedFeatures = HealthKitPermissionAudit.degradedFeatures(missing: missingSignals)
+            .sorted { $0.rawValue < $1.rawValue }
 
         engineAError = ProactiveNotificationService.engineALastError
         engineBError = ProactiveNotificationService.engineBLastError
