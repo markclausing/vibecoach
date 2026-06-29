@@ -966,6 +966,28 @@
         }
       }
     },
+    "Achtergrond-coach" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hintergrund-Coach"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background coach"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coach en segundo plano"
+          }
+        }
+      }
+    },
     "Actie vereist! Je haalt het doel niet met dit (geplande) tempo." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1438,6 +1460,28 @@
         }
       }
     },
+    "Annuleer" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        }
+      }
+    },
     "Annuleren" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1524,6 +1568,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Datos de la app reconstruidos"
+          }
+        }
+      }
+    },
+    "Apple Health" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Health"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Health"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Health"
+          }
+        }
+      }
+    },
+    "Apple Health overslaan?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Health überspringen?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip Apple Health?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Omitir Apple Health?"
           }
         }
       }
@@ -1799,6 +1887,28 @@
         }
       }
     },
+    "belastingsschatting" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Belastungsschätzung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "load estimate"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "estimación de carga"
+          }
+        }
+      }
+    },
     "Berekenen..." : {
       "localizations" : {
         "de" : {
@@ -1817,6 +1927,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Calculando..."
+          }
+        }
+      }
+    },
+    "Bewerk Doel" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ziel bearbeiten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Goal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar objetivo"
           }
         }
       }
@@ -2481,6 +2613,28 @@
         }
       }
     },
+    "Datum ligt te dichtbij — kies minstens %lld dagen vooruit." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datum liegt zu nah – wähle mindestens %lld Tage im Voraus."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date is too soon — choose at least %lld days out."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La fecha está demasiado cerca: elige al menos %lld días después."
+          }
+        }
+      }
+    },
     "De AI-provider gaf een onverwachte fout terug. Probeer het opnieuw." : {
       "localizations" : {
         "de" : {
@@ -2680,6 +2834,28 @@
         }
       }
     },
+    "Deze sleutel lijkt van een andere provider. Controleer of je provider en sleutel bij elkaar horen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Schlüssel scheint von einem anderen Anbieter zu sein. Prüfe, ob Anbieter und Schlüssel zusammenpassen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This key looks like it's from a different provider. Check that your provider and key match."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta clave parece de otro proveedor. Comprueba que el proveedor y la clave coincidan."
+          }
+        }
+      }
+    },
     "DEZE WEEK · PLAN" : {
       "localizations" : {
         "de" : {
@@ -2698,6 +2874,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ESTA SEMANA · PLAN"
+          }
+        }
+      }
+    },
+    "Die streeftijd lijkt erg lang voor deze sport — klopt dat?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Zielzeit wirkt sehr lang für diese Sportart – stimmt das?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That target time seems very long for this sport — is that right?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ese tiempo objetivo parece muy largo para este deporte, ¿es correcto?"
+          }
+        }
+      }
+    },
+    "Die streeftijd lijkt erg snel voor deze sport — klopt dat?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Zielzeit wirkt sehr schnell für diese Sportart – stimmt das?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That target time seems very fast for this sport — is that right?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ese tiempo objetivo parece muy rápido para este deporte, ¿es correcto?"
           }
         }
       }
@@ -3268,6 +3488,72 @@
         }
       }
     },
+    "Engine A — workout-trigger" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Engine A – Workout-Trigger"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Engine A — workout trigger"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motor A: disparador de entrenamiento"
+          }
+        }
+      }
+    },
+    "Engine A reageert op nieuwe workouts, Engine B doet een dagelijkse check op inactiviteit. Beide draaien alleen met de juiste toestemmingen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Engine A reagiert auf neue Workouts, Engine B macht eine tägliche Inaktivitätsprüfung. Beide laufen nur mit den richtigen Berechtigungen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Engine A reacts to new workouts, Engine B does a daily inactivity check. Both run only with the right permissions."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El motor A reacciona a nuevos entrenamientos, el motor B hace una comprobación diaria de inactividad. Ambos funcionan solo con los permisos adecuados."
+          }
+        }
+      }
+    },
+    "Engine B — dagelijkse check" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Engine B – tägliche Prüfung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Engine B — daily check"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Motor B: comprobación diaria"
+          }
+        }
+      }
+    },
     "Enkel" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3378,6 +3664,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Un momento…"
+          }
+        }
+      }
+    },
+    "Extra notities (optioneel)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zusätzliche Notizen (optional)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extra notes (optional)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notas adicionales (opcional)"
           }
         }
       }
@@ -4110,6 +4418,28 @@
         }
       }
     },
+    "Gekoppeld, maar geen data — controleer toegang in Apple Health" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbunden, aber keine Daten – prüfe den Zugriff in Apple Health"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connected, but no data — check access in Apple Health"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectado, pero sin datos: comprueba el acceso en Apple Health"
+          }
+        }
+      }
+    },
     "Gem. hartslag" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4334,6 +4664,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sincronizado a las %@"
+          }
+        }
+      }
+    },
+    "Geweigerd" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verweigert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denied"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denegado"
           }
         }
       }
@@ -4705,6 +5057,28 @@
         }
       }
     },
+    "HealthKit voedt je Vibe Score en trainingsanalyse; notificaties zijn optioneel en sturen alleen een seintje bij afwijkingen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HealthKit speist deinen Vibe Score und die Trainingsanalyse; Mitteilungen sind optional und melden sich nur bei Abweichungen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HealthKit feeds your Vibe Score and workout analysis; notifications are optional and only ping you on deviations."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HealthKit alimenta tu Vibe Score y el análisis de entrenamiento; las notificaciones son opcionales y solo avisan ante desviaciones."
+          }
+        }
+      }
+    },
     "Heel licht" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5045,6 +5419,28 @@
         }
       }
     },
+    "Hierdoor mis je: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dadurch fehlt dir: %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're missing: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Por esto te pierdes: %@"
+          }
+        }
+      }
+    },
     "HISTORIE" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5109,6 +5505,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "¿Cómo va mi recuperación?"
+          }
+        }
+      }
+    },
+    "Hoe kom ik aan een %@-sleutel? →" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie bekomme ich einen %@-Schlüssel? →"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How do I get a %@ key? →"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cómo consigo una clave de %@? →"
           }
         }
       }
@@ -5706,6 +6124,28 @@
         }
       }
     },
+    "Inlogportaal gedetecteerd" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Login-Portal erkannt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Login portal detected"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Portal de inicio de sesión detectado"
+          }
+        }
+      }
+    },
     "Inspanning (RPE)" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5770,6 +6210,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Intensidad: Zona %@"
+          }
+        }
+      }
+    },
+    "intensiteitszones" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intensitätszonen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "intensity zones"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zonas de intensidad"
           }
         }
       }
@@ -5949,6 +6411,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No has iniciado sesión en Strava. Ve a ajustes para vincular."
+          }
+        }
+      }
+    },
+    "Je bent verbonden met een netwerk dat eerst een login vraagt. Open je browser om in te loggen, daarna synct VibeCoach weer." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du bist mit einem Netzwerk verbunden, das zuerst eine Anmeldung verlangt. Öffne deinen Browser zum Anmelden, danach synchronisiert VibeCoach wieder."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're connected to a network that requires a login first. Open your browser to sign in, then VibeCoach syncs again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estás conectado a una red que primero requiere iniciar sesión. Abre el navegador para acceder y luego VibeCoach volverá a sincronizar."
           }
         }
       }
@@ -8226,6 +8710,28 @@
         }
       }
     },
+    "Niet actief" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht aktiv"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not active"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inactivo"
+          }
+        }
+      }
+    },
     "Niet gekoppeld" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8267,6 +8773,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sin establecer"
+          }
+        }
+      }
+    },
+    "Nieuw Doel" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neues Ziel"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Goal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo objetivo"
           }
         }
       }
@@ -8356,6 +8884,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Comida normal"
+          }
+        }
+      }
+    },
+    "Notificaties" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitteilungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notificaciones"
           }
         }
       }
@@ -9673,6 +10223,28 @@
         }
       }
     },
+    "Registratie mislukt" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrierung fehlgeschlagen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registration failed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registro fallido"
+          }
+        }
+      }
+    },
     "Rug" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10150,6 +10722,28 @@
         }
       }
     },
+    "Sta toe" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erlauben"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir"
+          }
+        }
+      }
+    },
     "Startdatum" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10258,6 +10852,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Define una FC máxima + FC en reposo (Karvonen) o un LTHR (Friel) para ver las zonas de FC."
+          }
+        }
+      }
+    },
+    "Stel een streeftijd in of zet de schakelaar uit." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lege eine Zielzeit fest oder schalte den Schalter aus."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set a target time or turn off the switch."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define un tiempo objetivo o desactiva el interruptor."
           }
         }
       }
@@ -10721,6 +11337,28 @@
         }
       }
     },
+    "Terug" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zurück"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atrás"
+          }
+        }
+      }
+    },
     "Test deze sleutel" : {
       "localizations" : {
         "de" : {
@@ -10854,6 +11492,72 @@
         }
       }
     },
+    "Titel" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titel"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Título"
+          }
+        }
+      }
+    },
+    "Titel (bijv. Marathon onder 3:30)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Titel (z. B. Marathon unter 3:30)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Title (e.g. Marathon under 3:30)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Título (p. ej. Maratón en menos de 3:30)"
+          }
+        }
+      }
+    },
+    "Toch overslaan" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trotzdem überspringen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skip anyway"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omitir de todos modos"
+          }
+        }
+      }
+    },
     "Toepassen" : {
       "localizations" : {
         "de" : {
@@ -10894,6 +11598,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Permiso fallido — puedes reintentar ahora o vincular más tarde en Ajustes."
+          }
+        }
+      }
+    },
+    "Toestemmingen" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berechtigungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permissions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permisos"
+          }
+        }
+      }
+    },
+    "Toestemmingen & achtergrond" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berechtigungen & Hintergrund"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permissions & background"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permisos y segundo plano"
           }
         }
       }
@@ -11033,6 +11781,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "UMBRALES DE ENTRENAMIENTO"
+          }
+        }
+      }
+    },
+    "trainingsschema" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trainingsplan"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "training schedule"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "plan de entrenamiento"
           }
         }
       }
@@ -11839,7 +12609,26 @@
       }
     },
     "Vibe Score" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vibe Score"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vibe Score"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vibe Score"
+          }
+        }
+      }
     },
     "VIBE SCORE" : {
       "localizations" : {
@@ -12821,6 +13610,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Incluso con el máximo crecimiento semanal, la carga máxima no es alcanzable antes del día de carrera. Coméntalo con tu entrenador."
+          }
+        }
+      }
+    },
+    "Zonder Apple Health kan VibeCoach je Vibe Score en herstel niet berekenen. Je kunt het later koppelen via Instellingen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ohne Apple Health kann VibeCoach deinen Vibe Score und deine Erholung nicht berechnen. Du kannst es später in den Einstellungen verbinden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Without Apple Health, VibeCoach can't compute your Vibe Score and recovery. You can connect it later in Settings."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin Apple Health, VibeCoach no puede calcular tu Vibe Score ni tu recuperación. Puedes conectarlo más tarde en Ajustes."
           }
         }
       }
