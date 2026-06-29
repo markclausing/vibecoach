@@ -174,24 +174,25 @@ enum PhysiologicalThresholdValidator {
         let hasRest = (profile.restingHR ?? 0) > 0
         let hasLTHR = (profile.lthr ?? 0) > 0
 
+        // Epic #37 / i18n follow-up: zone-preview hints are user-facing (Settings) → localised.
         switch (hasLTHR, hasMax, hasRest) {
         case (false, true, false):
-            return "Vul Rust HR in om zones via Karvonen te berekenen, of gebruik LTHR voor de Friel-methode."
+            return String(localized: "Vul Rust HR in om zones via Karvonen te berekenen, of gebruik LTHR voor de Friel-methode.")
         case (false, false, true):
-            return "Vul Max HR in om zones via Karvonen te berekenen, of gebruik LTHR voor de Friel-methode."
+            return String(localized: "Vul Max HR in om zones via Karvonen te berekenen, of gebruik LTHR voor de Friel-methode.")
         case (false, false, false):
-            return "Stel een Max HR + Rust HR in (Karvonen) of een LTHR (Friel) om HR-zones te zien."
+            return String(localized: "Stel een Max HR + Rust HR in (Karvonen) of een LTHR (Friel) om HR-zones te zien.")
         default:
-            return "HR-zones kunnen niet berekend worden met de huidige waarden."
+            return String(localized: "HR-zones kunnen niet berekend worden met de huidige waarden.")
         }
     }
 
     /// Explanation text for the FTP zones when they cannot be computed.
     static func emptyPowerZonesExplanation(for profile: ProfileInput) -> String {
         if let ftp = profile.ftp, ftp > 0 {
-            return "Power-zones kunnen niet berekend worden met de huidige FTP-waarde."
+            return String(localized: "Power-zones kunnen niet berekend worden met de huidige FTP-waarde.")
         }
-        return "Stel een FTP in om power-zones te zien."
+        return String(localized: "Stel een FTP in om power-zones te zien.")
     }
 
     // MARK: - Private helpers

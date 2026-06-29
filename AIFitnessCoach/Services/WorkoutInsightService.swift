@@ -21,22 +21,28 @@ final class WorkoutInsightService {
         case timedOut(retried: Bool)
         case unavailable(retried: Bool, detail: String)
 
+        // Epic #37 / i18n follow-up: user-facing (shown in the Coach-analysis card) → localised.
+        // Each branch is a full string so the catalog keys carry no interpolation footgun.
         var errorDescription: String? {
             switch self {
             case .missingAPIKey:
-                return "Geen API-sleutel ingesteld. Open Instellingen → AI Coach om er één toe te voegen."
+                return String(localized: "Geen API-sleutel ingesteld. Open Instellingen → AI Coach om er één toe te voegen.")
             case .rateLimited(let retried):
-                let suffix = retried ? " (primair én fallback-model)" : ""
-                return "AI-quotum bereikt\(suffix). Probeer het over een paar minuten opnieuw."
+                return retried
+                    ? String(localized: "AI-quotum bereikt (primair én fallback-model). Probeer het over een paar minuten opnieuw.")
+                    : String(localized: "AI-quotum bereikt. Probeer het over een paar minuten opnieuw.")
             case .authenticationFailed:
-                return "Je API-sleutel werkt niet. Controleer 'm in Instellingen → AI Coach."
+                return String(localized: "Je API-sleutel werkt niet. Controleer 'm in Instellingen → AI Coach.")
             case .contentBlocked:
-                return "AI heeft de analyse geblokkeerd om veiligheidsredenen."
+                return String(localized: "AI heeft de analyse geblokkeerd om veiligheidsredenen.")
             case .timedOut(let retried):
-                let suffix = retried ? " (primair én fallback-model)" : ""
-                return "AI reageert niet op tijd\(suffix). Probeer het zo opnieuw."
+                return retried
+                    ? String(localized: "AI reageert niet op tijd (primair én fallback-model). Probeer het zo opnieuw.")
+                    : String(localized: "AI reageert niet op tijd. Probeer het zo opnieuw.")
             case .unavailable(let retried, let detail):
-                let prefix = retried ? "AI-analyse niet beschikbaar (primair én fallback-model gefaald)" : "AI-analyse niet beschikbaar"
+                let prefix = retried
+                    ? String(localized: "AI-analyse niet beschikbaar (primair én fallback-model gefaald)")
+                    : String(localized: "AI-analyse niet beschikbaar")
                 return "\(prefix). \(detail)"
             }
         }

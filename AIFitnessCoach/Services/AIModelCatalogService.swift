@@ -12,15 +12,18 @@ enum AIModelCatalogError: LocalizedError {
     case decoding(Error)
 
     var errorDescription: String? {
+        // Epic #37 / i18n follow-up: shown in the Settings model-picker footer → localised.
+        // Numbers pre-formatted to String so the catalog key uses %@ (not %lld) — §13.
         switch self {
         case .invalidURL:
-            return "Ongeldige proxy-URL voor model-catalogus."
+            return String(localized: "Ongeldige proxy-URL voor model-catalogus.")
         case .transport(let error):
-            return "Netwerkfout bij ophalen modellen: \(error.localizedDescription)"
+            return String(localized: "Netwerkfout bij ophalen modellen: \(error.localizedDescription)")
         case .httpStatus(let code):
-            return "Proxy gaf statuscode \(code) terug voor /ai/models."
+            let codeStr = "\(code)"
+            return String(localized: "Proxy gaf statuscode \(codeStr) terug voor /ai/models.")
         case .decoding(let error):
-            return "Kon model-catalogus niet lezen: \(error.localizedDescription)"
+            return String(localized: "Kon model-catalogus niet lezen: \(error.localizedDescription)")
         }
     }
 }

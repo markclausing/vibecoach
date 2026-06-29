@@ -125,34 +125,48 @@ final class ProactiveNotificationService {
         recentTRIMP: Double?,
         atRiskTitles: [String]
     ) -> (title: String, body: String) {
+        // Epic #37 / i18n follow-up: these are delivered as notifications → localised. Numbers
+        // are pre-formatted to String so each catalog key uses %@ (not %lld) — §13.
         if let trimp = recentTRIMP, trimp >= 50 {
             // Substantial workout (≥ 50 TRIMP) — praise the effort first, then give context
-            let trimpInt = Int(trimp)
-            let title = "Lekker getraind! 💪"
+            let trimpStr = "\(Int(trimp))"
+            let title = String(localized: "Lekker getraind! 💪")
             let body: String
             if atRiskTitles.count == 1 {
-                body = "\(trimpInt) TRIMP binnengehaald — goede stap richting '\(atRiskTitles[0])'. Je loopt nog iets achter, maar de coach heeft een vervolgstap klaar."
+                let goal = atRiskTitles[0]
+                body = String(localized: "\(trimpStr) TRIMP binnengehaald — goede stap richting '\(goal)'. Je loopt nog iets achter, maar de coach heeft een vervolgstap klaar.")
             } else {
-                body = "\(trimpInt) TRIMP binnengehaald. Je loopt nog achter op \(atRiskTitles.count) doelen, maar je bent op de goede weg. Open de coach."
+                let countStr = "\(atRiskTitles.count)"
+                body = String(localized: "\(trimpStr) TRIMP binnengehaald. Je loopt nog achter op \(countStr) doelen, maar je bent op de goede weg. Open de coach.")
             }
             return (title, body)
         }
 
         if let trimp = recentTRIMP, trimp > 0 {
             // Light workout (< 50 TRIMP) — neutral
-            let trimpInt = Int(trimp)
-            let title = "Workout geregistreerd (\(trimpInt) TRIMP)"
-            let body = atRiskTitles.count == 1
-                ? "Je loopt nog achter op '\(atRiskTitles[0])'. Overweeg een zwaardere sessie — de coach helpt je plannen."
-                : "Je loopt achter op \(atRiskTitles.count) doelen. Open de coach voor een bijgestuurd plan."
+            let trimpStr = "\(Int(trimp))"
+            let title = String(localized: "Workout geregistreerd (\(trimpStr) TRIMP)")
+            let body: String
+            if atRiskTitles.count == 1 {
+                let goal = atRiskTitles[0]
+                body = String(localized: "Je loopt nog achter op '\(goal)'. Overweeg een zwaardere sessie — de coach helpt je plannen.")
+            } else {
+                let countStr = "\(atRiskTitles.count)"
+                body = String(localized: "Je loopt achter op \(countStr) doelen. Open de coach voor een bijgestuurd plan.")
+            }
             return (title, body)
         }
 
         // No TRIMP data available — neutral fallback
-        let title = "Workout geregistreerd"
-        let body = atRiskTitles.count == 1
-            ? "Je loopt nog achter op '\(atRiskTitles[0])'. Open de coach voor de volgende stap."
-            : "Je loopt achter op \(atRiskTitles.count) doelen. Open de coach voor een bijgestuurd plan."
+        let title = String(localized: "Workout geregistreerd")
+        let body: String
+        if atRiskTitles.count == 1 {
+            let goal = atRiskTitles[0]
+            body = String(localized: "Je loopt nog achter op '\(goal)'. Open de coach voor de volgende stap.")
+        } else {
+            let countStr = "\(atRiskTitles.count)"
+            body = String(localized: "Je loopt achter op \(countStr) doelen. Open de coach voor een bijgestuurd plan.")
+        }
         return (title, body)
     }
 
@@ -314,21 +328,23 @@ final class ProactiveNotificationService {
 
         guard daysSinceWorkout >= engineBInactivityThresholdDays else { return nil }
 
+        // Epic #37 / i18n follow-up: localised notification text (numbers pre-formatted → %@, §13).
         let daysInt = Int(daysSinceWorkout)
-        let daysText = daysInt >= 3 ? "\(daysInt) dagen" : "2 dagen"
+        let daysCount = daysInt >= 3 ? daysInt : 2
+        let daysText = String(localized: "\("\(daysCount)") dagen")
 
         if daysInt >= 4 {
             // Long inactive — a kick in the pants
             return (
-                title: "Tijd voor actie! ⚠️",
-                body: "Je hebt \(daysText) niet getraind en '\(primaryTitle)' loopt gevaarlijk achter. Elke dag telt nu. Open de coach voor een herstelplan."
+                title: String(localized: "Tijd voor actie! ⚠️"),
+                body: String(localized: "Je hebt \(daysText) niet getraind en '\(primaryTitle)' loopt gevaarlijk achter. Elke dag telt nu. Open de coach voor een herstelplan.")
             )
         }
 
         // 2-3 days inactive — friendly but clear
         return (
-            title: "Je doel heeft je nodig 👟",
-            body: "Je hebt \(daysText) niet getraind en '\(primaryTitle)' loopt achter. Zelfs een korte sessie helpt. Open de coach voor de volgende stap."
+            title: String(localized: "Je doel heeft je nodig 👟"),
+            body: String(localized: "Je hebt \(daysText) niet getraind en '\(primaryTitle)' loopt achter. Zelfs een korte sessie helpt. Open de coach voor de volgende stap.")
         )
     }
 
