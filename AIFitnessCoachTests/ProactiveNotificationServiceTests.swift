@@ -16,12 +16,10 @@ final class ProactiveNotificationServiceTests: XCTestCase {
             recentTRIMP: 80,
             atRiskTitles: ["Marathon Amsterdam"]
         )
-        XCTAssertEqual(result.title, "Lekker getraind! 💪")
-        XCTAssertTrue(result.body.contains("80 TRIMP"))
-        XCTAssertTrue(result.body.contains("Marathon Amsterdam"),
-                      "Doelnaam moet expliciet in de body staan bij precies één doel.")
-        XCTAssertTrue(result.body.contains("vervolgstap"),
-                      "Bij hoge TRIMP wijst de body naar de vervolgstap, niet naar 'inhalen'.")
+        // §13: assert locale-agnostically — title against the localised key, body against the
+        // full localised string built with the same interpolation; never a hardcoded translation.
+        XCTAssertEqual(result.title, String(localized: "Lekker getraind! 💪"))
+        XCTAssertEqual(result.body, String(localized: "\("80") TRIMP binnengehaald — goede stap richting '\("Marathon Amsterdam")'. Je loopt nog iets achter, maar de coach heeft een vervolgstap klaar."))
     }
 
     /// Hoge TRIMP + meerdere doelen op rood → telt aantal doelen, geen specifieke titel.
@@ -30,11 +28,8 @@ final class ProactiveNotificationServiceTests: XCTestCase {
             recentTRIMP: 100,
             atRiskTitles: ["Marathon", "Halve Marathon", "Fietstocht"]
         )
-        XCTAssertEqual(result.title, "Lekker getraind! 💪")
-        XCTAssertTrue(result.body.contains("3 doelen"),
-                      "Body moet het aantal doelen noemen i.p.v. een specifieke titel.")
-        XCTAssertFalse(result.body.contains("Marathon Amsterdam"),
-                       "Geen specifieke doelnaam wanneer er meerdere op rood staan.")
+        XCTAssertEqual(result.title, String(localized: "Lekker getraind! 💪"))
+        XCTAssertEqual(result.body, String(localized: "\("100") TRIMP binnengehaald. Je loopt nog achter op \("3") doelen, maar je bent op de goede weg. Open de coach."))
     }
 
     /// Lichte TRIMP (>0 maar <50) + één doel → neutrale toon met advies tot zwaardere sessie.
@@ -43,10 +38,8 @@ final class ProactiveNotificationServiceTests: XCTestCase {
             recentTRIMP: 25,
             atRiskTitles: ["Marathon Amsterdam"]
         )
-        XCTAssertTrue(result.title.contains("25 TRIMP"),
-                      "Titel toont de TRIMP-waarde voor lichte workouts.")
-        XCTAssertTrue(result.body.contains("zwaardere sessie"),
-                      "Body adviseert een zwaardere sessie bij lichte workout met enkel doel op rood.")
+        XCTAssertEqual(result.title, String(localized: "Workout geregistreerd (\("25") TRIMP)"))
+        XCTAssertEqual(result.body, String(localized: "Je loopt nog achter op '\("Marathon Amsterdam")'. Overweeg een zwaardere sessie — de coach helpt je plannen."))
     }
 
     /// Lichte TRIMP + meerdere doelen → neutraal met aantal-doelen.
@@ -55,9 +48,7 @@ final class ProactiveNotificationServiceTests: XCTestCase {
             recentTRIMP: 30,
             atRiskTitles: ["A", "B"]
         )
-        XCTAssertTrue(result.body.contains("2 doelen"))
-        XCTAssertFalse(result.body.contains("zwaardere sessie"),
-                       "Bij meerdere doelen ligt de focus op planning, niet op upsell van zwaardere training.")
+        XCTAssertEqual(result.body, String(localized: "Je loopt achter op \("2") doelen. Open de coach voor een bijgestuurd plan."))
     }
 
     /// Geen TRIMP-data + één doel → fallback-tekst zonder TRIMP-waarde in titel.
@@ -66,10 +57,9 @@ final class ProactiveNotificationServiceTests: XCTestCase {
             recentTRIMP: nil,
             atRiskTitles: ["Marathon Amsterdam"]
         )
-        XCTAssertEqual(result.title, "Workout geregistreerd",
+        XCTAssertEqual(result.title, String(localized: "Workout geregistreerd"),
                        "Titel mag GEEN TRIMP-getal bevatten als er geen data is.")
-        XCTAssertTrue(result.body.contains("Marathon Amsterdam"))
-        XCTAssertTrue(result.body.contains("volgende stap"))
+        XCTAssertEqual(result.body, String(localized: "Je loopt nog achter op '\("Marathon Amsterdam")'. Open de coach voor de volgende stap."))
     }
 
     /// Geen TRIMP + meerdere doelen → fallback-tekst met aantal.
@@ -78,8 +68,8 @@ final class ProactiveNotificationServiceTests: XCTestCase {
             recentTRIMP: nil,
             atRiskTitles: ["A", "B", "C"]
         )
-        XCTAssertEqual(result.title, "Workout geregistreerd")
-        XCTAssertTrue(result.body.contains("3 doelen"))
+        XCTAssertEqual(result.title, String(localized: "Workout geregistreerd"))
+        XCTAssertEqual(result.body, String(localized: "Je loopt achter op \("3") doelen. Open de coach voor een bijgestuurd plan."))
     }
 
     /// TRIMP exact op de grenswaarde 50 — moet in de "hoog"-tak vallen.
@@ -88,7 +78,7 @@ final class ProactiveNotificationServiceTests: XCTestCase {
             recentTRIMP: 50,
             atRiskTitles: ["Test"]
         )
-        XCTAssertEqual(result.title, "Lekker getraind! 💪",
+        XCTAssertEqual(result.title, String(localized: "Lekker getraind! 💪"),
                        "TRIMP exact 50 moet in de hoog-tak vallen (>= 50).")
     }
 
@@ -98,7 +88,7 @@ final class ProactiveNotificationServiceTests: XCTestCase {
             recentTRIMP: 0,
             atRiskTitles: ["Test"]
         )
-        XCTAssertEqual(result.title, "Workout geregistreerd",
+        XCTAssertEqual(result.title, String(localized: "Workout geregistreerd"),
                        "TRIMP=0 valt in de fallback-tak omdat trimp > 0 niet matcht.")
     }
 
@@ -137,11 +127,9 @@ final class ProactiveNotificationServiceTests: XCTestCase {
             now: now
         )
         XCTAssertNotNil(result)
-        XCTAssertEqual(result?.title, "Je doel heeft je nodig 👟")
-        XCTAssertTrue(result?.body.contains("2 dagen") ?? false)
-        XCTAssertTrue(result?.body.contains("Marathon Amsterdam") ?? false)
-        XCTAssertTrue(result?.body.contains("korte sessie helpt") ?? false,
-                      "2-3 dagen-tak moet vriendelijk zijn met 'korte sessie helpt'.")
+        XCTAssertEqual(result?.title, String(localized: "Je doel heeft je nodig 👟"))
+        let days = String(localized: "\("2") dagen")
+        XCTAssertEqual(result?.body, String(localized: "Je hebt \(days) niet getraind en '\("Marathon Amsterdam")' loopt achter. Zelfs een korte sessie helpt. Open de coach voor de volgende stap."))
     }
 
     /// 3 dagen inactief → nog steeds in de vriendelijke tak (drempel = 4 voor urgent).
@@ -153,8 +141,8 @@ final class ProactiveNotificationServiceTests: XCTestCase {
             now: now
         )
         XCTAssertNotNil(result)
-        XCTAssertEqual(result?.title, "Je doel heeft je nodig 👟")
-        XCTAssertTrue(result?.body.contains("3 dagen") ?? false)
+        XCTAssertEqual(result?.title, String(localized: "Je doel heeft je nodig 👟"))
+        XCTAssertTrue(result?.body.contains(String(localized: "\("3") dagen")) ?? false)
     }
 
     /// 4+ dagen inactief → urgente toon ("Tijd voor actie!").
@@ -166,11 +154,9 @@ final class ProactiveNotificationServiceTests: XCTestCase {
             now: now
         )
         XCTAssertNotNil(result)
-        XCTAssertEqual(result?.title, "Tijd voor actie! ⚠️")
-        XCTAssertTrue(result?.body.contains("5 dagen") ?? false)
-        XCTAssertTrue(result?.body.contains("gevaarlijk achter") ?? false,
-                      "4+ dagen-tak gebruikt strengere woordkeus.")
-        XCTAssertTrue(result?.body.contains("herstelplan") ?? false)
+        XCTAssertEqual(result?.title, String(localized: "Tijd voor actie! ⚠️"))
+        let days = String(localized: "\("5") dagen")
+        XCTAssertEqual(result?.body, String(localized: "Je hebt \(days) niet getraind en '\("Marathon Amsterdam")' loopt gevaarlijk achter. Elke dag telt nu. Open de coach voor een herstelplan."))
     }
 
     /// Geen lastWorkoutDate (nieuwe gebruiker) → behandeld als 3 dagen inactief.
@@ -180,7 +166,7 @@ final class ProactiveNotificationServiceTests: XCTestCase {
             lastWorkoutDate: nil
         )
         XCTAssertNotNil(result, "Geen historie hoort als 3 dagen behandeld te worden — engine vuurt.")
-        XCTAssertEqual(result?.title, "Je doel heeft je nodig 👟",
+        XCTAssertEqual(result?.title, String(localized: "Je doel heeft je nodig 👟"),
                        "3 dagen valt onder de vriendelijke tak.")
     }
 

@@ -537,6 +537,50 @@
         }
       }
     },
+    "%@ TRIMP binnengehaald — goede stap richting '%@'. Je loopt nog iets achter, maar de coach heeft een vervolgstap klaar." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ TRIMP erreicht – ein guter Schritt Richtung '%@'. Du bist noch etwas im Rückstand, aber der Coach hat einen nächsten Schritt parat."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ TRIMP earned — a good step toward '%@'. You're still a little behind, but the coach has a next step ready."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ TRIMP conseguidos: un buen paso hacia '%@'. Aún vas un poco por detrás, pero el coach ya tiene el siguiente paso."
+          }
+        }
+      }
+    },
+    "%@ TRIMP binnengehaald. Je loopt nog achter op %@ doelen, maar je bent op de goede weg. Open de coach." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ TRIMP erreicht. Du bist noch bei %@ Zielen im Rückstand, aber auf einem guten Weg. Öffne den Coach."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ TRIMP earned. You're still behind on %@ goals, but you're on the right track. Open the coach."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ TRIMP conseguidos. Aún vas por detrás en %@ objetivos, pero vas por buen camino. Abre el coach."
+          }
+        }
+      }
+    },
     "%@-limiet bereikt. Probeer het later opnieuw." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1150,6 +1194,28 @@
         }
       }
     },
+    "AI heeft de analyse geblokkeerd om veiligheidsredenen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die KI hat die Analyse aus Sicherheitsgründen blockiert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI blocked the analysis for safety reasons."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA bloqueó el análisis por motivos de seguridad."
+          }
+        }
+      }
+    },
     "AI Provider" : {
       "localizations" : {
         "de" : {
@@ -1190,6 +1256,138 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "PROVEEDOR IA"
+          }
+        }
+      }
+    },
+    "AI reageert niet op tijd (primair én fallback-model). Probeer het zo opnieuw." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die KI hat nicht rechtzeitig geantwortet (Primär- und Fallback-Modell). Versuche es gleich erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI didn't respond in time (primary and fallback model). Try again shortly."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA no respondió a tiempo (modelo principal y de reserva). Inténtalo de nuevo en breve."
+          }
+        }
+      }
+    },
+    "AI reageert niet op tijd. Probeer het zo opnieuw." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die KI hat nicht rechtzeitig geantwortet. Versuche es gleich erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The AI didn't respond in time. Try again shortly."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La IA no respondió a tiempo. Inténtalo de nuevo en breve."
+          }
+        }
+      }
+    },
+    "AI-analyse niet beschikbaar" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-Analyse nicht verfügbar"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI analysis unavailable"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Análisis de IA no disponible"
+          }
+        }
+      }
+    },
+    "AI-analyse niet beschikbaar (primair én fallback-model gefaald)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-Analyse nicht verfügbar (Primär- und Fallback-Modell fehlgeschlagen)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI analysis unavailable (primary and fallback model failed)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Análisis de IA no disponible (fallaron el modelo principal y el de reserva)"
+          }
+        }
+      }
+    },
+    "AI-quotum bereikt (primair én fallback-model). Probeer het over een paar minuten opnieuw." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-Kontingent erreicht (Primär- und Fallback-Modell). Versuche es in ein paar Minuten erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI quota reached (primary and fallback model). Try again in a few minutes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuota de IA alcanzada (modelo principal y de reserva). Inténtalo de nuevo en unos minutos."
+          }
+        }
+      }
+    },
+    "AI-quotum bereikt. Probeer het over een paar minuten opnieuw." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-Kontingent erreicht. Versuche es in ein paar Minuten erneut."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI quota reached. Try again in a few minutes."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuota de IA alcanzada. Inténtalo de nuevo en unos minutos."
           }
         }
       }
@@ -3551,6 +3749,28 @@
         }
       }
     },
+    "Geen API-sleutel ingesteld. Open Instellingen → AI Coach om er één toe te voegen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein API-Schlüssel hinterlegt. Öffne Einstellungen → KI-Coach, um einen hinzuzufügen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No API key set. Open Settings → AI Coach to add one."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay clave de API configurada. Abre Ajustes → Coach de IA para añadir una."
+          }
+        }
+      }
+    },
     "Geen data" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5075,6 +5295,28 @@
         }
       }
     },
+    "HR-zones kunnen niet berekend worden met de huidige waarden." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HF-Zonen können mit den aktuellen Werten nicht berechnet werden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HR zones can't be computed with the current values."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las zonas de FC no se pueden calcular con los valores actuales."
+          }
+        }
+      }
+    },
     "HRV %lld ms boven baseline. Goede dag voor intensiteit." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5644,6 +5886,28 @@
         }
       }
     },
+    "Je API-sleutel werkt niet. Controleer 'm in Instellingen → AI Coach." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein API-Schlüssel funktioniert nicht. Prüfe ihn in Einstellungen → KI-Coach."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your API key doesn't work. Check it in Settings → AI Coach."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu clave de API no funciona. Compruébala en Ajustes → Coach de IA."
+          }
+        }
+      }
+    },
     "Je bent fysiologisch klaar voor dit doel!" : {
       "localizations" : {
         "de" : {
@@ -5711,6 +5975,28 @@
         }
       }
     },
+    "Je doel heeft je nodig 👟" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Ziel braucht dich 👟"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your goal needs you 👟"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu objetivo te necesita 👟"
+          }
+        }
+      }
+    },
     "Je gesprekken gaan rechtstreeks naar je gekozen AI-provider — niet via onze servers. Je houdt zelf de controle over kosten, model en privacy." : {
       "localizations" : {
         "de" : {
@@ -5752,6 +6038,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Creces un %@ por semana. Vas %lld semana(s) por detrás de la fecha de pico prevista. Aumenta el volumen."
+          }
+        }
+      }
+    },
+    "Je hebt %@ niet getraind en '%@' loopt achter. Zelfs een korte sessie helpt. Open de coach voor de volgende stap." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast %@ nicht trainiert und '%@' gerät in Rückstand. Sogar eine kurze Einheit hilft. Öffne den Coach für den nächsten Schritt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You haven't trained for %@ and '%@' is falling behind. Even a short session helps. Open the coach for the next step."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llevas %@ sin entrenar y '%@' se va quedando atrás. Hasta una sesión corta ayuda. Abre el coach para el siguiente paso."
+          }
+        }
+      }
+    },
+    "Je hebt %@ niet getraind en '%@' loopt gevaarlijk achter. Elke dag telt nu. Open de coach voor een herstelplan." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast %@ nicht trainiert und '%@' ist gefährlich im Rückstand. Jeder Tag zählt jetzt. Öffne den Coach für einen Aufholplan."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You haven't trained for %@ and '%@' is dangerously behind. Every day counts now. Open the coach for a recovery plan."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Llevas %@ sin entrenar y '%@' va peligrosamente por detrás. Ahora cada día cuenta. Abre el coach para un plan de recuperación."
           }
         }
       }
@@ -5866,6 +6196,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vas %lld semana(s) por detrás, pero el día de carrera está aún lo bastante lejos para una recuperación enfocada. Constrúyelo paso a paso."
+          }
+        }
+      }
+    },
+    "Je loopt achter op %@ doelen. Open de coach voor een bijgestuurd plan." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du bist bei %@ Zielen im Rückstand. Öffne den Coach für einen angepassten Plan."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're behind on %@ goals. Open the coach for an adjusted plan."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vas por detrás en %@ objetivos. Abre el coach para un plan ajustado."
+          }
+        }
+      }
+    },
+    "Je loopt nog achter op '%@'. Open de coach voor de volgende stap." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du bist noch bei '%@' im Rückstand. Öffne den Coach für den nächsten Schritt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're still behind on '%@'. Open the coach for the next step."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún vas por detrás en '%@'. Abre el coach para el siguiente paso."
+          }
+        }
+      }
+    },
+    "Je loopt nog achter op '%@'. Overweeg een zwaardere sessie — de coach helpt je plannen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du bist noch bei '%@' im Rückstand. Erwäge eine intensivere Einheit – der Coach hilft dir bei der Planung."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're still behind on '%@'. Consider a harder session — the coach helps you plan."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún vas por detrás en '%@'. Plantéate una sesión más exigente: el coach te ayuda a planificar."
           }
         }
       }
@@ -6448,6 +6844,28 @@
         }
       }
     },
+    "Kon model-catalogus niet lezen: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modellkatalog konnte nicht gelesen werden: %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't read the model catalogue: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo leer el catálogo de modelos: %@"
+          }
+        }
+      }
+    },
     "koolhydraten" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6831,6 +7249,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vacío / agotado"
+          }
+        }
+      }
+    },
+    "Lekker getraind! 💪" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stark trainiert! 💪"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicely done! 💪"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Buen entrenamiento! 💪"
           }
         }
       }
@@ -7719,6 +8159,28 @@
         }
       }
     },
+    "Netwerkfout bij ophalen modellen: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Netzwerkfehler beim Abrufen der Modelle: %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Network error fetching models: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error de red al obtener los modelos: %@"
+          }
+        }
+      }
+    },
     "Netwerkprobleem — controleer je verbinding en probeer opnieuw." : {
       "localizations" : {
         "de" : {
@@ -8144,6 +8606,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Respuesta no válida del servidor."
+          }
+        }
+      }
+    },
+    "Ongeldige proxy-URL voor model-catalogus." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ungültige Proxy-URL für den Modellkatalog."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invalid proxy URL for the model catalogue."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL de proxy no válida para el catálogo de modelos."
           }
         }
       }
@@ -8875,6 +9359,28 @@
         }
       }
     },
+    "Power-zones kunnen niet berekend worden met de huidige FTP-waarde." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leistungszonen können mit dem aktuellen FTP-Wert nicht berechnet werden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Power zones can't be computed with the current FTP value."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las zonas de potencia no se pueden calcular con el valor de FTP actual."
+          }
+        }
+      }
+    },
     "Presteren / Zo snel mogelijk" : {
       "localizations" : {
         "de" : {
@@ -9073,6 +9579,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Proveedor"
+          }
+        }
+      }
+    },
+    "Proxy gaf statuscode %@ terug voor /ai/models." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proxy gab Statuscode %@ für /ai/models zurück."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proxy returned status code %@ for /ai/models."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El proxy devolvió el código de estado %@ para /ai/models."
           }
         }
       }
@@ -9690,6 +10218,50 @@
         }
       }
     },
+    "Stel een FTP in om power-zones te zien." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lege einen FTP fest, um Leistungszonen zu sehen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set an FTP to see power zones."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define un FTP para ver las zonas de potencia."
+          }
+        }
+      }
+    },
+    "Stel een Max HR + Rust HR in (Karvonen) of een LTHR (Friel) om HR-zones te zien." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lege eine Max-HF + Ruhe-HF (Karvonen) oder einen LTHR (Friel) fest, um HF-Zonen zu sehen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set a Max HR + Rest HR (Karvonen) or an LTHR (Friel) to see HR zones."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define una FC máxima + FC en reposo (Karvonen) o un LTHR (Friel) para ver las zonas de FC."
+          }
+        }
+      }
+    },
     "Sterk" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10211,6 +10783,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hora"
+          }
+        }
+      }
+    },
+    "Tijd voor actie! ⚠️" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeit zu handeln! ⚠️"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Time to act! ⚠️"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Hora de actuar! ⚠️"
           }
         }
       }
@@ -11701,6 +12295,50 @@
         }
       }
     },
+    "Vul Max HR in om zones via Karvonen te berekenen, of gebruik LTHR voor de Friel-methode." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib die Max-HF ein, um Zonen per Karvonen zu berechnen, oder nutze LTHR für die Friel-Methode."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Max HR to compute zones via Karvonen, or use LTHR for the Friel method."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introduce la FC máxima para calcular las zonas con Karvonen, o usa el LTHR para el método Friel."
+          }
+        }
+      }
+    },
+    "Vul Rust HR in om zones via Karvonen te berekenen, of gebruik LTHR voor de Friel-methode." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib die Ruhe-HF ein, um Zonen per Karvonen zu berechnen, oder nutze LTHR für die Friel-Methode."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter Rest HR to compute zones via Karvonen, or use LTHR for the Friel method."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introduce la FC en reposo para calcular las zonas con Karvonen, o usa el LTHR para el método Friel."
+          }
+        }
+      }
+    },
     "Waarom je eigen sleutel?" : {
       "localizations" : {
         "de" : {
@@ -12116,6 +12754,50 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Wind %1$@ km/u · %2$@%% neerslag"
+          }
+        }
+      }
+    },
+    "Workout geregistreerd" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workout erfasst"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workout logged"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrenamiento registrado"
+          }
+        }
+      }
+    },
+    "Workout geregistreerd (%@ TRIMP)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workout erfasst (%@ TRIMP)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workout logged (%@ TRIMP)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrenamiento registrado (%@ TRIMP)"
           }
         }
       }
