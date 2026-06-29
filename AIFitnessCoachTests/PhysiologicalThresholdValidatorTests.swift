@@ -105,13 +105,17 @@ final class PhysiologicalThresholdValidatorTests: XCTestCase {
     }
 
     func testEmptyHRZonesExplanationSuggestsMissingComplement() {
-        // Alleen Max HR ingevuld → moet Rust HR of LTHR suggereren
+        // §13: the hint is now localised, so compare against String(localized:) of the same key
+        // (locale-agnostic) instead of a Dutch substring like "Rust HR" (EN: "Rest HR").
+        // Alleen Max HR ingevuld → moet Rust HR of LTHR suggereren.
         let onlyMax = Sut.ProfileInput(maxHR: 185, restingHR: nil, lthr: nil, ftp: nil)
-        XCTAssertTrue(Sut.emptyHRZonesExplanation(for: onlyMax).contains("Rust HR"))
+        XCTAssertEqual(Sut.emptyHRZonesExplanation(for: onlyMax),
+                       String(localized: "Vul Rust HR in om zones via Karvonen te berekenen, of gebruik LTHR voor de Friel-methode."))
 
-        // Alleen Rust HR ingevuld → moet Max HR of LTHR suggereren
+        // Alleen Rust HR ingevuld → moet Max HR of LTHR suggereren.
         let onlyRest = Sut.ProfileInput(maxHR: nil, restingHR: 60, lthr: nil, ftp: nil)
-        XCTAssertTrue(Sut.emptyHRZonesExplanation(for: onlyRest).contains("Max HR"))
+        XCTAssertEqual(Sut.emptyHRZonesExplanation(for: onlyRest),
+                       String(localized: "Vul Max HR in om zones via Karvonen te berekenen, of gebruik LTHR voor de Friel-methode."))
     }
 
     func testEmptyHRZonesExplanationFallsBackOnGenericTipWhenNothingSet() {
