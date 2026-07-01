@@ -67,6 +67,9 @@
 		F010FF20AA30BB40CC50DD60 /* SyncStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F001FF02AA03BB04CC05DD06 /* SyncStatusBanner.swift */; };
 		5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */; };
 		531DF0798000FFC0CACC940E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4D1D9B3991F419262E294E /* SettingsView.swift */; };
+		DA54B1000000000000000201 /* PhysicalProfileSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B1000000000000000101 /* PhysicalProfileSection.swift */; };
+		DA54B1000000000000000202 /* AIProviderSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B1000000000000000102 /* AIProviderSettingsView.swift */; };
+		DA54B1000000000000000203 /* PreferencesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B1000000000000000103 /* PreferencesListView.swift */; };
 		543CBE0027B161C9AFDE3824 /* AIFitnessCoachApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3726EB408B0388208539E77 /* AIFitnessCoachApp.swift */; };
 		D5D0010101D001010100D001 /* SchemaV1.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0010102D001010100D002 /* SchemaV1.swift */; };
 		D5D0020101D002010100D001 /* SchemaV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D0020102D002010100D002 /* SchemaV2.swift */; };
@@ -417,6 +420,9 @@
 		CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockGenerativeModel.swift; sourceTree = "<group>"; };
 		CC01DD02EE03FF04AA05BB06 /* WeekTimelineView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeekTimelineView.swift; sourceTree = "<group>"; };
 		CE4D1D9B3991F419262E294E /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		DA54B1000000000000000101 /* PhysicalProfileSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysicalProfileSection.swift; sourceTree = "<group>"; };
+		DA54B1000000000000000102 /* AIProviderSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIProviderSettingsView.swift; sourceTree = "<group>"; };
+		DA54B1000000000000000103 /* PreferencesListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PreferencesListView.swift; sourceTree = "<group>"; };
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrainingPhaseTests.swift; sourceTree = "<group>"; };
 		D92F0B029D6902862CF50631 /* GoalsListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalsListView.swift; sourceTree = "<group>"; };
 		DA86D03EE20341A8CB8173EE /* ChatView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
@@ -721,6 +727,7 @@
 				F6C4F7B2D6E8F0A1B2C3D405 /* TrainingThresholdsSettingsView.swift */,
 				AA6022220000000000000001 /* PhaseMilestonesView.swift */,
 				DA54B0000000000000000001 /* Dashboard */,
+				DA54B1000000000000000001 /* Settings */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -737,6 +744,16 @@
 				DA54B0000000000000000107 /* SymptomCheckinCard.swift */,
 			);
 			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		DA54B1000000000000000001 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				DA54B1000000000000000101 /* PhysicalProfileSection.swift */,
+				DA54B1000000000000000102 /* AIProviderSettingsView.swift */,
+				DA54B1000000000000000103 /* PreferencesListView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 		413E677FAE0B37E364E902DA /* Services */ = {
@@ -1254,6 +1271,9 @@
 				200EA372CBBCA4A6A0021BAF /* AddGoalView.swift in Sources */,
 				E632BCD343E9A620341BD347 /* EditGoalView.swift in Sources */,
 				531DF0798000FFC0CACC940E /* SettingsView.swift in Sources */,
+				DA54B1000000000000000201 /* PhysicalProfileSection.swift in Sources */,
+				DA54B1000000000000000202 /* AIProviderSettingsView.swift in Sources */,
+				DA54B1000000000000000203 /* PreferencesListView.swift in Sources */,
 				CC77FF11AA3322BB55DD8844 /* OnboardingView.swift in Sources */,
 				B5F1A12710FF20AA30BB5001 /* SafariView.swift in Sources */,
 				CC77FF22AA3322BB55DD8844 /* OnboardingTemplateView.swift in Sources */,
