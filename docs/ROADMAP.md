@@ -10,6 +10,7 @@ Legend: ✅ done · 🔄 active · ⏳ backlog
 
 | Epic | What it is | Pickup trigger |
 |---|---|---|
+| ⏳ **#64** | Refactor-review follow-ups: split the oversized view files (§5), plus small backlog cleanups | next time you open `DashboardView`/`SettingsView`, or when a file over ±500 LOC gets in the way |
 | ⏳ **#63** | CI pipeline extensions (promoted from the Epic #46 backlog): TestFlight deploy, snapshot tests, dependency scan, perf checks, concurrency matrix, release-please | each story has its own trigger (first release, UI regression, Swift 6 upgrade…) |
 | ⏳ **#59** | Strava Developer Program compliance: base-URL change (June 2027), check AI-data terms | approaching Strava deadlines |
 | ⏳ **idea** | Mental benefit of workouts (not yet worked out) | more "why am I training this" context wanted |
@@ -17,6 +18,25 @@ Legend: ✅ done · 🔄 active · ⏳ backlog
 ---
 
 ## Active & planned
+
+### ⏳ Epic #64: Refactor-review follow-ups (tech debt)
+
+Follow-ups from the July 2026 refactor review (dead code · duplicate functionality · oversized files). The first two steps are **done and merged**; the rest is deferred, low-risk, mechanical cleanup — picked up opportunistically, not committed to a sprint.
+
+**Already delivered (context):**
+- ✅ **Dead-view cleanup** — removed 10 unreferenced SwiftUI `View` structs (−977 LOC). **Merged via PR #334.**
+- ✅ **`AppDateFormatters` helper** — centralised ~40 inline `DateFormatter()` sites into one cached factory (display / prompt / fixed locale intents), fixing two latent i18n bugs. **Merged via PR #335.**
+
+**Stories** (each its own `chore/` PR; pure file-splits per §5 — type names stay identical, so SwiftData and callers notice nothing):
+
+* **⏳ 64.1 — Split `DashboardView.swift`** (~1700 LOC after the dead-code cleanup). Extract the standalone card/banner structs (`TRIMPExplainerCard`, `VibeScoreExplainerCard`, `PostWorkoutCheckinCard`, `MilestoneProgressCard`, `SymptomCheckinCard`, `HealthKitPermissionWarningBanner`, `DashboardBannerView`, …) into their own files under `Views/Dashboard/`. Acceptance: no file over ±500 LOC for the extracted types; build + tests green; each moved building-block `View` stays registered/added in `architecture.json` if applicable. **Pickup trigger:** next substantial edit to the dashboard.
+* **⏳ 64.2 — Split `SettingsView.swift`** (~2180 LOC). Pull `AIProviderSettingsView` (~365 LOC), `PreferencesListView` + the memory-type classification, and `PhysicalProfileSection` into separate files. Same acceptance as 64.1. **Pickup trigger:** next substantial edit to Settings.
+* **⏳ 64.3 — Split the remaining oversized views opportunistically:** `ChatView`, `WorkoutAnalysisView`, `ChatViewModel` (extract JSON-parsing + PHI-context helpers into `extension` files). Lower priority than 64.1/64.2. **Pickup trigger:** when one of these files gets in the way of a change.
+* **⏳ 64.4 — Small backlog cleanups:** resolve or remove the `TODO(Epic 34.3)` placeholder in `ChatView` (real `CoachAnalysisService` LLM call vs. drop the stale marker), and drop the now-stale "V2.0" MARK labels left over from the removed V1 structs. **Pickup trigger:** meltable into any nearby PR.
+
+**Pickup trigger (epic-level):** opening `DashboardView`/`SettingsView` for other work, or any file over ±500 LOC (§5 soft cap) becoming a navigation burden. No functional change in any story — purely structural, so on-device validation is a smoke test that the affected screens still render.
+
+---
 
 ### ⏳ Epic #63: CI pipeline extensions (promoted from the Epic #46 backlog)
 
