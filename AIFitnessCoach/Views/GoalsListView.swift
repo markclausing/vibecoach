@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - GoalsListView V2.0
+// MARK: - GoalsListView
 
 struct GoalsListView: View {
     @ObservedObject var viewModel: ChatViewModel

@@ -284,7 +284,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - V2.0 Body
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
@@ -773,7 +773,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - V2.0 Helper views
+    // MARK: - Helper views
 
     private var settingsDivider: some View {
         Divider().padding(.leading, 60)
@@ -881,7 +881,7 @@ struct SettingsView: View {
     #endif
 }
 
-// MARK: - V2.0 Components
+// MARK: - Components
 
 struct SettingsConnectionCard: View {
     let icon: String
