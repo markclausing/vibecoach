@@ -250,6 +250,13 @@
 		E767E8F495D10156A93BCC15 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE95B5B0D96FB302BFE3145 /* ContentView.swift */; };
 		EDF73C6C2B12F9FC2BDB6140 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5493D0D3C44442CCF82489CA /* Preview Assets.xcassets */; };
 		EE10FF20AA30BB40CC50DD60 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE01FF02AA03BB04CC05DD06 /* DashboardView.swift */; };
+		DA54B0000000000000000201 /* TRIMPExplainerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B0000000000000000101 /* TRIMPExplainerCard.swift */; };
+		DA54B0000000000000000202 /* VibeScoreExplainerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B0000000000000000102 /* VibeScoreExplainerCard.swift */; };
+		DA54B0000000000000000203 /* PostWorkoutCheckinCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B0000000000000000103 /* PostWorkoutCheckinCard.swift */; };
+		DA54B0000000000000000204 /* HealthKitPermissionWarningBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B0000000000000000104 /* HealthKitPermissionWarningBanner.swift */; };
+		DA54B0000000000000000205 /* DashboardBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B0000000000000000105 /* DashboardBannerView.swift */; };
+		DA54B0000000000000000206 /* MilestoneProgressCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B0000000000000000106 /* MilestoneProgressCard.swift */; };
+		DA54B0000000000000000207 /* SymptomCheckinCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B0000000000000000107 /* SymptomCheckinCard.swift */; };
 		EE55FF6677AA889900112233 /* FutureProjectionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF6677AA88990011223344EE /* FutureProjectionServiceTests.swift */; };
 		F00D4D082A5D0B980C536185 /* StravaAuthServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C2BF572AF13DE2A83E51CF /* StravaAuthServiceTests.swift */; };
 		F57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift */; };
@@ -484,6 +491,13 @@
 		EDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionClassifier.swift; sourceTree = "<group>"; };
 		EDA9519ECAE22F903D67C756 /* TokenStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TokenStore.swift; sourceTree = "<group>"; };
 		EE01FF02AA03BB04CC05DD06 /* DashboardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		DA54B0000000000000000101 /* TRIMPExplainerCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TRIMPExplainerCard.swift; sourceTree = "<group>"; };
+		DA54B0000000000000000102 /* VibeScoreExplainerCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VibeScoreExplainerCard.swift; sourceTree = "<group>"; };
+		DA54B0000000000000000103 /* PostWorkoutCheckinCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PostWorkoutCheckinCard.swift; sourceTree = "<group>"; };
+		DA54B0000000000000000104 /* HealthKitPermissionWarningBanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthKitPermissionWarningBanner.swift; sourceTree = "<group>"; };
+		DA54B0000000000000000105 /* DashboardBannerView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardBannerView.swift; sourceTree = "<group>"; };
+		DA54B0000000000000000106 /* MilestoneProgressCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MilestoneProgressCard.swift; sourceTree = "<group>"; };
+		DA54B0000000000000000107 /* SymptomCheckinCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SymptomCheckinCard.swift; sourceTree = "<group>"; };
 		EEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionClassifierTests.swift; sourceTree = "<group>"; };
 		EFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HeartRateZones.swift; sourceTree = "<group>"; };
 		F0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HeartRateZonesTests.swift; sourceTree = "<group>"; };
@@ -706,8 +720,23 @@
 				E8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift */,
 				F6C4F7B2D6E8F0A1B2C3D405 /* TrainingThresholdsSettingsView.swift */,
 				AA6022220000000000000001 /* PhaseMilestonesView.swift */,
+				DA54B0000000000000000001 /* Dashboard */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		DA54B0000000000000000001 /* Dashboard */ = {
+			isa = PBXGroup;
+			children = (
+				DA54B0000000000000000101 /* TRIMPExplainerCard.swift */,
+				DA54B0000000000000000102 /* VibeScoreExplainerCard.swift */,
+				DA54B0000000000000000103 /* PostWorkoutCheckinCard.swift */,
+				DA54B0000000000000000104 /* HealthKitPermissionWarningBanner.swift */,
+				DA54B0000000000000000105 /* DashboardBannerView.swift */,
+				DA54B0000000000000000106 /* MilestoneProgressCard.swift */,
+				DA54B0000000000000000107 /* SymptomCheckinCard.swift */,
+			);
+			path = Dashboard;
 			sourceTree = "<group>";
 		};
 		413E677FAE0B37E364E902DA /* Services */ = {
@@ -1237,6 +1266,13 @@
 				CC10DD20EE30FF40AA50BB60 /* WeekTimelineView.swift in Sources */,
 				DD10EE20FF30AA40BB50CC60 /* TrendWidgetView.swift in Sources */,
 				EE10FF20AA30BB40CC50DD60 /* DashboardView.swift in Sources */,
+				DA54B0000000000000000201 /* TRIMPExplainerCard.swift in Sources */,
+				DA54B0000000000000000202 /* VibeScoreExplainerCard.swift in Sources */,
+				DA54B0000000000000000203 /* PostWorkoutCheckinCard.swift in Sources */,
+				DA54B0000000000000000204 /* HealthKitPermissionWarningBanner.swift in Sources */,
+				DA54B0000000000000000205 /* DashboardBannerView.swift in Sources */,
+				DA54B0000000000000000206 /* MilestoneProgressCard.swift in Sources */,
+				DA54B0000000000000000207 /* SymptomCheckinCard.swift in Sources */,
 				FF10AA20BB30CC40DD50EE60 /* AppTabHostView.swift in Sources */,
 				48E3320BE9BDAC79B8060EEE /* KeychainService.swift in Sources */,
 				48E3320CE9BDAC79B8060EEE /* APIKeyValidator.swift in Sources */,
