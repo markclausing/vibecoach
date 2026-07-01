@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - V2.0: DashboardBannerView
+// MARK: - DashboardBannerView
 
 /// Reusable card banner for ACWR warnings and informational messages.
 struct DashboardBannerView<Content: View>: View {

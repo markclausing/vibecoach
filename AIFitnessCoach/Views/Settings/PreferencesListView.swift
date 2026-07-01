@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - V2.0 Memory View
+// MARK: - Memory View
 
 struct PreferencesListView: View {
     @Environment(\.modelContext) private var modelContext

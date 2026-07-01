@@ -60,13 +60,11 @@ struct ChatView: View {
         }
     }
 
-    // MARK: - Epic 34 Sprint 2: Data-driven KORT + WAT IK ZIE
+    // MARK: - Data-driven KORT + WAT IK ZIE (Epic 34 Sprint 2)
     //
-    // TODO(Epic 34.3): Replace these derivations with a real LLM call
-    // (CoachAnalysisService) once that endpoint is live. Until then we combine
-    // the last stored coach insight with the most recent SwiftData records
-    // (ActivityRecord, DailyReadiness, AthleticProfile) so the UI never shows
-    // made-up numbers again.
+    // These derivations combine the last stored coach insight with the most
+    // recent SwiftData records (ActivityRecord, DailyReadiness, AthleticProfile)
+    // so the UI never shows made-up numbers.
 
     /// Short coach summary — falls back to the last insight stored by the LLM.
     private var coachSummaryText: String? {
@@ -673,7 +671,7 @@ struct MessageBubble: View {
     }
 }
 
-// MARK: - V2.0 Coach Card Components (Sprint 2 Part 1)
+// MARK: - Coach Card Components
 
 // MARK: CoachV2HeaderView
 
