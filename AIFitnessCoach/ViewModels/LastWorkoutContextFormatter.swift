@@ -31,10 +31,7 @@ enum LastWorkoutContextFormatter {
         let baseName = workoutName ?? "Training"
         let nameStr: String
         if let date = startDate {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            formatter.timeStyle = .none
-            formatter.locale = Locale(identifier: "nl_NL")
+            let formatter = AppDateFormatters.promptStyle(.medium)
             nameStr = "\(baseName) van \(formatter.string(from: date))"
         } else {
             nameStr = baseName

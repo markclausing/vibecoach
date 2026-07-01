@@ -282,10 +282,7 @@ struct PostWorkoutCheckinCard: View {
         } else if calendar.isDateInYesterday(activity.startDate) {
             relativeDay = String(localized: "Gisteren")
         } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "d MMM"
-            formatter.locale = AppLanguage.currentLocale
-            relativeDay = formatter.string(from: activity.startDate)
+            relativeDay = AppDateFormatters.display("d MMM").string(from: activity.startDate)
         }
         return "\(sport) • \(durationMin) min • \(relativeDay)"
     }
@@ -499,18 +496,17 @@ struct DashboardView: View {
     private var lastAnalysisText: String {
         guard lastAnalysisTimestamp > 0 else { return "" }
         let date = Date(timeIntervalSince1970: lastAnalysisTimestamp)
-        let formatter = DateFormatter()
-        formatter.locale = AppLanguage.currentLocale
         // Epic #37 story 37.1c: the quoted literals inside the date format ('vandaag om') and
         // the prefix below are localized via the String Catalog; HH:mm / d MMM are locale-driven.
+        let format: String
         if Calendar.current.isDateInToday(date) {
-            formatter.dateFormat = String(localized: "'vandaag om' HH:mm")
+            format = String(localized: "'vandaag om' HH:mm")
         } else if Calendar.current.isDateInYesterday(date) {
-            formatter.dateFormat = String(localized: "'gisteren om' HH:mm")
+            format = String(localized: "'gisteren om' HH:mm")
         } else {
-            formatter.dateFormat = String(localized: "d MMM 'om' HH:mm")
+            format = String(localized: "d MMM 'om' HH:mm")
         }
-        return String(localized: "Laatste update: \(formatter.string(from: date))")
+        return String(localized: "Laatste update: \(AppDateFormatters.display(format).string(from: date))")
     }
 
     // MARK: - Contextual TRIMP banner status (ACWR-based)

@@ -19,9 +19,7 @@ enum UserOverrideContextFormatter {
         let swapped = workouts.filter { $0.isSwapped }
         guard !swapped.isEmpty else { return "" }
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE d MMM"
-        formatter.locale = Locale(identifier: "nl_NL")
+        let formatter = AppDateFormatters.prompt("EEEE d MMM")
 
         let lines = swapped.map { workout -> String in
             let dayLabel = formatter.string(from: workout.displayDate)

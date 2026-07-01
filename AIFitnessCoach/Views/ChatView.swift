@@ -534,8 +534,7 @@ private let suggestionChips = [
                 // Because activePreferences is already fetched via @Query, we can use it for a check.
                 let existingTexts = activePreferences.map { $0.preferenceText.lowercased() }
 
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd"
+                let dateFormatter = AppDateFormatters.fixed("yyyy-MM-dd")
 
                 var hasNew = false
                 for pref in detectedPrefs {
@@ -1214,9 +1213,7 @@ struct MoveWorkoutSheet: View {
 
     private func dayChip(for day: Date) -> some View {
         let isSelected = Calendar.current.isDate(day, inSameDayAs: selectedDate)
-        let formatter = DateFormatter()
-        formatter.locale = AppLanguage.currentLocale
-        formatter.dateFormat = "EEE"
+        let formatter = AppDateFormatters.display("EEE")
         let weekday = formatter.string(from: day).prefix(1).uppercased() + formatter.string(from: day).dropFirst()
         let dayNumber = Calendar.current.component(.day, from: day)
 

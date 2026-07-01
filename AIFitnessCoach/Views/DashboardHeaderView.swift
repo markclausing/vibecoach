@@ -29,9 +29,7 @@ struct DashboardHeaderView: View {
 
     /// Builds the context line: "DONDERDAG 17 APR · BUILD PHASE · WK 2/5"
     private var contextLine: String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLanguage.currentLocale
-        formatter.dateFormat = "EEEE d MMM"
+        let formatter = AppDateFormatters.display("EEEE d MMM")
         var parts: [String] = [formatter.string(from: Date()).uppercased()]
 
         if let result = periodizationResults.first {

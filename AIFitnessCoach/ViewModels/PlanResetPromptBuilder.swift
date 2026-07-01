@@ -17,12 +17,8 @@ enum PlanResetPromptBuilder {
     ///   - now: Reference date for the "from today" phrasing (injectable for tests).
     /// - Returns: Tuple of `systemText` (hidden from the user) and `userText` (visible in chat).
     static func build(swappedWorkouts: [SuggestedWorkout], now: Date = Date()) -> (systemText: String, userText: String) {
-        let dateFormatter = DateFormatter()
-        dateFormatter.locale = Locale(identifier: "nl_NL")
-        dateFormatter.dateFormat = "EEEE d MMM"
-
-        let isoFormatter = DateFormatter()
-        isoFormatter.dateFormat = "yyyy-MM-dd"
+        let dateFormatter = AppDateFormatters.prompt("EEEE d MMM")
+        let isoFormatter = AppDateFormatters.fixed("yyyy-MM-dd")
 
         let todayLabel = dateFormatter.string(from: now).capitalized
         let todayIso = isoFormatter.string(from: now)

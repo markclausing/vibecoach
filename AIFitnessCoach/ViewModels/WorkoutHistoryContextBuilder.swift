@@ -85,9 +85,7 @@ enum WorkoutHistoryContextBuilder {
     /// NL-locale short date label (e.g. "30 apr"). `dd MMM` keeps the line short
     /// and is unambiguous within a 14-day window.
     private static func dateLabel(for date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "nl_NL")
-        formatter.dateFormat = "dd MMM"
+        let formatter = AppDateFormatters.prompt("dd MMM")
         return formatter.string(from: date)
     }
 }

@@ -339,6 +339,16 @@ The app UI and the AI coach are multilingual — **NL, EN, DE, ES**. The codebas
 
 Default is `.system` (follow the device). Picking a specific language writes an `AppleLanguages` override (`applyToBundleOverride`) so the bundle loads the matching `.lproj` on the next launch — hence the Settings picker shows a relaunch note (iOS reads `AppleLanguages` once at launch; `.environment(\.locale, …)` only steers date/number formatting, not String-Catalog lookup).
 
+### Locale-aware date formatting — `AppDateFormatters`
+
+`Extensions/AppDateFormatters.swift` is the single factory for every `DateFormatter` in the app — a thread-safe cache that replaced ~40 inline `DateFormatter()` instantiations (the same format strings repeated, the locale set inconsistently). It exposes three intents so the locale decision is made once, at the call site, by *which* method you pick:
+
+- **`display(_:)` / `displayStyle(_:)`** — user-facing UI, in `AppLanguage.currentLocale`. The cache is keyed on the active locale id, so switching language at runtime yields a freshly-localised formatter instead of a stale cached one.
+- **`prompt(_:)` / `promptStyle(_:)`** — dates interpolated into the coach prompt. Fixed `nl_NL`, the same "prompt term stays Dutch" rule as `SportCategory.displayName` (§13 prompt-vs-UI split); the coach's output language is steered only by `respond in {language}`.
+- **`fixed(_:utc:)`** — machine-readable keys, interchange strings and API date parsing. Fixed `en_US_POSIX` (optionally UTC) so the produced/parsed string is stable regardless of device locale.
+
+Picking the wrong-or-no locale inline was a real source of silent bugs: a display formatter without `currentLocale` renders Dutch weekday/month names verbatim on EN/DE/ES devices, and a `yyyy-MM-dd` parser without `en_US_POSIX` can fail on non-Gregorian device locales. The only sanctioned exceptions are `ISO8601DateFormatter` (a different API) and one-off parsers that need a custom `calendar`/`timeZone` the helper doesn't model (e.g. `StravaRateLimitParser`'s HTTP-header `zzz` format).
+
 ### UI strings — `Localizable.xcstrings`
 
 A single String Catalog (source language `nl`, columns en/de/es, ~527 keys). Two render patterns, because `Text("literal")` and `Text("literal \(interp)")` localize automatically but `Text(stringVariable)` renders **verbatim**:

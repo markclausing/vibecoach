@@ -51,11 +51,5 @@ struct MigrationFallbackBanner: View {
         }
     }
 
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = AppLanguage.currentLocale
-        f.dateStyle = .medium
-        f.timeStyle = .none
-        return f
-    }()
+    private static var dateFormatter: DateFormatter { AppDateFormatters.displayStyle(.medium) }
 }

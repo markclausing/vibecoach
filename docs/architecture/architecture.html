@@ -1375,8 +1375,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 30,
-    "lastUpdated": "2026-06-27",
+    "docRevision": 31,
+    "lastUpdated": "2026-07-01",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -2821,6 +2821,20 @@
         "epic-33",
         "epic-57"
       ]
+    },
+    {
+      "id": "AppDateFormatters",
+      "layer": "services",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Extensions/AppDateFormatters.swift",
+      "description": "Centralised, thread-safe cached DateFormatter factory. Replaces ~40 inline DateFormatter() instantiations with three locale intents: display() = current app language (cache keyed on locale, so a language switch re-localises), prompt() = nl_NL Dutch prompt term (CLAUDE.md §13), fixed(utc:) = en_US_POSIX for machine-readable keys / API parsing.",
+      "uses": [
+        "AppLanguage"
+      ],
+      "tags": [
+        "chore",
+        "i18n"
+      ]
     }
   ],
   "subsystems": [
@@ -3907,6 +3921,7 @@
     "epic-37": "Internationalisation (NL/EN/DE/ES) + English codebase & coach prompt"
   }
 }
+
 </script>
 
 <script>

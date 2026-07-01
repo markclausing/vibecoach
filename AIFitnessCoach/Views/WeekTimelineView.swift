@@ -372,9 +372,7 @@ private struct TodaySummaryRow: View {
     // Epic #37 story 37.1c: rendered via Text(todayLabel) -> verbatim. The "VANDAAG" prefix is
     // localized; the date (%@) is locale-formatted.
     private var todayLabel: String {
-        let f = DateFormatter()
-        f.locale = AppLanguage.currentLocale
-        f.dateFormat = "EEE d"
+        let f = AppDateFormatters.display("EEE d")
         return String(localized: "VANDAAG · \(f.string(from: Date()).uppercased())")
     }
 
@@ -462,11 +460,11 @@ struct DayCircleView: View {
     private var isStage: Bool { stageIndex != nil }
 
     private var dayAbbrev: String {
-        let f = DateFormatter(); f.locale = AppLanguage.currentLocale; f.dateFormat = "EEE"
+        let f = AppDateFormatters.display("EEE")
         return f.string(from: date).prefix(2).uppercased()
     }
     private var dayNumber: String {
-        let f = DateFormatter(); f.dateFormat = "d"; return f.string(from: date)
+        return AppDateFormatters.display("d").string(from: date)
     }
 
     private var subIcon: String {
@@ -538,8 +536,8 @@ struct WorkoutDayRowView: View {
     }
 
     private var dayLabel: (abbrev: String, number: String) {
-        let a = DateFormatter(); a.locale = AppLanguage.currentLocale; a.dateFormat = "EEE"
-        let n = DateFormatter(); n.dateFormat = "d"
+        let a = AppDateFormatters.display("EEE")
+        let n = AppDateFormatters.display("d")
         return (a.string(from: date).prefix(2).uppercased(), n.string(from: date))
     }
 
@@ -647,8 +645,8 @@ struct StageDayRowView: View {
     private var displayForecast: DayForecast? { stageWeather?.forecast ?? forecast }
 
     private var dayLabel: (abbrev: String, number: String) {
-        let a = DateFormatter(); a.locale = AppLanguage.currentLocale; a.dateFormat = "EEE"
-        let n = DateFormatter(); n.dateFormat = "d"
+        let a = AppDateFormatters.display("EEE")
+        let n = AppDateFormatters.display("d")
         return (a.string(from: date).prefix(2).uppercased(), n.string(from: date))
     }
 
@@ -730,9 +728,7 @@ struct TrainingDetailSheet: View {
     @State private var showingMoveSheet = false
 
     private var dateLabel: String {
-        let f = DateFormatter()
-        f.locale = AppLanguage.currentLocale
-        f.dateFormat = "EEE d MMM"
+        let f = AppDateFormatters.display("EEE d MMM")
         // Story 33.2a: use displayDate so moved sessions show the NEW day.
         return f.string(from: workout.displayDate).uppercased()
     }
