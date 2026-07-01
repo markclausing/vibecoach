@@ -774,8 +774,7 @@ class ChatViewModel: ObservableObject {
         var prefix = ""
 
         let now = Date()
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let dateFormatter = AppDateFormatters.fixed("yyyy-MM-dd")
         prefix += "[CURRENT DATE: Today is \(dateFormatter.string(from: now)). Use this for your calculations around 'expirationDate'.]\n\n"
 
         // Epic 14.4: Inject the Vibe Score as hard context — the AI MUST follow this (see system instruction)
@@ -1162,8 +1161,7 @@ class ChatViewModel: ObservableObject {
         let uncompletedGoals = activeGoals.filter { !$0.isCompleted }
         if !uncompletedGoals.isEmpty && textToUse != "" {
             let goalsString = uncompletedGoals.map { goal in
-                let formatter = DateFormatter()
-                formatter.dateStyle = .medium
+                let formatter = AppDateFormatters.promptStyle(.medium)
                 return "\(goal.title) voor \(formatter.string(from: goal.targetDate))"
             }.joined(separator: ", ")
 
@@ -1219,8 +1217,7 @@ class ChatViewModel: ObservableObject {
             lines.append("- My saved goals: No specific goals.")
         } else {
             let goalsString = uncompletedGoals.map { goal in
-                let formatter = DateFormatter()
-                formatter.dateStyle = .medium
+                let formatter = AppDateFormatters.promptStyle(.medium)
                 let dateStr = formatter.string(from: goal.targetDate)
                 let sport = goal.sportCategory?.displayName ?? "Sport"
                 return "\(goal.title) (\(sport)) for \(dateStr)"
@@ -1449,9 +1446,7 @@ class ChatViewModel: ObservableObject {
             case .missingToken: errorMsg += String(localized: "Je bent niet ingelogd op Strava. Ga naar instellingen om te koppelen.")
             case .unauthorized: errorMsg += String(localized: "Je Strava sessie is verlopen. Koppel opnieuw in de instellingen.")
             case .rateLimited(let retryAfter):
-                let f = DateFormatter()
-                f.locale = AppLanguage.currentLocale
-                f.dateFormat = "HH:mm"
+                let f = AppDateFormatters.display("HH:mm")
                 errorMsg += String(localized: "Strava-limiet bereikt — hervat om \(f.string(from: retryAfter)).")
             case .networkError(let desc): errorMsg += String(localized: "Netwerkfout (\(desc)).")
             case .decodingError(let desc): errorMsg += String(localized: "Data onleesbaar (\(desc)).")

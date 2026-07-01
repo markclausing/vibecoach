@@ -68,9 +68,7 @@ enum OpenMeteoForecastClient {
     // MARK: - Decoding
 
     private static func parse(_ daily: OpenMeteoForecastDaily) -> [DayForecast] {
-        let dateParser = DateFormatter()
-        dateParser.dateFormat = "yyyy-MM-dd"
-        dateParser.locale = Locale(identifier: "en_US_POSIX")
+        let dateParser = AppDateFormatters.fixed("yyyy-MM-dd")
 
         return daily.time.enumerated().compactMap { index, dateString in
             guard

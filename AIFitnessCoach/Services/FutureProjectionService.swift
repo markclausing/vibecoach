@@ -121,9 +121,7 @@ struct GoalProjection {
     // MARK: - Coach context
 
     var coachContext: String {
-        let df = DateFormatter()
-        df.dateFormat = "d MMM"
-        df.locale = Locale(identifier: "nl_NL")
+        let df = AppDateFormatters.prompt("d MMM")
 
         let plannedStr   = df.string(from: plannedPeakDate)
         let targetStr    = df.string(from: goal.targetDate)

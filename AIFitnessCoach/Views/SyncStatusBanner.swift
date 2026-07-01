@@ -166,10 +166,5 @@ struct SyncStatusBanner: View {
         }
     }
 
-    private static let timeFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = AppLanguage.currentLocale
-        f.dateFormat = "HH:mm"
-        return f
-    }()
+    private static var timeFormatter: DateFormatter { AppDateFormatters.display("HH:mm") }
 }

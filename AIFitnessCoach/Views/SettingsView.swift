@@ -2091,16 +2091,12 @@ struct MemoryPreferenceCard: View {
 
     private var expirationBadgeLabel: String? {
         guard let exp = preference.expirationDate, exp > Date() else { return nil }
-        let df = DateFormatter()
-        df.locale = AppLanguage.currentLocale
-        df.dateFormat = "d MMM"
+        let df = AppDateFormatters.display("d MMM")
         return "tot \(df.string(from: exp))"
     }
 
     private var createdLabel: String {
-        let df = DateFormatter()
-        df.locale = AppLanguage.currentLocale
-        df.dateFormat = "d MMM yyyy"
+        let df = AppDateFormatters.display("d MMM yyyy")
         return df.string(from: preference.createdAt)
     }
 
@@ -2164,12 +2160,7 @@ struct MemoryPreferenceCard: View {
     }
 }
 
-private let memoryDateFormatter: DateFormatter = {
-    let f = DateFormatter()
-    f.locale = AppLanguage.currentLocale
-    f.dateFormat = "d MMM yyyy"
-    return f
-}()
+private var memoryDateFormatter: DateFormatter { AppDateFormatters.display("d MMM yyyy") }
 
 // MARK: - Bundle helpers
 

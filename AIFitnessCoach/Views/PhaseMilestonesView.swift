@@ -154,10 +154,7 @@ struct PhaseMilestonesView: View {
     }
 
     private func shortDate(_ date: Date) -> String {
-        let df = DateFormatter()
-        df.dateFormat = "d MMM"
-        df.locale = AppLanguage.currentLocale
-        return df.string(from: date)
+        return AppDateFormatters.display("d MMM").string(from: date)
     }
 
     /// Formats the value column: "30 / 26 km" for an achieved target, or "≤ 16 km" / "≥ 280 TRIMP"

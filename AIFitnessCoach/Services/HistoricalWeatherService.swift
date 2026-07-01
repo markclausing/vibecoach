@@ -187,9 +187,7 @@ final class HistoricalWeatherService {
             ? "https://archive-api.open-meteo.com/v1/archive"
             : "https://api.open-meteo.com/v1/forecast"
 
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        dateFormatter.timeZone = TimeZone(identifier: "UTC")
+        let dateFormatter = AppDateFormatters.fixed("yyyy-MM-dd", utc: true)
         let startStr = dateFormatter.string(from: startDate)
         let endStr = dateFormatter.string(from: endDate)
 
@@ -255,9 +253,7 @@ final class HistoricalWeatherService {
     /// relative hour-bucket matching is correct — the exact timezone isn't critical
     /// since we match on time difference within one day.
     static func parseLocalDateTime(_ s: String) -> Date? {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd'T'HH:mm"
-        f.timeZone = TimeZone(identifier: "UTC")
+        let f = AppDateFormatters.fixed("yyyy-MM-dd'T'HH:mm", utc: true)
         return f.date(from: s)
     }
 

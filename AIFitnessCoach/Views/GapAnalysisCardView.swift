@@ -234,9 +234,7 @@ struct GapAnalysisCardView: View {
     }
 
     private func dateColumn(label: String, date: Date, color: Color) -> some View {
-        let df = DateFormatter()
-        df.dateFormat = "d MMM"
-        df.locale = AppLanguage.currentLocale
+        let df = AppDateFormatters.display("d MMM")
         return VStack(alignment: .center, spacing: 2) {
             Text(label)
                 .font(.caption2)

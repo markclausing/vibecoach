@@ -43,8 +43,7 @@ enum PreferencesContextFormatter {
         }
 
         if !temporary.isEmpty {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
+            let formatter = AppDateFormatters.fixed("yyyy-MM-dd")
             let lines = temporary.map { pref in
                 "- \(pref.preferenceText) (temporary, valid until \(formatter.string(from: pref.expirationDate!)))"
             }.joined(separator: "\n")

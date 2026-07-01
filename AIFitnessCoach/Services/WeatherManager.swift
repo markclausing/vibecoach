@@ -246,9 +246,7 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     // MARK: - Parser
 
     private func parseForecast(from daily: OpenMeteoDailyData) -> [DayForecast] {
-        let dateParser = DateFormatter()
-        dateParser.dateFormat = "yyyy-MM-dd"
-        dateParser.locale = Locale(identifier: "en_US_POSIX")
+        let dateParser = AppDateFormatters.fixed("yyyy-MM-dd")
 
         return daily.time.enumerated().compactMap { index, dateString in
             guard
@@ -277,9 +275,7 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     func buildAIContext() -> String {
         guard !weeklyForecast.isEmpty else { return "" }
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE d MMM"
-        formatter.locale = Locale(identifier: "nl_NL")
+        let formatter = AppDateFormatters.prompt("EEEE d MMM")
 
         var lines: [String] = []
         for day in weeklyForecast {

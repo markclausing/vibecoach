@@ -85,8 +85,10 @@
 		7C2EEDEF6E1CCAB9FE856BED /* StravaTokenResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6902F6A369E69FC0F8BC5C /* StravaTokenResponse.swift */; };
 		7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */; };
 		D571DD51A0001A0001A0001A /* Calendar+DSTSafe.swift in Sources */ = {isa = PBXBuildFile; fileRef = D571DD52B0002B0002B0002B /* Calendar+DSTSafe.swift */; };
+		D571DD53A0003A0003A0003A /* AppDateFormatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = D571DD54B0004B0004B0004B /* AppDateFormatters.swift */; };
 		89B083BDD5A2948D191971E5 /* FitnessGoalTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FDDDD26172C97669936B5B8 /* FitnessGoalTests.swift */; };
 		D571DD53C0003C0003C0003C /* CalendarDSTSafeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D571DD54D0004D0004D0004D /* CalendarDSTSafeTests.swift */; };
+		D571DD55E0005E0005E0005E /* AppDateFormattersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D571DD56F0006F0006F0006F /* AppDateFormattersTests.swift */; };
 		9673922FF2B9CCC9D666596F /* MockTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70418E8B60B3D7CA1BC426AA /* MockTokenStore.swift */; };
 		96739230F2B9CCC9D666596F /* UserAPIKeyStoreMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70418E8C60B3D7CA1BC426AA /* UserAPIKeyStoreMigrationTests.swift */; };
 		DB10FF20AA30BB40CC50DD60 /* MigrationFallbackStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB01FF02AA03BB04CC05DD06 /* MigrationFallbackStoreTests.swift */; };
@@ -361,6 +363,7 @@
 		769A9B624D9B0D66D5D394F9 /* UserConfiguration.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserConfiguration.swift; sourceTree = "<group>"; };
 		7FDDDD26172C97669936B5B8 /* FitnessGoalTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoalTests.swift; sourceTree = "<group>"; };
 		D571DD54D0004D0004D0004D /* CalendarDSTSafeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarDSTSafeTests.swift; sourceTree = "<group>"; };
+		D571DD56F0006F0006F0006F /* AppDateFormattersTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppDateFormattersTests.swift; sourceTree = "<group>"; };
 		892FA4CC13985F26BA4BB4DE /* ChatViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatViewModel.swift; sourceTree = "<group>"; };
 		D5C0010102C001010100C002 /* VibeScoreContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = VibeScoreContextFormatter.swift; sourceTree = "<group>"; };
 		D5C0020102C002010100C002 /* BlueprintContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlueprintContextFormatter.swift; sourceTree = "<group>"; };
@@ -389,6 +392,7 @@
 		BDF699C6B7148ACD66E857D7 /* AddGoalView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AddGoalView.swift; sourceTree = "<group>"; };
 		C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "UIImage+Extensions.swift"; sourceTree = "<group>"; };
 		D571DD52B0002B0002B0002B /* Calendar+DSTSafe.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "Calendar+DSTSafe.swift"; sourceTree = "<group>"; };
+		D571DD54B0004B0004B0004B /* AppDateFormatters.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "AppDateFormatters.swift"; sourceTree = "<group>"; };
 		C1C2BF572AF13DE2A83E51CF /* StravaAuthServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaAuthServiceTests.swift; sourceTree = "<group>"; };
 		C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeatherManager.swift; sourceTree = "<group>"; };
 		C2D3E4F5A6B7C8D9E0F1B2C3 /* HistoricalWeatherService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HistoricalWeatherService.swift; sourceTree = "<group>"; };
@@ -613,6 +617,7 @@
 				CC10F7B2D6E8F0A1B2C3E010 /* StageLocationInterpolatorTests.swift */,
 				CC10F7B2D6E8F0A1B2C3E008 /* RouteParserTests.swift */,
 				D571DD54D0004D0004D0004D /* CalendarDSTSafeTests.swift */,
+				D571DD56F0006F0006F0006F /* AppDateFormattersTests.swift */,
 				B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */,
 				D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */,
 				F6A7B8C9D0E1F2A3B4C5D6E7 /* BlueprintCheckerTests.swift */,
@@ -834,6 +839,7 @@
 			children = (
 				C120D3DB6FF46AC1602E9958 /* UIImage+Extensions.swift */,
 				D571DD52B0002B0002B0002B /* Calendar+DSTSafe.swift */,
+				D571DD54B0004B0004B0004B /* AppDateFormatters.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -1109,6 +1115,7 @@
 				CC10F7B2D6E8F0A1B2C3E009 /* StageLocationInterpolatorTests.swift in Sources */,
 				CC10F7B2D6E8F0A1B2C3E007 /* RouteParserTests.swift in Sources */,
 				D571DD53C0003C0003C0003C /* CalendarDSTSafeTests.swift in Sources */,
+				D571DD55E0005E0005E0005E /* AppDateFormattersTests.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */,
 				C3D4E5F6A7B8C9D0E1F2A3B4 /* TrainingPhaseTests.swift in Sources */,
 				E5F6A7B8C9D0E1F2A3B4C5D6 /* BlueprintCheckerTests.swift in Sources */,
@@ -1199,6 +1206,7 @@
 				E010FF20AA30BB40CC50DD60 /* ChatScopeInstruction.swift in Sources */,
 				7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */,
 				D571DD51A0001A0001A0001A /* Calendar+DSTSafe.swift in Sources */,
+				D571DD53A0003A0003A0003A /* AppDateFormatters.swift in Sources */,
 				A3BB100A32BF93E6C7587F72 /* FitnessGoal.swift in Sources */,
 				D5A0010101A001010100A001 /* Symptom.swift in Sources */,
 				D5A0020101A002010100A001 /* UserPreference.swift in Sources */,

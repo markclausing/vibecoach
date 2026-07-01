@@ -110,8 +110,7 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         let today = calendar.startOfDay(for: Date())
 
         // Try to parse an ISO date
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
+        let formatter = AppDateFormatters.fixed("yyyy-MM-dd")
         if let parsed = formatter.date(from: dateOrDay) {
             return calendar.startOfDay(for: parsed)
         }
@@ -161,9 +160,7 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
     /// No 'Today'/'Tomorrow' — explicit dates prevent confusion with stale data.
     /// Uses `displayDate` so moved sessions immediately show the new label.
     var displayDayLabel: String {
-        let formatter = DateFormatter()
-        formatter.locale = AppLanguage.currentLocale
-        formatter.dateFormat = "EEEE d MMM"
+        let formatter = AppDateFormatters.display("EEEE d MMM")
         let label = formatter.string(from: displayDate)
         return label.prefix(1).uppercased() + label.dropFirst()
     }
