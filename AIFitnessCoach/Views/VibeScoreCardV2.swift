@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// V2.0 Sprint 1: Redesigned Vibe Score card with an integrated metrics grid and coach-hint bar.
-/// Replaces the old VibeScoreCardView with a card-first layout:
+/// Vibe Score card with an integrated metrics grid and coach-hint bar. Card-first layout:
 ///   Top → tinted score + status
 ///   Middle → HRV / SLAAP / RUST-HR row
 ///   Bottom → coach hint with action link (optional)
