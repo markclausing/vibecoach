@@ -436,54 +436,6 @@ struct BlueprintTimelineView: View {
     }
 }
 
-// MARK: - Section view for the Goals tab
-
-/// Shows BlueprintTimelineView for each active goal with a blueprint — as a carousel.
-struct BlueprintTimelineSectionView: View {
-    let goals: [FitnessGoal]
-    let activities: [ActivityRecord]
-    let projections: [GoalProjection]
-
-    /// Only goals with a recognized blueprint
-    private var eligibleGoals: [FitnessGoal] {
-        goals.filter { BlueprintChecker.detectBlueprintType(for: $0) != nil && !$0.isCompleted && Date() < $0.targetDate }
-    }
-
-    var body: some View {
-        if !eligibleGoals.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "chart.line.uptrend.xyaxis.circle.fill")
-                        .foregroundStyle(.purple)
-                    Text("Jouw Trainingstraject")
-                        .font(.headline)
-                    Spacer()
-                }
-                .padding(.horizontal)
-
-                if eligibleGoals.count == 1, let goal = eligibleGoals.first {
-                    let proj = projections.first { $0.goal.id == goal.id }
-                    BlueprintTimelineView(goal: goal, activities: activities, projection: proj)
-                        .padding(.horizontal)
-                } else {
-                    // Multiple goals: carousel with pager
-                    TabView {
-                        ForEach(eligibleGoals) { goal in
-                            let proj = projections.first { $0.goal.id == goal.id }
-                            BlueprintTimelineView(goal: goal, activities: activities, projection: proj)
-                                .padding(.horizontal)
-                        }
-                    }
-                    .tabViewStyle(.page(indexDisplayMode: .always))
-                    .indexViewStyle(.page(backgroundDisplayMode: .always))
-                    .frame(height: 360)
-                }
-            }
-            .padding(.top, 8)
-        }
-    }
-}
-
 // MARK: - Calendar extension: start of the ISO week (Monday)
 
 private extension Calendar {

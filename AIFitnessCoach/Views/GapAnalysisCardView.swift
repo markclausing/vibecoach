@@ -315,33 +315,3 @@ struct GapAnalysisCardView: View {
         gap.blueprintType == .cyclingTour ? "bicycle" : "figure.run"
     }
 }
-
-// MARK: - Section in the Goals tab
-
-struct GapAnalysisSectionView: View {
-    let gaps: [BlueprintGap]
-    /// Projections matched on goal.id. Passed in from GoalsListView.
-    var projections: [GoalProjection] = []
-
-    var body: some View {
-        if !gaps.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .foregroundStyle(.blue)
-                    Text("Blueprint Voortgang")
-                        .font(.headline)
-                    Spacer()
-                }
-                .padding(.horizontal)
-
-                ForEach(gaps, id: \.goal.id) { gap in
-                    let projection = projections.first { $0.goal.id == gap.goal.id }
-                    GapAnalysisCardView(gap: gap, projection: projection)
-                        .padding(.horizontal)
-                }
-            }
-            .padding(.top, 8)
-        }
-    }
-}
