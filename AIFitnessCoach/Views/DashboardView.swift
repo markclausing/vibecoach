@@ -377,7 +377,6 @@ struct PostWorkoutCheckinCard: View {
     }
 }
 
-
 #Preview {
     ContentView()
         .environmentObject(AppNavigationState())
