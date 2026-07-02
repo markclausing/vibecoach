@@ -21,15 +21,49 @@ struct DashboardView: View {
     @State private var currentProfile: AthleticProfile?
     private let profileManager = AthleticProfileManager()
 
-    @Query(sort: \ActivityRecord.startDate, order: .forward) private var activities: [ActivityRecord]
+    // Epic #65 story 65.2: bounded to a rolling `QueryWindows.activityHistory` window
+    // (26 weeks) instead of the full table — sized to the widest consumer in this view
+    // (the 16-week burndown block in `atRiskGoals`). Cutoff is Calendar-based (§3) and
+    // computed at init; the query is set in `init(viewModel:)`.
+    @Query private var activities: [ActivityRecord]
 
     @AppStorage("latestCoachInsight") private var latestCoachInsight: String = ""
 
-    // Epic 14.3: Fetch all DailyReadiness records (few records — max 1 per day)
-    @Query(sort: \DailyReadiness.date, order: .reverse) private var readinessRecords: [DailyReadiness]
+    // Epic 14.3: DailyReadiness records — bounded to the last 90 days (§65.2). Consumers
+    // need today's record + the 14-day trend widget; 90 days is a generous margin.
+    @Query private var readinessRecords: [DailyReadiness]
 
-    // Epic 18: Daily symptom scores
-    @Query(sort: \Symptom.date, order: .reverse) private var symptoms: [Symptom]
+    // Epic 18: Daily symptom scores — bounded to the last 30 days (§65.2). Consumers read
+    // only today's records (`SymptomContextFormatter`), so 30 days is a safe bound.
+    @Query private var symptoms: [Symptom]
+
+    /// Epic #65 story 65.2: build the bounded `@Query`s with Calendar-based cutoffs
+    /// captured as `let` values (a `#Predicate` cannot call computed properties).
+    init(viewModel: ChatViewModel) {
+        self._viewModel = ObservedObject(wrappedValue: viewModel)
+
+        let now = Date()
+        let calendar = Calendar.current
+        let activityCutoff = QueryWindows.activityHistoryCutoff(from: now, calendar: calendar)
+        let readinessCutoff = QueryWindows.readinessHistoryCutoff(from: now, calendar: calendar)
+        let symptomCutoff = QueryWindows.symptomHistoryCutoff(from: now, calendar: calendar)
+
+        _activities = Query(
+            filter: #Predicate<ActivityRecord> { $0.startDate >= activityCutoff },
+            sort: \ActivityRecord.startDate,
+            order: .forward
+        )
+        _readinessRecords = Query(
+            filter: #Predicate<DailyReadiness> { $0.date >= readinessCutoff },
+            sort: \DailyReadiness.date,
+            order: .reverse
+        )
+        _symptoms = Query(
+            filter: #Predicate<Symptom> { $0.date >= symptomCutoff },
+            sort: \Symptom.date,
+            order: .reverse
+        )
+    }
 
     // Epic 14.3: Loading state for the Vibe Score card
     @State private var isVibeScoreLoading: Bool = false
