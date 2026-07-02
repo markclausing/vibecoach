@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.1](https://github.com/markclausing/vibecoach/compare/v2.2.0...v2.2.1) (2026-07-02)
+
+
+### Bug Fixes
+
+* localise remaining user-facing Dutch strings (notifications, insight/threshold/catalog) ([#331](https://github.com/markclausing/vibecoach/issues/331)) ([b392579](https://github.com/markclausing/vibecoach/commit/b392579afb2992142d08fa9d25afdc39e16d8b07))
+* translate remaining static UI strings (permission overview, captive-portal banner, goal/onboarding chrome) ([#333](https://github.com/markclausing/vibecoach/issues/333)) ([294a770](https://github.com/markclausing/vibecoach/commit/294a7706a6ebf92dd35e5073abc44b2823411692))
+
 ## [2.2.0](https://github.com/markclausing/vibecoach/compare/v2.1.0...v2.2.0) (2026-06-28)
 
 
