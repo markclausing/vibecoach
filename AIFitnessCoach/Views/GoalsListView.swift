@@ -130,7 +130,7 @@ struct GoalsListView: View {
             .navigationDestination(for: FitnessGoal.self) { goal in
                 // Epic #62 story 62.1: clear the goal-derived coach context on delete so the
                 // coach stops referencing a goal that no longer exists.
-                EditGoalView(goal: goal, onDeleted: { viewModel.clearGoalDerivedContext() })
+                EditGoalView(goal: goal, onDeleted: { viewModel.context.clearGoalDerivedContext() })
             }
             .onScrollGeometryChange(for: Bool.self) { geometry in
                 geometry.contentOffset.y > 4
@@ -569,9 +569,7 @@ struct GoalsListView: View {
         }
         viewModel.requestRecoveryPlan(
             atRiskGoals: riskInfos,
-            contextProfile: nil,
-            activeGoals: Array(goals),
-            activePreferences: Array(activePreferences)
+            invocation: CoachInvocationContext(activeGoals: Array(goals), activePreferences: Array(activePreferences))
         )
         recoveryPlanTimestamp = Date().timeIntervalSince1970
         appState.selectedTab = .coach

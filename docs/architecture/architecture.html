@@ -1375,7 +1375,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 32,
+    "docRevision": 33,
     "lastUpdated": "2026-07-02",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
@@ -1649,23 +1649,91 @@
       "layer": "viewmodels",
       "kind": "viewmodel",
       "file": "AIFitnessCoach/ViewModels/ChatViewModel.swift",
-      "description": "Orchestrates the AI call: builds the prompt blocks via the formatters, reads the key from the Keychain, streams the response. Test bypass via GenerativeModelProtocol. Story 61.7: 17 PHI context strings moved from cleartext UserDefaults to CoachContextCache (SwiftData, file-protected). Configured with modelContext via configure(with:) on first view appear.",
+      "description": "Thin @MainActor orchestrator for the AI call (Story 65.3 decomposition). Delegates prompt assembly to CoachPromptAssembler, the PHI context cache to CoachContextStore, model construction to CoachModelProvider, response parsing to CoachResponseParser and the HealthKit/Strava status fetch to CoachStatusAnalyzer. Threads per-call context via CoachInvocationContext. Test bypass via GenerativeModelProtocol.",
       "uses": [
         "GenerativeModelProtocol",
-        "UserAPIKeyStore",
+        "CoachPromptAssembler",
+        "CoachContextStore",
+        "CoachModelProvider",
+        "CoachResponseParser",
+        "CoachStatusAnalyzer",
+        "CoachInvocationContext",
+        "PlanResetPromptBuilder",
+        "UserProfileService"
+      ]
+    },
+    {
+      "id": "CoachPromptAssembler",
+      "layer": "viewmodels",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/ViewModels/CoachPromptAssembler.swift",
+      "description": "Story 65.3: pure assembly of the coach prompt — context prefix, training-thresholds block, systemInstruction, stored-plan/status prompts and the recovery-plan action prompt. AppStorage-free (every input injected); structural prompt markers pinned against the systemInstruction reference (§13). Split over CoachPromptAssembler.swift + two extension files.",
+      "uses": [
+        "VibeScoreContextFormatter",
+        "PreferencesContextFormatter",
+        "WorkoutPatternDetector",
+        "PromptInputSanitizer",
+        "ChatScopeInstruction"
+      ]
+    },
+    {
+      "id": "CoachContextStore",
+      "layer": "viewmodels",
+      "kind": "store",
+      "file": "AIFitnessCoach/ViewModels/CoachContextStore.swift",
+      "description": "Story 65.3: owns the coach PHI context cache. The ~20 cache* setters, the PHI computed properties and the CoachContextCache (SwiftData, file-protected) bridge, plus a snapshot() feeding CoachPromptAssembler. @MainActor.",
+      "uses": [
+        "CoachContextCache",
         "VibeScoreContextFormatter",
         "BlueprintContextFormatter",
         "IntentContextFormatter",
-        "PreferencesContextFormatter",
-        "WorkoutHistoryContextBuilder",
         "LastWorkoutContextFormatter",
         "SymptomContextFormatter",
         "UserOverrideContextFormatter",
-        "PlanResetPromptBuilder",
-        "AIModelFactory",
-        "PromptInputSanitizer",
-        "CoachContextCache"
+        "EventWindowContextFormatter",
+        "FutureProjectionService"
       ]
+    },
+    {
+      "id": "CoachModelProvider",
+      "layer": "viewmodels",
+      "kind": "store",
+      "file": "AIFitnessCoach/ViewModels/CoachModelProvider.swift",
+      "description": "Story 65.3: builds and lazily caches the AI model for the coach on top of AIModelFactory, incl. the Epic #51-A2 rebuild-on-name-change check, API-key resolution and the -UITesting mock path. @MainActor.",
+      "uses": [
+        "AIModelFactory",
+        "GenerativeModelProtocol",
+        "UserAPIKeyStore",
+        "CoachPromptAssembler"
+      ]
+    },
+    {
+      "id": "CoachResponseParser",
+      "layer": "viewmodels",
+      "kind": "parser",
+      "file": "AIFitnessCoach/ViewModels/CoachResponseParser.swift",
+      "description": "Story 65.3: pure parsing of the raw model response — markdown stripping, string-aware brace-balanced JSON extraction and plan decoding into a plan + user-facing motivation. Unit-testable without a ChatViewModel.",
+      "uses": []
+    },
+    {
+      "id": "CoachStatusAnalyzer",
+      "layer": "viewmodels",
+      "kind": "store",
+      "file": "AIFitnessCoach/ViewModels/CoachStatusAnalyzer.swift",
+      "description": "Story 65.3: data-source orchestration for the analyse-current-status flow. HealthKit-first / Strava-fallback / reverse-fallback waterfall + DailyWorkout mapping, returning a pure Outcome (workouts or a localized message). @MainActor.",
+      "uses": [
+        "HealthKitManager",
+        "FitnessDataService",
+        "CoachPromptAssembler"
+      ]
+    },
+    {
+      "id": "CoachInvocationContext",
+      "layer": "viewmodels",
+      "kind": "model",
+      "file": "AIFitnessCoach/ViewModels/CoachInvocationContext.swift",
+      "description": "Story 65.3: pure value type bundling the three per-call context parameters (profile, activeGoals, activePreferences) so the plumbing on the eight public ChatViewModel methods collapses to one argument.",
+      "uses": []
     },
     {
       "id": "WorkoutHistoryContextBuilder",
