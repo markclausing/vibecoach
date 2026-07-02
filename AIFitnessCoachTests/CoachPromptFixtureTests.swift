@@ -42,7 +42,7 @@ final class CoachPromptFixtureTests: XCTestCase {
         container = try! ModelContainer(for: CoachContextCache.self, configurations: config)
 
         viewModel = ChatViewModel(aiModel: mockModel)
-        viewModel.configure(with: container.mainContext)
+        viewModel.context.configure(with: container.mainContext)
     }
 
     override func tearDown() {
@@ -55,9 +55,9 @@ final class CoachPromptFixtureTests: XCTestCase {
 
     func testContextPrefix_FixtureIsByteIdentical() async {
         // Populate deterministic context.
-        viewModel.cacheVibeScoreUnavailable()
-        viewModel.cacheIntentExecution("[INTENT-EXECUTION FIXTURE]\n\n")
-        viewModel.profileUpdateNote = "[PROFILE UPDATE FIXTURE]"
+        viewModel.context.cacheVibeScoreUnavailable()
+        viewModel.context.cacheIntentExecution("[INTENT-EXECUTION FIXTURE]\n\n")
+        viewModel.context.profileUpdateNote = "[PROFILE UPDATE FIXTURE]"
 
         let profile = AthleticProfile(
             peakDistanceInMeters: 50000,
@@ -68,7 +68,7 @@ final class CoachPromptFixtureTests: XCTestCase {
         )
 
         viewModel.messages.removeAll()
-        viewModel.sendMessage("Hallo coach", contextProfile: profile)
+        viewModel.sendMessage("Hallo coach", invocation: CoachInvocationContext(profile: profile))
 
         // Wait for the async fetch Task to hand the payload to the mock.
         var attempts = 0
@@ -97,6 +97,6 @@ final class CoachPromptFixtureTests: XCTestCase {
         XCTAssertEqual(payload, expected)
 
         // profileUpdateNote is consumed on build and cleared for the next turn.
-        XCTAssertEqual(viewModel.profileUpdateNote, "")
+        XCTAssertEqual(viewModel.context.profileUpdateNote, "")
     }
 }

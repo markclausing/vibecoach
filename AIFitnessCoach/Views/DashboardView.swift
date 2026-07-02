@@ -144,7 +144,7 @@ struct DashboardView: View {
 
     /// Reads directly from viewModel (backed by CoachContextCache SwiftData since Story 61.7).
     /// @AppStorage("vibecoach_lastAnalysisTimestamp") was a stale mirror that no longer updated.
-    private var lastAnalysisTimestamp: Double { viewModel.lastAnalysisTimestamp }
+    private var lastAnalysisTimestamp: Double { viewModel.context.lastAnalysisTimestamp }
 
     // Epic 34.1: V2.0 Fit & Finish — material overlay on the status bar once the
     // user scrolls, so content does not slide visibly under the clock/battery.
@@ -409,7 +409,7 @@ struct DashboardView: View {
                     // Post-workout RPE check-in
                     if let recentActivity = recentUncheckedActivity {
                         PostWorkoutCheckinCard(activity: recentActivity) { rpe, mood in
-                            viewModel.cacheLastWorkoutFeedback(
+                            viewModel.context.cacheLastWorkoutFeedback(
                                 rpe: rpe,
                                 mood: mood,
                                 workoutName: recentActivity.displayName,
@@ -506,7 +506,7 @@ struct DashboardView: View {
                                 HStack(spacing: 12) {
                                     Button("Opnieuw proberen") {
                                         refreshProfileContext()
-                                        viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                        viewModel.analyzeCurrentStatus(days: 7, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
                                     }
                                     .font(.caption.weight(.semibold))
                                     Button("Sluit") {
@@ -566,12 +566,12 @@ struct DashboardView: View {
                         stageWeather: stageWeatherService.stageWeather,
                         onSkipWorkout: { workout in
                             refreshProfileContext()
-                            viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                            viewModel.skipWorkout(workout, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
                             appState.showingChatSheet = true
                         },
                         onAlternativeWorkout: { workout in
                             refreshProfileContext()
-                            viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                            viewModel.requestAlternativeWorkout(workout, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
                             appState.showingChatSheet = true
                         },
                         onResetSchema: {
@@ -581,9 +581,7 @@ struct DashboardView: View {
                             refreshProfileContext()
                             viewModel.requestPlanReset(
                                 swappedWorkouts: swapped,
-                                contextProfile: currentProfile,
-                                activeGoals: goals,
-                                activePreferences: activePreferences
+                                invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
                             )
                             appState.showingChatSheet = true
                         },
@@ -613,8 +611,8 @@ struct DashboardView: View {
                 refreshProfileContext()
                 isVibeScoreUnavailable = false
                 await calculateAndSaveVibeScore()
-                viewModel.cacheVibeScore(todayReadiness)
-                viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                viewModel.context.cacheVibeScore(todayReadiness)
+                viewModel.analyzeCurrentStatus(days: 7, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
                 ProactiveNotificationService.shared.updateRiskCache(
                     atRiskGoalTitles: atRiskGoals.map { $0.goal.title }
                 )
@@ -661,41 +659,41 @@ struct DashboardView: View {
                 // This way the day always starts with a current schedule — even after midnight.
                 let lastAnalysisDate = Date(timeIntervalSince1970: lastAnalysisTimestamp)
                 if lastAnalysisTimestamp == 0 || !Calendar.current.isDateInToday(lastAnalysisDate) {
-                    viewModel.analyzeCurrentStatus(days: 7, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                    viewModel.analyzeCurrentStatus(days: 7, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
                 }
                 // EPIC 14.4: Write today's Vibe Score to the AI prompt cache
                 // so every coach interaction knows the current recovery status.
-                viewModel.cacheVibeScore(todayReadiness)
+                viewModel.context.cacheVibeScore(todayReadiness)
                 // Epic 17: Write the blueprint status to the AI prompt cache
                 // so the coach knows which critical trainings are open per goal.
-                viewModel.cacheSymptomContext(Array(symptoms), preferences: Array(activePreferences))
-                viewModel.cacheActiveBlueprints(blueprintResults)
+                viewModel.context.cacheSymptomContext(Array(symptoms), preferences: Array(activePreferences))
+                viewModel.context.cacheActiveBlueprints(blueprintResults)
                 // Epic 17.1: Write the periodization status to the AI prompt cache
                 // so the coach knows the current training phase and success criteria.
-                viewModel.cachePeriodizationStatus(periodizationResults)
+                viewModel.context.cachePeriodizationStatus(periodizationResults)
                 // Epic Doel-Intenties: write the intent instructions to the separate cache
                 // so the coach receives a targeted [DOEL INTENTIES EN BENADERING] section.
-                viewModel.cacheIntentContext(periodizationResults)
+                viewModel.context.cacheIntentContext(periodizationResults)
                 // Epic #55 story 55.3: write the multi-day event-window block(s) so the coach
                 // suppresses other training in the event window and plans post-event recovery.
-                viewModel.cacheEventWindow(Array(goals))
+                viewModel.context.cacheEventWindow(Array(goals))
                 // Epic #56: resolve routes + fetch per-stage forecasts for multi-day events.
                 let eventGoalsSnapshot = Array(goals)
                 Task { await stageWeatherService.refresh(goals: eventGoalsSnapshot) }
                 // Epic 23 Sprint 1: Write the gap analysis to the AI prompt cache
                 // so the coach knows how much TRIMP/km the athlete is behind on the linear schedule.
                 let gapResults = ProgressService.analyzeGaps(for: Array(goals), activities: Array(activities))
-                viewModel.cacheGapAnalysis(gapResults)
+                viewModel.context.cacheGapAnalysis(gapResults)
                 // Epic 23 Sprint 2: Write the future projection to the AI prompt cache
                 // so the coach can proactively warn if a goal is "At Risk" or "Unreachable".
                 let projectionResults = FutureProjectionService.calculateProjections(for: Array(goals), activities: Array(activities))
-                viewModel.cacheProjections(projectionResults)
+                viewModel.context.cacheProjections(projectionResults)
                 // EPIC 18: Write the most recent real workout rating to the AI prompt cache.
                 // rpe == WorkoutCheckinConfig.ignoredRPESentinel (0) does not count as real feedback.
                 let lastRatedActivity = activities
                     .filter { ($0.rpe ?? WorkoutCheckinConfig.ignoredRPESentinel) > WorkoutCheckinConfig.ignoredRPESentinel }
                     .max(by: { $0.startDate < $1.startDate })
-                viewModel.cacheLastWorkoutFeedback(
+                viewModel.context.cacheLastWorkoutFeedback(
                     rpe: lastRatedActivity?.rpe,
                     mood: lastRatedActivity?.mood,
                     workoutName: lastRatedActivity?.displayName,
@@ -705,7 +703,7 @@ struct DashboardView: View {
                 )
                 // Story 33.2a: write the USER_OVERRIDE cache so the coach respects manually
                 // moved sessions in every prompt build.
-                viewModel.cacheUserOverrides(planManager.activePlan?.workouts ?? [])
+                viewModel.context.cacheUserOverrides(planManager.activePlan?.workouts ?? [])
 
                 // Story 33.4: find the most recent ActivityRecord that matches a
                 // SuggestedWorkout on the same calendar day, run the analyzer and cache the
@@ -727,9 +725,9 @@ struct DashboardView: View {
                         plannedTRIMP: plannedMatch.targetTRIMP,
                         actualTRIMP: mostRecent.trimp
                     )
-                    viewModel.cacheIntentExecution(formatted)
+                    viewModel.context.cacheIntentExecution(formatted)
                 } else {
-                    viewModel.cacheIntentExecution("")
+                    viewModel.context.cacheIntentExecution("")
                 }
 
                 // Epic 24 Sprint 1: Fetch the physiological profile and calculate the nutrition plan
@@ -738,7 +736,7 @@ struct DashboardView: View {
                 // Epic 21: Request weather data via the singleton (asks for location permission if not done yet).
                 // WeatherManager.shared is a singleton — no property passing needed from ContentView.
                 WeatherManager.shared.onWeatherUpdated = { context in
-                    viewModel.weatherContext = context
+                    viewModel.context.weatherContext = context
                 }
                 WeatherManager.shared.requestWeatherIfNeeded()
             }
@@ -812,8 +810,8 @@ struct DashboardView: View {
             }
         }
 
-        viewModel.workoutPatternsContext = WorkoutPatternFormatter.chatContextLine(for: patterns7d) ?? ""
-        viewModel.workoutHistoryContext = WorkoutHistoryContextBuilder.build(entries: entries)
+        viewModel.context.workoutPatternsContext = WorkoutPatternFormatter.chatContextLine(for: patterns7d) ?? ""
+        viewModel.context.workoutHistoryContext = WorkoutHistoryContextBuilder.build(entries: entries)
     }
 
     /// Epic 41: auto-dedupe via `ActivityDeduplicator`. Idempotent — a clean DB stays
@@ -908,7 +906,7 @@ struct DashboardView: View {
         }
         try? modelContext.save()
         // Update the AI cache immediately with the latest scores and active preferences
-        viewModel.cacheSymptomContext(Array(symptoms), preferences: Array(activePreferences))
+        viewModel.context.cacheSymptomContext(Array(symptoms), preferences: Array(activePreferences))
         // Mark the CoachInsight as stale — the scores changed after the last analysis
         symptomChangedSinceAnalysis = true
     }
@@ -948,7 +946,7 @@ struct DashboardView: View {
               let hrvBaseline = baseline else {
             AppLoggers.dashboard.notice("Insufficient sleep/baseline data — Vibe Score set to unavailable")
             isVibeScoreUnavailable = true
-            viewModel.cacheVibeScoreUnavailable()
+            viewModel.context.cacheVibeScoreUnavailable()
             return
         }
 
@@ -961,7 +959,7 @@ struct DashboardView: View {
         guard let currentHRV else {
             AppLoggers.dashboard.notice("No HRV data — Vibe Score set to unavailable")
             isVibeScoreUnavailable = true
-            viewModel.cacheVibeScoreUnavailable()
+            viewModel.context.cacheVibeScoreUnavailable()
             return
         }
 
@@ -1005,6 +1003,6 @@ struct DashboardView: View {
         try? modelContext.save()
 
         // Update the AI cache with the newly calculated score
-        viewModel.cacheVibeScore(todayReadiness)
+        viewModel.context.cacheVibeScore(todayReadiness)
     }
 }

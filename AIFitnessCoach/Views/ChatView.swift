@@ -311,15 +311,15 @@ private let suggestionChips = [
                                                     message: message,
                                                     onSkipWorkout: { workout in
                                                         refreshProfileContext()
-                                                        viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                                        viewModel.skipWorkout(workout, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
                                                     },
                                                     onAlternativeWorkout: { workout in
                                                         refreshProfileContext()
-                                                        viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                                        viewModel.requestAlternativeWorkout(workout, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
                                                     },
                                                     onRetry: {
                                                         refreshProfileContext()
-                                                        viewModel.retryLastMessage(contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                                        viewModel.retryLastMessage(invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
                                                     }
                                                 )
                                                 .id(message.id)
@@ -333,15 +333,15 @@ private let suggestionChips = [
                                             message: message,
                                             onSkipWorkout: { workout in
                                                 refreshProfileContext()
-                                                viewModel.skipWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                                viewModel.skipWorkout(workout, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
                                             },
                                             onAlternativeWorkout: { workout in
                                                 refreshProfileContext()
-                                                viewModel.requestAlternativeWorkout(workout, contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                                viewModel.requestAlternativeWorkout(workout, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
                                             },
                                             onRetry: {
                                                 refreshProfileContext()
-                                                viewModel.retryLastMessage(contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                                viewModel.retryLastMessage(invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
                                             }
                                         )
                                         .id(message.id)
@@ -483,7 +483,7 @@ private let suggestionChips = [
                         Button(action: {
                             refreshProfileContext()
                             Haptics.impact(.medium)
-                            viewModel.sendMessage(contextProfile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                            viewModel.sendMessage(invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
                             selectedItem = nil
                         }) {
                             Image(systemName: "arrow.up.circle.fill")

@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5DD1DD1F6E64419E81A68D76 /* CoachInvocationContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3969F92FCCDB1DA28E764D4 /* CoachInvocationContextTests.swift */; };
+		FBA008C8BD030821E06F0A57 /* CoachStatusAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD62748170BC9C6B3436A8E2 /* CoachStatusAnalyzer.swift */; };
+		08A30B32D080B501DBCF931B /* CoachModelProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 056815BA261B06564007DF17 /* CoachModelProvider.swift */; };
+		EA01A4944EA2CE1CA8B679AA /* CoachInvocationContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = C291AAFD2884ECA15D59AAE2 /* CoachInvocationContext.swift */; };
 		11050ED97072D68124C2C8E8 /* CoachContextStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30072D38FFE21A94DC789117 /* CoachContextStore.swift */; };
 		54B46A24D2A56B1367A483A3 /* CoachPromptAssemblerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34B2327387667EB61C0E20ED /* CoachPromptAssemblerTests.swift */; };
 		23E555FFD7781B1BBA59A97B /* CoachResponseParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B3B99409339E7417C4FDD5 /* CoachResponseParser.swift */; };
@@ -299,6 +303,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		C3969F92FCCDB1DA28E764D4 /* CoachInvocationContextTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "CoachInvocationContextTests.swift"; sourceTree = "<group>"; };
+		BD62748170BC9C6B3436A8E2 /* CoachStatusAnalyzer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "CoachStatusAnalyzer.swift"; sourceTree = "<group>"; };
+		056815BA261B06564007DF17 /* CoachModelProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "CoachModelProvider.swift"; sourceTree = "<group>"; };
+		C291AAFD2884ECA15D59AAE2 /* CoachInvocationContext.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "CoachInvocationContext.swift"; sourceTree = "<group>"; };
 		30072D38FFE21A94DC789117 /* CoachContextStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "CoachContextStore.swift"; sourceTree = "<group>"; };
 		34B2327387667EB61C0E20ED /* CoachPromptAssemblerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "CoachPromptAssemblerTests.swift"; sourceTree = "<group>"; };
 		F1B3B99409339E7417C4FDD5 /* CoachResponseParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "CoachResponseParser.swift"; sourceTree = "<group>"; };
@@ -630,6 +638,7 @@
 		3284AD7A217FFDEA98470CDC /* AIFitnessCoachTests */ = {
 			isa = PBXGroup;
 			children = (
+				C3969F92FCCDB1DA28E764D4 /* CoachInvocationContextTests.swift */,
 				34B2327387667EB61C0E20ED /* CoachPromptAssemblerTests.swift */,
 				9D20EC50A86831E50629F088 /* CoachPromptFixtureTests.swift */,
 				CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */,
@@ -875,6 +884,9 @@
 		48F580DFE59DCB4027FB3AEC /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				BD62748170BC9C6B3436A8E2 /* CoachStatusAnalyzer.swift */,
+				056815BA261B06564007DF17 /* CoachModelProvider.swift */,
+				C291AAFD2884ECA15D59AAE2 /* CoachInvocationContext.swift */,
 				30072D38FFE21A94DC789117 /* CoachContextStore.swift */,
 				F1B3B99409339E7417C4FDD5 /* CoachResponseParser.swift */,
 				5E7BBBE9B1B7FF67698BE2D3 /* CoachPromptAssembler+StatusPrompt.swift */,
@@ -1166,6 +1178,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5DD1DD1F6E64419E81A68D76 /* CoachInvocationContextTests.swift in Sources */,
 				54B46A24D2A56B1367A483A3 /* CoachPromptAssemblerTests.swift in Sources */,
 				90EBC97E41F89E2B95608E60 /* CoachPromptFixtureTests.swift in Sources */,
 				AA6033330000000000000002 /* PhaseTimelineTests.swift in Sources */,
@@ -1270,6 +1283,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FBA008C8BD030821E06F0A57 /* CoachStatusAnalyzer.swift in Sources */,
+				08A30B32D080B501DBCF931B /* CoachModelProvider.swift in Sources */,
+				EA01A4944EA2CE1CA8B679AA /* CoachInvocationContext.swift in Sources */,
 				11050ED97072D68124C2C8E8 /* CoachContextStore.swift in Sources */,
 				23E555FFD7781B1BBA59A97B /* CoachResponseParser.swift in Sources */,
 				0EACD9A2921EB96705EE857B /* CoachPromptAssembler+StatusPrompt.swift in Sources */,
