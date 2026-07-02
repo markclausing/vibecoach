@@ -51,7 +51,7 @@ struct AppTabHostView: View {
             // `HealthKitSyncStatusEvaluator` whether the "silent sync" banner should be
             // shown. 0 workouts + workout-auth != .sharingAuthorized = banner.
             let count = try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
-            UserDefaults.standard.set(count, forKey: "vibecoach_lastHKWorkoutsCount")
+            UserDefaults.standard.set(count, forKey: AppStorageKeys.lastHKWorkoutsCount)
             syncStatusStore.recordHKSuccess()
 
             // fix/workout-samples-loading: ask DeepSync directly for samples for the
@@ -68,7 +68,7 @@ struct AppTabHostView: View {
             // Silent error: HK may be unauthorized, no reason to block.
             // Write count=0 so the banner evaluator can still trigger if
             // the auth status supports it.
-            UserDefaults.standard.set(0, forKey: "vibecoach_lastHKWorkoutsCount")
+            UserDefaults.standard.set(0, forKey: AppStorageKeys.lastHKWorkoutsCount)
             syncStatusStore.recordHKError(error)
             AppLoggers.fitnessDataService.error("Auto-sync HealthKit failed: \(error.localizedDescription, privacy: .public)")
         }
@@ -95,23 +95,18 @@ struct AppTabHostView: View {
             // Only fetch the last 14 days — short enough for the Burn Rate graph + well
             // within Strava's rate limit.
             let activities = try await fitnessDataService.fetchRecentActivities(days: 14)
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            let fallbackFormatter = ISO8601DateFormatter()
 
             for activity in activities {
-                let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
+                // Epic 65.1: use the cached ISO-8601 formatters (no per-activity allocation).
+                let date = AppDateFormatters.iso8601WithFractionalSeconds.date(from: activity.start_date)
+                    ?? AppDateFormatters.iso8601.date(from: activity.start_date)
+                    ?? Date()
 
-                // SPRINT 12.4: basic TRIMP fallback during sync.
-                let basicTRIMPFallback: Double? = {
-                    if let hr = activity.average_heartrate, hr > 100 {
-                        let durationMins = Double(activity.moving_time) / 60.0
-                        let simulatedDeltaHR = (hr - 60.0) / (190.0 - 60.0)
-                        return durationMins * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
-                    } else {
-                        return (Double(activity.moving_time) / 60.0) * 1.5
-                    }
-                }()
+                // SPRINT 12.4: basic TRIMP fallback during sync (Epic 65.1: centralised).
+                let basicTRIMPFallback: Double? = PhysiologicalCalculator.basicFallbackTRIMP(
+                    durationSec: Double(activity.moving_time),
+                    avgHR: activity.average_heartrate
+                )
 
                 let record = ActivityRecord(
                     id: String(activity.id),
@@ -130,7 +125,12 @@ struct AppTabHostView: View {
                 await HistoricalWeatherService.enrichRecord(record, from: activity, startDate: date)
                 _ = try? ActivityDeduplicator.smartInsert(record, into: modelContext)
             }
-            try? modelContext.save()
+            // Epic 65.1: log a failed save instead of silently swallowing it (§11).
+            do {
+                try modelContext.save()
+            } catch {
+                AppLoggers.fitnessDataService.error("Auto-sync Strava save failed: \(error.localizedDescription, privacy: .public)")
+            }
             syncStatusStore.recordStravaSuccess()
         } catch FitnessDataError.missingToken {
             // User has not connected Strava — no reason to log on every launch.
@@ -201,7 +201,7 @@ struct AppTabHostView: View {
             // caches load from the protected store instead of UserDefaults.
             sharedChatViewModel.configure(with: modelContext)
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("TriggerAutoSync"))) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .triggerAutoSync)) { _ in
             performAutoSync()
         }
         // Epic #38 Story 38.1: on foreground return, prompt for types that

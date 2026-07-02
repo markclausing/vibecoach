@@ -98,6 +98,25 @@ enum AppDateFormatters {
         }
     }
 
+    // MARK: ISO-8601 (Strava / API timestamps)
+    //
+    // §13 exempts `ISO8601DateFormatter` from the locale rules above (different
+    // API, always internet-date-time). Cached here purely to avoid re-allocating
+    // a fresh formatter on every activity of every sync run. Like `DateFormatter`,
+    // `ISO8601DateFormatter` is safe for concurrent read-only `date(from:)` use.
+
+    /// ISO-8601 parser for Strava's fractional-second timestamps
+    /// (e.g. `2024-01-02T12:34:56.789Z`).
+    static let iso8601WithFractionalSeconds: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    /// ISO-8601 parser with the default internet-date-time options (no fractional
+    /// seconds) — fallback for timestamps Strava returns without milliseconds.
+    static let iso8601 = ISO8601DateFormatter()
+
     // MARK: Cache
 
     private static func cached(key: String, _ build: () -> DateFormatter) -> DateFormatter {

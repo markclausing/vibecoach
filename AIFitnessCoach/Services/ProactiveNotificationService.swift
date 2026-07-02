@@ -229,7 +229,8 @@ final class ProactiveNotificationService {
     ) -> Double {
         if let hr = averageHeartRate, hr > restingHR {
             let deltaHR = max(0.01, (hr - restingHR) / (maxHR - restingHR))
-            return durationMinutes * deltaHR * 0.64 * exp(1.92 * deltaHR)
+            // Epic 65.1: routed through the centralised Banister kernel.
+            return PhysiologicalCalculator.banisterTRIMP(durationMinutes: durationMinutes, normalizedDelta: deltaHR)
         }
         return durationMinutes * 1.5
     }
