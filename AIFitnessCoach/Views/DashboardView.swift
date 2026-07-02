@@ -575,7 +575,7 @@ struct DashboardView: View {
                 .padding(.bottom, 40)
             }
             .refreshable {
-                NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
+                NotificationCenter.default.post(name: .triggerAutoSync, object: nil)
                 refreshProfileContext()
                 isVibeScoreUnavailable = false
                 await calculateAndSaveVibeScore()
@@ -731,9 +731,6 @@ struct DashboardView: View {
                 await runAutoDedupe()
                 await runSessionReclassification()
                 await refreshChatContextCaches()
-                #if DEBUG
-                await runPatternDebugReport()
-                #endif
             }
         }
     }
@@ -784,42 +781,6 @@ struct DashboardView: View {
         viewModel.workoutPatternsContext = WorkoutPatternFormatter.chatContextLine(for: patterns7d) ?? ""
         viewModel.workoutHistoryContext = WorkoutHistoryContextBuilder.build(entries: entries)
     }
-
-    #if DEBUG
-    /// Story 32.3a empirical validation: runs `WorkoutPatternDetector.detectAll`
-    /// over all workouts with stored samples and prints the found patterns.
-    /// Intended to check before 32.3b (UI pins) whether the thresholds trigger
-    /// at all on real data — no UI effect, only console output.
-    private func runPatternDebugReport() async {
-        let store = WorkoutSampleStore(modelContainer: modelContext.container)
-        let profile = UserProfileService.cachedProfile()
-        var triggered = 0
-        var scanned = 0
-        var skippedNoSamples = 0
-        for activity in activities {
-            let uuid = UUID.forActivityRecordID(activity.id)
-            let samples = (try? await store.samples(forWorkoutUUID: uuid)) ?? []
-            let dateLabel = activity.startDate.formatted(date: .abbreviated, time: .shortened)
-            guard !samples.isEmpty else {
-                skippedNoSamples += 1
-                print("📊 [Pattern-debug] '\(activity.displayName)' op \(dateLabel) — geen samples opgeslagen, overgeslagen")
-                continue
-            }
-            scanned += 1
-            let patterns = WorkoutPatternDetector.detectAll(in: samples, profile: profile)
-            if patterns.isEmpty {
-                print("📊 [Pattern-debug] '\(activity.displayName)' op \(dateLabel) — \(samples.count) samples · geen patronen (alle filters/zones-gates negatief)")
-                continue
-            }
-            triggered += 1
-            print("📊 [Pattern-debug] '\(activity.displayName)' op \(dateLabel) — \(samples.count) samples")
-            for pattern in patterns {
-                print("   • \(pattern.kind) [\(pattern.severity)]: \(pattern.detail)")
-            }
-        }
-        print("📊 [Pattern-debug] Scan klaar — \(triggered)/\(scanned) workouts met samples hadden patronen, \(skippedNoSamples) overgeslagen wegens geen samples (\(activities.count) totaal in DB).")
-    }
-    #endif
 
     /// Epic 41: auto-dedupe via `ActivityDeduplicator`. Idempotent — a clean DB stays
     /// clean. Runs after the Strava backfill so sample counts are correct for the

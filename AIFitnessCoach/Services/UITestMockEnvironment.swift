@@ -25,7 +25,7 @@ enum UITestMockEnvironment {
             // hasCompletedOnboarding stays false after reset → OnboardingView is shown.
         } else {
             // No reset: skip onboarding so the TabView is immediately visible.
-            defaults.set(true, forKey: "hasCompletedOnboarding")
+            defaults.set(true, forKey: AppStorageKeys.hasCompletedOnboarding)
         }
 
         // Pin the Vibe Score to 82 (Optimally Recovered) — Epic 14.4 cache.
@@ -62,7 +62,7 @@ enum UITestMockEnvironment {
     /// Clears all app-specific UserDefaults keys so the app starts fresh.
     static func resetAllState(defaults: UserDefaults) {
         let keysToReset = [
-            "hasCompletedOnboarding",
+            AppStorageKeys.hasCompletedOnboarding,
             "vibecoach_todayVibeScoreContext",
             "vibecoach_weatherContext",
             // C-02: legacy key — stays in the reset list so a possible
@@ -81,7 +81,7 @@ enum UITestMockEnvironment {
             "vibecoach_recoveryPlanTimestamp",
             "latestCoachInsight",
             "latestSuggestedPlanData",
-            "selectedDataSource"
+            AppStorageKeys.selectedDataSource
         ]
         keysToReset.forEach { defaults.removeObject(forKey: $0) }
         // C-02: also clear the Keychain entries so a -ResetState run truly starts

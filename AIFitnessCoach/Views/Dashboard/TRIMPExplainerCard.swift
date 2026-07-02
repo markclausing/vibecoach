@@ -22,7 +22,8 @@ struct TRIMPExplainerCard: View {
     }
 
     private var calculatedTRIMP: Double {
-        return durationMinutes * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
+        // Epic 65.1: routed through the centralised Banister kernel.
+        return PhysiologicalCalculator.banisterTRIMP(durationMinutes: durationMinutes, normalizedDelta: simulatedDeltaHR)
     }
 
     struct ExplainerPoint: Identifiable {
@@ -38,7 +39,7 @@ struct TRIMPExplainerCard: View {
             switch z {
             case 1: hr = 0.60; case 2: hr = 0.70; case 3: hr = 0.80; case 4: hr = 0.90; case 5: hr = 0.95; default: hr = 0.70
             }
-            let trimpValue = durationMinutes * hr * 0.64 * exp(1.92 * hr)
+            let trimpValue = PhysiologicalCalculator.banisterTRIMP(durationMinutes: durationMinutes, normalizedDelta: hr)
             points.append(ExplainerPoint(zone: z, trimp: trimpValue))
         }
         return points

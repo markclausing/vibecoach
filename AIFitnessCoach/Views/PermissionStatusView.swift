@@ -192,7 +192,7 @@ struct PermissionStatusView: View {
         let store = HealthKitManager.shared.healthStore
         let available = HKHealthStore.isHealthDataAvailable()
         let anyCriticalNotDetermined = !HealthKitPermissionTypes.criticalNotDetermined(in: store).isEmpty
-        let rawCount = UserDefaults.standard.integer(forKey: "vibecoach_lastHKWorkoutsCount")
+        let rawCount = UserDefaults.standard.integer(forKey: AppStorageKeys.lastHKWorkoutsCount)
         // -1 (or absent) = no sync recorded yet → unknown; otherwise the cached count.
         let lastWorkoutCount: Int? = rawCount < 0 ? nil : rawCount
         let hkLevel = PermissionStatusEvaluator.healthKitLevel(

@@ -22,14 +22,14 @@ struct SettingsView: View {
     @State private var isSettingsScrolled: Bool = false
     @AppStorage("isHealthKitLinked") private var isHealthKitLinked: Bool = false
 
-    @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
+    @AppStorage(AppStorageKeys.selectedDataSource) private var selectedDataSource: DataSource = .healthKit
 
     // Historical sync state
     @State private var isSyncingHistory: Bool = false
     @State private var athleticProfile: AthleticProfile?
 
     // V2.0 extra state
-    @AppStorage("vibecoach_userName")        private var userName: String = ""
+    @AppStorage(AppStorageKeys.userName)     private var userName: String = ""
     // C-02: API key lives in the Keychain, not in AppStorage.
     // `loadTokens()` reloads the value from the Keychain on every onAppear.
     @State                                   private var apiKey: String = ""
@@ -42,7 +42,7 @@ struct SettingsView: View {
     // Epic 34 Sprint 2: toggles without backend logic removed.
     // Notification switches and background sync return once the
     // `ProactiveNotificationService` can be configured per channel.
-    @AppStorage("vibecoach_colorScheme")     private var colorSchemeRaw: String = "auto"
+    @AppStorage(AppStorageKeys.colorScheme)  private var colorSchemeRaw: String = "auto"
     // Epic #37 story 37.5: app language preference (drives `.environment(\.locale, …)` at the app root).
     @AppStorage(AppLanguage.storageKey)      private var appLanguageRaw: String = AppLanguage.system.rawValue
     // Epic #37 story 37.1: shown after a language change — UI-string switch needs a relaunch.
@@ -168,10 +168,10 @@ struct SettingsView: View {
         do {
             // Epic #38 Story 38.2: cache count for the Dashboard banner evaluator.
             let count = try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
-            UserDefaults.standard.set(count, forKey: "vibecoach_lastHKWorkoutsCount")
+            UserDefaults.standard.set(count, forKey: AppStorageKeys.lastHKWorkoutsCount)
             return "HealthKit (1 jaar) gesynchroniseerd — \(count) workouts"
         } catch {
-            UserDefaults.standard.set(0, forKey: "vibecoach_lastHKWorkoutsCount")
+            UserDefaults.standard.set(0, forKey: AppStorageKeys.lastHKWorkoutsCount)
             return "HealthKit-fout: \(error.localizedDescription)"
         }
     }
@@ -182,24 +182,19 @@ struct SettingsView: View {
             // SPRINT 6.1 & 7.4: fetch at most 12 months of Strava history.
             let activities = try await fitnessDataService.fetchHistoricalActivities(monthsBack: 12)
 
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            let fallbackFormatter = ISO8601DateFormatter()
             var newRecordsCount = 0
 
             for activity in activities {
-                let date = formatter.date(from: activity.start_date) ?? fallbackFormatter.date(from: activity.start_date) ?? Date()
+                // Epic 65.1: use the cached ISO-8601 formatters (no per-activity allocation).
+                let date = AppDateFormatters.iso8601WithFractionalSeconds.date(from: activity.start_date)
+                    ?? AppDateFormatters.iso8601.date(from: activity.start_date)
+                    ?? Date()
 
-                // SPRINT 12.4: basic TRIMP fallback during sync.
-                let basicTRIMPFallback: Double? = {
-                    if let hr = activity.average_heartrate, hr > 100 {
-                        let durationMins = Double(activity.moving_time) / 60.0
-                        let simulatedDeltaHR = (hr - 60.0) / (190.0 - 60.0)
-                        return durationMins * simulatedDeltaHR * 0.64 * exp(1.92 * simulatedDeltaHR)
-                    } else {
-                        return (Double(activity.moving_time) / 60.0) * 1.5
-                    }
-                }()
+                // SPRINT 12.4: basic TRIMP fallback during sync (Epic 65.1: centralised).
+                let basicTRIMPFallback: Double? = PhysiologicalCalculator.basicFallbackTRIMP(
+                    durationSec: Double(activity.moving_time),
+                    avgHR: activity.average_heartrate
+                )
 
                 let record = ActivityRecord(
                     id: String(activity.id),

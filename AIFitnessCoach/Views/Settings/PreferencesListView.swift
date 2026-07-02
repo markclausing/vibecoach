@@ -6,7 +6,7 @@ import SwiftData
 struct PreferencesListView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var themeManager: ThemeManager
-    @AppStorage("vibecoach_userName") private var userName: String = ""
+    @AppStorage(AppStorageKeys.userName) private var userName: String = ""
 
     @Query(sort: \UserPreference.createdAt, order: .reverse) private var allPreferences: [UserPreference]
 

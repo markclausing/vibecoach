@@ -13,7 +13,7 @@ struct HealthKitPermissionWarningBanner: View {
     /// Cache from `AppTabHostView.runHealthKitAutoSync` / `SettingsView` historical sync.
     /// `-1` = sentinel "never synced yet" → no banner (avoids a false positive on the
     /// very first app launch before the first auto-sync cycle).
-    @AppStorage("vibecoach_lastHKWorkoutsCount") private var lastHKWorkoutsCount: Int = -1
+    @AppStorage(AppStorageKeys.lastHKWorkoutsCount) private var lastHKWorkoutsCount: Int = -1
     @State private var workoutAuthStatus: HKAuthorizationStatus = .notDetermined
 
     private var shouldShow: Bool {

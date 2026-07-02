@@ -124,6 +124,70 @@ final class PhysiologicalCalculatorTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(result, 0, "TRIMP mag nooit negatief zijn.")
     }
 
+    // MARK: - 1b. Banister kernel + basicFallbackTRIMP (Epic 65.1 centralisation)
+
+    func testBanisterTRIMP_KernelMatchesInlineFormula() {
+        // De kernel is de enige plek met de Banister-coëfficiënten. Assert dat hij
+        // exact de oude inline-uitdrukking reproduceert voor een genormaliseerde delta.
+        let durationMinutes = 60.0
+        let delta = 0.70
+        let expected = durationMinutes * delta * 0.64 * exp(1.92 * delta)
+
+        let result = PhysiologicalCalculator.banisterTRIMP(durationMinutes: durationMinutes, normalizedDelta: delta)
+
+        XCTAssertEqual(result, expected, accuracy: 1e-9,
+                       "Kernel moet byte-identiek zijn aan de oude inline TRIMP-formule.")
+    }
+
+    func testBasicFallbackTRIMP_WithHR_ReproducesOldInlineValue() {
+        // Oude inline sync-fallback (AppTabHostView / SettingsView): hr > 100 →
+        // delta = (hr-60)/(190-60), TRIMP = durMin * delta * 0.64 * exp(1.92*delta).
+        // Representatieve input: hr = 150, 60 min (3600s).
+        let hr = 150.0
+        let durationSec = 3600.0
+        let durationMins = durationSec / 60.0
+        let delta = (hr - 60.0) / (190.0 - 60.0)
+        let expected = durationMins * delta * 0.64 * exp(1.92 * delta)
+
+        let result = PhysiologicalCalculator.basicFallbackTRIMP(durationSec: durationSec, avgHR: hr)
+
+        XCTAssertEqual(result, expected, accuracy: 1e-9,
+                       "basicFallbackTRIMP met HR moet de oude inline-waarde exact reproduceren.")
+    }
+
+    func testBasicFallbackTRIMP_NoHR_ReturnsConservativeEstimate() {
+        // Zonder HR: conservatieve Zone-2 schatting van 1.5 TRIMP/min → 60 min = 90.
+        let result = PhysiologicalCalculator.basicFallbackTRIMP(durationSec: 3600, avgHR: nil)
+
+        XCTAssertEqual(result, 90.0, accuracy: 1e-9,
+                       "Zonder HR moet de fallback 1.5 TRIMP/min geven (60 min → 90).")
+    }
+
+    func testBasicFallbackTRIMP_LowHR_UsesNoHRBranch() {
+        // hr <= 100 valt terug op de no-HR tak (oude drempel `hr > 100`).
+        let result = PhysiologicalCalculator.basicFallbackTRIMP(durationSec: 3600, avgHR: 90)
+
+        XCTAssertEqual(result, 90.0, accuracy: 1e-9,
+                       "HR ≤ 100 moet de conservatieve 1.5 TRIMP/min tak gebruiken.")
+    }
+
+    func testCalculateTSS_RoutesThroughKernel() {
+        // calculateTSS deelt nu de kernel: de volledige TSS-uitkomst moet gelijk zijn
+        // aan de kernel met dezelfde genormaliseerde delta.
+        let delta = (150.0 - 60.0) / (190.0 - 60.0)
+        let expected = PhysiologicalCalculator.banisterTRIMP(durationMinutes: 60.0, normalizedDelta: delta)
+
+        let result = calculator.calculateTSS(
+            durationInSeconds: 3600,
+            averageHeartRate: 150,
+            maxHeartRate: 190,
+            restingHeartRate: 60
+        )
+
+        XCTAssertEqual(result, expected, accuracy: 1e-9,
+                       "calculateTSS moet identiek zijn aan de gecentraliseerde kernel.")
+    }
+
     // MARK: - 2. InjuryImpactMatrix: penaltyMultiplier
 
     func testPenaltyMultiplier_NoPreferences_ReturnsOne() {

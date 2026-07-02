@@ -20,7 +20,7 @@ struct OnboardingView: View {
     // MARK: - Persistent state
 
     /// Set to true once the user finishes onboarding (step 5).
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage(AppStorageKeys.hasCompletedOnboarding) private var hasCompletedOnboarding = false
 
     /// Sprint 31.6: chosen AI provider — shared key with `AIProviderSettingsView`
     /// so that `ChatViewModel` picks it up directly. The actual API key

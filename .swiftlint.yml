@@ -1,11 +1,11 @@
-# SwiftLint config voor VibeCoach
+# SwiftLint config for VibeCoach
 #
-# Filosofie: catch real bugs (force-unwrap, switch-misalignment, redundante code)
-# zonder noise op stijl-zaken die geen echte regressie zijn (line-length,
-# function-body-length). Codebase heeft Nederlandse comments (die zijn relatief
-# wordy) en lange Coach-prompts die niet zinvol gesplitst kunnen worden.
+# Philosophy: catch real bugs (force-unwrap, switch-misalignment, redundant code)
+# without noise on style matters that are not a real regression (line-length,
+# function-body-length). The codebase has Dutch comments (which are relatively
+# wordy) and long Coach prompts that cannot be meaningfully split.
 
-# Alleen production-source linten in deze eerste pass; tests volgen later.
+# Only lint production source in this first pass; tests follow later.
 included:
   - AIFitnessCoach
 
@@ -16,27 +16,27 @@ excluded:
   - DerivedData
 
 disabled_rules:
-  # Stijl-rules met te veel ruis voor te weinig waarde in deze codebase:
-  - line_length              # 460 violations — Dutch comments + Coach-prompts zijn wordy
-  - identifier_name          # 171 violations — kort loop-vars (i, r, hr, f) zijn idiomatisch
-  - function_body_length     # 17 violations — Coach-prompt-builders zijn intentioneel lang
-  - file_length              # 15 violations — Models/Services zijn pragmatisch grouped
-  - type_body_length         # 12 violations — ChatViewModel + DashboardView zijn rijke views
-  - cyclomatic_complexity    # 9 violations — Coach-prompt-context heeft veel branches
-  - todo                     # 1 violation — TODOs zijn waardevol als doc-aanknopingspunt
+  # Style rules with too much noise for too little value in this codebase:
+  - line_length              # 460 violations — Dutch comments + Coach prompts are wordy
+  - identifier_name          # 171 violations — short loop vars (i, r, hr, f) are idiomatic
+  - function_body_length     # 17 violations — Coach-prompt builders are intentionally long
+  - file_length              # 15 violations — Models/Services are pragmatically grouped
+  - type_body_length         # 12 violations — ChatViewModel + DashboardView are rich views
+  - cyclomatic_complexity    # 9 violations — Coach-prompt context has many branches
+  - todo                     # 1 violation — TODOs are valuable as doc anchors
 
-  # Patroon-rules die in SwiftUI / pragmatic tuples geen echte waarde toevoegen:
-  - switch_case_alignment    # 15 violations — inline single-line switches zijn leesbaar
-  - multiple_closures_with_trailing_closure  # 7 — SwiftUI Button/label-patroon is idiomatisch
-  - redundant_string_enum_value              # 7 — SportCategory etc. expliciete raws voor Codable-stabiliteit
-  - large_tuple                              # 6 — type-introductie is invasief; trade voor leesbaarheid
-  - function_parameter_count                 # 2 — refactor zou protocol-injection vragen, los onderwerp
-  - vertical_parameter_alignment             # 3 — false-positives op multiline parameter-strings
+  # Pattern rules that add no real value in SwiftUI / pragmatic tuples:
+  - switch_case_alignment    # 15 violations — inline single-line switches are readable
+  - multiple_closures_with_trailing_closure  # 7 — SwiftUI Button/label pattern is idiomatic
+  - redundant_string_enum_value              # 7 — SportCategory etc. explicit raws for Codable stability
+  - large_tuple                              # 6 — introducing a type is invasive; trade for readability
+  - function_parameter_count                 # 2 — a refactor would need protocol injection, separate topic
+  - vertical_parameter_alignment             # 3 — false positives on multiline parameter strings
 
 opt_in_rules: []
-  # `force_unwrapping` (77 violations) bewust niet aan in deze eerste cleanup —
-  # de meeste zijn benign idioms (`guard x == nil || x! > now`) waar de nil-check
-  # wél gedaan is maar SwiftLint dat niet kan zien. Aparte audit-PR
-  # (`chore/force-unwrap-audit`) loopt later: per call-site evalueren en
-  # ofwel naar `if let` ofwel comment-supressie. Tot die tijd geen
-  # regel-aan-met-77-bestaande-violations — dat blokkeert alle nieuwe PR's.
+  # `force_unwrapping` (77 violations) deliberately not enabled in this first cleanup —
+  # most are benign idioms (`guard x == nil || x! > now`) where the nil-check
+  # *has* been done but SwiftLint cannot see it. A separate audit PR
+  # (`chore/force-unwrap-audit`) runs later: evaluate per call site and move
+  # either to `if let` or a comment suppression. Until then no
+  # rule-on-with-77-existing-violations — that would block every new PR.

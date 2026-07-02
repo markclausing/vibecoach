@@ -62,7 +62,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // SPRINT 13.2 — Engine A & B: Only start if the user has already completed onboarding.
         // This prevents the engines from being active before the user has even granted permission.
         // Epic #31 Sprint 1: gatekeeper key migrated to `hasCompletedOnboarding` (V2.0 flow).
-        let hasOnboarded = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+        let hasOnboarded = UserDefaults.standard.bool(forKey: AppStorageKeys.hasCompletedOnboarding)
         if hasOnboarded {
             ProactiveNotificationService.shared.setupEngineA()
             ProactiveNotificationService.shared.scheduleEngineB()
@@ -176,11 +176,11 @@ struct AIFitnessCoachApp: App {
             return container
         } catch {
             AppLoggers.fitnessDataService.error("""
-                ModelContainer-init met migratieplan faalde: \
+                ModelContainer init with migration plan failed: \
                 \(error.localizedDescription, privacy: .public). \
-                Val terug op fresh DB — FitnessGoal, UserPreference en Symptom \
-                records zijn verloren, HK + Strava activities re-syncen vanzelf \
-                zodra de app opent.
+                Falling back to a fresh DB — FitnessGoal, UserPreference and Symptom \
+                records are lost; HK + Strava activities re-sync automatically \
+                as soon as the app reopens.
                 """)
         }
 
@@ -200,7 +200,7 @@ struct AIFitnessCoachApp: App {
         } catch {
             // Unrecoverable: even a fresh DB fails. Crashing is correct behaviour then —
             // something is fundamentally wrong with the Application Support directory or the schema.
-            fatalError("ModelContainer-init faalde ook ná fresh-DB-fallback: \(error)")
+            fatalError("ModelContainer init failed even after the fresh-DB fallback: \(error)")
         }
     }
 
@@ -222,7 +222,7 @@ struct AIFitnessCoachApp: App {
                     ofItemAtPath: path
                 )
             } catch {
-                AppLoggers.fitnessDataService.error("Kon file-protection niet zetten op store-bestand: \(error.localizedDescription, privacy: .public)")
+                AppLoggers.fitnessDataService.error("Could not set file protection on the store file: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -254,10 +254,10 @@ struct AIFitnessCoachApp: App {
     // Epic #31 Sprint 1: gatekeeper for the V2.0 onboarding flow.
     // When `false` the app shows OnboardingView(); as soon as the last step sets this to `true`
     // the app switches over to the regular main app (ContentView).
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage(AppStorageKeys.hasCompletedOnboarding) private var hasCompletedOnboarding = false
 
     // Epic 30: Color mode setting (light / dark / auto)
-    @AppStorage("vibecoach_colorScheme") private var colorSchemeRaw: String = "auto"
+    @AppStorage(AppStorageKeys.colorScheme) private var colorSchemeRaw: String = "auto"
 
     // Epic #37 story 37.5: app language preference. `.system` follows the device locale,
     // so existing users see no forced switch. Drives `.environment(\.locale, …)` below;
@@ -348,7 +348,7 @@ struct AIFitnessCoachApp: App {
                     if newPhase == .active && hasCompletedOnboarding {
                         // SPRINT 12.3: Trigger the automatic historical data sync when
                         // the app is open. AppTabHostView listens on TriggerAutoSync.
-                        NotificationCenter.default.post(name: NSNotification.Name("TriggerAutoSync"), object: nil)
+                        NotificationCenter.default.post(name: .triggerAutoSync, object: nil)
                     }
                 }
         }
