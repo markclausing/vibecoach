@@ -10,8 +10,22 @@ struct GoalsListView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
-    @Query(sort: \ActivityRecord.startDate, order: .forward) private var activities: [ActivityRecord]
+    // Epic #65 story 65.2: bounded to the rolling `QueryWindows.activityHistory` window
+    // (26 weeks). Widest consumer here is `atRiskGoals`'s 16-week burndown block; the
+    // `ProgressService` / `PeriodizationEngine` helpers scan ≤ that. Cutoff set in init.
+    @Query private var activities: [ActivityRecord]
     @Query(filter: #Predicate<UserPreference> { $0.isActive == true }, sort: \UserPreference.createdAt) private var activePreferences: [UserPreference]
+
+    /// Epic #65 story 65.2: Calendar-based (§3) cutoff captured as a `let` for the `#Predicate`.
+    init(viewModel: ChatViewModel) {
+        self._viewModel = ObservedObject(wrappedValue: viewModel)
+        let cutoff = QueryWindows.activityHistoryCutoff()
+        _activities = Query(
+            filter: #Predicate<ActivityRecord> { $0.startDate >= cutoff },
+            sort: \ActivityRecord.startDate,
+            order: .forward
+        )
+    }
 
     @State private var showingAddSheet = false
     @AppStorage("vibecoach_recoveryPlanTimestamp") private var recoveryPlanTimestamp: Double = 0

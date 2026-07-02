@@ -24,7 +24,10 @@ struct WorkoutAnalysisView: View {
     /// Epic #48: active goals + all activities + readiness for the blueprint and
     /// periodization context that the Coach analysis receives.
     @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
-    @Query(sort: \ActivityRecord.startDate, order: .forward) private var allActivitiesForContext: [ActivityRecord]
+    // Epic #65 story 65.2: bounded to the rolling `QueryWindows.activityHistory` window
+    // (26 weeks). Consumers are `BlueprintChecker` + `PeriodizationEngine`, which scan
+    // the current training block (≤ 26 weeks). Cutoff set in `init(activity:)`.
+    @Query private var allActivitiesForContext: [ActivityRecord]
     @Query(sort: \DailyReadiness.date, order: .reverse) private var readinessRecords: [DailyReadiness]
 
     @State private var scrubbedDate: Date?
@@ -58,6 +61,14 @@ struct WorkoutAnalysisView: View {
         _samples = Query(
             filter: #Predicate<WorkoutSample> { $0.workoutUUID == uuid },
             sort: \WorkoutSample.timestamp,
+            order: .forward
+        )
+        // Epic #65 story 65.2: bound the blueprint/periodization context scan to the
+        // rolling 26-week window (Calendar-based cutoff captured as a `let` for the predicate).
+        let activityCutoff = QueryWindows.activityHistoryCutoff()
+        _allActivitiesForContext = Query(
+            filter: #Predicate<ActivityRecord> { $0.startDate >= activityCutoff },
+            sort: \ActivityRecord.startDate,
             order: .forward
         )
     }
@@ -1380,7 +1391,7 @@ struct WorkoutAnalysisView: View {
 /// `WorkoutSample` data because Deep Sync only links the HealthKit source.
 struct RecentWorkoutsSection: View {
 
-    @Query(sort: \ActivityRecord.startDate, order: .reverse) private var allActivities: [ActivityRecord]
+    @Query private var allActivities: [ActivityRecord]
     @EnvironmentObject var themeManager: ThemeManager
 
     /// Number of rows we show. Default 7 — fits on one screen without dominating the scroll.
@@ -1388,6 +1399,14 @@ struct RecentWorkoutsSection: View {
 
     init(limit: Int = 7) {
         self.limit = limit
+        // Epic #65 story 65.2: the section only ever renders the newest `limit` rows,
+        // so push the bound into the query via `fetchLimit` instead of scanning the
+        // whole table and slicing in memory.
+        var descriptor = FetchDescriptor<ActivityRecord>(
+            sortBy: [SortDescriptor(\.startDate, order: .reverse)]
+        )
+        descriptor.fetchLimit = limit
+        _allActivities = Query(descriptor)
     }
 
     private var recent: [ActivityRecord] {

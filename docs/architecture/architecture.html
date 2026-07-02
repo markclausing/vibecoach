@@ -1375,8 +1375,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 31,
-    "lastUpdated": "2026-07-01",
+    "docRevision": 32,
+    "lastUpdated": "2026-07-02",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -1831,14 +1831,30 @@
       "layer": "services",
       "kind": "service",
       "file": "AIFitnessCoach/Services/WorkoutSampleService.swift",
-      "description": "Read/write for fine-grained workout samples (5s buckets HR/power/cadence/speed/distance). FK = workoutUUID. Idempotent replaceSamples.",
+      "description": "Read/write for fine-grained workout samples (5s buckets HR/power/cadence/speed/distance). FK = workoutUUID. Idempotent replaceSamples. Epic #65 story 65.2: pruneSamplesOlderThanRetention deletes samples beyond a 6-month horizon (fetchCount-guarded, boundary kept); ActivityRecord aggregates are never touched.",
       "uses": [
         "WorkoutSample",
         "SampleResampler",
         "UUID+Deterministic"
       ],
       "tags": [
-        "epic-32"
+        "epic-32",
+        "epic-65"
+      ]
+    },
+    {
+      "id": "DeepSyncService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/DeepSyncService.swift",
+      "description": "Epic #32 orchestrator for the rolling 30-day deep sync of workout samples: fetches HKWorkouts in the window, ingests per workout via WorkoutSampleIngestService (idempotent via a persisted processed-UUID set + ingest-revision re-ingest migration). Since Epic #65 story 65.2 also triggers the once-per-session WorkoutSample retention prune (6-month horizon) on WorkoutSampleStore.",
+      "uses": [
+        "WorkoutSampleService",
+        "WorkoutSample"
+      ],
+      "tags": [
+        "epic-32",
+        "epic-65"
       ]
     },
     {
@@ -2762,6 +2778,17 @@
         "epic-23",
         "epic-36",
         "epic-60"
+      ]
+    },
+    {
+      "id": "QueryWindows",
+      "layer": "services",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Services/QueryWindows.swift",
+      "description": "Epic #65 story 65.2 pure helper: central Calendar-based rolling cutoffs that bound the full-table @Query's (ActivityRecord 26w, DailyReadiness 90d, Symptom 30d). Sized to the widest real consumer per view (16-week burndown block); computed at view-init as let values for #Predicate capture. Pure-Swift, AppStorage-free.",
+      "uses": [],
+      "tags": [
+        "epic-65"
       ]
     },
     {
