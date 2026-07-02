@@ -6,7 +6,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 33,
+    "docRevision": 34,
     "lastUpdated": "2026-07-02",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
@@ -144,17 +144,17 @@
       "layer": "views",
       "kind": "view",
       "file": "AIFitnessCoach/Views/AppTabHostView.swift",
-      "description": "Main tab bar with 5 tabs (Dashboard, Goals, Coach, Memory, Settings). Manages the always-on dual-source sync via async let.",
+      "description": "Main tab bar with 5 tabs (Dashboard, Goals, Coach, Memory, Settings). Story 65.4: the auto-sync pipeline moved into AutoSyncCoordinator; the view only owns the coordinator instance and fires one-line triggers (.triggerAutoSync notification + scenePhase).",
       "uses": [
         "DashboardView",
         "GoalsListView",
         "ChatView",
         "SettingsView",
-        "HealthKitSyncService",
-        "FitnessDataService"
+        "AutoSyncCoordinator"
       ],
       "tags": [
-        "epic-42"
+        "epic-42",
+        "epic-65"
       ]
     },
     {
@@ -162,16 +162,13 @@
       "layer": "views",
       "kind": "view",
       "file": "AIFitnessCoach/Views/DashboardView.swift",
-      "description": "Main screen: Vibe Score, goal burndown, weekly calendar, dedupe + reclassify pipeline in scenePhase. Caches risk data in UserDefaults for Engine A/B.",
+      "description": "Main screen: Vibe Score, goal burndown, weekly calendar. Story 65.4: the post-sync maintenance sequence (dedupe/reclassify/backfill/context-refresh) moved into DashboardMaintenanceRunner; the view keeps the view-bound Vibe Score calc + cache priming. Caches risk data in UserDefaults for Engine A/B.",
       "uses": [
         "VibeScoreCardV2",
         "WeekTimelineView",
         "BlueprintTimelineView",
         "ReadinessCalculator",
-        "ActivityDeduplicator",
-        "SessionReclassifier",
-        "StravaStreamIngestService",
-        "WorkoutSampleService",
+        "DashboardMaintenanceRunner",
         "MigrationFallbackBanner"
       ],
       "tags": [
@@ -180,7 +177,8 @@
         "epic-32",
         "epic-40",
         "epic-41",
-        "epic-51"
+        "epic-51",
+        "epic-65"
       ]
     },
     {
@@ -553,6 +551,52 @@
       ],
       "tags": [
         "epic-32",
+        "epic-65"
+      ]
+    },
+    {
+      "id": "AutoSyncCoordinator",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/AutoSyncCoordinator.swift",
+      "description": "Epic #65 story 65.4: owns the entire auto-sync pipeline extracted from AppTabHostView — the async let HK+Strava fan-out, the single-in-flight concurrency guard, per-source SyncStatusStore writes, the lastHKWorkoutsCount cache, the post-HK DeepSync trigger and the foreground HealthKit permission retrigger. @MainActor (SwiftData work stays on the main actor). Strava weather enrichment is batched across records with a bounded (~4) task group. Injection seams: HealthKitWorkoutSyncing + StravaActivityFetching protocols, SyncStatusStore, UserDefaults, ModelContext and a weather-fetch closure — so the guard, missing-token silence and per-record weather-failure isolation are unit-tested (AutoSyncCoordinatorTests).",
+      "uses": [
+        "HealthKitSyncService",
+        "FitnessDataService",
+        "SyncStatusStore",
+        "ActivityDeduplicator",
+        "HistoricalWeatherService",
+        "DeepSyncService",
+        "PhysiologicalCalculator",
+        "HealthKitManager",
+        "ActivityRecord"
+      ],
+      "tags": [
+        "epic-42",
+        "epic-65"
+      ]
+    },
+    {
+      "id": "DashboardMaintenanceRunner",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/DashboardMaintenanceRunner.swift",
+      "description": "Epic #65 story 65.4: owns DashboardView's post-sync maintenance orchestration — the ordered sequence Strava stream backfill -> auto-dedupe -> session reclassification -> coach context-cache refresh, previously four .task methods on the view. Plain @MainActor type with an injected ModelContext, unit-tested for wiring/ordering (DashboardMaintenanceRunnerTests); the individual jobs keep their own service tests. calculateAndSaveVibeScore stays in DashboardView as genuinely view-bound glue.",
+      "uses": [
+        "ActivityDeduplicator",
+        "SessionReclassifier",
+        "StravaStreamIngestService",
+        "WorkoutSampleService",
+        "FitnessDataService",
+        "WorkoutPatternDetector",
+        "WorkoutHistoryContextBuilder",
+        "CoachContextStore",
+        "ActivityRecord"
+      ],
+      "tags": [
+        "epic-40",
+        "epic-41",
+        "epic-45",
         "epic-65"
       ]
     },

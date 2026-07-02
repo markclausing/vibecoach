@@ -80,7 +80,7 @@ Read it at the start of every session as the basis for all decisions.
 
 ### What NOT to test
 - Trivial getters/setters or SwiftData boilerplate. No value, only maintenance burden.
-- View-layer orchestration without a clean injection seam (concurrent sync, `async let` flows in `performAutoSync`). Document instead of test, in the PR checklist + on-device validation.
+- Genuinely view-bound glue that drives `@State`/SwiftUI lifecycle and has no seam that wouldn't just re-plumb the same view state back in — e.g. `DashboardView.calculateAndSaveVibeScore` (owns `isVibeScoreLoading` / `isVibeScoreUnavailable` / `dashboardRestingHR`), the `.onAppear` cache-priming block, and the one-line trigger wiring in `AppTabHostView`. Document instead of test, in the PR checklist + on-device validation. **Note (Epic #65 story 65.4):** the bulk of the old sync/maintenance orchestration is *no longer* exempt — the auto-sync pipeline moved into `AutoSyncCoordinator` and the dashboard maintenance jobs into `DashboardMaintenanceRunner`, both plain `@MainActor` types with injected seams and unit tests (`AutoSyncCoordinatorTests`, `DashboardMaintenanceRunnerTests`). The `async let` HK+Strava fan-out, the concurrency guard, per-source `SyncStatusStore` writes and per-record weather-failure isolation are now tested code, not documented-not-tested view logic.
 - iOS-framework things that do not work in the simulator sandbox (Keychain entitlements, BGTaskScheduler timing).
 
 ### Safeguarding testability

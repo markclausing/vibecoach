@@ -148,6 +148,10 @@
 		B49CB5209082C67DC40F4FA5 /* FitnessDataError.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F8A5ED17924E05931B9476 /* FitnessDataError.swift */; };
 		B4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift */; };
 		B5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift */; };
+		A1C0DE65401B0000000000F1 /* AutoSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE65401A0000000000F1 /* AutoSyncCoordinator.swift */; };
+		A1C0DE65402B0000000000F2 /* DashboardMaintenanceRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE65402A0000000000F2 /* DashboardMaintenanceRunner.swift */; };
+		A1C0DE65403B0000000000F3 /* AutoSyncCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE65403A0000000000F3 /* AutoSyncCoordinatorTests.swift */; };
+		A1C0DE65404B0000000000F4 /* DashboardMaintenanceRunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE65404A0000000000F4 /* DashboardMaintenanceRunnerTests.swift */; };
 		B6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift */; };
 		B7A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisView.swift */; };
 		B81B710C2F8D65A80062BC61 /* UITestMockEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81B710B2F8D65A80062BC61 /* UITestMockEnvironment.swift */; };
@@ -519,6 +523,10 @@
 		E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppLoggers.swift; sourceTree = "<group>"; };
 		A11A6E0001000000000000B2 /* AppLanguage.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Localization/AppLanguage.swift; sourceTree = "<group>"; };
 		E5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeepSyncService.swift; sourceTree = "<group>"; };
+		A1C0DE65401A0000000000F1 /* AutoSyncCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AutoSyncCoordinator.swift; sourceTree = "<group>"; };
+		A1C0DE65402A0000000000F2 /* DashboardMaintenanceRunner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardMaintenanceRunner.swift; sourceTree = "<group>"; };
+		A1C0DE65403A0000000000F3 /* AutoSyncCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AutoSyncCoordinatorTests.swift; sourceTree = "<group>"; };
+		A1C0DE65404A0000000000F4 /* DashboardMaintenanceRunnerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardMaintenanceRunnerTests.swift; sourceTree = "<group>"; };
 		E6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeepSyncServiceTests.swift; sourceTree = "<group>"; };
 		E7A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutAnalysisView.swift; sourceTree = "<group>"; };
 		E8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutAnalysisHelpers.swift; sourceTree = "<group>"; };
@@ -701,6 +709,8 @@
 				3606AABBCC00DD08EE05FF05 /* KeychainServiceTests.swift */,
 				E4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift */,
 				E6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift */,
+				A1C0DE65403A0000000000F3 /* AutoSyncCoordinatorTests.swift */,
+				A1C0DE65404A0000000000F4 /* DashboardMaintenanceRunnerTests.swift */,
 				E9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift */,
 				EBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift */,
 				EEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift */,
@@ -849,6 +859,8 @@
 				E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */,
 				E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */,
 				E5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift */,
+				A1C0DE65401A0000000000F1 /* AutoSyncCoordinator.swift */,
+				A1C0DE65402A0000000000F2 /* DashboardMaintenanceRunner.swift */,
 				EDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift */,
 				EFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift */,
 				F5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift */,
@@ -1242,6 +1254,8 @@
 				3606AABBCC00DD07EE05FF05 /* KeychainServiceTests.swift in Sources */,
 				B4A4F7B2D6E8F0A1B2C3D405 /* SampleResamplerTests.swift in Sources */,
 				B6A4F7B2D6E8F0A1B2C3D405 /* DeepSyncServiceTests.swift in Sources */,
+				A1C0DE65403B0000000000F3 /* AutoSyncCoordinatorTests.swift in Sources */,
+				A1C0DE65404B0000000000F4 /* DashboardMaintenanceRunnerTests.swift in Sources */,
 				B9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift in Sources */,
 				BBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift in Sources */,
 				BEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift in Sources */,
@@ -1416,6 +1430,8 @@
 				B2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift in Sources */,
 				B3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift in Sources */,
 				B5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift in Sources */,
+				A1C0DE65401B0000000000F1 /* AutoSyncCoordinator.swift in Sources */,
+				A1C0DE65402B0000000000F2 /* DashboardMaintenanceRunner.swift in Sources */,
 				B7A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisView.swift in Sources */,
 				B8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift in Sources */,
 				BAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift in Sources */,
