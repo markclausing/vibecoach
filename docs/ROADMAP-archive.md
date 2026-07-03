@@ -949,6 +949,6 @@ Maintainer goal (2026-07-03, verbatim): *"I want, as a non-programmer, to unders
 * **✅ 66.2 — Progressive disclosure for a non-programmer.** Built the three reading levels (Story / Map / Depth) plus a Flows view and a deep Reference view (testing, CI, agent). Story copy is plain English with short sentences; jargon (Service, ViewModel, @Model, migration, BYOK, singleton…) is explained via a glossary and dotted tap-to-reveal terms on first use. Layer/kind/concept explanations are hand-authored viewer copy; **all module lists stay data-driven** from the JSON (no hardcoded module names).
 * **✅ 66.3 — Pipeline integrity + defensive rendering.** Preserved the exact `<script id="architecture-data" type="application/json">` tag so the §7 python re-injection snippet still targets it; verified the round-trip is idempotent (re-running the snippet is a no-op) and the embedded JSON equals the source file byte-for-byte. `architecture.json` deliberately unchanged (viewer-only). Render JS is defensive: every consumed field is guarded, each view is wrapped in try/catch, and a missing/garbage/partial JSON payload renders a non-blank page instead of throwing (verified in headless Chrome with `{}`, non-JSON, and a stripped-down payload).
 
-**Effort realised:** ~1 day. **Status:** ✅ complete. **Merged via PR #TBD. Effort:** ~1 day.
+**Effort realised:** ~1 day. **Status:** ✅ complete. **Merged via PR #348. Effort:** ~1 day.
 
 ---
