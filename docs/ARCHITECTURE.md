@@ -424,3 +424,25 @@ Story 61.5 hardens the external-request and build surface without changing behav
 - **Pagination backstop.** The two Strava activity-pagination loops (`while true` until an empty page) gain a `maxPages = 50` cap (10 000 activities at `per_page = 200`), so a server that never returns an empty page can't loop forever. Hitting the cap is **logged**, not silent — truncation is visible.
 - **Clamped server-controlled cooldown.** `StravaRateLimitParser` clamps a parsed `Retry-After` (delta-seconds or HTTP date) to a 24 h ceiling, so a malicious/buggy header can't pin the client in a multi-day lockout.
 - **Test bypasses are DEBUG-only.** The `-UITesting` launch-argument bypasses in `ChatView` (API-key gate) and `AddGoalView` (network skip) are wrapped in `#if DEBUG`, matching `AIFitnessCoachApp.makeModelContainer()`, so the code path cannot exist in a shipped binary.
+
+---
+
+## 19. Development workflow — how this project is built (Epic #67)
+
+This section describes the **process** around the code, not the code itself: the human+agent collaboration loop, the CI/release pipeline, the branch/PR conventions, and the documentation system. It is a compact summary — the normative rules live in [CLAUDE.md §7 (documentation)](../CLAUDE.md) and [§8 (git workflow)](../CLAUDE.md), and the pipeline detail in [§11](#11-ci-pipeline-epic-46) above. The `development` object in `architecture.json` mirrors this section structurally so the [architecture viewer](architecture/architecture.html)'s "How it's built" tab can render it visually for a non-programmer audience.
+
+### The collaboration loop
+
+The app is co-developed by a **maintainer** (sets direction, tests on a real device, decides when to merge and release) and an **AI developer agent** (implements each epic — branch, code, tests and docs — under the CLAUDE.md rules). Work flows in a repeating loop: intent → a self-contained epic on the roadmap → the agent implements on a branch (code + tests + docs together, never as a follow-up) → a PR with a summary + test-plan checklist → the CI verdict (the agent fixes red on the same branch) → the maintainer tests on device → **squash & merge** (maintainer only; the agent never merges) → the finished epic moves to the roadmap archive and the branch is deleted. The human/agent split is deliberate: the one thing automation can't do — validating on a physical iPhone — stays with the maintainer.
+
+### The CI/release pipeline
+
+Every push and PR runs through GitHub Actions (see §11 for the full DAG). `iOS CI` is a 4-job DAG: **SwiftLint** ∥ **Unit Tests** run in parallel, **UI Tests** wait on Unit Tests, **Coverage** waits on both. `CodeQL` scans Swift + the workflow YAML on push/PR and weekly. **Two version numbers move on different clocks:** the *build number* (`CFBundleVersion`) bumps on every commit (commit count, Build Phase, never hand-edited); the *marketing version* (semver `CFBundleShortVersionString`) only moves when the maintainer merges the rolling **release-please** Release PR, which cuts the `vX.Y.Z` tag + GitHub Release from the [Conventional-Commit](https://www.conventionalcommits.org/) PR titles accumulated since the last release (`fix:` → patch, `feat:` → minor, `feat!`/`BREAKING CHANGE:` → major).
+
+### Branch & PR agreements
+
+Every change lives on a branch and lands through a PR — **never straight onto `main`** (only pure docs-only updates may skip the branch). The branch prefix encodes the change type: `feature/epic-{nr}-…`, `fix/…`, `hotfix/…`, `security/…`, `ci/…`, `chore/…`, `docs/…`. Rules: **one fix per PR** (no piggybacked refactors), and because we **squash & merge**, the **PR title becomes the single commit on `main`** — so it must be a valid Conventional-Commit subject for release-please to read. A hard-won lesson: with **stacked PRs** (a branch based on another not-yet-merged branch), merge bottom-up and delete each branch right after it merges, otherwise the stack tangles and CI re-runs on stale bases.
+
+### The documentation system
+
+Four hand-written source-of-truth files carry the project state with **no overlap**: `README.md` (product showcase, for a new visitor), `docs/ROADMAP.md` (the live plan, for human or AI agent), `docs/ARCHITECTURE.md` (how + why, for anyone reading the code), and `CLAUDE.md` (the fixed rules, for the agent). Two **derived** artefacts present the architecture in clickable + machine-readable form: `architecture.json` (the single source) is injected into `architecture.html` by a small script (§7), so the two never drift. A **Definition-of-Done checklist** (§7) is walked on every feature PR — ROADMAP status flipped, `architecture.json` + `.html` synced when a building block changes, ARCHITECTURE.md section added for a new concept, README/CLAUDE.md touched only when their trigger fires, i18n entries authored — so a skipped doc is a visible decision, not an oversight. Finished epics move from `ROADMAP.md` to `ROADMAP-archive.md`, keeping the live plan cheap to load.
