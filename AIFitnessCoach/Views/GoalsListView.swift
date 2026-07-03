@@ -540,6 +540,8 @@ struct GoalsListView: View {
         let df  = AppDateFormatters.display("d MMM")
         let cal = Calendar.current
 
+        // swiftlint:disable force_unwrapping
+        // Calendar week arithmetic on a valid targetDate — never nil.
         switch goal.currentPhase {
         // Epic #37 story 37.1c: rendered via Text(nextLabel) -> verbatim. Phase names stay
         // English (matching TrainingPhase.displayName); the date interpolates as %@.
@@ -555,6 +557,7 @@ struct GoalsListView: View {
         case .tapering, nil:
             return nil
         }
+        // swiftlint:enable force_unwrapping
     }
 
     private func requestRecoveryPlan() {

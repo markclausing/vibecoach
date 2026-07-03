@@ -33,10 +33,14 @@ disabled_rules:
   - function_parameter_count                 # 2 — a refactor would need protocol injection, separate topic
   - vertical_parameter_alignment             # 3 — false positives on multiline parameter strings
 
-opt_in_rules: []
-  # `force_unwrapping` (77 violations) deliberately not enabled in this first cleanup —
-  # most are benign idioms (`guard x == nil || x! > now`) where the nil-check
-  # *has* been done but SwiftLint cannot see it. A separate audit PR
-  # (`chore/force-unwrap-audit`) runs later: evaluate per call site and move
-  # either to `if let` or a comment suppression. Until then no
-  # rule-on-with-77-existing-violations — that would block every new PR.
+opt_in_rules:
+  # `force_unwrapping` — enabled (warning) after the Epic 65.6 audit
+  # (`chore/force-unwrap-audit`). Every one of the ~82 existing hits was triaged
+  # and found benign: built-in HealthKit identifiers, hardcoded URL/TimeZone
+  # literals, fixed-offset Calendar date arithmetic, and nil-checked idioms
+  # SwiftLint cannot see (`guard x == nil || x!`, `!isEmpty` then `.first!`,
+  # filtered arrays). No genuinely-unsafe unwrap was found — consistent with the
+  # July 2026 review's "zero try!/as!" verdict. Each benign site now carries a
+  # scoped `swiftlint:disable[:next] force_unwrapping` + reason, so the rule now
+  # keeps *new* force-unwraps out unless they are explicitly justified in place.
+  - force_unwrapping

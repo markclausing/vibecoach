@@ -102,7 +102,8 @@ extension CoachPromptAssembler {
                     if emptyDaysStreak.count == 1 {
                         lines.append("- Day \(emptyDaysStreak[0]): Rest")
                     } else {
-                        lines.append("- Day \(emptyDaysStreak.first!) to \(emptyDaysStreak.last!): Rest")
+                        // swiftlint:disable:next force_unwrapping
+                        lines.append("- Day \(emptyDaysStreak.first!) to \(emptyDaysStreak.last!): Rest") // else-branch: count >= 2, so first/last are non-nil
                     }
                     emptyDaysStreak.removeAll()
                 }
@@ -129,7 +130,8 @@ extension CoachPromptAssembler {
             if emptyDaysStreak.count == 1 {
                 lines.append("- Day \(emptyDaysStreak[0]): Rest")
             } else {
-                lines.append("- Day \(emptyDaysStreak.first!) to \(emptyDaysStreak.last!): Rest")
+                // swiftlint:disable:next force_unwrapping
+                lines.append("- Day \(emptyDaysStreak.first!) to \(emptyDaysStreak.last!): Rest") // else-branch: count >= 2, so first/last are non-nil
             }
         }
 

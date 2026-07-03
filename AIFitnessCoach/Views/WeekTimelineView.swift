@@ -30,7 +30,8 @@ struct WeekTimelineView: View {
     private var currentWeekDays: [Date] {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
-        return (0..<7).map { cal.date(byAdding: .day, value: $0, to: today)! }
+        // swiftlint:disable:next force_unwrapping
+        return (0..<7).map { cal.date(byAdding: .day, value: $0, to: today)! } // day arithmetic on a valid startOfDay date, never nil
     }
 
     private func planWorkout(for date: Date) -> SuggestedWorkout? {

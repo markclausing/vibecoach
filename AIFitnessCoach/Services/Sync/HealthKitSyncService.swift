@@ -23,8 +23,10 @@ actor HealthKitSyncService {
     @MainActor
     func syncHistoricalWorkouts(to context: ModelContext) async throws -> Int {
         let workoutType = HKObjectType.workoutType()
-        let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)!
-        let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate)!
+        // swiftlint:disable:next force_unwrapping
+        let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate)! // built-in HK identifier, never nil
+        // swiftlint:disable:next force_unwrapping
+        let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate)! // built-in HK identifier, never nil
 
         // Epic 33 Story 33.1b: derive maxHR via the Tanaka formula + dateOfBirth.
         // Once per sync (not per workout) — the birth date doesn't change anyway.

@@ -152,6 +152,8 @@ extension SettingsView {
             let calendar = Calendar.current
             let now = Date()
 
+            // swiftlint:disable force_unwrapping
+            // Debug-only dummy-data generator: Calendar day arithmetic on `now`, never nil.
             // 1. Add a dummy FitnessGoal (Marathon)
             let targetDate = calendar.date(byAdding: .day, value: 60, to: now)! // In 2 months
             let createdDate = calendar.date(byAdding: .day, value: -30, to: now)! // Started 1 month ago
@@ -174,6 +176,7 @@ extension SettingsView {
                 calendar.date(byAdding: .day, value: -7, to: now)!,
                 calendar.date(byAdding: .day, value: -2, to: now)!
             ]
+            // swiftlint:enable force_unwrapping
 
             let trimps = [150.0, 210.0, 180.0, 320.0, 140.0]
             let durations = [2700, 3600, 3200, 5400, 2400]

@@ -36,7 +36,8 @@ enum SymptomContextFormatter {
                                   "lesión", "lesion", "dolor", "molestia"]
         let injuryKeywords = bodyPartKeywords + generalInjuryWords
         let activeInjuryPrefs = preferences.filter { pref in
-            guard pref.expirationDate == nil || pref.expirationDate! > now else { return false }
+            // swiftlint:disable:next force_unwrapping
+            guard pref.expirationDate == nil || pref.expirationDate! > now else { return false } // `||` short-circuits: `!` only reached when expirationDate != nil
             let text = pref.preferenceText.lowercased()
             return injuryKeywords.contains(where: { text.contains($0) })
         }

@@ -191,7 +191,8 @@ final class HistoricalWeatherService {
         let startStr = dateFormatter.string(from: startDate)
         let endStr = dateFormatter.string(from: endDate)
 
-        var components = URLComponents(string: base)!
+        // swiftlint:disable:next force_unwrapping
+        var components = URLComponents(string: base)! // `base` is one of two hardcoded valid URL literals, never nil
         var items: [URLQueryItem] = [
             URLQueryItem(name: "latitude", value: String(format: "%.2f", latitude)),
             URLQueryItem(name: "longitude", value: String(format: "%.2f", longitude)),
@@ -282,7 +283,8 @@ final class HistoricalWeatherService {
         // start 9:43 → bucket 9:00 counts. A workout that falls within one hour
         // (start 9:43, end 9:55) thus always picks up at least that one bucket.
         var utcCalendar = Calendar(identifier: .gregorian)
-        utcCalendar.timeZone = TimeZone(identifier: "UTC")!
+        // swiftlint:disable:next force_unwrapping
+        utcCalendar.timeZone = TimeZone(identifier: "UTC")! // "UTC" is a valid built-in tz identifier, never nil
         let startBucket = utcCalendar.dateInterval(of: .hour, for: start)?.start ?? start
 
         var tempValues: [Double] = []

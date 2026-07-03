@@ -23,8 +23,11 @@ struct TrendWidgetView: View {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
         let values = (0..<14).map { offset -> Double in
+            // swiftlint:disable force_unwrapping
+            // Calendar day arithmetic on a valid startOfDay date — never nil.
             let day = cal.date(byAdding: .day, value: -(13 - offset), to: today)!
             let nextDay = cal.date(byAdding: .day, value: 1, to: day)!
+            // swiftlint:enable force_unwrapping
             return activities
                 .filter { $0.startDate >= day && $0.startDate < nextDay }
                 .compactMap { $0.trimp }
@@ -39,7 +42,8 @@ struct TrendWidgetView: View {
 
     private var vibeDelta: Int {
         guard vibeHistory.count >= 2 else { return 0 }
-        return currentVibe - vibeHistory.first!
+        // swiftlint:disable:next force_unwrapping
+        return currentVibe - vibeHistory.first! // guarded by count >= 2 above → non-nil
     }
 
     private var trimpDelta: Int {

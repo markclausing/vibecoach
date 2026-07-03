@@ -116,7 +116,8 @@ struct DashboardView: View {
     private var activeInjuryAreas: [BodyArea] {
         let now = Date()
         let validPrefs = activePreferences.filter {
-            $0.expirationDate == nil || $0.expirationDate! > now
+            // swiftlint:disable:next force_unwrapping
+            $0.expirationDate == nil || $0.expirationDate! > now // `||` short-circuits: `!` only reached when expirationDate != nil
         }
         return BodyArea.allCases.filter { area in
             validPrefs.contains { pref in
@@ -844,7 +845,8 @@ struct DashboardView: View {
 
         // Upsert: overwrite an existing record for today or create a new one
         let todayStart   = Calendar.current.startOfDay(for: Date())
-        let tomorrowStart = Calendar.current.date(byAdding: .day, value: 1, to: todayStart)!
+        // swiftlint:disable:next force_unwrapping
+        let tomorrowStart = Calendar.current.date(byAdding: .day, value: 1, to: todayStart)! // +1 day on a valid startOfDay date, never nil
         let descriptor   = FetchDescriptor<DailyReadiness>(
             predicate: #Predicate { $0.date >= todayStart && $0.date < tomorrowStart }
         )
