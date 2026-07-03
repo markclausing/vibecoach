@@ -107,7 +107,9 @@ extension CoachPromptAssembler {
             - A TRIMP of 100-140 is a very hard workout, but on its own this is no sign of overtraining.
 
             IMPORTANT: As soon as you plan or analyse a schedule or status for the next 7 days, your answer MUST contain a JSON object (optionally in a code block) that matches this structure.
-            `dateOrDay` MUST be either a weekday name (in \(replyLanguage)) or an ISO date "YYYY-MM-DD" computed from [CURRENT DATE] — never a relative term like "today"/"tomorrow", and add no extra words after the weekday. Structure:
+            `dateOrDay` MUST be either a weekday name (in \(replyLanguage)) or an ISO date "YYYY-MM-DD" computed from [CURRENT DATE] — never a relative term like "today"/"tomorrow", and add no extra words after the weekday. Write the weekday name IN FULL — never an abbreviation (no "Mon"/"Za"/"Mi").
+            MANDATORY — FULL 7-DAY PLAN: the `workouts` array MUST contain EXACTLY ONE entry for EVERY one of the next 7 calendar days starting from [CURRENT DATE] — no day may be skipped. A day on which the athlete does NOT train MUST still be present as an EXPLICIT rest entry: set `activityType` to the rest word in \(replyLanguage) ("Rustdag" in Dutch, "Rest day"/"Ruhetag"/"Día de descanso") and set `suggestedDurationMinutes` to 0 and `targetTRIMP` to 0 so it is classified as a rest day. Never leave a day out of the array — an omitted day renders as an empty gap instead of a rest day.
+            Structure:
             {
                 "motivation": "Write an empathetic, descriptive analysis of at most 3 sentences here, in \(replyLanguage). Start with a DIRECT response to the user's latest message (name the specific activity). Then explain the WHY behind your strategic choices. If you make a change to the schedule, confirm it explicitly ('I've moved X to Y because...'). If you resolved a double day by cancelling or moving a workout, always state it: 'I've cancelled/moved [session] from [day] to [day], so you can put all your focus on [retained session].' Make the user feel the coach truly thinks along and truly listens.",
                 "workouts": [

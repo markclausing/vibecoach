@@ -159,6 +159,35 @@ final class CoachPromptAssemblerTests: XCTestCase {
         XCTAssertTrue(instruction.contains("Always reply to the user in Portuguese"))
     }
 
+    /// fix/coach-plan-full-week: the plan JSON contract must require a full 7-day plan with
+    /// explicit rest entries, otherwise skipped days render as empty gaps ("—") in the week
+    /// strip instead of a rest day.
+    func testSystemInstruction_RequiresFull7DayPlanWithExplicitRestDays() {
+        let instruction = CoachPromptAssembler.systemInstruction(replyLanguage: "Dutch")
+        XCTAssertTrue(instruction.contains("MANDATORY — FULL 7-DAY PLAN"),
+                      "systemInstruction must carry the full-week rule.")
+        XCTAssertTrue(instruction.contains("EXACTLY ONE entry for EVERY one of the next 7 calendar days"),
+                      "The rule must require exactly one entry per day.")
+        XCTAssertTrue(instruction.contains("EXPLICIT rest entry"),
+                      "Non-training days must be explicit rest entries.")
+        // The rest phrasing must be classifiable by SuggestedWorkout.isRestDay in every language.
+        for restWord in ["Rustdag", "Rest day", "Ruhetag", "Día de descanso"] {
+            XCTAssertTrue(instruction.contains(restWord),
+                          "systemInstruction must name the rest word \(restWord).")
+            let sample = SuggestedWorkout(dateOrDay: "Maandag", activityType: restWord,
+                                          suggestedDurationMinutes: 30, targetTRIMP: 30, description: "x")
+            XCTAssertTrue(sample.isRestDay, "\(restWord) must classify as a rest day.")
+        }
+    }
+
+    /// The coach must write full weekday names — an abbreviation instruction guards the round trip
+    /// with SuggestedWorkout.resolvedDate (which now also parses abbreviations defensively).
+    func testSystemInstruction_ForbidsWeekdayAbbreviations() {
+        let instruction = CoachPromptAssembler.systemInstruction(replyLanguage: "Dutch")
+        XCTAssertTrue(instruction.contains("Write the weekday name IN FULL"),
+                      "systemInstruction must forbid weekday abbreviations.")
+    }
+
     /// The emitter side: markers the context prefix produces for injury/periodization must
     /// also live in the systemInstruction, so the coach's section lookup stays aligned.
     func testEmitterMarkers_AlignWithSystemInstruction() {
