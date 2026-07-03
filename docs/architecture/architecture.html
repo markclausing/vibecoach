@@ -500,6 +500,91 @@
   @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
   }
+
+  /* ===== "How it's built" — dev-process visualisation (Epic #67) ===== */
+  .dev-block { margin-top: 6px; }
+  .dev-intro { color: var(--text-muted); font-size: 14.5px; margin: 2px 0 12px; max-width: 62ch; }
+  .doc-subhead { font-weight: 700; font-size: 12.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin: 18px 0 9px; }
+
+  /* actor colours: maintainer follows the theme, agent a fixed accent — so the human/agent split reads without relying on colour alone (icons + labels back it up) */
+  .actor-maintainer { --actor: var(--primary); --actor-soft: var(--primary-soft); }
+  .actor-agent { --actor: #7A5AF0; --actor-soft: rgba(122,90,240,0.14); }
+  [data-mode="dark"] .actor-agent { --actor: #B9A6FF; --actor-soft: rgba(185,166,255,0.18); }
+
+  .dev-actors { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 14px; }
+  .dev-actor { display: flex; align-items: flex-start; gap: 9px; background: var(--bg-elev); border: 1px solid var(--border); border-left: 3px solid var(--actor); border-radius: var(--radius-sm); padding: 11px 13px; }
+  .dev-actor-ico { font-size: 20px; line-height: 1.15; flex: none; }
+  .dev-actor-name { font-weight: 700; font-size: 14.5px; }
+  .dev-actor-role { color: var(--text-muted); font-size: 13.5px; margin-top: 2px; }
+
+  .loop { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .loop-step { display: flex; gap: 11px; align-items: flex-start; background: var(--bg-elev); border: 1px solid var(--border); border-left: 3px solid var(--actor); border-radius: var(--radius-sm); padding: 11px 13px; }
+  .loop-num { flex: none; width: 27px; height: 27px; border-radius: 50%; background: var(--actor-soft); color: var(--actor); font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+  .loop-body { min-width: 0; }
+  .loop-actor-tag { display: inline-block; font-size: 11px; font-weight: 700; color: var(--actor); text-transform: uppercase; letter-spacing: 0.03em; }
+  .loop-title { font-weight: 700; font-size: 15px; margin-top: 1px; }
+  .loop-detail { color: var(--text-muted); font-size: 14px; margin-top: 3px; }
+  .loop-repeat { text-align: center; color: var(--text-faint); font-size: 13px; font-weight: 700; margin: 12px 0 2px; }
+
+  /* CI dependency graph (inline SVG, styled via CSS custom props) */
+  .dev-dag-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 2px 0 6px; }
+  .dev-dag { display: block; }
+  .dag-node-box { fill: var(--bg-elev); stroke: var(--primary-line); stroke-width: 1.5; }
+  .dag-node-lvl0 .dag-node-box { fill: var(--primary-soft); }
+  .dag-node-label { fill: var(--text); font-size: 12.5px; font-weight: 700; font-family: -apple-system, system-ui, sans-serif; }
+  .dag-edge { stroke: var(--primary-line); stroke-width: 1.7; fill: none; }
+  .dag-arrow { fill: var(--primary-line); }
+  .dag-stage-label { fill: var(--text-faint); font-size: 10px; font-weight: 700; letter-spacing: 0.05em; font-family: -apple-system, system-ui, sans-serif; text-transform: uppercase; }
+
+  /* horizontal step flow (release, roadmap) */
+  .dev-flow-row { display: flex; align-items: stretch; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  .dev-flow-card { flex: 1 0 158px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px 12px; }
+  .dfc-title { font-weight: 700; font-size: 13.5px; }
+  .dfc-detail { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
+  .dev-flow-arrow { flex: none; align-self: center; color: var(--text-faint); font-size: 18px; }
+
+  /* branching legend + rules + stacked-PR inset */
+  .branch-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .branch-card { display: flex; align-items: flex-start; gap: 10px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; }
+  .branch-ico { font-size: 18px; flex: none; }
+  .branch-main { min-width: 0; }
+  .branch-pattern { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--primary); font-weight: 600; word-break: break-all; }
+  .branch-use { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
+  .stack-inset { background: var(--primary-soft); border: 1px solid var(--primary-line); border-radius: var(--radius); padding: 14px; margin-top: 12px; }
+  .stack-inset h4 { font-size: 15px; font-weight: 700; }
+  .stack-inset p.body { color: var(--text-muted); font-size: 14px; margin-top: 6px; }
+  .stack-bars { display: flex; flex-direction: column-reverse; gap: 6px; margin: 11px 0 2px; }
+  .stack-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--bg-elev); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: 8px 11px; }
+  .stack-bar .sb-label { font-weight: 700; font-size: 13px; }
+  .stack-bar .sb-note { color: var(--text-faint); font-size: 12px; }
+  .stack-updir { text-align: center; color: var(--primary); font-weight: 700; font-size: 13px; margin-top: 8px; }
+
+  /* documentation file cards + sync note + DoD checklist */
+  .doc-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .doc-card { display: flex; align-items: flex-start; gap: 10px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px 12px; }
+  .doc-ico { font-size: 17px; flex: none; width: 24px; text-align: center; }
+  .doc-file { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--text); font-weight: 700; word-break: break-all; }
+  .doc-scope { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
+  .doc-reader { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 700; color: var(--primary); background: var(--primary-soft); padding: 2px 9px; border-radius: 999px; }
+  .doc-sync { text-align: center; color: var(--text-muted); font-size: 13.5px; margin: 12px 0; line-height: 1.5; }
+  .doc-sync b { color: var(--primary); }
+  .dev-details { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-top: 12px; overflow: hidden; }
+  .dev-details > summary { cursor: pointer; padding: 12px 14px; font-weight: 700; font-size: 14.5px; list-style: none; display: flex; justify-content: space-between; align-items: center; min-height: 44px; }
+  .dev-details > summary::-webkit-details-marker { display: none; }
+  .dev-details > summary::after { content: "+"; color: var(--text-faint); font-size: 20px; font-weight: 400; }
+  .dev-details[open] > summary::after { content: "\2013"; }
+  .dev-details .dd-body { padding: 0 14px 12px; }
+  .dod-list { list-style: none; margin: 0; padding: 0; }
+  .dod-list li { position: relative; padding: 8px 0 8px 26px; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); }
+  .dod-list li:first-child { border-top: none; }
+  .dod-list li::before { content: "\2713"; position: absolute; left: 4px; top: 8px; color: var(--primary); font-weight: 800; }
+
+  @media (min-width: 640px) {
+    .dev-actors { grid-template-columns: 1fr 1fr; }
+    .loop { grid-template-columns: 1fr 1fr; }
+    .branch-grid { grid-template-columns: 1fr 1fr; }
+    .doc-grid { grid-template-columns: 1fr 1fr; }
+  }
 </style>
 </head>
 <body data-theme="moss" data-mode="light">
@@ -523,7 +608,7 @@
       <button class="nav-tab active" data-view="story" type="button"><span class="nav-emoji">📖</span> Story</button>
       <button class="nav-tab" data-view="map" type="button"><span class="nav-emoji">🗺️</span> Map</button>
       <button class="nav-tab" data-view="flows" type="button"><span class="nav-emoji">🔀</span> Flows</button>
-      <button class="nav-tab" data-view="reference" type="button"><span class="nav-emoji">📚</span> Reference</button>
+      <button class="nav-tab" data-view="howbuilt" type="button"><span class="nav-emoji">🛠️</span> How it's built</button>
     </nav>
   </div>
 </header>
@@ -535,8 +620,8 @@
   <section class="view" id="view-map"></section>
   <!-- Flows -->
   <section class="view" id="view-flows"></section>
-  <!-- Reference (deep) -->
-  <section class="view" id="view-reference"></section>
+  <!-- How it's built (dev process + deep reference) -->
+  <section class="view" id="view-howbuilt"></section>
 </main>
 
 <footer class="foot">
@@ -575,7 +660,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 36,
+    "docRevision": 37,
     "lastUpdated": "2026-07-03",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
@@ -3237,6 +3322,125 @@
       }
     ]
   },
+  "development": {
+    "summary": "How the app is actually built: a maintainer and an AI developer agent working in a tight loop, an automated pipeline that guards every change, clear branching agreements, and a living documentation system that stays in sync with the code.",
+    "docRef": "CLAUDE.md §7 + §8 · ARCHITECTURE.md#19",
+    "collaboration": {
+      "title": "The collaboration loop",
+      "intro": "One person — the maintainer — sets direction and tests on a real phone; an AI agent does the implementation, tests and docs. Work flows around this loop and repeats every epic.",
+      "loopNote": "↻ repeats every epic",
+      "actors": [
+        { "id": "maintainer", "label": "Maintainer", "icon": "🧑", "role": "Sets direction, tests on a real device, decides when to merge and release." },
+        { "id": "agent", "label": "AI agent", "icon": "🤖", "role": "Implements the epic — branch, code, tests and docs — following the rules in CLAUDE.md." }
+      ],
+      "steps": [
+        { "n": 1, "actor": "maintainer", "title": "Intent", "detail": "The maintainer describes what to build next, in plain language." },
+        { "n": 2, "actor": "maintainer", "title": "Epic on the roadmap", "detail": "It becomes a self-contained epic with enough context for the agent to run without hand-holding." },
+        { "n": 3, "actor": "agent", "title": "Implement", "detail": "The agent opens a branch and writes the code, tests and documentation together — docs are part of the change, not a follow-up." },
+        { "n": 4, "actor": "agent", "title": "Open a PR", "detail": "Right after the first push, the agent opens a pull request with a summary and a test-plan checklist." },
+        { "n": 5, "actor": "agent", "title": "CI verdict", "detail": "The automated checks run. If anything is red, the agent fixes it on the same branch until it goes green." },
+        { "n": 6, "actor": "maintainer", "title": "Test on device", "detail": "The maintainer pulls the branch and tries the feature on a real iPhone — the one thing automation can't do." },
+        { "n": 7, "actor": "maintainer", "title": "Squash & merge", "detail": "Happy? The maintainer squashes the branch into one tidy commit on main. The agent never merges." },
+        { "n": 8, "actor": "agent", "title": "Archive & clean up", "detail": "The finished epic moves to the roadmap archive and the branch is deleted — ready for the next loop." }
+      ]
+    },
+    "ci": {
+      "title": "The CI pipeline",
+      "intro": "Every push and pull request runs through automated gates before anything can reach the app. Some jobs run at the same time; others wait for what they depend on.",
+      "platform": "GitHub Actions",
+      "docRef": "ARCHITECTURE.md#11",
+      "workflows": [
+        { "id": "ios-ci", "name": "iOS CI", "blurb": "Lint, tests and a coverage report on every push and PR." },
+        { "id": "codeql", "name": "CodeQL security scan", "blurb": "Scans the Swift code and the workflow files for security issues — on every push/PR and once a week." },
+        { "id": "release-please", "name": "release-please", "blurb": "Keeps a standing Release PR up to date; merging it cuts a new version." }
+      ],
+      "jobs": [
+        { "id": "lint", "name": "SwiftLint", "workflow": "ios-ci", "needs": [], "blocks": "Style + rule check. One new violation breaks the build." },
+        { "id": "unit-tests", "name": "Unit Tests", "workflow": "ios-ci", "needs": [], "blocks": "Runs the fast pure-logic test suite." },
+        { "id": "ui-tests", "name": "UI Tests", "workflow": "ios-ci", "needs": ["unit-tests"], "blocks": "Drives the app in a simulator — only after unit tests pass." },
+        { "id": "coverage", "name": "Coverage Report", "workflow": "ios-ci", "needs": ["unit-tests", "ui-tests"], "blocks": "Merges both test runs into one coverage report." },
+        { "id": "codeql-swift", "name": "CodeQL · Swift", "workflow": "codeql", "needs": [], "blocks": "Builds and scans the app code for security issues." },
+        { "id": "codeql-actions", "name": "CodeQL · Actions", "workflow": "codeql", "needs": [], "blocks": "Scans the workflow files themselves — 10× cheaper runner." }
+      ],
+      "release": {
+        "title": "How a release is cut",
+        "intro": "Two version numbers move on different clocks.",
+        "buildNumber": { "label": "Build number", "detail": "Bumps on every single commit (a simple commit count). Never touched by hand." },
+        "marketingVersion": { "label": "Public version", "detail": "Like 2.1.0 — only moves when the maintainer merges the standing Release PR." },
+        "steps": [
+          { "title": "Every merge feeds the Release PR", "detail": "release-please reads the commit titles and keeps a rolling \"release X.Y.Z\" PR + changelog up to date." },
+          { "title": "Merge = tag vX.Y.Z", "detail": "When the maintainer merges that PR, a version tag and a GitHub Release are created." },
+          { "title": "Build stamps the version", "detail": "From then on, the app build stamps that new version number." }
+        ],
+        "bumpRules": [
+          { "type": "fix:", "bump": "patch", "example": "2.1.0 → 2.1.1" },
+          { "type": "feat:", "bump": "minor", "example": "2.1.0 → 2.2.0" },
+          { "type": "feat! / BREAKING CHANGE:", "bump": "major", "example": "2.1.0 → 3.0.0" },
+          { "type": "docs: · chore: · ci:", "bump": "none", "example": "no version change" }
+        ]
+      }
+    },
+    "branching": {
+      "title": "Branching & PR agreements",
+      "intro": "Every change lives on its own branch and lands through a pull request — never straight onto main. The branch name says what kind of change it is.",
+      "types": [
+        { "type": "feature", "pattern": "feature/epic-{nr}-{desc}", "use": "New epics and sprints", "icon": "✨" },
+        { "type": "fix", "pattern": "fix/{desc}", "use": "Regular bugfixes", "icon": "🐛" },
+        { "type": "hotfix", "pattern": "hotfix/{desc}", "use": "Production-critical, fast-track", "icon": "🚑" },
+        { "type": "security", "pattern": "security/{alert-id}", "use": "Security fixes", "icon": "🔒" },
+        { "type": "ci", "pattern": "ci/{desc}", "use": "Pipeline / workflow changes", "icon": "⚙️" },
+        { "type": "chore", "pattern": "chore/{desc}", "use": "Cleanup & refactors, no behaviour change", "icon": "🧹" },
+        { "type": "docs", "pattern": "docs/{desc}", "use": "Docs-only — may go straight to main", "icon": "📝" }
+      ],
+      "rules": [
+        { "title": "One fix per PR", "detail": "No piggybacked refactors or \"while I was at it\" changes — each PR does one thing, with its source linked." },
+        { "title": "The PR title is the commit", "detail": "Because we squash & merge, the PR title becomes the single commit on main — so it must follow Conventional Commits for the release tool to read it." },
+        { "title": "Docs-only can skip the dance", "detail": "A pure documentation update may go straight to main; everything else goes through a branch + PR." },
+        { "title": "The agent opens PRs, the maintainer merges", "detail": "The agent never merges to main — that decision stays with the maintainer." }
+      ],
+      "stackedPRs": {
+        "title": "Stacked PRs — a real lesson here",
+        "detail": "When one branch builds on another not-yet-merged branch, merge from the bottom up and delete each branch right after it merges — otherwise the stack tangles and CI re-runs on stale bases.",
+        "stack": [
+          { "label": "PR A → main", "note": "merge first" },
+          { "label": "PR B → A", "note": "then this" },
+          { "label": "PR C → B", "note": "last" }
+        ]
+      }
+    },
+    "documentation": {
+      "title": "The documentation system",
+      "intro": "Four hand-written files hold the project's truth, each for a different reader. Two more files are generated from them — including this viewer. A checklist keeps them all in sync on every change.",
+      "sources": [
+        { "id": "readme", "file": "README.md", "scope": "Product showcase — what the app is and how to build it.", "reader": "New visitor", "icon": "👋" },
+        { "id": "roadmap", "file": "docs/ROADMAP.md", "scope": "The live plan — what's open and being worked on right now.", "reader": "Human or AI agent", "icon": "🗺️" },
+        { "id": "architecture", "file": "docs/ARCHITECTURE.md", "scope": "How each part works, and why it was built that way.", "reader": "Anyone reading the code", "icon": "🏛️" },
+        { "id": "claude", "file": "CLAUDE.md", "scope": "The fixed rules for working on this codebase.", "reader": "The AI agent", "icon": "🤖" }
+      ],
+      "derived": [
+        { "id": "arch-json", "file": "docs/architecture/architecture.json", "scope": "The same architecture, machine-readable for AI agents.", "reader": "AI agents", "icon": "{}" },
+        { "id": "arch-html", "file": "docs/architecture/architecture.html", "scope": "This interactive viewer, for humans.", "reader": "Humans", "icon": "🖥️" }
+      ],
+      "syncNote": "The JSON is the single source; a small script injects it into this HTML page, so the two never drift.",
+      "dodChecklist": [
+        "ROADMAP status flipped to ✅ and the finished epic moved to the archive.",
+        "architecture.json + .html updated in the same PR when a building block changes.",
+        "ARCHITECTURE.md gains a section when a new architectural concept is introduced.",
+        "README.md touched only when a showcase feature or the tech summary changes.",
+        "CLAUDE.md touched only when a new permanent rule is established.",
+        "Every new user-facing text gets a translation entry (NL / EN / DE / ES)."
+      ],
+      "roadmapFlow": {
+        "title": "Roadmap → archive",
+        "intro": "The live roadmap stays lean; finished work moves out of the way.",
+        "stages": [
+          { "status": "⏳", "label": "Planned", "detail": "An idea, with no commitment yet." },
+          { "status": "🔄", "label": "Active", "detail": "A branch is open and in review." },
+          { "status": "✅", "label": "Done", "detail": "Merged on main — then moved to the archive so the live plan stays short." }
+        ]
+      }
+    }
+  },
   "tags": {
     "engine-a": "HKObserverQuery-driven proactive notifications",
     "engine-b": "BGAppRefreshTask-driven inaction trigger",
@@ -3333,7 +3537,16 @@
     'oauth': 'OAuth — the secure "log in with Strava" handshake that never shares your password with the app.',
     'layer': 'Layer — one horizontal slice of the app, from the screens at the top down to storage at the bottom.',
     'subsystem': 'Subsystem — a feature that cuts across several layers to get one job done end to end.',
-    'flow': 'Flow — a step-by-step chain showing what happens after something triggers it.'
+    'flow': 'Flow — a step-by-step chain showing what happens after something triggers it.',
+    'pr': 'PR (pull request) — a proposed set of changes, opened for review before it becomes part of the app.',
+    'squash': 'Squash & merge — combining all the small commits on a branch into one tidy commit on the main line.',
+    'dag': 'DAG — steps wired so some run at the same time and others must wait for what they depend on.',
+    'conventional-commits': 'Conventional Commits — a small format for commit titles (feat:, fix:, docs:…) that a tool reads to decide the next version.',
+    'semver': 'Semver — version numbers like 2.1.0: major.minor.patch, each part signalling how big the change is.',
+    'ci': 'CI (continuous integration) — automated checks that run on every change to catch problems early.',
+    'main': 'main — the primary branch that always holds the shippable version of the app.',
+    'release-please': 'release-please — a tool that watches commit titles and keeps a ready-to-merge “release” PR up to date.',
+    'branch': 'Branch — a private copy of the code where a change is built, before it merges back.'
   };
   // extra kinds we may meet, default explanation
   function termKey(s) { return String(s || '').toLowerCase(); }
@@ -3797,18 +4010,230 @@
     return out;
   }
 
-  function renderReference() {
-    var root = document.getElementById('view-reference');
-    root.innerHTML = refTesting() + refCI() + refAgent() ||
-      '<p class="empty-note">No reference material recorded.</p>';
-    if (!root.innerHTML.trim()) root.innerHTML = '<p class="empty-note">No reference material recorded.</p>';
+  // ============================================================
+  // "HOW IT'S BUILT" — dev-process visualisation (Epic #67)
+  // Data-driven from DATA.development. Every block guards its own
+  // input so a missing/older JSON never blanks the view.
+  // ============================================================
+  var dagUid = 0;
+
+  function devHead(title, subHtml) {
+    return '<div class="section-head"><div class="section-title">' + esc(title) + '</div>' +
+      (subHtml ? '<p class="section-sub">' + subHtml + '</p>' : '') + '</div>';
+  }
+
+  // jargon chips — same term-popover pattern as the Story glossary
+  function devJargonStrip() {
+    var keys = [['PR', 'pr'], ['squash & merge', 'squash'], ['CI', 'ci'], ['DAG', 'dag'],
+      ['Conventional Commits', 'conventional-commits'], ['semver', 'semver'],
+      ['release-please', 'release-please'], ['main', 'main']];
+    return '<div class="chip-list" style="margin:2px 0 6px">' +
+      keys.map(function (k) { return term(k[0], k[1]); }).join('') + '</div>';
+  }
+
+  // Block 1 — the collaboration loop (colour-coded by actor)
+  function devCollaboration(c) {
+    if (!c || typeof c !== 'object') return '';
+    var actorById = {}; (c.actors || []).forEach(function (a) { if (a && a.id) actorById[a.id] = a; });
+    var actors = (c.actors || []).map(function (a) {
+      return '<div class="dev-actor actor-' + esc(a.id) + '"><span class="dev-actor-ico">' + esc(a.icon || '') + '</span>' +
+        '<div><div class="dev-actor-name">' + esc(a.label) + '</div><div class="dev-actor-role">' + esc(a.role || '') + '</div></div></div>';
+    }).join('');
+    var steps = (c.steps || []).map(function (s) {
+      var a = actorById[s.actor];
+      var tag = a ? (esc(a.icon || '') + ' ' + esc(a.label)) : esc(s.actor || '');
+      return '<div class="loop-step actor-' + esc(s.actor) + '"><div class="loop-num">' + esc(s.n) + '</div>' +
+        '<div class="loop-body"><span class="loop-actor-tag">' + tag + '</span>' +
+        '<div class="loop-title">' + esc(s.title) + '</div>' +
+        '<div class="loop-detail">' + esc(s.detail || '') + '</div></div></div>';
+    }).join('');
+    return '<div class="dev-block">' + devHead(c.title || 'The collaboration loop', c.intro ? esc(c.intro) : '') +
+      (actors ? '<div class="dev-actors">' + actors + '</div>' : '') +
+      '<div class="loop">' + steps + '</div>' +
+      (c.loopNote ? '<div class="loop-repeat">' + esc(c.loopNote) + '</div>' : '') + '</div>';
+  }
+
+  // inline-SVG dependency graph: level = longest path from a root; columns = levels
+  function ciDag(jobs) {
+    if (!jobs.length) return '';
+    var uid = 'dag' + (++dagUid);
+    var jById = {}; jobs.forEach(function (j) { jById[j.id] = j; });
+    var lvl = {};
+    function level(id, seen) {
+      if (lvl[id] != null) return lvl[id];
+      seen = seen || {};
+      if (seen[id]) return 0;            // cycle guard (defensive)
+      seen[id] = 1;
+      var j = jById[id];
+      var needs = ((j && j.needs) || []).filter(function (n) { return jById[n]; });
+      var v = needs.length ? Math.max.apply(null, needs.map(function (n) { return level(n, seen); })) + 1 : 0;
+      lvl[id] = v; return v;
+    }
+    jobs.forEach(function (j) { level(j.id); });
+    var cols = {};
+    jobs.forEach(function (j) { (cols[lvl[j.id]] = cols[lvl[j.id]] || []).push(j); });
+    var levels = Object.keys(cols).map(Number).sort(function (a, b) { return a - b; });
+    var NW = 150, NH = 46, COLGAP = 58, ROWGAP = 16, PADX = 6, PADY = 20;
+    var maxRows = Math.max.apply(null, levels.map(function (L) { return cols[L].length; }));
+    var W = PADX * 2 + levels.length * NW + (levels.length - 1) * COLGAP;
+    var H = PADY + maxRows * (NH + ROWGAP);
+    var pos = {};
+    levels.forEach(function (L, ci) {
+      var arr = cols[L];
+      var colX = PADX + ci * (NW + COLGAP);
+      var totalH = arr.length * (NH + ROWGAP) - ROWGAP;
+      var startY = PADY + (maxRows * (NH + ROWGAP) - ROWGAP - totalH) / 2;
+      arr.forEach(function (j, ri) { pos[j.id] = { x: colX, y: startY + ri * (NH + ROWGAP), lvl: L }; });
+    });
+    var edges = '';
+    jobs.forEach(function (j) {
+      (j.needs || []).forEach(function (n) {
+        if (!pos[n]) return;
+        var p = pos[n], c = pos[j.id];
+        var x1 = p.x + NW, y1 = p.y + NH / 2, x2 = c.x, y2 = c.y + NH / 2, mx = (x1 + x2) / 2;
+        edges += '<path class="dag-edge" d="M' + x1 + ' ' + y1 + ' C ' + mx + ' ' + y1 + ' ' + mx + ' ' + y2 + ' ' + x2 + ' ' + y2 + '" marker-end="url(#' + uid + ')"/>';
+      });
+    });
+    var nodes = jobs.map(function (j) {
+      var p = pos[j.id];
+      return '<g class="dag-node dag-node-lvl' + p.lvl + '">' +
+        '<rect class="dag-node-box" x="' + p.x + '" y="' + p.y + '" width="' + NW + '" height="' + NH + '" rx="10"/>' +
+        '<text class="dag-node-label" x="' + (p.x + NW / 2) + '" y="' + (p.y + NH / 2 + 4) + '" text-anchor="middle">' + esc(j.name) + '</text></g>';
+    }).join('');
+    var stageLabels = levels.map(function (L, ci) {
+      var colX = PADX + ci * (NW + COLGAP) + NW / 2;
+      return '<text class="dag-stage-label" x="' + colX + '" y="11" text-anchor="middle">' + (L === 0 ? 'runs first' : 'then') + '</text>';
+    }).join('');
+    return '<div class="dev-dag-wrap"><svg class="dev-dag" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="CI job dependency graph — arrows point from a job to the jobs that wait for it">' +
+      '<defs><marker id="' + uid + '" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="dag-arrow" d="M0 0 L8 4 L0 8 z"/></marker></defs>' +
+      stageLabels + edges + nodes + '</svg></div>';
+  }
+
+  // Block 2 — the CI / release pipeline
+  function devCI(ci) {
+    if (!ci || typeof ci !== 'object') return '';
+    var jobs = Array.isArray(ci.jobs) ? ci.jobs : [];
+    var iosJobs = jobs.filter(function (j) { return j.workflow === 'ios-ci'; });
+    var codeqlJobs = jobs.filter(function (j) { return j.workflow === 'codeql'; });
+    var out = '<div class="dev-block">' + devHead(ci.title || 'The CI pipeline', ci.intro ? esc(ci.intro) : '');
+    if ((ci.workflows || []).length) {
+      out += '<div class="doc-grid" style="margin-bottom:6px">' + ci.workflows.map(function (w) {
+        return '<div class="doc-card"><span class="doc-ico">⚙️</span><div class="branch-main"><div class="doc-file">' + esc(w.name) + '</div><div class="doc-scope">' + esc(w.blurb || '') + '</div></div></div>';
+      }).join('') + '</div>';
+    }
+    if (iosJobs.length) {
+      out += '<div class="doc-subhead">iOS CI — what blocks what</div>' + ciDag(iosJobs) +
+        '<ul class="mini-list">' + iosJobs.map(function (j) {
+          var waits = (j.needs || []).length ? ' <span class="stat-sub" style="display:inline">(waits for ' + esc(j.needs.join(', ')) + ')</span>' : ' <span class="stat-sub" style="display:inline">(runs first)</span>';
+          return '<li><b>' + esc(j.name) + '</b>' + (j.blocks ? ' — ' + esc(j.blocks) : '') + waits + '</li>';
+        }).join('') + '</ul>';
+    }
+    if (codeqlJobs.length) {
+      out += '<div class="doc-subhead">CodeQL — security scan (both run in parallel)</div>' + ciDag(codeqlJobs);
+    }
+    var r = ci.release;
+    if (r && typeof r === 'object') {
+      out += '<div class="doc-subhead">' + esc(r.title || 'How a release is cut') + '</div>';
+      if (r.intro) out += '<p class="dev-intro">' + esc(r.intro) + '</p>';
+      var vcards = '';
+      if (r.buildNumber) vcards += '<div class="stat-card"><div class="stat-label">' + esc(r.buildNumber.label || 'Build number') + '</div><p class="body" style="margin-top:4px">' + esc(r.buildNumber.detail || '') + '</p></div>';
+      if (r.marketingVersion) vcards += '<div class="stat-card"><div class="stat-label">' + esc(r.marketingVersion.label || 'Version') + '</div><p class="body" style="margin-top:4px">' + esc(r.marketingVersion.detail || '') + '</p></div>';
+      if (vcards) out += '<div class="stat-row" style="grid-template-columns:1fr 1fr;margin-bottom:10px">' + vcards + '</div>';
+      if ((r.steps || []).length) {
+        out += '<div class="dev-flow-row">' + r.steps.map(function (s, i) {
+          return (i > 0 ? '<div class="dev-flow-arrow">→</div>' : '') +
+            '<div class="dev-flow-card"><div class="dfc-title">' + esc(s.title) + '</div><div class="dfc-detail">' + esc(s.detail || '') + '</div></div>';
+        }).join('') + '</div>';
+      }
+      if ((r.bumpRules || []).length) {
+        out += '<div class="scroll-x" style="margin-top:12px"><table class="ref-table"><thead><tr><th>Commit type</th><th>Version bump</th><th>Example</th></tr></thead><tbody>' +
+          r.bumpRules.map(function (b) { return '<tr><td class="code-inline">' + esc(b.type) + '</td><td><b>' + esc(b.bump) + '</b></td><td class="code-inline">' + esc(b.example) + '</td></tr>'; }).join('') +
+          '</tbody></table></div>';
+      }
+    }
+    return out + '</div>';
+  }
+
+  // Block 3 — branching & PR agreements
+  function devBranching(b) {
+    if (!b || typeof b !== 'object') return '';
+    var types = (b.types || []).map(function (t) {
+      return '<div class="branch-card"><span class="branch-ico">' + esc(t.icon || '') + '</span><div class="branch-main">' +
+        '<div class="branch-pattern">' + esc(t.pattern) + '</div><div class="branch-use">' + esc(t.use || '') + '</div></div></div>';
+    }).join('');
+    var rules = (b.rules || []).map(function (r) {
+      return '<div class="ref-block"><h4>' + esc(r.title) + '</h4><p class="body">' + esc(r.detail || '') + '</p></div>';
+    }).join('');
+    var st = b.stackedPRs, stack = '';
+    if (st && typeof st === 'object') {
+      var bars = (st.stack || []).map(function (s) {
+        return '<div class="stack-bar"><span class="sb-label">' + esc(s.label) + '</span><span class="sb-note">' + esc(s.note || '') + '</span></div>';
+      }).join('');
+      stack = '<div class="stack-inset"><h4>' + esc(st.title || 'Stacked PRs') + '</h4><p class="body">' + esc(st.detail || '') + '</p>' +
+        (bars ? '<div class="stack-bars">' + bars + '</div><div class="stack-updir">↑ merge bottom-up, delete each branch after it merges</div>' : '') + '</div>';
+    }
+    return '<div class="dev-block">' + devHead(b.title || 'Branching & PR agreements', b.intro ? esc(b.intro) : '') +
+      '<div class="branch-grid">' + types + '</div>' +
+      (rules ? '<div style="margin-top:12px">' + rules + '</div>' : '') + stack + '</div>';
+  }
+
+  // Block 4 — the documentation system
+  function devDocumentation(d) {
+    if (!d || typeof d !== 'object') return '';
+    function docCard(x) {
+      return '<div class="doc-card"><span class="doc-ico">' + esc(x.icon || '') + '</span><div class="branch-main">' +
+        '<div class="doc-file">' + esc(x.file) + '</div><div class="doc-scope">' + esc(x.scope || '') + '</div>' +
+        (x.reader ? '<span class="doc-reader">' + esc(x.reader) + '</span>' : '') + '</div></div>';
+    }
+    var out = '<div class="dev-block">' + devHead(d.title || 'The documentation system', d.intro ? esc(d.intro) : '');
+    if ((d.sources || []).length) out += '<div class="doc-subhead">Source of truth — hand-written</div><div class="doc-grid">' + d.sources.map(docCard).join('') + '</div>';
+    if ((d.derived || []).length) out += '<div class="doc-subhead">Derived — generated from the source</div><div class="doc-grid">' + d.derived.map(docCard).join('') + '</div>';
+    if (d.syncNote) out += '<div class="doc-sync"><span class="code-inline">architecture.json</span> <b>→ injected into →</b> <span class="code-inline">architecture.html</span><br>' + esc(d.syncNote) + '</div>';
+    if ((d.dodChecklist || []).length) {
+      out += '<details class="dev-details"><summary>Definition of Done — the sync checklist</summary><div class="dd-body"><ul class="dod-list">' +
+        d.dodChecklist.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul></div></details>';
+    }
+    var rf = d.roadmapFlow;
+    if (rf && typeof rf === 'object') {
+      out += '<div class="doc-subhead">' + esc(rf.title || 'Roadmap → archive') + '</div>';
+      if (rf.intro) out += '<p class="dev-intro">' + esc(rf.intro) + '</p>';
+      out += '<div class="dev-flow-row">' + (rf.stages || []).map(function (s, i) {
+        return (i > 0 ? '<div class="dev-flow-arrow">→</div>' : '') +
+          '<div class="dev-flow-card"><div class="dfc-title">' + esc(s.status || '') + ' ' + esc(s.label) + '</div><div class="dfc-detail">' + esc(s.detail || '') + '</div></div>';
+      }).join('') +
+        '<div class="dev-flow-arrow">→</div><div class="dev-flow-card"><div class="dfc-title">📦 Archive</div><div class="dfc-detail">ROADMAP-archive.md — the full history, read on demand.</div></div></div>';
+    }
+    return out + '</div>';
+  }
+
+  function renderHowItsBuilt() {
+    var root = document.getElementById('view-howbuilt');
+    var dev = (DATA.development && typeof DATA.development === 'object') ? DATA.development : null;
+    var html = devHead('How this project is built',
+      dev && dev.summary ? esc(dev.summary) : 'The people, pipeline and conventions behind the app.');
+    if (dev) {
+      html += devJargonStrip();
+      html += devCollaboration(dev.collaboration);
+      html += devCI(dev.ci);
+      html += devBranching(dev.branching);
+      html += devDocumentation(dev.documentation);
+      // deeper reference sits below the visual process story
+      var deep = refTesting() + refAgent();
+      if (deep) html += '<div class="section-head"><div class="section-title">Go deeper</div>' +
+        '<p class="section-sub">The full testing strategy, the agent rules, and the lessons learned along the way.</p></div>' + deep;
+    } else {
+      // Defensive: an older JSON snapshot without a development object still renders.
+      html += refTesting() + refCI() + refAgent();
+    }
+    root.innerHTML = html;
+    if (!root.innerHTML.trim()) root.innerHTML = '<p class="empty-note">No material recorded.</p>';
   }
 
   // ===== Initial render =====
   try { renderStory(); } catch (e) { document.getElementById('view-story').innerHTML = '<p class="empty-note">Could not render the story.</p>'; }
   try { renderMap(); } catch (e) {}
   try { renderFlows(); } catch (e) {}
-  try { renderReference(); } catch (e) {}
+  try { renderHowItsBuilt(); } catch (e) { document.getElementById('view-howbuilt').innerHTML = '<p class="empty-note">Could not render this view.</p>'; }
 })();
 </script>
 </body>
