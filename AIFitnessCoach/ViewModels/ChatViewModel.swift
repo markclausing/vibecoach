@@ -118,7 +118,7 @@ class ChatViewModel: ObservableObject {
     }
 
     // Read the user's preference regarding the primary data source (Sprint 7.4)
-    @AppStorage("selectedDataSource") private var selectedDataSource: DataSource = .healthKit
+    @AppStorage(AppStorageKeys.selectedDataSource) private var selectedDataSource: DataSource = .healthKit
 
     // Epic 20: BYOK — user-configured AI provider.
     // C-02: the API key itself is NO longer in @AppStorage but in the

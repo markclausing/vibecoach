@@ -6,7 +6,7 @@ struct DashboardHeaderView: View {
     let periodizationResults: [PeriodizationResult]
     let goals: [FitnessGoal]
 
-    @AppStorage("vibecoach_userName") private var userName: String = ""
+    @AppStorage(AppStorageKeys.userName) private var userName: String = ""
 
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())

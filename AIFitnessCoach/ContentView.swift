@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// The actual TabView navigation lives in `AppTabHostView`; the dashboard UI in `DashboardView`.
 struct ContentView: View {
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage(AppStorageKeys.hasCompletedOnboarding) private var hasCompletedOnboarding = false
 
     var body: some View {
         Group {
