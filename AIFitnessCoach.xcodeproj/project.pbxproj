@@ -81,6 +81,9 @@
 		F010FF20AA30BB40CC50DD60 /* SyncStatusBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F001FF02AA03BB04CC05DD06 /* SyncStatusBanner.swift */; };
 		5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */; };
 		531DF0798000FFC0CACC940E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4D1D9B3991F419262E294E /* SettingsView.swift */; };
+		DA54B1000000000000000204 /* SettingsConnectionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B1000000000000000104 /* SettingsConnectionCard.swift */; };
+		DA54B1000000000000000205 /* SettingsRowV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B1000000000000000105 /* SettingsRowV2.swift */; };
+		DA54B1000000000000000206 /* SettingsView+Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B1000000000000000106 /* SettingsView+Actions.swift */; };
 		DA54B1000000000000000201 /* PhysicalProfileSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B1000000000000000101 /* PhysicalProfileSection.swift */; };
 		DA54B1000000000000000202 /* AIProviderSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B1000000000000000102 /* AIProviderSettingsView.swift */; };
 		DA54B1000000000000000203 /* PreferencesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54B1000000000000000103 /* PreferencesListView.swift */; };
@@ -485,6 +488,9 @@
 		DA54C5000000000000000101 /* OnboardingWelcomePreviews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomePreviews.swift; sourceTree = "<group>"; };
 		DA54C5000000000000000102 /* OnboardingPermissionContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingPermissionContent.swift; sourceTree = "<group>"; };
 		CE4D1D9B3991F419262E294E /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		DA54B1000000000000000104 /* SettingsConnectionCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsConnectionCard.swift; sourceTree = "<group>"; };
+		DA54B1000000000000000105 /* SettingsRowV2.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsRowV2.swift; sourceTree = "<group>"; };
+		DA54B1000000000000000106 /* SettingsView+Actions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "SettingsView+Actions.swift"; sourceTree = "<group>"; };
 		DA54B1000000000000000101 /* PhysicalProfileSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysicalProfileSection.swift; sourceTree = "<group>"; };
 		DA54B1000000000000000102 /* AIProviderSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIProviderSettingsView.swift; sourceTree = "<group>"; };
 		DA54B1000000000000000103 /* PreferencesListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PreferencesListView.swift; sourceTree = "<group>"; };
@@ -847,6 +853,9 @@
 				DA54B1000000000000000101 /* PhysicalProfileSection.swift */,
 				DA54B1000000000000000102 /* AIProviderSettingsView.swift */,
 				DA54B1000000000000000103 /* PreferencesListView.swift */,
+				DA54B1000000000000000104 /* SettingsConnectionCard.swift */,
+				DA54B1000000000000000105 /* SettingsRowV2.swift */,
+				DA54B1000000000000000106 /* SettingsView+Actions.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1466,6 +1475,9 @@
 				200EA372CBBCA4A6A0021BAF /* AddGoalView.swift in Sources */,
 				E632BCD343E9A620341BD347 /* EditGoalView.swift in Sources */,
 				531DF0798000FFC0CACC940E /* SettingsView.swift in Sources */,
+				DA54B1000000000000000204 /* SettingsConnectionCard.swift in Sources */,
+				DA54B1000000000000000205 /* SettingsRowV2.swift in Sources */,
+				DA54B1000000000000000206 /* SettingsView+Actions.swift in Sources */,
 				DA54B1000000000000000201 /* PhysicalProfileSection.swift in Sources */,
 				DA54B1000000000000000202 /* AIProviderSettingsView.swift in Sources */,
 				DA54B1000000000000000203 /* PreferencesListView.swift in Sources */,

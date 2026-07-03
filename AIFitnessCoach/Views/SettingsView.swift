@@ -7,26 +7,26 @@ import SwiftData
 /// securely to the KeychainService.
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.modelContext) var modelContext
     @EnvironmentObject private var themeManager: ThemeManager
 
     // Authentication service for Strava OAuth web flow
     @StateObject private var stravaAuthService = StravaAuthService()
-    private let fitnessDataService = FitnessDataService()
-    private let profileManager = AthleticProfileManager()
+    let fitnessDataService = FitnessDataService()
+    let profileManager = AthleticProfileManager()
 
     // UI state variables, read from and written to Keychain
-    @State private var feedbackMessage: String?
-    @State private var notificationsEnabled: Bool = false
+    @State var feedbackMessage: String?
+    @State var notificationsEnabled: Bool = false
     // Epic 34 Sprint 2: material overlay below the status bar once scrolled.
     @State private var isSettingsScrolled: Bool = false
-    @AppStorage("isHealthKitLinked") private var isHealthKitLinked: Bool = false
+    @AppStorage("isHealthKitLinked") var isHealthKitLinked: Bool = false
 
     @AppStorage(AppStorageKeys.selectedDataSource) private var selectedDataSource: DataSource = .healthKit
 
     // Historical sync state
-    @State private var isSyncingHistory: Bool = false
-    @State private var athleticProfile: AthleticProfile?
+    @State var isSyncingHistory: Bool = false
+    @State var athleticProfile: AthleticProfile?
 
     // V2.0 extra state
     @AppStorage(AppStorageKeys.userName)     private var userName: String = ""
@@ -128,143 +128,6 @@ struct SettingsView: View {
                 physicalProfile  = p
                 weeklyAvgMinutes = secs / 60
                 vo2Max           = vo2
-            }
-        }
-    }
-
-    // Recalculate the local athletic profile based on SwiftData
-    private func refreshProfile() {
-        do {
-            self.athleticProfile = try profileManager.calculateProfile(context: modelContext)
-        } catch {
-            AppLoggers.athleticProfileManager.error("Athletic profile calculation failed: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    // Triggers fetching historical workouts.
-    // Epic #42 Story 42.1: HK + Strava run independently; the dedupe layer from
-    // Epic #41 covers cross-source. `selectedDataSource` no longer determines
-    // which source we fetch — only which one is labelled as "primary".
-    private func syncHistoricalData() {
-        guard !isSyncingHistory else { return }
-        isSyncingHistory = true
-        feedbackMessage = "Synchroniseren gestart..."
-
-        Task {
-            async let hk = runHealthKitHistoricalSync()
-            async let strava = runStravaHistoricalSync()
-            let (hkMessage, stravaMessage) = await (hk, strava)
-
-            await MainActor.run {
-                isSyncingHistory = false
-                feedbackMessage = "\(hkMessage) · \(stravaMessage)"
-                refreshProfile()
-            }
-        }
-    }
-
-    @MainActor
-    private func runHealthKitHistoricalSync() async -> String {
-        do {
-            // Epic #38 Story 38.2: cache count for the Dashboard banner evaluator.
-            let count = try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
-            UserDefaults.standard.set(count, forKey: AppStorageKeys.lastHKWorkoutsCount)
-            return "HealthKit (1 jaar) gesynchroniseerd — \(count) workouts"
-        } catch {
-            UserDefaults.standard.set(0, forKey: AppStorageKeys.lastHKWorkoutsCount)
-            return "HealthKit-fout: \(error.localizedDescription)"
-        }
-    }
-
-    @MainActor
-    private func runStravaHistoricalSync() async -> String {
-        do {
-            // SPRINT 6.1 & 7.4: fetch at most 12 months of Strava history.
-            let activities = try await fitnessDataService.fetchHistoricalActivities(monthsBack: 12)
-
-            var newRecordsCount = 0
-
-            for activity in activities {
-                // Epic 65.1: use the cached ISO-8601 formatters (no per-activity allocation).
-                let date = AppDateFormatters.iso8601WithFractionalSeconds.date(from: activity.start_date)
-                    ?? AppDateFormatters.iso8601.date(from: activity.start_date)
-                    ?? Date()
-
-                // SPRINT 12.4: basic TRIMP fallback during sync (Epic 65.1: centralised).
-                let basicTRIMPFallback: Double? = PhysiologicalCalculator.basicFallbackTRIMP(
-                    durationSec: Double(activity.moving_time),
-                    avgHR: activity.average_heartrate
-                )
-
-                let record = ActivityRecord(
-                    id: String(activity.id),
-                    name: activity.name,
-                    distance: activity.distance,
-                    movingTime: activity.moving_time,
-                    averageHeartrate: activity.average_heartrate,
-                    sportCategory: SportCategory.from(rawString: activity.type),
-                    startDate: date,
-                    trimp: basicTRIMPFallback,
-                    deviceWatts: activity.device_watts
-                )
-                // Epic #50: historical weather data via Open-Meteo for Strava-only
-                // rides (Garmin/bike computer). Sequential — for 12 months ≈
-                // 100 calls, ~10s extra on the "Sync historische data" button. Fault-
-                // tolerant: API error = continue without weather.
-                await HistoricalWeatherService.enrichRecord(record, from: activity, startDate: date)
-                if let result = try? ActivityDeduplicator.smartInsert(record, into: modelContext),
-                   result == .inserted || result == .replaced {
-                    newRecordsCount += 1
-                }
-            }
-            try? modelContext.save()
-            return "Strava: \(newRecordsCount) nieuwe activiteiten"
-        } catch FitnessDataError.missingToken {
-            return "Strava niet gekoppeld"
-        } catch {
-            return "Strava-fout: \(error.localizedDescription)"
-        }
-    }
-
-    // Check the current status of Push Notifications permission
-    private func checkNotificationStatus() {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            DispatchQueue.main.async {
-                self.notificationsEnabled = (settings.authorizationStatus == .authorized)
-            }
-        }
-    }
-
-    // Explicitly request permission from the user for local notifications.
-    // The proactive engines (A & B) use only `UNUserNotificationCenter`
-    // scheduling — there is no APNs receiver anymore since the Node.js backend disappeared.
-    private func requestNotificationPermission() {
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
-            DispatchQueue.main.async {
-                self.notificationsEnabled = granted
-                if granted {
-                    self.feedbackMessage = "Notificaties succesvol ingeschakeld."
-                } else if let error = error {
-                    self.feedbackMessage = "Fout bij aanvragen notificaties: \(error.localizedDescription)"
-                } else {
-                    self.feedbackMessage = "Notificatie toestemming geweigerd. Zet dit aan in de iOS Instellingen app."
-                }
-            }
-        }
-    }
-
-    // Function to connect Apple Health
-    private func koppelAppleHealth() {
-        let healthKitManager = HealthKitManager()
-        healthKitManager.requestAuthorization { success, error in
-            DispatchQueue.main.async {
-                if success {
-                    self.isHealthKitLinked = true
-                    self.feedbackMessage = "Apple Health succesvol gekoppeld."
-                } else {
-                    self.feedbackMessage = "Fout bij koppelen Apple Health: \(error?.localizedDescription ?? "Onbekende fout")"
-                }
             }
         }
     }
@@ -817,165 +680,6 @@ struct SettingsView: View {
         case .other:   return String(localized: "Divers")
         case .unknown: return String(localized: "Onbekend")
         }
-    }
-
-    #if targetEnvironment(simulator)
-    private func generateDummyData() {
-        feedbackMessage = "Genereren van dummy data..."
-
-        Task { @MainActor in
-            let calendar = Calendar.current
-            let now = Date()
-
-            // 1. Add a dummy FitnessGoal (Marathon)
-            let targetDate = calendar.date(byAdding: .day, value: 60, to: now)! // In 2 months
-            let createdDate = calendar.date(byAdding: .day, value: -30, to: now)! // Started 1 month ago
-
-            let goal = FitnessGoal(
-                title: "Amsterdam Marathon (Test)",
-                details: "Gegenereerd via simulator tools",
-                targetDate: targetDate,
-                createdAt: createdDate,
-                sportCategory: .running,
-                targetTRIMP: 6500.0
-            )
-            modelContext.insert(goal)
-
-            // 2. Add 5 realistic activities in the past 45 days
-            let workoutDates = [
-                calendar.date(byAdding: .day, value: -35, to: now)!, // Time Travel: Before the createdAt!
-                calendar.date(byAdding: .day, value: -20, to: now)!,
-                calendar.date(byAdding: .day, value: -12, to: now)!,
-                calendar.date(byAdding: .day, value: -7, to: now)!,
-                calendar.date(byAdding: .day, value: -2, to: now)!
-            ]
-
-            let trimps = [150.0, 210.0, 180.0, 320.0, 140.0]
-            let durations = [2700, 3600, 3200, 5400, 2400]
-            let names = ["Recovery Run", "Tempo Run", "Endurance", "Long Run", "Shakeout"]
-
-            for (index, date) in workoutDates.enumerated() {
-                let record = ActivityRecord(
-                    id: "dummy_\(index)_\(Int(date.timeIntervalSince1970))",
-                    name: names[index],
-                    distance: Double(durations[index]) * 2.5, // Rough estimate
-                    movingTime: durations[index],
-                    averageHeartrate: 145.0 + Double(index * 2),
-                    sportCategory: .running,
-                    startDate: date,
-                    trimp: trimps[index]
-                )
-                modelContext.insert(record)
-            }
-
-            try? modelContext.save()
-            feedbackMessage = "Dummy data gegenereerd! Ga naar het Dashboard."
-            refreshProfile()
-        }
-    }
-    #endif
-}
-
-// MARK: - Components
-
-struct SettingsConnectionCard: View {
-    let icon: String
-    let title: String
-    let subtitle: String
-    let isConnected: Bool
-    let accentColor: Color
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(accentColor.opacity(0.12))
-                        .frame(width: 34, height: 34)
-                    Image(systemName: icon)
-                        .font(.system(size: 14))
-                        .foregroundColor(accentColor)
-                }
-                Spacer()
-                Circle()
-                    .fill(isConnected ? Color.green : Color(.systemGray4))
-                    .frame(width: 8, height: 8)
-            }
-            Text(title)
-                .font(.subheadline).fontWeight(.semibold)
-            Text(subtitle)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .lineLimit(1)
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: Color(.label).opacity(0.05), radius: 6, x: 0, y: 2)
-    }
-}
-
-struct SettingsRowV2: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    var subtitle: String?
-    var value: String?
-    var hasChevron: Bool = false
-    var isLocked: Bool = false
-    var isWarning: Bool = false
-    var showHealthKitBadge: Bool = false
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isWarning ? Color.orange.opacity(0.12) : iconColor.opacity(0.12))
-                    .frame(width: 34, height: 34)
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                    .foregroundColor(isWarning ? .orange : iconColor)
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                // Epic #37 story 37.1c: `title`/`subtitle` are `String` (call sites pass literals
-                // and computed values), so wrap them in `LocalizedStringKey` to resolve via the
-                // String Catalog at runtime. Brand names not in the catalog fall back unchanged.
-                // `value` stays verbatim — it's dynamic data (e.g. "76.0 kg").
-                Text(LocalizedStringKey(title))
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(isWarning ? .orange : .primary)
-                if let sub = subtitle {
-                    Text(LocalizedStringKey(sub))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            Spacer()
-            if let val = value {
-                Text(val)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-            if showHealthKitBadge {
-                Image(systemName: "applewatch")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            if isLocked {
-                Image(systemName: "lock.fill")
-                    .font(.caption)
-                    .foregroundColor(Color(.systemGray3))
-            } else if hasChevron {
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(Color(.systemGray3))
-            }
-        }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 14)
-        .background(isWarning ? Color.orange.opacity(0.05) : Color.clear)
     }
 }
 
