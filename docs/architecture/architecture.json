@@ -6,8 +6,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 31,
-    "lastUpdated": "2026-07-01",
+    "docRevision": 36,
+    "lastUpdated": "2026-07-03",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -144,17 +144,17 @@
       "layer": "views",
       "kind": "view",
       "file": "AIFitnessCoach/Views/AppTabHostView.swift",
-      "description": "Main tab bar with 5 tabs (Dashboard, Goals, Coach, Memory, Settings). Manages the always-on dual-source sync via async let.",
+      "description": "Main tab bar with 5 tabs (Dashboard, Goals, Coach, Memory, Settings). Story 65.4: the auto-sync pipeline moved into AutoSyncCoordinator; the view only owns the coordinator instance and fires one-line triggers (.triggerAutoSync notification + scenePhase).",
       "uses": [
         "DashboardView",
         "GoalsListView",
         "ChatView",
         "SettingsView",
-        "HealthKitSyncService",
-        "FitnessDataService"
+        "AutoSyncCoordinator"
       ],
       "tags": [
-        "epic-42"
+        "epic-42",
+        "epic-65"
       ]
     },
     {
@@ -162,16 +162,13 @@
       "layer": "views",
       "kind": "view",
       "file": "AIFitnessCoach/Views/DashboardView.swift",
-      "description": "Main screen: Vibe Score, goal burndown, weekly calendar, dedupe + reclassify pipeline in scenePhase. Caches risk data in UserDefaults for Engine A/B.",
+      "description": "Main screen: Vibe Score, goal burndown, weekly calendar. Story 65.4: the post-sync maintenance sequence (dedupe/reclassify/backfill/context-refresh) moved into DashboardMaintenanceRunner; the view keeps the view-bound Vibe Score calc + cache priming. Caches risk data in UserDefaults for Engine A/B.",
       "uses": [
         "VibeScoreCardV2",
         "WeekTimelineView",
         "BlueprintTimelineView",
         "ReadinessCalculator",
-        "ActivityDeduplicator",
-        "SessionReclassifier",
-        "StravaStreamIngestService",
-        "WorkoutSampleService",
+        "DashboardMaintenanceRunner",
         "MigrationFallbackBanner"
       ],
       "tags": [
@@ -180,7 +177,8 @@
         "epic-32",
         "epic-40",
         "epic-41",
-        "epic-51"
+        "epic-51",
+        "epic-65"
       ]
     },
     {
@@ -280,23 +278,91 @@
       "layer": "viewmodels",
       "kind": "viewmodel",
       "file": "AIFitnessCoach/ViewModels/ChatViewModel.swift",
-      "description": "Orchestrates the AI call: builds the prompt blocks via the formatters, reads the key from the Keychain, streams the response. Test bypass via GenerativeModelProtocol. Story 61.7: 17 PHI context strings moved from cleartext UserDefaults to CoachContextCache (SwiftData, file-protected). Configured with modelContext via configure(with:) on first view appear.",
+      "description": "Thin @MainActor orchestrator for the AI call (Story 65.3 decomposition). Delegates prompt assembly to CoachPromptAssembler, the PHI context cache to CoachContextStore, model construction to CoachModelProvider, response parsing to CoachResponseParser and the HealthKit/Strava status fetch to CoachStatusAnalyzer. Threads per-call context via CoachInvocationContext. Test bypass via GenerativeModelProtocol.",
       "uses": [
         "GenerativeModelProtocol",
-        "UserAPIKeyStore",
+        "CoachPromptAssembler",
+        "CoachContextStore",
+        "CoachModelProvider",
+        "CoachResponseParser",
+        "CoachStatusAnalyzer",
+        "CoachInvocationContext",
+        "PlanResetPromptBuilder",
+        "UserProfileService"
+      ]
+    },
+    {
+      "id": "CoachPromptAssembler",
+      "layer": "viewmodels",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/ViewModels/CoachPromptAssembler.swift",
+      "description": "Story 65.3: pure assembly of the coach prompt — context prefix, training-thresholds block, systemInstruction, stored-plan/status prompts and the recovery-plan action prompt. AppStorage-free (every input injected); structural prompt markers pinned against the systemInstruction reference (§13). Split over CoachPromptAssembler.swift + two extension files.",
+      "uses": [
+        "VibeScoreContextFormatter",
+        "PreferencesContextFormatter",
+        "WorkoutPatternDetector",
+        "PromptInputSanitizer",
+        "ChatScopeInstruction"
+      ]
+    },
+    {
+      "id": "CoachContextStore",
+      "layer": "viewmodels",
+      "kind": "store",
+      "file": "AIFitnessCoach/ViewModels/CoachContextStore.swift",
+      "description": "Story 65.3: owns the coach PHI context cache. The ~20 cache* setters, the PHI computed properties and the CoachContextCache (SwiftData, file-protected) bridge, plus a snapshot() feeding CoachPromptAssembler. @MainActor.",
+      "uses": [
+        "CoachContextCache",
         "VibeScoreContextFormatter",
         "BlueprintContextFormatter",
         "IntentContextFormatter",
-        "PreferencesContextFormatter",
-        "WorkoutHistoryContextBuilder",
         "LastWorkoutContextFormatter",
         "SymptomContextFormatter",
         "UserOverrideContextFormatter",
-        "PlanResetPromptBuilder",
-        "AIModelFactory",
-        "PromptInputSanitizer",
-        "CoachContextCache"
+        "EventWindowContextFormatter",
+        "FutureProjectionService"
       ]
+    },
+    {
+      "id": "CoachModelProvider",
+      "layer": "viewmodels",
+      "kind": "store",
+      "file": "AIFitnessCoach/ViewModels/CoachModelProvider.swift",
+      "description": "Story 65.3: builds and lazily caches the AI model for the coach on top of AIModelFactory, incl. the Epic #51-A2 rebuild-on-name-change check, API-key resolution and the -UITesting mock path. @MainActor.",
+      "uses": [
+        "AIModelFactory",
+        "GenerativeModelProtocol",
+        "UserAPIKeyStore",
+        "CoachPromptAssembler"
+      ]
+    },
+    {
+      "id": "CoachResponseParser",
+      "layer": "viewmodels",
+      "kind": "parser",
+      "file": "AIFitnessCoach/ViewModels/CoachResponseParser.swift",
+      "description": "Story 65.3: pure parsing of the raw model response — markdown stripping, string-aware brace-balanced JSON extraction and plan decoding into a plan + user-facing motivation. Unit-testable without a ChatViewModel.",
+      "uses": []
+    },
+    {
+      "id": "CoachStatusAnalyzer",
+      "layer": "viewmodels",
+      "kind": "store",
+      "file": "AIFitnessCoach/ViewModels/CoachStatusAnalyzer.swift",
+      "description": "Story 65.3: data-source orchestration for the analyse-current-status flow. HealthKit-first / Strava-fallback / reverse-fallback waterfall + DailyWorkout mapping, returning a pure Outcome (workouts or a localized message). @MainActor.",
+      "uses": [
+        "HealthKitManager",
+        "FitnessDataService",
+        "CoachPromptAssembler"
+      ]
+    },
+    {
+      "id": "CoachInvocationContext",
+      "layer": "viewmodels",
+      "kind": "model",
+      "file": "AIFitnessCoach/ViewModels/CoachInvocationContext.swift",
+      "description": "Story 65.3: pure value type bundling the three per-call context parameters (profile, activeGoals, activePreferences) so the plumbing on the eight public ChatViewModel methods collapses to one argument.",
+      "uses": []
     },
     {
       "id": "WorkoutHistoryContextBuilder",
@@ -344,7 +410,7 @@
       "id": "ReadinessCalculator",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/ReadinessCalculator.swift",
+      "file": "AIFitnessCoach/Services/Physiology/ReadinessCalculator.swift",
       "description": "Computes the daily Vibe Score (0-100) from HRV (50%, 7-day personal baseline) + sleep (50%, linear 5-8h).",
       "uses": [
         "HealthKitManager",
@@ -375,7 +441,7 @@
       "id": "HealthKitManager",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/HealthKitManager.swift",
+      "file": "AIFitnessCoach/Services/Sync/HealthKitManager.swift",
       "description": "Gateway to HealthKit: HRV, sleep stages, workouts. enableBackgroundDelivery for Engine A.",
       "uses": [
         "HealthKitPermissionTypes",
@@ -386,7 +452,7 @@
       "id": "HealthKitSyncService",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/HealthKitSyncService.swift",
+      "file": "AIFitnessCoach/Services/Sync/HealthKitSyncService.swift",
       "description": "Periodic + on-demand sync of HK workouts into ActivityRecord. Uses ActivityDeduplicator.smartInsert to prevent duplicate records.",
       "uses": [
         "HealthKitManager",
@@ -398,7 +464,7 @@
       "id": "FitnessDataService",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/FitnessDataService.swift",
+      "file": "AIFitnessCoach/Services/Sync/FitnessDataService.swift",
       "description": "Strava client. The central `ensureValidToken()` guard refreshes via the Cloudflare Worker; all endpoints (fetchLatestActivity, fetchActivityById, fetchActivityStreams, fetchRecentActivities, fetchHistoricalActivities) route through it.",
       "uses": [
         "StravaAuthService",
@@ -416,7 +482,7 @@
       "id": "StravaAuthService",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/StravaAuthService.swift",
+      "file": "AIFitnessCoach/Services/Sync/StravaAuthService.swift",
       "description": "OAuth2 with the Cloudflare Worker proxy. No client_secret in the IPA — only a shared X-Client-Token. CSRF protection via a random `state` UUID. Story 61.7: logout(modelContext:) clears both UserDefaults PHI keys and CoachContextCache (SwiftData) on disconnect.",
       "uses": [
         "TokenStore",
@@ -433,7 +499,7 @@
       "id": "ActivityDeduplicator",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/ActivityDeduplicator.swift",
+      "file": "AIFitnessCoach/Services/Sync/ActivityDeduplicator.swift",
       "description": "Pure-Swift dedupe. `smartInsert` at the front door (HK + Strava ingest) and `runDedupe` as a scenePhase pass. Richness heuristic: samples > deviceWatts > trimp > avgHR > stable id tiebreaker.",
       "uses": [
         "ActivityRecord",
@@ -447,7 +513,7 @@
       "id": "StravaStreamIngestService",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/StravaStreamIngestService.swift",
+      "file": "AIFitnessCoach/Services/Sync/StravaStreamIngestService.swift",
       "description": "Backfill of Strava `/streams` for recent records without samples. Writes via WorkoutSampleStore. 100ms throttle.",
       "uses": [
         "FitnessDataService",
@@ -461,22 +527,84 @@
       "id": "WorkoutSampleService",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/WorkoutSampleService.swift",
-      "description": "Read/write for fine-grained workout samples (5s buckets HR/power/cadence/speed/distance). FK = workoutUUID. Idempotent replaceSamples.",
+      "file": "AIFitnessCoach/Services/Sync/WorkoutSampleService.swift",
+      "description": "Read/write for fine-grained workout samples (5s buckets HR/power/cadence/speed/distance). FK = workoutUUID. Idempotent replaceSamples. Epic #65 story 65.2: pruneSamplesOlderThanRetention deletes samples beyond a 6-month horizon (fetchCount-guarded, boundary kept); ActivityRecord aggregates are never touched.",
       "uses": [
         "WorkoutSample",
         "SampleResampler",
         "UUID+Deterministic"
       ],
       "tags": [
-        "epic-32"
+        "epic-32",
+        "epic-65"
+      ]
+    },
+    {
+      "id": "DeepSyncService",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/Sync/DeepSyncService.swift",
+      "description": "Epic #32 orchestrator for the rolling 30-day deep sync of workout samples: fetches HKWorkouts in the window, ingests per workout via WorkoutSampleIngestService (idempotent via a persisted processed-UUID set + ingest-revision re-ingest migration). Since Epic #65 story 65.2 also triggers the once-per-session WorkoutSample retention prune (6-month horizon) on WorkoutSampleStore.",
+      "uses": [
+        "WorkoutSampleService",
+        "WorkoutSample"
+      ],
+      "tags": [
+        "epic-32",
+        "epic-65"
+      ]
+    },
+    {
+      "id": "AutoSyncCoordinator",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/Sync/AutoSyncCoordinator.swift",
+      "description": "Epic #65 story 65.4: owns the entire auto-sync pipeline extracted from AppTabHostView — the async let HK+Strava fan-out, the single-in-flight concurrency guard, per-source SyncStatusStore writes, the lastHKWorkoutsCount cache, the post-HK DeepSync trigger and the foreground HealthKit permission retrigger. @MainActor (SwiftData work stays on the main actor). Strava weather enrichment is batched across records with a bounded (~4) task group. Injection seams: HealthKitWorkoutSyncing + StravaActivityFetching protocols, SyncStatusStore, UserDefaults, ModelContext and a weather-fetch closure — so the guard, missing-token silence and per-record weather-failure isolation are unit-tested (AutoSyncCoordinatorTests).",
+      "uses": [
+        "HealthKitSyncService",
+        "FitnessDataService",
+        "SyncStatusStore",
+        "ActivityDeduplicator",
+        "HistoricalWeatherService",
+        "DeepSyncService",
+        "PhysiologicalCalculator",
+        "HealthKitManager",
+        "ActivityRecord"
+      ],
+      "tags": [
+        "epic-42",
+        "epic-65"
+      ]
+    },
+    {
+      "id": "DashboardMaintenanceRunner",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/Sync/DashboardMaintenanceRunner.swift",
+      "description": "Epic #65 story 65.4: owns DashboardView's post-sync maintenance orchestration — the ordered sequence Strava stream backfill -> auto-dedupe -> session reclassification -> coach context-cache refresh, previously four .task methods on the view. Plain @MainActor type with an injected ModelContext, unit-tested for wiring/ordering (DashboardMaintenanceRunnerTests); the individual jobs keep their own service tests. calculateAndSaveVibeScore stays in DashboardView as genuinely view-bound glue.",
+      "uses": [
+        "ActivityDeduplicator",
+        "SessionReclassifier",
+        "StravaStreamIngestService",
+        "WorkoutSampleService",
+        "FitnessDataService",
+        "WorkoutPatternDetector",
+        "WorkoutHistoryContextBuilder",
+        "CoachContextStore",
+        "ActivityRecord"
+      ],
+      "tags": [
+        "epic-40",
+        "epic-41",
+        "epic-45",
+        "epic-65"
       ]
     },
     {
       "id": "SessionClassifier",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/SessionClassifier.swift",
+      "file": "AIFitnessCoach/Services/Sync/SessionClassifier.swift",
       "description": "Determines the session type (Easy / Tempo / Threshold / Interval / VO2max) based on HR-zone distribution. Falls back to avg HR when samples are missing.",
       "uses": [
         "HeartRateZones",
@@ -488,7 +616,7 @@
       "id": "SessionReclassifier",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/SessionReclassifier.swift",
+      "file": "AIFitnessCoach/Services/Sync/SessionReclassifier.swift",
       "description": "Reclassifies the session type for records that just got samples (after a Strava backfill). Protected by ActivityRecord.manualSessionTypeOverride.",
       "uses": [
         "SessionClassifier",
@@ -502,7 +630,7 @@
       "id": "WorkoutPatternDetector",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/WorkoutPatternDetector.swift",
+      "file": "AIFitnessCoach/Services/Physiology/WorkoutPatternDetector.swift",
       "description": "Detects four patterns (aerobic decoupling, cardiac drift, cadence fade, slow HR recovery) on 5s-resampled samples. Gated on personal HR zones.",
       "uses": [
         "PauseDetector",
@@ -533,7 +661,7 @@
       "id": "RouteParser",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/RouteParser.swift",
+      "file": "AIFitnessCoach/Services/Weather/RouteParser.swift",
       "description": "Epic #56: pure-Swift, multilingual (NL/EN/DE/ES) extraction of (start, end) place names from a goal's free text ('van X naar Y'). Two-pass to avoid the greedy Spanish 'a' connector. Feeds CLGeocoder.",
       "uses": [],
       "tags": [
@@ -544,7 +672,7 @@
       "id": "StageLocationInterpolator",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/StageLocationInterpolator.swift",
+      "file": "AIFitnessCoach/Services/Weather/StageLocationInterpolator.swift",
       "description": "Epic #56: pure-Swift great-circle (slerp) interpolation of the approximate per-stage coordinate (day 1 = start, day N = end).",
       "uses": [
         "EventRoute"
@@ -557,7 +685,7 @@
       "id": "OpenMeteoForecastClient",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/OpenMeteoForecastClient.swift",
+      "file": "AIFitnessCoach/Services/Weather/OpenMeteoForecastClient.swift",
       "description": "Epic #56: reusable Open-Meteo /v1/forecast daily fetch for arbitrary coordinates -> [DayForecast]. Owns the WMO->Dutch condition mapping (single source of truth; WeatherManager delegates).",
       "uses": [
         "WeatherManager",
@@ -571,7 +699,7 @@
       "id": "StageWeatherService",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/StageWeatherService.swift",
+      "file": "AIFitnessCoach/Services/Weather/StageWeatherService.swift",
       "description": "Epic #56: @MainActor ObservableObject orchestrating location-aware per-stage weather for multi-day events: resolve route (RouteParser + CLGeocoder, cached), interpolate per stage, fetch forecast (OpenMeteoForecastClient), reverse-geocode place name. Exposes [Date: StageWeather] for the week schedule.",
       "uses": [
         "RouteParser",
@@ -587,7 +715,7 @@
       "id": "PauseDetector",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/PauseDetector.swift",
+      "file": "AIFitnessCoach/Services/Physiology/PauseDetector.swift",
       "description": "Pure-Swift, AppStorage-free. Detects contiguous samples with power<5 and cadence<5 for at least 45s. Peak-anchored 90s recovery window.",
       "uses": [
         "WorkoutSample"
@@ -600,7 +728,7 @@
       "id": "WorkoutInsightService",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/WorkoutInsightService.swift",
+      "file": "AIFitnessCoach/Services/AI/WorkoutInsightService.swift",
       "description": "Generates a 3-sentence Coach analysis per workout with patterns + recovery events + blueprint context + periodization context + weather context. Gemini call, cached.",
       "uses": [
         "WorkoutInsightCache",
@@ -620,7 +748,7 @@
       "id": "WorkoutInsightCache",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/WorkoutInsightCache.swift",
+      "file": "AIFitnessCoach/Services/AI/WorkoutInsightCache.swift",
       "description": "The cache key contains goalsFingerprint + weatherFingerprint so a milestone achievement, phase transition or later weather sync invalidates the cache.",
       "uses": [
         "WorkoutInsightService"
@@ -634,7 +762,7 @@
       "id": "PHIContextCache",
       "layer": "services",
       "kind": "helper",
-      "file": "AIFitnessCoach/Services/PHIContextCache.swift",
+      "file": "AIFitnessCoach/Services/AI/PHIContextCache.swift",
       "description": "Central purge of the remaining cleartext UserDefaults caches (latestSuggestedPlanData, latestCoachInsight, atRiskGoalTitles). Story 61.7: the 17 ChatViewModel PHI context strings moved to CoachContextCache (SwiftData); purgeSwiftData(from:) covers that side. Pure helper: UserDefaults injected (§6).",
       "uses": [
         "WorkoutInsightCache",
@@ -664,7 +792,7 @@
       "id": "TrainingPlanSafetyValidator",
       "layer": "services",
       "kind": "validator",
-      "file": "AIFitnessCoach/Services/TrainingPlanSafetyValidator.swift",
+      "file": "AIFitnessCoach/Services/AI/TrainingPlanSafetyValidator.swift",
       "description": "Code-side safety bounds on model-proposed training plans (L-2/LLM09). Clamps suggestedDurationMinutes (≤600m) and targetTRIMP (≤1000, negatives→0) before persistence/display, independent of the prompt guardrails. Pure value-in/value-out (§6); runs at the single TrainingPlanManager.updatePlan chokepoint.",
       "uses": [
         "SuggestedWorkout"
@@ -678,7 +806,7 @@
       "id": "PromptInputSanitizer",
       "layer": "services",
       "kind": "helper",
-      "file": "AIFitnessCoach/Services/PromptInputSanitizer.swift",
+      "file": "AIFitnessCoach/Services/AI/PromptInputSanitizer.swift",
       "description": "Sanitizes externally-sourced free text (e.g. Strava activity.name) before it enters the coach prompt (L-1/LLM01 prompt-injection): strips control chars/newlines, collapses whitespace, caps length, placeholder for blank. Pure (§6).",
       "uses": [],
       "tags": [
@@ -690,7 +818,7 @@
       "id": "CoordinatePrivacy",
       "layer": "services",
       "kind": "helper",
-      "file": "AIFitnessCoach/Services/CoordinatePrivacy.swift",
+      "file": "AIFitnessCoach/Services/Security/CoordinatePrivacy.swift",
       "description": "Single source of truth for coordinate privacy: rounds GPS/geocoded lat-lon to 0.1° (~11km) before any weather request, so the privacy margin is explicit and no longer depends on CLLocationManager.desiredAccuracy (review L-5). Pure (§6). Used by WeatherManager, OpenMeteoForecastClient and HistoricalWeatherService.",
       "uses": [],
       "tags": [
@@ -702,7 +830,7 @@
       "id": "PermissionStatusEvaluator",
       "layer": "services",
       "kind": "helper",
-      "file": "AIFitnessCoach/Services/PermissionStatusEvaluator.swift",
+      "file": "AIFitnessCoach/Services/Sync/PermissionStatusEvaluator.swift",
       "description": "Epic #62 stories 62.3/62.5 — pure-Swift mapping of raw permission + background-engine facts to a display status (AccessLevel granted/partial/denied/notRequested, EngineStatus active/failed/inactive) for the Settings overview. HealthKit read-grant is unverifiable, so it combines 'critical types asked?' with Epic #38's last workout count ('asked but zero' = partial). Framework-free (§6).",
       "uses": [],
       "tags": [
@@ -713,7 +841,7 @@
       "id": "CaptivePortalClassifier",
       "layer": "services",
       "kind": "helper",
-      "file": "AIFitnessCoach/Services/CaptivePortalClassifier.swift",
+      "file": "AIFitnessCoach/Services/Infra/CaptivePortalClassifier.swift",
       "description": "Epic #62 story 62.4 (51.F6) — pure-Swift: flags a captive-portal HTML login page returned where a JSON API was expected (looksLikeCaptivePortal on content-type/body/redirect). No HTTP-204 probe / ATS exception needed; the network layer passes the response it already got. Used by WeatherManager → SyncStatusStore → SyncBannerStateBuilder (.captivePortal).",
       "uses": [],
       "tags": [
@@ -724,7 +852,7 @@
       "id": "WeatherRetryPolicy",
       "layer": "services",
       "kind": "helper",
-      "file": "AIFitnessCoach/Services/WeatherRetryPolicy.swift",
+      "file": "AIFitnessCoach/Services/Weather/WeatherRetryPolicy.swift",
       "description": "Epic #62 story 62.4 (51.F4) — pure-Swift: throttles automatic weather re-fetch after a failure (5-min cooldown) so a missing forecast is non-blocking and Open-Meteo isn't hammered on every appear. WeatherManager records/clears the failure timestamp.",
       "uses": [],
       "tags": [
@@ -735,7 +863,7 @@
       "id": "HealthKitPermissionAudit",
       "layer": "services",
       "kind": "helper",
-      "file": "AIFitnessCoach/Services/HealthKitPermissionAudit.swift",
+      "file": "AIFitnessCoach/Services/Sync/HealthKitPermissionAudit.swift",
       "description": "Epic #62 story 62.4 (51.F3) — pure-Swift: maps unavailable critical HealthKit signals (workouts/heartRate/hrv/activeEnergy) to the app features that degrade (schedule/intensityZones/vibeScore/loadEstimate). Surfaced in PermissionStatusView; only .notDetermined is reliable for read types.",
       "uses": [],
       "tags": [
@@ -774,7 +902,7 @@
       "id": "APIKeyInputValidator",
       "layer": "services",
       "kind": "validator",
-      "file": "AIFitnessCoach/Services/APIKeyInputValidator.swift",
+      "file": "AIFitnessCoach/Services/AI/APIKeyInputValidator.swift",
       "description": "Epic #62 story 62.2 — pure-Swift hardening for the BYOK key field: sanitize() strips all whitespace/newlines from a paste, inferredProvider()/isProviderMismatch() detect a key whose prefix (sk-ant- / sk- / AIza) belongs to a different provider than selected. Never guesses on an unrecognised prefix (no Mistral false positives).",
       "uses": [
         "AIProvider"
@@ -787,7 +915,7 @@
       "id": "APIKeyTestStatusStore",
       "layer": "services",
       "kind": "store",
-      "file": "AIFitnessCoach/Services/APIKeyTestStatusStore.swift",
+      "file": "AIFitnessCoach/Services/AI/APIKeyTestStatusStore.swift",
       "description": "Epic #62 story 62.2 — persists the 'key works' verdict per provider so it survives a provider switch + app restart. Stores only a SHA256 fingerprint of the key (§11 privacy), never the key. UserDefaults-injected (§6).",
       "uses": [
         "AIProvider"
@@ -800,7 +928,7 @@
       "id": "HistoricalWeatherService",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/HistoricalWeatherService.swift",
+      "file": "AIFitnessCoach/Services/Weather/HistoricalWeatherService.swift",
       "description": "Queries Open-Meteo (archive or forecast with past_days) for Strava records without iPhone presence. GPS rounded to 0.1° for privacy.",
       "uses": [
         "NetworkSession",
@@ -815,7 +943,7 @@
       "id": "WeatherManager",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/WeatherManager.swift",
+      "file": "AIFitnessCoach/Services/Weather/WeatherManager.swift",
       "description": "Realtime weather via Open-Meteo + CoreLocation for dashboard context.",
       "uses": [
         "NetworkSession",
@@ -826,7 +954,7 @@
       "id": "HeartRateZoneCalculator",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/HeartRateZoneCalculator.swift",
+      "file": "AIFitnessCoach/Services/Physiology/HeartRateZoneCalculator.swift",
       "description": "Computes personal HR zones from max HR and lactateThresholdHR.",
       "uses": [
         "HeartRateZones",
@@ -840,7 +968,7 @@
       "id": "PowerZoneCalculator",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/PowerZoneCalculator.swift",
+      "file": "AIFitnessCoach/Services/Physiology/PowerZoneCalculator.swift",
       "description": "Computes Coggan power zones from FTP.",
       "uses": [
         "UserConfiguration"
@@ -853,7 +981,7 @@
       "id": "PhysiologicalThresholdService",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/PhysiologicalThresholdService.swift",
+      "file": "AIFitnessCoach/Services/Physiology/PhysiologicalThresholdService.swift",
       "description": "Manages storage/retrieval of LTHR + FTP. Feeds PauseDetector and WorkoutPatternDetector with referenceHR.",
       "uses": [
         "UserConfiguration",
@@ -867,7 +995,7 @@
       "id": "PhysiologicalThresholdEstimator",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/PhysiologicalThresholdEstimator.swift",
+      "file": "AIFitnessCoach/Services/Physiology/PhysiologicalThresholdEstimator.swift",
       "description": "Pure-Swift estimator that derives LTHR/FTP from historical workout data when the user does not set them manually.",
       "uses": [
         "ActivityRecord",
@@ -896,7 +1024,7 @@
       "id": "InjuryImpactMatrix",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/InjuryImpactMatrix.swift",
+      "file": "AIFitnessCoach/Services/Physiology/InjuryImpactMatrix.swift",
       "description": "Penalty multiplier (1.0-1.4×) on TRIMP for a risky sport+injury combination.",
       "uses": [
         "Symptom",
@@ -910,7 +1038,7 @@
       "id": "KeychainService",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/KeychainService.swift",
+      "file": "AIFitnessCoach/Services/Security/KeychainService.swift",
       "description": "Wrapper around kSecClassGenericPassword. Stores Strava tokens + BYOK API keys with kSecAttrAccessibleWhenUnlockedThisDeviceOnly (M-4: device-only, excluded from backups/restore).",
       "uses": [],
       "tags": [
@@ -922,7 +1050,7 @@
       "id": "UserAPIKeyStore",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/UserAPIKeyStore.swift",
+      "file": "AIFitnessCoach/Services/Security/UserAPIKeyStore.swift",
       "description": "Type-safe layer over KeychainService. Per-provider key slots (Epic #53) + the one-time migrations from UserDefaults and from the legacy single key (both idempotent).",
       "uses": [
         "KeychainService"
@@ -935,7 +1063,7 @@
       "id": "MigrationFallbackStore",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/MigrationFallbackStore.swift",
+      "file": "AIFitnessCoach/Services/Infra/MigrationFallbackStore.swift",
       "description": "Pure-Swift wrapper around the `vibecoach_migrationFallbackAt` UserDefaults flag. Written by AIFitnessCoachApp on a successful fresh-DB fallback (CLAUDE.md §12); read by MigrationFallbackBanner; cleared on user dismiss. AppStorage-free for testability.",
       "uses": [],
       "tags": [
@@ -946,7 +1074,7 @@
       "id": "AppVersionInfo",
       "layer": "services",
       "kind": "infrastructure",
-      "file": "AIFitnessCoach/Services/AppVersionInfo.swift",
+      "file": "AIFitnessCoach/Services/Infra/AppVersionInfo.swift",
       "description": "Reads CFBundleShortVersionString + CFBundleVersion from Bundle.main and formats it as 'VibeCoach 2.0.0 (build 627)' for the Settings footer. Bundle injection via a parameter so tests can supply a fixture bundle.",
       "uses": [],
       "tags": [
@@ -957,7 +1085,7 @@
       "id": "PhysiologicalThresholdValidator",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/PhysiologicalThresholdValidator.swift",
+      "file": "AIFitnessCoach/Services/Physiology/PhysiologicalThresholdValidator.swift",
       "description": "Pure-Swift validator for the four personal training thresholds (Max HR, Resting HR, LTHR, FTP). Two kinds of checks: per-field range (warning on unusual, error on absurd) + cross-validation over the profile (Max HR > Resting HR, LTHR < Max HR, LTHR > Resting HR). Feeds ThresholdEditSheet live feedback and the zone-card explanation.",
       "uses": [],
       "tags": [
@@ -979,7 +1107,7 @@
       "id": "ChatErrorMessageMapper",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/ChatErrorMessageMapper.swift",
+      "file": "AIFitnessCoach/Services/AI/ChatErrorMessageMapper.swift",
       "description": "Pure-Swift mapper from raw SDK/network errors to specific user messages. URLError codes for offline/timeout/DNS/cancelled; GenerateContentError cases via type-name matching (no circular SDK dep) for safety-block / invalid-key / overload; plus AIProviderError for the non-Gemini REST clients. Replaces the old generic 'temporary problem' message in ChatViewModel.",
       "uses": [],
       "tags": [
@@ -990,7 +1118,7 @@
       "id": "ChatModelSwitchNotice",
       "layer": "services",
       "kind": "formatter",
-      "file": "AIFitnessCoach/Services/ChatModelSwitchNotice.swift",
+      "file": "AIFitnessCoach/Services/AI/ChatModelSwitchNotice.swift",
       "description": "Pure-Swift helper that generates the banner text when the user switches model in Settings during an in-flight coach call. Compares the active-request snapshot (from ChatViewModel) with the current AppStorage model names and returns a specific message — a primary change takes precedence over a fallback change.",
       "uses": [],
       "tags": [
@@ -1001,7 +1129,7 @@
       "id": "ChatConversationTrimmer",
       "layer": "services",
       "kind": "formatter",
-      "file": "AIFitnessCoach/Services/ChatConversationTrimmer.swift",
+      "file": "AIFitnessCoach/Services/AI/ChatConversationTrimmer.swift",
       "description": "Generic pure-Swift split helper that splits a message array over 50 items into an archived front part (oldest) and a visible tail. Used by ChatView to collapse long conversations behind a 'Show earlier X messages' toggle. UI optimisation only — the chat API receives no message history.",
       "uses": [],
       "tags": [
@@ -1012,7 +1140,7 @@
       "id": "ChatInputValidator",
       "layer": "services",
       "kind": "validator",
-      "file": "AIFitnessCoach/Services/ChatInputValidator.swift",
+      "file": "AIFitnessCoach/Services/AI/ChatInputValidator.swift",
       "description": "Pure-Swift validator that clamps chat input to 5000 characters (maxLength) and only shows the counter from 4000 characters (80%). A paste that exceeds the limit is truncated and marked via didClamp so the view can show a one-time trim toast. Prevents 45s timeouts on large text blocks.",
       "uses": [],
       "tags": [
@@ -1023,7 +1151,7 @@
       "id": "StravaRateLimitParser",
       "layer": "services",
       "kind": "parser",
-      "file": "AIFitnessCoach/Services/StravaRateLimitParser.swift",
+      "file": "AIFitnessCoach/Services/Sync/StravaRateLimitParser.swift",
       "description": "Pure-Swift parser that extracts the Retry-After time from a 429 response. Supports both delta-seconds (`60`) and an RFC 7231 IMF date (`Mon, 06 May 2024 13:03:20 GMT`). Default cooldown 15 min when the header is missing or malformed; dates in the past fall back to the default instead of an immediate retry to prevent retry storms.",
       "uses": [],
       "tags": [
@@ -1035,7 +1163,7 @@
       "id": "StravaRateLimitStore",
       "layer": "services",
       "kind": "store",
-      "file": "AIFitnessCoach/Services/StravaRateLimitStore.swift",
+      "file": "AIFitnessCoach/Services/Sync/StravaRateLimitStore.swift",
       "description": "UserDefaults-backed store for the Strava rate-limit cooldown. Writes the retry time as a Double so @AppStorage in SyncStatusBanner can bind to it reactively; `currentCooldown(now:)` clears expired entries automatically. Injected into FitnessDataService so a 429 is respected across app launches.",
       "uses": [],
       "tags": [
@@ -1047,7 +1175,7 @@
       "id": "NetworkReachabilityMonitor",
       "layer": "services",
       "kind": "monitor",
-      "file": "AIFitnessCoach/Services/NetworkReachabilityMonitor.swift",
+      "file": "AIFitnessCoach/Services/Infra/NetworkReachabilityMonitor.swift",
       "description": "Lightweight @MainActor singleton wrapper around NWPathMonitor. Publishes `isOnline` (Bool) and mirrors the offline status to UserDefaults so non-View-layer callers (the SyncStatusStore snapshot) have a synchronous read path. Idempotent `start()`; started from AIFitnessCoachApp.init so the banner has the correct state right from launch.",
       "uses": [],
       "tags": [
@@ -1059,7 +1187,7 @@
       "id": "SyncStatusStore",
       "layer": "services",
       "kind": "store",
-      "file": "AIFitnessCoach/Services/SyncStatusStore.swift",
+      "file": "AIFitnessCoach/Services/Sync/SyncStatusStore.swift",
       "description": "Pure-Swift, UserDefaults-backed store with per-source last-success timestamps and last-error categories (network/auth/rateLimit/decoding/other). Filters out FitnessDataError.missingToken — users without a Strava connection get no banner. Provides a SyncStatusSnapshot for SyncBannerStateBuilder. Writes Double timestamps (Unix epoch) so @AppStorage in the View can read reactively.",
       "uses": [
         "StravaRateLimitStore"
@@ -1073,7 +1201,7 @@
       "id": "SyncBannerStateBuilder",
       "layer": "services",
       "kind": "formatter",
-      "file": "AIFitnessCoach/Services/SyncBannerStateBuilder.swift",
+      "file": "AIFitnessCoach/Services/Sync/SyncBannerStateBuilder.swift",
       "description": "Pure function that determines the right banner state from a SyncStatusSnapshot. Strict priority offline > rate-limited > error > nil; with two error sources the most recent wins. A leftover `.rateLimit` category is ignored once the cooldown has expired so the banner does not stay up permanently.",
       "uses": [],
       "tags": [
@@ -1102,7 +1230,7 @@
       "id": "TokenStore",
       "layer": "services",
       "kind": "service",
-      "file": "AIFitnessCoach/Services/TokenStore.swift",
+      "file": "AIFitnessCoach/Services/Security/TokenStore.swift",
       "description": "Strava OAuth token storage in the Keychain.",
       "uses": [
         "KeychainService"
@@ -1112,7 +1240,7 @@
       "id": "AppLoggers",
       "layer": "services",
       "kind": "infrastructure",
-      "file": "AIFitnessCoach/Services/AppLoggers.swift",
+      "file": "AIFitnessCoach/Services/Infra/AppLoggers.swift",
       "description": "Centralised os.Logger instances per category. Privacy modifiers mandatory for user data (HRV, RPE, tokens, UUIDs).",
       "uses": [],
       "tags": [
@@ -1151,7 +1279,7 @@
       "id": "UITestMockEnvironment",
       "layer": "services",
       "kind": "test-infra",
-      "file": "AIFitnessCoach/Services/UITestMockEnvironment.swift",
+      "file": "AIFitnessCoach/Services/Infra/UITestMockEnvironment.swift",
       "description": "Gated on -UITesting + #if DEBUG. Writes a dummy API key, weather data, periodisation context. UITestMockGenerativeModel replaces the Gemini call.",
       "uses": [
         "GenerativeModelProtocol"
@@ -1225,6 +1353,15 @@
       "file": "AIFitnessCoach/Models/Symptom.swift",
       "description": "Injury/complaint with a bodyArea enum and an expiry date. Local-only — not re-syncable.",
       "uses": []
+    },
+    {
+      "id": "InjuryKeywordMatcher",
+      "layer": "models",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Models/InjuryKeywordMatcher.swift",
+      "description": "Pure, AppStorage-free word-boundary matcher for injury keywords. Replaces a bare text.contains that matched 'rug' inside 'terug' (phantom Back tracker, on-device report 2026-07-03). Prefix matching keeps NL/DE compounds ('rugpijn', 'knieblessure'); short greedy keywords ('hand', 'back') opt into whole-word-only. Shared by BodyArea.matchesInjuryKeyword and SymptomContextFormatter.",
+      "uses": [],
+      "tags": ["injury-detection", "i18n", "pure-helper"]
     },
     {
       "id": "AppMigrationPlan",
@@ -1315,7 +1452,7 @@
       "id": "AIModelFactory",
       "kind": "service",
       "layer": "services",
-      "file": "AIFitnessCoach/Services/AIModelFactory.swift",
+      "file": "AIFitnessCoach/Services/AI/AIModelFactory.swift",
       "description": "Provider-agnostic client factory (Epic #53, Story 61.8). Routes per AIProvider to GeminiRestClient (Gemini v1beta REST, replaces generative-ai-swift SDK), OpenAICompatibleModelClient (OpenAI + Mistral, /v1/chat/completions) or AnthropicModelClient (/v1/messages). Encapsulates system-instruction placement, JSON mode and HTTP error mapping (AIProviderHTTP.validate → AIProviderError).",
       "uses": [
         "GenerativeModelProtocol"
@@ -1328,7 +1465,7 @@
       "id": "GeminiRestClient",
       "kind": "service",
       "layer": "services",
-      "file": "AIFitnessCoach/Services/AIModelFactory.swift",
+      "file": "AIFitnessCoach/Services/AI/AIModelFactory.swift",
       "description": "Story 61.8 — pure URLSession REST client for Gemini API v1beta /generateContent. Replaces the deprecated generative-ai-swift SDK (CWE-1104). Implements GenerativeModelProtocol + RealAIProviderClient. Auth: x-goog-api-key header (key stays out of URL/access logs). JSON mode: generationConfig.response_mime_type. Image: inline_data parts. Custom validateGemini() maps HTTP 400 INVALID_ARGUMENT to AIProviderError.authenticationFailed.",
       "uses": [
         "GenerativeModelProtocol",
@@ -1343,7 +1480,7 @@
       "id": "ProviderModelListService",
       "kind": "service",
       "layer": "services",
-      "file": "AIFitnessCoach/Services/AIModelFactory.swift",
+      "file": "AIFitnessCoach/Services/AI/AIModelFactory.swift",
       "description": "Epic #54 — fetches /v1/models live per provider (OpenAI/Anthropic/Mistral) directly with the BYOK key, filters to chat models, falls back to AIModelCatalog.builtIn. Gemini stays on the Worker.",
       "uses": [],
       "tags": [
@@ -1393,6 +1530,17 @@
         "epic-23",
         "epic-36",
         "epic-60"
+      ]
+    },
+    {
+      "id": "QueryWindows",
+      "layer": "services",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Services/QueryWindows.swift",
+      "description": "Epic #65 story 65.2 pure helper: central Calendar-based rolling cutoffs that bound the full-table @Query's (ActivityRecord 26w, DailyReadiness 90d, Symptom 30d). Sized to the widest real consumer per view (16-week burndown block); computed at view-init as let values for #Predicate capture. Pure-Swift, AppStorage-free.",
+      "uses": [],
+      "tags": [
+        "epic-65"
       ]
     },
     {
@@ -2043,7 +2191,7 @@
       {
         "id": "UITestMockEnvironment",
         "purpose": "Bootstrap for XCUITest: writes a dummy API key to Keychain, fake weather + periodisation context, and swaps the generative model. Gated on -UITesting + #if DEBUG.",
-        "file": "AIFitnessCoach/Services/UITestMockEnvironment.swift"
+        "file": "AIFitnessCoach/Services/Infra/UITestMockEnvironment.swift"
       }
     ],
     "coverage": {

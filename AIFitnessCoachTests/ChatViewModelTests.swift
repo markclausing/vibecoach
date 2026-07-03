@@ -173,7 +173,7 @@ final class ChatViewModelTests: XCTestCase {
         viewModel.messages.removeAll()
 
         // Actie
-        viewModel.sendMessage(contextProfile: testProfile)
+        viewModel.sendMessage(invocation: CoachInvocationContext(profile: testProfile))
 
         try? await Task.sleep(nanoseconds: 200_000_000)
 
@@ -204,7 +204,7 @@ final class ChatViewModelTests: XCTestCase {
         viewModel.messages.removeAll()
 
         // Actie
-        viewModel.sendMessage(contextProfile: testProfile)
+        viewModel.sendMessage(invocation: CoachInvocationContext(profile: testProfile))
         try? await Task.sleep(nanoseconds: 200_000_000)
 
         // Assert: Mock model heeft de urgent prefix
@@ -558,7 +558,7 @@ final class ChatViewModelTests: XCTestCase {
     /// to JSONDecoder verbatim and failed. The balanced extractor must drop the extra brace.
     func testExtractCleanJSON_DropsDuplicatedTrailingBrace() throws {
         let raw = planJSONBody + "\n}"
-        let cleaned = ChatViewModel.extractCleanJSON(from: raw)
+        let cleaned = CoachResponseParser.extractCleanJSON(from: raw)
         XCTAssertEqual(cleaned, planJSONBody)
         // And the result must actually decode.
         XCTAssertNoThrow(try JSONSerialization.jsonObject(with: Data(cleaned.utf8)))
@@ -566,13 +566,13 @@ final class ChatViewModelTests: XCTestCase {
 
     /// A clean object (already starting with `{`) must pass through unchanged.
     func testExtractCleanJSON_CleanObject_Unchanged() {
-        XCTAssertEqual(ChatViewModel.extractCleanJSON(from: planJSONBody), planJSONBody)
+        XCTAssertEqual(CoachResponseParser.extractCleanJSON(from: planJSONBody), planJSONBody)
     }
 
     /// Markdown code fences and surrounding prose are stripped, and only the balanced object remains.
     func testExtractCleanJSON_StripsMarkdownFenceAndProse() throws {
         let raw = "Hier is je schema:\n```json\n\(planJSONBody)\n```\nVeel plezier!"
-        let cleaned = ChatViewModel.extractCleanJSON(from: raw)
+        let cleaned = CoachResponseParser.extractCleanJSON(from: raw)
         XCTAssertEqual(cleaned, planJSONBody)
         XCTAssertNoThrow(try JSONSerialization.jsonObject(with: Data(cleaned.utf8)))
     }
@@ -580,7 +580,7 @@ final class ChatViewModelTests: XCTestCase {
     /// A brace inside a string value (e.g. a description) must not throw off the depth count.
     func testExtractCleanJSON_BraceInsideStringValue_DoesNotMiscount() throws {
         let body = #"{"motivation": "Gebruik {haakjes} bewust", "workouts": [], "newPreferences": []}"#
-        let cleaned = ChatViewModel.extractCleanJSON(from: body + "\n}")
+        let cleaned = CoachResponseParser.extractCleanJSON(from: body + "\n}")
         XCTAssertEqual(cleaned, body)
         XCTAssertNoThrow(try JSONSerialization.jsonObject(with: Data(cleaned.utf8)))
     }
@@ -588,7 +588,7 @@ final class ChatViewModelTests: XCTestCase {
     /// An escaped quote inside a string must not be treated as the string terminator.
     func testExtractCleanJSON_EscapedQuoteInString_StaysBalanced() throws {
         let body = #"{"motivation": "Hij zei \"ga door\" tegen me", "workouts": [], "newPreferences": []}"#
-        let cleaned = ChatViewModel.extractCleanJSON(from: body + "}}")
+        let cleaned = CoachResponseParser.extractCleanJSON(from: body + "}}")
         XCTAssertEqual(cleaned, body)
         XCTAssertNoThrow(try JSONSerialization.jsonObject(with: Data(cleaned.utf8)))
     }

@@ -14,8 +14,9 @@ enum BodyArea: String, CaseIterable, Codable {
 
     /// Keywords in UserPreference texts that indicate a complaint in this area.
     /// Epic #37 story 37.4: now a NL + EN + DE + ES union so injury detection works on free
-    /// text the user typed in any supported language. Matching is `contains` on lowercased
-    /// text; Spanish/German accents are listed with and without the diacritic.
+    /// text the user typed in any supported language. Matching goes through
+    /// `InjuryKeywordMatcher` (word-boundary anchored — no more "rug" inside "terug");
+    /// Spanish/German accents are listed with and without the diacritic.
     var injuryKeywords: [String] {
         switch self {
         case .calf:     return ["kuit", "scheen", "shin", "calf", "wade", "schienbein", "pantorrilla", "gemelo", "espinilla"]
@@ -25,6 +26,13 @@ enum BodyArea: String, CaseIterable, Codable {
         case .shoulder: return ["schouder", "shoulder", "schulter", "hombro"]
         case .ankle:    return ["enkel", "ankle", "knöchel", "knochel", "fußgelenk", "fussgelenk", "tobillo"]
         }
+    }
+
+    /// True when this area's injury keywords occur at a word boundary in `text`.
+    /// Shared entry point so every call site (Dashboard, Chat, SymptomContextFormatter) uses the
+    /// same word-boundary matching instead of a bare `contains`.
+    func matchesInjuryKeyword(in text: String) -> Bool {
+        InjuryKeywordMatcher.matches(anyOf: injuryKeywords, in: text)
     }
 
     var icon: String {

@@ -70,7 +70,8 @@ enum RouteParser {
         var match: Range<String.Index>?
         for connector in strongMidConnectors {
             if let r = rangeOfWord(connector, in: lower) {
-                if match == nil || r.lowerBound < match!.lowerBound { match = r }
+                // swiftlint:disable:next force_unwrapping
+                if match == nil || r.lowerBound < match!.lowerBound { match = r } // `||` short-circuits: `match!` only reached when match != nil
             }
         }
 

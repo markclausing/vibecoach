@@ -33,7 +33,8 @@ struct PreferencesListView: View {
     }
 
     private var activePreferences: [UserPreference] {
-        allPreferences.filter { $0.isActive && ($0.expirationDate == nil || $0.expirationDate! > Date()) }
+        // swiftlint:disable:next force_unwrapping
+        allPreferences.filter { $0.isActive && ($0.expirationDate == nil || $0.expirationDate! > Date()) } // `||` short-circuits: `!` only reached when expirationDate != nil
     }
 
     private var historicPreferences: [UserPreference] {

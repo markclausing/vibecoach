@@ -227,6 +227,7 @@ struct OpenAICompatibleModelClient: GenerativeModelProtocol, RealAIProviderClien
         case mistral
 
         var endpoint: URL {
+            // Hardcoded, valid absolute URL literals — `URL(string:)` never returns nil for these.
             switch self {
             case .openAI:  return URL(string: "https://api.openai.com/v1/chat/completions")!
             case .mistral: return URL(string: "https://api.mistral.ai/v1/chat/completions")!
@@ -301,7 +302,7 @@ struct OpenAICompatibleModelClient: GenerativeModelProtocol, RealAIProviderClien
 /// half-finished assistant turn and paste the `{` back in front of the response.
 struct AnthropicModelClient: GenerativeModelProtocol, RealAIProviderClient {
 
-    static let endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
+    static let endpoint = URL(string: "https://api.anthropic.com/v1/messages")! // hardcoded valid URL literal, never nil
     static let apiVersion = "2023-06-01"
     static let maxTokens = 4096
 
@@ -463,6 +464,7 @@ struct ProviderModelListService {
     }
 
     static func endpoint(for provider: AIProvider) -> URL {
+        // Hardcoded, valid absolute URL literals — `URL(string:)` never returns nil for these.
         switch provider {
         case .openAI:    return URL(string: "https://api.openai.com/v1/models")!
         case .mistral:   return URL(string: "https://api.mistral.ai/v1/models")!

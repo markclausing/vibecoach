@@ -14,133 +14,14 @@ struct AppTabHostView: View {
     // Auto-Sync Dependencies (Sprint 12.3)
     @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
-    private let fitnessDataService = FitnessDataService()
 
-    /// Guard against concurrent auto-sync runs (race condition fix for duplicate records).
-    @State private var isAutoSyncing = false
-
-    /// Epic #51-F1/F2/F5: writes per-source success/error messages so that
-    /// `SyncStatusBanner` on the Dashboard can show them directly. Deliberately silent
-    /// for `.missingToken` — a user without a Strava connection gets no
-    /// banner about a sync they never enabled.
-    private let syncStatusStore = SyncStatusStore()
-
-    /// Asynchronously runs the data synchronization for the last 14 days in the background.
-    /// Epic #42 Story 42.1: HK + Strava run independently, regardless of `selectedDataSource`.
-    /// The toggle has thereby become a "preference" (label/tiebreaker), no longer an exclusive
-    /// choice. Cross-source duplicates are caught by `ActivityDeduplicator.smartInsert`.
-    private func performAutoSync() {
-        guard !isAutoSyncing else {
-            AppLoggers.fitnessDataService.notice("Auto-sync skipped: a previous sync is still active")
-            return
-        }
-        isAutoSyncing = true
-        Task {
-            defer { Task { @MainActor in isAutoSyncing = false } }
-            async let hk: Void = runHealthKitAutoSync()
-            async let strava: Void = runStravaAutoSync()
-            _ = await (hk, strava)
-        }
-    }
-
-    @MainActor
-    private func runHealthKitAutoSync() async {
-        do {
-            // Epic #38 Story 38.2: cache the number of workouts HK returned in the
-            // 365d window, so that `DashboardView` can determine via
-            // `HealthKitSyncStatusEvaluator` whether the "silent sync" banner should be
-            // shown. 0 workouts + workout-auth != .sharingAuthorized = banner.
-            let count = try await HealthKitSyncService().syncHistoricalWorkouts(to: modelContext)
-            UserDefaults.standard.set(count, forKey: AppStorageKeys.lastHKWorkoutsCount)
-            syncStatusStore.recordHKSuccess()
-
-            // fix/workout-samples-loading: ask DeepSync directly for samples for the
-            // just-inserted workouts. Without this trigger DeepSync only picks up
-            // at DashboardView.task — a user who opens the Coach or Goals tab
-            // right after a workout would otherwise stay stuck forever on the
-            // "Deep Sync running" placeholder. Idempotent: the processed-UUID set in
-            // DeepSyncService prevents repeated HK quantity fetches.
-            let store = WorkoutSampleStore(modelContainer: modelContext.container)
-            let ingest = WorkoutSampleIngestService()
-            let deepSync = DeepSyncService(ingestService: ingest, store: store)
-            await deepSync.runIfNeeded()
-        } catch {
-            // Silent error: HK may be unauthorized, no reason to block.
-            // Write count=0 so the banner evaluator can still trigger if
-            // the auth status supports it.
-            UserDefaults.standard.set(0, forKey: AppStorageKeys.lastHKWorkoutsCount)
-            syncStatusStore.recordHKError(error)
-            AppLoggers.fitnessDataService.error("Auto-sync HealthKit failed: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    /// Epic #38 Story 38.1: foreground-return retrigger. On every `.active`
-    /// transition we check whether one of the critical types is `.notDetermined` —
-    /// can arise after an iOS permission reset (e.g. partially after reinstall
-    /// or via Privacy & Security settings). The helper only shows a
-    /// prompt for types where no decision has been made yet; users with
-    /// explicit `.sharingAuthorized` or `.sharingDenied` see no UX change.
-    @MainActor
-    private func retriggerHealthKitPermissionsIfNeeded() async {
-        do {
-            try await HealthKitManager.shared.requestPermissionsForCriticalNotDetermined()
-        } catch {
-            AppLoggers.fitnessDataService.error("HealthKit permission retrigger failed: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    @MainActor
-    private func runStravaAutoSync() async {
-        do {
-            // Only fetch the last 14 days — short enough for the Burn Rate graph + well
-            // within Strava's rate limit.
-            let activities = try await fitnessDataService.fetchRecentActivities(days: 14)
-
-            for activity in activities {
-                // Epic 65.1: use the cached ISO-8601 formatters (no per-activity allocation).
-                let date = AppDateFormatters.iso8601WithFractionalSeconds.date(from: activity.start_date)
-                    ?? AppDateFormatters.iso8601.date(from: activity.start_date)
-                    ?? Date()
-
-                // SPRINT 12.4: basic TRIMP fallback during sync (Epic 65.1: centralised).
-                let basicTRIMPFallback: Double? = PhysiologicalCalculator.basicFallbackTRIMP(
-                    durationSec: Double(activity.moving_time),
-                    avgHR: activity.average_heartrate
-                )
-
-                let record = ActivityRecord(
-                    id: String(activity.id),
-                    name: activity.name,
-                    distance: activity.distance,
-                    movingTime: activity.moving_time,
-                    averageHeartrate: activity.average_heartrate,
-                    sportCategory: SportCategory.from(rawString: activity.type),
-                    startDate: date,
-                    trimp: basicTRIMPFallback,
-                    deviceWatts: activity.device_watts
-                )
-                // Epic #50: fetch historical weather data for outdoor Strava rides
-                // without iPhone presence (Garmin/bike-computer-only). Fails
-                // gracefully — on an API error the record simply stays without weather data.
-                await HistoricalWeatherService.enrichRecord(record, from: activity, startDate: date)
-                _ = try? ActivityDeduplicator.smartInsert(record, into: modelContext)
-            }
-            // Epic 65.1: log a failed save instead of silently swallowing it (§11).
-            do {
-                try modelContext.save()
-            } catch {
-                AppLoggers.fitnessDataService.error("Auto-sync Strava save failed: \(error.localizedDescription, privacy: .public)")
-            }
-            syncStatusStore.recordStravaSuccess()
-        } catch FitnessDataError.missingToken {
-            // User has not connected Strava — no reason to log on every launch.
-            // Deliberately no `recordStravaError` so we don't show a banner to someone
-            // without a Strava connection (Epic #51-F1).
-        } catch {
-            syncStatusStore.recordStravaError(error)
-            AppLoggers.fitnessDataService.error("Auto-sync Strava failed: \(error.localizedDescription, privacy: .public)")
-        }
-    }
+    /// Epic #65 story 65.4: the whole auto-sync pipeline (HK + Strava fan-out, weather
+    /// enrichment, per-source status writes, concurrency guard, foreground permission
+    /// retrigger) now lives in `AutoSyncCoordinator`. This view only owns the instance and
+    /// fires one-line triggers. Created lazily in `.onAppear` because the coordinator needs
+    /// the environment `modelContext`, which is not available at property-init time. Held in
+    /// `@State` so the single instance (and its in-flight guard) survives re-renders.
+    @State private var syncCoordinator: AutoSyncCoordinator?
 
     var body: some View {
         TabView(selection: $appState.selectedTab) {
@@ -199,17 +80,22 @@ struct AppTabHostView: View {
             sharedChatViewModel.setTrainingPlanManager(planManager)
             // Story 61.7: inject the SwiftData context so the PHI prompt-context
             // caches load from the protected store instead of UserDefaults.
-            sharedChatViewModel.configure(with: modelContext)
+            sharedChatViewModel.context.configure(with: modelContext)
+            // Epic #65 story 65.4: lazily build the coordinator once the environment
+            // modelContext is available. A single instance keeps the in-flight guard alive.
+            if syncCoordinator == nil {
+                syncCoordinator = AutoSyncCoordinator(modelContext: modelContext)
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .triggerAutoSync)) { _ in
-            performAutoSync()
+            syncCoordinator?.performAutoSync()
         }
         // Epic #38 Story 38.1: on foreground return, prompt for types that
         // have become `.notDetermined` in the meantime (e.g. iOS reinstall with
         // partial permission reset). iOS 17+ two-arg onChange syntax.
         .onChange(of: scenePhase) { _, newPhase in
             guard newPhase == .active else { return }
-            Task { await retriggerHealthKitPermissionsIfNeeded() }
+            Task { await syncCoordinator?.retriggerHealthKitPermissionsIfNeeded() }
         }
     }
 }

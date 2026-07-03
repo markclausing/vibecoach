@@ -246,10 +246,13 @@ final class UserProfileService: @unchecked Sendable {
         if let dob        = HKObjectType.characteristicType(forIdentifier: .dateOfBirth) { read.insert(dob) }
         if let sex        = HKObjectType.characteristicType(forIdentifier: .biologicalSex) { read.insert(sex) }
 
+        // swiftlint:disable force_unwrapping
+        // Built-in HealthKit identifiers — Apple guarantees non-nil.
         let share: Set<HKSampleType> = [
             HKQuantityType.quantityType(forIdentifier: .bodyMass)!,
             HKQuantityType.quantityType(forIdentifier: .height)!
         ]
+        // swiftlint:enable force_unwrapping
 
         await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
             healthStore.requestAuthorization(toShare: share, read: read) { _, _ in

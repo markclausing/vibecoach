@@ -63,7 +63,7 @@ Read it at the start of every session as the basis for all decisions.
 
 - Modular code: split large screens into smaller reusable components.
 - **One top-level type per file.** Mandatory for `@Model` classes; for structs/enums only combine them when they are tightly coupled (e.g. an enum + its supporting structs like `BodyArea` + `Symptom`).
-- **Soft cap: ±500 LOC per Swift file.** If it goes over, split by logical responsibility (model class, prompt formatter, query helper, etc.). Pure file splits without semantic changes are always safe — type names stay identical, so SwiftData and callers notice nothing.
+- **Soft cap: ±500 LOC per Swift file.** If it goes over, split by logical responsibility (model class, prompt formatter, query helper, etc.). Pure file splits without semantic changes are always safe — type names stay identical, so SwiftData and callers notice nothing. **Automated backstop (Epic 65.6):** SwiftLint enforces `file_length` (warning 600) + `type_body_length` (warning 500); a file legitimately over the cap carries an in-file `// swiftlint:disable file_length` header with a one-line justification (debt visible at the point of debt).
 - Use standard iOS components — simple, modern and native.
 - Explain complex logic (API integrations, background processes) via comments **in English**.
 - Build step by step: basics first, complex features later.
@@ -80,7 +80,7 @@ Read it at the start of every session as the basis for all decisions.
 
 ### What NOT to test
 - Trivial getters/setters or SwiftData boilerplate. No value, only maintenance burden.
-- View-layer orchestration without a clean injection seam (concurrent sync, `async let` flows in `performAutoSync`). Document instead of test, in the PR checklist + on-device validation.
+- Genuinely view-bound glue that drives `@State`/SwiftUI lifecycle and has no seam that wouldn't just re-plumb the same view state back in — e.g. `DashboardView.calculateAndSaveVibeScore` (owns `isVibeScoreLoading` / `isVibeScoreUnavailable` / `dashboardRestingHR`), the `.onAppear` cache-priming block, and the one-line trigger wiring in `AppTabHostView`. Document instead of test, in the PR checklist + on-device validation. **Note (Epic #65 story 65.4):** the bulk of the old sync/maintenance orchestration is *no longer* exempt — the auto-sync pipeline moved into `AutoSyncCoordinator` and the dashboard maintenance jobs into `DashboardMaintenanceRunner`, both plain `@MainActor` types with injected seams and unit tests (`AutoSyncCoordinatorTests`, `DashboardMaintenanceRunnerTests`). The `async let` HK+Strava fan-out, the concurrency guard, per-source `SyncStatusStore` writes and per-record weather-failure isolation are now tested code, not documented-not-tested view logic.
 - iOS-framework things that do not work in the simulator sandbox (Keychain entitlements, BGTaskScheduler timing).
 
 ### Safeguarding testability
@@ -275,7 +275,7 @@ So: merge feature PRs whenever; they pile into one Release PR. The version only 
 
 ## 11. Logger & Privacy Discipline
 
-- **Never** use `print()` in `Services/`, `Models/` or `ViewModels/`. Replace it with `AppLoggers.<category>.<level>(...)` (see `Services/AppLoggers.swift` for the existing categories — add a new one if the service falls outside the scope of an existing one).
+- **Never** use `print()` in `Services/`, `Models/` or `ViewModels/`. Replace it with `AppLoggers.<category>.<level>(...)` (see `Services/Infra/AppLoggers.swift` for the existing categories — add a new one if the service falls outside the scope of an existing one).
 - Privacy modifiers are **mandatory** for anything that can contain user data. Without a modifier `Logger` defaults to `.private`, but make it explicit so code review is clear:
   - `privacy: .private` for HRV, sleep minutes, TRIMP, age, goal titles, workout UUIDs, tokens, RPE/mood, bodyArea raw values
   - `privacy: .public` only for framework error codes (e.g. `error.localizedDescription` of iOS frameworks), counters (`count, weeks`), and non-identifying status flags (auth-status enums, sport raw values)

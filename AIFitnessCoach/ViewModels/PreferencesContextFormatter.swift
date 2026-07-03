@@ -45,7 +45,8 @@ enum PreferencesContextFormatter {
         if !temporary.isEmpty {
             let formatter = AppDateFormatters.fixed("yyyy-MM-dd")
             let lines = temporary.map { pref in
-                "- \(pref.preferenceText) (temporary, valid until \(formatter.string(from: pref.expirationDate!)))"
+                // swiftlint:disable:next force_unwrapping
+                "- \(pref.preferenceText) (temporary, valid until \(formatter.string(from: pref.expirationDate!)))" // `temporary` is filtered to expirationDate != nil
             }.joined(separator: "\n")
             output += """
             [TEMPORARY PREFERENCES (override pinned rules for their duration):

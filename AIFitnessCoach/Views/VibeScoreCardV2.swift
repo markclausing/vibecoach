@@ -122,7 +122,8 @@ struct VibeScoreCardV2: View {
             if isLoading {
                 ProgressView().controlSize(.small)
             } else {
-                Text(readiness != nil ? "\(readiness!.readinessScore)" : "--")
+                // swiftlint:disable:next force_unwrapping
+                Text(readiness != nil ? "\(readiness!.readinessScore)" : "--") // ternary nil-checks `readiness != nil` before the `!`
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundColor(.primary)
             }
