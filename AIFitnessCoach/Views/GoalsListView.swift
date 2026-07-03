@@ -1,6 +1,10 @@
 import SwiftUI
 import SwiftData
 
+// swiftlint:disable file_length
+// Epic 65.6 size backstop: GoalsListView (636 LOC) hosts the goal list plus its
+// phase-timeline detail glue. Just over the 600 cap; a further split is optional.
+
 // MARK: - GoalsListView
 
 struct GoalsListView: View {

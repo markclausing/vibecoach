@@ -2,6 +2,11 @@ import SwiftUI
 import SwiftData
 import HealthKit
 
+// swiftlint:disable file_length type_body_length
+// Epic 65.6 size backstop: the Dashboard is the app's richest screen (status
+// assessment, maintenance orchestration glue, vibe-score upsert). A further split
+// is tracked under Epic #64/#65's view-decomposition work, not forced here.
+
 #Preview {
     ContentView()
         .environmentObject(AppNavigationState())

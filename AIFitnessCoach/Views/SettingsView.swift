@@ -2,6 +2,11 @@ import SwiftUI
 import UserNotifications
 import SwiftData
 
+// swiftlint:disable file_length type_body_length
+// Epic 65.6 size backstop: SettingsView was already split in 64.2/65.5; the
+// residual body is the connection/preferences hub and still sits above the cap.
+// Kept intact rather than over-fragmented into cosmetic sub-views.
+
 /// Management of external API connections and other preferences.
 /// This view is accessible via the settings icon and writes data
 /// securely to the KeychainService.

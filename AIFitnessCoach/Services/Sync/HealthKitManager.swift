@@ -1,6 +1,10 @@
 import Foundation
 import HealthKit
 
+// swiftlint:disable file_length
+// Epic 65.6 size backstop: HealthKitManager (603 LOC) is the single HealthKit
+// query boundary — each method is a self-contained HKSampleQuery wrapper. Just
+// over the 600 cap; splitting per query type would scatter the boundary.
 // swiftlint:disable force_unwrapping
 // Epic 65.6 force-unwrap audit: the `!`s in this HealthKit-boundary file fall into
 // two never-nil idioms — (1) `HKObjectType.quantityType(forIdentifier:)` for a

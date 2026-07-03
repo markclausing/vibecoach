@@ -2,6 +2,10 @@ import SwiftUI
 import PhotosUI
 import SwiftData
 
+// swiftlint:disable file_length
+// Epic 65.6 size backstop: ChatView was split 1444→677 in 65.5; the residual is
+// the core chat surface + its tightly-coupled input bar. Just over the 600 cap.
+
 /// The main SwiftUI view that displays the chat interface.
 struct ChatView: View {
     /// The viewmodel that manages the chat state and network logic.
