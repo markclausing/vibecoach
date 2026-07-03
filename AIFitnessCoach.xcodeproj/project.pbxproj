@@ -243,6 +243,17 @@
 		D4A4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */; };
 		A11A6E0001000000000000B1 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11A6E0001000000000000B2 /* AppLanguage.swift */; };
 		D8A5CC6C6399BF876493D66B /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA86D03EE20341A8CB8173EE /* ChatView.swift */; };
+		DA54C0000000000000000201 /* CoachV2HeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C0000000000000000101 /* CoachV2HeaderView.swift */; };
+		DA54C0000000000000000202 /* CoachMessageCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C0000000000000000102 /* CoachMessageCards.swift */; };
+		DA54C0000000000000000203 /* PlanAdjustmentCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C0000000000000000103 /* PlanAdjustmentCard.swift */; };
+		DA54C0000000000000000204 /* SuggestionChipsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C0000000000000000104 /* SuggestionChipsView.swift */; };
+		DA54C0000000000000000205 /* WorkoutCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C0000000000000000105 /* WorkoutCardView.swift */; };
+		DA54C0000000000000000206 /* WorkoutDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C0000000000000000106 /* WorkoutDetailView.swift */; };
+		DA54C0000000000000000207 /* MoveWorkoutSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C0000000000000000107 /* MoveWorkoutSheet.swift */; };
+		DA54C0000000000000000208 /* InfoRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C0000000000000000108 /* InfoRowView.swift */; };
+		DA54C0000000000000000209 /* WorkoutStatsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C0000000000000000109 /* WorkoutStatsRow.swift */; };
+		DA54C000000000000000020A /* WorkoutFuelingSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C000000000000000010A /* WorkoutFuelingSectionView.swift */; };
+		DA54C000000000000000020B /* WeatherBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C000000000000000010B /* WeatherBadgeView.swift */; };
 		D9D6946898CF838A86E276DC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0B16CF484B776C9214345E29 /* Foundation.framework */; };
 		DB076B94561F03C4EB2D8C5E /* TokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDA9519ECAE22F903D67C756 /* TokenStore.swift */; };
 		DD10EE20FF30AA40BB50CC60 /* TrendWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD01EE02FF03AA04BB05CC06 /* TrendWidgetView.swift */; };
@@ -463,6 +474,17 @@
 		D4E5F6A7B8C9D0E1F2A3B4C5 /* TrainingPhaseTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrainingPhaseTests.swift; sourceTree = "<group>"; };
 		D92F0B029D6902862CF50631 /* GoalsListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalsListView.swift; sourceTree = "<group>"; };
 		DA86D03EE20341A8CB8173EE /* ChatView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
+		DA54C0000000000000000101 /* CoachV2HeaderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoachV2HeaderView.swift; sourceTree = "<group>"; };
+		DA54C0000000000000000102 /* CoachMessageCards.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoachMessageCards.swift; sourceTree = "<group>"; };
+		DA54C0000000000000000103 /* PlanAdjustmentCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanAdjustmentCard.swift; sourceTree = "<group>"; };
+		DA54C0000000000000000104 /* SuggestionChipsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SuggestionChipsView.swift; sourceTree = "<group>"; };
+		DA54C0000000000000000105 /* WorkoutCardView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutCardView.swift; sourceTree = "<group>"; };
+		DA54C0000000000000000106 /* WorkoutDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutDetailView.swift; sourceTree = "<group>"; };
+		DA54C0000000000000000107 /* MoveWorkoutSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MoveWorkoutSheet.swift; sourceTree = "<group>"; };
+		DA54C0000000000000000108 /* InfoRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InfoRowView.swift; sourceTree = "<group>"; };
+		DA54C0000000000000000109 /* WorkoutStatsRow.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutStatsRow.swift; sourceTree = "<group>"; };
+		DA54C000000000000000010A /* WorkoutFuelingSectionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutFuelingSectionView.swift; sourceTree = "<group>"; };
+		DA54C000000000000000010B /* WeatherBadgeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeatherBadgeView.swift; sourceTree = "<group>"; };
 		DD01EE02FF03AA04BB05CC06 /* TrendWidgetView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrendWidgetView.swift; sourceTree = "<group>"; };
 		DD44EE55FF6677AA88990011 /* ProgressServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgressServiceTests.swift; sourceTree = "<group>"; };
 		DD88EE22FF4433AA66BB9955 /* OnboardingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
@@ -778,6 +800,7 @@
 				AA6022220000000000000001 /* PhaseMilestonesView.swift */,
 				DA54B0000000000000000001 /* Dashboard */,
 				DA54B1000000000000000001 /* Settings */,
+				DA54C0000000000000000001 /* Chat */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -804,6 +827,24 @@
 				DA54B1000000000000000103 /* PreferencesListView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		DA54C0000000000000000001 /* Chat */ = {
+			isa = PBXGroup;
+			children = (
+				DA54C0000000000000000101 /* CoachV2HeaderView.swift */,
+				DA54C0000000000000000102 /* CoachMessageCards.swift */,
+				DA54C0000000000000000103 /* PlanAdjustmentCard.swift */,
+				DA54C0000000000000000104 /* SuggestionChipsView.swift */,
+				DA54C0000000000000000105 /* WorkoutCardView.swift */,
+				DA54C0000000000000000106 /* WorkoutDetailView.swift */,
+				DA54C0000000000000000107 /* MoveWorkoutSheet.swift */,
+				DA54C0000000000000000108 /* InfoRowView.swift */,
+				DA54C0000000000000000109 /* WorkoutStatsRow.swift */,
+				DA54C000000000000000010A /* WorkoutFuelingSectionView.swift */,
+				DA54C000000000000000010B /* WeatherBadgeView.swift */,
+			);
+			path = Chat;
 			sourceTree = "<group>";
 		};
 		413E677FAE0B37E364E902DA /* Services */ = {
@@ -1320,6 +1361,17 @@
 				E767E8F495D10156A93BCC15 /* ContentView.swift in Sources */,
 				E541659C316B9F8EBCCD6AA3 /* ChatMessage.swift in Sources */,
 				D8A5CC6C6399BF876493D66B /* ChatView.swift in Sources */,
+				DA54C0000000000000000201 /* CoachV2HeaderView.swift in Sources */,
+				DA54C0000000000000000202 /* CoachMessageCards.swift in Sources */,
+				DA54C0000000000000000203 /* PlanAdjustmentCard.swift in Sources */,
+				DA54C0000000000000000204 /* SuggestionChipsView.swift in Sources */,
+				DA54C0000000000000000205 /* WorkoutCardView.swift in Sources */,
+				DA54C0000000000000000206 /* WorkoutDetailView.swift in Sources */,
+				DA54C0000000000000000207 /* MoveWorkoutSheet.swift in Sources */,
+				DA54C0000000000000000208 /* InfoRowView.swift in Sources */,
+				DA54C0000000000000000209 /* WorkoutStatsRow.swift in Sources */,
+				DA54C000000000000000020A /* WorkoutFuelingSectionView.swift in Sources */,
+				DA54C000000000000000020B /* WeatherBadgeView.swift in Sources */,
 				DEBB8672AFBDB80CA6D79AA6 /* ChatViewModel.swift in Sources */,
 				D5C0010101C001010100C001 /* VibeScoreContextFormatter.swift in Sources */,
 				D5C0020101C002010100C001 /* BlueprintContextFormatter.swift in Sources */,
