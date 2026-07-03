@@ -275,7 +275,7 @@ So: merge feature PRs whenever; they pile into one Release PR. The version only 
 
 ## 11. Logger & Privacy Discipline
 
-- **Never** use `print()` in `Services/`, `Models/` or `ViewModels/`. Replace it with `AppLoggers.<category>.<level>(...)` (see `Services/AppLoggers.swift` for the existing categories — add a new one if the service falls outside the scope of an existing one).
+- **Never** use `print()` in `Services/`, `Models/` or `ViewModels/`. Replace it with `AppLoggers.<category>.<level>(...)` (see `Services/Infra/AppLoggers.swift` for the existing categories — add a new one if the service falls outside the scope of an existing one).
 - Privacy modifiers are **mandatory** for anything that can contain user data. Without a modifier `Logger` defaults to `.private`, but make it explicit so code review is clear:
   - `privacy: .private` for HRV, sleep minutes, TRIMP, age, goal titles, workout UUIDs, tokens, RPE/mood, bodyArea raw values
   - `privacy: .public` only for framework error codes (e.g. `error.localizedDescription` of iOS frameworks), counters (`count, weeks`), and non-identifying status flags (auth-status enums, sport raw values)
