@@ -63,7 +63,7 @@ Read it at the start of every session as the basis for all decisions.
 
 - Modular code: split large screens into smaller reusable components.
 - **One top-level type per file.** Mandatory for `@Model` classes; for structs/enums only combine them when they are tightly coupled (e.g. an enum + its supporting structs like `BodyArea` + `Symptom`).
-- **Soft cap: ±500 LOC per Swift file.** If it goes over, split by logical responsibility (model class, prompt formatter, query helper, etc.). Pure file splits without semantic changes are always safe — type names stay identical, so SwiftData and callers notice nothing.
+- **Soft cap: ±500 LOC per Swift file.** If it goes over, split by logical responsibility (model class, prompt formatter, query helper, etc.). Pure file splits without semantic changes are always safe — type names stay identical, so SwiftData and callers notice nothing. **Automated backstop (Epic 65.6):** SwiftLint enforces `file_length` (warning 600) + `type_body_length` (warning 500); a file legitimately over the cap carries an in-file `// swiftlint:disable file_length` header with a one-line justification (debt visible at the point of debt).
 - Use standard iOS components — simple, modern and native.
 - Explain complex logic (API integrations, background processes) via comments **in English**.
 - Build step by step: basics first, complex features later.
