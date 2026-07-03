@@ -73,7 +73,6 @@ struct WorkoutAnalysisView: View {
         )
     }
 
-
     /// Epic #52 cross-source fix: HK-`stepCount`-derived cadence, fetched separately
     /// when the stored samples contain no cadence. This happens when the displayed
     /// `ActivityRecord` is a Strava record that "won" over an HK counterpart during
