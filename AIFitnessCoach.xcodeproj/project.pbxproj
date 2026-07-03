@@ -186,6 +186,13 @@
 		CAA4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAA4F7B2D6E8F0A1B2C3D405 /* PlanResetPromptBuilderTests.swift */; };
 		CBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBA4F7B2D6E8F0A1B2C3D405 /* TrainingPlanManagerMergeTests.swift */; };
 		CC10DD20EE30FF40AA50BB60 /* WeekTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC01DD02EE03FF04AA05BB06 /* WeekTimelineView.swift */; };
+		DA54C3000000000000000201 /* DayCircleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C3000000000000000101 /* DayCircleView.swift */; };
+		DA54C3000000000000000202 /* WorkoutDayRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C3000000000000000102 /* WorkoutDayRowView.swift */; };
+		DA54C3000000000000000203 /* StageDayRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C3000000000000000103 /* StageDayRowView.swift */; };
+		DA54C3000000000000000204 /* TrainingDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C3000000000000000104 /* TrainingDetailSheet.swift */; };
+		DA54C4000000000000000201 /* GoalRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C4000000000000000101 /* GoalRowView.swift */; };
+		DA54C5000000000000000201 /* OnboardingWelcomePreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C5000000000000000101 /* OnboardingWelcomePreviews.swift */; };
+		DA54C5000000000000000202 /* OnboardingPermissionContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C5000000000000000102 /* OnboardingPermissionContent.swift */; };
 		CC33DD44EE55FF6677AA8899 /* ProgressServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD44EE55FF6677AA88990011 /* ProgressServiceTests.swift */; };
 		CC54A4B0A24ABC7666AB3222 /* ChatViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67296E4EBEF49D03095F01B9 /* ChatViewModelTests.swift */; };
 		CC77FF11AA3322BB55DD8844 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD88EE22FF4433AA66BB9955 /* OnboardingView.swift */; };
@@ -470,6 +477,13 @@
 		D5D0080102D008010100D006 /* SchemaMigrationV4ToV5Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaMigrationV4ToV5Tests.swift; sourceTree = "<group>"; };
 		CA3664CEA7FBF8A7E8B2D822 /* MockGenerativeModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockGenerativeModel.swift; sourceTree = "<group>"; };
 		CC01DD02EE03FF04AA05BB06 /* WeekTimelineView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeekTimelineView.swift; sourceTree = "<group>"; };
+		DA54C3000000000000000101 /* DayCircleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DayCircleView.swift; sourceTree = "<group>"; };
+		DA54C3000000000000000102 /* WorkoutDayRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutDayRowView.swift; sourceTree = "<group>"; };
+		DA54C3000000000000000103 /* StageDayRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StageDayRowView.swift; sourceTree = "<group>"; };
+		DA54C3000000000000000104 /* TrainingDetailSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrainingDetailSheet.swift; sourceTree = "<group>"; };
+		DA54C4000000000000000101 /* GoalRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalRowView.swift; sourceTree = "<group>"; };
+		DA54C5000000000000000101 /* OnboardingWelcomePreviews.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomePreviews.swift; sourceTree = "<group>"; };
+		DA54C5000000000000000102 /* OnboardingPermissionContent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OnboardingPermissionContent.swift; sourceTree = "<group>"; };
 		CE4D1D9B3991F419262E294E /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		DA54B1000000000000000101 /* PhysicalProfileSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysicalProfileSection.swift; sourceTree = "<group>"; };
 		DA54B1000000000000000102 /* AIProviderSettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIProviderSettingsView.swift; sourceTree = "<group>"; };
@@ -788,7 +802,6 @@
 				CE4D1D9B3991F419262E294E /* SettingsView.swift */,
 				DD88EE22FF4433AA66BB9955 /* OnboardingView.swift */,
 				B5F1A12701FF02AA03BB0501 /* SafariView.swift */,
-				DD88EE33FF4433AA66BB9955 /* OnboardingTemplateView.swift */,
 				D92F0B029D6902862CF50631 /* GoalsListView.swift */,
 				B23C4D5E6F7A8B9C0D1E2F3A /* GapAnalysisCardView.swift */,
 				A57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift */,
@@ -807,6 +820,9 @@
 				DA54B1000000000000000001 /* Settings */,
 				DA54C0000000000000000001 /* Chat */,
 				DA54C1000000000000000001 /* WorkoutAnalysis */,
+				DA54C3000000000000000001 /* WeekTimeline */,
+				DA54C4000000000000000001 /* Goals */,
+				DA54C5000000000000000001 /* Onboarding */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -862,6 +878,35 @@
 				E8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift */,
 			);
 			path = WorkoutAnalysis;
+			sourceTree = "<group>";
+		};
+		DA54C3000000000000000001 /* WeekTimeline */ = {
+			isa = PBXGroup;
+			children = (
+				DA54C3000000000000000101 /* DayCircleView.swift */,
+				DA54C3000000000000000102 /* WorkoutDayRowView.swift */,
+				DA54C3000000000000000103 /* StageDayRowView.swift */,
+				DA54C3000000000000000104 /* TrainingDetailSheet.swift */,
+			);
+			path = WeekTimeline;
+			sourceTree = "<group>";
+		};
+		DA54C4000000000000000001 /* Goals */ = {
+			isa = PBXGroup;
+			children = (
+				DA54C4000000000000000101 /* GoalRowView.swift */,
+			);
+			path = Goals;
+			sourceTree = "<group>";
+		};
+		DA54C5000000000000000001 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				DA54C5000000000000000101 /* OnboardingWelcomePreviews.swift */,
+				DA54C5000000000000000102 /* OnboardingPermissionContent.swift */,
+				DD88EE33FF4433AA66BB9955 /* OnboardingTemplateView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		413E677FAE0B37E364E902DA /* Services */ = {
@@ -1434,6 +1479,13 @@
 				DA10FF20AA30BB40CC50DD60 /* MigrationFallbackBanner.swift in Sources */,
 				BB10CC20DD30EE40FF50AA60 /* VibeScoreCardV2.swift in Sources */,
 				CC10DD20EE30FF40AA50BB60 /* WeekTimelineView.swift in Sources */,
+				DA54C3000000000000000201 /* DayCircleView.swift in Sources */,
+				DA54C3000000000000000202 /* WorkoutDayRowView.swift in Sources */,
+				DA54C3000000000000000203 /* StageDayRowView.swift in Sources */,
+				DA54C3000000000000000204 /* TrainingDetailSheet.swift in Sources */,
+				DA54C4000000000000000201 /* GoalRowView.swift in Sources */,
+				DA54C5000000000000000201 /* OnboardingWelcomePreviews.swift in Sources */,
+				DA54C5000000000000000202 /* OnboardingPermissionContent.swift in Sources */,
 				DD10EE20FF30AA40BB50CC60 /* TrendWidgetView.swift in Sources */,
 				EE10FF20AA30BB40CC50DD60 /* DashboardView.swift in Sources */,
 				DA54B0000000000000000201 /* TRIMPExplainerCard.swift in Sources */,
