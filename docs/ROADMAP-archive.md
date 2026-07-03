@@ -925,3 +925,30 @@ Source: full-codebase refactor review of 2 July 2026 (report: `~/Development/vib
 **Pickup trigger (epic-level):** 65.1 is safe to start anytime; the epic as a whole earns priority the moment dashboard latency is felt, the coach prompt needs a new context type, or a sync-adjacent feature (Epic #59) comes up — those map to 65.2, 65.3 and 65.4 respectively.
 
 ---
+
+### ✅ Epic #66: Architecture-viewer redesign — mobile + non-programmer readability
+
+Maintainer goal (2026-07-03, verbatim): *"I want, as a non-programmer, to understand the architecture better by reading this HTML — but still be able to find depth when I want it."* The interactive viewer `docs/architecture/architecture.html` was a desktop-first, three-column tool (sidebar + module grid + detail pane, seven top tabs) that broke down on a phone and led with jargon-first module names instead of a story. This epic is a **viewer-only** redesign: `architecture.json` is untouched (the data is the single source of truth; `docRevision` stayed at 36 — a deliberate no-bump since no building block changed), and the CLAUDE.md §7 re-injection pipeline (the `<script id="architecture-data">` round-trip) still works byte-for-byte.
+
+**Readability findings (old viewer → how the redesign answers it):**
+
+| Problem in the old viewer | Fix in the redesign |
+|---|---|
+| **Desktop-only layout.** A fixed `260px / 1fr / 360px` CSS grid; below 900px the sidebar (search + filters) stacked *above* the content, pushing the actual architecture far down the page. | Single-column, mobile-first flow with a max-width reading column; no side panes. Filters live in an in-context toolbar on the Map, not a permanent sidebar. |
+| **Horizontal overflow on a phone.** Inline tables (Agent view), a 7-tab bar and wide grids caused body-level horizontal scroll at ~390px. | `body { overflow-x: hidden }` as a guard; every wide element (nav, filter row, reference tables) scrolls inside its own `overflow-x:auto` container. Verified no body-level horizontal scroll at 390px. |
+| **Hover-only reveals.** Tag/epic meanings and the version detail were `title=` tooltips — invisible on touch. | Every reveal is tap-driven: jargon terms and tag chips open a tap popover; the version pill opens a details popover. No information is hover-gated. |
+| **Sub-44px tap targets.** 22px theme swatches, 32px icon buttons, ~30px tabs. | Nav pills, buttons, chips and list rows are all ≥44px min-height. |
+| **Body text below 16px.** Base font was 14px (also triggers iOS input-zoom). | Base font 16px; body copy ≥15–16px; search input 16px (no zoom). |
+| **Jargon-first, wall-of-modules.** The default landing was a grid of 117 raw type names (`ChatViewModel`, `WorkoutSampleService`…) with `kind` labels — no narrative, no plain-English entry point. | A **Story** default view: the app in one breath (`meta.summary`), a six-block "big picture" narrative (one block per layer, plain-English viewer copy + data-driven module chips), the principles, key flows in plain steps, and a tap-to-expand glossary. |
+| **No progressive disclosure / depth was always in your face.** Depth (uses/used-by, files, tags) and the raw graph were the *first* thing shown, with no gentle on-ramp. | Three explicit reading levels — Level 1 **Story** (narrative), Level 2 **Map** (tappable module cards, name + one-line description, grouped by layer + cross-layer subsystems), Level 3 **Depth** (a module detail sheet: description, file, tags, and navigable *Builds on* / *Used by* lists). Depth is always reachable, never blocking the story. |
+| **Dependency "graph" unusable on a phone.** The old graph was a dim/highlight interaction on a dense desktop grid — meaningless on touch. | Replaced with **navigable uses/used-by lists** in the detail sheet (each entry taps through to that module) — a mobile-first alternative to a node-link hairball, and clearer for a non-programmer. |
+
+**Stories** (all delivered in this one PR per the maintainer's preferred single-PR flow for a self-contained docs change):
+
+* **✅ 66.1 — Mobile-first rebuild.** Rewrote the presentation layer (CSS + markup + render JS) as a single-column, touch-first document: no body horizontal scroll (guard + per-element scroll containers), all interactions tap-capable (term/tag/version popovers replace `title=` hovers), ≥44px targets, 16px base text, the module detail as a bottom sheet on phones that docks to a right-hand panel ≥1000px. Kept the green visual identity (6-theme CSS custom props + light/dark). *Verification:* headless-Chrome render at 390px shows the Story leading, no horizontal overflow.
+* **✅ 66.2 — Progressive disclosure for a non-programmer.** Built the three reading levels (Story / Map / Depth) plus a Flows view and a deep Reference view (testing, CI, agent). Story copy is plain English with short sentences; jargon (Service, ViewModel, @Model, migration, BYOK, singleton…) is explained via a glossary and dotted tap-to-reveal terms on first use. Layer/kind/concept explanations are hand-authored viewer copy; **all module lists stay data-driven** from the JSON (no hardcoded module names).
+* **✅ 66.3 — Pipeline integrity + defensive rendering.** Preserved the exact `<script id="architecture-data" type="application/json">` tag so the §7 python re-injection snippet still targets it; verified the round-trip is idempotent (re-running the snippet is a no-op) and the embedded JSON equals the source file byte-for-byte. `architecture.json` deliberately unchanged (viewer-only). Render JS is defensive: every consumed field is guarded, each view is wrapped in try/catch, and a missing/garbage/partial JSON payload renders a non-blank page instead of throwing (verified in headless Chrome with `{}`, non-JSON, and a stripped-down payload).
+
+**Effort realised:** ~1 day. **Status:** ✅ complete. **Merged via PR #348. Effort:** ~1 day.
+
+---

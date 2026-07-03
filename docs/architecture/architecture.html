@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>VibeCoach — Architecture</title>
 <style>
   :root {
@@ -13,32 +13,34 @@
     --bg-elev: #FFFFFF;
     --bg-elev-2: #FAFCF8;
     --text: #1F2A1F;
-    --text-muted: #5E6E5E;
-    --text-faint: #8A988A;
-    --border: rgba(31, 42, 31, 0.08);
+    --text-muted: #52624F;
+    --text-faint: #7A887A;
+    --border: rgba(31, 42, 31, 0.09);
     --border-strong: rgba(31, 42, 31, 0.16);
     --shadow: 0 1px 3px rgba(31, 42, 31, 0.04), 0 4px 16px rgba(31, 42, 31, 0.05);
-    --shadow-elev: 0 2px 6px rgba(31, 42, 31, 0.06), 0 12px 32px rgba(31, 42, 31, 0.08);
+    --shadow-elev: 0 2px 6px rgba(31, 42, 31, 0.06), 0 12px 32px rgba(31, 42, 31, 0.10);
     --radius: 14px;
-    --radius-sm: 8px;
+    --radius-sm: 9px;
     --radius-lg: 20px;
-    --transition: 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    --transition: 200ms cubic-bezier(0.2, 0.7, 0.2, 1);
+    --maxw: 940px;
   }
-  [data-theme="moss"]   { --primary: #4D804D; --primary-soft: rgba(77,128,77,0.12);   --primary-line: rgba(77,128,77,0.35);   --bg: #F2F7EF; }
-  [data-theme="stone"]  { --primary: #78736D; --primary-soft: rgba(120,115,109,0.12); --primary-line: rgba(120,115,109,0.35); --bg: #F5F2EF; }
-  [data-theme="mist"]   { --primary: #618AAD; --primary-soft: rgba(97,138,173,0.12);  --primary-line: rgba(97,138,173,0.35);  --bg: #F0F5FA; }
-  [data-theme="clay"]   { --primary: #AD6642; --primary-soft: rgba(173,102,66,0.12);  --primary-line: rgba(173,102,66,0.35);  --bg: #FAF2EB; }
-  [data-theme="sakura"] { --primary: #B36685; --primary-soft: rgba(179,102,133,0.12); --primary-line: rgba(179,102,133,0.35); --bg: #FCF2F7; }
-  [data-theme="ink"]    { --primary: #384775; --primary-soft: rgba(56,71,117,0.12);   --primary-line: rgba(56,71,117,0.35);   --bg: #F2F2FA; }
+  [data-theme="moss"]   { --primary: #40703F; --primary-soft: rgba(64,112,63,0.12);    --primary-line: rgba(64,112,63,0.35);   --bg: #F2F7EF; }
+  [data-theme="stone"]  { --primary: #6B665F; --primary-soft: rgba(107,102,95,0.12);   --primary-line: rgba(107,102,95,0.35);  --bg: #F5F2EF; }
+  [data-theme="mist"]   { --primary: #4F7A9E; --primary-soft: rgba(79,122,158,0.12);   --primary-line: rgba(79,122,158,0.35);  --bg: #F0F5FA; }
+  [data-theme="clay"]   { --primary: #9C5836; --primary-soft: rgba(156,88,54,0.12);    --primary-line: rgba(156,88,54,0.35);   --bg: #FAF2EB; }
+  [data-theme="sakura"] { --primary: #A15877; --primary-soft: rgba(161,88,119,0.12);   --primary-line: rgba(161,88,119,0.35);  --bg: #FCF2F7; }
+  [data-theme="ink"]    { --primary: #384775; --primary-soft: rgba(56,71,117,0.12);    --primary-line: rgba(56,71,117,0.35);   --bg: #F2F2FA; }
 
-  [data-mode="dark"][data-theme="moss"]   { --primary: #85BC85; --primary-soft: rgba(133,188,133,0.14); --primary-line: rgba(133,188,133,0.4);  --bg: #1A211A; --bg-elev: #232B22; --bg-elev-2: #1E2620; --text: #E8EEE6; --text-muted: #A0B0A0; --text-faint: #6E806E; --border: rgba(232,238,230,0.08); --border-strong: rgba(232,238,230,0.16); --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45); --shadow-elev: 0 2px 6px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.55); }
-  [data-mode="dark"][data-theme="stone"]  { --primary: #B3ABA1; --primary-soft: rgba(179,171,161,0.14); --primary-line: rgba(179,171,161,0.4); --bg: #1F1C1A; --bg-elev: #2A2724; --bg-elev-2: #232120; --text: #EEEAE5; --text-muted: #B0A89F; --text-faint: #7D766E; --border: rgba(238,234,229,0.08); --border-strong: rgba(238,234,229,0.16); --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45); --shadow-elev: 0 2px 6px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.55); }
-  [data-mode="dark"][data-theme="mist"]   { --primary: #94BCDB; --primary-soft: rgba(148,188,219,0.14); --primary-line: rgba(148,188,219,0.4); --bg: #141A24; --bg-elev: #1E2632; --bg-elev-2: #181F2A; --text: #E2EBF5; --text-muted: #9CB1C8; --text-faint: #6A7C92; --border: rgba(226,235,245,0.08); --border-strong: rgba(226,235,245,0.16); --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45); --shadow-elev: 0 2px 6px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.55); }
-  [data-mode="dark"][data-theme="clay"]   { --primary: #D69970; --primary-soft: rgba(214,153,112,0.14); --primary-line: rgba(214,153,112,0.4); --bg: #241712; --bg-elev: #32201A; --bg-elev-2: #2A1A14; --text: #F5E8DC; --text-muted: #C9A78B; --text-faint: #8E7158; --border: rgba(245,232,220,0.08); --border-strong: rgba(245,232,220,0.16); --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45); --shadow-elev: 0 2px 6px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.55); }
-  [data-mode="dark"][data-theme="sakura"] { --primary: #E1A8BC; --primary-soft: rgba(225,168,188,0.14); --primary-line: rgba(225,168,188,0.4); --bg: #21141A; --bg-elev: #2F1E26; --bg-elev-2: #271820; --text: #F5E2EB; --text-muted: #CCA0B0; --text-faint: #8E6A78; --border: rgba(245,226,235,0.08); --border-strong: rgba(245,226,235,0.16); --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45); --shadow-elev: 0 2px 6px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.55); }
-  [data-mode="dark"][data-theme="ink"]    { --primary: #859ED1; --primary-soft: rgba(133,158,209,0.14); --primary-line: rgba(133,158,209,0.4); --bg: #121219; --bg-elev: #1C1C28; --bg-elev-2: #18181F; --text: #E2E6F5; --text-muted: #9FA8C8; --text-faint: #6C7390; --border: rgba(226,230,245,0.08); --border-strong: rgba(226,230,245,0.16); --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45); --shadow-elev: 0 2px 6px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.55); }
+  [data-mode="dark"][data-theme="moss"]   { --primary: #85BC85; --primary-soft: rgba(133,188,133,0.14); --primary-line: rgba(133,188,133,0.4);  --bg: #1A211A; --bg-elev: #232B22; --bg-elev-2: #1E2620; --text: #E8EEE6; --text-muted: #A6B4A4; --text-faint: #748573; --border: rgba(232,238,230,0.10); --border-strong: rgba(232,238,230,0.18); --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45); --shadow-elev: 0 2px 6px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.55); }
+  [data-mode="dark"][data-theme="stone"]  { --primary: #B3ABA1; --primary-soft: rgba(179,171,161,0.14); --primary-line: rgba(179,171,161,0.4); --bg: #1F1C1A; --bg-elev: #2A2724; --bg-elev-2: #232120; --text: #EEEAE5; --text-muted: #B4ACA3; --text-faint: #837B72; --border: rgba(238,234,229,0.10); --border-strong: rgba(238,234,229,0.18); --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45); --shadow-elev: 0 2px 6px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.55); }
+  [data-mode="dark"][data-theme="mist"]   { --primary: #94BCDB; --primary-soft: rgba(148,188,219,0.14); --primary-line: rgba(148,188,219,0.4); --bg: #141A24; --bg-elev: #1E2632; --bg-elev-2: #181F2A; --text: #E2EBF5; --text-muted: #A2B5CB; --text-faint: #718197; --border: rgba(226,235,245,0.10); --border-strong: rgba(226,235,245,0.18); --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45); --shadow-elev: 0 2px 6px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.55); }
+  [data-mode="dark"][data-theme="clay"]   { --primary: #D69970; --primary-soft: rgba(214,153,112,0.14); --primary-line: rgba(214,153,112,0.4); --bg: #241712; --bg-elev: #32201A; --bg-elev-2: #2A1A14; --text: #F5E8DC; --text-muted: #CDAC90; --text-faint: #94765D; --border: rgba(245,232,220,0.10); --border-strong: rgba(245,232,220,0.18); --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45); --shadow-elev: 0 2px 6px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.55); }
+  [data-mode="dark"][data-theme="sakura"] { --primary: #E1A8BC; --primary-soft: rgba(225,168,188,0.14); --primary-line: rgba(225,168,188,0.4); --bg: #21141A; --bg-elev: #2F1E26; --bg-elev-2: #271820; --text: #F5E2EB; --text-muted: #CFA4B4; --text-faint: #946E7C; --border: rgba(245,226,235,0.10); --border-strong: rgba(245,226,235,0.18); --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45); --shadow-elev: 0 2px 6px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.55); }
+  [data-mode="dark"][data-theme="ink"]    { --primary: #859ED1; --primary-soft: rgba(133,158,209,0.14); --primary-line: rgba(133,158,209,0.4); --bg: #121219; --bg-elev: #1C1C28; --bg-elev-2: #18181F; --text: #E2E6F5; --text-muted: #A4ADCC; --text-faint: #737A96; --border: rgba(226,230,245,0.10); --border-strong: rgba(226,230,245,0.18); --shadow: 0 1px 3px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.45); --shadow-elev: 0 2px 6px rgba(0,0,0,0.5), 0 16px 40px rgba(0,0,0,0.55); }
 
   * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
   html, body {
     margin: 0;
     padding: 0;
@@ -46,1324 +48,522 @@
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 16px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: background-color var(--transition), color var(--transition);
   }
   body {
-    background: linear-gradient(135deg, var(--bg) 0%, var(--primary-soft) 100%);
+    overflow-x: hidden;
+    background: linear-gradient(160deg, var(--bg) 0%, var(--primary-soft) 140%);
     background-attachment: fixed;
+    transition: background-color var(--transition), color var(--transition);
   }
+  h1, h2, h3, h4 { margin: 0; letter-spacing: -0.01em; }
+  p { margin: 0; }
+  button { font-family: inherit; }
+  a { color: var(--primary); }
 
   /* ===== Top bar ===== */
   .topbar {
     position: sticky;
     top: 0;
-    z-index: 50;
+    z-index: 60;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: saturate(150%) blur(18px);
+    -webkit-backdrop-filter: saturate(150%) blur(18px);
+    border-bottom: 1px solid var(--border);
+    padding: 10px max(14px, env(safe-area-inset-left)) 8px;
+  }
+  .topbar-inner { max-width: var(--maxw); margin: 0 auto; }
+  .topbar-row {
     display: flex;
     align-items: center;
-    gap: 24px;
-    padding: 14px 24px;
-    background: color-mix(in srgb, var(--bg) 85%, transparent);
-    backdrop-filter: saturate(140%) blur(20px);
-    -webkit-backdrop-filter: saturate(140%) blur(20px);
-    border-bottom: 1px solid var(--border);
+    gap: 12px;
   }
   .brand {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-weight: 600;
-    font-size: 15px;
-    letter-spacing: -0.01em;
+    gap: 9px;
+    font-weight: 700;
+    font-size: 16px;
+    min-width: 0;
   }
   .brand-dot {
-    width: 22px;
-    height: 22px;
+    width: 20px; height: 20px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 60%, transparent));
+    flex: none;
+    background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 55%, transparent));
     box-shadow: 0 0 0 4px var(--primary-soft);
   }
-  .brand-sub {
-    color: var(--text-muted);
-    font-weight: 400;
-    margin-left: 6px;
-  }
+  .brand-sub { color: var(--text-muted); font-weight: 400; font-size: 14px; }
   .version-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 10px 3px 9px;
-    background: var(--primary-soft);
-    color: var(--primary);
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.01em;
-    margin-left: 4px;
-  }
-  .version-pill .version-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: currentColor;
-    opacity: 0.6;
-  }
-  .version-pill .version-rev {
-    color: var(--text-faint);
-    font-weight: 500;
-    margin-left: -2px;
-  }
-  .tabs {
-    display: flex;
-    gap: 4px;
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 3px;
-  }
-  .tab {
-    padding: 6px 12px;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: 7px;
-    cursor: pointer;
-    transition: all var(--transition);
-    font-family: inherit;
-  }
-  .tab:hover { color: var(--text); }
-  .tab.active {
-    background: var(--primary);
-    color: white;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-  }
-  .topbar-spacer { flex: 1; }
-  .controls {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .theme-picker {
-    display: flex;
-    gap: 4px;
-    padding: 3px;
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-  }
-  .theme-swatch {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: transform var(--transition), border-color var(--transition);
-  }
-  .theme-swatch:hover { transform: scale(1.1); }
-  .theme-swatch.active {
-    border-color: var(--text);
-    transform: scale(1.08);
-  }
-  .icon-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 1px solid var(--border);
-    background: var(--bg-elev);
-    color: var(--text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all var(--transition);
-    font-size: 15px;
-  }
-  .icon-btn:hover { color: var(--text); border-color: var(--border-strong); }
-
-  /* ===== Layout ===== */
-  .layout {
-    display: grid;
-    grid-template-columns: 260px 1fr 360px;
-    gap: 0;
-    min-height: calc(100vh - 60px);
-  }
-  /* Detail panel is only relevant on the Layers view (clickable module graph).
-     On other views we hide it + collapse the grid to 2 columns. */
-  .layout:not([data-view="layers"]) {
-    grid-template-columns: 260px 1fr;
-  }
-  .layout:not([data-view="layers"]) .detail-panel {
-    display: none;
-  }
-  .sidebar {
-    padding: 24px 18px;
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    max-height: calc(100vh - 60px);
-    position: sticky;
-    top: 60px;
-  }
-  .content {
-    padding: 28px 32px;
-    overflow-y: auto;
-    max-height: calc(100vh - 60px);
-  }
-  .detail-panel {
-    padding: 24px 22px;
-    border-left: 1px solid var(--border);
-    background: var(--bg-elev-2);
-    overflow-y: auto;
-    max-height: calc(100vh - 60px);
-    position: sticky;
-    top: 60px;
-  }
-  @media (max-width: 1200px) {
-    .layout[data-view="layers"] { grid-template-columns: 220px 1fr 320px; }
-  }
-  @media (max-width: 900px) {
-    .layout, .layout[data-view="layers"], .layout:not([data-view="layers"]) {
-      grid-template-columns: 1fr;
-    }
-    .sidebar, .detail-panel { position: static; max-height: none; border: none; border-top: 1px solid var(--border); }
-  }
-
-  /* ===== Sidebar ===== */
-  .side-title {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-faint);
-    margin: 0 0 10px 4px;
-    font-weight: 600;
-  }
-  .side-group { margin-bottom: 26px; }
-  .search-input {
-    width: 100%;
-    padding: 9px 12px;
-    border: 1px solid var(--border);
-    background: var(--bg-elev);
-    color: var(--text);
-    border-radius: var(--radius-sm);
-    font-size: 13px;
-    font-family: inherit;
-    transition: border-color var(--transition);
-    margin-bottom: 12px;
-  }
-  .search-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-soft);
-  }
-  .chip-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
     padding: 4px 10px;
-    font-size: 12px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    border: none;
     border-radius: 999px;
-    background: var(--bg-elev);
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .version-pill .version-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.65; }
+  .version-rev { color: var(--text-faint); font-weight: 500; }
+  .topbar-spacer { flex: 1; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .theme-picker { display: flex; gap: 5px; padding: 4px; background: var(--bg-elev); border: 1px solid var(--border); border-radius: 999px; }
+  .theme-swatch { width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; transition: transform var(--transition), border-color var(--transition); }
+  .theme-swatch.active { border-color: var(--text); transform: scale(1.06); }
+  .icon-btn {
+    min-width: 44px; height: 44px;
+    border-radius: 12px;
     border: 1px solid var(--border);
+    background: var(--bg-elev);
     color: var(--text-muted);
     cursor: pointer;
-    transition: all var(--transition);
-    font-family: inherit;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    transition: color var(--transition), border-color var(--transition);
   }
-  .chip:hover { color: var(--text); border-color: var(--border-strong); }
-  .chip.active {
-    background: var(--primary-soft);
-    border-color: var(--primary-line);
-    color: var(--primary);
-  }
-  .chip.layer-chip {
-    width: 100%;
-    text-align: left;
-    padding: 8px 12px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 4px;
-  }
-  .chip-count {
-    float: right;
-    color: var(--text-faint);
-    font-variant-numeric: tabular-nums;
-  }
-  .chip.active .chip-count { color: var(--primary); }
+  .icon-btn:active { border-color: var(--border-strong); }
 
-  /* ===== Content ===== */
-  .view-header {
-    margin-bottom: 24px;
+  /* ===== Primary nav ===== */
+  .nav {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 2px;
+    scroll-snap-type: x proximity;
   }
-  .view-title {
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    margin: 0 0 4px 0;
-  }
-  .view-sub {
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-tab {
+    flex: none;
+    min-height: 44px;
+    padding: 0 16px;
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--border);
+    background: var(--bg-elev);
     color: var(--text-muted);
-    margin: 0;
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    scroll-snap-align: start;
+    transition: color var(--transition), background var(--transition), border-color var(--transition);
+  }
+  .nav-tab .nav-emoji { font-size: 16px; }
+  .nav-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); box-shadow: 0 2px 8px var(--primary-soft); }
+
+  /* ===== Main layout ===== */
+  main {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 20px max(16px, env(safe-area-inset-left)) 96px max(16px, env(safe-area-inset-right));
+  }
+  .view { display: none; }
+  .view.active { display: block; animation: fade 260ms ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .section-head { margin: 34px 0 14px; }
+  .section-head:first-child { margin-top: 6px; }
+  .section-title { font-size: 21px; font-weight: 700; }
+  .section-sub { color: var(--text-muted); font-size: 15px; margin-top: 4px; max-width: 60ch; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--primary);
+    background: var(--primary-soft);
+    padding: 4px 10px; border-radius: 999px;
+    margin-bottom: 10px;
   }
 
-  /* Layered view */
-  .layer-stack { display: flex; flex-direction: column; gap: 18px; }
-  .layer-card {
+  /* ===== Story: hero ===== */
+  .hero {
     background: var(--bg-elev);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: 18px 20px;
+    padding: 24px 22px;
     box-shadow: var(--shadow);
-    transition: box-shadow var(--transition);
   }
-  .layer-head {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
+  .hero-title { font-size: 30px; font-weight: 800; line-height: 1.15; }
+  .hero-summary { font-size: 18px; color: var(--text-muted); margin-top: 12px; line-height: 1.55; }
+  .hero-stack { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; }
+  .stack-chip {
+    font-size: 13px; font-weight: 600;
+    padding: 5px 11px; border-radius: 999px;
+    background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text-muted);
+  }
+  .hero-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 16px; font-size: 13px; color: var(--text-faint); }
+  .hero-meta b { color: var(--text-muted); font-weight: 600; }
+
+  /* ===== Chapter cards (big picture) ===== */
+  .chapter-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  .chapter {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 18px 16px;
+    box-shadow: var(--shadow);
+  }
+  .chapter-top { display: flex; align-items: center; gap: 12px; }
+  .chapter-icon {
+    width: 44px; height: 44px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    background: var(--primary-soft); border-radius: 12px;
+  }
+  .chapter-name { font-size: 18px; font-weight: 700; }
+  .chapter-count { font-size: 13px; color: var(--text-faint); font-weight: 500; }
+  .chapter-blurb { color: var(--text-muted); font-size: 15px; margin-top: 12px; }
+  .chapter-mods { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+
+  /* module chip (tappable → detail) */
+  .mchip {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 34px;
+    padding: 5px 11px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-elev-2);
+    color: var(--text);
+    border-radius: 999px;
+    font-size: 13.5px; font-weight: 600;
+    cursor: pointer;
+    max-width: 100%;
+    transition: border-color var(--transition), background var(--transition);
+  }
+  .mchip:active { border-color: var(--primary); background: var(--primary-soft); }
+  .mchip.more { color: var(--primary); border-style: dashed; }
+  .mchip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ===== Principle cards ===== */
+  .principle-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .principle {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: var(--radius-sm);
+    padding: 15px 16px;
+  }
+  .principle-title { font-size: 16px; font-weight: 700; }
+  .principle-desc { color: var(--text-muted); font-size: 15px; margin-top: 5px; }
+
+  /* ===== Flow cards ===== */
+  .flow {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow);
     margin-bottom: 14px;
   }
-  .layer-name {
-    font-size: 15px;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: -0.01em;
-  }
-  .layer-desc {
-    color: var(--text-muted);
-    font-size: 13px;
-    margin: 0;
-    flex: 1;
-  }
-  .layer-badge {
-    background: var(--primary-soft);
-    color: var(--primary);
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-variant-numeric: tabular-nums;
-  }
-  .node-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 8px;
-  }
-  .node {
-    padding: 10px 12px;
-    background: var(--bg-elev-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: all var(--transition);
-    text-align: left;
-    font-family: inherit;
-    color: var(--text);
-    overflow: hidden;
-  }
-  .node:hover {
-    transform: translateY(-1px);
-    border-color: var(--primary-line);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-  }
-  .node.active {
-    background: var(--primary-soft);
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-soft);
-  }
-  .node.connected {
-    border-color: var(--primary-line);
-    background: color-mix(in srgb, var(--primary-soft) 50%, transparent);
-  }
-  .node.dimmed { opacity: 0.35; }
-  .node-name {
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.3;
-    margin-bottom: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .node-kind {
-    font-size: 11px;
-    color: var(--text-faint);
-    text-transform: lowercase;
-    letter-spacing: 0.02em;
-  }
-  .node-tags {
-    margin-top: 6px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3px;
-  }
-  .node-tag {
-    font-size: 10px;
-    padding: 1px 5px;
-    background: var(--primary-soft);
-    color: var(--primary);
-    border-radius: 4px;
-    font-weight: 500;
-  }
-
-  /* Subsystems view */
-  .subsystem-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-    gap: 16px;
-  }
-  .subsystem-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 20px;
-    box-shadow: var(--shadow);
-    transition: box-shadow var(--transition);
-  }
-  .subsystem-card:hover { box-shadow: var(--shadow-elev); }
-  .subsystem-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0 0 4px 0;
-    letter-spacing: -0.01em;
-  }
-  .subsystem-meta {
-    display: flex;
-    gap: 10px;
-    font-size: 12px;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-    align-items: center;
-  }
-  .subsystem-epic {
-    background: var(--primary-soft);
-    color: var(--primary);
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-weight: 600;
-    font-size: 11px;
-  }
-  .subsystem-desc {
-    color: var(--text-muted);
-    font-size: 13px;
-    margin: 0 0 14px 0;
-  }
-  .subsystem-modules {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .module-pill {
-    font-size: 12px;
-    padding: 4px 10px;
-    background: var(--bg-elev-2);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    cursor: pointer;
-    transition: all var(--transition);
-    color: var(--text);
-    font-family: inherit;
-  }
-  .module-pill:hover { border-color: var(--primary-line); color: var(--primary); }
-
-  /* Flows view */
-  .flow-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
-  .flow-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 20px 22px;
-    box-shadow: var(--shadow);
-  }
-  .flow-title {
-    font-size: 16px;
-    font-weight: 600;
-    margin: 0 0 2px 0;
-    letter-spacing: -0.01em;
-  }
-  .flow-trigger {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin: 0 0 14px 0;
-  }
-  .flow-trigger strong {
-    color: var(--primary);
-    font-weight: 600;
-  }
-  .flow-steps {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    counter-reset: step;
-  }
-  .flow-step {
-    position: relative;
-    padding: 8px 0 8px 32px;
-    counter-increment: step;
-    font-size: 13px;
-  }
+  .flow-title { font-size: 17px; font-weight: 700; }
+  .flow-trigger { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+  .flow-trigger b { color: var(--text); font-weight: 600; }
+  .flow-steps { list-style: none; margin: 14px 0 0; padding: 0; counter-reset: step; }
+  .flow-step { position: relative; padding: 0 0 16px 34px; counter-increment: step; }
+  .flow-step:last-child { padding-bottom: 0; }
   .flow-step::before {
     content: counter(step);
-    position: absolute;
-    left: 0;
-    top: 8px;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: var(--primary-soft);
-    color: var(--primary);
-    font-size: 11px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: absolute; left: 0; top: 0;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--primary-soft); color: var(--primary);
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
   }
-  .flow-step:not(:last-child)::after {
-    content: '';
-    position: absolute;
-    left: 11px;
-    top: 30px;
-    bottom: -2px;
-    width: 1px;
-    background: var(--primary-line);
-    opacity: 0.5;
+  .flow-step::after {
+    content: ""; position: absolute; left: 11px; top: 26px; bottom: 2px; width: 2px;
+    background: var(--border-strong);
   }
-  .flow-step-module {
-    font-weight: 600;
-    color: var(--text);
-    cursor: pointer;
-    text-decoration: underline;
-    text-decoration-color: var(--primary-line);
-    text-underline-offset: 3px;
-  }
-  .flow-step-module:hover { color: var(--primary); }
-  .flow-step-action {
-    color: var(--text-muted);
-    margin-left: 8px;
-  }
+  .flow-step:last-child::after { display: none; }
+  .flow-action { font-size: 15px; color: var(--text); }
+  .flow-mod { margin-top: 5px; }
+  .flow-mod .mchip { min-height: 30px; padding: 3px 10px; font-size: 12.5px; }
 
-  /* Principles */
-  .principle-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 12px;
-    margin-bottom: 30px;
-  }
-  .principle-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-  }
-  .principle-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 4px 0;
-    color: var(--primary);
-  }
-  .principle-desc {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin: 0;
-  }
-
-  /* ===== Detail panel ===== */
-  .detail-empty {
-    color: var(--text-faint);
-    font-size: 13px;
-    text-align: center;
-    padding: 60px 20px;
-    line-height: 1.6;
-  }
-  .detail-kind {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--primary);
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-  .detail-name {
-    font-size: 19px;
-    font-weight: 600;
-    margin: 0 0 4px 0;
-    letter-spacing: -0.01em;
-  }
-  .detail-layer {
-    display: inline-block;
-    font-size: 12px;
-    background: var(--primary-soft);
-    color: var(--primary);
-    padding: 2px 10px;
-    border-radius: 999px;
-    font-weight: 500;
-    margin-bottom: 14px;
-  }
-  .detail-section {
-    margin-bottom: 18px;
-  }
-  .detail-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-faint);
-    font-weight: 600;
-    margin-bottom: 6px;
-  }
-  .detail-text {
-    font-size: 13px;
-    color: var(--text);
-    line-height: 1.55;
-  }
-  .detail-file {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 11.5px;
-    color: var(--text-muted);
-    background: var(--bg);
-    padding: 6px 10px;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    word-break: break-all;
-  }
-  .detail-list { display: flex; flex-direction: column; gap: 4px; }
-  .detail-link {
-    padding: 7px 10px;
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    font-size: 12.5px;
-    transition: all var(--transition);
-    color: var(--text);
-  }
-  .detail-link:hover {
-    border-color: var(--primary-line);
-    color: var(--primary);
-    transform: translateX(2px);
-  }
-  .detail-link-kind {
-    font-size: 10px;
-    color: var(--text-faint);
-    margin-left: 6px;
-  }
-
-  /* ===== Testing view ===== */
-  .qa-section { margin-bottom: 28px; }
-  .qa-section-title {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-faint);
-    font-weight: 600;
-    margin: 0 0 12px 4px;
-  }
-  .stat-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 10px;
-    margin-bottom: 6px;
-  }
-  .stat-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-  }
-  .stat-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-faint);
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-  .stat-value {
-    font-size: 22px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
-    color: var(--primary);
-  }
-  .stat-sub {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-  .stat-bar {
-    height: 4px;
-    background: var(--bg);
-    border-radius: 999px;
-    overflow: hidden;
-    margin-top: 8px;
-  }
-  .stat-bar-fill {
-    height: 100%;
-    background: var(--primary);
-    border-radius: 999px;
-    transition: width var(--transition);
-  }
-  .policy-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 12px;
-  }
-  .policy-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-  }
-  .policy-card.yes { border-left: 3px solid var(--primary); }
-  .policy-card.no { border-left: 3px solid var(--border-strong); opacity: 0.92; }
-  .policy-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 8px 0;
-    color: var(--text);
-  }
-  .policy-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .policy-list li {
-    font-size: 13px;
-    color: var(--text-muted);
-    padding: 4px 0 4px 16px;
-    position: relative;
-    line-height: 1.5;
-  }
-  .policy-list li::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 11px;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--primary);
-    opacity: 0.5;
-  }
-  .suite-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-    gap: 14px;
-  }
-  .suite-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 18px 20px;
-    box-shadow: var(--shadow);
-  }
-  .suite-head {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin-bottom: 6px;
-  }
-  .suite-name {
-    font-size: 15px;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: -0.01em;
-  }
-  .suite-count {
-    background: var(--primary-soft);
-    color: var(--primary);
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-variant-numeric: tabular-nums;
-  }
-  .suite-target {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 11px;
-    color: var(--text-faint);
-    margin-bottom: 8px;
-  }
-  .suite-desc {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin: 0 0 12px 0;
-  }
-  .suite-highlights {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    border-top: 1px solid var(--border);
-    padding-top: 10px;
-  }
-  .suite-highlights li {
-    font-size: 12px;
-    color: var(--text);
-    padding: 3px 0 3px 14px;
-    position: relative;
-    line-height: 1.5;
-  }
-  .suite-highlights li::before {
-    content: '›';
-    position: absolute;
-    left: 0;
-    top: 1px;
-    color: var(--primary);
-    font-weight: 700;
-  }
-  .mini-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .mini-list li {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 10px 14px;
-    margin-bottom: 6px;
-  }
-  .mini-list-title {
-    font-size: 13px;
-    font-weight: 600;
-    margin: 0 0 2px 0;
-  }
-  .mini-list-body {
-    font-size: 12px;
-    color: var(--text-muted);
-    line-height: 1.5;
-    margin: 0;
-  }
-  .mini-list-file {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 11px;
-    color: var(--text-faint);
-    margin-top: 4px;
-  }
-
-  /* ===== CI view ===== */
-  .workflow-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 18px 20px;
-    box-shadow: var(--shadow);
-    margin-bottom: 16px;
-  }
-  .workflow-head {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin-bottom: 6px;
-    flex-wrap: wrap;
-  }
-  .workflow-name {
-    font-size: 15px;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: -0.01em;
-  }
-  .workflow-meta {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 11px;
-    color: var(--text-faint);
-  }
-  .workflow-trigger {
-    font-size: 11px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    padding: 1px 7px;
-    border-radius: 999px;
-    margin-right: 4px;
-    font-variant-numeric: tabular-nums;
-  }
-  .workflow-desc {
-    font-size: 13px;
-    color: var(--text-muted);
-    margin: 4px 0 14px 0;
-  }
-  .dag {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    padding-bottom: 6px;
-  }
-  .dag-job {
-    flex: 0 0 220px;
-    background: var(--bg-elev-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    position: relative;
-    transition: all var(--transition);
-  }
-  .dag-job:hover {
-    border-color: var(--primary-line);
-    transform: translateY(-1px);
-  }
-  .dag-job.has-needs {
-    border-left: 3px solid var(--primary);
-  }
-  .dag-job-name {
-    font-size: 13px;
-    font-weight: 600;
-    margin: 0 0 2px 0;
-  }
-  .dag-job-runner {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 10px;
-    color: var(--text-faint);
-    margin-bottom: 8px;
-  }
-  .dag-job-desc {
-    font-size: 11.5px;
-    color: var(--text-muted);
-    line-height: 1.5;
-    margin: 0 0 8px 0;
-  }
-  .dag-job-needs {
-    font-size: 10px;
-    color: var(--primary);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 2px;
-  }
-  .dag-job-artifacts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 6px;
-  }
-  .dag-job-artifact {
-    font-size: 10px;
-    background: var(--primary-soft);
-    color: var(--primary);
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-weight: 500;
-  }
-  .info-strip {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--primary);
-    border-radius: var(--radius-sm);
-    padding: 10px 14px;
-    margin-bottom: 8px;
-  }
-  .info-strip-title {
-    font-size: 12px;
-    font-weight: 600;
-    margin: 0 0 2px 0;
-  }
-  .info-strip-body {
-    font-size: 12px;
-    color: var(--text-muted);
-    margin: 0;
-    line-height: 1.5;
-  }
-
-  /* ===== Agent view ===== */
-  .agent-hero {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--primary);
-    border-radius: var(--radius-lg);
-    padding: 18px 22px;
-    margin-bottom: 24px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 14px;
-  }
-  .agent-hero-item .label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-faint);
-    font-weight: 600;
-    margin-bottom: 2px;
-  }
-  .agent-hero-item .value {
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .agent-hero-item .value-mono {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 11.5px;
-    color: var(--text-muted);
-    word-break: break-all;
-  }
-  .rule-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 12px;
-  }
-  .rule-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-    transition: all var(--transition);
-  }
-  .rule-card:hover {
-    border-color: var(--primary-line);
-    transform: translateY(-1px);
-  }
-  .rule-head {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin-bottom: 4px;
-  }
-  .rule-section {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 11px;
-    color: var(--primary);
-    background: var(--primary-soft);
-    padding: 1px 7px;
-    border-radius: 4px;
-    font-weight: 600;
-  }
-  .rule-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0;
-    letter-spacing: -0.01em;
-  }
-  .rule-summary {
-    font-size: 12.5px;
-    color: var(--text-muted);
-    margin: 0 0 10px 0;
-    line-height: 1.5;
-  }
-  .rule-highlights {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    font-size: 12px;
-  }
-  .rule-highlights li {
-    color: var(--text);
-    padding: 3px 0 3px 14px;
-    position: relative;
-    line-height: 1.5;
-  }
-  .rule-highlights li::before {
-    content: '·';
-    position: absolute;
-    left: 4px;
-    top: 0;
-    color: var(--primary);
-    font-weight: 700;
-  }
-  .lesson-timeline {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .lesson-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-    display: grid;
-    grid-template-columns: 110px 1fr;
-    gap: 18px;
-    transition: all var(--transition);
-  }
-  .lesson-card:hover { border-color: var(--primary-line); }
-  .lesson-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .lesson-date {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-faint);
-    font-weight: 600;
-  }
-  .lesson-epic {
-    font-size: 12px;
-    color: var(--primary);
-    font-weight: 600;
-  }
-  .lesson-rules {
-    margin-top: 4px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3px;
-  }
-  .lesson-rule-pin {
-    font-size: 10px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  }
-  .lesson-body { display: flex; flex-direction: column; gap: 8px; }
-  .lesson-incident {
-    font-size: 12.5px;
-    color: var(--text-muted);
-    line-height: 1.55;
-    margin: 0;
-  }
-  .lesson-incident::before {
-    content: 'Incident — ';
-    color: var(--text-faint);
-    font-weight: 600;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  .lesson-rule {
-    font-size: 13px;
-    color: var(--text);
-    line-height: 1.55;
-    margin: 0;
-    padding: 8px 12px;
-    background: var(--primary-soft);
-    border-radius: var(--radius-sm);
-    border-left: 2px solid var(--primary);
-  }
-  .lesson-rule::before {
-    content: 'Regel — ';
-    color: var(--primary);
-    font-weight: 600;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-  @media (max-width: 600px) {
-    .lesson-card { grid-template-columns: 1fr; }
-  }
-  .workflow-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 12px;
-  }
-  .wf-card {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-  }
-  .wf-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin: 0 0 10px 0;
-  }
-  .wf-step-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    counter-reset: wfstep;
-  }
-  .wf-step-list li {
-    counter-increment: wfstep;
-    font-size: 12.5px;
-    color: var(--text-muted);
-    padding: 4px 0 4px 26px;
-    position: relative;
-    line-height: 1.5;
-  }
-  .wf-step-list li::before {
-    content: counter(wfstep);
-    position: absolute;
-    left: 0;
-    top: 4px;
-    width: 18px;
-    height: 18px;
-    background: var(--primary-soft);
-    color: var(--primary);
-    border-radius: 50%;
-    font-size: 10px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .wf-table {
+  /* ===== Map: search + filters ===== */
+  .toolbar {
+    position: sticky; top: 118px; z-index: 20;
+    background: color-mix(in srgb, var(--bg) 90%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    padding: 10px 0 8px;
+    margin: 0 0 6px;
+  }
+  .search-input {
     width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-    table-layout: fixed;
+    height: 48px;
+    padding: 0 16px;
+    font-size: 16px;
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    background: var(--bg-elev);
+    color: var(--text);
+    outline: none;
   }
-  .wf-table th, .wf-table td {
-    text-align: left;
-    padding: 6px 10px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: top;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-  }
-  .wf-table th {
-    color: var(--text-faint);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 10px;
-    letter-spacing: 0.05em;
-  }
-  .wf-table td:first-child {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    color: var(--primary);
-    width: 42%;
-  }
-  .wf-table td:last-child { color: var(--text-muted); }
-  .wf-files {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    max-width: 100%;
-  }
-  .wf-file {
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 10.5px;
-    background: var(--bg);
+  .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+  .filter-row { display: flex; gap: 7px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .fchip {
+    flex: none; min-height: 38px;
+    padding: 0 13px;
+    display: inline-flex; align-items: center; gap: 7px;
     border: 1px solid var(--border);
+    background: var(--bg-elev);
     color: var(--text-muted);
-    padding: 1px 6px;
-    border-radius: 4px;
-    max-width: 100%;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    border-radius: 999px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+  }
+  .fchip .fcount { font-size: 12px; opacity: 0.7; font-variant-numeric: tabular-nums; }
+  .fchip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  /* ===== Layer block + module cards ===== */
+  .layer-block { margin-bottom: 26px; }
+  .layer-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .layer-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 26px; height: 26px; padding: 0 7px; border-radius: 8px;
+    background: var(--primary); color: #fff; font-size: 13px; font-weight: 700;
+  }
+  .layer-name { font-size: 18px; font-weight: 700; }
+  .layer-desc { color: var(--text-muted); font-size: 14px; margin: 4px 0 14px; }
+  .card-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .mcard {
+    text-align: left; width: 100%;
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px 15px;
+    cursor: pointer; color: var(--text);
+    display: flex; flex-direction: column; gap: 5px;
+    transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+  }
+  .mcard:active { border-color: var(--primary); box-shadow: var(--shadow); }
+  .mcard-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .mcard-name { font-size: 16px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kind-badge {
+    flex: none;
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.02em;
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--primary-soft); color: var(--primary);
+    text-transform: lowercase;
+  }
+  .mcard-desc { color: var(--text-muted); font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .empty-note { color: var(--text-faint); font-size: 15px; padding: 30px 4px; text-align: center; }
+
+  /* ===== Subsystem cards ===== */
+  .subsystem {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow);
+  }
+  .subsystem-title { font-size: 17px; font-weight: 700; }
+  .subsystem-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .badge-soft { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--bg-elev-2); border: 1px solid var(--border); color: var(--text-muted); }
+  .subsystem-desc { color: var(--text-muted); font-size: 15px; }
+  .subsystem-mods { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 13px; }
+
+  /* ===== Glossary ===== */
+  .glossary-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .gitem { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+  .gitem summary {
+    list-style: none; cursor: pointer;
+    padding: 13px 15px; font-size: 15.5px; font-weight: 700;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    min-height: 44px;
+  }
+  .gitem summary::-webkit-details-marker { display: none; }
+  .gitem summary::after { content: "+"; color: var(--primary); font-size: 20px; font-weight: 400; }
+  .gitem[open] summary::after { content: "\2013"; }
+  .gitem-body { padding: 0 15px 14px; color: var(--text-muted); font-size: 15px; }
+
+  /* term (jargon) button */
+  .term {
+    border: none; background: none; padding: 0; cursor: pointer;
+    color: inherit; font: inherit;
+    border-bottom: 1.5px dotted var(--primary);
+    color: var(--primary);
   }
 
-  /* Hidden view */
-  .view { display: none; }
-  .view.active { display: block; }
+  /* ===== Reference view ===== */
+  .ref-block {
+    background: var(--bg-elev); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow);
+  }
+  .ref-block h4 { font-size: 16px; font-weight: 700; }
+  .ref-block .meta-line { color: var(--text-faint); font-size: 13px; margin-top: 3px; }
+  .ref-block p.body { color: var(--text-muted); font-size: 14.5px; margin-top: 8px; }
+  .mini-list { list-style: none; margin: 8px 0 0; padding: 0; }
+  .mini-list li { padding: 6px 0 6px 18px; position: relative; color: var(--text-muted); font-size: 14.5px; }
+  .mini-list li::before { content: ""; position: absolute; left: 3px; top: 13px; width: 6px; height: 6px; border-radius: 50%; background: var(--primary-line); }
+  .stat-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stat-card { background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px; }
+  .stat-value { font-size: 24px; font-weight: 800; }
+  .stat-label { font-size: 13px; color: var(--text-muted); font-weight: 600; }
+  .stat-sub { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
+  .stat-bar { height: 6px; border-radius: 999px; background: var(--primary-soft); margin-top: 8px; overflow: hidden; }
+  .stat-bar-fill { height: 100%; background: var(--primary); border-radius: 999px; }
+  .scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ref-table { border-collapse: collapse; width: 100%; min-width: 420px; font-size: 14px; }
+  .ref-table th, .ref-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .ref-table th { color: var(--text-faint); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .pill-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .code-inline { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--text-muted); word-break: break-all; }
+
+  /* ===== Detail sheet (Level 3) ===== */
+  .scrim {
+    position: fixed; inset: 0; z-index: 90;
+    background: rgba(15, 22, 15, 0.42);
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--transition);
+  }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed; z-index: 100;
+    left: 0; right: 0; bottom: 0;
+    max-height: 88vh;
+    background: var(--bg-elev);
+    border-top-left-radius: 22px; border-top-right-radius: 22px;
+    box-shadow: var(--shadow-elev);
+    transform: translateY(102%);
+    transition: transform var(--transition);
+    display: flex; flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .sheet.open { transform: none; }
+  .sheet-handle { width: 40px; height: 5px; border-radius: 999px; background: var(--border-strong); margin: 10px auto 4px; flex: none; }
+  .sheet-head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    padding: 6px 18px 12px; border-bottom: 1px solid var(--border); flex: none;
+  }
+  .sheet-close { min-width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-elev-2); color: var(--text-muted); font-size: 20px; cursor: pointer; flex: none; }
+  .sheet-body { overflow-y: auto; padding: 16px 18px 26px; }
+  .detail-kind { display: inline-block; margin-bottom: 8px; }
+  .detail-name { font-size: 22px; font-weight: 800; word-break: break-word; }
+  .detail-layer { color: var(--text-muted); font-size: 14px; margin-top: 2px; }
+  .detail-desc { font-size: 16px; color: var(--text); margin-top: 14px; line-height: 1.55; }
+  .detail-section { margin-top: 18px; }
+  .detail-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); margin-bottom: 8px; }
+  .detail-file { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; color: var(--text-muted); background: var(--bg-elev-2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; word-break: break-all; }
+  .detail-links { display: flex; flex-direction: column; gap: 7px; }
+  .detail-link {
+    text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    min-height: 44px; padding: 8px 13px;
+    border: 1px solid var(--border); background: var(--bg-elev-2); color: var(--text);
+    border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  .detail-link[disabled] { opacity: 0.55; cursor: default; }
+  .detail-link .ll-kind { font-size: 12px; font-weight: 600; color: var(--text-faint); }
+  .chip-list { display: flex; flex-wrap: wrap; gap: 7px; }
+  .tag-chip { min-height: 34px; padding: 5px 11px; border: 1px solid var(--border); background: var(--bg-elev-2); color: var(--text-muted); border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+  /* term popover */
+  .term-pop {
+    position: fixed; z-index: 120; left: 50%; bottom: 22px; transform: translateX(-50%) translateY(120%);
+    width: min(420px, calc(100vw - 28px));
+    background: var(--bg-elev); border: 1px solid var(--border-strong);
+    border-radius: 16px; box-shadow: var(--shadow-elev);
+    padding: 16px 18px; opacity: 0; pointer-events: none;
+    transition: transform var(--transition), opacity var(--transition);
+  }
+  .term-pop.open { transform: translateX(-50%); opacity: 1; pointer-events: auto; }
+  .term-pop h5 { font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+  .term-pop p { font-size: 14.5px; color: var(--text-muted); }
+  .term-pop .tp-close { position: absolute; top: 8px; right: 10px; background: none; border: none; color: var(--text-faint); font-size: 20px; cursor: pointer; min-width: 44px; height: 44px; }
+
+  .foot { max-width: var(--maxw); margin: 0 auto; padding: 30px 16px calc(30px + env(safe-area-inset-bottom)); color: var(--text-faint); font-size: 13px; text-align: center; }
+  .foot a { color: var(--text-muted); }
+
+  /* ===== Tablet / desktop ===== */
+  @media (min-width: 720px) {
+    .chapter-grid { grid-template-columns: 1fr 1fr; }
+    .principle-grid { grid-template-columns: 1fr 1fr; }
+    .card-grid { grid-template-columns: 1fr 1fr; }
+    .glossary-grid { grid-template-columns: 1fr 1fr; }
+    .stat-row { grid-template-columns: repeat(4, 1fr); }
+    .hero-title { font-size: 34px; }
+  }
+  @media (min-width: 1000px) {
+    .card-grid { grid-template-columns: 1fr 1fr 1fr; }
+    /* Detail docks as a right-hand panel instead of a bottom sheet */
+    .sheet {
+      left: auto; right: 20px; bottom: 20px; top: 128px;
+      width: 400px; max-height: none;
+      border-radius: 20px;
+      transform: translateX(130%);
+    }
+    .sheet.open { transform: none; }
+    .sheet-handle { display: none; }
+    .scrim { background: rgba(15, 22, 15, 0.22); }
+  }
+  @media (max-width: 639px) {
+    .theme-picker { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+  }
 </style>
 </head>
 <body data-theme="moss" data-mode="light">
 
 <header class="topbar">
-  <div class="brand">
-    <span class="brand-dot"></span>
-    <span>VibeCoach</span>
-    <span class="brand-sub">Architecture</span>
-    <span class="version-pill" id="versionPill" title=""></span>
-  </div>
-  <nav class="tabs">
-    <button class="tab active" data-view="overview">Overview</button>
-    <button class="tab" data-view="layers">Layers</button>
-    <button class="tab" data-view="subsystems">Subsystems</button>
-    <button class="tab" data-view="flows">Flows</button>
-    <button class="tab" data-view="testing">Tests</button>
-    <button class="tab" data-view="ci">CI</button>
-    <button class="tab" data-view="agent">Agent</button>
-  </nav>
-  <div class="topbar-spacer"></div>
-  <div class="controls">
-    <div class="theme-picker" id="themePicker"></div>
-    <button class="icon-btn" id="modeToggle" title="Toggle light/dark">◐</button>
+  <div class="topbar-inner">
+    <div class="topbar-row">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span>VibeCoach</span>
+        <span class="brand-sub">Architecture</span>
+      </div>
+      <button class="version-pill" id="versionPill" type="button" title=""></button>
+      <div class="topbar-spacer"></div>
+      <div class="controls">
+        <div class="theme-picker" id="themePicker"></div>
+        <button class="icon-btn" id="modeToggle" type="button" title="Toggle light / dark" aria-label="Toggle light or dark mode">◐</button>
+      </div>
+    </div>
+    <nav class="nav" id="nav" aria-label="Reading level">
+      <button class="nav-tab active" data-view="story" type="button"><span class="nav-emoji">📖</span> Story</button>
+      <button class="nav-tab" data-view="map" type="button"><span class="nav-emoji">🗺️</span> Map</button>
+      <button class="nav-tab" data-view="flows" type="button"><span class="nav-emoji">🔀</span> Flows</button>
+      <button class="nav-tab" data-view="reference" type="button"><span class="nav-emoji">📚</span> Reference</button>
+    </nav>
   </div>
 </header>
 
-<div class="layout" data-view="overview">
-  <aside class="sidebar">
-    <div class="side-group">
-      <input class="search-input" id="searchInput" type="search" placeholder="Search modules, services...">
+<main>
+  <!-- ===== Level 1 — Story ===== -->
+  <section class="view active" id="view-story"></section>
+  <!-- ===== Level 2 — Map ===== -->
+  <section class="view" id="view-map"></section>
+  <!-- Flows -->
+  <section class="view" id="view-flows"></section>
+  <!-- Reference (deep) -->
+  <section class="view" id="view-reference"></section>
+</main>
+
+<footer class="foot">
+  Derived from <a id="jsonLink" href="architecture.json">architecture.json</a> +
+  <span class="code-inline">docs/ARCHITECTURE.md</span>. The code is the source of truth.
+</footer>
+
+<!-- ===== Level 3 — module detail ===== -->
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetName">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div>
+      <span class="kind-badge detail-kind" id="detailKind"></span>
+      <h2 class="detail-name" id="sheetName"></h2>
+      <div class="detail-layer" id="detailLayer"></div>
     </div>
-    <div class="side-group">
-      <h3 class="side-title">Layers</h3>
-      <div id="layerFilters"></div>
-    </div>
-    <div class="side-group">
-      <h3 class="side-title">Tags / Epics</h3>
-      <div class="chip-list" id="tagFilters"></div>
-    </div>
-    <div class="side-group">
-      <h3 class="side-title">Source</h3>
-      <div class="detail-file" style="margin-top:8px"><a id="jsonLink" href="architecture.json" style="color:inherit;text-decoration:none">architecture.json</a></div>
-    </div>
-  </aside>
+    <button class="sheet-close" id="sheetClose" type="button" aria-label="Close">✕</button>
+  </div>
+  <div class="sheet-body" id="sheetBody"></div>
+</aside>
 
-  <main class="content">
-    <!-- Overview -->
-    <section class="view active" id="view-overview">
-      <div class="view-header">
-        <h1 class="view-title">VibeCoach</h1>
-        <p class="view-sub" id="overviewSub"></p>
-      </div>
-      <div id="principles" class="principle-grid"></div>
-      <div class="view-header" style="margin-top:12px">
-        <h2 class="view-title" style="font-size:18px">Subsystems</h2>
-      </div>
-      <div id="overviewSubsystems" class="subsystem-grid"></div>
-    </section>
-
-    <!-- Layers -->
-    <section class="view" id="view-layers">
-      <div class="view-header">
-        <h1 class="view-title">Layers</h1>
-        <p class="view-sub">Click a module for details. Other modules dim, connected modules highlight.</p>
-      </div>
-      <div id="layerStack" class="layer-stack"></div>
-    </section>
-
-    <!-- Subsystems -->
-    <section class="view" id="view-subsystems">
-      <div class="view-header">
-        <h1 class="view-title">Subsystems</h1>
-        <p class="view-sub">Cross-cutting concerns spanning multiple layers.</p>
-      </div>
-      <div id="subsystems" class="subsystem-grid"></div>
-    </section>
-
-    <!-- Flows -->
-    <section class="view" id="view-flows">
-      <div class="view-header">
-        <h1 class="view-title">Flows</h1>
-        <p class="view-sub">Step-by-step chains — from trigger to effect.</p>
-      </div>
-      <div id="flows" class="flow-grid"></div>
-    </section>
-
-    <!-- Testing -->
-    <section class="view" id="view-testing">
-      <div class="view-header">
-        <h1 class="view-title">Testing strategy</h1>
-        <p class="view-sub" id="testingSummary"></p>
-      </div>
-      <div id="testingContent"></div>
-    </section>
-
-    <!-- CI -->
-    <section class="view" id="view-ci">
-      <div class="view-header">
-        <h1 class="view-title">CI Pipeline</h1>
-        <p class="view-sub" id="ciSummary"></p>
-      </div>
-      <div id="ciContent"></div>
-    </section>
-
-    <!-- Agent -->
-    <section class="view" id="view-agent">
-      <div class="view-header">
-        <h1 class="view-title">Agent strategy</h1>
-        <p class="view-sub" id="agentSummary"></p>
-      </div>
-      <div id="agentContent"></div>
-    </section>
-  </main>
-
-  <aside class="detail-panel" id="detailPanel">
-    <div class="detail-empty">
-      <p>Click a module to see details and dependencies.</p>
-    </div>
-  </aside>
+<!-- term / jargon popover -->
+<div class="term-pop" id="termPop" role="dialog" aria-live="polite">
+  <button class="tp-close" id="termClose" type="button" aria-label="Close">✕</button>
+  <h5 id="termTitle"></h5>
+  <p id="termBody"></p>
 </div>
 
 <script id="architecture-data" type="application/json">
@@ -4071,697 +3271,544 @@
 }
 
 </script>
-
 <script>
-(function() {
-  const DATA = JSON.parse(document.getElementById('architecture-data').textContent);
-  const moduleById = Object.fromEntries(DATA.modules.map(m => [m.id, m]));
-  const layerById = Object.fromEntries(DATA.layers.map(l => [l.id, l]));
+(function () {
+  "use strict";
+  var DATA = {};
+  try { DATA = JSON.parse(document.getElementById('architecture-data').textContent || '{}') || {}; }
+  catch (e) { DATA = {}; }
 
-  // Build reverse-dependency index
-  const dependents = {};
-  for (const m of DATA.modules) {
-    for (const dep of (m.uses || [])) {
-      (dependents[dep] = dependents[dep] || []).push(m.id);
-    }
+  // --- Safe accessors (a missing/extra field must never throw) ---
+  var meta = DATA.meta || {};
+  var modules = Array.isArray(DATA.modules) ? DATA.modules : [];
+  var layers = Array.isArray(DATA.layers) ? DATA.layers.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); }) : [];
+  var subsystems = Array.isArray(DATA.subsystems) ? DATA.subsystems : [];
+  var flows = Array.isArray(DATA.flows) ? DATA.flows : [];
+  var principles = Array.isArray(DATA.principles) ? DATA.principles : [];
+  var tagsMap = (DATA.tags && typeof DATA.tags === 'object') ? DATA.tags : {};
+  var styleGuide = DATA.styleGuide || {};
+
+  var byId = {}; modules.forEach(function (m) { if (m && m.id) byId[m.id] = m; });
+  var layerById = {}; layers.forEach(function (l) { if (l && l.id) layerById[l.id] = l; });
+  var dependents = {};
+  modules.forEach(function (m) {
+    (m.uses || []).forEach(function (dep) { (dependents[dep] = dependents[dep] || []).push(m.id); });
+  });
+
+  function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function h(html) { var t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstChild; }
+
+  // ===== Glossary / jargon (viewer copy — plain-English explanations) =====
+  var TERMS = {
+    'service': 'Service — a behind-the-scenes worker that does one job: syncing data, doing a calculation, or talking to an outside API.',
+    'view': 'View — a screen, or a piece of a screen, that you actually see and tap.',
+    'viewmodel': 'ViewModel — prepares and shapes data for a screen, so the screen itself stays simple.',
+    'model': '@Model — a kind of data the app saves on your device (a goal, a workout, a preference). SwiftData stores these.',
+    'formatter': 'Formatter — turns raw numbers and facts into the exact text the AI coach reads in its prompt.',
+    'helper': 'Helper — a small, reusable piece of logic that other parts of the app lean on.',
+    'store': 'Store — safely holds one specific thing, like your API key or a login token.',
+    'validator': 'Validator — checks that data is correct and complete before the app trusts it.',
+    'parser': 'Parser — reads raw text or data from outside and turns it into something structured.',
+    'schema-snapshot': 'Schema snapshot — a frozen picture of how saved data was shaped in an earlier app version, used to upgrade safely.',
+    'migration': 'Migration — safely upgrades the data already saved on your device when its shape changes in a new version.',
+    'framework': 'Framework — a large building block Apple provides, such as HealthKit or background tasks.',
+    'api': 'API — an outside service the app talks to over the internet (Strava, the weather service, an AI provider).',
+    'infrastructure': 'Infrastructure — plumbing that supports the app rather than a user-facing feature.',
+    'entry': 'Entry point — where the app starts running when you open it.',
+    'delegate': 'Delegate — a helper the system calls at key moments in the app life-cycle.',
+    'monitor': 'Monitor — keeps an eye on something and reacts when it changes.',
+    'banner': 'Banner — a small message strip shown at the top of a screen.',
+    'test-infra': 'Test infrastructure — fake data and stand-ins that let automated tests run without the real internet.',
+    'byok': 'BYOK — "Bring Your Own Key". You supply your own AI provider key; it is stored safely on your device, never on our servers.',
+    'singleton': 'Singleton — a single shared instance that the whole app reuses, instead of making many copies.',
+    'healthkit': 'HealthKit — Apple’s on-device health store: workouts, heart rate, sleep, HRV.',
+    'swiftdata': 'SwiftData — Apple’s on-device database. It saves your goals, workouts and preferences locally.',
+    'swiftui': 'SwiftUI — Apple’s modern toolkit for building the screens you see.',
+    'keychain': 'Keychain — the encrypted vault iOS uses for secrets like passwords and API keys.',
+    'oauth': 'OAuth — the secure "log in with Strava" handshake that never shares your password with the app.',
+    'layer': 'Layer — one horizontal slice of the app, from the screens at the top down to storage at the bottom.',
+    'subsystem': 'Subsystem — a feature that cuts across several layers to get one job done end to end.',
+    'flow': 'Flow — a step-by-step chain showing what happens after something triggers it.'
+  };
+  // extra kinds we may meet, default explanation
+  function termKey(s) { return String(s || '').toLowerCase(); }
+
+  // ===== term popover =====
+  var termPop = document.getElementById('termPop');
+  var termTitle = document.getElementById('termTitle');
+  var termBody = document.getElementById('termBody');
+  function showTerm(key, label) {
+    var def = TERMS[termKey(key)];
+    termTitle.textContent = label || key || '';
+    termBody.textContent = def || (tagsMap[key] || 'No plain-English note for this term yet.');
+    termPop.classList.add('open');
+  }
+  function hideTerm() { termPop.classList.remove('open'); }
+  document.getElementById('termClose').addEventListener('click', hideTerm);
+  document.addEventListener('click', function (e) {
+    if (termPop.classList.contains('open') && !termPop.contains(e.target) && !(e.target.classList && e.target.classList.contains('term'))) hideTerm();
+  });
+  // helper: make a <button class="term"> for a jargon word
+  function term(label, key) {
+    return '<button class="term" type="button" data-term="' + esc(termKey(key || label)) + '" data-label="' + esc(label) + '">' + esc(label) + '</button>';
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest ? e.target.closest('.term') : null;
+    if (t) { e.stopPropagation(); showTerm(t.dataset.term, t.dataset.label); }
+  });
+
+  // ===== module chip / detail =====
+  function mchip(id, opts) {
+    opts = opts || {};
+    var known = !!byId[id];
+    var cls = 'mchip' + (opts.more ? ' more' : '');
+    return '<button class="' + cls + '" type="button" data-mod="' + esc(id) + '"' + (known ? '' : ' data-extern="1"') + '>' +
+      '<span class="mchip-name">' + esc(id) + '</span></button>';
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('[data-mod]') : null;
+    if (b && !b.dataset.extern) openDetail(b.dataset.mod);
+  });
+
+  // ===== Detail sheet (Level 3) =====
+  var scrim = document.getElementById('scrim');
+  var sheet = document.getElementById('sheet');
+  var sheetBody = document.getElementById('sheetBody');
+  function closeDetail() { sheet.classList.remove('open'); scrim.classList.remove('open'); }
+  scrim.addEventListener('click', closeDetail);
+  document.getElementById('sheetClose').addEventListener('click', closeDetail);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDetail(); hideTerm(); } });
+
+  function linkRow(id) {
+    var target = byId[id];
+    if (!target) return '<button class="detail-link" disabled type="button">' + esc(id) + '<span class="ll-kind">external</span></button>';
+    return '<button class="detail-link" type="button" data-mod="' + esc(id) + '">' + esc(id) + '<span class="ll-kind">' + esc(target.kind || '') + '</span></button>';
   }
 
-  let activeView = 'overview';
-  let activeModule = null;
-  let activeLayerFilter = null;
-  let activeTagFilter = null;
-  let searchQuery = '';
+  function openDetail(id) {
+    var m = byId[id];
+    if (!m) return;
+    var layer = layerById[m.layer];
+    var uses = (m.uses || []);
+    var usedBy = (dependents[id] || []);
+    document.getElementById('detailKind').innerHTML = term(m.kind || 'module', m.kind || '');
+    document.getElementById('sheetName').textContent = m.id;
+    document.getElementById('detailLayer').textContent = layer ? layer.name : (m.layer || '');
+    var parts = [];
+    if (m.description) parts.push('<p class="detail-desc">' + esc(m.description) + '</p>');
+    if (m.file) parts.push('<div class="detail-section"><div class="detail-label">File</div><div class="detail-file">' + esc(m.file) + '</div></div>');
+    if ((m.tags || []).length) {
+      parts.push('<div class="detail-section"><div class="detail-label">Tags / epics</div><div class="chip-list">' +
+        m.tags.map(function (t) { return '<button class="tag-chip term" type="button" data-term="' + esc(t) + '" data-label="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') +
+        '</div></div>');
+    }
+    if (uses.length) {
+      parts.push('<div class="detail-section"><div class="detail-label">Builds on (' + uses.length + ')</div><div class="detail-links">' +
+        uses.map(linkRow).join('') + '</div></div>');
+    }
+    if (usedBy.length) {
+      parts.push('<div class="detail-section"><div class="detail-label">Used by (' + usedBy.length + ')</div><div class="detail-links">' +
+        usedBy.map(linkRow).join('') + '</div></div>');
+    }
+    if (!uses.length && !usedBy.length) {
+      parts.push('<div class="detail-section"><p class="stat-sub">No recorded dependencies in either direction.</p></div>');
+    }
+    sheetBody.innerHTML = parts.join('');
+    // patch the tag term buttons to resolve from tagsMap on tap
+    sheet.classList.add('open'); scrim.classList.add('open');
+    sheetBody.scrollTop = 0;
+  }
+  // tag chips inside the sheet use tagsMap as their definition source
+  sheetBody.addEventListener('click', function (e) {
+    var t = e.target.closest ? e.target.closest('.tag-chip') : null;
+    if (t) { e.stopPropagation(); showTerm(t.dataset.term, t.dataset.label); if (tagsMap[t.dataset.term]) { termBody.textContent = tagsMap[t.dataset.term]; } }
+  });
 
   // ===== Version pill =====
-  (function renderVersion() {
-    const pill = document.getElementById('versionPill');
-    const v = DATA.meta.appVersion || DATA.meta.version || '?';
-    const rev = DATA.meta.docRevision ? `rev ${DATA.meta.docRevision}` : '';
-    const updated = DATA.meta.lastUpdated || '';
-    pill.innerHTML = `
-      <span class="version-dot"></span>
-      <span>v${v}</span>
-      ${rev ? `<span class="version-rev">· ${rev}</span>` : ''}
-    `;
-    pill.title = [
-      `App version: ${v} (${DATA.meta.appVersionSource || 'Info.plist'})`,
-      DATA.meta.docRevision ? `Doc revision: ${DATA.meta.docRevision}` : null,
-      updated ? `Last updated: ${updated}` : null,
-      DATA.meta.versioningPolicy ? `\n${DATA.meta.versioningPolicy}` : null
-    ].filter(Boolean).join('\n');
+  (function () {
+    var pill = document.getElementById('versionPill');
+    var v = meta.appVersion || meta.version || '?';
+    var rev = meta.docRevision ? ('rev ' + meta.docRevision) : '';
+    pill.innerHTML = '<span class="version-dot"></span><span>v' + esc(v) + '</span>' + (rev ? '<span class="version-rev">· ' + esc(rev) + '</span>' : '');
+    var title = ['App version ' + v + (meta.appVersionSource ? ' (' + meta.appVersionSource + ')' : '')];
+    if (meta.docRevision) title.push('Doc revision ' + meta.docRevision);
+    if (meta.lastUpdated) title.push('Last updated ' + meta.lastUpdated);
+    pill.title = title.join('\n');
+    pill.addEventListener('click', function () {
+      showTerm('__version__', 'Version');
+      termTitle.textContent = 'v' + v + (rev ? ' · ' + rev : '');
+      termBody.textContent = title.slice(1).join(' · ') + (meta.versioningPolicy ? '\n\n' + meta.versioningPolicy : '');
+      termBody.style.whiteSpace = 'pre-wrap';
+    });
   })();
 
-  // ===== Theme handling =====
-  const themePicker = document.getElementById('themePicker');
-  for (const t of DATA.styleGuide.themes) {
-    const btn = document.createElement('button');
+  // ===== Theme + mode =====
+  var themePicker = document.getElementById('themePicker');
+  (styleGuide.themes || []).forEach(function (t) {
+    if (!t || !t.id) return;
+    var btn = document.createElement('button');
     btn.className = 'theme-swatch';
+    btn.type = 'button';
     btn.dataset.theme = t.id;
-    btn.title = t.displayName;
-    btn.style.background = `linear-gradient(135deg, ${t.primaryLight}, ${t.primaryDark})`;
-    btn.addEventListener('click', () => setTheme(t.id));
+    btn.title = t.displayName || t.id;
+    btn.setAttribute('aria-label', 'Theme ' + (t.displayName || t.id));
+    btn.style.background = 'linear-gradient(135deg,' + (t.primaryLight || '#4D804D') + ',' + (t.primaryDark || '#85BC85') + ')';
+    btn.addEventListener('click', function () { setTheme(t.id); });
     themePicker.appendChild(btn);
-  }
+  });
   function setTheme(id) {
     document.body.dataset.theme = id;
-    localStorage.setItem('vibecoach-arch-theme', id);
-    document.querySelectorAll('.theme-swatch').forEach(s => {
-      s.classList.toggle('active', s.dataset.theme === id);
-    });
+    try { localStorage.setItem('vibecoach-arch-theme', id); } catch (e) {}
+    document.querySelectorAll('.theme-swatch').forEach(function (s) { s.classList.toggle('active', s.dataset.theme === id); });
   }
-  const savedTheme = localStorage.getItem('vibecoach-arch-theme') || 'moss';
-  setTheme(savedTheme);
+  var savedTheme; try { savedTheme = localStorage.getItem('vibecoach-arch-theme'); } catch (e) {}
+  setTheme(savedTheme || 'moss');
 
-  // Mode toggle
-  const modeToggle = document.getElementById('modeToggle');
+  var modeToggle = document.getElementById('modeToggle');
   function setMode(m) {
     document.body.dataset.mode = m;
-    localStorage.setItem('vibecoach-arch-mode', m);
+    try { localStorage.setItem('vibecoach-arch-mode', m); } catch (e) {}
     modeToggle.textContent = m === 'dark' ? '☼' : '◐';
   }
-  const savedMode = localStorage.getItem('vibecoach-arch-mode')
-    || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  setMode(savedMode);
-  modeToggle.addEventListener('click', () => setMode(document.body.dataset.mode === 'dark' ? 'light' : 'dark'));
+  var savedMode; try { savedMode = localStorage.getItem('vibecoach-arch-mode'); } catch (e) {}
+  setMode(savedMode || ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'));
+  modeToggle.addEventListener('click', function () { setMode(document.body.dataset.mode === 'dark' ? 'light' : 'dark'); });
 
-  // ===== Tabs =====
-  const layoutEl = document.querySelector('.layout');
-  document.querySelectorAll('.tab').forEach(btn => {
-    btn.addEventListener('click', () => {
+  // ===== Nav =====
+  var activeView = 'story';
+  document.querySelectorAll('.nav-tab').forEach(function (btn) {
+    btn.addEventListener('click', function () {
       activeView = btn.dataset.view;
-      layoutEl.dataset.view = activeView;
-      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === btn));
-      document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + activeView));
+      document.querySelectorAll('.nav-tab').forEach(function (t) { t.classList.toggle('active', t === btn); });
+      document.querySelectorAll('.view').forEach(function (v) { v.classList.toggle('active', v.id === 'view-' + activeView); });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
+  function goView(name) { var b = document.querySelector('.nav-tab[data-view="' + name + '"]'); if (b) b.click(); }
 
-  // ===== Sidebar filters =====
-  const layerFilters = document.getElementById('layerFilters');
-  const renderLayerFilters = () => {
-    layerFilters.innerHTML = '';
-    const counts = {};
-    DATA.modules.forEach(m => counts[m.layer] = (counts[m.layer] || 0) + 1);
-    DATA.layers.forEach(l => {
-      const btn = document.createElement('button');
-      btn.className = 'chip layer-chip' + (activeLayerFilter === l.id ? ' active' : '');
-      btn.innerHTML = `${l.name}<span class="chip-count">${counts[l.id] || 0}</span>`;
-      btn.addEventListener('click', () => {
-        activeLayerFilter = activeLayerFilter === l.id ? null : l.id;
-        renderLayerFilters();
-        renderLayers();
-      });
-      layerFilters.appendChild(btn);
+  // ============================================================
+  // LEVEL 1 — STORY (plain-English narrative, default view)
+  // ============================================================
+  // Viewer copy: each chapter maps to a JSON layer id. Module lists stay data-driven.
+  var CHAPTERS = [
+    { layer: 'views', icon: '📱', name: 'What you see',
+      blurb: 'The screens you tap through: the dashboard with your Vibe Score, the coach chat, your goals and settings. Built with ' + term('SwiftUI', 'swiftui') + '.' },
+    { layer: 'viewmodels', icon: '🧠', name: 'The coaching brain',
+      blurb: 'Before the AI answers, the app gathers the right facts — your history, goals, readiness, weather. These ' + term('formatters', 'formatter') + ' assemble that briefing so the coach gives grounded advice, not guesses.' },
+    { layer: 'services', icon: '⚙️', name: 'The engine room',
+      blurb: 'The workhorses: syncing workouts, reading heart-rate zones, spotting training patterns, checking the weather. Most are pure logic, kept simple enough to test. Each is a ' + term('service', 'service') + '.' },
+    { layer: 'models', icon: '🗄️', name: 'Where your data lives',
+      blurb: 'Your goals, workouts and preferences are saved on your device with ' + term('SwiftData', 'swiftdata') + '. Every saved type is a ' + term('@Model', 'model') + ', upgraded safely by a ' + term('migration', 'migration') + ' when the app changes.' },
+    { layer: 'external', icon: '🌐', name: 'The outside world',
+      blurb: 'What the app reaches out to: Apple’s ' + term('HealthKit', 'healthkit') + ', Strava over a secure ' + term('OAuth', 'oauth') + ' handshake, a weather service, and your chosen AI provider via ' + term('BYOK', 'byok') + '.' },
+    { layer: 'app', icon: '🚀', name: 'Starting up',
+      blurb: 'When you open the app it sets up its database, wires everything together, and decides whether to show onboarding or your dashboard — defensively, so a hiccup never bricks the app.' }
+  ];
+
+  function chapterCard(c) {
+    var layer = layerById[c.layer];
+    var mods = modules.filter(function (m) { return m.layer === c.layer; });
+    var sample = mods.slice(0, 5);
+    var extra = mods.length - sample.length;
+    var chips = sample.map(function (m) { return mchip(m.id); }).join('');
+    if (extra > 0) chips += '<button class="mchip more" type="button" data-more-layer="' + esc(c.layer) + '"><span class="mchip-name">+' + extra + ' more</span></button>';
+    return '<div class="chapter">' +
+      '<div class="chapter-top"><div class="chapter-icon">' + c.icon + '</div>' +
+      '<div><div class="chapter-name">' + esc(c.name) + '</div>' +
+      '<div class="chapter-count">' + mods.length + ' ' + (mods.length === 1 ? 'building block' : 'building blocks') +
+      (layer ? ' · ' + esc(layer.name) : '') + '</div></div></div>' +
+      '<p class="chapter-blurb">' + c.blurb + '</p>' +
+      (chips ? '<div class="chapter-mods">' + chips + '</div>' : '') +
+      '</div>';
+  }
+
+  // curated key flows for the story (fall back gracefully if ids absent)
+  var STORY_FLOW_IDS = ['app-launch', 'workout-ingest', 'chat-coach', 'engine-a'];
+
+  function plainFlowCard(f, compact) {
+    var steps = (f.steps || []).map(function (s) {
+      var known = byId[s.module];
+      return '<li class="flow-step"><div class="flow-action">' + esc(s.action || '') + '</div>' +
+        (s.module ? '<div class="flow-mod">' + (known ? mchip(s.module) : '<button class="mchip" type="button" data-extern="1"><span class="mchip-name">' + esc(s.module) + '</span></button>') + '</div>' : '') +
+        '</li>';
+    }).join('');
+    return '<div class="flow"><div class="flow-title">' + esc(f.name || f.id) + '</div>' +
+      (f.trigger ? '<div class="flow-trigger"><b>Starts when:</b> ' + esc(f.trigger) + '</div>' : '') +
+      '<ol class="flow-steps">' + steps + '</ol></div>';
+  }
+
+  function renderStory() {
+    var root = document.getElementById('view-story');
+    var stack = (meta.stack || []).map(function (s) { return '<span class="stack-chip">' + esc(s) + '</span>'; }).join('');
+    var metaLine = [];
+    if (meta.platform) metaLine.push('<span><b>Platform</b> ' + esc(meta.platform) + '</span>');
+    if (meta.language) metaLine.push('<span><b>Language</b> ' + esc(meta.language) + '</span>');
+    if (meta.ui) metaLine.push('<span><b>UI</b> ' + esc(meta.ui) + '</span>');
+    if (meta.persistence) metaLine.push('<span><b>Storage</b> ' + esc(meta.persistence) + '</span>');
+
+    var hero = '<div class="hero">' +
+      '<span class="eyebrow">The app in one breath</span>' +
+      '<h1 class="hero-title">' + esc(meta.name || 'VibeCoach') + '</h1>' +
+      (meta.summary ? '<p class="hero-summary">' + esc(meta.summary) + '</p>' : '') +
+      (stack ? '<div class="hero-stack">' + stack + '</div>' : '') +
+      (metaLine.length ? '<div class="hero-meta">' + metaLine.join('') + '</div>' : '') +
+      '</div>';
+
+    var bigPic = '<div class="section-head"><div class="section-title">The big picture</div>' +
+      '<p class="section-sub">Six parts, top to bottom — from the screens you see down to where your data rests. Tap any name to open it. Dotted words explain the jargon.</p></div>' +
+      '<div class="chapter-grid">' + CHAPTERS.map(chapterCard).join('') + '</div>';
+
+    var princ = principles.length ? ('<div class="section-head"><div class="section-title">The ideas it’s built on</div>' +
+      '<p class="section-sub">A handful of principles that shape every decision.</p></div>' +
+      '<div class="principle-grid">' + principles.map(function (p) {
+        return '<div class="principle"><div class="principle-title">' + esc(p.title) + '</div><p class="principle-desc">' + esc(p.description) + '</p></div>';
+      }).join('') + '</div>') : '';
+
+    var picked = STORY_FLOW_IDS.map(function (id) { return flows.find(function (f) { return f.id === id; }); }).filter(Boolean);
+    if (!picked.length) picked = flows.slice(0, 3);
+    var flowSec = picked.length ? ('<div class="section-head"><div class="section-title">What happens, step by step</div>' +
+      '<p class="section-sub">A few everyday moments, traced from the trigger to the result.</p></div>' +
+      picked.map(function (f) { return plainFlowCard(f); }).join('') +
+      '<button class="nav-tab" type="button" id="allFlowsBtn" style="margin-top:4px">See all ' + flows.length + ' flows →</button>') : '';
+
+    var glossaryKeys = ['service', 'view', 'viewmodel', 'model', 'formatter', 'store', 'migration', 'byok', 'singleton', 'healthkit', 'swiftdata', 'keychain', 'oauth', 'layer', 'subsystem', 'flow'];
+    var glossary = '<div class="section-head"><div class="section-title">Words explained</div>' +
+      '<p class="section-sub">Tap a term to expand it. The same words are dotted throughout the story.</p></div>' +
+      '<div class="glossary-grid">' + glossaryKeys.map(function (k) {
+        var full = TERMS[k] || '';
+        var dash = full.indexOf('—');
+        var titleText = dash > -1 ? full.slice(0, dash).trim() : k;
+        var bodyText = dash > -1 ? full.slice(dash + 1).trim() : full;
+        return '<details class="gitem"><summary>' + esc(titleText) + '</summary><div class="gitem-body">' + esc(bodyText) + '</div></details>';
+      }).join('') + '</div>';
+
+    root.innerHTML = hero + bigPic + princ + flowSec + glossary;
+    var allBtn = document.getElementById('allFlowsBtn');
+    if (allBtn) { allBtn.classList.remove('nav-tab'); allBtn.style.cssText = 'margin-top:6px;min-height:44px;padding:0 16px;border:1px solid var(--border-strong);background:var(--bg-elev);color:var(--primary);font-weight:600;border-radius:999px;cursor:pointer;font-size:15px'; allBtn.addEventListener('click', function () { goView('flows'); }); }
+    root.querySelectorAll('[data-more-layer]').forEach(function (b) {
+      b.addEventListener('click', function () { goView('map'); setLayerFilter(b.dataset.moreLayer); });
     });
-  };
+  }
 
-  const tagFilters = document.getElementById('tagFilters');
-  const renderTagFilters = () => {
-    tagFilters.innerHTML = '';
-    const counts = {};
-    DATA.modules.forEach(m => (m.tags || []).forEach(t => counts[t] = (counts[t] || 0) + 1));
-    const sorted = Object.keys(counts).sort((a,b) => counts[b] - counts[a]);
-    sorted.forEach(tag => {
-      const btn = document.createElement('button');
-      btn.className = 'chip' + (activeTagFilter === tag ? ' active' : '');
-      btn.textContent = `${tag} (${counts[tag]})`;
-      btn.title = DATA.tags[tag] || '';
-      btn.addEventListener('click', () => {
-        activeTagFilter = activeTagFilter === tag ? null : tag;
-        renderTagFilters();
-        renderLayers();
-      });
-      tagFilters.appendChild(btn);
-    });
-  };
+  // ============================================================
+  // LEVEL 2 — MAP (layers + module cards, search, filter)
+  // ============================================================
+  var searchQuery = '';
+  var layerFilter = null;
 
-  document.getElementById('searchInput').addEventListener('input', e => {
-    searchQuery = e.target.value.trim().toLowerCase();
-    renderLayers();
-  });
+  function setLayerFilter(id) {
+    layerFilter = (layerFilter === id) ? null : id;
+    renderMapBody();
+    // reflect in filter chips
+    document.querySelectorAll('.fchip[data-layer]').forEach(function (c) { c.classList.toggle('active', c.dataset.layer === layerFilter); });
+    var s = document.querySelector('.fchip[data-layer="__all__"]'); if (s) s.classList.toggle('active', !layerFilter);
+  }
 
-  // ===== Overview =====
-  document.getElementById('overviewSub').textContent = DATA.meta.summary;
-
-  const principlesEl = document.getElementById('principles');
-  DATA.principles.forEach(p => {
-    const el = document.createElement('div');
-    el.className = 'principle-card';
-    el.innerHTML = `
-      <h3 class="principle-title">${escape(p.title)}</h3>
-      <p class="principle-desc">${escape(p.description)}</p>
-    `;
-    principlesEl.appendChild(el);
-  });
-
-  const overviewSubsystems = document.getElementById('overviewSubsystems');
-  DATA.subsystems.forEach(s => overviewSubsystems.appendChild(renderSubsystemCard(s)));
-
-  // ===== Layers view =====
-  const layerStack = document.getElementById('layerStack');
-
-  function passesFilter(m) {
-    if (activeLayerFilter && m.layer !== activeLayerFilter) return false;
-    if (activeTagFilter && !(m.tags || []).includes(activeTagFilter)) return false;
+  function passes(m) {
+    if (layerFilter && m.layer !== layerFilter) return false;
     if (searchQuery) {
-      const hay = (m.id + ' ' + m.description + ' ' + (m.tags || []).join(' ')).toLowerCase();
-      if (!hay.includes(searchQuery)) return false;
+      var hay = (m.id + ' ' + (m.description || '') + ' ' + (m.kind || '') + ' ' + (m.tags || []).join(' ')).toLowerCase();
+      if (hay.indexOf(searchQuery) === -1) return false;
     }
     return true;
   }
 
-  function connectedSet(modId) {
-    if (!modId) return null;
-    const m = moduleById[modId];
-    if (!m) return null;
-    const set = new Set([modId, ...(m.uses || []), ...(dependents[modId] || [])]);
-    return set;
+  function moduleCard(m) {
+    return '<button class="mcard" type="button" data-mod="' + esc(m.id) + '">' +
+      '<div class="mcard-top"><span class="mcard-name">' + esc(m.id) + '</span>' +
+      (m.kind ? '<span class="kind-badge">' + esc(m.kind) + '</span>' : '') + '</div>' +
+      (m.description ? '<span class="mcard-desc">' + esc(m.description) + '</span>' : '') +
+      '</button>';
   }
 
-  function renderLayers() {
-    layerStack.innerHTML = '';
-    const connSet = connectedSet(activeModule);
-    DATA.layers.forEach(l => {
-      const modules = DATA.modules.filter(m => m.layer === l.id && passesFilter(m));
-      if (modules.length === 0 && (activeLayerFilter || activeTagFilter || searchQuery)) return;
-      const card = document.createElement('div');
-      card.className = 'layer-card';
-      card.innerHTML = `
-        <div class="layer-head">
-          <span class="layer-badge">${l.order}</span>
-          <h3 class="layer-name">${escape(l.name)}</h3>
-          <p class="layer-desc">${escape(l.description)}</p>
-        </div>
-      `;
-      const grid = document.createElement('div');
-      grid.className = 'node-grid';
-      modules.forEach(m => grid.appendChild(renderNode(m, connSet)));
-      card.appendChild(grid);
-      layerStack.appendChild(card);
+  function renderMapBody() {
+    var body = document.getElementById('mapBody');
+    if (!body) return;
+    var html = '';
+    var any = false;
+    layers.forEach(function (l) {
+      var mods = modules.filter(function (m) { return m.layer === l.id && passes(m); });
+      if (!mods.length) return;
+      any = true;
+      html += '<div class="layer-block"><div class="layer-head"><span class="layer-badge">' + esc(l.order != null ? l.order : '') + '</span>' +
+        '<span class="layer-name">' + esc(l.name || l.id) + '</span></div>' +
+        (l.description ? '<p class="layer-desc">' + esc(l.description) + '</p>' : '') +
+        '<div class="card-grid">' + mods.map(moduleCard).join('') + '</div></div>';
     });
-    if (!layerStack.children.length) {
-      layerStack.innerHTML = `<div class="detail-empty"><p>No modules for this filter.</p></div>`;
+    // modules whose layer isn't in the layers list (defensive)
+    var known = {}; layers.forEach(function (l) { known[l.id] = 1; });
+    var orphans = modules.filter(function (m) { return !known[m.layer] && passes(m); });
+    if (orphans.length) {
+      any = true;
+      html += '<div class="layer-block"><div class="layer-head"><span class="layer-name">Other</span></div>' +
+        '<div class="card-grid">' + orphans.map(moduleCard).join('') + '</div></div>';
     }
+    body.innerHTML = any ? html : '<p class="empty-note">Nothing matches that filter.</p>';
   }
 
-  function renderNode(m, connSet) {
-    const btn = document.createElement('button');
-    btn.className = 'node';
-    if (activeModule === m.id) btn.classList.add('active');
-    else if (connSet) {
-      if (connSet.has(m.id)) btn.classList.add('connected');
-      else btn.classList.add('dimmed');
-    }
-    btn.dataset.module = m.id;
-    btn.innerHTML = `
-      <div class="node-name">${escape(m.id)}</div>
-      <div class="node-kind">${escape(m.kind || '')}</div>
-      ${(m.tags || []).length ? `<div class="node-tags">${m.tags.slice(0,3).map(t => `<span class="node-tag">${escape(t)}</span>`).join('')}</div>` : ''}
-    `;
-    btn.addEventListener('click', () => selectModule(m.id));
-    return btn;
+  function renderMap() {
+    var root = document.getElementById('view-map');
+    var counts = {}; modules.forEach(function (m) { counts[m.layer] = (counts[m.layer] || 0) + 1; });
+    var chips = '<button class="fchip active" type="button" data-layer="__all__">All<span class="fcount">' + modules.length + '</span></button>' +
+      layers.map(function (l) {
+        return '<button class="fchip" type="button" data-layer="' + esc(l.id) + '">' + esc(l.name || l.id) + '<span class="fcount">' + (counts[l.id] || 0) + '</span></button>';
+      }).join('');
+
+    root.innerHTML =
+      '<div class="section-head"><div class="section-title">The map</div>' +
+      '<p class="section-sub">Every building block, grouped by layer. Tap a card to see what it does, what it builds on, and what depends on it.</p></div>' +
+      '<div class="toolbar"><input class="search-input" id="searchInput" type="search" placeholder="Search building blocks…" aria-label="Search building blocks">' +
+      '<div class="filter-row" id="filterRow">' + chips + '</div></div>' +
+      '<div id="mapBody"></div>' +
+      // subsystems
+      '<div class="section-head"><div class="section-title">Features that cross layers</div>' +
+      '<p class="section-sub">Some jobs need pieces from several layers working together. These are the ' + term('subsystems', 'subsystem') + '.</p></div>' +
+      '<div id="subsystemList"></div>';
+
+    document.getElementById('searchInput').addEventListener('input', function (e) {
+      searchQuery = e.target.value.trim().toLowerCase();
+      renderMapBody();
+    });
+    document.querySelectorAll('.fchip[data-layer]').forEach(function (c) {
+      c.addEventListener('click', function () {
+        var id = c.dataset.layer;
+        if (id === '__all__') { layerFilter = null; }
+        else { layerFilter = (layerFilter === id) ? null : id; }
+        document.querySelectorAll('.fchip[data-layer]').forEach(function (x) { x.classList.toggle('active', x.dataset.layer === layerFilter); });
+        var all = document.querySelector('.fchip[data-layer="__all__"]'); if (all) all.classList.toggle('active', !layerFilter);
+        renderMapBody();
+      });
+    });
+
+    var sub = document.getElementById('subsystemList');
+    sub.innerHTML = subsystems.map(function (s) {
+      var mods = (s.modules || []).filter(function (id) { return byId[id]; });
+      var extern = (s.modules || []).filter(function (id) { return !byId[id]; });
+      var pills = (s.modules || []).map(function (id) { return mchip(id); }).join('');
+      return '<div class="subsystem"><div class="subsystem-title">' + esc(s.title || s.id) + '</div>' +
+        '<div class="subsystem-meta">' +
+        (s.epic ? '<span class="badge-soft">' + esc(s.epic) + '</span>' : '') +
+        (s.docRef ? '<span class="badge-soft">' + esc(s.docRef) + '</span>' : '') +
+        '</div>' +
+        (s.description ? '<p class="subsystem-desc">' + esc(s.description) + '</p>' : '') +
+        (pills ? '<div class="subsystem-mods">' + pills + '</div>' : '') + '</div>';
+    }).join('') || '<p class="empty-note">No subsystems recorded.</p>';
+
+    renderMapBody();
   }
 
-  // ===== Subsystems view =====
-  const subsystemsEl = document.getElementById('subsystems');
-  DATA.subsystems.forEach(s => subsystemsEl.appendChild(renderSubsystemCard(s)));
-
-  function renderSubsystemCard(s) {
-    const card = document.createElement('div');
-    card.className = 'subsystem-card';
-    card.innerHTML = `
-      <h3 class="subsystem-title">${escape(s.title)}</h3>
-      <div class="subsystem-meta">
-        ${s.epic ? `<span class="subsystem-epic">${escape(s.epic)}</span>` : ''}
-        ${s.docRef ? `<span>${escape(s.docRef)}</span>` : ''}
-      </div>
-      <p class="subsystem-desc">${escape(s.description)}</p>
-    `;
-    const pills = document.createElement('div');
-    pills.className = 'subsystem-modules';
-    (s.modules || []).forEach(modId => {
-      const m = moduleById[modId];
-      if (!m) return;
-      const pill = document.createElement('button');
-      pill.className = 'module-pill';
-      pill.textContent = m.id;
-      pill.addEventListener('click', () => {
-        document.querySelector('.tab[data-view="layers"]').click();
-        selectModule(modId);
-        document.querySelector('.content').scrollTo({ top: 0, behavior: 'smooth' });
-      });
-      pills.appendChild(pill);
-    });
-    card.appendChild(pills);
-    return card;
+  // ============================================================
+  // FLOWS (all of them)
+  // ============================================================
+  function renderFlows() {
+    var root = document.getElementById('view-flows');
+    root.innerHTML = '<div class="section-head"><div class="section-title">Flows</div>' +
+      '<p class="section-sub">Step-by-step chains — from a trigger to its effect. Tap a building block to open it.</p></div>' +
+      (flows.length ? flows.map(function (f) { return plainFlowCard(f); }).join('') : '<p class="empty-note">No flows recorded.</p>');
   }
 
-  // ===== Flows view =====
-  const flowsEl = document.getElementById('flows');
-  DATA.flows.forEach(f => {
-    const card = document.createElement('div');
-    card.className = 'flow-card';
-    card.innerHTML = `
-      <h3 class="flow-title">${escape(f.name)}</h3>
-      <p class="flow-trigger"><strong>Trigger:</strong> ${escape(f.trigger)}</p>
-    `;
-    const list = document.createElement('ol');
-    list.className = 'flow-steps';
-    f.steps.forEach(step => {
-      const li = document.createElement('li');
-      li.className = 'flow-step';
-      const m = moduleById[step.module];
-      const moduleName = `<span class="flow-step-module" data-module="${escape(step.module)}">${escape(step.module)}</span>`;
-      li.innerHTML = `${moduleName}<span class="flow-step-action">${escape(step.action)}</span>`;
-      const link = li.querySelector('.flow-step-module');
-      if (m) {
-        link.addEventListener('click', () => {
-          document.querySelector('.tab[data-view="layers"]').click();
-          selectModule(step.module);
-          document.querySelector('.content').scrollTo({ top: 0, behavior: 'smooth' });
-        });
-      } else {
-        link.style.cursor = 'default';
-        link.style.textDecoration = 'none';
-      }
-      list.appendChild(li);
+  // ============================================================
+  // REFERENCE (deep: testing, CI, agent, meta)
+  // ============================================================
+  function refTesting() {
+    var T = DATA.testing; if (!T) return '';
+    var out = '<div class="section-head"><div class="section-title">Testing strategy</div>' +
+      (T.summary ? '<p class="section-sub">' + esc(T.summary) + '</p>' : '') + '</div>';
+    var cov = T.coverage || {};
+    var stats = [];
+    var totalFiles = (T.suites || []).reduce(function (a, s) { return a + (s.fileCount || 0); }, 0);
+    if (totalFiles) stats.push('<div class="stat-card"><div class="stat-value">' + totalFiles + '</div><div class="stat-label">Test files</div></div>');
+    (cov.byDirectory || []).forEach(function (d) {
+      stats.push('<div class="stat-card"><div class="stat-value">' + esc(d.pct) + '%</div><div class="stat-label">' + esc(d.path) + '/</div><div class="stat-bar"><div class="stat-bar-fill" style="width:' + Math.max(0, Math.min(100, d.pct || 0)) + '%"></div></div></div>');
     });
-    card.appendChild(list);
-    flowsEl.appendChild(card);
-  });
-
-  // ===== Testing view =====
-  (function renderTesting() {
-    const T = DATA.testing;
-    if (!T) return;
-    document.getElementById('testingSummary').textContent = T.summary || '';
-    const root = document.getElementById('testingContent');
-
-    // Stats row: coverage + suite counts
-    const stats = document.createElement('div');
-    stats.className = 'qa-section';
-    const totalTests = (T.suites || []).reduce((a, s) => a + (s.fileCount || 0), 0);
-    const cov = T.coverage || {};
-    const statRow = document.createElement('div');
-    statRow.className = 'stat-row';
-    const overallPct = cov.byDirectory ? Math.round(cov.byDirectory.reduce((a, d) => a + d.pct, 0) / cov.byDirectory.length) : null;
-    const cards = [
-      { label: 'Test-bestanden', value: totalTests, sub: (T.suites || []).map(s => `${s.fileCount} ${s.name.split(' ')[0].toLowerCase()}`).join(' · ') },
-      ...(cov.byDirectory || []).map(d => ({ label: d.path + '/', value: d.pct + '%', sub: 'coverage', bar: d.pct }))
-    ];
-    cards.forEach(c => {
-      const el = document.createElement('div');
-      el.className = 'stat-card';
-      el.innerHTML = `
-        <div class="stat-label">${escape(c.label)}</div>
-        <div class="stat-value">${escape(String(c.value))}</div>
-        ${c.sub ? `<div class="stat-sub">${escape(c.sub)}</div>` : ''}
-        ${c.bar != null ? `<div class="stat-bar"><div class="stat-bar-fill" style="width:${c.bar}%"></div></div>` : ''}
-      `;
-      statRow.appendChild(el);
+    if (stats.length) out += '<div class="ref-block"><div class="stat-row">' + stats.join('') + '</div>' + (cov.summary ? '<p class="stat-sub" style="margin-top:10px">' + esc(cov.summary) + '</p>' : '') + '</div>';
+    (T.policy || []).forEach(function (p) {
+      out += '<div class="ref-block"><h4>' + esc(p.title) + '</h4><ul class="mini-list">' + (p.items || []).map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul></div>';
     });
-    stats.appendChild(statRow);
-    if (cov.summary) {
-      const note = document.createElement('p');
-      note.className = 'stat-sub';
-      note.style.marginTop = '8px';
-      note.textContent = cov.summary;
-      stats.appendChild(note);
-    }
-    root.appendChild(stats);
-
-    // Policy
-    if (T.policy && T.policy.length) {
-      const section = document.createElement('div');
-      section.className = 'qa-section';
-      section.innerHTML = `<h3 class="qa-section-title">Beleid</h3>`;
-      const grid = document.createElement('div');
-      grid.className = 'policy-grid';
-      T.policy.forEach(p => {
-        const card = document.createElement('div');
-        const cls = p.id === 'test-yes' ? 'yes' : (p.id === 'test-no' ? 'no' : '');
-        card.className = `policy-card ${cls}`;
-        card.innerHTML = `
-          <h4 class="policy-title">${escape(p.title)}</h4>
-          <ul class="policy-list">${p.items.map(i => `<li>${escape(i)}</li>`).join('')}</ul>
-        `;
-        grid.appendChild(card);
-      });
-      section.appendChild(grid);
-      root.appendChild(section);
-    }
-
-    // Suites
-    if (T.suites && T.suites.length) {
-      const section = document.createElement('div');
-      section.className = 'qa-section';
-      section.innerHTML = `<h3 class="qa-section-title">Suites</h3>`;
-      const grid = document.createElement('div');
-      grid.className = 'suite-grid';
-      T.suites.forEach(s => {
-        const card = document.createElement('div');
-        card.className = 'suite-card';
-        card.innerHTML = `
-          <div class="suite-head">
-            <h4 class="suite-name">${escape(s.name)}</h4>
-            <span class="suite-count">${s.fileCount} files</span>
-          </div>
-          <div class="suite-target">${escape(s.target || '')}${s.framework ? ' · ' + escape(s.framework) : ''}</div>
-          <p class="suite-desc">${escape(s.description || '')}</p>
-          ${(s.highlights && s.highlights.length) ? `
-            <ul class="suite-highlights">${s.highlights.map(h => `<li>${escape(h)}</li>`).join('')}</ul>
-          ` : ''}
-        `;
-        grid.appendChild(card);
-      });
-      section.appendChild(grid);
-      root.appendChild(section);
-    }
-
-    // Infrastructure (mocks)
-    if (T.infrastructure && T.infrastructure.length) {
-      const section = document.createElement('div');
-      section.className = 'qa-section';
-      section.innerHTML = `<h3 class="qa-section-title">Mock-infrastructuur</h3>`;
-      const ul = document.createElement('ul');
-      ul.className = 'mini-list';
-      T.infrastructure.forEach(m => {
-        const li = document.createElement('li');
-        li.innerHTML = `
-          <h4 class="mini-list-title">${escape(m.id)}</h4>
-          <p class="mini-list-body">${escape(m.purpose)}</p>
-          ${m.file ? `<div class="mini-list-file">${escape(m.file)}</div>` : ''}
-        `;
-        ul.appendChild(li);
-      });
-      section.appendChild(ul);
-      root.appendChild(section);
-    }
-
-    // Lessons learned
-    if (T.lessonsLearned && T.lessonsLearned.length) {
-      const section = document.createElement('div');
-      section.className = 'qa-section';
-      section.innerHTML = `<h3 class="qa-section-title">Lessons learned</h3>`;
-      T.lessonsLearned.forEach(l => {
-        const strip = document.createElement('div');
-        strip.className = 'info-strip';
-        strip.innerHTML = `
-          <h4 class="info-strip-title">${escape(l.title)}</h4>
-          <p class="info-strip-body">${escape(l.body)}</p>
-        `;
-        section.appendChild(strip);
-      });
-      root.appendChild(section);
-    }
-  })();
-
-  // ===== CI view =====
-  (function renderCI() {
-    const C = DATA.ci;
-    if (!C) return;
-    document.getElementById('ciSummary').textContent = C.summary || '';
-    const root = document.getElementById('ciContent');
-
-    // Workflows + jobs DAG
-    (C.workflows || []).forEach(wf => {
-      const card = document.createElement('div');
-      card.className = 'workflow-card';
-      const triggers = (wf.triggers || []).map(t => `<span class="workflow-trigger">${escape(t)}</span>`).join(' ');
-      card.innerHTML = `
-        <div class="workflow-head">
-          <h3 class="workflow-name">${escape(wf.name)}</h3>
-          <span class="workflow-meta">${escape(wf.file)}</span>
-        </div>
-        <div>${triggers}<span class="workflow-meta" style="margin-left:6px">runner: ${escape(wf.runner)}</span></div>
-        <p class="workflow-desc">${escape(wf.description || '')}</p>
-      `;
-      const dag = document.createElement('div');
-      dag.className = 'dag';
-      const jobs = (C.jobs || []).filter(j => j.workflow === wf.id);
-      // Sort by dependency: jobs with no `needs` first, then in order
-      const sorted = jobs.slice().sort((a, b) => (a.needs || []).length - (b.needs || []).length);
-      sorted.forEach(j => {
-        const jc = document.createElement('div');
-        jc.className = 'dag-job' + ((j.needs || []).length ? ' has-needs' : '');
-        const needs = (j.needs && j.needs.length) ? `<div class="dag-job-needs">needs: ${j.needs.join(', ')}</div>` : '';
-        const artifacts = (j.artifacts && j.artifacts.length) ? `<div class="dag-job-artifacts">${j.artifacts.map(a => `<span class="dag-job-artifact">${escape(a)}</span>`).join('')}</div>` : '';
-        jc.innerHTML = `
-          <h4 class="dag-job-name">${escape(j.name)}</h4>
-          <div class="dag-job-runner">${escape(j.runner || '')}${j.duration ? ' · ' + escape(j.duration) : ''}</div>
-          ${needs}
-          <p class="dag-job-desc">${escape(j.description || '')}</p>
-          ${artifacts}
-        `;
-        dag.appendChild(jc);
-      });
-      card.appendChild(dag);
-      root.appendChild(card);
+    (T.suites || []).forEach(function (s) {
+      out += '<div class="ref-block"><h4>' + esc(s.name) + '</h4><div class="meta-line">' + esc(s.target || '') + (s.framework ? ' · ' + esc(s.framework) : '') + ' · ' + esc(s.fileCount || 0) + ' files</div>' +
+        (s.description ? '<p class="body">' + esc(s.description) + '</p>' : '') +
+        ((s.highlights || []).length ? '<ul class="mini-list">' + s.highlights.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
     });
+    (T.lessonsLearned || []).forEach(function (l) {
+      out += '<div class="ref-block"><h4>' + esc(l.title) + '</h4><p class="body">' + esc(l.body) + '</p></div>';
+    });
+    return out;
+  }
 
-    // Env setup
-    if (C.envSetup && C.envSetup.length) {
-      const section = document.createElement('div');
-      section.className = 'qa-section';
-      section.innerHTML = `<h3 class="qa-section-title">Environment setup</h3>`;
-      C.envSetup.forEach(e => {
-        const strip = document.createElement('div');
-        strip.className = 'info-strip';
-        strip.innerHTML = `
-          <h4 class="info-strip-title">${escape(e.step)}</h4>
-          <p class="info-strip-body">${escape(e.detail)}</p>
-        `;
-        section.appendChild(strip);
-      });
-      root.appendChild(section);
-    }
+  function refCI() {
+    var C = DATA.ci; if (!C) return '';
+    var out = '<div class="section-head"><div class="section-title">CI pipeline</div>' +
+      (C.summary ? '<p class="section-sub">' + esc(C.summary) + '</p>' : '') + '</div>';
+    (C.workflows || []).forEach(function (wf) {
+      var jobs = (C.jobs || []).filter(function (j) { return j.workflow === wf.id; });
+      out += '<div class="ref-block"><h4>' + esc(wf.name) + '</h4><div class="meta-line">' + esc(wf.file || '') + (wf.runner ? ' · ' + esc(wf.runner) : '') + '</div>' +
+        (wf.description ? '<p class="body">' + esc(wf.description) + '</p>' : '') +
+        (jobs.length ? '<ul class="mini-list">' + jobs.map(function (j) {
+          return '<li><b>' + esc(j.name) + '</b>' + (j.duration ? ' · ' + esc(j.duration) : '') + (j.description ? ' — ' + esc(j.description) : '') + ((j.needs || []).length ? ' <span class="stat-sub">(needs: ' + esc(j.needs.join(', ')) + ')</span>' : '') + '</li>';
+        }).join('') + '</ul>' : '') + '</div>';
+    });
+    (C.envSetup || []).forEach(function (e) {
+      out += '<div class="ref-block"><h4>' + esc(e.step) + '</h4><p class="body">' + esc(e.detail) + '</p></div>';
+    });
+    if (C.concurrency) out += '<div class="ref-block"><h4>Concurrency</h4><p class="body">' + esc(C.concurrency) + '</p></div>';
+    if (C.node24OptIn) out += '<div class="ref-block"><h4>Node 24 opt-in</h4><p class="body">' + esc(C.node24OptIn) + '</p></div>';
+    return out;
+  }
 
-    // Concurrency + Node 24
-    if (C.concurrency || C.node24OptIn) {
-      const section = document.createElement('div');
-      section.className = 'qa-section';
-      section.innerHTML = `<h3 class="qa-section-title">Pipeline-policies</h3>`;
-      if (C.concurrency) {
-        const strip = document.createElement('div');
-        strip.className = 'info-strip';
-        strip.innerHTML = `<h4 class="info-strip-title">Concurrency</h4><p class="info-strip-body">${escape(C.concurrency)}</p>`;
-        section.appendChild(strip);
-      }
-      if (C.node24OptIn) {
-        const strip = document.createElement('div');
-        strip.className = 'info-strip';
-        strip.innerHTML = `<h4 class="info-strip-title">Node 24 opt-in</h4><p class="info-strip-body">${escape(C.node24OptIn)}</p>`;
-        section.appendChild(strip);
-      }
-      root.appendChild(section);
-    }
-  })();
-
-  // ===== Agent view =====
-  (function renderAgent() {
-    const A = DATA.agent;
-    if (!A) return;
-    document.getElementById('agentSummary').textContent = A.summary || '';
-    const root = document.getElementById('agentContent');
-
-    // Hero met system-meta
+  function refAgent() {
+    var A = DATA.agent; if (!A) return '';
+    var out = '<div class="section-head"><div class="section-title">Built with an AI agent</div>' +
+      (A.summary ? '<p class="section-sub">' + esc(A.summary) + '</p>' : '') + '</div>';
     if (A.system) {
-      const hero = document.createElement('div');
-      hero.className = 'agent-hero';
-      const items = [
-        { label: 'Tool', value: A.system.tool, valueClass: 'value' },
-        { label: 'Model', value: A.system.model, valueClass: 'value-mono' },
-        { label: 'Rules-file', value: A.system.rulesFile, valueClass: 'value-mono' },
-        { label: 'Memory', value: A.system.memoryFile, valueClass: 'value-mono' }
-      ];
-      items.forEach(it => {
-        if (!it.value) return;
-        const el = document.createElement('div');
-        el.className = 'agent-hero-item';
-        el.innerHTML = `<div class="label">${escape(it.label)}</div><div class="${it.valueClass}">${escape(it.value)}</div>`;
-        hero.appendChild(el);
-      });
-      root.appendChild(hero);
-      if (A.system.philosophy) {
-        const p = document.createElement('p');
-        p.className = 'stat-sub';
-        p.style.marginBottom = '24px';
-        p.style.marginTop = '-12px';
-        p.textContent = A.system.philosophy;
-        root.appendChild(p);
-      }
+      var s = A.system;
+      out += '<div class="ref-block"><div class="stat-row" style="grid-template-columns:1fr 1fr">' +
+        (s.tool ? '<div class="stat-card"><div class="stat-label">Tool</div><div class="body" style="margin-top:2px">' + esc(s.tool) + '</div></div>' : '') +
+        (s.model ? '<div class="stat-card"><div class="stat-label">Model</div><div class="code-inline" style="margin-top:2px">' + esc(s.model) + '</div></div>' : '') +
+        (s.rulesFile ? '<div class="stat-card"><div class="stat-label">Rules file</div><div class="code-inline" style="margin-top:2px">' + esc(s.rulesFile) + '</div></div>' : '') +
+        (s.memoryFile ? '<div class="stat-card"><div class="stat-label">Memory</div><div class="code-inline" style="margin-top:2px">' + esc(s.memoryFile) + '</div></div>' : '') +
+        '</div>' + (s.philosophy ? '<p class="body">' + esc(s.philosophy) + '</p>' : '') + '</div>';
     }
-
-    // Principles (reuse principle-grid styling)
-    if (A.principles && A.principles.length) {
-      const section = document.createElement('div');
-      section.className = 'qa-section';
-      section.innerHTML = `<h3 class="qa-section-title">Kernprincipes</h3>`;
-      const grid = document.createElement('div');
-      grid.className = 'principle-grid';
-      A.principles.forEach(p => {
-        const c = document.createElement('div');
-        c.className = 'principle-card';
-        c.innerHTML = `<h3 class="principle-title">${escape(p.title)}</h3><p class="principle-desc">${escape(p.description)}</p>`;
-        grid.appendChild(c);
-      });
-      section.appendChild(grid);
-      root.appendChild(section);
-    }
-
-    // Regels uit CLAUDE.md
-    if (A.rules && A.rules.length) {
-      const section = document.createElement('div');
-      section.className = 'qa-section';
-      section.innerHTML = `<h3 class="qa-section-title">CLAUDE.md — Regels & discipline</h3>`;
-      const grid = document.createElement('div');
-      grid.className = 'rule-grid';
-      A.rules.forEach(r => {
-        const card = document.createElement('div');
-        card.className = 'rule-card';
-        card.innerHTML = `
-          <div class="rule-head">
-            <span class="rule-section">${escape(r.section)}</span>
-            <h4 class="rule-title">${escape(r.title)}</h4>
-          </div>
-          <p class="rule-summary">${escape(r.summary)}</p>
-          ${(r.highlights || []).length ? `<ul class="rule-highlights">${r.highlights.map(h => `<li>${escape(h)}</li>`).join('')}</ul>` : ''}
-        `;
-        grid.appendChild(card);
-      });
-      section.appendChild(grid);
-      root.appendChild(section);
-    }
-
-    // Workflows
-    if (A.workflows && A.workflows.length) {
-      const section = document.createElement('div');
-      section.className = 'qa-section';
-      section.innerHTML = `<h3 class="qa-section-title">Workflows</h3>`;
-      const grid = document.createElement('div');
-      grid.className = 'workflow-grid';
-      A.workflows.forEach(w => {
-        const card = document.createElement('div');
-        card.className = 'wf-card';
-        let body = `<h4 class="wf-title">${escape(w.title)}</h4>`;
-        if (w.steps) {
-          body += `<ol class="wf-step-list">${w.steps.map(s => `<li>${escape(s)}</li>`).join('')}</ol>`;
-        } else if (w.items) {
-          body += `<table class="wf-table"><thead><tr><th>Pattern</th><th>Usage</th></tr></thead><tbody>${
-            w.items.map(i => `<tr><td>${escape(i.pattern)}</td><td>${escape(i.use)}</td></tr>`).join('')
-          }</tbody></table>`;
-        } else if (w.matrix) {
-          body += `<table class="wf-table"><thead><tr><th>Trigger</th><th>Files</th></tr></thead><tbody>${
-            w.matrix.map(m => `<tr><td>${escape(m.trigger)}</td><td>${
-              (m.files || []).length ? `<div class="wf-files">${m.files.map(f => `<span class="wf-file">${escape(f)}</span>`).join('')}</div>` : '<span style="color:var(--text-faint)">—</span>'
-            }</td></tr>`).join('')
-          }</tbody></table>`;
-        }
-        card.innerHTML = body;
-        grid.appendChild(card);
-      });
-      section.appendChild(grid);
-      root.appendChild(section);
-    }
-
-    // Lessons learned
-    if (A.lessonsLearned && A.lessonsLearned.length) {
-      const section = document.createElement('div');
-      section.className = 'qa-section';
-      section.innerHTML = `<h3 class="qa-section-title">Lessons learned — incident → regel</h3>`;
-      const timeline = document.createElement('div');
-      timeline.className = 'lesson-timeline';
-      A.lessonsLearned.forEach(l => {
-        const card = document.createElement('div');
-        card.className = 'lesson-card';
-        card.innerHTML = `
-          <div class="lesson-meta">
-            <div class="lesson-date">${escape(l.date || '')}</div>
-            <div class="lesson-epic">${escape(l.epic || '')}</div>
-            ${(l.rulesAffected || []).length ? `<div class="lesson-rules">${l.rulesAffected.map(r => `<span class="lesson-rule-pin">${escape(r)}</span>`).join('')}</div>` : ''}
-          </div>
-          <div class="lesson-body">
-            <p class="lesson-incident">${escape(l.incident)}</p>
-            <p class="lesson-rule">${escape(l.rule)}</p>
-          </div>
-        `;
-        timeline.appendChild(card);
-      });
-      section.appendChild(timeline);
-      root.appendChild(section);
-    }
-  })();
-
-  // ===== Module selection / detail panel =====
-  function selectModule(id) {
-    activeModule = activeModule === id ? null : id;
-    renderLayers();
-    renderDetail();
-  }
-
-  const detailPanel = document.getElementById('detailPanel');
-  function renderDetail() {
-    if (!activeModule) {
-      detailPanel.innerHTML = `<div class="detail-empty"><p>Click a module to see details and dependencies.</p></div>`;
-      return;
-    }
-    const m = moduleById[activeModule];
-    if (!m) return;
-    const layer = layerById[m.layer];
-    const usesList = (m.uses || []).map(dep => {
-      const target = moduleById[dep];
-      if (!target) return `<button class="detail-link" data-module="${escape(dep)}" disabled style="opacity:0.6;cursor:default">${escape(dep)}<span class="detail-link-kind">extern</span></button>`;
-      return `<button class="detail-link" data-module="${escape(dep)}">${escape(dep)}<span class="detail-link-kind">${escape(target.kind)}</span></button>`;
-    }).join('');
-    const usedBy = (dependents[activeModule] || []).map(dep => {
-      const target = moduleById[dep];
-      return `<button class="detail-link" data-module="${escape(dep)}">${escape(dep)}<span class="detail-link-kind">${escape(target ? target.kind : '')}</span></button>`;
-    }).join('');
-
-    detailPanel.innerHTML = `
-      <div class="detail-kind">${escape(m.kind || '')}</div>
-      <h2 class="detail-name">${escape(m.id)}</h2>
-      <div class="detail-layer">${escape(layer ? layer.name : m.layer)}</div>
-      <div class="detail-section">
-        <div class="detail-text">${escape(m.description)}</div>
-      </div>
-      ${m.file ? `
-        <div class="detail-section">
-          <div class="detail-label">Bestand</div>
-          <div class="detail-file">${escape(m.file)}</div>
-        </div>` : ''}
-      ${(m.tags || []).length ? `
-        <div class="detail-section">
-          <div class="detail-label">Tags</div>
-          <div class="chip-list">${m.tags.map(t => `<span class="chip" title="${escape(DATA.tags[t] || '')}">${escape(t)}</span>`).join('')}</div>
-        </div>` : ''}
-      ${usesList ? `
-        <div class="detail-section">
-          <div class="detail-label">Uses (${(m.uses || []).length})</div>
-          <div class="detail-list">${usesList}</div>
-        </div>` : ''}
-      ${usedBy ? `
-        <div class="detail-section">
-          <div class="detail-label">Used by (${(dependents[activeModule] || []).length})</div>
-          <div class="detail-list">${usedBy}</div>
-        </div>` : ''}
-    `;
-    detailPanel.querySelectorAll('.detail-link[data-module]').forEach(el => {
-      if (el.disabled) return;
-      el.addEventListener('click', () => selectModule(el.dataset.module));
+    (A.principles || []).forEach(function (p) {
+      out += '<div class="ref-block"><h4>' + esc(p.title) + '</h4><p class="body">' + esc(p.description) + '</p></div>';
     });
+    (A.rules || []).forEach(function (r) {
+      out += '<div class="ref-block"><div class="meta-line">' + esc(r.section || '') + '</div><h4>' + esc(r.title) + '</h4>' +
+        (r.summary ? '<p class="body">' + esc(r.summary) + '</p>' : '') +
+        ((r.highlights || []).length ? '<ul class="mini-list">' + r.highlights.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+    });
+    (A.workflows || []).forEach(function (w) {
+      var inner = '';
+      if (w.steps) inner = '<ul class="mini-list">' + w.steps.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>';
+      else if (w.items) inner = '<div class="scroll-x"><table class="ref-table"><thead><tr><th>Pattern</th><th>Usage</th></tr></thead><tbody>' + w.items.map(function (i) { return '<tr><td class="code-inline">' + esc(i.pattern) + '</td><td>' + esc(i.use) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      else if (w.matrix) inner = '<div class="scroll-x"><table class="ref-table"><thead><tr><th>Trigger</th><th>Files</th></tr></thead><tbody>' + w.matrix.map(function (m) { return '<tr><td>' + esc(m.trigger) + '</td><td class="code-inline">' + ((m.files || []).join(', ') || '—') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      out += '<div class="ref-block"><h4>' + esc(w.title) + '</h4>' + inner + '</div>';
+    });
+    (A.lessonsLearned || []).forEach(function (l) {
+      out += '<div class="ref-block"><div class="meta-line">' + esc(l.date || '') + (l.epic ? ' · ' + esc(l.epic) : '') + '</div>' +
+        (l.incident ? '<p class="body"><b>Incident.</b> ' + esc(l.incident) + '</p>' : '') +
+        (l.rule ? '<p class="body"><b>Rule.</b> ' + esc(l.rule) + '</p>' : '') + '</div>';
+    });
+    return out;
   }
 
-  function escape(s) {
-    if (s == null) return '';
-    return String(s).replace(/[&<>"']/g, c => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-    }[c]));
+  function renderReference() {
+    var root = document.getElementById('view-reference');
+    root.innerHTML = refTesting() + refCI() + refAgent() ||
+      '<p class="empty-note">No reference material recorded.</p>';
+    if (!root.innerHTML.trim()) root.innerHTML = '<p class="empty-note">No reference material recorded.</p>';
   }
 
   // ===== Initial render =====
-  renderLayerFilters();
-  renderTagFilters();
-  renderLayers();
+  try { renderStory(); } catch (e) { document.getElementById('view-story').innerHTML = '<p class="empty-note">Could not render the story.</p>'; }
+  try { renderMap(); } catch (e) {}
+  try { renderFlows(); } catch (e) {}
+  try { renderReference(); } catch (e) {}
 })();
 </script>
 </body>

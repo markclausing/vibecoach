@@ -90,10 +90,10 @@ Idea for a future Epic — not yet worked out. The thought: show not only physic
 
 ## Recently completed (last 5)
 
+- ✅ **#66** Architecture-viewer redesign — mobile-first + non-programmer progressive disclosure (Story → Map → Depth)
 - ✅ **#65** Refactor-review follow-ups — ChatViewModel split, bounded queries, sync-orchestration extraction, lint guardrails
 - ✅ **#62** Remaining user-feedback hardening — forms, permissions & concurrency
 - ✅ **#61** Security hardening — privacy & storage discipline (review follow-up)
 - ✅ **#60** Per-phase milestone insight in the Goals view (collapsible)
-- ✅ **#58** README as showcase — user-focused product page
 
 Full history (Phases 1–9 + all completed epics) is in **[docs/ROADMAP-archive.md](ROADMAP-archive.md)**.
