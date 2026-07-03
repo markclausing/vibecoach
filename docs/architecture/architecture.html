@@ -1375,7 +1375,7 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 35,
+    "docRevision": 36,
     "lastUpdated": "2026-07-03",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
@@ -2722,6 +2722,15 @@
       "file": "AIFitnessCoach/Models/Symptom.swift",
       "description": "Injury/complaint with a bodyArea enum and an expiry date. Local-only — not re-syncable.",
       "uses": []
+    },
+    {
+      "id": "InjuryKeywordMatcher",
+      "layer": "models",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Models/InjuryKeywordMatcher.swift",
+      "description": "Pure, AppStorage-free word-boundary matcher for injury keywords. Replaces a bare text.contains that matched 'rug' inside 'terug' (phantom Back tracker, on-device report 2026-07-03). Prefix matching keeps NL/DE compounds ('rugpijn', 'knieblessure'); short greedy keywords ('hand', 'back') opt into whole-word-only. Shared by BodyArea.matchesInjuryKeyword and SymptomContextFormatter.",
+      "uses": [],
+      "tags": ["injury-detection", "i18n", "pure-helper"]
     },
     {
       "id": "AppMigrationPlan",

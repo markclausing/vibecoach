@@ -129,6 +129,7 @@
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* ReadinessCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C3D4E5F6A7B8C9D0E1F2A3 /* ReadinessCalculatorTests.swift */; };
 		A3BB100A32BF93E6C7587F72 /* FitnessGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */; };
 		D5A0010101A001010100A001 /* Symptom.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0010102A001010100A002 /* Symptom.swift */; };
+		D5A0990101A099010100A001 /* InjuryKeywordMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0990102A099010100A002 /* InjuryKeywordMatcher.swift */; };
 		D5A0020101A002010100A001 /* UserPreference.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0020102A002010100A002 /* UserPreference.swift */; };
 		D5A0030101A003010100A001 /* DailyReadiness.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0030102A003010100A002 /* DailyReadiness.swift */; };
 		D5A0040101A004010100A001 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A0040102A004010100A002 /* AppSettings.swift */; };
@@ -281,6 +282,7 @@
 		D5C0060101C006010100C001 /* BlueprintContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0060102C006010100C002 /* BlueprintContextFormatterTests.swift */; };
 		D5C0070101C007010100C001 /* IntentContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0070102C007010100C002 /* IntentContextFormatterTests.swift */; };
 		D5C0080101C008010100C001 /* SymptomContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0080102C008010100C002 /* SymptomContextFormatterTests.swift */; };
+		D5C0990101C099010100C001 /* InjuryKeywordMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0990102C099010100C002 /* InjuryKeywordMatcherTests.swift */; };
 		E23A1B4C5D6E7F8A9B0C1D2E /* ProgressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */; };
 		A1650000000000000000001A /* QueryWindows.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1650000000000000000001B /* QueryWindows.swift */; };
 		AA6011110000000000000002 /* PhaseTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6011110000000000000001 /* PhaseTimeline.swift */; };
@@ -420,6 +422,7 @@
 		758A7ECDF66FE523D3217100 /* FitnessDataServiceTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessDataServiceTests.swift; sourceTree = "<group>"; };
 		769A9B604D9B0D66D5D394F9 /* FitnessGoal.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FitnessGoal.swift; sourceTree = "<group>"; };
 		D5A0010102A001010100A002 /* Symptom.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Symptom.swift; sourceTree = "<group>"; };
+		D5A0990102A099010100A002 /* InjuryKeywordMatcher.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InjuryKeywordMatcher.swift; sourceTree = "<group>"; };
 		D5A0020102A002010100A002 /* UserPreference.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserPreference.swift; sourceTree = "<group>"; };
 		D5A0030102A003010100A002 /* DailyReadiness.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DailyReadiness.swift; sourceTree = "<group>"; };
 		D5A0040102A004010100A002 /* AppSettings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
@@ -444,6 +447,7 @@
 		D5C0060102C006010100C002 /* BlueprintContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlueprintContextFormatterTests.swift; sourceTree = "<group>"; };
 		D5C0070102C007010100C002 /* IntentContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IntentContextFormatterTests.swift; sourceTree = "<group>"; };
 		D5C0080102C008010100C002 /* SymptomContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SymptomContextFormatterTests.swift; sourceTree = "<group>"; };
+		D5C0990102C099010100C002 /* InjuryKeywordMatcherTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = InjuryKeywordMatcherTests.swift; sourceTree = "<group>"; };
 		984AC8DD2D26E4CA3247251E /* Secrets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = Secrets.swift; sourceTree = "<group>"; };
 		A57D4E8A9B0C1D2E3F4A5B6C /* BlueprintTimelineView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BlueprintTimelineView.swift; sourceTree = "<group>"; };
 		AA01BB02CC03DD04EE05FF06 /* DashboardHeaderView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DashboardHeaderView.swift; sourceTree = "<group>"; };
@@ -722,6 +726,7 @@
 				D5C0070102C007010100C002 /* IntentContextFormatterTests.swift */,
 				BBC5F7B2D6E8F0A1B2C3D664 /* EventWindowContextFormatterTests.swift */,
 				D5C0080102C008010100C002 /* SymptomContextFormatterTests.swift */,
+				D5C0990102C099010100C002 /* InjuryKeywordMatcherTests.swift */,
 				D5D0050102D005010100D002 /* SchemaMigrationV1ToV2Tests.swift */,
 				D5D0060102D006010100D002 /* SchemaMigrationV2ToV3Tests.swift */,
 				D5D0080102D008010100D002 /* SchemaMigrationV3ToV4Tests.swift */,
@@ -1127,6 +1132,7 @@
 				F11DCACE610000000000A009 /* CoachContextCache.swift */,
 				D5D0030102D003010100D002 /* AppMigrationPlan.swift */,
 				D5A0010102A001010100A002 /* Symptom.swift */,
+				D5A0990102A099010100A002 /* InjuryKeywordMatcher.swift */,
 				D5A0020102A002010100A002 /* UserPreference.swift */,
 				D5A0030102A003010100A002 /* DailyReadiness.swift */,
 				D5A0040102A004010100A002 /* AppSettings.swift */,
@@ -1379,6 +1385,7 @@
 				D5C0070101C007010100C001 /* IntentContextFormatterTests.swift in Sources */,
 				BBC5F7B2D6E8F0A1B2C3D663 /* EventWindowContextFormatterTests.swift in Sources */,
 				D5C0080101C008010100C001 /* SymptomContextFormatterTests.swift in Sources */,
+				D5C0990101C099010100C001 /* InjuryKeywordMatcherTests.swift in Sources */,
 				D5D0050101D005010100D001 /* SchemaMigrationV1ToV2Tests.swift in Sources */,
 				D5D0060101D006010100D001 /* SchemaMigrationV2ToV3Tests.swift in Sources */,
 				D5D0080101D008010100D001 /* SchemaMigrationV3ToV4Tests.swift in Sources */,
@@ -1507,6 +1514,7 @@
 				D571DD53A0003A0003A0003A /* AppDateFormatters.swift in Sources */,
 				A3BB100A32BF93E6C7587F72 /* FitnessGoal.swift in Sources */,
 				D5A0010101A001010100A001 /* Symptom.swift in Sources */,
+				D5A0990101A099010100A001 /* InjuryKeywordMatcher.swift in Sources */,
 				D5A0020101A002010100A001 /* UserPreference.swift in Sources */,
 				D5A0030101A003010100A001 /* DailyReadiness.swift in Sources */,
 				D5A0040101A004010100A001 /* AppSettings.swift in Sources */,

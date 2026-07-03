@@ -80,8 +80,7 @@ struct ChatView: View {
     private var activeInjuries: [BodyArea] {
         BodyArea.allCases.filter { area in
             activePreferences.contains { pref in
-                let text = pref.preferenceText.lowercased()
-                return area.injuryKeywords.contains(where: { text.contains($0) })
+                area.matchesInjuryKeyword(in: pref.preferenceText)
             }
         }
     }

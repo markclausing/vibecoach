@@ -126,8 +126,7 @@ struct DashboardView: View {
         }
         return BodyArea.allCases.filter { area in
             validPrefs.contains { pref in
-                let text = pref.preferenceText.lowercased()
-                return area.injuryKeywords.contains(where: { text.contains($0) })
+                area.matchesInjuryKeyword(in: pref.preferenceText)
             }
         }
     }
