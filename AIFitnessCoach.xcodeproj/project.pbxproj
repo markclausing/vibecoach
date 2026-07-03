@@ -921,88 +921,136 @@
 		413E677FAE0B37E364E902DA /* Services */ = {
 			isa = PBXGroup;
 			children = (
-				B81B710B2F8D65A80062BC61 /* UITestMockEnvironment.swift */,
-				136CF190D3B3F2D63ADC3225 /* KeychainService.swift */,
-				136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */,
-				BE55E081F0611A0FD4776101 /* HealthKitPermissionAudit.swift */,
-				87B271FD10E4D9911EE0019B /* WeatherRetryPolicy.swift */,
-				CCEB39214C89DE213C19B419 /* CaptivePortalClassifier.swift */,
-				5A0646F367262AB5EBE7CC6D /* PermissionStatusEvaluator.swift */,
-				5FE50630131CF375BCA5A21A /* APIKeyTestStatusStore.swift */,
-				EF94C6F48AA3187AD06B9821 /* APIKeyInputValidator.swift */,
 				EDF1ADFB18FBFE38E56F903C /* GoalFormValidator.swift */,
-				136CF192D3B3F2D63ADC3225 /* UserAPIKeyStore.swift */,
-				D9B4F7B2D6E8F0A1B2C3D9F0 /* MigrationFallbackStore.swift */,
-				DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */,
-				DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */,
-				E101FF02AA03BB04CC05DD06 /* ChatErrorMessageMapper.swift */,
-				A153FAC701FF02AA03BB0401 /* AIModelFactory.swift */,
-				E401FF02AA03BB04CC05DD06 /* ChatModelSwitchNotice.swift */,
-				E501FF02AA03BB04CC05DD06 /* ChatConversationTrimmer.swift */,
-				E601FF02AA03BB04CC05DD06 /* ChatInputValidator.swift */,
-				EA01FF02AA03BB04CC05DD06 /* StravaRateLimitParser.swift */,
-				EB01FF02AA03BB04CC05DD06 /* StravaRateLimitStore.swift */,
-				EC01FF02AA03BB04CC05DD06 /* NetworkReachabilityMonitor.swift */,
-				ED01FF02AA03BB04CC05DD06 /* SyncStatusStore.swift */,
-				EF01FF02AA03BB04CC05DD06 /* SyncBannerStateBuilder.swift */,
-				EDA9519ECAE22F903D67C756 /* TokenStore.swift */,
-				60758C181F9C986190D5A369 /* StravaAuthService.swift */,
-				F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */,
-				D5B0010102B001010100B002 /* AthleticProfileManager.swift */,
-				D5B0020102B002010100B002 /* HealthKitManager.swift */,
-				D5B0030102B003010100B002 /* SleepStages.swift */,
-				D5B0040102B004010100B002 /* ReadinessCalculator.swift */,
-				D5B0050102B005010100B002 /* InjuryImpactMatrix.swift */,
-				D5B0060102B006010100B002 /* PhysiologicalCalculator.swift */,
-				D5B0070102B007010100B002 /* HealthKitSyncService.swift */,
 				D5B0080102B008010100B002 /* BlueprintChecker.swift */,
 				D5B0090102B009010100B002 /* PeriodizationEngine.swift */,
 				F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */,
 				F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */,
 				A1650000000000000000001B /* QueryWindows.swift */,
-				F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */,
 				F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */,
 				F46C4D7E8F9A0B1C2D3E4F5A /* FutureProjectionService.swift */,
-				C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */,
-				C2D3E4F5A6B7C8D9E0F1B2C3 /* HistoricalWeatherService.swift */,
-				AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */,
-				3500FFEECC00AA04BB02CC03 /* AIModelCatalogService.swift */,
 				268DC6609F434E5DA4FF63F7 /* ThemeManager.swift */,
-				E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */,
-				E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */,
-				E5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift */,
-				A1C0DE65401A0000000000F1 /* AutoSyncCoordinator.swift */,
-				A1C0DE65402A0000000000F2 /* DashboardMaintenanceRunner.swift */,
-				EDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift */,
-				EFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift */,
-				F5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift */,
-				FCA4F7B2D6E8F0A1B2C3D405 /* UUID+Deterministic.swift */,
-				FEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift */,
-				E0B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift */,
-				E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */,
-				E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */,
-				E6B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift */,
 				AAB4F7B2D6E8F0A1B2C3D556 /* WeekScheduleBuilder.swift */,
-				CC10F7B2D6E8F0A1B2C3E024 /* StageWeatherService.swift */,
-				CC10F7B2D6E8F0A1B2C3E022 /* OpenMeteoForecastClient.swift */,
-				CC10F7B2D6E8F0A1B2C3E006 /* StageLocationInterpolator.swift */,
-				CC10F7B2D6E8F0A1B2C3E004 /* RouteParser.swift */,
-				E8C4F7B2D6E8F0A1B2C3D405 /* PauseDetector.swift */,
-				E8B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift */,
-				E45A4502D6E8F0A1B2C3D405 /* HealthKitPermissionTypes.swift */,
-				E45A4503D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluator.swift */,
-				EAB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift */,
-				F11DCACE610000000000A001 /* PHIContextCache.swift */,
-				F11DCACE610000000000A003 /* TrainingPlanSafetyValidator.swift */,
-				F11DCACE610000000000A004 /* PromptInputSanitizer.swift */,
-				F11DCACE610000000000A007 /* CoordinatePrivacy.swift */,
-				ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */,
-				EDB4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift */,
-				EEB4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift */,
-				EFB4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimator.swift */,
-				F5C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdService.swift */,
+				DA54D1000000000000000001 /* Sync */,
+				DA54D2000000000000000001 /* AI */,
+				DA54D3000000000000000001 /* Weather */,
+				DA54D4000000000000000001 /* Physiology */,
+				DA54D5000000000000000001 /* Security */,
+				DA54D6000000000000000001 /* Infra */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		DA54D1000000000000000001 /* Sync */ = {
+			isa = PBXGroup;
+			children = (
+				E0B4F7B2D6E8F0A1B2C3D405 /* ActivityDeduplicator.swift */,
+				A1C0DE65401A0000000000F1 /* AutoSyncCoordinator.swift */,
+				A1C0DE65402A0000000000F2 /* DashboardMaintenanceRunner.swift */,
+				E5A4F7B2D6E8F0A1B2C3D405 /* DeepSyncService.swift */,
+				F752392D9C6DF10FBC9F0A95 /* FitnessDataService.swift */,
+				D5B0020102B002010100B002 /* HealthKitManager.swift */,
+				BE55E081F0611A0FD4776101 /* HealthKitPermissionAudit.swift */,
+				E45A4502D6E8F0A1B2C3D405 /* HealthKitPermissionTypes.swift */,
+				D5B0070102B007010100B002 /* HealthKitSyncService.swift */,
+				E45A4503D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluator.swift */,
+				5A0646F367262AB5EBE7CC6D /* PermissionStatusEvaluator.swift */,
+				E2A4F7B2D6E8F0A1B2C3D405 /* SampleResampler.swift */,
+				EDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift */,
+				E2B4F7B2D6E8F0A1B2C3D405 /* SessionReclassifier.swift */,
+				60758C181F9C986190D5A369 /* StravaAuthService.swift */,
+				EA01FF02AA03BB04CC05DD06 /* StravaRateLimitParser.swift */,
+				EB01FF02AA03BB04CC05DD06 /* StravaRateLimitStore.swift */,
+				FEA4F7B2D6E8F0A1B2C3D405 /* StravaStreamIngestService.swift */,
+				EF01FF02AA03BB04CC05DD06 /* SyncBannerStateBuilder.swift */,
+				ED01FF02AA03BB04CC05DD06 /* SyncStatusStore.swift */,
+				FCA4F7B2D6E8F0A1B2C3D405 /* UUID+Deterministic.swift */,
+				E3A4F7B2D6E8F0A1B2C3D405 /* WorkoutSampleService.swift */,
+			);
+			path = Sync;
+			sourceTree = "<group>";
+		};
+		DA54D2000000000000000001 /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				3500FFEECC00AA04BB02CC03 /* AIModelCatalogService.swift */,
+				A153FAC701FF02AA03BB0401 /* AIModelFactory.swift */,
+				EF94C6F48AA3187AD06B9821 /* APIKeyInputValidator.swift */,
+				5FE50630131CF375BCA5A21A /* APIKeyTestStatusStore.swift */,
+				136CF191D3B3F2D63ADC3225 /* APIKeyValidator.swift */,
+				E501FF02AA03BB04CC05DD06 /* ChatConversationTrimmer.swift */,
+				E101FF02AA03BB04CC05DD06 /* ChatErrorMessageMapper.swift */,
+				E601FF02AA03BB04CC05DD06 /* ChatInputValidator.swift */,
+				E401FF02AA03BB04CC05DD06 /* ChatModelSwitchNotice.swift */,
+				F11DCACE610000000000A001 /* PHIContextCache.swift */,
+				F11DCACE610000000000A004 /* PromptInputSanitizer.swift */,
+				F11DCACE610000000000A003 /* TrainingPlanSafetyValidator.swift */,
+				EAB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCache.swift */,
+				ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
+		DA54D3000000000000000001 /* Weather */ = {
+			isa = PBXGroup;
+			children = (
+				C2D3E4F5A6B7C8D9E0F1B2C3 /* HistoricalWeatherService.swift */,
+				CC10F7B2D6E8F0A1B2C3E022 /* OpenMeteoForecastClient.swift */,
+				CC10F7B2D6E8F0A1B2C3E004 /* RouteParser.swift */,
+				CC10F7B2D6E8F0A1B2C3E006 /* StageLocationInterpolator.swift */,
+				CC10F7B2D6E8F0A1B2C3E024 /* StageWeatherService.swift */,
+				C2D3E4F5A6B7C8D9E0F1A2B3 /* WeatherManager.swift */,
+				87B271FD10E4D9911EE0019B /* WeatherRetryPolicy.swift */,
+			);
+			path = Weather;
+			sourceTree = "<group>";
+		};
+		DA54D4000000000000000001 /* Physiology */ = {
+			isa = PBXGroup;
+			children = (
+				D5B0010102B001010100B002 /* AthleticProfileManager.swift */,
+				EDB4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift */,
+				EFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift */,
+				D5B0050102B005010100B002 /* InjuryImpactMatrix.swift */,
+				F5A4F7B2D6E8F0A1B2C3D405 /* IntentExecutionAnalyzer.swift */,
+				E8C4F7B2D6E8F0A1B2C3D405 /* PauseDetector.swift */,
+				D5B0060102B006010100B002 /* PhysiologicalCalculator.swift */,
+				EFB4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimator.swift */,
+				F5C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdService.swift */,
+				DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */,
+				EEB4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift */,
+				D5B0040102B004010100B002 /* ReadinessCalculator.swift */,
+				D5B0030102B003010100B002 /* SleepStages.swift */,
+				F24B2C5D6E7F8A9B0C1D2E4A /* UserProfileService.swift */,
+				E6B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternDetector.swift */,
+				E8B4F7B2D6E8F0A1B2C3D405 /* WorkoutPatternFormatter.swift */,
+			);
+			path = Physiology;
+			sourceTree = "<group>";
+		};
+		DA54D5000000000000000001 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				F11DCACE610000000000A007 /* CoordinatePrivacy.swift */,
+				136CF190D3B3F2D63ADC3225 /* KeychainService.swift */,
+				EDA9519ECAE22F903D67C756 /* TokenStore.swift */,
+				136CF192D3B3F2D63ADC3225 /* UserAPIKeyStore.swift */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
+		DA54D6000000000000000001 /* Infra */ = {
+			isa = PBXGroup;
+			children = (
+				E4B4F7B2D6E8F0A1B2C3D405 /* AppLoggers.swift */,
+				DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */,
+				CCEB39214C89DE213C19B419 /* CaptivePortalClassifier.swift */,
+				D9B4F7B2D6E8F0A1B2C3D9F0 /* MigrationFallbackStore.swift */,
+				EC01FF02AA03BB04CC05DD06 /* NetworkReachabilityMonitor.swift */,
+				AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */,
+				B81B710B2F8D65A80062BC61 /* UITestMockEnvironment.swift */,
+			);
+			path = Infra;
 			sourceTree = "<group>";
 		};
 		48F580DFE59DCB4027FB3AEC /* ViewModels */ = {
