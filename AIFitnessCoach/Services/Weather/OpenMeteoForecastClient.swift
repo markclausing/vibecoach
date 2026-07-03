@@ -19,7 +19,8 @@ enum OpenMeteoForecastClient {
         // precision (single source of truth: CoordinatePrivacy).
         let roundedLat = CoordinatePrivacy.round(latitude)
         let roundedLon = CoordinatePrivacy.round(longitude)
-        var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
+        // swiftlint:disable:next force_unwrapping
+        var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")! // hardcoded valid URL literal, never nil
         components.queryItems = [
             URLQueryItem(name: "latitude", value: String(format: "%.4f", roundedLat)),
             URLQueryItem(name: "longitude", value: String(format: "%.4f", roundedLon)),

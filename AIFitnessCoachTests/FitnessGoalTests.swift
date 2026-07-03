@@ -505,6 +505,72 @@ final class FitnessGoalTests: XCTestCase {
         XCTAssertEqual(weekday, 7, "sábado = weekday 7 (zaterdag).")
     }
 
+    // MARK: SuggestedWorkout.resolvedDate — abbreviations (fix/coach-plan-full-week)
+
+    private func weekday(forDay dateOrDay: String) -> Int {
+        let workout = SuggestedWorkout(dateOrDay: dateOrDay, activityType: "Rust",
+                                       suggestedDurationMinutes: 0, targetTRIMP: 0, description: "x")
+        return Calendar.current.component(.weekday, from: workout.resolvedDate)
+    }
+
+    func testSuggestedWorkout_ResolvedDate_ParsesDutchAbbreviations() {
+        XCTAssertEqual(weekday(forDay: "ma"), 2)
+        XCTAssertEqual(weekday(forDay: "di"), 3)
+        XCTAssertEqual(weekday(forDay: "wo"), 4)
+        XCTAssertEqual(weekday(forDay: "do"), 5)
+        XCTAssertEqual(weekday(forDay: "vr"), 6)
+        XCTAssertEqual(weekday(forDay: "za"), 7)
+        XCTAssertEqual(weekday(forDay: "zo"), 1)
+    }
+
+    func testSuggestedWorkout_ResolvedDate_ParsesEnglishAbbreviations() {
+        XCTAssertEqual(weekday(forDay: "mon"), 2)
+        XCTAssertEqual(weekday(forDay: "tue"), 3)
+        XCTAssertEqual(weekday(forDay: "tues"), 3)
+        XCTAssertEqual(weekday(forDay: "wed"), 4)
+        XCTAssertEqual(weekday(forDay: "thu"), 5)
+        XCTAssertEqual(weekday(forDay: "thur"), 5)
+        XCTAssertEqual(weekday(forDay: "thurs"), 5)
+        XCTAssertEqual(weekday(forDay: "fri"), 6)
+        XCTAssertEqual(weekday(forDay: "sat"), 7)
+        XCTAssertEqual(weekday(forDay: "sun"), 1)
+    }
+
+    func testSuggestedWorkout_ResolvedDate_ParsesGermanAbbreviations() {
+        XCTAssertEqual(weekday(forDay: "mo"), 2)
+        XCTAssertEqual(weekday(forDay: "di"), 3)
+        XCTAssertEqual(weekday(forDay: "mi"), 4)
+        XCTAssertEqual(weekday(forDay: "do"), 5)
+        XCTAssertEqual(weekday(forDay: "fr"), 6)
+        XCTAssertEqual(weekday(forDay: "sa"), 7)
+        XCTAssertEqual(weekday(forDay: "so"), 1)
+    }
+
+    func testSuggestedWorkout_ResolvedDate_AbbreviationsSharedAcrossLanguagesAgree() {
+        // The only abbreviations that appear in more than one language's list are NL/DE "di"
+        // (Tuesday) and NL/DE "do" (Thursday). Both languages agree, so they resolve unambiguously.
+        XCTAssertEqual(weekday(forDay: "di"), 3, "NL & DE 'di' = Tuesday in both.")
+        XCTAssertEqual(weekday(forDay: "do"), 5, "NL & DE 'do' = Thursday in both.")
+        // NL 'wo' (Wednesday) has no meaning in DE; DE 'mo' (Monday) has none in NL — no conflict.
+        XCTAssertEqual(weekday(forDay: "wo"), 4)
+        XCTAssertEqual(weekday(forDay: "mo"), 2)
+    }
+
+    func testSuggestedWorkout_ResolvedDate_ParsesMixedAbbreviationDateString() {
+        // "Za 4 juli" — abbreviated first word + a trailing day number. First word "za" = Saturday.
+        XCTAssertEqual(weekday(forDay: "Za 4 juli"), 7)
+        XCTAssertEqual(weekday(forDay: "Mon, 6 July"), 2)
+        XCTAssertEqual(weekday(forDay: "Mi. 8. Juli"), 4)
+    }
+
+    func testSuggestedWorkout_ResolvedDate_UnknownAbbreviationFallsBackToToday() {
+        // A non-day abbreviation must NOT resolve; it keeps the today fallback (and now logs).
+        let workout = SuggestedWorkout(dateOrDay: "xy 3 juli", activityType: "Rust",
+                                       suggestedDurationMinutes: 0, targetTRIMP: 0, description: "x")
+        XCTAssertEqual(workout.resolvedDate, Calendar.current.startOfDay(for: Date()),
+                       "Onbekende afkorting → fallback op vandaag (nu wél gelogd, gedrag onveranderd).")
+    }
+
     // MARK: - Epic #55: multi-day event window
 
     func testFitnessGoal_EventWindow_SingleDayByDefault() {

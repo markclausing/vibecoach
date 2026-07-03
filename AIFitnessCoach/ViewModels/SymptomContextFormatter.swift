@@ -36,9 +36,11 @@ enum SymptomContextFormatter {
                                   "lesión", "lesion", "dolor", "molestia"]
         let injuryKeywords = bodyPartKeywords + generalInjuryWords
         let activeInjuryPrefs = preferences.filter { pref in
-            guard pref.expirationDate == nil || pref.expirationDate! > now else { return false }
-            let text = pref.preferenceText.lowercased()
-            return injuryKeywords.contains(where: { text.contains($0) })
+            // swiftlint:disable:next force_unwrapping
+            guard pref.expirationDate == nil || pref.expirationDate! > now else { return false } // `||` short-circuits: `!` only reached when expirationDate != nil
+            // Word-boundary matching (InjuryKeywordMatcher) — a bare `contains` matched
+            // "rug" inside "terug" and flagged phantom injuries.
+            return InjuryKeywordMatcher.matches(anyOf: injuryKeywords, in: pref.preferenceText)
         }
 
         // All areas measured TODAY (score 0 and > 0) count as 'tracked'
@@ -84,7 +86,7 @@ enum SymptomContextFormatter {
         //    exists. This prevents false recovery messages for body parts that were never injured.
         for s in todayAll where s.severity == 0 {
             let matchesPref = activeInjuryPrefs.contains { pref in
-                s.bodyArea.injuryKeywords.contains(where: { pref.preferenceText.lowercased().contains($0) })
+                s.bodyArea.matchesInjuryKeyword(in: pref.preferenceText)
             }
             guard matchesPref else { continue }
             let areaName = s.bodyArea.rawValue
@@ -100,7 +102,7 @@ enum SymptomContextFormatter {
         for pref in activeInjuryPrefs {
             let alreadyTracked = BodyArea.allCases.contains { area in
                 allTrackedAreas.contains(area.rawValue.lowercased()) &&
-                area.injuryKeywords.contains(where: { pref.preferenceText.lowercased().contains($0) })
+                area.matchesInjuryKeyword(in: pref.preferenceText)
             }
             if !alreadyTracked {
                 scoreLines.append("• \(pref.preferenceText) (score not entered today — use caution)")

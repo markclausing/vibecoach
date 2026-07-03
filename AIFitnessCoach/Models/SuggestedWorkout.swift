@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// The individual suggestion for a specific day in the coming week.
 struct SuggestedWorkout: Codable, Identifiable, Equatable {
@@ -119,6 +120,19 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         // Epic #37 story 37.4: Dutch + English + German + Spanish so the coach reply is parsed
         // correctly in every supported language. Spanish accents are listed both with and
         // without the diacritic (the model is inconsistent about "miércoles" vs "miercoles").
+        //
+        // Abbreviations (fix/coach-plan-full-week): the coach sometimes writes a shortened day
+        // ("Za 4 juli", "Mon", "Mi"). Without these an abbreviated first word failed the lookup
+        // and silently collapsed onto today, leaving the real day empty ("—") in the week strip.
+        // Only abbreviations that are UNAMBIGUOUS across the supported languages are added — an
+        // abbreviation that means a different weekday in another language is dropped:
+        //   NL  ma=Mon di=Tue wo=Wed do=Thu vr=Fri za=Sat zo=Sun
+        //   EN  mon=Mon tue/tues=Tue wed=Wed thu/thur/thurs=Thu fri=Fri sat=Sat sun=Sun
+        //   DE  mo=Mon di=Tue mi=Wed do=Thu fr=Fri sa=Sat so=Sun
+        // Cross-language check: the only strings shared between lists are NL/DE "di" (both Tue)
+        // and NL/DE "do" (both Thu) — they AGREE, so they stay. NL "wo" (Wed) has no meaning in
+        // DE (DE Wed = "mi"), DE "mo" (Mon) has no meaning in NL (NL Mon = "ma"), so neither
+        // conflicts. No requested abbreviation maps to two different weekdays across languages.
         let dayMap: [String: Int] = [
             "zondag": 1, "sunday": 1, "sonntag": 1, "domingo": 1,
             "maandag": 2, "monday": 2, "montag": 2, "lunes": 2,
@@ -126,7 +140,21 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
             "woensdag": 4, "wednesday": 4, "mittwoch": 4, "miércoles": 4, "miercoles": 4,
             "donderdag": 5, "thursday": 5, "donnerstag": 5, "jueves": 5,
             "vrijdag": 6, "friday": 6, "freitag": 6, "viernes": 6,
-            "zaterdag": 7, "saturday": 7, "samstag": 7, "sonnabend": 7, "sábado": 7, "sabado": 7
+            "zaterdag": 7, "saturday": 7, "samstag": 7, "sonnabend": 7, "sábado": 7, "sabado": 7,
+            // Abbreviations — Sunday (1)
+            "zo": 1, "sun": 1, "so": 1,
+            // Monday (2)
+            "ma": 2, "mon": 2, "mo": 2,
+            // Tuesday (3) — NL & DE both "di"
+            "di": 3, "tue": 3, "tues": 3,
+            // Wednesday (4) — NL "wo", DE "mi", EN "wed"
+            "wo": 4, "wed": 4, "mi": 4,
+            // Thursday (5) — NL & DE both "do"
+            "do": 5, "thu": 5, "thur": 5, "thurs": 5,
+            // Friday (6)
+            "vr": 6, "fri": 6, "fr": 6,
+            // Saturday (7)
+            "za": 7, "sat": 7, "sa": 7
         ]
 
         // Use only the first word so "Maandag 21 apr" is correctly recognised as "maandag".
@@ -136,7 +164,15 @@ struct SuggestedWorkout: Codable, Identifiable, Equatable {
         // collapsed onto a single day.
         let firstWord = (dateOrDay.lowercased().components(separatedBy: .whitespaces).first ?? dateOrDay.lowercased())
             .trimmingCharacters(in: .punctuationCharacters)
-        guard let targetWeekday = dayMap[firstWord] else { return today }
+        guard let targetWeekday = dayMap[firstWord] else {
+            // Silent collapse onto `today` is what left days empty ("—") in the week strip.
+            // Keep the fallback (existing UX) but make it observable. `.private` because the
+            // string can contain user-language content (CLAUDE.md §11).
+            AppLoggers.trainingPlan.warning(
+                "SuggestedWorkout.resolvedDate: could not parse dateOrDay, falling back to today: \(self.dateOrDay, privacy: .private)"
+            )
+            return today
+        }
 
         let todayWeekday = calendar.component(.weekday, from: today)
         var daysAhead = targetWeekday - todayWeekday

@@ -45,6 +45,12 @@ final class DeepSyncService: ObservableObject {
 
     @Published private(set) var status: Status = .idle
 
+    /// Epic #65 story 65.2: process-wide guard so the `WorkoutSample` retention pass
+    /// runs **at most once per app session**. `DeepSyncService` is re-instantiated on
+    /// every `DashboardView.task`, so an instance flag wouldn't survive; a `static`
+    /// (main-actor isolated) does.
+    private static var hasRunRetentionThisSession = false
+
     // MARK: Dependencies
 
     private let ingestService: WorkoutSampleIngesting
@@ -123,6 +129,11 @@ final class DeepSyncService: ObservableObject {
         // also become available for already-existing HK workouts.
         applyIngestRevisionMigrationIfNeeded()
 
+        // Epic #65 story 65.2: opportunistic retention. Runs once per app session,
+        // independent of whether there is new work to ingest — it prunes *old* samples
+        // (> 6 months), which never overlap the fresh 30-day ingest window.
+        await pruneOldSamplesIfNeeded()
+
         let calendar = Calendar.current
         let endDate = Date()
         guard let startDate = calendar.date(byAdding: .day, value: -daysBack, to: endDate) else {
@@ -165,6 +176,24 @@ final class DeepSyncService: ObservableObject {
     }
 
     // MARK: Private
+
+    /// Epic #65 story 65.2: prune `WorkoutSample` rows older than the retention horizon,
+    /// once per app session. Idempotent and cheap on a warm store (see
+    /// `WorkoutSampleStore.pruneSamplesOlderThanRetention`). A failure is logged and the
+    /// guard is reset so the next session retries.
+    private func pruneOldSamplesIfNeeded() async {
+        guard !Self.hasRunRetentionThisSession else { return }
+        Self.hasRunRetentionThisSession = true
+        do {
+            let pruned = try await store.pruneSamplesOlderThanRetention()
+            if pruned > 0 {
+                log.info("Retention: pruned \(pruned, privacy: .public) workout sample(s) beyond the retention horizon")
+            }
+        } catch {
+            Self.hasRunRetentionThisSession = false
+            log.error("WorkoutSample retention failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
 
     private func finalizeIfComplete(processed: Set<UUID>, allWorkoutUUIDs: Set<UUID>) {
         // The processed set is never cleared again: it's the single source of truth for

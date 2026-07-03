@@ -1,6 +1,10 @@
 import SwiftUI
 import SwiftData
 
+// swiftlint:disable file_length
+// Epic 65.6 size backstop: GoalsListView (636 LOC) hosts the goal list plus its
+// phase-timeline detail glue. Just over the 600 cap; a further split is optional.
+
 // MARK: - GoalsListView
 
 struct GoalsListView: View {
@@ -10,8 +14,22 @@ struct GoalsListView: View {
     @EnvironmentObject var themeManager: ThemeManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FitnessGoal.targetDate, order: .forward) private var goals: [FitnessGoal]
-    @Query(sort: \ActivityRecord.startDate, order: .forward) private var activities: [ActivityRecord]
+    // Epic #65 story 65.2: bounded to the rolling `QueryWindows.activityHistory` window
+    // (26 weeks). Widest consumer here is `atRiskGoals`'s 16-week burndown block; the
+    // `ProgressService` / `PeriodizationEngine` helpers scan ≤ that. Cutoff set in init.
+    @Query private var activities: [ActivityRecord]
     @Query(filter: #Predicate<UserPreference> { $0.isActive == true }, sort: \UserPreference.createdAt) private var activePreferences: [UserPreference]
+
+    /// Epic #65 story 65.2: Calendar-based (§3) cutoff captured as a `let` for the `#Predicate`.
+    init(viewModel: ChatViewModel) {
+        self._viewModel = ObservedObject(wrappedValue: viewModel)
+        let cutoff = QueryWindows.activityHistoryCutoff()
+        _activities = Query(
+            filter: #Predicate<ActivityRecord> { $0.startDate >= cutoff },
+            sort: \ActivityRecord.startDate,
+            order: .forward
+        )
+    }
 
     @State private var showingAddSheet = false
     @AppStorage("vibecoach_recoveryPlanTimestamp") private var recoveryPlanTimestamp: Double = 0
@@ -116,7 +134,7 @@ struct GoalsListView: View {
             .navigationDestination(for: FitnessGoal.self) { goal in
                 // Epic #62 story 62.1: clear the goal-derived coach context on delete so the
                 // coach stops referencing a goal that no longer exists.
-                EditGoalView(goal: goal, onDeleted: { viewModel.clearGoalDerivedContext() })
+                EditGoalView(goal: goal, onDeleted: { viewModel.context.clearGoalDerivedContext() })
             }
             .onScrollGeometryChange(for: Bool.self) { geometry in
                 geometry.contentOffset.y > 4
@@ -526,6 +544,8 @@ struct GoalsListView: View {
         let df  = AppDateFormatters.display("d MMM")
         let cal = Calendar.current
 
+        // swiftlint:disable force_unwrapping
+        // Calendar week arithmetic on a valid targetDate — never nil.
         switch goal.currentPhase {
         // Epic #37 story 37.1c: rendered via Text(nextLabel) -> verbatim. Phase names stay
         // English (matching TrainingPhase.displayName); the date interpolates as %@.
@@ -541,6 +561,7 @@ struct GoalsListView: View {
         case .tapering, nil:
             return nil
         }
+        // swiftlint:enable force_unwrapping
     }
 
     private func requestRecoveryPlan() {
@@ -555,9 +576,7 @@ struct GoalsListView: View {
         }
         viewModel.requestRecoveryPlan(
             atRiskGoals: riskInfos,
-            contextProfile: nil,
-            activeGoals: Array(goals),
-            activePreferences: Array(activePreferences)
+            invocation: CoachInvocationContext(activeGoals: Array(goals), activePreferences: Array(activePreferences))
         )
         recoveryPlanTimestamp = Date().timeIntervalSince1970
         appState.selectedTab = .coach
@@ -617,77 +636,5 @@ private struct PhaseProgressCard: View {
         .padding(12)
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10))
-    }
-}
-
-// MARK: - GoalRowView (preserved for EditGoal navigation)
-
-struct GoalRowView: View {
-    let goal: FitnessGoal
-    @EnvironmentObject var themeManager: ThemeManager
-
-    var daysRemaining: Int {
-        Calendar.current.dateComponents([.day], from: Date(), to: goal.targetDate).day ?? 0
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(goal.title)
-                    .font(.headline)
-                    .strikethrough(goal.isCompleted, color: .secondary)
-                    .foregroundColor(goal.isCompleted ? .secondary : .primary)
-                Spacer()
-                if goal.isCompleted {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                } else if daysRemaining >= 0 {
-                    Text("\(daysRemaining) dagen")
-                        .font(.caption)
-                        .padding(.horizontal, 8).padding(.vertical, 4)
-                        .background(themeManager.primaryAccentColor.opacity(0.1))
-                        .foregroundStyle(themeManager.primaryAccentColor)
-                        .clipShape(Capsule())
-                } else {
-                    Text("Verlopen")
-                        .font(.caption)
-                        .padding(.horizontal, 8).padding(.vertical, 4)
-                        .background(Color.red.opacity(0.1))
-                        .foregroundColor(.red)
-                        .clipShape(Capsule())
-                }
-            }
-
-            HStack(spacing: 6) {
-                if let phase = goal.currentPhase {
-                    let phaseColor: Color = {
-                        switch phase {
-                        case .baseBuilding: return .blue
-                        case .buildPhase:   return .orange
-                        case .peakPhase:    return .red
-                        case .tapering:     return .purple
-                        }
-                    }()
-                    Text(phase.displayName)
-                        .font(.caption2).fontWeight(.semibold)
-                        .padding(.horizontal, 7).padding(.vertical, 3)
-                        .background(phaseColor.opacity(0.12))
-                        .foregroundColor(phaseColor)
-                        .clipShape(Capsule())
-                }
-                if let sport = goal.sportCategory?.displayName, !sport.isEmpty {
-                    Text(sport)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                        .textCase(.uppercase)
-                }
-            }
-
-            Text(goal.targetDate, style: .date)
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .padding(.vertical, 4)
-        .contentShape(Rectangle())
     }
 }

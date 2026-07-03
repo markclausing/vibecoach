@@ -4,6 +4,14 @@
 # without noise on style matters that are not a real regression (line-length,
 # function-body-length). The codebase has Dutch comments (which are relatively
 # wordy) and long Coach prompts that cannot be meaningfully split.
+#
+# Size backstop (Epic 65.6): `file_length` (warning 600) and `type_body_length`
+# (warning 500) are now enabled — an automated backstop under the CLAUDE.md §5
+# ±500 LOC soft cap. They fire at a generous margin above the cap so a pure
+# split is never *forced*, only flagged. The handful of files that legitimately
+# exceed the thresholds (rich Dashboard/Settings screens, the HealthKit boundary)
+# carry an in-file `swiftlint:disable file_length` (± `type_body_length`) header
+# with a one-line justification, so the debt stays visible at the point of debt.
 
 # Only lint production source in this first pass; tests follow later.
 included:
@@ -20,8 +28,6 @@ disabled_rules:
   - line_length              # 460 violations — Dutch comments + Coach prompts are wordy
   - identifier_name          # 171 violations — short loop vars (i, r, hr, f) are idiomatic
   - function_body_length     # 17 violations — Coach-prompt builders are intentionally long
-  - file_length              # 15 violations — Models/Services are pragmatically grouped
-  - type_body_length         # 12 violations — ChatViewModel + DashboardView are rich views
   - cyclomatic_complexity    # 9 violations — Coach-prompt context has many branches
   - todo                     # 1 violation — TODOs are valuable as doc anchors
 
@@ -33,10 +39,31 @@ disabled_rules:
   - function_parameter_count                 # 2 — a refactor would need protocol injection, separate topic
   - vertical_parameter_alignment             # 3 — false positives on multiline parameter strings
 
-opt_in_rules: []
-  # `force_unwrapping` (77 violations) deliberately not enabled in this first cleanup —
-  # most are benign idioms (`guard x == nil || x! > now`) where the nil-check
-  # *has* been done but SwiftLint cannot see it. A separate audit PR
-  # (`chore/force-unwrap-audit`) runs later: evaluate per call site and move
-  # either to `if let` or a comment suppression. Until then no
-  # rule-on-with-77-existing-violations — that would block every new PR.
+opt_in_rules:
+  # `force_unwrapping` — enabled (warning) after the Epic 65.6 audit
+  # (`chore/force-unwrap-audit`). Every one of the ~82 existing hits was triaged
+  # and found benign: built-in HealthKit identifiers, hardcoded URL/TimeZone
+  # literals, fixed-offset Calendar date arithmetic, and nil-checked idioms
+  # SwiftLint cannot see (`guard x == nil || x!`, `!isEmpty` then `.first!`,
+  # filtered arrays). No genuinely-unsafe unwrap was found — consistent with the
+  # July 2026 review's "zero try!/as!" verdict. Each benign site now carries a
+  # scoped `swiftlint:disable[:next] force_unwrapping` + reason, so the rule now
+  # keeps *new* force-unwraps out unless they are explicitly justified in place.
+  - force_unwrapping
+
+# Size backstop thresholds (Epic 65.6) — see the philosophy note at the top.
+file_length:
+  warning: 600
+  error: 2000            # hard ceiling only; the warning at 600 is the real signal
+type_body_length:
+  warning: 500
+  error: 1500
+
+# `file_length` / `type_body_length` are whole-file/whole-type rules that can
+# only be silenced with a blanket (unpaired) `disable`. Allow that specific form
+# for these two rules so the in-file debt markers don't trip blanket_disable_command;
+# every other rule must still use scoped `:next`/`:this` or a disable/enable pair.
+blanket_disable_command:
+  always_blanket_disable:
+    - file_length
+    - type_body_length

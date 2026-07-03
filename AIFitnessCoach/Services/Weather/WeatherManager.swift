@@ -175,7 +175,8 @@ class WeatherManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
         // Open-Meteo free endpoint — no API key required.
         // daily parameters: temperature (min/max), precipitation probability, wind speed, weather code.
-        var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
+        // swiftlint:disable:next force_unwrapping
+        var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")! // hardcoded valid URL literal, never nil
         components.queryItems = [
             URLQueryItem(name: "latitude", value: String(format: "%.4f", lat)),
             URLQueryItem(name: "longitude", value: String(format: "%.4f", lon)),

@@ -58,7 +58,8 @@ final class ProactiveNotificationService {
         // Observer query: fires on every new or changed workout
         let observerQuery = HKObserverQuery(sampleType: workoutType, predicate: nil) { [weak self] _, completionHandler, error in
             guard error == nil else {
-                AppLoggers.proactiveNotification.error("Engine A observer fout: \(error!.localizedDescription, privacy: .public)")
+                // swiftlint:disable:next force_unwrapping
+                AppLoggers.proactiveNotification.error("Engine A observer fout: \(error!.localizedDescription, privacy: .public)") // guarded by `error == nil` above → non-nil here
                 completionHandler() // Always call — otherwise background delivery stops
                 return
             }

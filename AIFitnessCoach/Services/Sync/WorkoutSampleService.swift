@@ -52,6 +52,49 @@ actor WorkoutSampleStore {
         )
         return try modelContext.fetch(descriptor)
     }
+
+    // MARK: - Epic #65 Story 65.2: retention
+
+    /// Retention horizon for full-resolution `WorkoutSample` rows.
+    ///
+    /// We keep the 5s per-workout samples for **6 months**; older samples are pruned.
+    /// Six months comfortably covers the ~12-week blueprint lookback (×2) and the
+    /// 26-week `QueryWindows.activityHistoryWeeks` window that bounds the aggregate
+    /// views, with margin. Only `WorkoutSample` rows are pruned here — the
+    /// `ActivityRecord` aggregates (avg/max HR, TRIMP, distance) live in a separate
+    /// table and must survive so the burndown/trend history stays intact.
+    static let retentionMonths = 6
+
+    /// Prunes `WorkoutSample` rows whose parent workout started before the retention
+    /// horizon. A sample's `timestamp` always falls inside its workout's `[start, end]`
+    /// window, so filtering on `timestamp` is equivalent to filtering on workout start.
+    ///
+    /// - Idempotent and cheap when there is nothing to prune: it first `fetchCount`s the
+    ///   stale rows and returns early on zero, so a warm store never materialises samples.
+    /// - A sample exactly on the boundary (`timestamp == cutoff`) is **kept** (`< cutoff`),
+    ///   matching "started *more than* N months ago".
+    /// - Returns the number of deleted rows (a non-identifying counter → `.public` per §11).
+    @discardableResult
+    func pruneSamplesOlderThanRetention(now: Date = Date(),
+                                        calendar: Calendar = .current) throws -> Int {
+        // §3: Calendar-based cutoff, never `TimeInterval` month-math.
+        guard let cutoff = calendar.date(byAdding: .month, value: -Self.retentionMonths, to: now) else {
+            return 0
+        }
+        let predicate = #Predicate<WorkoutSample> { $0.timestamp < cutoff }
+        let descriptor = FetchDescriptor<WorkoutSample>(predicate: predicate)
+
+        let staleCount = try modelContext.fetchCount(descriptor)
+        guard staleCount > 0 else { return 0 }
+
+        let stale = try modelContext.fetch(descriptor)
+        for sample in stale {
+            modelContext.delete(sample)
+        }
+        try modelContext.save()
+        log.info("WorkoutSample retention: pruned \(staleCount, privacy: .public) sample(s) older than \(Self.retentionMonths, privacy: .public) month(s)")
+        return staleCount
+    }
 }
 
 // MARK: - Ingest

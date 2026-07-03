@@ -1,5 +1,13 @@
 import HealthKit
 
+// swiftlint:disable force_unwrapping
+// Epic 65.6 force-unwrap audit: every `!` in this file force-unwraps
+// `HKQuantityType.quantityType(forIdentifier:)` / `HKObjectType.characteristicType(forIdentifier:)`
+// for a *built-in* HealthKit identifier. Apple guarantees these are non-nil for
+// the framework's own identifiers — a nil would mean a fundamentally broken SDK.
+// This is the canonical "fails loudly by design" static-resource case, so the
+// rule is disabled file-wide rather than annotated per line.
+
 // MARK: - Epic 38 Story 38.1: HealthKit permission types (single source of truth)
 //
 // Central definition of all HealthKit types the coach uses. Prevents
@@ -56,6 +64,7 @@ enum HealthKitPermissionTypes {
         HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
         HKQuantityType.quantityType(forIdentifier: .activeEnergyBurned)!
     ]
+    // swiftlint:enable force_unwrapping
 
     /// Returns all critical types whose status is `.notDetermined`. An empty
     /// set means: all critical types are already explicit (`sharingAuthorized`

@@ -1,6 +1,19 @@
 import Foundation
 import HealthKit
 
+// swiftlint:disable file_length
+// Epic 65.6 size backstop: HealthKitManager (603 LOC) is the single HealthKit
+// query boundary — each method is a self-contained HKSampleQuery wrapper. Just
+// over the 600 cap; splitting per query type would scatter the boundary.
+// swiftlint:disable force_unwrapping
+// Epic 65.6 force-unwrap audit: the `!`s in this HealthKit-boundary file fall into
+// two never-nil idioms — (1) `HKObjectType.quantityType(forIdentifier:)` for a
+// *built-in* HealthKit identifier (Apple guarantees non-nil for its own
+// identifiers), and (2) `Calendar.current.date(byAdding:...)` with fixed
+// hour/day/month offsets on a valid `startOfDay` date (never nil in the Gregorian
+// calendar). Both are audited as benign; the rule is disabled file-wide so the
+// query boilerplate stays readable instead of carrying ~19 inline suppressions.
+
 /// Manages the Apple HealthKit integration and permissions
 final class HealthKitManager: @unchecked Sendable {
 
@@ -591,3 +604,4 @@ final class HealthKitManager: @unchecked Sendable {
         }
     }
 }
+// swiftlint:enable force_unwrapping
