@@ -68,6 +68,8 @@
 		DC10FF20AA30BB40CC50DD60 /* AppVersionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */; };
 		DE10FF20AA30BB40CC50DD60 /* PhysiologicalThresholdValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */; };
 		E010FF20AA30BB40CC50DD60 /* ChatScopeInstruction.swift in Sources */ = {isa = PBXBuildFile; fileRef = E001FF02AA03BB04CC05DD06 /* ChatScopeInstruction.swift */; };
+		F11DCACE610000000000B010 /* WorkoutChatScopeInstruction.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A010 /* WorkoutChatScopeInstruction.swift */; };
+		F11DCACE610000000000B011 /* WorkoutChatScopeInstructionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A011 /* WorkoutChatScopeInstructionTests.swift */; };
 		E110FF20AA30BB40CC50DD60 /* ChatErrorMessageMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E101FF02AA03BB04CC05DD06 /* ChatErrorMessageMapper.swift */; };
 		A153FAC710FF20AA30BB4001 /* AIModelFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A153FAC701FF02AA03BB0401 /* AIModelFactory.swift */; };
 		E410FF20AA30BB40CC50DD60 /* ChatModelSwitchNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E401FF02AA03BB04CC05DD06 /* ChatModelSwitchNotice.swift */; };
@@ -368,6 +370,8 @@
 		DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppVersionInfo.swift; sourceTree = "<group>"; };
 		DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalThresholdValidator.swift; sourceTree = "<group>"; };
 		E001FF02AA03BB04CC05DD06 /* ChatScopeInstruction.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatScopeInstruction.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A010 /* WorkoutChatScopeInstruction.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatScopeInstruction.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A011 /* WorkoutChatScopeInstructionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatScopeInstructionTests.swift; sourceTree = "<group>"; };
 		E101FF02AA03BB04CC05DD06 /* ChatErrorMessageMapper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatErrorMessageMapper.swift; sourceTree = "<group>"; };
 		A153FAC701FF02AA03BB0401 /* AIModelFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelFactory.swift; sourceTree = "<group>"; };
 		E401FF02AA03BB04CC05DD06 /* ChatModelSwitchNotice.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatModelSwitchNotice.swift; sourceTree = "<group>"; };
@@ -802,6 +806,7 @@
 				F11DCACE610000000000A008 /* CoordinatePrivacyTests.swift */,
 				F11DCACE610000000000A00B /* SchemaMigrationV5ToV6Tests.swift */,
 				F11DCACE610000000000A00F /* SchemaMigrationV6ToV7Tests.swift */,
+				F11DCACE610000000000A011 /* WorkoutChatScopeInstructionTests.swift */,
 				F0C4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculatorTests.swift */,
 				F1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift */,
 				F2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift */,
@@ -1086,6 +1091,7 @@
 				D5C0040102C004010100C002 /* SymptomContextFormatter.swift */,
 				6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */,
 				E001FF02AA03BB04CC05DD06 /* ChatScopeInstruction.swift */,
+				F11DCACE610000000000A010 /* WorkoutChatScopeInstruction.swift */,
 				EAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift */,
 				F1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift */,
 				E45A4500D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilder.swift */,
@@ -1465,6 +1471,7 @@
 				F11DCACE610000000000B008 /* CoordinatePrivacyTests.swift in Sources */,
 				F11DCACE610000000000B00B /* SchemaMigrationV5ToV6Tests.swift in Sources */,
 				F11DCACE610000000000B00F /* SchemaMigrationV6ToV7Tests.swift in Sources */,
+				F11DCACE610000000000B011 /* WorkoutChatScopeInstructionTests.swift in Sources */,
 				E0C4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculatorTests.swift in Sources */,
 				E1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift in Sources */,
 				E2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift in Sources */,
@@ -1523,6 +1530,7 @@
 				75D1A92071CFBE1BA9750D59 /* Secrets.swift in Sources */,
 				5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */,
 				E010FF20AA30BB40CC50DD60 /* ChatScopeInstruction.swift in Sources */,
+				F11DCACE610000000000B010 /* WorkoutChatScopeInstruction.swift in Sources */,
 				7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */,
 				6501AA01BB02CC03DD040001 /* Notification+VibeCoach.swift in Sources */,
 				6501AA01BB02CC03DD040003 /* AppStorageKeys.swift in Sources */,
