@@ -107,6 +107,8 @@ struct WorkoutAnalysisView: View {
                     emptyStateCard
                 }
                 statsGrid
+                // Epic #70: per-workout chat with local memory ("Discuss this workout").
+                WorkoutChatSection(activity: activity)
             }
             .padding(.horizontal)
             .padding(.vertical, 12)

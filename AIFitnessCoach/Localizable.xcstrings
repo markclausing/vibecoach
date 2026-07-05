@@ -1931,6 +1931,28 @@
         }
       }
     },
+    "Bespreek deze workout" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Besprich dieses Workout"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Discuss this workout"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comenta este entrenamiento"
+          }
+        }
+      }
+    },
     "Bewerk Doel" : {
       "localizations" : {
         "de" : {
@@ -2697,6 +2719,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "El entrenador empieza con el modelo principal. En caso de sobrecarga (503/429) cambia automáticamente al modelo de reserva."
+          }
+        }
+      }
+    },
+    "De coach denkt na…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Coach denkt nach…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The coach is thinking…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El coach está pensando…"
           }
         }
       }
@@ -9204,6 +9248,28 @@
         }
       }
     },
+    "Onthouden over deze workout" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu diesem Workout gemerkt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remembered about this workout"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordado sobre este entrenamiento"
+          }
+        }
+      }
+    },
     "Onverwachte fout" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10878,6 +10944,28 @@
         }
       }
     },
+    "Stel eerst een API-sleutel in via Instellingen om over deze workout te chatten." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinterlege zuerst einen API-Schlüssel in den Einstellungen, um über dieses Workout zu chatten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set an API key in Settings first to chat about this workout."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Configura primero una clave API en Ajustes para chatear sobre este entrenamiento."
+          }
+        }
+      }
+    },
     "Sterk" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11665,6 +11753,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mostrar %lld mensajes anteriores"
+          }
+        }
+      }
+    },
+    "Toon alle berichten (%@)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Nachrichten anzeigen (%@)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show all messages (%@)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar todos los mensajes (%@)"
           }
         }
       }
@@ -12563,6 +12673,28 @@
         }
       }
     },
+    "Verwijder onthouden feit" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemerkten Fakt löschen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete remembered fact"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar dato recordado"
+          }
+        }
+      }
+    },
     "Verwijderen" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -13035,6 +13167,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cuidado — Riesgo de lesión"
+          }
+        }
+      }
+    },
+    "Vraag of vertel iets over deze workout…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frag oder erzähl etwas zu diesem Workout…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask or share something about this workout…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregunta o cuenta algo sobre este entrenamiento…"
           }
         }
       }
