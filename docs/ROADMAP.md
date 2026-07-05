@@ -12,6 +12,7 @@ Legend: ✅ done · 🔄 active · ⏳ backlog
 |---|---|---|
 | ⏳ **#63** | CI pipeline extensions — TestFlight deploy (63.1, **maintainer wants this**), concurrency baseline guard (63.5), snapshot tests + dep scan (63.2+63.3 coupled) | 63.1: as soon as the maintainer's App Store Connect prerequisites are in place; others per-story |
 | ⏳ **#69** | Mental benefit of workouts — subjective track first (existing rpe/mood check-in data) | more "why am I training this" context wanted |
+| ⏳ **#70** | Per-workout chat with local memory — inline "discuss this workout" section, distilled facts feed plans & feedback | wanting to tell the coach *about* a specific workout (feel, route, day condition) |
 | ⏳ **#59** | Strava Developer Program compliance: base-URL refactor (59.1 anytime) + flip (June 2027), terms verification | Strava migration docs appearing / early 2027; 59.1 fits any quiet moment |
 | ⏳ **#68** | Oversized-file splits: 5 files above the 600-LOC lint cap (residual from archived Epic #64) | next time one of the listed files is opened for other work |
 
@@ -77,6 +78,38 @@ Goal: the coach can say *"sessions like this usually give you energy"* — groun
 **Architecture artefacts:** `MentalBenefitProfiler` is a new building-block Service → `architecture.json` + `architecture.html` in the same PR (§7 hard trigger); ARCHITECTURE.md gains a short section (new analysis concept).
 
 **Pickup trigger:** wanting more explicit "why am I training this" context with workouts. No dependency on other epics.
+
+---
+
+### ⏳ Epic #70: Per-workout chat with local memory ("discuss this workout")
+
+Maintainer goal (July 2026): a small chat input on the workout detail page where the user can talk *about that workout* — how it felt, the route, whatever — plus their condition that day/week. The app remembers this locally and feeds it into plans and feedback. Guardrails keep the chat strictly on-topic (this workout + the user's current condition).
+
+**Design decisions (maintainer, July 2026):** **hybrid persistence** — the full chat thread is stored per workout (re-readable when reopening the detail page) *and* the coach distils compact facts out of it for prompt context; **inline section** at the bottom of `WorkoutAnalysisView` (no sheet, no tab hand-off); facts are visible/deletable **at the workout itself only** (no Settings surface).
+
+**Grounding (existing building blocks — most of this epic is composition, not invention):**
+
+- **Guardrail pattern:** `ChatScopeInstruction` (Epic #51-A1) — a pure-Swift scope constant prepended to the systemInstruction, unit-testable. The workout chat gets a *narrower* sibling.
+- **Memory pattern:** the coach already proposes durable facts via structured JSON (`detectedPrefs` → `UserPreference` inserts with containment-dedupe, `ChatView.swift` ~553). Same extraction pattern, new target model.
+- **Chat plumbing:** `GenerativeModelProtocol` + `AIModelFactory` (BYOK, provider-agnostic), `ChatConversationTrimmer`, `ChatInputValidator`, `PromptInputSanitizer` — all reusable as-is.
+- **Prompt assembly:** `CoachPromptAssembler` + pure per-block formatters (`LastWorkoutContextFormatter`, `SymptomContextFormatter`, …) — the fact block becomes one more formatter.
+- **Not persisted today:** main-chat `ChatMessage` is a plain struct — per-workout persistence needs new `@Model`s → **SchemaV7 migration (§2.1 applies in full)**.
+
+**Stories:**
+
+* **⏳ 70.1 — SchemaV7: two local-only `@Model`s + migration.** `WorkoutChatEntry` (id, `activityID: String` keyed to `ActivityRecord.id` by value, role rawValue, text, timestamp) and `WorkoutChatFact` (id, activityID, factText, `category: WorkoutFactCategory` — type-safe enum per §2, e.g. `.feel` / `.route` / `.dayCondition`, createdAt). One type per file (§5). Pure addition → §2.1 protocol anyway: snapshot `SchemaV7`, `MigrationStage.lightweight`, bump `makeModelContainer()`, and a file-backed `SchemaMigrationV6ToV7Tests` asserting `FitnessGoal`/`UserPreference` survival + writability of the new models. **Data-loss class:** both are local-only (like `Symptom`) — §12 fallback wipes them on a failed migration; accepted, which is exactly why the migration test is mandatory.
+* **⏳ 70.2 — `WorkoutChatScopeInstruction` guardrail (pure Swift).** Sibling of `ChatScopeInstruction`, but narrower: only (a) *this* workout (name/date/type/metrics interpolated into the instruction) and (b) the user's physical/mental condition that day/week (sleep, stress, energy, niggles). Everything else — including general training questions that belong in the Coach tab — gets the redirect template, phrased in the user's language, pointing to the Coach tab where appropriate. Unit tests: instruction content, interpolation, both scope branches described.
+* **⏳ 70.3 — `WorkoutChatViewModel` + fact distillation.** A slim view model (injected `GenerativeModelProtocol` per §6 — no AppStorage) that loads/saves the thread for one `activityID`, assembles the prompt (70.2 instruction + workout data block + active `WorkoutChatFact`s + recent `Symptom`s), and extends the structured-JSON response contract with a `workoutFacts` array (mirror of `detectedPrefs`): each entry `{text, category}` → insert as `WorkoutChatFact` with the existing containment-dedupe. Distillation guidance lives in the systemInstruction: distil only *durable, plan-relevant* facts (feel vs. load, route quality, day-condition causes) — not chit-chat. Unit tests: parser round-trip, dedupe, category mapping (unknown category → dropped, §2 front-door rule).
+* **⏳ 70.4 — Inline chat UI on the workout detail page.** A "Discuss this workout" section at the bottom of `WorkoutAnalysisView`: persisted thread (last few messages + expand), input field (reusing `ChatInputValidator` limits), and the distilled facts rendered as small deletable chips ("remembered: *route beviel goed*" ✕) — the only management surface, per the maintainer's choice. New component files under `Views/WorkoutAnalysis/` (the host view is 416 LOC — the section must not push it over the §5 cap; `WorkoutChatSection.swift` as its own file, registered per §9). All new strings hand-added to `Localizable.xcstrings` (NL + EN/DE/ES) + `normalize-xcstrings.swift` (§13). Logging of chat text/facts only with `privacy: .private` (§11).
+* **⏳ 70.5 — Coach-context integration ("use it in plans and feedback").** New pure formatter `WorkoutFactsContextFormatter` emitting a `[WORKOUT NOTES]` structural marker block, + the matching section description in the `systemInstruction` reference — **both sides in the same PR, grep both (§13)**. Injection policy: facts from the trailing 14 days (Calendar math, §3), `.dayCondition` facts of the current week weighted first, capped (e.g. max 20, newest first) to bound prompt size. Consumed by the main coach chat *and* the recovery-plan prompt. Optional follow-up (not committed): feed a workout's own facts into its `WorkoutInsightService` narrative — requires adding a fact-hash to the `WorkoutInsightCache` fingerprint so stored insights invalidate when facts change.
+
+**Architecture artefacts:** `WorkoutChatEntry`/`WorkoutChatFact` (@Models), `WorkoutChatViewModel`, `WorkoutFactsContextFormatter`, `WorkoutChatSection` are building blocks → `architecture.json` + `architecture.html` in the same PR (§7 hard trigger); ARCHITECTURE.md gains a section (new memory/persistence concept). **README showcase:** this significantly extends the `04-workout-deepdive` surface → feature-block copy update + an explicit maintainer screenshot task in the PR body (§7 showcase trigger).
+
+**Effort estimate:** ~2–3 days (70.1 ~2h · 70.2 ~1–2h · 70.3 ~4–6h · 70.4 ~4–6h · 70.5 ~2–3h, plus docs/i18n).
+
+**Suggested order:** 70.1 → 70.2+70.3 → 70.4 → 70.5 (each PR-able on its own; 70.4 is the first user-visible step, 70.5 closes the loop into plans/feedback).
+
+**Pickup trigger:** wanting to tell the coach something about a specific workout that the sensors can't know (feel, route, context of the day). Pairs naturally with Epic #69 (both enrich the subjective layer), but has no dependency on it.
 
 ---
 
