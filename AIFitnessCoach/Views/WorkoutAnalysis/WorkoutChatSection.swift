@@ -67,8 +67,15 @@ struct WorkoutChatSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("Bespreek deze workout", systemImage: "bubble.left.and.text.bubble.right")
-                .font(.headline)
+            // Header in the house style of the sibling cards (see `insightCard`):
+            // accent-tinted icon + plain .headline text.
+            HStack(spacing: 6) {
+                Image(systemName: "bubble.left.and.text.bubble.right")
+                    .foregroundStyle(themeManager.primaryAccentColor)
+                Text("Bespreek deze workout")
+                    .font(.headline)
+                Spacer()
+            }
 
             if !facts.isEmpty {
                 factChipsRow
@@ -96,7 +103,11 @@ struct WorkoutChatSection: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        // Card contrast in line with the summary/stats cards on this page:
+        // opaque system background + soft shadow instead of translucent material.
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color(.label).opacity(0.06), radius: 8, x: 0, y: 2)
         .onAppear(perform: wireUpViewModel)
         .accessibilityIdentifier("workoutChatSection")
     }
@@ -168,6 +179,7 @@ struct WorkoutChatSection: View {
         VStack(alignment: .trailing, spacing: 4) {
             HStack(spacing: 8) {
                 TextField("Vraag of vertel iets over deze workout…", text: $draft, axis: .vertical)
+                    .font(.subheadline) // match the MessageBubble text size
                     .lineLimit(1...4)
                     .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("workoutChatInput")

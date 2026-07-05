@@ -114,6 +114,9 @@ struct WorkoutAnalysisView: View {
             .padding(.vertical, 12)
         }
         .background(themeManager.backgroundGradient.ignoresSafeArea())
+        // Epic #70: the chat input lives in this scroll view — let a downward
+        // drag dismiss the keyboard interactively (the Messages-app gesture).
+        .scrollDismissesKeyboard(.interactively)
         .navigationTitle(activity.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .task(id: samples.count) {
