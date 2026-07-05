@@ -12,6 +12,7 @@ Legend: ✅ done · 🔄 active · ⏳ backlog
 |---|---|---|
 | ⏳ **#63** | CI pipeline extensions — TestFlight deploy (63.1, **maintainer wants this**), concurrency baseline guard (63.5), snapshot tests + dep scan (63.2+63.3 coupled) | 63.1: as soon as the maintainer's App Store Connect prerequisites are in place; others per-story |
 | ⏳ **#69** | Mental benefit of workouts — subjective track first (existing rpe/mood check-in data) | more "why am I training this" context wanted |
+| ⏳ **#71** | Objective session comparison in the Coach analysis — "vs. your recent similar sessions", GPS/weather-normalised | wanting "is this normal for me?" context in the workout analysis |
 | ⏳ **#59** | Strava Developer Program compliance: base-URL refactor (59.1 anytime) + flip (June 2027), terms verification | Strava migration docs appearing / early 2027; 59.1 fits any quiet moment |
 | ⏳ **#68** | Oversized-file splits: 5 files above the 600-LOC lint cap (residual from archived Epic #64) | next time one of the listed files is opened for other work |
 
@@ -77,6 +78,34 @@ Goal: the coach can say *"sessions like this usually give you energy"* — groun
 **Architecture artefacts:** `MentalBenefitProfiler` is a new building-block Service → `architecture.json` + `architecture.html` in the same PR (§7 hard trigger); ARCHITECTURE.md gains a short section (new analysis concept).
 
 **Pickup trigger:** wanting more explicit "why am I training this" context with workouts. No dependency on other epics.
+
+---
+
+### ⏳ Epic #71: Objective session comparison in the Coach analysis
+
+Maintainer decision (July 2026, during the Epic #70 review): the workout-detail **Coach analysis stays purely objective** — the subjective workout-chat facts (Epic #70) deliberately do **not** feed `WorkoutInsightService`, so the analysis keeps its independent "what does the data say" value and the divergence with the user's own story stays visible (the chat below it is where both meet). What the analysis *should* get is objective context: **"how does this session compare to my recent similar ones?"** — with GPS and weather used to make sessions genuinely comparable (same route, humidity-normalised expectations).
+
+**Current state in the code (grounding):**
+
+- `ActivityRecord` already carries everything needed for cheap comparison: scalar metrics (distance, `movingTime`, `averageHeartrate`, `trimp`), **weather** (`temperatureCelsius`/`humidityPercent`, Epic #49) and **GPS start coordinates** (`startLatitude`/`startLongitude`, Epic #52). Note: start point only — no track — so "same route" is a start-proximity + distance-band heuristic, never a track match.
+- `WorkoutSample` rows are pruned after **6 months** (`WorkoutSampleService.retentionMonths`, story 65.2) → pattern-level comparison (decoupling/drift of past sessions) is only recomputable inside that window; scalar comparison works for the full 26-week activity window.
+- `WorkoutInsightService.InsightContext` is a struct of optional context strings (`periodizationContext`, weather, …) — one more optional slots in cleanly; `buildPrompt` appends blocks conditionally.
+- The insight cache key is already a composite fingerprint (pattern + profile + goals + weather + cadence, see `WorkoutAnalysisView+Insights`) — a comparison-set fingerprint extends it, so a changed match set regenerates the narrative automatically.
+
+**Stories:**
+
+* **⏳ 71.1 — `SimilarSessionMatcher` (pure Swift, `Services/`):** input `(target: ActivityRecord-values, candidates: [ActivityRecord-values])` as value tuples/structs (AppStorage-free, §6). Hard filters: same `SportCategory`, started within the trailing 6 months (aligned with sample retention), not the target itself. Scoring: same `SessionType` (strong weight), duration band ±25%, distance band ±25%, **GPS start proximity** (Haversine on start coords; ≤ ~500 m marks a *same-route candidate*), recency tiebreak. Output: top 3 matches + their same-route flags. Unit tests: each filter, scoring order, the 500 m boundary, missing GPS/weather → still matchable (fields optional), fewer than 3 candidates → fewer results.
+* **⏳ 71.2 — `SessionComparisonFormatter` (pure):** renders the `[SESSION COMPARISON]` block: one line per match — prompt-formatted date (`AppDateFormatters.promptStyle`, §13), distance, duration, avg HR, pace, TRIMP, temp/humidity when present, `same route` marker when flagged. No interpretation in the formatter — deltas and conclusions are the model's job. Empty matches → `""` (no block, house convention). Unit tests: line format, marker, missing-weather omission, empty → empty.
+* **⏳ 71.3 — Pattern-level enrichment (optional, separate story):** for matched sessions that still have samples (≤ 6 months): fetch via `WorkoutSampleService.samples(forWorkoutUUID:)` (`UUID.forActivityRecordID` mapping) and run the existing detectors to add per-session decoupling/drift to the comparison lines — that turns "your HR was higher" into "your decoupling was 6.2% vs 4–5% on the same route". Degrade gracefully when samples are pruned (scalar line only). Watch the cost: 3 extra sample fetches + detector runs on page open — run inside the existing insight task, measure before optimising. Ship 71.1+71.2+71.4 first; this story only if the scalar comparison proves too shallow.
+* **⏳ 71.4 — Prompt + cache integration:** `InsightContext` gains `comparisonContext: String?`; `buildPrompt` appends the block + instruction text telling the coach to (a) name concrete deltas vs. the matched sessions, (b) **weather-normalise** expectations ("at 87% humidity vs ~60% on your previous three, some extra drift is expected — don't read it as lost fitness"), (c) prefer same-route matches for pace comparisons. `WorkoutAnalysisView+Insights` computes the matches (it already queries `allActivitiesForContext`, 26 weeks) and extends the cache fingerprint with a hash of matched ids + key metrics. No new UI surface: the analysis narrative carries the comparison (optionally a "vs. N vergelijkbare sessies" caption chip — decide during on-device review).
+
+**Deliberately out of scope:** subjective facts in the insight (decided against, see intro); cross-sport comparison; full GPS-track matching (no track data stored).
+
+**Architecture artefacts (§7):** `SimilarSessionMatcher` + `SessionComparisonFormatter` are new building blocks → `architecture.json` + `.html` in the same PR; ARCHITECTURE.md §-note under the workout-analysis section.
+
+**Effort estimate:** ~1–1.5 day (71.1 ~3–4h · 71.2 ~2h · 71.4 ~2–3h; 71.3 +~4h if picked up).
+
+**Pickup trigger:** wanting "is this normal for me?" context in the workout analysis — natural companion to Epic #69 (both enrich the analysis layer), no dependency on it.
 
 ---
 
