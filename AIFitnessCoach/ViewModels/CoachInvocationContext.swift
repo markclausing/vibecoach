@@ -16,13 +16,18 @@ struct CoachInvocationContext {
     var activeGoals: [FitnessGoal]
     /// The user's active preferences (pinned + temporary) for the preferences block.
     var activePreferences: [UserPreference]
+    /// Epic #70: the preformatted `[WORKOUT NOTES]` block (built by the view via
+    /// `WorkoutFactsContextFormatter`). Empty = no block in the prompt.
+    var workoutNotesBlock: String
 
     init(profile: AthleticProfile? = nil,
          activeGoals: [FitnessGoal] = [],
-         activePreferences: [UserPreference] = []) {
+         activePreferences: [UserPreference] = [],
+         workoutNotesBlock: String = "") {
         self.profile = profile
         self.activeGoals = activeGoals
         self.activePreferences = activePreferences
+        self.workoutNotesBlock = workoutNotesBlock
     }
 
     /// A context with no profile, goals or preferences — the default for calls that

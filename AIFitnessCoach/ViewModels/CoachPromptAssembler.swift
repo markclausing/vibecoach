@@ -46,6 +46,8 @@ enum CoachPromptAssembler {
     ///   - profile: the athletic profile for the `[ATHLETE CONTEXT]` block.
     ///   - activeGoals: active goals — drive the `[PERIODIZATION — ACTIVE TRAINING PHASES]` block.
     ///   - activePreferences: active preferences (pinned + temporary).
+    ///   - workoutNotes: Epic #70 — the preformatted `[WORKOUT NOTES]` block from
+    ///     `WorkoutFactsContextFormatter`; empty means no block.
     ///   - thresholdProfile: the cached physiological profile for `[TRAINING THRESHOLDS]`.
     ///   - now: injected clock (defaults to now) so date output is deterministic in tests.
     static func buildContextPrefix(
@@ -53,6 +55,7 @@ enum CoachPromptAssembler {
         profile: AthleticProfile?,
         activeGoals: [FitnessGoal] = [],
         activePreferences: [UserPreference] = [],
+        workoutNotes: String = "",
         thresholdProfile: UserPhysicalProfile,
         now: Date = Date()
     ) -> String {
@@ -260,6 +263,12 @@ enum CoachPromptAssembler {
         // a conflicting pinned rule during its lifetime. Filtering of
         // expired items + format logic lives in `PreferencesContextFormatter` (testable).
         prefix += PreferencesContextFormatter.format(activePreferences: activePreferences, now: now)
+
+        // Epic #70: subjective notes from the per-workout chats — preformatted by
+        // `WorkoutFactsContextFormatter` (window/cap policy lives there, tested).
+        if !workoutNotes.isEmpty {
+            prefix += workoutNotes
+        }
 
         // Epic 18: Injury context is fully handled via symptomContext (see top of buildContextPrefix).
         // The old static block based on UserPreference texts has been replaced by the dynamic

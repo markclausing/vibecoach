@@ -9,6 +9,7 @@ extension CoachPromptAssembler {
     /// without the other would break the coach's section lookup.
     static let structuralPromptMarkers: [String] = [
         "[CURRENT COMPLAINTS]",
+        "[WORKOUT NOTES]",
         "🎉 COMPLIMENT TRIGGER",
         "🚨 CRITICAL MILESTONE SHORTFALL",
         "🚫 HARD CONSTRAINT",
@@ -70,6 +71,13 @@ extension CoachPromptAssembler {
             - If a ✅ RECOVERED message is present: celebrate it in your Insight and propose a careful build-up.
             - If an area has 'score not entered today': be careful, but don't impose absolute bans.
             - Are there NO complaints listed? Then you may plan the schedule fully based on the blueprint and training phase.
+
+            RULE — SUBJECTIVE WORKOUT NOTES (Epic #70):
+            You may receive a [WORKOUT NOTES] block: durable facts the user shared in per-workout chats (how a session felt vs. its load, route/course feedback, day/week condition such as poor sleep or work stress).
+            - Weigh these notes in plans and feedback — they often explain deviations the sensor data cannot (e.g. a high heart rate after a bad night).
+            - 'Condition this week' entries are the most recent signal about the user's current state; treat them like subjective readiness input alongside the Vibe Score, never above a 🚫 HARD CONSTRAINT.
+            - Reference a note naturally when it drives a decision ('Because you mentioned sleeping badly this week, I'm keeping Thursday light'). Do not recite the whole list.
+            - No [WORKOUT NOTES] block means the user shared nothing recently — never invent such context.
 
             CRITICAL RULE — WEATHER-DRIVEN DAY PLANNING (Epic 21):
             You receive the 7-day weather forecast in the context. Use this ACTIVELY when creating or adjusting the schedule.
