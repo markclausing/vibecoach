@@ -971,3 +971,16 @@ Maintainer goal (2026-07-03, verbatim): *"make the technical workflow of collabo
 * **✅ 67.3 — Pipeline round-trip + defensive-render verification.** Preserved the single `<script id="architecture-data">` tag; the §7 python re-injection is idempotent (round-trip a byte-for-byte no-op). Headless-Chrome checks: no console errors, the new view populated (~37 KB), no body horizontal scroll at 390px (`documentElement.scrollWidth == innerWidth == 390`), and — critically — a JSON payload with the `development` key **stripped** still renders a non-blank view (falls back to the previous testing/CI/agent reference), so older snapshots never blank the page. Only inert external URLs remain (schema id + a proxy-repo reference, both as JSON data).
 
 **Effort realised:** ~0.5 day. **Status:** ✅ complete. **Merged via PR #349. Effort:** ~0.5 day.
+
+---
+
+### ✅ Epic #64: Refactor-review follow-ups (tech debt)
+
+Follow-ups from the July 2026 refactor review (dead code · duplicate functionality · oversized files). Delivered before the epic was structured (context): the dead-view cleanup — 10 unreferenced SwiftUI `View` structs removed, −977 LOC (**PR #334**) — and the `AppDateFormatters` helper centralising ~40 inline `DateFormatter()` sites into one cached factory with display/prompt/fixed locale intents, fixing two latent i18n bugs (**PR #335**).
+
+* **✅ 64.1 — Split `DashboardView.swift`** (was ~1700 LOC). Extracted the standalone card/banner structs into their own files under `Views/Dashboard/`: `TRIMPExplainerCard`, `VibeScoreExplainerCard`, `PostWorkoutCheckinCard` (+ `WorkoutCheckinConfig`), `HealthKitPermissionWarningBanner`, `DashboardBannerView`, `MilestoneProgressCard`, `SymptomCheckinCard`. Pure file-split — type names unchanged, no functional change; the moved sub-views are internal dashboard components, so no derived-artefact change. **Merged via PR #336.**
+* **✅ 64.2 — Split `SettingsView.swift`** (was ~2177 LOC). Pulled three blocks into `Views/Settings/`: `AIProviderSettingsView` (+ `APIKeyTestState`), `PreferencesListView` (+ `MemoryType` + `MemoryPreferenceCard`), and `PhysicalProfileSection` (+ `PhysicalProfileEditView`). Pure file-split — type names unchanged, no functional change. **Merged via PR #337.**
+* **✅ 64.3 — Superseded by Epic #65.** The three named files were covered by worked-out stories there: `ChatViewModel` → story 65.3 (decomposition), `ChatView`/`WorkoutAnalysisView` → story 65.5 (splits + `Services/` grouping). No independent work done under this number.
+* **✅ 64.4 — Small backlog cleanups.** Dropped the stale `TODO(Epic 34.3)` placeholder in `ChatView` (Epic 34.3 shipped the data-driven derivations as the final solution; the referenced `CoachAnalysisService` LLM endpoint never existed) and the stale "V2.0" MARK labels (`SettingsView`, `GoalsListView`, `ChatView`, `DashboardBannerView`, `PreferencesListView`); kept the legitimate schema-version markers and the `CoachV2HeaderView` type marker. Comment-only. **Merged via PR #338.**
+
+**Status:** ✅ complete (July 2026). Residual oversized-file debt — five files still carrying a `swiftlint:disable file_length` header (`DashboardView` 882 · `SettingsView` 703 · `ChatView` 680 · `GoalsListView` 640 · `HealthKitManager` 607 LOC) — handed to **Epic #68** as an opportunistic follow-up backlog.
