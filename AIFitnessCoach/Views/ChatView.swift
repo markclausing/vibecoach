@@ -50,18 +50,9 @@ struct ChatView: View {
                                workoutNotesBlock: workoutNotesBlock)
     }
 
-    /// Builds the [WORKOUT NOTES] block: flattens the facts to formatter items with
-    /// the source workout's display name looked up in the already-queried activities.
+    /// Builds the [WORKOUT NOTES] block (facts + workout labels → formatter).
     private var workoutNotesBlock: String {
-        guard !workoutChatFacts.isEmpty else { return "" }
-        let labelByID = Dictionary(uniqueKeysWithValues: recentActivities.map { ($0.id, $0.displayName) })
-        let items = workoutChatFacts.map { fact in
-            WorkoutFactsContextFormatter.Item(text: fact.factText,
-                                              category: fact.category,
-                                              createdAt: fact.createdAt,
-                                              workoutLabel: labelByID[fact.activityID] ?? "")
-        }
-        return WorkoutFactsContextFormatter.format(items: items)
+        WorkoutFactsContextFormatter.format(facts: workoutChatFacts, activities: recentActivities)
     }
 
     // Epic 34.1: V2.0 Fit & Finish — scroll state for the material overlay in the top safe area.

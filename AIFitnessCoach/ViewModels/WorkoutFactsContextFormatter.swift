@@ -30,6 +30,25 @@ enum WorkoutFactsContextFormatter {
     /// Trailing window in days.
     static let windowDays = 14
 
+    /// Convenience overload for the SwiftData-owning views (ChatView, DashboardView,
+    /// GoalsListView): maps the facts to `Item`s with the source workout's display
+    /// name looked up in the caller's already-queried activities, then delegates to
+    /// the pure item-based formatter below.
+    static func format(facts: [WorkoutChatFact],
+                       activities: [ActivityRecord],
+                       now: Date = Date()) -> String {
+        guard !facts.isEmpty else { return "" }
+        let labelByID = Dictionary(activities.map { ($0.id, $0.displayName) },
+                                   uniquingKeysWith: { first, _ in first })
+        let items = facts.map { fact in
+            Item(text: fact.factText,
+                 category: fact.category,
+                 createdAt: fact.createdAt,
+                 workoutLabel: labelByID[fact.activityID] ?? "")
+        }
+        return format(items: items, now: now)
+    }
+
     static func format(items: [Item],
                        now: Date = Date(),
                        calendar: Calendar = .current) -> String {

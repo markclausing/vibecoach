@@ -42,6 +42,21 @@ struct DashboardView: View {
     // only today's records (`SymptomContextFormatter`), so 30 days is a safe bound.
     @Query private var symptoms: [Symptom]
 
+    /// Epic #70: facts from the per-workout chats → the [WORKOUT NOTES] prompt block.
+    /// Unbounded on purpose: the 14-day window/cap policy lives in the formatter and
+    /// the fact volume is inherently small.
+    @Query(sort: \WorkoutChatFact.createdAt, order: .reverse) private var workoutChatFacts: [WorkoutChatFact]
+
+    /// Epic #70: the invocation context for every coach call from this view — one
+    /// helper (the ChatView pattern) so the workout-notes block is always threaded.
+    private var coachInvocation: CoachInvocationContext {
+        CoachInvocationContext(profile: currentProfile,
+                               activeGoals: goals,
+                               activePreferences: activePreferences,
+                               workoutNotesBlock: WorkoutFactsContextFormatter.format(facts: workoutChatFacts,
+                                                                                      activities: activities))
+    }
+
     /// Epic #65 story 65.2: build the bounded `@Query`s with Calendar-based cutoffs
     /// captured as `let` values (a `#Predicate` cannot call computed properties).
     init(viewModel: ChatViewModel) {
@@ -511,7 +526,7 @@ struct DashboardView: View {
                                 HStack(spacing: 12) {
                                     Button("Opnieuw proberen") {
                                         refreshProfileContext()
-                                        viewModel.analyzeCurrentStatus(days: 7, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
+                                        viewModel.analyzeCurrentStatus(days: 7, invocation: coachInvocation)
                                     }
                                     .font(.caption.weight(.semibold))
                                     Button("Sluit") {
@@ -571,12 +586,12 @@ struct DashboardView: View {
                         stageWeather: stageWeatherService.stageWeather,
                         onSkipWorkout: { workout in
                             refreshProfileContext()
-                            viewModel.skipWorkout(workout, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
+                            viewModel.skipWorkout(workout, invocation: coachInvocation)
                             appState.showingChatSheet = true
                         },
                         onAlternativeWorkout: { workout in
                             refreshProfileContext()
-                            viewModel.requestAlternativeWorkout(workout, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
+                            viewModel.requestAlternativeWorkout(workout, invocation: coachInvocation)
                             appState.showingChatSheet = true
                         },
                         onResetSchema: {
@@ -586,7 +601,7 @@ struct DashboardView: View {
                             refreshProfileContext()
                             viewModel.requestPlanReset(
                                 swappedWorkouts: swapped,
-                                invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences)
+                                invocation: coachInvocation
                             )
                             appState.showingChatSheet = true
                         },
@@ -617,7 +632,7 @@ struct DashboardView: View {
                 isVibeScoreUnavailable = false
                 await calculateAndSaveVibeScore()
                 viewModel.context.cacheVibeScore(todayReadiness)
-                viewModel.analyzeCurrentStatus(days: 7, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
+                viewModel.analyzeCurrentStatus(days: 7, invocation: coachInvocation)
                 ProactiveNotificationService.shared.updateRiskCache(
                     atRiskGoalTitles: atRiskGoals.map { $0.goal.title }
                 )
@@ -664,7 +679,7 @@ struct DashboardView: View {
                 // This way the day always starts with a current schedule — even after midnight.
                 let lastAnalysisDate = Date(timeIntervalSince1970: lastAnalysisTimestamp)
                 if lastAnalysisTimestamp == 0 || !Calendar.current.isDateInToday(lastAnalysisDate) {
-                    viewModel.analyzeCurrentStatus(days: 7, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
+                    viewModel.analyzeCurrentStatus(days: 7, invocation: coachInvocation)
                 }
                 // EPIC 14.4: Write today's Vibe Score to the AI prompt cache
                 // so every coach interaction knows the current recovery status.
