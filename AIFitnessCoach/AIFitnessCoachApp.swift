@@ -161,10 +161,10 @@ struct AIFitnessCoachApp: App {
             #endif
         }()
 
-        let schema = Schema(SchemaV6.models)
+        let schema = Schema(SchemaV7.models)
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isUITesting)
 
-        // First attempt: load existing store and run the migration chain (V1 → V2 → … → V6).
+        // First attempt: load existing store and run the migration chain (V1 → V2 → … → V7).
         do {
             let container = try ModelContainer(
                 for: schema,
@@ -178,13 +178,13 @@ struct AIFitnessCoachApp: App {
             AppLoggers.fitnessDataService.error("""
                 ModelContainer init with migration plan failed: \
                 \(error.localizedDescription, privacy: .public). \
-                Falling back to a fresh DB — FitnessGoal, UserPreference and Symptom \
-                records are lost; HK + Strava activities re-sync automatically \
-                as soon as the app reopens.
+                Falling back to a fresh DB — FitnessGoal, UserPreference, Symptom \
+                and workout-chat records are lost; HK + Strava activities re-sync \
+                automatically as soon as the app reopens.
                 """)
         }
 
-        // Fallback: remove the corrupt store and build an empty V6 container.
+        // Fallback: remove the corrupt store and build an empty V7 container.
         // During UI tests we run in-memory (`isStoredInMemoryOnly`), so no
         // file cleanup is needed — skip that step in that case.
         if !isUITesting {
