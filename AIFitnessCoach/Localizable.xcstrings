@@ -447,6 +447,28 @@
         }
       }
     },
+    "%@ dagen op rij getraind. Neem vandaag rust." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ Tage in Folge trainiert. Gönn dir heute Ruhe."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trained %@ days in a row. Take a rest day today."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ días seguidos entrenando. Descansa hoy."
+          }
+        }
+      }
+    },
     "%@ dagen te gaan" : {
       "localizations" : {
         "de" : {
@@ -2083,6 +2105,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lesión"
+          }
+        }
+      }
+    },
+    "Blessuregeheugen actief: %@. Plan ontziet deze zone." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verletzungsgedächtnis aktiv: %@. Der Plan schont diese Zone."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Injury memory active: %@. Your plan avoids this zone."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Memoria de lesiones activa: %@. El plan protege esta zona."
           }
         }
       }
@@ -3847,6 +3891,28 @@
         }
       }
     },
+    "Fietstocht" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Radtour"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bike ride"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salida en bici"
+          }
+        }
+      }
+    },
     "Flink afgezien, praten lukte amper" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5031,6 +5097,28 @@
         }
       }
     },
+    "Hardloopsessie" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laufeinheit"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Running session"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesión de carrera"
+          }
+        }
+      }
+    },
     "Hardlopen" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5459,6 +5547,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plan de recuperación activo"
+          }
+        }
+      }
+    },
+    "Herstelsignaal: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erholungssignal: %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recovery signal: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Señal de recuperación: %@"
           }
         }
       }
@@ -7598,6 +7708,28 @@
         }
       }
     },
+    "Laatste training: %@ · %@ km%@." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Letztes Training: %1$@ · %2$@ km%3$@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last workout: %1$@ · %2$@ km%3$@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Último entrenamiento: %1$@ · %2$@ km%3$@."
+          }
+        }
+      }
+    },
     "Laatste update: %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7640,6 +7772,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "FC de umbral de lactato: la frecuencia cardíaca más alta que mantienes ~30 min."
+          }
+        }
+      }
+    },
+    "Lage batterij (Vibe %@/100) — prioriteit is vandaag herstel." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niedrige Batterie (Vibe %@/100) — Erholung hat heute Priorität."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Low battery (Vibe %@/100) — recovery is today’s priority."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Batería baja (Vibe %@/100) — la recuperación es la prioridad de hoy."
           }
         }
       }
@@ -8069,6 +8223,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Humedad"
+          }
+        }
+      }
+    },
+    "Luister naar je lichaam. Elke stap telt — ook de rustdagen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Höre auf deinen Körper. Jeder Schritt zählt — auch die Ruhetage."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listen to your body. Every step counts — rest days too."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escucha a tu cuerpo. Cada paso cuenta — también los días de descanso."
           }
         }
       }
@@ -10424,6 +10600,28 @@
         }
       }
     },
+    "Rust wordt aanbevolen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ruhe wird empfohlen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rest is recommended."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se recomienda descansar."
+          }
+        }
+      }
+    },
     "RUST-HR" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11891,6 +12089,28 @@
         }
       }
     },
+    "Training" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Training"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Workout"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrenamiento"
+          }
+        }
+      }
+    },
     "TRAINING" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11933,6 +12153,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Carga de entrenamiento"
+          }
+        }
+      }
+    },
+    "Trainingsbelasting boven baseline." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trainingsbelastung über der Baseline."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Training load above baseline."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carga de entrenamiento por encima de la línea base."
           }
         }
       }
@@ -12024,6 +12266,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Triatlón"
+          }
+        }
+      }
+    },
+    "Triatlonsessie" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Triathloneinheit"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Triathlon session"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesión de triatlón"
           }
         }
       }
@@ -12806,6 +13070,28 @@
         }
       }
     },
+    "Vibe %@/100 · HRV %@ ms — houd het gematigd." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vibe %1$@/100 · HRV %2$@ ms — halte es moderat."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vibe %1$@/100 · HRV %2$@ ms — keep it moderate."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vibe %1$@/100 · HRV %2$@ ms — mantenlo moderado."
+          }
+        }
+      }
+    },
     "Vibe Score" : {
       "localizations" : {
         "de" : {
@@ -13102,6 +13388,28 @@
         }
       }
     },
+    "Volle batterij (Vibe %@/100) — goede dag voor intensiteit." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volle Batterie (Vibe %@/100) — guter Tag für Intensität."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full battery (Vibe %@/100) — good day for intensity."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Batería llena (Vibe %@/100) — buen día para la intensidad."
+          }
+        }
+      }
+    },
     "VOLTOOIDE DOELEN" : {
       "localizations" : {
         "de" : {
@@ -13120,6 +13428,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "OBJETIVOS COMPLETADOS"
+          }
+        }
+      }
+    },
+    "Volume deze week is %@ boven je gemiddelde. Plan 1–2 rustdagen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Volumen dieser Woche liegt %@ über deinem Durchschnitt. Plane 1–2 Ruhetage."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This week’s volume is %@ above your average. Plan 1–2 rest days."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El volumen de esta semana está un %@ por encima de tu promedio. Planifica 1–2 días de descanso."
           }
         }
       }
@@ -13412,6 +13742,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Caminar"
+          }
+        }
+      }
+    },
+    "Wandeling" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spaziergang"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Walk"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caminata"
           }
         }
       }
@@ -13920,6 +14272,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Natación"
+          }
+        }
+      }
+    },
+    "Zwemsessie" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schwimmeinheit"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Swim session"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesión de natación"
           }
         }
       }

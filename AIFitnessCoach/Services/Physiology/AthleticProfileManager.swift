@@ -85,7 +85,11 @@ class AthleticProfileManager {
             if ratio > 1.5 {
                 needsRecovery = true
                 let pct = Int((ratio - 1.0) * 100)
-                recoveryReason = "Volume deze week is \(pct)% boven je gemiddelde. Plan 1–2 rustdagen."
+                // UI-facing only (Chat insight card + Settings row); the coach prompt uses the
+                // isRecoveryNeeded flag, so localizing at the source is safe (Epic #37 split).
+                // The percentage is pre-formatted into the %@ argument to avoid a literal-%
+                // pitfall in the catalog key.
+                recoveryReason = String(localized: "Volume deze week is \("\(pct)%") boven je gemiddelde. Plan 1–2 rustdagen.")
             }
         }
 
@@ -97,7 +101,7 @@ class AthleticProfileManager {
 
         if daysTrainedInLast4Days >= 4 {
             needsRecovery = true
-            recoveryReason = "\(daysTrainedInLast4Days) dagen op rij getraind. Neem vandaag rust."
+            recoveryReason = String(localized: "\("\(daysTrainedInLast4Days)") dagen op rij getraind. Neem vandaag rust.")
         }
 
         // 5. SPRINT 9.3: compute average pace (baseline pace)

@@ -327,7 +327,7 @@ struct SettingsView: View {
                                 iconColor: themeManager.primaryAccentColor,
                                 title: "Dagen sinds laatste training",
                                 subtitle: "Herstel-indicator",
-                                value: "\(profile.daysSinceLastTraining) dagen"
+                                value: String(localized: "\("\(profile.daysSinceLastTraining)") dagen")
                             )
                             if profile.isRecoveryNeeded {
                                 settingsDivider
