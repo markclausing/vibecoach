@@ -68,6 +68,15 @@
 		DC10FF20AA30BB40CC50DD60 /* AppVersionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */; };
 		DE10FF20AA30BB40CC50DD60 /* PhysiologicalThresholdValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */; };
 		E010FF20AA30BB40CC50DD60 /* ChatScopeInstruction.swift in Sources */ = {isa = PBXBuildFile; fileRef = E001FF02AA03BB04CC05DD06 /* ChatScopeInstruction.swift */; };
+		F11DCACE610000000000B010 /* WorkoutChatScopeInstruction.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A010 /* WorkoutChatScopeInstruction.swift */; };
+		F11DCACE610000000000B011 /* WorkoutChatScopeInstructionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A011 /* WorkoutChatScopeInstructionTests.swift */; };
+		F11DCACE610000000000B012 /* WorkoutChatResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A012 /* WorkoutChatResponse.swift */; };
+		F11DCACE610000000000B013 /* WorkoutChatResponseParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A013 /* WorkoutChatResponseParser.swift */; };
+		F11DCACE610000000000B014 /* WorkoutChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A014 /* WorkoutChatViewModel.swift */; };
+		F11DCACE610000000000B018 /* WorkoutFactsContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A018 /* WorkoutFactsContextFormatter.swift */; };
+		F11DCACE610000000000B019 /* WorkoutFactsContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A019 /* WorkoutFactsContextFormatterTests.swift */; };
+		F11DCACE610000000000B015 /* WorkoutChatResponseParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A015 /* WorkoutChatResponseParserTests.swift */; };
+		F11DCACE610000000000B016 /* WorkoutChatViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A016 /* WorkoutChatViewModelTests.swift */; };
 		E110FF20AA30BB40CC50DD60 /* ChatErrorMessageMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = E101FF02AA03BB04CC05DD06 /* ChatErrorMessageMapper.swift */; };
 		A153FAC710FF20AA30BB4001 /* AIModelFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = A153FAC701FF02AA03BB0401 /* AIModelFactory.swift */; };
 		E410FF20AA30BB40CC50DD60 /* ChatModelSwitchNotice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E401FF02AA03BB04CC05DD06 /* ChatModelSwitchNotice.swift */; };
@@ -161,6 +170,7 @@
 		B81B710C2F8D65A80062BC61 /* UITestMockEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = B81B710B2F8D65A80062BC61 /* UITestMockEnvironment.swift */; };
 		B8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift */; };
 		DA54C1000000000000000201 /* RecentWorkoutsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C1000000000000000101 /* RecentWorkoutsSection.swift */; };
+		F11DCACE610000000000B017 /* WorkoutChatSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A017 /* WorkoutChatSection.swift */; };
 		DA54C1000000000000000202 /* WorkoutAnalysisView+Charts.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C1000000000000000102 /* WorkoutAnalysisView+Charts.swift */; };
 		DA54C1000000000000000203 /* WorkoutAnalysisView+Insights.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA54C1000000000000000103 /* WorkoutAnalysisView+Insights.swift */; };
 		B9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift */; };
@@ -240,6 +250,10 @@
 		F11DCACE610000000000B009 /* CoachContextCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A009 /* CoachContextCache.swift */; };
 		F11DCACE610000000000B00A /* SchemaV6.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A00A /* SchemaV6.swift */; };
 		F11DCACE610000000000B00B /* SchemaMigrationV5ToV6Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A00B /* SchemaMigrationV5ToV6Tests.swift */; };
+		F11DCACE610000000000B00C /* WorkoutChatEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A00C /* WorkoutChatEntry.swift */; };
+		F11DCACE610000000000B00D /* WorkoutChatFact.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A00D /* WorkoutChatFact.swift */; };
+		F11DCACE610000000000B00E /* SchemaV7.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A00E /* SchemaV7.swift */; };
+		F11DCACE610000000000B00F /* SchemaMigrationV6ToV7Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A00F /* SchemaMigrationV6ToV7Tests.swift */; };
 		DCA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */; };
 		DDA4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift */; };
 		DEA4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEB4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift */; };
@@ -364,6 +378,15 @@
 		DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppVersionInfo.swift; sourceTree = "<group>"; };
 		DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalThresholdValidator.swift; sourceTree = "<group>"; };
 		E001FF02AA03BB04CC05DD06 /* ChatScopeInstruction.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatScopeInstruction.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A010 /* WorkoutChatScopeInstruction.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatScopeInstruction.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A011 /* WorkoutChatScopeInstructionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatScopeInstructionTests.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A012 /* WorkoutChatResponse.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatResponse.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A013 /* WorkoutChatResponseParser.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatResponseParser.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A014 /* WorkoutChatViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatViewModel.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A018 /* WorkoutFactsContextFormatter.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutFactsContextFormatter.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A019 /* WorkoutFactsContextFormatterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutFactsContextFormatterTests.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A015 /* WorkoutChatResponseParserTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatResponseParserTests.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A016 /* WorkoutChatViewModelTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatViewModelTests.swift; sourceTree = "<group>"; };
 		E101FF02AA03BB04CC05DD06 /* ChatErrorMessageMapper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatErrorMessageMapper.swift; sourceTree = "<group>"; };
 		A153FAC701FF02AA03BB0401 /* AIModelFactory.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AIModelFactory.swift; sourceTree = "<group>"; };
 		E401FF02AA03BB04CC05DD06 /* ChatModelSwitchNotice.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatModelSwitchNotice.swift; sourceTree = "<group>"; };
@@ -550,6 +573,10 @@
 		F11DCACE610000000000A009 /* CoachContextCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CoachContextCache.swift; sourceTree = "<group>"; };
 		F11DCACE610000000000A00A /* SchemaV6.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaV6.swift; sourceTree = "<group>"; };
 		F11DCACE610000000000A00B /* SchemaMigrationV5ToV6Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaMigrationV5ToV6Tests.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A00C /* WorkoutChatEntry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatEntry.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A00D /* WorkoutChatFact.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatFact.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A00E /* SchemaV7.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaV7.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A00F /* SchemaMigrationV6ToV7Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaMigrationV6ToV7Tests.swift; sourceTree = "<group>"; };
 		EBB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightCacheTests.swift; sourceTree = "<group>"; };
 		F11DCACE610000000000A002 /* PHIContextCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PHIContextCacheTests.swift; sourceTree = "<group>"; };
 		ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightService.swift; sourceTree = "<group>"; };
@@ -580,6 +607,7 @@
 		E7A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutAnalysisView.swift; sourceTree = "<group>"; };
 		E8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutAnalysisHelpers.swift; sourceTree = "<group>"; };
 		DA54C1000000000000000101 /* RecentWorkoutsSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RecentWorkoutsSection.swift; sourceTree = "<group>"; };
+		F11DCACE610000000000A017 /* WorkoutChatSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatSection.swift; sourceTree = "<group>"; };
 		DA54C1000000000000000102 /* WorkoutAnalysisView+Charts.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "WorkoutAnalysisView+Charts.swift"; sourceTree = "<group>"; };
 		DA54C1000000000000000103 /* WorkoutAnalysisView+Insights.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "WorkoutAnalysisView+Insights.swift"; sourceTree = "<group>"; };
 		E9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutAnalysisHelpersTests.swift; sourceTree = "<group>"; };
@@ -793,6 +821,11 @@
 				F11DCACE610000000000A006 /* PromptInputSanitizerTests.swift */,
 				F11DCACE610000000000A008 /* CoordinatePrivacyTests.swift */,
 				F11DCACE610000000000A00B /* SchemaMigrationV5ToV6Tests.swift */,
+				F11DCACE610000000000A00F /* SchemaMigrationV6ToV7Tests.swift */,
+				F11DCACE610000000000A011 /* WorkoutChatScopeInstructionTests.swift */,
+				F11DCACE610000000000A015 /* WorkoutChatResponseParserTests.swift */,
+				F11DCACE610000000000A016 /* WorkoutChatViewModelTests.swift */,
+				F11DCACE610000000000A019 /* WorkoutFactsContextFormatterTests.swift */,
 				F0C4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculatorTests.swift */,
 				F1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift */,
 				F2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift */,
@@ -887,6 +920,7 @@
 			isa = PBXGroup;
 			children = (
 				DA54C1000000000000000101 /* RecentWorkoutsSection.swift */,
+				F11DCACE610000000000A017 /* WorkoutChatSection.swift */,
 				DA54C1000000000000000102 /* WorkoutAnalysisView+Charts.swift */,
 				DA54C1000000000000000103 /* WorkoutAnalysisView+Insights.swift */,
 				E8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift */,
@@ -1077,6 +1111,10 @@
 				D5C0040102C004010100C002 /* SymptomContextFormatter.swift */,
 				6CAD188D90BEB0018EC65323 /* GenerativeModelProtocol.swift */,
 				E001FF02AA03BB04CC05DD06 /* ChatScopeInstruction.swift */,
+				F11DCACE610000000000A010 /* WorkoutChatScopeInstruction.swift */,
+				F11DCACE610000000000A013 /* WorkoutChatResponseParser.swift */,
+				F11DCACE610000000000A014 /* WorkoutChatViewModel.swift */,
+				F11DCACE610000000000A018 /* WorkoutFactsContextFormatter.swift */,
 				EAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift */,
 				F1A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatter.swift */,
 				E45A4500D6E8F0A1B2C3D405 /* WorkoutHistoryContextBuilder.swift */,
@@ -1129,6 +1167,10 @@
 				D5D0070102D007010100D002 /* SchemaV4.swift */,
 				D5D0070102D007010100D006 /* SchemaV5.swift */,
 				F11DCACE610000000000A00A /* SchemaV6.swift */,
+				F11DCACE610000000000A00E /* SchemaV7.swift */,
+				F11DCACE610000000000A00C /* WorkoutChatEntry.swift */,
+				F11DCACE610000000000A00D /* WorkoutChatFact.swift */,
+				F11DCACE610000000000A012 /* WorkoutChatResponse.swift */,
 				F11DCACE610000000000A009 /* CoachContextCache.swift */,
 				D5D0030102D003010100D002 /* AppMigrationPlan.swift */,
 				D5A0010102A001010100A002 /* Symptom.swift */,
@@ -1452,6 +1494,11 @@
 				F11DCACE610000000000B006 /* PromptInputSanitizerTests.swift in Sources */,
 				F11DCACE610000000000B008 /* CoordinatePrivacyTests.swift in Sources */,
 				F11DCACE610000000000B00B /* SchemaMigrationV5ToV6Tests.swift in Sources */,
+				F11DCACE610000000000B00F /* SchemaMigrationV6ToV7Tests.swift in Sources */,
+				F11DCACE610000000000B011 /* WorkoutChatScopeInstructionTests.swift in Sources */,
+				F11DCACE610000000000B015 /* WorkoutChatResponseParserTests.swift in Sources */,
+				F11DCACE610000000000B016 /* WorkoutChatViewModelTests.swift in Sources */,
+				F11DCACE610000000000B019 /* WorkoutFactsContextFormatterTests.swift in Sources */,
 				E0C4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculatorTests.swift in Sources */,
 				E1C4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculatorTests.swift in Sources */,
 				E2C4F7B2D6E8F0A1B2C3D405 /* PhysiologicalThresholdEstimatorTests.swift in Sources */,
@@ -1482,6 +1529,9 @@
 				D5D0070101D007010100D001 /* SchemaV4.swift in Sources */,
 				D5D0070101D007010100D005 /* SchemaV5.swift in Sources */,
 				F11DCACE610000000000B00A /* SchemaV6.swift in Sources */,
+				F11DCACE610000000000B00E /* SchemaV7.swift in Sources */,
+				F11DCACE610000000000B00C /* WorkoutChatEntry.swift in Sources */,
+				F11DCACE610000000000B00D /* WorkoutChatFact.swift in Sources */,
 				F11DCACE610000000000B009 /* CoachContextCache.swift in Sources */,
 				D5D0030101D003010100D001 /* AppMigrationPlan.swift in Sources */,
 				E767E8F495D10156A93BCC15 /* ContentView.swift in Sources */,
@@ -1507,6 +1557,11 @@
 				75D1A92071CFBE1BA9750D59 /* Secrets.swift in Sources */,
 				5207FD409349CA11ECD20774 /* GenerativeModelProtocol.swift in Sources */,
 				E010FF20AA30BB40CC50DD60 /* ChatScopeInstruction.swift in Sources */,
+				F11DCACE610000000000B010 /* WorkoutChatScopeInstruction.swift in Sources */,
+				F11DCACE610000000000B012 /* WorkoutChatResponse.swift in Sources */,
+				F11DCACE610000000000B013 /* WorkoutChatResponseParser.swift in Sources */,
+				F11DCACE610000000000B014 /* WorkoutChatViewModel.swift in Sources */,
+				F11DCACE610000000000B018 /* WorkoutFactsContextFormatter.swift in Sources */,
 				7F8F58135FA6D8F7628C8581 /* UIImage+Extensions.swift in Sources */,
 				6501AA01BB02CC03DD040001 /* Notification+VibeCoach.swift in Sources */,
 				6501AA01BB02CC03DD040003 /* AppStorageKeys.swift in Sources */,
@@ -1624,6 +1679,7 @@
 				B7A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisView.swift in Sources */,
 				B8A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpers.swift in Sources */,
 				DA54C1000000000000000201 /* RecentWorkoutsSection.swift in Sources */,
+				F11DCACE610000000000B017 /* WorkoutChatSection.swift in Sources */,
 				DA54C1000000000000000202 /* WorkoutAnalysisView+Charts.swift in Sources */,
 				DA54C1000000000000000203 /* WorkoutAnalysisView+Insights.swift in Sources */,
 				BAA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatter.swift in Sources */,

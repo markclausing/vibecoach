@@ -25,8 +25,16 @@ final class CoachModelProvider {
     /// model name — otherwise a rebuild loop arises with a non-Gemini provider.
     var currentProvider: AIProvider { AIProvider.current() }
 
-    init(injectedModel: GenerativeModelProtocol? = nil) {
+    /// Epic #70: an alternative system-instruction source. `ChatViewModel` keeps the
+    /// default (the full coach instruction); the per-workout chat injects its narrower
+    /// `WorkoutChatScopeInstruction` here so the whole provider (lazy cache, key
+    /// resolution, fallback waterfall, `-UITesting` mock) is reused unchanged.
+    private let systemInstructionBuilder: (() -> String)?
+
+    init(injectedModel: GenerativeModelProtocol? = nil,
+         systemInstructionBuilder: (() -> String)? = nil) {
         self._model = injectedModel
+        self.systemInstructionBuilder = systemInstructionBuilder
     }
 
     /// True if a usable API key is configured.
@@ -80,8 +88,11 @@ final class CoachModelProvider {
         #endif
         // Epic #37 story 37.3: the coach replies in the user's chosen language. The
         // instruction body stays English; only this directive steers the output language.
+        // Epic #70: an injected builder (workout chat) takes precedence over the
+        // default full-coach instruction.
         let replyLanguage = AppLanguage.currentPromptLanguageName
-        let systemInstruction = CoachPromptAssembler.systemInstruction(replyLanguage: replyLanguage)
+        let systemInstruction = systemInstructionBuilder?()
+            ?? CoachPromptAssembler.systemInstruction(replyLanguage: replyLanguage)
 
         // Epic #53: provider-agnostic construction via the `AIModelFactory`. JSON mode on:
         // the coach response must always contain the plan JSON. Timeout 45s: enough for a

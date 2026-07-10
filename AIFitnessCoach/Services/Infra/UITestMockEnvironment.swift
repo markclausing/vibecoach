@@ -130,10 +130,28 @@ class UITestMockGenerativeModel: GenerativeModelProtocol {
     }
     """
 
+    /// Epic #70: hardcoded response for the per-workout chat (detected via its
+    /// `[WORKOUT DATA]` prompt marker). Matches the `WorkoutChatResponse` contract
+    /// so previews/UI tests exercise the full parse → chip flow offline.
+    static let hardcodedWorkoutChatResponse = """
+    {
+        "reply": "Goed om te weten! Zo'n zware nacht verklaart de hogere hartslag. Ik onthoud dit voor je planning.",
+        "workoutFacts": [
+            {"text": "Slecht geslapen voor deze workout", "category": "dayCondition"}
+        ]
+    }
+    """
+
     func generateContent(_ parts: [AIPromptPart]) async throws -> String? {
         // Simulate 1 second of network latency — realistic and fast enough for tests.
         try await Task.sleep(nanoseconds: 1_000_000_000)
-        return Self.hardcodedResponse
+        // Epic #70: the workout chat assembles its prompt with a [WORKOUT DATA]
+        // block; the main coach prompt never contains that marker.
+        let isWorkoutChat = parts.contains { part in
+            if case .text(let text) = part { return text.contains("[WORKOUT DATA]") }
+            return false
+        }
+        return isWorkoutChat ? Self.hardcodedWorkoutChatResponse : Self.hardcodedResponse
     }
 }
 #endif

@@ -151,8 +151,11 @@ extension CoachPromptAssembler {
 
     /// Builds the (invisible) technical prompt asking the AI for a concrete recovery plan
     /// for goals that are behind schedule. Injects the recovery status (`vibeContext`) so
-    /// the plan respects the current recovery state.
-    static func recoveryPlanSystemPrompt(atRiskGoals: [GoalRiskInfo], vibeContext: String) -> String {
+    /// the plan respects the current recovery state, plus (Epic #70) the `[WORKOUT NOTES]`
+    /// block so subjective context (bad sleep week, loved route) shapes the plan too.
+    static func recoveryPlanSystemPrompt(atRiskGoals: [GoalRiskInfo],
+                                         vibeContext: String,
+                                         workoutNotes: String = "") -> String {
         var systemLines = [
             "RECOVERY CONTEXT — My goal(s) are behind schedule. Create a gradual recovery plan:",
             ""
@@ -164,6 +167,12 @@ extension CoachPromptAssembler {
             systemLines.append("")
         } else if !vibeContext.isEmpty {
             systemLines.append("RECOVERY STATUS TODAY: \(vibeContext) Adjust the intensity of the recovery plan STRICTLY to this score (see system instruction).")
+            systemLines.append("")
+        }
+
+        // Epic #70: subjective workout notes (preformatted by WorkoutFactsContextFormatter).
+        if !workoutNotes.isEmpty {
+            systemLines.append(workoutNotes.trimmingCharacters(in: .whitespacesAndNewlines))
             systemLines.append("")
         }
         for risk in atRiskGoals {

@@ -181,6 +181,7 @@ class ChatViewModel: ObservableObject {
             profile: invocation.profile,
             activeGoals: invocation.activeGoals,
             activePreferences: invocation.activePreferences,
+            workoutNotes: invocation.workoutNotesBlock,
             thresholdProfile: UserProfileService.cachedProfile()
         )
         context.profileUpdateNote = ""
@@ -214,7 +215,8 @@ class ChatViewModel: ObservableObject {
 
         let systemPrompt = CoachPromptAssembler.recoveryPlanSystemPrompt(
             atRiskGoals: atRiskGoals,
-            vibeContext: context.todayVibeScoreContext
+            vibeContext: context.todayVibeScoreContext,
+            workoutNotes: invocation.workoutNotesBlock
         )
 
         // The text the user sees in the chat (concise and understandable)

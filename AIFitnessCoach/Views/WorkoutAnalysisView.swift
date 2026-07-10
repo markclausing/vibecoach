@@ -107,11 +107,16 @@ struct WorkoutAnalysisView: View {
                     emptyStateCard
                 }
                 statsGrid
+                // Epic #70: per-workout chat with local memory ("Discuss this workout").
+                WorkoutChatSection(activity: activity)
             }
             .padding(.horizontal)
             .padding(.vertical, 12)
         }
         .background(themeManager.backgroundGradient.ignoresSafeArea())
+        // Epic #70: the chat input lives in this scroll view — let a downward
+        // drag dismiss the keyboard interactively (the Messages-app gesture).
+        .scrollDismissesKeyboard(.interactively)
         .navigationTitle(activity.displayName)
         .navigationBarTitleDisplayMode(.inline)
         .task(id: samples.count) {

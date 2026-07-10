@@ -6,8 +6,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 37,
-    "lastUpdated": "2026-07-03",
+    "docRevision": 38,
+    "lastUpdated": "2026-07-05",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -1361,7 +1361,11 @@
       "file": "AIFitnessCoach/Models/InjuryKeywordMatcher.swift",
       "description": "Pure, AppStorage-free word-boundary matcher for injury keywords. Replaces a bare text.contains that matched 'rug' inside 'terug' (phantom Back tracker, on-device report 2026-07-03). Prefix matching keeps NL/DE compounds ('rugpijn', 'knieblessure'); short greedy keywords ('hand', 'back') opt into whole-word-only. Shared by BodyArea.matchesInjuryKeyword and SymptomContextFormatter.",
       "uses": [],
-      "tags": ["injury-detection", "i18n", "pure-helper"]
+      "tags": [
+        "injury-detection",
+        "i18n",
+        "pure-helper"
+      ]
     },
     {
       "id": "AppMigrationPlan",
@@ -1613,6 +1617,96 @@
       "tags": [
         "chore",
         "i18n"
+      ]
+    },
+    {
+      "id": "WorkoutChatEntry",
+      "layer": "models",
+      "kind": "model",
+      "file": "AIFitnessCoach/Models/WorkoutChatEntry.swift",
+      "description": "One persisted message in the per-workout chat thread ('Discuss this workout'). Keyed by value to ActivityRecord.id (no relationship: activities re-sync, the chat is local-only). Added in SchemaV7.",
+      "uses": [],
+      "tags": [
+        "epic-70"
+      ]
+    },
+    {
+      "id": "WorkoutChatFact",
+      "layer": "models",
+      "kind": "model",
+      "file": "AIFitnessCoach/Models/WorkoutChatFact.swift",
+      "description": "A durable, plan-relevant fact the coach distilled from a per-workout chat (categories: feel / route / dayCondition). The memory half of the hybrid design: the thread is the archive, facts flow into coach plans via WorkoutFactsContextFormatter. Hard-deleted via the chip on the workout detail page. Added in SchemaV7.",
+      "uses": [],
+      "tags": [
+        "epic-70"
+      ]
+    },
+    {
+      "id": "WorkoutChatScopeInstruction",
+      "layer": "viewmodels",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/ViewModels/WorkoutChatScopeInstruction.swift",
+      "description": "Narrower sibling of ChatScopeInstruction for the per-workout chat: scope = this one workout + the user's condition today/this week; everything else redirects to the Coach tab. Also carries the reply/workoutFacts JSON contract shared with WorkoutChatResponseParser.",
+      "uses": [],
+      "tags": [
+        "epic-70"
+      ]
+    },
+    {
+      "id": "WorkoutChatResponseParser",
+      "layer": "viewmodels",
+      "kind": "parser",
+      "file": "AIFitnessCoach/ViewModels/WorkoutChatResponseParser.swift",
+      "description": "Pure parser of the workout-chat model response (reply + workoutFacts). Reuses CoachResponseParser's markdown/brace cleanup; maps raw category strings to WorkoutFactCategory at the front door (unknown → fact dropped); non-JSON responses degrade to a plain reply so the coach text is never lost.",
+      "uses": [
+        "CoachResponseParser"
+      ],
+      "tags": [
+        "epic-70"
+      ]
+    },
+    {
+      "id": "WorkoutChatViewModel",
+      "layer": "viewmodels",
+      "kind": "viewmodel",
+      "file": "AIFitnessCoach/ViewModels/WorkoutChatViewModel.swift",
+      "description": "SwiftData-free orchestration of the per-workout chat: assembles the [WORKOUT DATA]/[REMEMBERED FACTS] prompt, runs the overload fallback waterfall via CoachModelProvider (with WorkoutChatScopeInstruction injected as system instruction), and reports persistence through callbacks owned by WorkoutChatSection.",
+      "uses": [
+        "CoachModelProvider",
+        "WorkoutChatScopeInstruction",
+        "WorkoutChatResponseParser",
+        "ChatInputValidator",
+        "ChatErrorMessageMapper"
+      ],
+      "tags": [
+        "epic-70"
+      ]
+    },
+    {
+      "id": "WorkoutFactsContextFormatter",
+      "layer": "viewmodels",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/ViewModels/WorkoutFactsContextFormatter.swift",
+      "description": "Builds the [WORKOUT NOTES] prompt block from distilled workout-chat facts: trailing 14-day Calendar window, current-week dayCondition facts lead, capped at 20 newest. Empty string = no block. Fed into buildContextPrefix and recoveryPlanSystemPrompt via CoachInvocationContext.workoutNotesBlock.",
+      "uses": [],
+      "tags": [
+        "epic-70"
+      ]
+    },
+    {
+      "id": "WorkoutChatSection",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/WorkoutAnalysis/WorkoutChatSection.swift",
+      "description": "Inline 'Discuss this workout' section at the bottom of WorkoutAnalysisView. Owns the SwiftData side: queries the thread (WorkoutChatEntry) + facts (WorkoutChatFact), wires WorkoutChatViewModel's persistence callbacks (containment dedupe), and renders the fact chips whose ✕ is the single fact-management surface.",
+      "uses": [
+        "WorkoutChatViewModel",
+        "WorkoutChatEntry",
+        "WorkoutChatFact",
+        "ChatInputValidator"
+      ],
+      "tags": [
+        "epic-70"
       ]
     }
   ],
@@ -1980,6 +2074,18 @@
           "module": "Build Phase",
           "action": "Subsequent builds stamp CFBundleShortVersionString from git describe --tags (fallback: source Info.plist). CFBundleVersion keeps auto-incrementing per commit independently."
         }
+      ]
+    },
+    {
+      "id": "workout-chat",
+      "name": "Per-workout chat with local memory (Epic #70)",
+      "trigger": "User sends a message in the 'Discuss this workout' section on the workout detail page.",
+      "steps": [
+        "WorkoutChatSection passes the input + current fact texts to WorkoutChatViewModel.sendMessage.",
+        "WorkoutChatViewModel assembles [WORKOUT DATA] + [REMEMBERED FACTS] + recent thread and calls the model (WorkoutChatScopeInstruction as system instruction; overload → fallback model).",
+        "WorkoutChatResponseParser decodes {reply, workoutFacts}; unknown categories are dropped at the front door.",
+        "WorkoutChatSection persists both messages as WorkoutChatEntry and inserts deduped WorkoutChatFacts (chips with ✕ = management surface).",
+        "ChatView builds the [WORKOUT NOTES] block via WorkoutFactsContextFormatter (14-day window, cap 20) and threads it through CoachInvocationContext into buildContextPrefix and recoveryPlanSystemPrompt — plans and feedback see the subjective context."
       ]
     }
   ],
@@ -2676,18 +2782,68 @@
       "intro": "One person — the maintainer — sets direction and tests on a real phone; an AI agent does the implementation, tests and docs. Work flows around this loop and repeats every epic.",
       "loopNote": "↻ repeats every epic",
       "actors": [
-        { "id": "maintainer", "label": "Maintainer", "icon": "🧑", "role": "Sets direction, tests on a real device, decides when to merge and release." },
-        { "id": "agent", "label": "AI agent", "icon": "🤖", "role": "Implements the epic — branch, code, tests and docs — following the rules in CLAUDE.md." }
+        {
+          "id": "maintainer",
+          "label": "Maintainer",
+          "icon": "🧑",
+          "role": "Sets direction, tests on a real device, decides when to merge and release."
+        },
+        {
+          "id": "agent",
+          "label": "AI agent",
+          "icon": "🤖",
+          "role": "Implements the epic — branch, code, tests and docs — following the rules in CLAUDE.md."
+        }
       ],
       "steps": [
-        { "n": 1, "actor": "maintainer", "title": "Intent", "detail": "The maintainer describes what to build next, in plain language." },
-        { "n": 2, "actor": "maintainer", "title": "Epic on the roadmap", "detail": "It becomes a self-contained epic with enough context for the agent to run without hand-holding." },
-        { "n": 3, "actor": "agent", "title": "Implement", "detail": "The agent opens a branch and writes the code, tests and documentation together — docs are part of the change, not a follow-up." },
-        { "n": 4, "actor": "agent", "title": "Open a PR", "detail": "Right after the first push, the agent opens a pull request with a summary and a test-plan checklist." },
-        { "n": 5, "actor": "agent", "title": "CI verdict", "detail": "The automated checks run. If anything is red, the agent fixes it on the same branch until it goes green." },
-        { "n": 6, "actor": "maintainer", "title": "Test on device", "detail": "The maintainer pulls the branch and tries the feature on a real iPhone — the one thing automation can't do." },
-        { "n": 7, "actor": "maintainer", "title": "Squash & merge", "detail": "Happy? The maintainer squashes the branch into one tidy commit on main. The agent never merges." },
-        { "n": 8, "actor": "agent", "title": "Archive & clean up", "detail": "The finished epic moves to the roadmap archive and the branch is deleted — ready for the next loop." }
+        {
+          "n": 1,
+          "actor": "maintainer",
+          "title": "Intent",
+          "detail": "The maintainer describes what to build next, in plain language."
+        },
+        {
+          "n": 2,
+          "actor": "maintainer",
+          "title": "Epic on the roadmap",
+          "detail": "It becomes a self-contained epic with enough context for the agent to run without hand-holding."
+        },
+        {
+          "n": 3,
+          "actor": "agent",
+          "title": "Implement",
+          "detail": "The agent opens a branch and writes the code, tests and documentation together — docs are part of the change, not a follow-up."
+        },
+        {
+          "n": 4,
+          "actor": "agent",
+          "title": "Open a PR",
+          "detail": "Right after the first push, the agent opens a pull request with a summary and a test-plan checklist."
+        },
+        {
+          "n": 5,
+          "actor": "agent",
+          "title": "CI verdict",
+          "detail": "The automated checks run. If anything is red, the agent fixes it on the same branch until it goes green."
+        },
+        {
+          "n": 6,
+          "actor": "maintainer",
+          "title": "Test on device",
+          "detail": "The maintainer pulls the branch and tries the feature on a real iPhone — the one thing automation can't do."
+        },
+        {
+          "n": 7,
+          "actor": "maintainer",
+          "title": "Squash & merge",
+          "detail": "Happy? The maintainer squashes the branch into one tidy commit on main. The agent never merges."
+        },
+        {
+          "n": 8,
+          "actor": "agent",
+          "title": "Archive & clean up",
+          "detail": "The finished epic moves to the roadmap archive and the branch is deleted — ready for the next loop."
+        }
       ]
     },
     "ci": {
@@ -2696,33 +2852,117 @@
       "platform": "GitHub Actions",
       "docRef": "ARCHITECTURE.md#11",
       "workflows": [
-        { "id": "ios-ci", "name": "iOS CI", "blurb": "Lint, tests and a coverage report on every push and PR." },
-        { "id": "codeql", "name": "CodeQL security scan", "blurb": "Scans the Swift code and the workflow files for security issues — on every push/PR and once a week." },
-        { "id": "release-please", "name": "release-please", "blurb": "Keeps a standing Release PR up to date; merging it cuts a new version." }
+        {
+          "id": "ios-ci",
+          "name": "iOS CI",
+          "blurb": "Lint, tests and a coverage report on every push and PR."
+        },
+        {
+          "id": "codeql",
+          "name": "CodeQL security scan",
+          "blurb": "Scans the Swift code and the workflow files for security issues — on every push/PR and once a week."
+        },
+        {
+          "id": "release-please",
+          "name": "release-please",
+          "blurb": "Keeps a standing Release PR up to date; merging it cuts a new version."
+        }
       ],
       "jobs": [
-        { "id": "lint", "name": "SwiftLint", "workflow": "ios-ci", "needs": [], "blocks": "Style + rule check. One new violation breaks the build." },
-        { "id": "unit-tests", "name": "Unit Tests", "workflow": "ios-ci", "needs": [], "blocks": "Runs the fast pure-logic test suite." },
-        { "id": "ui-tests", "name": "UI Tests", "workflow": "ios-ci", "needs": ["unit-tests"], "blocks": "Drives the app in a simulator — only after unit tests pass." },
-        { "id": "coverage", "name": "Coverage Report", "workflow": "ios-ci", "needs": ["unit-tests", "ui-tests"], "blocks": "Merges both test runs into one coverage report." },
-        { "id": "codeql-swift", "name": "CodeQL · Swift", "workflow": "codeql", "needs": [], "blocks": "Builds and scans the app code for security issues." },
-        { "id": "codeql-actions", "name": "CodeQL · Actions", "workflow": "codeql", "needs": [], "blocks": "Scans the workflow files themselves — 10× cheaper runner." }
+        {
+          "id": "lint",
+          "name": "SwiftLint",
+          "workflow": "ios-ci",
+          "needs": [],
+          "blocks": "Style + rule check. One new violation breaks the build."
+        },
+        {
+          "id": "unit-tests",
+          "name": "Unit Tests",
+          "workflow": "ios-ci",
+          "needs": [],
+          "blocks": "Runs the fast pure-logic test suite."
+        },
+        {
+          "id": "ui-tests",
+          "name": "UI Tests",
+          "workflow": "ios-ci",
+          "needs": [
+            "unit-tests"
+          ],
+          "blocks": "Drives the app in a simulator — only after unit tests pass."
+        },
+        {
+          "id": "coverage",
+          "name": "Coverage Report",
+          "workflow": "ios-ci",
+          "needs": [
+            "unit-tests",
+            "ui-tests"
+          ],
+          "blocks": "Merges both test runs into one coverage report."
+        },
+        {
+          "id": "codeql-swift",
+          "name": "CodeQL · Swift",
+          "workflow": "codeql",
+          "needs": [],
+          "blocks": "Builds and scans the app code for security issues."
+        },
+        {
+          "id": "codeql-actions",
+          "name": "CodeQL · Actions",
+          "workflow": "codeql",
+          "needs": [],
+          "blocks": "Scans the workflow files themselves — 10× cheaper runner."
+        }
       ],
       "release": {
         "title": "How a release is cut",
         "intro": "Two version numbers move on different clocks.",
-        "buildNumber": { "label": "Build number", "detail": "Bumps on every single commit (a simple commit count). Never touched by hand." },
-        "marketingVersion": { "label": "Public version", "detail": "Like 2.1.0 — only moves when the maintainer merges the standing Release PR." },
+        "buildNumber": {
+          "label": "Build number",
+          "detail": "Bumps on every single commit (a simple commit count). Never touched by hand."
+        },
+        "marketingVersion": {
+          "label": "Public version",
+          "detail": "Like 2.1.0 — only moves when the maintainer merges the standing Release PR."
+        },
         "steps": [
-          { "title": "Every merge feeds the Release PR", "detail": "release-please reads the commit titles and keeps a rolling \"release X.Y.Z\" PR + changelog up to date." },
-          { "title": "Merge = tag vX.Y.Z", "detail": "When the maintainer merges that PR, a version tag and a GitHub Release are created." },
-          { "title": "Build stamps the version", "detail": "From then on, the app build stamps that new version number." }
+          {
+            "title": "Every merge feeds the Release PR",
+            "detail": "release-please reads the commit titles and keeps a rolling \"release X.Y.Z\" PR + changelog up to date."
+          },
+          {
+            "title": "Merge = tag vX.Y.Z",
+            "detail": "When the maintainer merges that PR, a version tag and a GitHub Release are created."
+          },
+          {
+            "title": "Build stamps the version",
+            "detail": "From then on, the app build stamps that new version number."
+          }
         ],
         "bumpRules": [
-          { "type": "fix:", "bump": "patch", "example": "2.1.0 → 2.1.1" },
-          { "type": "feat:", "bump": "minor", "example": "2.1.0 → 2.2.0" },
-          { "type": "feat! / BREAKING CHANGE:", "bump": "major", "example": "2.1.0 → 3.0.0" },
-          { "type": "docs: · chore: · ci:", "bump": "none", "example": "no version change" }
+          {
+            "type": "fix:",
+            "bump": "patch",
+            "example": "2.1.0 → 2.1.1"
+          },
+          {
+            "type": "feat:",
+            "bump": "minor",
+            "example": "2.1.0 → 2.2.0"
+          },
+          {
+            "type": "feat! / BREAKING CHANGE:",
+            "bump": "major",
+            "example": "2.1.0 → 3.0.0"
+          },
+          {
+            "type": "docs: · chore: · ci:",
+            "bump": "none",
+            "example": "no version change"
+          }
         ]
       }
     },
@@ -2730,27 +2970,83 @@
       "title": "Branching & PR agreements",
       "intro": "Every change lives on its own branch and lands through a pull request — never straight onto main. The branch name says what kind of change it is.",
       "types": [
-        { "type": "feature", "pattern": "feature/epic-{nr}-{desc}", "use": "New epics and sprints", "icon": "✨" },
-        { "type": "fix", "pattern": "fix/{desc}", "use": "Regular bugfixes", "icon": "🐛" },
-        { "type": "hotfix", "pattern": "hotfix/{desc}", "use": "Production-critical, fast-track", "icon": "🚑" },
-        { "type": "security", "pattern": "security/{alert-id}", "use": "Security fixes", "icon": "🔒" },
-        { "type": "ci", "pattern": "ci/{desc}", "use": "Pipeline / workflow changes", "icon": "⚙️" },
-        { "type": "chore", "pattern": "chore/{desc}", "use": "Cleanup & refactors, no behaviour change", "icon": "🧹" },
-        { "type": "docs", "pattern": "docs/{desc}", "use": "Docs-only — may go straight to main", "icon": "📝" }
+        {
+          "type": "feature",
+          "pattern": "feature/epic-{nr}-{desc}",
+          "use": "New epics and sprints",
+          "icon": "✨"
+        },
+        {
+          "type": "fix",
+          "pattern": "fix/{desc}",
+          "use": "Regular bugfixes",
+          "icon": "🐛"
+        },
+        {
+          "type": "hotfix",
+          "pattern": "hotfix/{desc}",
+          "use": "Production-critical, fast-track",
+          "icon": "🚑"
+        },
+        {
+          "type": "security",
+          "pattern": "security/{alert-id}",
+          "use": "Security fixes",
+          "icon": "🔒"
+        },
+        {
+          "type": "ci",
+          "pattern": "ci/{desc}",
+          "use": "Pipeline / workflow changes",
+          "icon": "⚙️"
+        },
+        {
+          "type": "chore",
+          "pattern": "chore/{desc}",
+          "use": "Cleanup & refactors, no behaviour change",
+          "icon": "🧹"
+        },
+        {
+          "type": "docs",
+          "pattern": "docs/{desc}",
+          "use": "Docs-only — may go straight to main",
+          "icon": "📝"
+        }
       ],
       "rules": [
-        { "title": "One fix per PR", "detail": "No piggybacked refactors or \"while I was at it\" changes — each PR does one thing, with its source linked." },
-        { "title": "The PR title is the commit", "detail": "Because we squash & merge, the PR title becomes the single commit on main — so it must follow Conventional Commits for the release tool to read it." },
-        { "title": "Docs-only can skip the dance", "detail": "A pure documentation update may go straight to main; everything else goes through a branch + PR." },
-        { "title": "The agent opens PRs, the maintainer merges", "detail": "The agent never merges to main — that decision stays with the maintainer." }
+        {
+          "title": "One fix per PR",
+          "detail": "No piggybacked refactors or \"while I was at it\" changes — each PR does one thing, with its source linked."
+        },
+        {
+          "title": "The PR title is the commit",
+          "detail": "Because we squash & merge, the PR title becomes the single commit on main — so it must follow Conventional Commits for the release tool to read it."
+        },
+        {
+          "title": "Docs-only can skip the dance",
+          "detail": "A pure documentation update may go straight to main; everything else goes through a branch + PR."
+        },
+        {
+          "title": "The agent opens PRs, the maintainer merges",
+          "detail": "The agent never merges to main — that decision stays with the maintainer."
+        }
       ],
       "stackedPRs": {
         "title": "Stacked PRs — a real lesson here",
         "detail": "When one branch builds on another not-yet-merged branch, merge from the bottom up and delete each branch right after it merges — otherwise the stack tangles and CI re-runs on stale bases.",
         "stack": [
-          { "label": "PR A → main", "note": "merge first" },
-          { "label": "PR B → A", "note": "then this" },
-          { "label": "PR C → B", "note": "last" }
+          {
+            "label": "PR A → main",
+            "note": "merge first"
+          },
+          {
+            "label": "PR B → A",
+            "note": "then this"
+          },
+          {
+            "label": "PR C → B",
+            "note": "last"
+          }
         ]
       }
     },
@@ -2758,14 +3054,50 @@
       "title": "The documentation system",
       "intro": "Four hand-written files hold the project's truth, each for a different reader. Two more files are generated from them — including this viewer. A checklist keeps them all in sync on every change.",
       "sources": [
-        { "id": "readme", "file": "README.md", "scope": "Product showcase — what the app is and how to build it.", "reader": "New visitor", "icon": "👋" },
-        { "id": "roadmap", "file": "docs/ROADMAP.md", "scope": "The live plan — what's open and being worked on right now.", "reader": "Human or AI agent", "icon": "🗺️" },
-        { "id": "architecture", "file": "docs/ARCHITECTURE.md", "scope": "How each part works, and why it was built that way.", "reader": "Anyone reading the code", "icon": "🏛️" },
-        { "id": "claude", "file": "CLAUDE.md", "scope": "The fixed rules for working on this codebase.", "reader": "The AI agent", "icon": "🤖" }
+        {
+          "id": "readme",
+          "file": "README.md",
+          "scope": "Product showcase — what the app is and how to build it.",
+          "reader": "New visitor",
+          "icon": "👋"
+        },
+        {
+          "id": "roadmap",
+          "file": "docs/ROADMAP.md",
+          "scope": "The live plan — what's open and being worked on right now.",
+          "reader": "Human or AI agent",
+          "icon": "🗺️"
+        },
+        {
+          "id": "architecture",
+          "file": "docs/ARCHITECTURE.md",
+          "scope": "How each part works, and why it was built that way.",
+          "reader": "Anyone reading the code",
+          "icon": "🏛️"
+        },
+        {
+          "id": "claude",
+          "file": "CLAUDE.md",
+          "scope": "The fixed rules for working on this codebase.",
+          "reader": "The AI agent",
+          "icon": "🤖"
+        }
       ],
       "derived": [
-        { "id": "arch-json", "file": "docs/architecture/architecture.json", "scope": "The same architecture, machine-readable for AI agents.", "reader": "AI agents", "icon": "{}" },
-        { "id": "arch-html", "file": "docs/architecture/architecture.html", "scope": "This interactive viewer, for humans.", "reader": "Humans", "icon": "🖥️" }
+        {
+          "id": "arch-json",
+          "file": "docs/architecture/architecture.json",
+          "scope": "The same architecture, machine-readable for AI agents.",
+          "reader": "AI agents",
+          "icon": "{}"
+        },
+        {
+          "id": "arch-html",
+          "file": "docs/architecture/architecture.html",
+          "scope": "This interactive viewer, for humans.",
+          "reader": "Humans",
+          "icon": "🖥️"
+        }
       ],
       "syncNote": "The JSON is the single source; a small script injects it into this HTML page, so the two never drift.",
       "dodChecklist": [
@@ -2780,9 +3112,21 @@
         "title": "Roadmap → archive",
         "intro": "The live roadmap stays lean; finished work moves out of the way.",
         "stages": [
-          { "status": "⏳", "label": "Planned", "detail": "An idea, with no commitment yet." },
-          { "status": "🔄", "label": "Active", "detail": "A branch is open and in review." },
-          { "status": "✅", "label": "Done", "detail": "Merged on main — then moved to the archive so the live plan stays short." }
+          {
+            "status": "⏳",
+            "label": "Planned",
+            "detail": "An idea, with no commitment yet."
+          },
+          {
+            "status": "🔄",
+            "label": "Active",
+            "detail": "A branch is open and in review."
+          },
+          {
+            "status": "✅",
+            "label": "Done",
+            "detail": "Merged on main — then moved to the archive so the live plan stays short."
+          }
         ]
       }
     }

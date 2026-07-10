@@ -20,6 +20,10 @@ struct GoalsListView: View {
     @Query private var activities: [ActivityRecord]
     @Query(filter: #Predicate<UserPreference> { $0.isActive == true }, sort: \UserPreference.createdAt) private var activePreferences: [UserPreference]
 
+    /// Epic #70: facts from the per-workout chats → the [WORKOUT NOTES] block in the
+    /// recovery-plan invocation (window/cap policy lives in the formatter).
+    @Query(sort: \WorkoutChatFact.createdAt, order: .reverse) private var workoutChatFacts: [WorkoutChatFact]
+
     /// Epic #65 story 65.2: Calendar-based (§3) cutoff captured as a `let` for the `#Predicate`.
     init(viewModel: ChatViewModel) {
         self._viewModel = ObservedObject(wrappedValue: viewModel)
@@ -576,7 +580,13 @@ struct GoalsListView: View {
         }
         viewModel.requestRecoveryPlan(
             atRiskGoals: riskInfos,
-            invocation: CoachInvocationContext(activeGoals: Array(goals), activePreferences: Array(activePreferences))
+            invocation: CoachInvocationContext(
+                activeGoals: Array(goals),
+                activePreferences: Array(activePreferences),
+                // Epic #70: subjective workout notes shape the recovery plan too.
+                workoutNotesBlock: WorkoutFactsContextFormatter.format(facts: workoutChatFacts,
+                                                                       activities: activities)
+            )
         )
         recoveryPlanTimestamp = Date().timeIntervalSince1970
         appState.selectedTab = .coach

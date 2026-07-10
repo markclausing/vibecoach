@@ -30,10 +30,30 @@ struct ChatView: View {
     @Query(sort: \ActivityRecord.startDate, order: .reverse) private var recentActivities: [ActivityRecord]
     @Query(sort: \DailyReadiness.date, order: .reverse) private var recentReadiness: [DailyReadiness]
 
+    /// Epic #70: facts distilled in per-workout chats — feed the [WORKOUT NOTES]
+    /// prompt block. The 14-day window/cap policy lives in the formatter; this
+    /// query stays unfiltered because the fact volume is inherently small.
+    @Query(sort: \WorkoutChatFact.createdAt, order: .reverse) private var workoutChatFacts: [WorkoutChatFact]
+
     /// Tracks whether the user has dismissed the overtraining warning banner.
     @State private var warningDismissed = false
 
     private let profileManager = AthleticProfileManager()
+
+    /// Epic #70: the invocation context for every coach call from this view.
+    /// One computed helper (instead of 7 inline constructions) so the
+    /// workout-notes block is threaded consistently everywhere.
+    private var coachInvocation: CoachInvocationContext {
+        CoachInvocationContext(profile: currentProfile,
+                               activeGoals: goals,
+                               activePreferences: activePreferences,
+                               workoutNotesBlock: workoutNotesBlock)
+    }
+
+    /// Builds the [WORKOUT NOTES] block (facts + workout labels → formatter).
+    private var workoutNotesBlock: String {
+        WorkoutFactsContextFormatter.format(facts: workoutChatFacts, activities: recentActivities)
+    }
 
     // Epic 34.1: V2.0 Fit & Finish — scroll state for the material overlay in the top safe area.
     @State private var isChatScrolled: Bool = false
@@ -314,15 +334,15 @@ private let suggestionChips = [
                                                     message: message,
                                                     onSkipWorkout: { workout in
                                                         refreshProfileContext()
-                                                        viewModel.skipWorkout(workout, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
+                                                        viewModel.skipWorkout(workout, invocation: coachInvocation)
                                                     },
                                                     onAlternativeWorkout: { workout in
                                                         refreshProfileContext()
-                                                        viewModel.requestAlternativeWorkout(workout, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
+                                                        viewModel.requestAlternativeWorkout(workout, invocation: coachInvocation)
                                                     },
                                                     onRetry: {
                                                         refreshProfileContext()
-                                                        viewModel.retryLastMessage(invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
+                                                        viewModel.retryLastMessage(invocation: coachInvocation)
                                                     }
                                                 )
                                                 .id(message.id)
@@ -336,15 +356,15 @@ private let suggestionChips = [
                                             message: message,
                                             onSkipWorkout: { workout in
                                                 refreshProfileContext()
-                                                viewModel.skipWorkout(workout, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
+                                                viewModel.skipWorkout(workout, invocation: coachInvocation)
                                             },
                                             onAlternativeWorkout: { workout in
                                                 refreshProfileContext()
-                                                viewModel.requestAlternativeWorkout(workout, invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
+                                                viewModel.requestAlternativeWorkout(workout, invocation: coachInvocation)
                                             },
                                             onRetry: {
                                                 refreshProfileContext()
-                                                viewModel.retryLastMessage(invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
+                                                viewModel.retryLastMessage(invocation: coachInvocation)
                                             }
                                         )
                                         .id(message.id)
@@ -486,7 +506,7 @@ private let suggestionChips = [
                         Button(action: {
                             refreshProfileContext()
                             Haptics.impact(.medium)
-                            viewModel.sendMessage(invocation: CoachInvocationContext(profile: currentProfile, activeGoals: goals, activePreferences: activePreferences))
+                            viewModel.sendMessage(invocation: coachInvocation)
                             selectedItem = nil
                         }) {
                             Image(systemName: "arrow.up.circle.fill")

@@ -56,9 +56,9 @@ Chat with a coach that already knows your readiness, recent workouts, goals and 
 
 <img src="docs/screenshots/04-workout-deepdive.png" width="230" align="left" alt="Workout analysis with pattern detection">
 
-Beyond averages: VibeCoach reads the raw time-series of a workout and detects aerobic decoupling, cardiac drift, cadence fade and slow HR recovery — annotated right on the chart, with a short AI synthesis of what they mean together.
+Beyond averages: VibeCoach reads the raw time-series of a workout and detects aerobic decoupling, cardiac drift, cadence fade and slow HR recovery — annotated right on the chart, with a short AI synthesis of what they mean together. And you can talk back: a small chat on the workout page lets you tell the coach how it really felt — the route, a bad night, work stress — and the coach remembers those facts (locally) and weighs them in your plans and feedback.
 
-**What you get:** you find out *why* a session felt hard — heat, fatigue, going too deep — instead of guessing.
+**What you get:** you find out *why* a session felt hard — heat, fatigue, going too deep — instead of guessing. And what the sensors can't see, you can simply say.
 
 <br clear="left">
 
@@ -126,7 +126,7 @@ A short technical summary; the full picture lives in the linked docs (no duplica
 
 **CI:** a 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) on `macos-latest`, plus a CodeQL scan of Swift + Actions workflows and a `release-please` workflow that cuts semver tags + GitHub Releases from Conventional Commits.
 
-**Recently completed:** Epic #67 ("How it's built" viewer — visual dev workflow: agent collaboration, CI pipeline, branching & docs), #66 (architecture viewer redesigned — plain-language story first, drill-down depth, mobile-friendly), #65 (refactor hardening: bounded queries + sample retention, ChatViewModel decomposition, sync-orchestration extraction, view splits, lint guardrails), #64 (refactor follow-ups: dead-code cleanup, centralised date formatting, file splits), #60 (per-phase milestone insight in the Goals view). Open work → [`docs/ROADMAP.md`](docs/ROADMAP.md) · full history → [`docs/ROADMAP-archive.md`](docs/ROADMAP-archive.md).
+**Recently completed:** Epic #70 (per-workout chat with local memory — discuss a workout on its detail page; distilled facts feed plans & feedback), #67 ("How it's built" viewer — visual dev workflow: agent collaboration, CI pipeline, branching & docs), #66 (architecture viewer redesigned — plain-language story first, drill-down depth, mobile-friendly), #65 (refactor hardening: bounded queries + sample retention, ChatViewModel decomposition, sync-orchestration extraction, view splits, lint guardrails), #64 (refactor follow-ups: dead-code cleanup, centralised date formatting, file splits). Open work → [`docs/ROADMAP.md`](docs/ROADMAP.md) · full history → [`docs/ROADMAP-archive.md`](docs/ROADMAP-archive.md).
 
 **Dig deeper:**
 

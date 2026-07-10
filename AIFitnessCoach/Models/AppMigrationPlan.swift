@@ -32,12 +32,22 @@ import SwiftData
 enum AppMigrationPlan: SchemaMigrationPlan {
 
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self, SchemaV6.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self, SchemaV6.self, SchemaV7.self]
     }
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6]
+        [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6, migrateV6toV7]
     }
+
+    // MARK: - V6 → V7: pure addition (WorkoutChatEntry + WorkoutChatFact — Epic #70)
+
+    /// Epic #70: adds the per-workout chat thread (`WorkoutChatEntry`) and the distilled
+    /// facts (`WorkoutChatFact`) as new tables. Existing records are untouched.
+    /// `.lightweight` is sufficient for new @Models with no changes to existing tables.
+    static let migrateV6toV7 = MigrationStage.lightweight(
+        fromVersion: SchemaV6.self,
+        toVersion: SchemaV7.self
+    )
 
     // MARK: - V5 → V6: pure addition (CoachContextCache — PHI prompt-context in protected storage)
 
