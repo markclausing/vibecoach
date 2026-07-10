@@ -240,7 +240,7 @@ struct MemoryPreferenceCard: View {
     private var expirationBadgeLabel: String? {
         guard let exp = preference.expirationDate, exp > Date() else { return nil }
         let df = AppDateFormatters.display("d MMM")
-        return "tot \(df.string(from: exp))"
+        return String(localized: "tot \(df.string(from: exp))")
     }
 
     private var createdLabel: String {
@@ -280,7 +280,7 @@ struct MemoryPreferenceCard: View {
 
                 Menu {
                     Button(role: .destructive, action: onDelete) {
-                        Label("Verwijder", systemImage: "trash")
+                        Label("Verwijderen", systemImage: "trash")
                     }
                 } label: {
                     Image(systemName: "ellipsis")

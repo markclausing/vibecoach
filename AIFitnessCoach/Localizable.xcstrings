@@ -2065,6 +2065,28 @@
         }
       }
     },
+    "Blessure" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verletzung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Injury"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesión"
+          }
+        }
+      }
+    },
     "Blueprint" : {
 
     },
@@ -8843,6 +8865,28 @@
         }
       }
     },
+    "Nog geen herinneringen" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch keine Erinnerungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No memories yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no hay recuerdos"
+          }
+        }
+      }
+    },
     "Nog geen samples beschikbaar" : {
       "localizations" : {
         "de" : {
@@ -11775,6 +11819,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mostrar todos los mensajes (%@)"
+          }
+        }
+      }
+    },
+    "tot %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bis %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "until %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hasta %@"
           }
         }
       }
