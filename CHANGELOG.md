@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.3.0](https://github.com/markclausing/vibecoach/compare/v2.2.0...v2.3.0) (2026-07-10)
+
+
+### Features
+
+* land Epic [#65](https://github.com/markclausing/vibecoach/issues/65) stack + injury/plan fixes on main (merge recovery) ([#347](https://github.com/markclausing/vibecoach/issues/347)) ([13de7d0](https://github.com/markclausing/vibecoach/commit/13de7d0937bac05edf565498d0cdd3d56c959ae1))
+* per-workout chat with local memory (Epic [#70](https://github.com/markclausing/vibecoach/issues/70)) ([#350](https://github.com/markclausing/vibecoach/issues/350)) ([9a0971e](https://github.com/markclausing/vibecoach/commit/9a0971e5856d26116ca5d40036c95a2786df5daf))
+
+
+### Bug Fixes
+
+* localise remaining user-facing Dutch strings (notifications, insight/threshold/catalog) ([#331](https://github.com/markclausing/vibecoach/issues/331)) ([b392579](https://github.com/markclausing/vibecoach/commit/b392579afb2992142d08fa9d25afdc39e16d8b07))
+* translate remaining static UI strings (permission overview, captive-portal banner, goal/onboarding chrome) ([#333](https://github.com/markclausing/vibecoach/issues/333)) ([294a770](https://github.com/markclausing/vibecoach/commit/294a7706a6ebf92dd35e5073abc44b2823411692))
+
 ## [2.2.0](https://github.com/markclausing/vibecoach/compare/v2.1.0...v2.2.0) (2026-06-28)
 
 
