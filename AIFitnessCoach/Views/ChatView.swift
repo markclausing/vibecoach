@@ -111,38 +111,45 @@ struct ChatView: View {
         var lines: [String] = []
 
         // Vibe Score → battery tier
+        // Epic #37: numbers pre-formatted as String so the runtime %@ keys match the catalog.
         if let readiness = recentReadiness.first {
-            let hrv = Int(readiness.hrv.rounded())
+            let score = "\(readiness.readinessScore)"
+            let hrv = "\(Int(readiness.hrv.rounded()))"
             if readiness.readinessScore < 50 {
-                lines.append("Lage batterij (Vibe \(readiness.readinessScore)/100) — prioriteit is vandaag herstel.")
+                lines.append(String(localized: "Lage batterij (Vibe \(score)/100) — prioriteit is vandaag herstel."))
             } else if readiness.readinessScore >= 80 {
-                lines.append("Volle batterij (Vibe \(readiness.readinessScore)/100) — goede dag voor intensiteit.")
+                lines.append(String(localized: "Volle batterij (Vibe \(score)/100) — goede dag voor intensiteit."))
             } else {
-                lines.append("Vibe \(readiness.readinessScore)/100 · HRV \(hrv) ms — houd het gematigd.")
+                lines.append(String(localized: "Vibe \(score)/100 · HRV \(hrv) ms — houd het gematigd."))
             }
         }
 
         // Active injuries from InjuryMemory
         let injuries = activeInjuries
         if !injuries.isEmpty {
-            let names = injuries.map { $0.rawValue.lowercased() }.joined(separator: ", ")
-            lines.append("Blessuregeheugen actief: \(names). Plan ontziet deze zone.")
+            // BodyArea rawValues are Dutch prompt terms — resolve them via the catalog
+            // at this render site (Epic #37 prompt-vs-UI split).
+            let names = injuries.map { String(localized: String.LocalizationValue($0.rawValue)) }.joined(separator: ", ")
+            lines.append(String(localized: "Blessuregeheugen actief: \(names). Plan ontziet deze zone."))
         }
 
         if let lastActivity = recentActivities.first {
-            let km = String(format: "%.1f", lastActivity.distance / 1000).replacingOccurrences(of: ".", with: ",")
+            let km = (lastActivity.distance / 1000).formatted(.number.precision(.fractionLength(1)).locale(AppLanguage.currentLocale))
+            // displayName is either the user's own workout title (rendered verbatim, no
+            // catalog hit) or a SportCategory workout name (Dutch prompt term → catalog).
+            let name = String(localized: String.LocalizationValue(lastActivity.displayName))
             let trimpText = lastActivity.trimp.map { " · TRIMP \(Int($0.rounded()))" } ?? ""
-            lines.append("Laatste training: \(lastActivity.displayName) · \(km) km\(trimpText).")
+            lines.append(String(localized: "Laatste training: \(name) · \(km) km\(trimpText)."))
         }
 
         if let profile = currentProfile, profile.isRecoveryNeeded {
-            let reason = profile.recoveryReason ?? "Trainingsbelasting boven baseline."
-            lines.append("Herstelsignaal: \(reason)")
+            let reason = profile.recoveryReason ?? String(localized: "Trainingsbelasting boven baseline.")
+            lines.append(String(localized: "Herstelsignaal: \(reason)"))
         }
 
         // Motivating fallback when there is no data yet
         if lines.isEmpty {
-            lines.append("Luister naar je lichaam. Elke stap telt — ook de rustdagen.")
+            lines.append(String(localized: "Luister naar je lichaam. Elke stap telt — ook de rustdagen."))
         }
 
         return lines

@@ -499,9 +499,11 @@ final class AthleticProfileManagerTests: XCTestCase {
         let profile = try manager.calculateProfile(context: context)
 
         XCTAssertNotNil(profile?.recoveryReason, "recoveryReason moet ingesteld zijn bij 4 aaneengesloten trainingsdagen")
-        XCTAssertTrue(
-            profile?.recoveryReason?.contains("op rij getraind") ?? false,
-            "recoveryReason verwacht 'op rij getraind', kreeg: \(profile?.recoveryReason ?? "nil")"
+        // Locale-agnostic assert (Epic #37): compare against String(localized:) of the same key.
+        XCTAssertEqual(
+            profile?.recoveryReason,
+            String(localized: "\("\(4)") dagen op rij getraind. Neem vandaag rust."),
+            "recoveryReason verwacht de consecutive-days-melding, kreeg: \(profile?.recoveryReason ?? "nil")"
         )
     }
 
@@ -522,9 +524,12 @@ final class AthleticProfileManagerTests: XCTestCase {
         XCTAssertNotNil(profile)
         XCTAssertTrue(profile?.isRecoveryNeeded ?? false, "isRecoveryNeeded moet true zijn bij volume > 150%")
         XCTAssertNotNil(profile?.recoveryReason, "recoveryReason moet ingesteld zijn bij volume-overbelasting")
-        XCTAssertTrue(
-            profile?.recoveryReason?.contains("boven je gemiddelde") ?? false,
-            "recoveryReason verwacht 'boven je gemiddelde', kreeg: \(profile?.recoveryReason ?? "nil")"
+        // Locale-agnostic assert (Epic #37): compare against String(localized:) of the same key.
+        // Fixed seed data: avg = (3×7200 + 14000)/4 = 8900, ratio = 14000/8900 ≈ 1.573 → 57%.
+        XCTAssertEqual(
+            profile?.recoveryReason,
+            String(localized: "Volume deze week is \("57%") boven je gemiddelde. Plan 1–2 rustdagen."),
+            "recoveryReason verwacht de volume-overload-melding, kreeg: \(profile?.recoveryReason ?? "nil")"
         )
     }
 
