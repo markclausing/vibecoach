@@ -11,9 +11,12 @@ struct EditGoalView: View {
     /// goal-derived coach context (no stale prompt references to a removed goal).
     var onDeleted: (() -> Void)?
 
-    // Stretch goal: local state so the DatePicker always gets a valid Date
+    // Stretch goal: local state so the picker always gets valid hours/minutes.
     @State private var hasStretchGoal: Bool
-    @State private var stretchGoalPickerDate: Date
+    // Epic #72 story 72.5: hours:minutes duration instead of a time-of-day DatePicker
+    // (a `.hourAndMinute` DatePicker rendered a 3h45 duration as "4:00 AM" on 12-hour locales).
+    @State private var stretchHours: Int
+    @State private var stretchMinutes: Int
 
     @State private var showDeleteConfirm = false
     // Guards the onDisappear save: after deleting we must NOT write back to the
@@ -25,11 +28,12 @@ struct EditGoalView: View {
         self.onDeleted = onDeleted
         if let stretchTime = goal.stretchGoalTime, stretchTime > 0 {
             _hasStretchGoal = State(initialValue: true)
-            let midnight = Calendar.current.startOfDay(for: Date())
-            _stretchGoalPickerDate = State(initialValue: midnight.addingTimeInterval(stretchTime))
+            _stretchHours = State(initialValue: Int(stretchTime) / 3600)
+            _stretchMinutes = State(initialValue: (Int(stretchTime) % 3600) / 60)
         } else {
             _hasStretchGoal = State(initialValue: false)
-            _stretchGoalPickerDate = State(initialValue: Calendar.current.startOfDay(for: Date()).addingTimeInterval(3 * 3600))
+            _stretchHours = State(initialValue: 3)
+            _stretchMinutes = State(initialValue: 0)
         }
     }
 
@@ -44,7 +48,7 @@ struct EditGoalView: View {
                 .lineLimit(3...6)
             }
 
-            Section(header: Text("Type Sport")) {
+            Section(header: Text("Sport & evenement")) {
                 Picker("Sport", selection: Binding<SportCategory>(
                     get: { goal.sportCategory ?? .other },
                     set: { goal.sportCategory = $0 }
@@ -54,9 +58,7 @@ struct EditGoalView: View {
                         Text(LocalizedStringKey(category.displayName)).tag(category)
                     }
                 }
-            }
 
-            Section(header: Text("Type Evenement & Intentie")) {
                 Picker("Evenement", selection: Binding<EventFormat>(
                     get: { goal.resolvedFormat },
                     set: { newFormat in
@@ -90,25 +92,9 @@ struct EditGoalView: View {
                     Text("Uitlopen / Genieten").tag(PrimaryIntent.completion)
                     Text("Presteren / Zo snel mogelijk").tag(PrimaryIntent.peakPerformance)
                 }
-
-                Toggle("Streeftijd instellen", isOn: $hasStretchGoal)
-
-                if hasStretchGoal {
-                    DatePicker(
-                        "Doeltijd (u:min)",
-                        selection: $stretchGoalPickerDate,
-                        displayedComponents: .hourAndMinute
-                    )
-                    if let warning = stretchWarning {
-                        Label(warning, systemImage: "exclamationmark.triangle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
-                    }
-                }
             }
 
-            Section(header: Text("Status")) {
-                Toggle("Doel Behaald", isOn: $goal.isCompleted)
+            Section(header: Text("Doelstelling"), footer: Text("De coach rekent vanaf deze datum terug om je trainingsfasen te plannen.")) {
                 // Epic #55: for a multi-day event `targetDate` is the START day, so label it
                 // "Startdatum" (matching AddGoalView). For single-day goals it stays the target date.
                 // Epic #62 story 62.1: forward-bound the picker so a goal can't be edited to a
@@ -123,6 +109,21 @@ struct EditGoalView: View {
                         .font(.caption)
                         .foregroundStyle(.orange)
                 }
+
+                Toggle("Streeftijd instellen", isOn: $hasStretchGoal)
+
+                if hasStretchGoal {
+                    GoalDurationPicker(label: "Finishtijd", hours: $stretchHours, minutes: $stretchMinutes)
+                    if let warning = stretchWarning {
+                        Label(warning, systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                }
+            }
+
+            Section(header: Text("Status"), footer: Text("Verplaatst dit doel naar 'Voltooide doelen'.")) {
+                Toggle("Doel Behaald", isOn: $goal.isCompleted)
             }
 
             Section {
@@ -165,28 +166,24 @@ struct EditGoalView: View {
             guard !isDeleting else { return }
             // Epic #62 story 62.1: trim the title so trailing whitespace/newlines aren't persisted.
             goal.title = GoalFormValidator.sanitizedTitle(goal.title)
-            goal.stretchGoalTime = hasStretchGoal ? stretchTimeInterval(from: stretchGoalPickerDate) : nil
+            goal.stretchGoalTime = hasStretchGoal ? stretchSeconds : nil
             try? modelContext.save()
         }
+    }
+
+    /// Epic #72 story 72.5: hours:minutes duration converted to seconds for storage/validation.
+    private var stretchSeconds: TimeInterval {
+        TimeInterval(stretchHours * 3600 + stretchMinutes * 60)
     }
 
     /// Epic #62 story 62.1: inline plausibility hint for the stretch (target finish) time.
     private var stretchWarning: String? {
         guard hasStretchGoal else { return nil }
-        let seconds = stretchTimeInterval(from: stretchGoalPickerDate)
-        switch GoalFormValidator.stretchTimePlausibility(seconds: seconds, sport: goal.sportCategory ?? .other) {
+        switch GoalFormValidator.stretchTimePlausibility(seconds: stretchSeconds, sport: goal.sportCategory ?? .other) {
         case .ok:      return nil
         case .zero:    return String(localized: "Stel een streeftijd in of zet de schakelaar uit.")
         case .tooFast: return String(localized: "Die streeftijd lijkt erg snel voor deze sport — klopt dat?")
         case .tooSlow: return String(localized: "Die streeftijd lijkt erg lang voor deze sport — klopt dat?")
         }
-    }
-
-    /// Converteert de uur:minuut-waarde van een Date naar een TimeInterval (seconden).
-    private func stretchTimeInterval(from date: Date) -> TimeInterval {
-        let cal = Calendar.current
-        let h = cal.component(.hour, from: date)
-        let m = cal.component(.minute, from: date)
-        return TimeInterval(h * 3600 + m * 60)
     }
 }

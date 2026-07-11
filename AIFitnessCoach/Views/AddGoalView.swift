@@ -16,7 +16,10 @@ struct AddGoalView: View {
     // Epic #55: number of consecutive event days (only used for a multi-day stage event).
     @State private var eventDurationDays: Int = 5
     @State private var hasStretchGoal: Bool = false
-    @State private var stretchGoalPickerDate: Date = Calendar.current.startOfDay(for: Date()).addingTimeInterval(3 * 3600) // standaard 3:00
+    // Epic #72 story 72.5: hours:minutes duration instead of a time-of-day DatePicker
+    // (a `.hourAndMinute` DatePicker rendered a 3h45 duration as "4:00 AM" on 12-hour locales).
+    @State private var stretchHours: Int = 3 // standaard 3:00
+    @State private var stretchMinutes: Int = 0
 
     @State private var isSaving = false
 
@@ -32,7 +35,7 @@ struct AddGoalView: View {
                         .lineLimit(3...6)
                 }
 
-                Section(header: Text("Type Sport")) {
+                Section(header: Text("Sport & evenement")) {
                     Picker("Sport", selection: $sportCategory) {
                         ForEach(SportCategory.allCases) { category in
                             // Epic #37 story 37.4: displayName stays Dutch for prompts; the UI
@@ -40,9 +43,7 @@ struct AddGoalView: View {
                             Text(LocalizedStringKey(category.displayName)).tag(category)
                         }
                     }
-                }
 
-                Section(header: Text("Type Evenement & Intentie")) {
                     Picker("Evenement", selection: $eventFormat) {
                         Text("Eendaagse Race").tag(EventFormat.singleDayRace)
                         Text("Eendaagse Tocht").tag(EventFormat.singleDayTour)
@@ -57,29 +58,26 @@ struct AddGoalView: View {
                         Text("Uitlopen / Genieten").tag(PrimaryIntent.completion)
                         Text("Presteren / Zo snel mogelijk").tag(PrimaryIntent.peakPerformance)
                     }
+                }
+
+                Section(header: Text("Doelstelling"), footer: Text("De coach rekent vanaf deze datum terug om je trainingsfasen te plannen.")) {
+                    // Epic #62 story 62.1: forward-bound to the minimum lead time so a new goal
+                    // can't be created with a past / too-soon target date.
+                    DatePicker(eventFormat == .multiDayStage ? "Startdatum" : "Streefdatum",
+                               selection: $targetDate,
+                               in: GoalFormValidator.earliestTargetDate()...,
+                               displayedComponents: .date)
 
                     Toggle("Streeftijd instellen", isOn: $hasStretchGoal)
 
                     if hasStretchGoal {
-                        DatePicker(
-                            "Doeltijd (u:min)",
-                            selection: $stretchGoalPickerDate,
-                            displayedComponents: .hourAndMinute
-                        )
+                        GoalDurationPicker(label: "Finishtijd", hours: $stretchHours, minutes: $stretchMinutes)
                         if let warning = stretchWarning {
                             Label(warning, systemImage: "exclamationmark.triangle.fill")
                                 .font(.caption)
                                 .foregroundStyle(.orange)
                         }
                     }
-                }
-
-                Section(header: Text(eventFormat == .multiDayStage ? "Startdatum" : "Streefdatum")) {
-                    // Epic #62 story 62.1: forward-bound to the minimum lead time so a new goal
-                    // can't be created with a past / too-soon target date.
-                    DatePicker("Datum", selection: $targetDate,
-                               in: GoalFormValidator.earliestTargetDate()...,
-                               displayedComponents: .date)
                 }
             }
             .navigationTitle("Nieuw Doel")
@@ -108,11 +106,15 @@ struct AddGoalView: View {
         }
     }
 
+    /// Epic #72 story 72.5: hours:minutes duration converted to seconds for storage/validation.
+    private var stretchSeconds: TimeInterval {
+        TimeInterval(stretchHours * 3600 + stretchMinutes * 60)
+    }
+
     /// Epic #62 story 62.1: inline plausibility hint for the stretch (target finish) time.
     private var stretchWarning: String? {
         guard hasStretchGoal else { return nil }
-        let seconds = stretchTimeInterval(from: stretchGoalPickerDate)
-        switch GoalFormValidator.stretchTimePlausibility(seconds: seconds, sport: sportCategory) {
+        switch GoalFormValidator.stretchTimePlausibility(seconds: stretchSeconds, sport: sportCategory) {
         case .ok:      return nil
         case .zero:    return String(localized: "Stel een streeftijd in of zet de schakelaar uit.")
         case .tooFast: return String(localized: "Die streeftijd lijkt erg snel voor deze sport — klopt dat?")
@@ -124,7 +126,7 @@ struct AddGoalView: View {
     private func saveGoal() {
         isSaving = true
         let finalDetails = details.isEmpty ? nil : details
-        let stretchTime: TimeInterval? = hasStretchGoal ? stretchTimeInterval(from: stretchGoalPickerDate) : nil
+        let stretchTime: TimeInterval? = hasStretchGoal ? stretchSeconds : nil
 
         let newGoal = FitnessGoal(
             title: GoalFormValidator.sanitizedTitle(title),
@@ -229,14 +231,6 @@ struct AddGoalView: View {
         }
 
         return fallbackTRIMP(for: goal.targetDate)
-    }
-
-    /// Converts the hour:minute value of a Date to a TimeInterval (seconds).
-    private func stretchTimeInterval(from date: Date) -> TimeInterval {
-        let cal = Calendar.current
-        let h = cal.component(.hour, from: date)
-        let m = cal.component(.minute, from: date)
-        return TimeInterval(h * 3600 + m * 60)
     }
 
     private func fallbackTRIMP(for date: Date) -> Double {

@@ -298,6 +298,9 @@
 		D5C0080101C008010100C001 /* SymptomContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0080102C008010100C002 /* SymptomContextFormatterTests.swift */; };
 		D5C0990101C099010100C001 /* InjuryKeywordMatcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5C0990102C099010100C002 /* InjuryKeywordMatcherTests.swift */; };
 		E23A1B4C5D6E7F8A9B0C1D2E /* ProgressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */; };
+		E72000000000000000000201 /* GoalVerdictBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72000000000000000000101 /* GoalVerdictBuilder.swift */; };
+		E72000000000000000000202 /* GoalDurationPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72000000000000000000102 /* GoalDurationPicker.swift */; };
+		E72000000000000000000203 /* GoalVerdictBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72000000000000000000103 /* GoalVerdictBuilderTests.swift */; };
 		A1650000000000000000001A /* QueryWindows.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1650000000000000000001B /* QueryWindows.swift */; };
 		AA6011110000000000000002 /* PhaseTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6011110000000000000001 /* PhaseTimeline.swift */; };
 		AA6022220000000000000002 /* PhaseMilestonesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6022220000000000000001 /* PhaseMilestonesView.swift */; };
@@ -637,6 +640,9 @@
 		E45A4503D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthKitSyncStatusEvaluator.swift; sourceTree = "<group>"; };
 		E45A4504D6E8F0A1B2C3D405 /* HealthKitSyncStatusEvaluatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HealthKitSyncStatusEvaluatorTests.swift; sourceTree = "<group>"; };
 		F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgressService.swift; sourceTree = "<group>"; };
+		E72000000000000000000101 /* GoalVerdictBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalVerdictBuilder.swift; sourceTree = "<group>"; };
+		E72000000000000000000102 /* GoalDurationPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalDurationPicker.swift; sourceTree = "<group>"; };
+		E72000000000000000000103 /* GoalVerdictBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalVerdictBuilderTests.swift; sourceTree = "<group>"; };
 		A1650000000000000000001B /* QueryWindows.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QueryWindows.swift; sourceTree = "<group>"; };
 		AA6011110000000000000001 /* PhaseTimeline.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhaseTimeline.swift; sourceTree = "<group>"; };
 		AA6022220000000000000001 /* PhaseMilestonesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhaseMilestonesView.swift; sourceTree = "<group>"; };
@@ -749,6 +755,7 @@
 				FD41D2D02372B05947DC9CBC /* Mocks */,
 				BAA944C2BAFC81F1B435A02A /* SettingsViewTests.swift */,
 				7FDDDD26172C97669936B5B8 /* FitnessGoalTests.swift */,
+				E72000000000000000000103 /* GoalVerdictBuilderTests.swift */,
 				D5C0050102C005010100C002 /* VibeScoreContextFormatterTests.swift */,
 				D5C0060102C006010100C002 /* BlueprintContextFormatterTests.swift */,
 				D5C0070102C007010100C002 /* IntentContextFormatterTests.swift */,
@@ -943,6 +950,7 @@
 			isa = PBXGroup;
 			children = (
 				DA54C4000000000000000101 /* GoalRowView.swift */,
+				E72000000000000000000102 /* GoalDurationPicker.swift */,
 			);
 			path = Goals;
 			sourceTree = "<group>";
@@ -965,6 +973,7 @@
 				D5B0090102B009010100B002 /* PeriodizationEngine.swift */,
 				F8E9D0C1B2A3F4E5D6C7B8A9 /* ProactiveNotificationService.swift */,
 				F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */,
+				E72000000000000000000101 /* GoalVerdictBuilder.swift */,
 				A1650000000000000000001B /* QueryWindows.swift */,
 				F35C3D6E7F8A9B0C1D2E3F5B /* NutritionService.swift */,
 				F46C4D7E8F9A0B1C2D3E4F5A /* FutureProjectionService.swift */,
@@ -1422,6 +1431,7 @@
 				FA26082FD3260BAC05A7AAEB /* MockNetworkSession.swift in Sources */,
 				34B36AEEDAF09C2EA9BC6241 /* SettingsViewTests.swift in Sources */,
 				89B083BDD5A2948D191971E5 /* FitnessGoalTests.swift in Sources */,
+				E72000000000000000000203 /* GoalVerdictBuilderTests.swift in Sources */,
 				D5C0050101C005010100C001 /* VibeScoreContextFormatterTests.swift in Sources */,
 				D5C0060101C006010100C001 /* BlueprintContextFormatterTests.swift in Sources */,
 				D5C0070101C007010100C001 /* IntentContextFormatterTests.swift in Sources */,
@@ -1658,6 +1668,8 @@
 				D5B0090101B009010100B001 /* PeriodizationEngine.swift in Sources */,
 				A9B8C7D6E5F4A3B2C1D0E9F8 /* ProactiveNotificationService.swift in Sources */,
 				E23A1B4C5D6E7F8A9B0C1D2E /* ProgressService.swift in Sources */,
+				E72000000000000000000201 /* GoalVerdictBuilder.swift in Sources */,
+				E72000000000000000000202 /* GoalDurationPicker.swift in Sources */,
 				A1650000000000000000001A /* QueryWindows.swift in Sources */,
 				E24A1B4C5D6E7F8A9B0C1D2F /* UserProfileService.swift in Sources */,
 				B81B710C2F8D65A80062BC61 /* UITestMockEnvironment.swift in Sources */,

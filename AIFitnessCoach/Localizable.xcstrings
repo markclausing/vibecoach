@@ -2811,6 +2811,29 @@
         }
       }
     },
+    "De coach rekent vanaf deze datum terug om je trainingsfasen te plannen." : {
+      "comment" : "Epic #72 story 72.5: footer under the goal target-date section",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Coach rechnet von diesem Datum zurück, um deine Trainingsphasen zu planen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The coach counts back from this date to plan your training phases."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El coach cuenta hacia atrás desde esta fecha para planificar tus fases de entrenamiento."
+          }
+        }
+      }
+    },
     "De verbinding met de AI-provider is te traag. Probeer het over een paar seconden opnieuw." : {
       "localizations" : {
         "de" : {
@@ -3299,6 +3322,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Objetivos"
+          }
+        }
+      }
+    },
+    "Doelstelling" : {
+      "comment" : "Epic #72 story 72.5: Add/Edit goal form section header (target date + duration)",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zielsetzung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Target"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objetivo"
           }
         }
       }
@@ -3909,6 +3955,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Salida en bici"
+          }
+        }
+      }
+    },
+    "Finishtijd" : {
+      "comment" : "Epic #72 story 72.5: GoalDurationPicker row label",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zielzeit"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finish time"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiempo de meta"
           }
         }
       }
@@ -8613,6 +8682,29 @@
         }
       }
     },
+    "min" : {
+      "comment" : "Epic #72 story 72.5: GoalDurationPicker minutes-wheel unit label",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Min."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "min"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "min"
+          }
+        }
+      }
+    },
     "Minder" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11007,6 +11099,29 @@
         }
       }
     },
+    "Sport & evenement" : {
+      "comment" : "Epic #72 story 72.5: Add/Edit goal form section header",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sport & Event"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sport & event"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deporte y evento"
+          }
+        }
+      }
+    },
     "Sta notificaties toe" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -12611,6 +12726,29 @@
         }
       }
     },
+    "uur" : {
+      "comment" : "Epic #72 story 72.5: GoalDurationPicker hours-wheel unit label",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Std."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hr"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "h"
+          }
+        }
+      }
+    },
     "vandaag" : {
       "localizations" : {
         "de" : {
@@ -12904,6 +13042,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Desactualizado — puntuación cambiada"
+          }
+        }
+      }
+    },
+    "Verplaatst dit doel naar 'Voltooide doelen'." : {
+      "comment" : "Epic #72 story 72.5: footer under the Status section in EditGoalView",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verschiebt dieses Ziel nach 'Abgeschlossene Ziele'."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moves this goal to 'Completed goals'."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mueve este objetivo a 'Objetivos completados'."
           }
         }
       }
