@@ -11,6 +11,7 @@ Legend: ✅ done · 🔄 active · ⏳ backlog
 | Epic | What it is | Pickup trigger |
 |---|---|---|
 | ⏳ **#63** | CI pipeline extensions — TestFlight deploy (63.1, **maintainer wants this**), concurrency baseline guard (63.5), snapshot tests + dep scan (63.2+63.3 coupled) | 63.1: as soon as the maintainer's App Store Connect prerequisites are in place; others per-story |
+| ⏳ **#72** | Goals-tab redesign per Claude-Design spec — status verdict leads, expected-today markers, phase-grouped milestones, finish-time duration fix | design approved & snapshotted (July 2026); next UI work moment |
 | ⏳ **#69** | Mental benefit of workouts — subjective track first (existing rpe/mood check-in data) | more "why am I training this" context wanted |
 | ⏳ **#71** | Objective session comparison in the Coach analysis — "vs. your recent similar sessions", GPS/weather-normalised | wanting "is this normal for me?" context in the workout analysis |
 | ⏳ **#59** | Strava Developer Program compliance: base-URL refactor (59.1 anytime) + flip (June 2027), terms verification | Strava migration docs appearing / early 2027; 59.1 fits any quiet moment |
@@ -55,6 +56,45 @@ The six deliberately-deferred CI extensions from completed **Epic #46** were kep
 **Suggested order (remaining):** 63.1 first (maintainer wish confirmed; blocked only on the one-off Apple prerequisites), then 63.5 (unblocked, cheap), 63.2+63.3 as a pair when a visual regression bites, 63.4 opportunistically.
 
 **Pickup trigger (epic-level):** the TestFlight wish (63.1, active), the unblocked 63.5 regression guard, or a concrete regression the current pipeline misses (63.2/63.4).
+
+---
+
+### ⏳ Epic #72: Goals-tab redesign — "will I make it?"
+
+The maintainer produced a high-fidelity redesign of the Goals tab in Claude Design (July 2026): three frames (Goals overview · Edit goal · New goal), light + dark. **Design source of truth:** [`docs/design/goals-redesign.html`](design/goals-redesign.html) — a self-contained snapshot of the design project's `Goals.html` (open it in a browser; original lives in the [Claude Design project](https://claude.ai/design/p/69ab15c0-15ef-4a4a-971b-4365aa231bb1?file=Goals.html)). The redesign rebuilds the tab around one question — *"will I make it?"* — with these deltas vs. the current screen:
+
+1. **A status verdict leads** the hero card: On track / Slightly behind / At risk + a short composed explanation (milestone hit, load on pace, distance nudge). Today only the *negative* case renders (risk warning card); the positive case shows nothing.
+2. **Consistent phase math**: proportional phase timeline (segment width = phase weeks), in-phase progress fill, "week N of M", next-phase-start label — all summing to the same days-to-go countdown.
+3. **Expected-today marker** on every cumulative progress bar (TRIMP, km) + a per-metric status pill (On pace / Slightly behind), with a one-line legend ("The line marks where you should be today").
+4. **Achieved rows instead of anxiety bars**: max/threshold metrics (longest run) get a check badge once hit — no progress bar.
+5. **Milestones grouped per phase** in collapsible groups: current phase shows "Now · done/total", future phases read "Upcoming" (not a lock); flagged target sessions (🏁) vs. dashed open milestones vs. checked done ones.
+6. **Edit / create / delete screen**: grouped form sections (Details / Sport & event / Target / Status), **finish time as a real duration**, mark-as-achieved toggle, delete as a bordered destructive button (design's terracotta danger tone, not pure red).
+
+**Current state in the code (grounding):**
+
+- `Views/GoalsListView.swift` (650 LOC — already on Epic #68's split list) renders header, `activeGoalCard`, `phaseBarSection`, risk-only `warningCard`, `progressThisPhaseSection` + private `PhaseProgressCard`; per-phase milestones live in `Views/PhaseMilestonesView.swift` on the Epic #60 data layer (`Models/PhaseTimeline.swift`: `PhaseWindow`/`PhaseTarget`/`PhaseMilestone`/`PhaseSummary`, `PhaseWindowCalculator`, `ProgressService.phaseTimeline`).
+- `BlueprintGap` (`Services/ProgressService.swift`) already computes cumulative in-phase TRIMP/km, progress percentages **relative to the full phase**, and thresholds — the expected-today marker is the phase-elapsed fraction it already knows; no new data needed.
+- **The "4:00 AM" finish-time bug is real and UI-only:** `FitnessGoal.stretchGoalTime` is correctly stored as `TimeInterval`, but `AddGoalView` (~line 64) and `EditGoalView` (~line 97) bind it through a `DatePicker(displayedComponents: .hourAndMinute)` — a *time-of-day* control that renders a 3h45 target as "4:00 AM" on 12-hour locales. Fix is a duration control; **no schema change, no migration**.
+- **Theme scope:** the design carries its own warm token set (sage `#6B8E5A` accent, cream surfaces, Nunito numerals) shared with the broader design project (`tokens.css`, other screens). This epic implements the Goals tab's **structure and semantics** mapped onto the app's existing `Models/Theme.swift` tokens (extend where a semantic slot is missing, e.g. warn/danger-soft fills). An app-wide adoption of the new palette is **out of scope** — that would be its own epic covering all tabs.
+
+**Stories** (one PR for the epic per the house PR-workflow; stories are commits/review units):
+
+* **⏳ 72.1 — `GoalVerdictBuilder` (pure Swift, `Services/`):** deterministic verdict (`onTrack` / `slightlyBehind` / `atRisk`) + composed explanation parts, computed from `BlueprintGap` (per-metric pace vs. phase-elapsed fraction) + `PhaseTimeline` milestone state, inputs injected by the caller (AppStorage-free, §6). Reuses the existing risk thresholds so the verdict never contradicts the red dashboard status (§1: red still comes with a recovery plan — the verdict card is on-demand context, not a notification). Unit tests: threshold boundaries per tone, explanation composition, no-data → neutral verdict.
+* **⏳ 72.2 — Hero card + phase timeline:** identity row (sport icon tile, Active/AI-plan pills, race date, days-countdown numeral), verdict banner (72.1), proportional `PhaseTimeline` bar with in-phase fill + "week N of M" + next-phase label. **This story also executes Epic #68's `GoalsListView` split**: extracted components move to `Views/Goals/` (joins the existing `GoalRowView`), the `swiftlint:disable file_length` header goes away.
+* **⏳ 72.3 — Progress this phase:** cumulative `ProgressRow`s (TRIMP, km) with expected-today marker + per-metric status pill; `AchievedRow` with check badge for hit max/threshold targets; legend line under the card.
+* **⏳ 72.4 — Milestones grouped per phase:** collapsible phase groups ("Now · n/m" pill on the current phase, "Upcoming" on future ones, done-check / dashed-open / flag-target row states), reworking `PhaseMilestonesView` on the unchanged Epic #60 data layer.
+* **⏳ 72.5 — Edit / create / delete screen:** grouped form sections per the design; replace the `.hourAndMinute` `DatePicker` in `AddGoalView` + `EditGoalView` with a duration control (hr:min, backed by the existing `TimeInterval` — fixes the AM/PM bug); mark-as-achieved toggle; bordered destructive delete button with confirmation.
+
+**Epic-wide notes (Definition of Done, §7):**
+
+- **i18n (§13):** every new user-facing string (verdict labels + explanations, "On pace"/"Slightly behind", legend line, form labels, "days" unit, …) hand-added to `Localizable.xcstrings` (NL source + EN/DE/ES) + `swift scripts/normalize-xcstrings.swift` in the same PR. Dates/formatting via `AppDateFormatters.display*`.
+- **README showcase hard trigger:** this is a significant redesign of the `05-goals-phases` showcase surface → update that feature block's copy and add the maintainer screenshot task (`- [ ] Maintainer: replace docs/screenshots/05-goals-phases.png with a fresh capture`) to the PR body.
+- **Architecture artefacts:** `GoalVerdictBuilder` is a new building-block Service → `architecture.json` + `architecture.html` in the same PR; new `Views/Goals/` component files registered in `project.pbxproj` (§9). ARCHITECTURE.md: short note under the Goals/periodisation section (verdict layer), no new subsystem.
+- **Testing (§6):** unit tests for 72.1 only; the view work is documented-not-tested view glue — on-device validation (light + dark, NL + EN) in the PR checklist. Existing XCUITest goal-creation flow must stay green (form restructure may need identifier updates).
+
+**Effort estimate:** ~2–3 days (72.1 ~3–4h · 72.2 ~4–5h incl. the #68 split · 72.3 ~3h · 72.4 ~3h · 72.5 ~4–5h · i18n/docs ~2h).
+
+**Pickup trigger:** design approved & snapshotted (July 2026) — pick up as the next UI work moment. Executes Epic #68's `GoalsListView` row as a side effect; no dependency on other epics.
 
 ---
 
@@ -143,7 +183,7 @@ Residual from archived **Epic #64**: five files still sit above the 600-LOC Swif
 | `Views/DashboardView.swift` | 882 | remaining inline card/section subviews → `Views/Dashboard/` (the 64.1 pattern) |
 | `Views/SettingsView.swift` | 703 | next cohesive `Section` blocks → `Views/Settings/` (the 64.2 pattern) |
 | `Views/ChatView.swift` | 680 | coach-card subviews / input-bar components into own files |
-| `Views/GoalsListView.swift` | 640 | goal-row + phase-disclosure components |
+| `Views/GoalsListView.swift` | 650 | goal-row + phase-disclosure components — **claimed by Epic #72 (story 72.2)** |
 | `Services/Sync/HealthKitManager.swift` | 607 | sample-query builders vs. authorization/background-delivery plumbing |
 
 **Rules per split (all established, §5/§9):** each split its own `chore/` PR; pure file-split — type names identical, so SwiftData and callers notice nothing; remove the `swiftlint:disable` header once the file drops under the cap; new files registered in `project.pbxproj` per §9; no `architecture.json` change unless a split promotes a type into a genuine building block. On-device validation = smoke test that the affected screen still renders.
