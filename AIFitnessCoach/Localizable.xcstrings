@@ -1191,6 +1191,50 @@
         }
       }
     },
+    "Afstand ligt op schema." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distanz liegt im Plan."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distance is on pace."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La distancia va según lo previsto."
+          }
+        }
+      }
+    },
+    "Afstand ligt voor op schema." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distanz liegt vor dem Plan."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distance is ahead of pace."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La distancia va adelantada."
+          }
+        }
+      }
+    },
     "AI Coach" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4258,6 +4302,28 @@
         }
       }
     },
+    "Geef je afstand een zetje — %@ km achter op schema." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib deiner Distanz einen Schub — %@ km hinter dem Plan."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Give your distance a nudge — %@ km behind pace."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dale un empujón a tu distancia — %@ km por detrás del plan."
+          }
+        }
+      }
+    },
     "Geen API-sleutel ingesteld. Open Instellingen → AI Coach om er één toe te voegen." : {
       "localizations" : {
         "de" : {
@@ -5664,6 +5730,28 @@
         }
       }
     },
+    "Het is week %@ van %@." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es ist Woche %@ von %@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's week %@ of %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es la semana %@ de %@."
+          }
+        }
+      }
+    },
     "Hierdoor mis je: %@" : {
       "localizations" : {
         "de" : {
@@ -6090,6 +6178,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plan ideal"
+          }
+        }
+      }
+    },
+    "Iets achter op schema" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etwas hinter dem Plan"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slightly behind schedule"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un poco por detrás del plan"
           }
         }
       }
@@ -6615,6 +6725,28 @@
         }
       }
     },
+    "Je belasting is te hoog voor de taper — bouw af." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Belastung ist zu hoch für das Tapering — reduziere."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your load is too high for the taper — wind down."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu carga es demasiado alta para el taper — reduce."
+          }
+        }
+      }
+    },
     "Je bent fysiologisch klaar voor dit doel!" : {
       "localizations" : {
         "de" : {
@@ -7106,6 +7238,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu carga de entrenamiento es demasiado alta para la fase de taper."
+          }
+        }
+      }
+    },
+    "Je traint nu %@ TRIMP/week, terwijl %@ nodig is." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du trainierst %@ TRIMP/Woche, benötigt sind %@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're training %@ TRIMP/week, while %@ is needed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrenas %@ TRIMP/semana, se necesitan %@."
           }
         }
       }
@@ -8637,6 +8791,28 @@
         }
       }
     },
+    "Mijlpaal '%@' is al gehaald." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meilenstein '%@' bereits erreicht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Milestone '%@' already achieved."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hito '%@' ya conseguido."
+          }
+        }
+      }
+    },
     "MIJLPALEN & PROGNOSE" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9647,6 +9823,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "En esta sesión"
+          }
+        }
+      }
+    },
+    "Op koers" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf Kurs"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On track"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En camino"
           }
         }
       }
@@ -12290,6 +12488,72 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Carga de entrenamiento por encima de la línea base."
+          }
+        }
+      }
+    },
+    "Trainingsbelasting ligt %@ TRIMP achter." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trainingsbelastung liegt %@ TRIMP zurück."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Training load is %@ TRIMP behind."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La carga de entrenamiento va %@ TRIMP por detrás."
+          }
+        }
+      }
+    },
+    "Trainingsbelasting ligt op schema." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trainingsbelastung liegt im Plan."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Training load is on pace."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La carga de entrenamiento va según lo previsto."
+          }
+        }
+      }
+    },
+    "Trainingsbelasting ligt voor op schema." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trainingsbelastung liegt vor dem Plan."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Training load is ahead of pace."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La carga de entrenamiento va adelantada."
           }
         }
       }

@@ -300,6 +300,10 @@
 		E23A1B4C5D6E7F8A9B0C1D2E /* ProgressService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */; };
 		E72000000000000000000201 /* GoalVerdictBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72000000000000000000101 /* GoalVerdictBuilder.swift */; };
 		E72000000000000000000202 /* GoalDurationPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72000000000000000000102 /* GoalDurationPicker.swift */; };
+		E72000000000000000000204 /* GoalHeroCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72000000000000000000104 /* GoalHeroCard.swift */; };
+		E72000000000000000000205 /* GoalVerdictBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72000000000000000000105 /* GoalVerdictBanner.swift */; };
+		E72000000000000000000206 /* GoalWarningCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72000000000000000000106 /* GoalWarningCard.swift */; };
+		E72000000000000000000207 /* GoalProgressSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72000000000000000000107 /* GoalProgressSection.swift */; };
 		E72000000000000000000203 /* GoalVerdictBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72000000000000000000103 /* GoalVerdictBuilderTests.swift */; };
 		A1650000000000000000001A /* QueryWindows.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1650000000000000000001B /* QueryWindows.swift */; };
 		AA6011110000000000000002 /* PhaseTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA6011110000000000000001 /* PhaseTimeline.swift */; };
@@ -642,6 +646,10 @@
 		F34B2C5D6E7F8A9B0C1D2E3F /* ProgressService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgressService.swift; sourceTree = "<group>"; };
 		E72000000000000000000101 /* GoalVerdictBuilder.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalVerdictBuilder.swift; sourceTree = "<group>"; };
 		E72000000000000000000102 /* GoalDurationPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalDurationPicker.swift; sourceTree = "<group>"; };
+		E72000000000000000000104 /* GoalHeroCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalHeroCard.swift; sourceTree = "<group>"; };
+		E72000000000000000000105 /* GoalVerdictBanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalVerdictBanner.swift; sourceTree = "<group>"; };
+		E72000000000000000000106 /* GoalWarningCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalWarningCard.swift; sourceTree = "<group>"; };
+		E72000000000000000000107 /* GoalProgressSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalProgressSection.swift; sourceTree = "<group>"; };
 		E72000000000000000000103 /* GoalVerdictBuilderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalVerdictBuilderTests.swift; sourceTree = "<group>"; };
 		A1650000000000000000001B /* QueryWindows.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QueryWindows.swift; sourceTree = "<group>"; };
 		AA6011110000000000000001 /* PhaseTimeline.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhaseTimeline.swift; sourceTree = "<group>"; };
@@ -951,6 +959,10 @@
 			children = (
 				DA54C4000000000000000101 /* GoalRowView.swift */,
 				E72000000000000000000102 /* GoalDurationPicker.swift */,
+				E72000000000000000000104 /* GoalHeroCard.swift */,
+				E72000000000000000000105 /* GoalVerdictBanner.swift */,
+				E72000000000000000000106 /* GoalWarningCard.swift */,
+				E72000000000000000000107 /* GoalProgressSection.swift */,
 			);
 			path = Goals;
 			sourceTree = "<group>";
@@ -1670,6 +1682,10 @@
 				E23A1B4C5D6E7F8A9B0C1D2E /* ProgressService.swift in Sources */,
 				E72000000000000000000201 /* GoalVerdictBuilder.swift in Sources */,
 				E72000000000000000000202 /* GoalDurationPicker.swift in Sources */,
+				E72000000000000000000204 /* GoalHeroCard.swift in Sources */,
+				E72000000000000000000205 /* GoalVerdictBanner.swift in Sources */,
+				E72000000000000000000206 /* GoalWarningCard.swift in Sources */,
+				E72000000000000000000207 /* GoalProgressSection.swift in Sources */,
 				A1650000000000000000001A /* QueryWindows.swift in Sources */,
 				E24A1B4C5D6E7F8A9B0C1D2F /* UserProfileService.swift in Sources */,
 				B81B710C2F8D65A80062BC61 /* UITestMockEnvironment.swift in Sources */,
