@@ -998,3 +998,17 @@ Maintainer goal (July 2026): a small chat on the workout detail page where the u
 * **✅ 70.5 — `[WORKOUT NOTES]` coach integration.** `WorkoutFactsContextFormatter` (14-day Calendar window, current-week dayCondition facts lead, cap 20 newest) threaded via `CoachInvocationContext.workoutNotesBlock` into `buildContextPrefix` and `recoveryPlanSystemPrompt`; ChatView's 7 inline invocation constructions collapsed into one `coachInvocation` helper. `[WORKOUT NOTES]` registered in `structuralPromptMarkers` + a system-instruction behaviour rule — the marker test enforces §13 both-sides.
 
 **Docs/artefacts:** ARCHITECTURE.md §20, architecture.json/html +7 modules +1 flow (docRevision 38), README workout-deepdive block extended. **Full unit suite: 1205 tests, 0 failures. Merged via PR #350. Effort:** ~1 day.
+
+---
+
+### ✅ Epic #72: Goals-tab redesign — "will I make it?"
+
+The maintainer produced a high-fidelity redesign of the Goals tab in Claude Design (July 2026) — design source: [`docs/design/goals-redesign.html`](design/goals-redesign.html), a self-contained snapshot of the design project's `Goals.html`. The redesign rebuilds the tab around one question, *"will I make it?"*: a status verdict leads the hero card, cumulative progress bars carry an expected-today marker, achieved max/threshold metrics get a check row instead of a bar, milestones group per phase, and the edit/create screen fixes the "4:00 AM" finish-time bug.
+
+* **✅ 72.1 — `GoalVerdictBuilder` (pure Swift, `Services/`).** Deterministic verdict (`onTrack`/`slightlyBehind`/`atRisk`) + `MetricPaceStatus`, mirroring `BlueprintGap`'s 10% thresholds so the hero-card banner and the per-metric progress pills can never disagree. 19 unit tests (`GoalVerdictBuilderTests`).
+* **✅ 72.2 — `GoalsListView` split + hero card.** 651 → 370 LOC; extracted `GoalHeroCard` (identity + race-date line + phase bar with in-phase progress fill), `GoalVerdictBanner`, `GoalWarningCard`, `GoalProgressSection` into `Views/Goals/` — also executes Epic #68's claimed `GoalsListView` split; the `swiftlint:disable file_length` header is gone.
+* **✅ 72.3 — Progress-this-phase restyle.** `GoalProgressSection` gained per-metric pace pills + bar colour driven by `GoalVerdictBuilder.paceStatus`, an `AchievedRow` (check badge, no bar) for the met longest-session metric, and an expected-today legend line.
+* **✅ 72.4 — Milestones grouped per phase.** `PhaseMilestonesView` reworked: state circles (check/dashed/flag), a "Nu · n/m" pill on the current phase, "Aankomend" replaces the old lock icon, no more progress bars in the milestone list.
+* **✅ 72.5 — Duration picker + form restructure.** New `Views/Goals/GoalDurationPicker.swift`; `AddGoalView`/`EditGoalView` restructured into grouped sections (Details / Sport & evenement / Doelstelling / Status) — fixes the finish-time duration rendering as a time-of-day value ("4:00 AM").
+
+**Merged via PR #354. Effort:** ~1 day (5 stories, implemented via 6 delegated subagent waves with central review).

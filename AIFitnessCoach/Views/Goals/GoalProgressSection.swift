@@ -155,7 +155,8 @@ private struct ProgressRow: View {
                     Text(valueCurrent)
                         .font(.system(size: 15, weight: .bold, design: .rounded))
                         .foregroundColor(.primary)
-                    Text("/ \(valueTarget) \(unit)")
+                    // §13: value + unit is data, not copy — render verbatim, no catalog key.
+                    Text(verbatim: "/ \(valueTarget) \(unit)")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
@@ -230,7 +231,8 @@ private struct AchievedRow: View {
 
             Spacer()
 
-            Text("\(currentValue) km")
+            // §13: value + unit is data, not copy — render verbatim, no catalog key.
+            Text(verbatim: "\(currentValue) km")
                 .font(.system(size: 15, weight: .bold, design: .rounded))
                 .foregroundColor(.primary)
 

@@ -897,6 +897,28 @@
         }
       }
     },
+    "Aankomend" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevorstehend"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upcoming"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próxima"
+          }
+        }
+      }
+    },
     "Aanmelden bij %@ is nodig — controleer de koppeling in Instellingen." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2878,6 +2900,28 @@
         }
       }
     },
+    "De streep markeert waar je vandaag zou moeten zijn." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Linie markiert, wo du heute stehen solltest."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The line marks where you should be today."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La línea marca dónde deberías estar hoy."
+          }
+        }
+      }
+    },
     "De verbinding met de AI-provider is te traag. Probeer het over een paar seconden opnieuw." : {
       "localizations" : {
         "de" : {
@@ -3231,6 +3275,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Otro"
+          }
+        }
+      }
+    },
+    "Doel ≥ %@ km" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ziel ≥ %@ km"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Target ≥ %@ km"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objetivo ≥ %@ km"
           }
         }
       }
@@ -6178,6 +6244,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plan ideal"
+          }
+        }
+      }
+    },
+    "Iets achter" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etwas zurück"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slightly behind"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algo por detrás"
           }
         }
       }
@@ -9510,6 +9598,28 @@
         }
       }
     },
+    "Nu · %@/%@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt · %@/%@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now · %@/%@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora · %@/%@"
+          }
+        }
+      }
+    },
     "Nu niet, later in Instellingen" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -9845,6 +9955,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "En camino"
+          }
+        }
+      }
+    },
+    "Op tempo" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Im Plan"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On pace"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A ritmo"
           }
         }
       }
@@ -13898,6 +14030,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Antes"
+          }
+        }
+      }
+    },
+    "Voor op schema" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vor dem Plan"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahead of pace"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adelantado"
           }
         }
       }

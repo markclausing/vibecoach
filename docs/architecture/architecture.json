@@ -6,8 +6,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 38,
-    "lastUpdated": "2026-07-05",
+    "docRevision": 39,
+    "lastUpdated": "2026-07-11",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -200,16 +200,79 @@
       "layer": "views",
       "kind": "view",
       "file": "AIFitnessCoach/Views/GoalsListView.swift",
-      "description": "Per-goal detail hub: blueprint milestones, periodisation phase, recovery-plan banner.",
+      "description": "Per-goal detail hub (370 LOC post Epic #72 split): assembles the goal-card composition from Views/Goals/ (GoalHeroCard, GoalVerdictBanner, GoalWarningCard, GoalProgressSection) plus PhaseMilestonesView and the recovery-plan banner.",
       "uses": [
         "FitnessGoal",
         "BlueprintChecker",
         "PeriodizationEngine",
-        "EditGoalView"
+        "EditGoalView",
+        "GoalHeroCard",
+        "GoalVerdictBanner",
+        "GoalWarningCard",
+        "GoalProgressSection"
       ],
       "tags": [
         "epic-17",
-        "epic-23"
+        "epic-23",
+        "epic-72"
+      ]
+    },
+    {
+      "id": "GoalHeroCard",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/Goals/GoalHeroCard.swift",
+      "description": "Epic #72 story 72.2 — identity row (sport icon tile, Active/AI-plan pills, race-date line, days-countdown numeral) + the proportional phase-timeline bar with in-phase progress fill. Hosts GoalVerdictBanner so the 'will I make it?' verdict leads the card.",
+      "uses": [
+        "FitnessGoal",
+        "GoalVerdictBanner",
+        "GoalVerdictBuilder",
+        "PhaseTimeline"
+      ],
+      "tags": [
+        "epic-72"
+      ]
+    },
+    {
+      "id": "GoalVerdictBanner",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/Goals/GoalVerdictBanner.swift",
+      "description": "Epic #72 story 72.1/72.2 — renders the on-track/slightly-behind/at-risk verdict + composed explanation from GoalVerdictBuilder as a coloured banner on the goal hero card. Positive case now renders (previously only the risk warning showed).",
+      "uses": [
+        "GoalVerdictBuilder",
+        "AppLanguage"
+      ],
+      "tags": [
+        "epic-72"
+      ]
+    },
+    {
+      "id": "GoalWarningCard",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/Goals/GoalWarningCard.swift",
+      "description": "Epic #72 story 72.2 — extracted risk-only warning card from the former GoalsListView.warningCard; shown alongside the verdict banner when a goal is at risk.",
+      "uses": [
+        "FitnessGoal",
+        "GoalVerdictBuilder"
+      ],
+      "tags": [
+        "epic-72"
+      ]
+    },
+    {
+      "id": "GoalProgressSection",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/Goals/GoalProgressSection.swift",
+      "description": "Epic #72 stories 72.2/72.3 — 'progress this phase' cumulative TRIMP/km rows with an expected-today marker + per-metric pace pill (bar colour from GoalVerdictBuilder.paceStatus), plus an AchievedRow (check badge, no bar) for hit max/threshold metrics and the expected-today legend line.",
+      "uses": [
+        "ProgressService",
+        "GoalVerdictBuilder"
+      ],
+      "tags": [
+        "epic-72"
       ]
     },
     {
@@ -899,6 +962,17 @@
       ]
     },
     {
+      "id": "GoalDurationPicker",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/Goals/GoalDurationPicker.swift",
+      "description": "Epic #72 story 72.5 — hr:min duration control backed by the existing FitnessGoal.stretchGoalTime TimeInterval, replacing the .hourAndMinute DatePicker in AddGoalView/EditGoalView that rendered a duration as a time-of-day (e.g. a 3h45 target shown as '4:00 AM'). Used by both goal create/edit screens as part of their story-72.5 grouped-section restructure (Details / Sport & evenement / Doelstelling / Status); no schema change.",
+      "uses": [],
+      "tags": [
+        "epic-72"
+      ]
+    },
+    {
       "id": "APIKeyInputValidator",
       "layer": "services",
       "kind": "validator",
@@ -1537,6 +1611,20 @@
       ]
     },
     {
+      "id": "GoalVerdictBuilder",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/GoalVerdictBuilder.swift",
+      "description": "Epic #72 story 72.1 — pure-Swift deterministic 'will I make it?' verdict (onTrack / slightlyBehind / atRisk) + composed explanation, computed from ProgressService's BlueprintGap (per-metric pace vs. phase-elapsed fraction) and PhaseTimeline milestone state. Also exposes MetricPaceStatus, the shared per-metric pace classification consumed by both the hero-card banner and the progress-row pills, mirroring BlueprintGap's 10% risk thresholds so the two views can never disagree. Inputs injected by the caller (AppStorage-free, §6). 19 unit tests (GoalVerdictBuilderTests).",
+      "uses": [
+        "ProgressService",
+        "PhaseTimeline"
+      ],
+      "tags": [
+        "epic-72"
+      ]
+    },
+    {
       "id": "QueryWindows",
       "layer": "services",
       "kind": "helper",
@@ -1579,7 +1667,7 @@
       "layer": "views",
       "kind": "view",
       "file": "AIFitnessCoach/Views/PhaseMilestonesView.swift",
-      "description": "Epic #60 expandable per-phase milestones in the Goals view: a DisclosureGroup per phase (current phase open by default). Collapsed = phase colour dot + name + date range + status; expanded = target rows with progress bar (taper '(max)') + milestone rows with due date + satisfied checkmark. Replaces the old four-point timeline.",
+      "description": "Expandable per-phase milestones in the Goals view: a DisclosureGroup per phase (current phase open by default). Collapsed = phase colour dot + name + date range + status; expanded = milestone rows with state circles (check/dashed/flag). Epic #72 reworked the row states: a 'Nu · n/m' pill on the current phase, 'Aankomend' replaces the old lock icon, and progress bars were dropped from the milestone list (the check/dashed/flag circle carries the state instead).",
       "uses": [
         "PhaseTimeline",
         "ProgressService",
@@ -1587,7 +1675,8 @@
         "AppLanguage"
       ],
       "tags": [
-        "epic-60"
+        "epic-60",
+        "epic-72"
       ]
     },
     {

@@ -390,6 +390,10 @@ Previously two pieces of code computed phase boundaries independently and could 
 
 **Scope boundary:** the coach-prompt path (`BlueprintGap.currentPhase` via `TrainingPhase.calculate`) was deliberately left untouched — only the view layer is unified. Fully unifying the prompt path is a possible follow-up.
 
+### Goal verdict layer (Epic #72)
+
+`GoalVerdictBuilder` (`Services/GoalVerdictBuilder.swift`, pure Swift, AppStorage-free) is the single deterministic source for "will I make it?": it computes an `onTrack` / `slightlyBehind` / `atRisk` verdict + composed explanation from `ProgressService`'s `BlueprintGap` (per-metric pace vs. phase-elapsed fraction) and `PhaseTimeline` milestone state, mirroring `BlueprintGap`'s existing 10% risk band so the verdict never contradicts the red dashboard status. `GoalVerdictBanner` (`Views/Goals/GoalVerdictBanner.swift`) renders it on the goal hero card — the positive case now renders too, not only the risk warning. The builder also exposes `MetricPaceStatus`, shared with `GoalProgressSection`'s per-metric progress-row pills, so the banner and the pills can never disagree on a given metric's pace. Per the §13 prompt-vs-UI split, the builder's output is language-free facts (tone + composed parts); `GoalVerdictBanner` maps them to localized sentences at the render site.
+
 ## 15. Readable mood in the coach context (Epic #57)
 
 The post-workout check-in persists `mood` on `ActivityRecord` as the chosen option's SF Symbol name (e.g. `bandage.fill`). `LastWorkoutContextFormatter.readableMood(_:)` translates that to a readable English word (good / strong / exhausted / in pain / calm) before injecting it into the coach context, so the prompt reads `Mood: in pain` instead of the raw icon name. Unknown/legacy values (older emoji moods) pass through unchanged.
