@@ -189,7 +189,8 @@ private struct ProgressRow: View {
     private var statusPill: some View {
         switch paceStatus {
         case .onPace, .ahead:
-            pill(text: paceStatus == .ahead ? "Voor op schema" : "Op tempo", color: accentColor)
+            // "schema" wording, never "tempo/pace" — in a running app that reads as min/km.
+            pill(text: paceStatus == .ahead ? "Voor op schema" : "Op schema", color: accentColor)
         case .behind:
             pill(text: "Iets achter", color: .orange)
         }
