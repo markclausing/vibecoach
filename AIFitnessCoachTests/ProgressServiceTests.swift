@@ -449,4 +449,90 @@ final class ProgressServiceTests: XCTestCase {
         XCTAssertEqual(gap?.phaseStartDate, baseWindow?.start,
                        "Gap pace interpolation must use the same window the UI displays")
     }
+
+    // MARK: - Epic #72 story 72.6: personalised volume ramp (WeeklyVolumeRamp)
+
+    /// The hero card demanded "9 / 121 km" in a 2-week base phase: the old maths multiplied the
+    /// STATIC blueprint weekly volume (55 km/week) by the phase-week count, ignoring where the
+    /// athlete actually stood. With four recent 10 km weeks, the km target must ramp from that
+    /// 10 km/week starting point instead — verified against `WeeklyVolumeRamp` directly so this
+    /// test breaks if the integration and the helper ever disagree.
+    func testAnalyzeGaps_PersonalisedKmTargetStartsAtAthleteVolume() {
+        let now = Date()
+        let target = Calendar.current.date(byAdding: .day, value: 99, to: now)!
+        let goal = FitnessGoal(title: "Marathon Amsterdam", targetDate: target,
+                               createdAt: now, sportCategory: .running)
+        let activities = [5, 12, 19, 26].map {
+            makeActivity(sport: .running, startDate: now.addingTimeInterval(-Double($0) * 86400),
+                        distanceMeters: 10_000, trimp: 80)
+        }
+
+        let gap = ProgressService.analyzeGaps(for: [goal], activities: activities).first
+        XCTAssertNotNil(gap)
+        guard let gap else { return }
+
+        let taperStart = PhaseWindowCalculator.windows(for: goal)
+            .first { $0.phase == .tapering }?.start ?? target
+        let model = WeeklyVolumeRamp.Model(
+            planStart: goal.createdAt, taperStart: taperStart,
+            startWeekly: 10, peakWeekly: gap.blueprint.weeklyKmTarget,
+            taperFactor: TrainingPhase.tapering.multiplier
+        )
+        let expected = WeeklyVolumeRamp.cumulativeTarget(from: gap.phaseStartDate, to: gap.phaseEndDate, model: model)
+
+        XCTAssertEqual(gap.totalPhaseKmTarget, expected, accuracy: 0.01,
+                       "totalPhaseKmTarget must equal the ramp helper's cumulative value for the same window")
+        XCTAssertLessThan(gap.totalPhaseKmTarget, 60,
+                          "Personalised target for a 2-week base phase starting at 10 km/week must stay far below the legacy 55 × phase-weeks figure")
+    }
+
+    /// Without recent matching-sport volume, the ramp has nothing to start from and the gap
+    /// analysis must fall back to the legacy static blueprint-weekly × phase-weeks maths
+    /// unchanged — this pins that fallback behaviour so it can't silently regress.
+    func testAnalyzeGaps_NoRecentVolumeFallsBackToBlueprintTargets() {
+        let now = Date()
+        let target = Calendar.current.date(byAdding: .day, value: 99, to: now)!
+        let goal = FitnessGoal(title: "Marathon Amsterdam", targetDate: target,
+                               createdAt: now, sportCategory: .running)
+
+        let gap = ProgressService.analyzeGaps(for: [goal], activities: []).first
+        XCTAssertNotNil(gap)
+        guard let gap else { return }
+
+        let calendar = Calendar.current
+        let phaseDays = calendar.fractionalDays(from: gap.phaseStartDate, to: gap.phaseEndDate)
+        let expected = gap.blueprint.weeklyKmTarget * gap.currentPhase.multiplier * (phaseDays / 7.0)
+
+        XCTAssertEqual(gap.totalPhaseKmTarget, expected, accuracy: 0.5,
+                       "No recent volume → legacy blueprint-weekly × phase-multiplier × phase-weeks")
+    }
+
+    /// Same personalised-ramp behaviour, this time for the TRIMP total — the hero's TRIMP figure
+    /// has the same static-multiplication flaw and must follow the same ramp model.
+    func testAnalyzeGaps_PersonalisedTrimpFollowsSameRamp() {
+        let now = Date()
+        let target = Calendar.current.date(byAdding: .day, value: 99, to: now)!
+        let goal = FitnessGoal(title: "Marathon Amsterdam", targetDate: target,
+                               createdAt: now, sportCategory: .running)
+        let activities = [5, 12, 19, 26].map {
+            makeActivity(sport: .running, startDate: now.addingTimeInterval(-Double($0) * 86400),
+                        distanceMeters: 10_000, trimp: 80)
+        }
+
+        let gap = ProgressService.analyzeGaps(for: [goal], activities: activities).first
+        XCTAssertNotNil(gap)
+        guard let gap else { return }
+
+        let taperStart = PhaseWindowCalculator.windows(for: goal)
+            .first { $0.phase == .tapering }?.start ?? target
+        let model = WeeklyVolumeRamp.Model(
+            planStart: goal.createdAt, taperStart: taperStart,
+            startWeekly: 80, peakWeekly: gap.blueprint.weeklyTrimpTarget,
+            taperFactor: TrainingPhase.tapering.multiplier
+        )
+        let expected = WeeklyVolumeRamp.cumulativeTarget(from: gap.phaseStartDate, to: gap.phaseEndDate, model: model)
+
+        XCTAssertEqual(gap.totalPhaseTRIMPTarget, expected, accuracy: 0.01,
+                       "totalPhaseTRIMPTarget must equal the ramp helper's cumulative value for the same window")
+    }
 }
