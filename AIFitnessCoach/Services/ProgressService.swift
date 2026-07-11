@@ -412,9 +412,25 @@ extension ProgressService {
                 // 1) Longest session target (taper: a maximum, not a minimum).
                 let requiredMeters = blueprint.minLongRunDistance * criteria.longestSessionPct
                 let longestKm: Double? = status == .future ? nil : {
+                    // Epic #72 fix: "longest session" is a capability check, not an
+                    // in-phase administration. For the CURRENT phase, widen the look-back
+                    // to the union of the phase window and PeriodizationEngine's trailing
+                    // `criteria.sessionWindowWeeks` — so a qualifying run done days before
+                    // the goal was created still earns the check, and this row can't
+                    // contradict the "Progress this phase" card above it. The union (not
+                    // the bare trailing window) keeps the check monotone: once achieved
+                    // inside the phase it never un-achieves by sliding out of the trailing
+                    // window. Past phases keep their historical in-window maximum.
+                    var lookbackStart = window.start
+                    if status == .current {
+                        let trailing = calendar.date(byAdding: .weekOfYear,
+                                                     value: -criteria.sessionWindowWeeks,
+                                                     to: now) ?? window.start
+                        lookbackStart = min(window.start, trailing)
+                    }
                     let longest = activities
                         .filter { $0.sportCategory == targetSport
-                            && $0.startDate >= window.start && $0.startDate <= windowEnd }
+                            && $0.startDate >= lookbackStart && $0.startDate <= windowEnd }
                         .map { $0.distance }
                         .max() ?? 0
                     return longest / 1000.0
