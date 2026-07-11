@@ -271,19 +271,19 @@ struct ProgressService {
         case .cyclingTour:             targetSport = .cycling
         }
 
-        // Compute the start and end date of the current phase.
-        // The phase transitions are defined in TrainingPhase.calculate:
-        //   tapering    < 2 weeks
-        //   peakPhase   2–4 weeks
-        //   buildPhase  4–12 weeks
-        //   baseBuilding ≥ 12 weeks
+        // Epic #72 fix: take the current phase's window from `PhaseWindowCalculator` — the same
+        // single source of truth the segmented bar and the per-phase milestone list use — so the
+        // hero's "week N van M" can never disagree with the "BASE 2w" bar label or the milestone
+        // date ranges (previously this used the fixed -12/-4/-2 offsets of `phaseDateRange` and a
+        // ceil() week count, which showed "week 1 van 3" next to a 2-week bar segment).
+        // `phaseDateRange` stays as fallback for the boundary case where `TrainingPhase.calculate`
+        // names a phase the compressed week budget didn't give a window (e.g. exactly 12 weeks out).
         let calendar = Calendar.current
-        let (phaseStartDate, phaseEndDate) = phaseDateRange(
-            phase: phase,
-            targetDate: goal.targetDate,
-            goalCreatedAt: goal.createdAt,
-            calendar: calendar
-        )
+        let window = PhaseWindowCalculator.windows(for: goal, calendar: calendar)
+            .first { $0.phase == phase }
+        let (phaseStartDate, phaseEndDate) = window.map { ($0.start, $0.end) }
+            ?? phaseDateRange(phase: phase, targetDate: goal.targetDate,
+                              goalCreatedAt: goal.createdAt, calendar: calendar)
 
         let phaseDurationDays = max(1.0, calendar.fractionalDays(from: phaseStartDate, to: phaseEndDate))
         let elapsedDaysInPhase = max(0.0, min(phaseDurationDays, calendar.fractionalDays(from: phaseStartDate, to: now)))
@@ -291,9 +291,9 @@ struct ProgressService {
         let phaseTotalWeeks   = phaseDurationDays / 7.0
         let elapsedWeeksInPhase = elapsedDaysInPhase / 7.0
 
-        // Week number within the phase (1-based, max is phaseTotalWeeks)
-        let phaseWeekNumber   = max(1, Int(ceil(elapsedWeeksInPhase)))
-        let phaseTotalWeeksInt = max(1, Int(ceil(phaseTotalWeeks)))
+        // Week number within the phase (1-based, clamped to the displayed total)
+        let phaseTotalWeeksInt = window?.weekCount ?? max(1, Int(ceil(phaseTotalWeeks)))
+        let phaseWeekNumber   = max(1, min(phaseTotalWeeksInt, Int(ceil(elapsedWeeksInPhase))))
 
         // Phase-corrected weekly TRIMP target (blueprint × phase multiplier)
         let adjustedWeeklyTRIMP = blueprint.weeklyTrimpTarget * phase.multiplier

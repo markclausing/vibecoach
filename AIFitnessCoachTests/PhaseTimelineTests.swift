@@ -147,4 +147,35 @@ final class PhaseTimelineTests: XCTestCase {
         XCTAssertEqual(session?.current ?? 0, 30, accuracy: 0.01,
                        "The longest-session target must reflect the 30 km run logged in this phase")
     }
+
+    // MARK: - Epic #72 regression: day-one goal (creation inside the week-rounding gap)
+
+    /// Reproduces the on-device bug (11 Jul 2026): a goal created today whose whole-week
+    /// walk-back placed the base window's start on TOMORROW. Every phase then read as
+    /// `.future` — "Aankomend" everywhere, no "Nu · n/m" pill — and the already-achieved
+    /// 14 km long run stayed unchecked in the milestone list.
+    func testDayOneGoalFirstPhaseIsCurrentAndCountsSameDayRun() {
+        // 99 days out: floor(99/7) = 14 budget weeks walked back from the target lands the
+        // base start one day AFTER creation — exactly the rounding gap being fixed.
+        let target = cal.date(byAdding: .day, value: 99, to: now)!
+        let goal = FitnessGoal(title: "Marathon Amsterdam", targetDate: target,
+                               createdAt: now, sportCategory: .running)
+
+        let windows = PhaseWindowCalculator.windows(targetDate: target, createdAt: now)
+        XCTAssertEqual(windows.first?.start, cal.startOfDay(for: now),
+                       "First window must snap back to the start of the creation day")
+
+        // A 14 km run logged earlier that same day — BEFORE the goal was created.
+        let run = makeActivity(sport: .running,
+                               startDate: cal.date(byAdding: .hour, value: -3, to: now)!,
+                               distanceMeters: 14_000, trimp: 120)
+        let timeline = ProgressService.phaseTimeline(for: goal, activities: [run], now: now)
+
+        let first = timeline.phases.first
+        XCTAssertEqual(first?.status, .current,
+                       "A day-one goal starts in its first phase — never 'upcoming'")
+        let session = first?.targets.first { $0.unit == "km" }
+        XCTAssertEqual(session?.current ?? 0, 14, accuracy: 0.01,
+                       "The same-day run counts toward phase 1")
+    }
 }

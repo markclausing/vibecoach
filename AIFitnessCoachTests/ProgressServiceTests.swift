@@ -424,4 +424,29 @@ final class ProgressServiceTests: XCTestCase {
         XCTAssertEqual(gap.actualTRIMPToDate, 70, accuracy: 0.01,
                        "TRIMP wordt wél van álle sporten in de fase opgeteld (cardiosystem-belasting).")
     }
+
+    // MARK: - Epic #72 regression: gap week counts follow PhaseWindowCalculator
+
+    /// The hero card showed "week 1 van 3" while the phase bar and the milestone list said
+    /// "BASE 2w": analyzeGap counted ceil-weeks over its own -12/-4/-2 date range instead of
+    /// the shared PhaseWindowCalculator budget. The gap must report the same week total as
+    /// the window it is displayed next to.
+    func testAnalyzeGaps_PhaseTotalWeeksMatchesWindowBudget() {
+        // 99 days out (the on-device repro of 11 Jul 2026): base budget = 14 - 2 - 2 - 8 = 2 weeks.
+        let now = Date()
+        let target = Calendar.current.date(byAdding: .day, value: 99, to: now)!
+        let goal = FitnessGoal(title: "Marathon Amsterdam", targetDate: target,
+                               createdAt: now, sportCategory: .running)
+
+        let gap = ProgressService.analyzeGaps(for: [goal], activities: []).first
+        let baseWindow = PhaseWindowCalculator.windows(for: goal)
+            .first { $0.phase == .baseBuilding }
+
+        XCTAssertNotNil(gap)
+        XCTAssertEqual(gap?.currentPhase, .baseBuilding)
+        XCTAssertEqual(gap?.phaseTotalWeeks, baseWindow?.weekCount,
+                       "Hero week count must match the phase-bar/milestone week budget")
+        XCTAssertEqual(gap?.phaseStartDate, baseWindow?.start,
+                       "Gap pace interpolation must use the same window the UI displays")
+    }
 }
