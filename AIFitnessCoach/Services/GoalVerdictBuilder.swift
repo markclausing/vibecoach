@@ -58,6 +58,23 @@ enum GoalVerdictBuilder {
     /// a gap of more than 10% of what's expected to date counts as off-pace.
     private static let paceTolerance: Double = 0.10
 
+    /// Absolute dead-band per metric (§1 management-by-exception): early in a phase the 10%
+    /// relative band is tiny in absolute terms, so day one read "31 TRIMP behind" before the
+    /// athlete had even trained. A gap smaller than roughly one easy session is not a deviation
+    /// worth flagging — the pill/verdict flips only past BOTH the relative and absolute band.
+    static let trimpGapFloor: Double = 40.0  // ≈ 20 min easy Z2 (TRIMPTranslator: 2.0/min)
+    static let kmGapFloor: Double = 5.0      // ≈ one short easy run
+
+    /// Pace status for the training-load metric (TRIMP): relative band + absolute dead-band.
+    static func loadPaceStatus(actual: Double, expectedToDate: Double) -> MetricPaceStatus {
+        paceStatus(actual: actual, expectedToDate: expectedToDate, absoluteGapFloor: trimpGapFloor)
+    }
+
+    /// Pace status for the distance metric (km): relative band + absolute dead-band.
+    static func distancePaceStatus(actual: Double, expectedToDate: Double) -> MetricPaceStatus {
+        paceStatus(actual: actual, expectedToDate: expectedToDate, absoluteGapFloor: kmGapFloor)
+    }
+
     static func build(_ input: GoalVerdictInput) -> GoalVerdict? {
         guard input.trimpPhaseTarget > 0 || input.kmPhaseTarget > 0 || input.isAtRisk else {
             return nil
@@ -77,7 +94,7 @@ enum GoalVerdictBuilder {
         var anyMetricBehind = false
 
         if input.trimpPhaseTarget > 0 {
-            let status = paceStatus(actual: input.trimpActual, expectedToDate: input.trimpExpectedToDate)
+            let status = loadPaceStatus(actual: input.trimpActual, expectedToDate: input.trimpExpectedToDate)
             switch status {
             case .ahead:
                 facts.append(.loadAhead)
@@ -91,7 +108,7 @@ enum GoalVerdictBuilder {
         }
 
         if input.kmPhaseTarget > 0 {
-            let status = paceStatus(actual: input.kmActual, expectedToDate: input.kmExpectedToDate)
+            let status = distancePaceStatus(actual: input.kmActual, expectedToDate: input.kmExpectedToDate)
             switch status {
             case .ahead:
                 facts.append(.distanceAhead)
@@ -126,10 +143,11 @@ enum GoalVerdictBuilder {
         return GoalVerdict(tone: tone, facts: facts)
     }
 
-    static func paceStatus(actual: Double, expectedToDate: Double) -> MetricPaceStatus {
+    static func paceStatus(actual: Double, expectedToDate: Double,
+                           absoluteGapFloor: Double = 0) -> MetricPaceStatus {
         guard expectedToDate > 0 else { return .onPace }
 
-        let tolerance = expectedToDate * paceTolerance
+        let tolerance = max(expectedToDate * paceTolerance, absoluteGapFloor)
         if (expectedToDate - actual) > tolerance {
             return .behind
         }

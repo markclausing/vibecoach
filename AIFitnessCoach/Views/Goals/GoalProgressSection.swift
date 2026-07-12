@@ -33,6 +33,7 @@ struct GoalProgressSection: View {
                     reference: gap.trimpReferencePct,
                     actualValue: gap.actualTRIMPToDate,
                     expectedValue: gap.requiredTRIMPToDate,
+                    gapFloor: GoalVerdictBuilder.trimpGapFloor,
                     showsPill: true,
                     accentColor: themeManager.primaryAccentColor
                 )
@@ -49,6 +50,7 @@ struct GoalProgressSection: View {
                         reference: gap.kmReferencePct,
                         actualValue: gap.actualKmToDate,
                         expectedValue: gap.requiredKmToDate,
+                        gapFloor: GoalVerdictBuilder.kmGapFloor,
                         showsPill: true,
                         accentColor: themeManager.primaryAccentColor
                     )
@@ -73,6 +75,7 @@ struct GoalProgressSection: View {
                             reference: nil,
                             actualValue: session.current,
                             expectedValue: 0,
+                            gapFloor: 0,
                             showsPill: false,
                             accentColor: themeManager.primaryAccentColor
                         )
@@ -124,13 +127,18 @@ private struct ProgressRow: View {
     /// so this row's pill/bar colour can never disagree with the verdict banner.
     let actualValue: Double
     let expectedValue: Double
+    /// Absolute dead-band for this metric (GoalVerdictBuilder.trimpGapFloor / kmGapFloor),
+    /// so the pill uses exactly the same thresholds as the verdict banner (§1: a gap smaller
+    /// than one easy session is not a deviation).
+    let gapFloor: Double
     /// The max-metric row (longest session, not-yet-met) has no "expected today" concept,
     /// so it hides the pace pill entirely rather than showing a misleading "on pace".
     let showsPill: Bool
     let accentColor: Color
 
     private var paceStatus: MetricPaceStatus {
-        GoalVerdictBuilder.paceStatus(actual: actualValue, expectedToDate: expectedValue)
+        GoalVerdictBuilder.paceStatus(actual: actualValue, expectedToDate: expectedValue,
+                                      absoluteGapFloor: gapFloor)
     }
 
     var body: some View {

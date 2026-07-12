@@ -210,4 +210,19 @@ final class PhaseTimelineTests: XCTestCase {
         let pastTimeline = ProgressService.phaseTimeline(for: pastGoal, activities: [], now: now)
         XCTAssertEqual(pastTimeline.phases.first { $0.phase == .buildPhase }?.status, .past)
     }
+
+    /// Third on-device repro (12 Jul 2026): a 97-day goal floors to 13 budget weeks → base
+    /// budget 1w, but the creation-day snap widens the real window to ~13 days. The label
+    /// then read "BASE 1w" / "week 1 of 1" next to a two-week window. The snapped window
+    /// must recompute its week count from the actual span.
+    func testSnappedFirstWindowRecomputesWeekCount() {
+        let target = cal.date(byAdding: .day, value: 97, to: now)!
+        let windows = PhaseWindowCalculator.windows(targetDate: target, createdAt: now)
+
+        let base = windows.first
+        XCTAssertEqual(base?.phase, .baseBuilding)
+        XCTAssertEqual(base?.start, cal.startOfDay(for: now))
+        XCTAssertEqual(base?.weekCount, 2,
+                       "A ~13-day snapped window must report 2 weeks, not the 1-week budget")
+    }
 }

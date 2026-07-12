@@ -127,8 +127,13 @@ enum PhaseWindowCalculator {
         if let first = windows.first {
             let creationDay = calendar.startOfDay(for: createdAt)
             if first.start > creationDay {
+                // Recompute the week count from the widened span — the budget count can be a
+                // full week short (e.g. a 13-week plan snaps base from 1 budget week to a real
+                // [creation day, build start] span of 2 weeks; the bar/hero must not say "1w").
+                let spanWeeks = calendar.fractionalDays(from: creationDay, to: first.end) / 7.0
+                let weekCount = max(first.weekCount, Int(spanWeeks.rounded()))
                 windows[0] = PhaseWindow(phase: first.phase, start: creationDay,
-                                         end: first.end, weekCount: first.weekCount)
+                                         end: first.end, weekCount: weekCount)
             }
         }
         return windows

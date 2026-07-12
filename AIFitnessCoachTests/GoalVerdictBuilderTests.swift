@@ -199,6 +199,41 @@ final class GoalVerdictBuilderTests: XCTestCase {
         XCTAssertEqual(milestoneFacts, [.milestoneAchieved(label: "Eerste target")])
     }
 
+    // MARK: - 8b. Absolute dead-band (§1: day-one noise)
+
+    /// On-device repro (12 Jul 2026, 10:31): day one of a phase, nothing trained yet —
+    /// expected-to-date was 31 TRIMP / 1 km, both >10% relative, and the verdict read
+    /// "Slightly behind". A gap smaller than one easy session is not a deviation.
+    func testDayOneSmallGapsStayOnTrack() {
+        let input = makeInput(
+            trimpActual: 0,
+            trimpExpectedToDate: 31,
+            trimpPhaseTarget: 1031,
+            kmActual: 0,
+            kmExpectedToDate: 1,
+            kmPhaseTarget: 30
+        )
+        let verdict = GoalVerdictBuilder.build(input)
+        XCTAssertEqual(verdict?.tone, .onTrack)
+        XCTAssertEqual(verdict?.facts.contains(.loadOnPace), true)
+        XCTAssertEqual(verdict?.facts.contains(.distanceOnPace), true)
+    }
+
+    func testGapPastAbsoluteFloorIsBehind() {
+        // 41 TRIMP > floor 40 and > 10% of 41 expected → behind again.
+        let input = makeInput(trimpActual: 0, trimpExpectedToDate: 41, trimpPhaseTarget: 1031)
+        XCTAssertEqual(GoalVerdictBuilder.build(input)?.tone, .slightlyBehind)
+        // 6 km > floor 5 → behind.
+        let kmInput = makeInput(kmActual: 0, kmExpectedToDate: 6, kmPhaseTarget: 30)
+        XCTAssertEqual(GoalVerdictBuilder.build(kmInput)?.tone, .slightlyBehind)
+    }
+
+    func testAbsoluteFloorAlsoSuppressesAheadNoise() {
+        // 35 TRIMP ahead on day one (< floor 40) → still onPace, not "ahead of schedule".
+        let input = makeInput(trimpActual: 66, trimpExpectedToDate: 31, trimpPhaseTarget: 1031)
+        XCTAssertEqual(GoalVerdictBuilder.build(input)?.facts.contains(.loadOnPace), true)
+    }
+
     // MARK: - 9. taperingOverload replaces offTrack
 
     func testTaperingOverloadReplacesOffTrack() {
