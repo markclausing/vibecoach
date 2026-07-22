@@ -271,19 +271,23 @@ struct ProgressService {
         case .cyclingTour:             targetSport = .cycling
         }
 
-        // Compute the start and end date of the current phase.
-        // The phase transitions are defined in TrainingPhase.calculate:
-        //   tapering    < 2 weeks
-        //   peakPhase   2–4 weeks
-        //   buildPhase  4–12 weeks
-        //   baseBuilding ≥ 12 weeks
+        // Epic #72 fix: take the current phase's window from `PhaseWindowCalculator` — the same
+        // single source of truth the segmented bar and the per-phase milestone list use — so the
+        // hero's "week N van M" can never disagree with the "BASE 2w" bar label or the milestone
+        // date ranges (previously this used the fixed -12/-4/-2 offsets of `phaseDateRange` and a
+        // ceil() week count, which showed "week 1 van 3" next to a 2-week bar segment).
+        // `phaseDateRange` stays as fallback for the boundary case where `TrainingPhase.calculate`
+        // names a phase the compressed week budget didn't give a window (e.g. exactly 12 weeks out).
         let calendar = Calendar.current
-        let (phaseStartDate, phaseEndDate) = phaseDateRange(
-            phase: phase,
-            targetDate: goal.targetDate,
-            goalCreatedAt: goal.createdAt,
-            calendar: calendar
-        )
+        let allWindows = PhaseWindowCalculator.windows(for: goal, calendar: calendar)
+        let window = allWindows.first { $0.phase == phase }
+        let (phaseStartDate, phaseEndDate) = window.map { ($0.start, $0.end) }
+            ?? phaseDateRange(phase: phase, targetDate: goal.targetDate,
+                              goalCreatedAt: goal.createdAt, calendar: calendar)
+        // Reuse the same `allWindows` call for the taper start — the anchor the volume ramp
+        // (below) climbs toward. Tapering is always present in `PhaseWindowCalculator`'s output
+        // (unconditionally appended), so this fallback is only a defensive guard.
+        let taperStart = allWindows.first { $0.phase == .tapering }?.start ?? goal.targetDate
 
         let phaseDurationDays = max(1.0, calendar.fractionalDays(from: phaseStartDate, to: phaseEndDate))
         let elapsedDaysInPhase = max(0.0, min(phaseDurationDays, calendar.fractionalDays(from: phaseStartDate, to: now)))
@@ -291,33 +295,84 @@ struct ProgressService {
         let phaseTotalWeeks   = phaseDurationDays / 7.0
         let elapsedWeeksInPhase = elapsedDaysInPhase / 7.0
 
-        // Week number within the phase (1-based, max is phaseTotalWeeks)
-        let phaseWeekNumber   = max(1, Int(ceil(elapsedWeeksInPhase)))
-        let phaseTotalWeeksInt = max(1, Int(ceil(phaseTotalWeeks)))
+        // Week number within the phase (1-based, clamped to the displayed total)
+        let phaseTotalWeeksInt = window?.weekCount ?? max(1, Int(ceil(phaseTotalWeeks)))
+        let phaseWeekNumber   = max(1, min(phaseTotalWeeksInt, Int(ceil(elapsedWeeksInPhase))))
 
-        // Phase-corrected weekly TRIMP target (blueprint × phase multiplier)
+        // Phase-corrected weekly TRIMP target (blueprint × phase multiplier) — legacy fallback
+        // arithmetic, used only when the athlete has no recent volume to ramp from (below).
         let adjustedWeeklyTRIMP = blueprint.weeklyTrimpTarget * phase.multiplier
+        let adjustedWeeklyKm    = blueprint.weeklyKmTarget * phase.multiplier
 
-        // Total TRIMP target for the whole phase
-        let totalPhaseTRIMP = adjustedWeeklyTRIMP * phaseTotalWeeks
-
-        // Expected cumulative TRIMP today = linearly interpolated
-        let requiredTRIMP = adjustedWeeklyTRIMP * elapsedWeeksInPhase
-
-        // Actually earned TRIMP in this phase
+        // Actually earned TRIMP/km in this phase (unchanged by the ramp — this is real data).
         let phaseActivities = activities.filter {
             $0.startDate >= phaseStartDate && $0.startDate <= now
         }
         let actualTRIMP = phaseActivities.compactMap { $0.trimp }.reduce(0, +)
-
-        // Km calculation (phase-weighted: km target × phase multiplier for cycling/running)
-        let adjustedWeeklyKm = blueprint.weeklyKmTarget * phase.multiplier
-        let totalPhaseKm     = adjustedWeeklyKm * phaseTotalWeeks
-        let requiredKm       = adjustedWeeklyKm * elapsedWeeksInPhase
-        let actualKm         = phaseActivities
+        let actualKm    = phaseActivities
             .filter { $0.sportCategory == targetSport }
             .map { $0.distance / 1000.0 }
             .reduce(0, +)
+
+        // Epic #72 story 72.6: the cumulative targets no longer multiply the STATIC blueprint
+        // weekly volume by the phase-week count — that ignored where the athlete actually stood
+        // at plan start (e.g. "9 / 121 km" in a 2-week base phase for a Pfitzinger 18/55
+        // marathon plan). Instead they ramp linearly from the athlete's own trailing 4-week
+        // average at `goal.createdAt` toward the blueprint's peak weekly volume, reached at
+        // taper start — the ramp IS the progression, not an addition on top of it. Athletes
+        // without recent matching data (new sport, or a goal created >22 weeks ago — the
+        // `activities` fan-in this function receives is a 26-week caller window, and the
+        // trailing-4-week lookback needs headroom before that cutoff — documented, acceptable)
+        // fall back to the legacy static-multiplier maths unchanged.
+        let startWeeklyKm = WeeklyVolumeRamp.trailingWeeklyAverage(
+            values: activities
+                .filter { $0.sportCategory == targetSport }
+                .map { (date: $0.startDate, value: $0.distance / 1000.0) },
+            reference: goal.createdAt,
+            calendar: calendar
+        )
+        let startWeeklyTrimp = WeeklyVolumeRamp.trailingWeeklyAverage(
+            values: activities.map { (date: $0.startDate, value: $0.trimp ?? 0) },
+            reference: goal.createdAt,
+            calendar: calendar
+        )
+
+        let kmRampModel: WeeklyVolumeRamp.Model? = startWeeklyKm > 0
+            ? WeeklyVolumeRamp.Model(planStart: goal.createdAt, taperStart: taperStart,
+                                     startWeekly: startWeeklyKm, peakWeekly: blueprint.weeklyKmTarget,
+                                     taperFactor: TrainingPhase.tapering.multiplier)
+            : nil
+        let trimpRampModel: WeeklyVolumeRamp.Model? = startWeeklyTrimp > 0
+            ? WeeklyVolumeRamp.Model(planStart: goal.createdAt, taperStart: taperStart,
+                                     startWeekly: startWeeklyTrimp, peakWeekly: blueprint.weeklyTrimpTarget,
+                                     taperFactor: TrainingPhase.tapering.multiplier)
+            : nil
+
+        // Total TRIMP target for the whole phase / expected cumulative TRIMP today.
+        let totalPhaseTRIMP: Double
+        let requiredTRIMP: Double
+        if let trimpRampModel {
+            totalPhaseTRIMP = WeeklyVolumeRamp.cumulativeTarget(
+                from: phaseStartDate, to: phaseEndDate, model: trimpRampModel, calendar: calendar)
+            requiredTRIMP = WeeklyVolumeRamp.cumulativeTarget(
+                from: phaseStartDate, to: min(now, phaseEndDate), model: trimpRampModel, calendar: calendar)
+        } else {
+            totalPhaseTRIMP = adjustedWeeklyTRIMP * phaseTotalWeeks
+            requiredTRIMP = adjustedWeeklyTRIMP * elapsedWeeksInPhase
+        }
+
+        // Total km target for the whole phase / expected cumulative km today.
+        let totalPhaseKm: Double
+        let requiredKm: Double
+        if let kmRampModel {
+            totalPhaseKm = WeeklyVolumeRamp.cumulativeTarget(
+                from: phaseStartDate, to: phaseEndDate, model: kmRampModel, calendar: calendar)
+            requiredKm = WeeklyVolumeRamp.cumulativeTarget(
+                from: phaseStartDate, to: min(now, phaseEndDate), model: kmRampModel, calendar: calendar)
+        } else {
+            totalPhaseKm = adjustedWeeklyKm * phaseTotalWeeks
+            requiredKm = adjustedWeeklyKm * elapsedWeeksInPhase
+        }
 
         return BlueprintGap(
             goal: goal,
@@ -412,9 +467,25 @@ extension ProgressService {
                 // 1) Longest session target (taper: a maximum, not a minimum).
                 let requiredMeters = blueprint.minLongRunDistance * criteria.longestSessionPct
                 let longestKm: Double? = status == .future ? nil : {
+                    // Epic #72 fix: "longest session" is a capability check, not an
+                    // in-phase administration. For the CURRENT phase, widen the look-back
+                    // to the union of the phase window and PeriodizationEngine's trailing
+                    // `criteria.sessionWindowWeeks` — so a qualifying run done days before
+                    // the goal was created still earns the check, and this row can't
+                    // contradict the "Progress this phase" card above it. The union (not
+                    // the bare trailing window) keeps the check monotone: once achieved
+                    // inside the phase it never un-achieves by sliding out of the trailing
+                    // window. Past phases keep their historical in-window maximum.
+                    var lookbackStart = window.start
+                    if status == .current {
+                        let trailing = calendar.date(byAdding: .weekOfYear,
+                                                     value: -criteria.sessionWindowWeeks,
+                                                     to: now) ?? window.start
+                        lookbackStart = min(window.start, trailing)
+                    }
                     let longest = activities
                         .filter { $0.sportCategory == targetSport
-                            && $0.startDate >= window.start && $0.startDate <= windowEnd }
+                            && $0.startDate >= lookbackStart && $0.startDate <= windowEnd }
                         .map { $0.distance }
                         .max() ?? 0
                     return longest / 1000.0

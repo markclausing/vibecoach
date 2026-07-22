@@ -1,10 +1,6 @@
 import SwiftUI
 import SwiftData
 
-// swiftlint:disable file_length
-// Epic 65.6 size backstop: GoalsListView (636 LOC) hosts the goal list plus its
-// phase-timeline detail glue. Just over the 600 cap; a further split is optional.
-
 // MARK: - GoalsListView
 
 struct GoalsListView: View {
@@ -200,79 +196,37 @@ struct GoalsListView: View {
         let periResult = periodizationResults.first { $0.goal.id == goal.id }
         let riskStatus = atRiskGoals.first { $0.goal.id == goal.id }
         let daysLeft   = max(0, Calendar.current.dateComponents([.day], from: Date(), to: goal.targetDate).day ?? 0)
+        // Epic #60: single timeline instance, reused by the verdict mapping AND the milestones
+        // list below (previously computed twice implicitly).
+        let timeline   = ProgressService.phaseTimeline(for: goal, activities: Array(activities))
 
         VStack(spacing: 0) {
-            // ── Top: icon + pills + countdown
-            HStack(alignment: .top, spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(themeManager.primaryAccentColor.opacity(0.12))
-                        .frame(width: 48, height: 48)
-                    Image(systemName: sportIcon(goal.sportCategory))
-                        .font(.system(size: 20))
-                        .foregroundColor(themeManager.primaryAccentColor)
-                }
+            GoalHeroCard(
+                goal: goal,
+                gap: gap,
+                verdict: verdict(for: goal, gap: gap, timeline: timeline, risk: riskStatus),
+                daysLeft: daysLeft
+            )
 
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 6) {
-                        Text("Actief")
-                            .font(.caption2).fontWeight(.semibold)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
-                            .background(themeManager.primaryAccentColor.opacity(0.15))
-                            .foregroundColor(themeManager.primaryAccentColor)
-                            .clipShape(Capsule())
-                        if gap != nil {
-                            Text("Blueprint")
-                                .font(.caption2).fontWeight(.medium)
-                                .padding(.horizontal, 8).padding(.vertical, 3)
-                                .background(Color(.systemFill))
-                                .foregroundColor(.secondary)
-                                .clipShape(Capsule())
-                        }
-                    }
-                    Text(goal.title)
-                        .font(.title3).fontWeight(.bold)
-                        .lineLimit(2)
-                }
-
-                Spacer()
-
-                VStack(alignment: .center, spacing: 1) {
-                    Text("\(daysLeft)")
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    Text("DAGEN")
-                        .font(.system(size: 9, weight: .semibold))
-                        .foregroundColor(.secondary).kerning(0.5)
-                }
-                .padding(.horizontal, 12).padding(.vertical, 10)
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-            }
-            .padding(16)
-
-            // ── Phase bar
-            if let phase = goal.currentPhase {
-                Divider()
-                phaseBarSection(goal: goal, currentPhase: phase, gap: gap)
-                    .padding(16)
-            }
-
-            // ── Warning (at risk)
+            // ── Warning (at risk) — §1: a red status always ships with an action.
             if let risk = riskStatus {
                 Divider()
-                warningCard(risk: risk, goal: goal)
+                GoalWarningCard(
+                    risk: risk,
+                    onAdjustPlan: { requestRecoveryPlan() },
+                    onDetails: { appState.selectedTab = .coach }
+                )
             }
 
             // ── Progress this phase
-            if let gap = gap {
+            if let gap {
                 Divider()
-                progressThisPhaseSection(gap: gap, periResult: periResult, goal: goal)
+                GoalProgressSection(gap: gap, periResult: periResult)
             }
 
             // ── Milestones per phase (Epic #60: collapsible, all phases at once)
             Divider()
-            PhaseMilestonesView(timeline: ProgressService.phaseTimeline(for: goal, activities: Array(activities)))
+            PhaseMilestonesView(timeline: timeline)
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -280,158 +234,32 @@ struct GoalsListView: View {
         .padding(.horizontal)
     }
 
-    // MARK: - Phase Bar
+    // MARK: - Verdict mapping (Epic #72 story 72.2)
 
-    private func phaseBarSection(goal: FitnessGoal, currentPhase: TrainingPhase, gap: BlueprintGap?) -> some View {
-        let segments = phaseSegments(for: goal)
-        let totalW   = max(1, segments.reduce(0) { $0 + $1.weeks })
+    /// Maps this goal's gap analysis / phase timeline / risk status into the deterministic
+    /// "will I make it?" verdict rendered by `GoalVerdictBanner`. Pure mapping — the actual
+    /// pace logic lives in `GoalVerdictBuilder` (story 72.1).
+    private func verdict(for goal: FitnessGoal, gap: BlueprintGap?, timeline: PhaseTimeline, risk: DashboardView.GoalRiskStatus?) -> GoalVerdict? {
+        let achievedLabels = timeline.phases
+            .first(where: { $0.status == .current })?
+            .targets.filter(\.isMet).map(\.label) ?? []
 
-        // Epic #37 story 37.1c: assigned to a var then Text(weekLabel) -> verbatim. The phase
-        // name (%@) and counts (%lld) interpolate into a catalog format key.
-        let weekLabel: String = {
-            if let g = gap {
-                return String(localized: "\(currentPhase.displayName) · week \(g.phaseWeekNumber) van \(g.phaseTotalWeeks)")
-            }
-            return currentPhase.displayName
-        }()
-
-        let nextLabel = nextPhaseStartLabel(for: goal)
-
-        return VStack(alignment: .leading, spacing: 8) {
-            // Segmented bar
-            GeometryReader { geo in
-                HStack(spacing: 3) {
-                    ForEach(segments, id: \.phase.rawValue) { seg in
-                        let isActive = seg.phase == currentPhase
-                        let width = geo.size.width * (Double(seg.weeks) / Double(totalW))
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(isActive ? themeManager.primaryAccentColor : Color(.systemFill))
-                            .frame(width: max(0, width - 3), height: isActive ? 8 : 5)
-                            .animation(.easeInOut(duration: 0.3), value: isActive)
-                    }
-                }
-                .frame(height: 8, alignment: .center)
-            }
-            .frame(height: 8)
-
-            // Phase labels row
-            HStack(spacing: 0) {
-                ForEach(segments, id: \.phase.rawValue) { seg in
-                    let isActive = seg.phase == currentPhase
-                    // swiftlint:disable:next redundant_discardable_let
-                    let _ = Double(totalW)  // ForEach disambiguation; removing it breaks closure type inference.
-                    Text(phaseShortLabel(seg.phase) + " \(seg.weeks)w")
-                        .font(.system(size: 9, weight: isActive ? .bold : .regular))
-                        .foregroundColor(isActive ? themeManager.primaryAccentColor : .secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-
-            // Week label + next phase date
-            HStack {
-                Text(weekLabel)
-                    .font(.caption).fontWeight(.medium)
-                    .foregroundColor(.primary)
-                Spacer()
-                if let next = nextLabel {
-                    Text(next)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-        }
-    }
-
-    // MARK: - Warning Card
-
-    private func warningCard(risk: DashboardView.GoalRiskStatus, goal: FitnessGoal) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.subheadline)
-                .foregroundColor(.orange)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Bijsturing nodig")
-                    .font(.subheadline).fontWeight(.semibold)
-                    .foregroundColor(.orange)
-                Text(risk.isTaperingOverload
-                     ? String(localized: "Je trainingsbelasting is te hoog voor de taperingsfase.")
-                     : String(format: String(localized: "Je trainingsbelasting is %.0f TRIMP/week — het doel is %.0f."), risk.currentWeeklyRate, risk.requiredWeeklyRate))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                HStack(spacing: 12) {
-                    Button {
-                        requestRecoveryPlan()
-                    } label: {
-                        Text("Pas plan aan")
-                            .font(.caption).fontWeight(.semibold)
-                            .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Color.orange.opacity(0.15))
-                            .foregroundColor(.orange)
-                            .clipShape(Capsule())
-                    }
-                    Button {
-                        appState.selectedTab = .coach
-                    } label: {
-                        Text("Details")
-                            .font(.caption).fontWeight(.medium)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-            Spacer()
-        }
-        .padding(16)
-        .background(Color.orange.opacity(0.07))
-    }
-
-    // MARK: - Progress This Phase
-
-    private func progressThisPhaseSection(gap: BlueprintGap, periResult: PeriodizationResult?, goal: FitnessGoal) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("VOORTGANG DEZE FASE")
-                .font(.caption).fontWeight(.semibold)
-                .foregroundColor(.secondary).kerning(0.5)
-
-            // Training load (TRIMP)
-            PhaseProgressCard(
-                label: "Trainingsbelasting",
-                valueCurrent: String(format: "%.0f", gap.actualTRIMPToDate),
-                valueTarget: String(format: "%.0f", gap.totalPhaseTRIMPTarget),
-                unit: "TRIMP",
-                progress: gap.trimpProgressPct,
-                reference: gap.trimpReferencePct,
-                accentColor: themeManager.primaryAccentColor
-            )
-
-            // Distance
-            if gap.totalPhaseKmTarget > 0 {
-                let sportLabel = gap.blueprintType == .cyclingTour ? "Afstand (wielrennen)" : "Afstand (hardlopen)"
-                PhaseProgressCard(
-                    label: sportLabel,
-                    valueCurrent: String(format: "%.0f", gap.actualKmToDate),
-                    valueTarget: String(format: "%.0f", gap.totalPhaseKmTarget),
-                    unit: "km",
-                    progress: gap.kmProgressPct,
-                    reference: gap.kmReferencePct,
-                    accentColor: themeManager.primaryAccentColor
-                )
-            }
-
-            // Longest session
-            if let session = periResult?.milestoneItems.first(where: { $0.label == "Langste sessie" }) {
-                PhaseProgressCard(
-                    label: "Langste sessie",
-                    valueCurrent: String(format: "%.0f", session.current),
-                    valueTarget: String(format: "%.0f", session.required),
-                    unit: "km",
-                    progress: session.progress,
-                    reference: nil,
-                    accentColor: themeManager.primaryAccentColor
-                )
-            }
-        }
-        .padding(16)
+        let input = GoalVerdictInput(
+            phaseWeekNumber: gap?.phaseWeekNumber ?? 0,
+            phaseTotalWeeks: gap?.phaseTotalWeeks ?? 0,
+            trimpActual: gap?.actualTRIMPToDate ?? 0,
+            trimpExpectedToDate: gap?.requiredTRIMPToDate ?? 0,
+            trimpPhaseTarget: gap?.totalPhaseTRIMPTarget ?? 0,
+            kmActual: gap?.actualKmToDate ?? 0,
+            kmExpectedToDate: gap?.requiredKmToDate ?? 0,
+            kmPhaseTarget: gap?.totalPhaseKmTarget ?? 0,
+            achievedTargetLabels: achievedLabels,
+            isAtRisk: risk != nil,
+            isTaperingOverload: risk?.isTaperingOverload ?? false,
+            riskCurrentWeeklyRate: risk?.currentWeeklyRate,
+            riskRequiredWeeklyRate: risk?.requiredWeeklyRate
+        )
+        return GoalVerdictBuilder.build(input)
     }
 
     // MARK: - Alternative Goals Section
@@ -464,7 +292,7 @@ struct GoalsListView: View {
                 Circle()
                     .fill(Color(.systemFill))
                     .frame(width: 40, height: 40)
-                Image(systemName: sportIcon(goal.sportCategory))
+                Image(systemName: GoalHeroCard.sportIcon(goal.sportCategory))
                     .font(.system(size: 16))
                     .foregroundColor(.secondary)
             }
@@ -516,58 +344,6 @@ struct GoalsListView: View {
 
     // MARK: - Helpers
 
-    private func sportIcon(_ category: SportCategory?) -> String {
-        switch category {
-        case .cycling:    return "bicycle"
-        case .running:    return "figure.run"
-        case .swimming:   return "figure.pool.swim"
-        case .triathlon:  return "medal.fill"
-        case .strength:   return "dumbbell.fill"
-        case .walking:    return "figure.walk"
-        default:          return "flag.fill"
-        }
-    }
-
-    private func phaseShortLabel(_ phase: TrainingPhase) -> String {
-        switch phase {
-        case .baseBuilding: return "BASE"
-        case .buildPhase:   return "BUILD"
-        case .peakPhase:    return "PEAK"
-        case .tapering:     return "TAPER"
-        }
-    }
-
-    // Epic #60: derive the bar segments from the same PhaseWindowCalculator the per-phase
-    // milestone list uses, so the bar and the list can never disagree (previously this used a
-    // local week budget while ProgressService used fixed -12/-4/-2 offsets).
-    private func phaseSegments(for goal: FitnessGoal) -> [(phase: TrainingPhase, weeks: Int)] {
-        PhaseWindowCalculator.windows(for: goal).map { (phase: $0.phase, weeks: $0.weekCount) }
-    }
-
-    private func nextPhaseStartLabel(for goal: FitnessGoal) -> String? {
-        let df  = AppDateFormatters.display("d MMM")
-        let cal = Calendar.current
-
-        // swiftlint:disable force_unwrapping
-        // Calendar week arithmetic on a valid targetDate — never nil.
-        switch goal.currentPhase {
-        // Epic #37 story 37.1c: rendered via Text(nextLabel) -> verbatim. Phase names stay
-        // English (matching TrainingPhase.displayName); the date interpolates as %@.
-        case .baseBuilding:
-            let d = cal.date(byAdding: .weekOfYear, value: -12, to: goal.targetDate)!
-            return String(localized: "Build start \(df.string(from: d))")
-        case .buildPhase:
-            let d = cal.date(byAdding: .weekOfYear, value: -4, to: goal.targetDate)!
-            return String(localized: "Peak start \(df.string(from: d))")
-        case .peakPhase:
-            let d = cal.date(byAdding: .weekOfYear, value: -2, to: goal.targetDate)!
-            return String(localized: "Taper start \(df.string(from: d))")
-        case .tapering, nil:
-            return nil
-        }
-        // swiftlint:enable force_unwrapping
-    }
-
     private func requestRecoveryPlan() {
         let riskInfos = atRiskGoals.map { status in
             let w = max(0.1, status.goal.weeksRemaining)
@@ -590,61 +366,5 @@ struct GoalsListView: View {
         )
         recoveryPlanTimestamp = Date().timeIntervalSince1970
         appState.selectedTab = .coach
-    }
-}
-
-// MARK: - PhaseProgressCard
-
-private struct PhaseProgressCard: View {
-    let label: String
-    let valueCurrent: String
-    let valueTarget: String
-    let unit: String
-    let progress: Double
-    let reference: Double?
-    let accentColor: Color
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                // Epic #37 story 37.1c: `label` is a String passed by the caller, resolved
-                // via the catalog. valueCurrent/valueTarget/unit stay verbatim (data + units).
-                Text(LocalizedStringKey(label))
-                    .font(.caption).fontWeight(.medium)
-                    .foregroundColor(.primary)
-                Spacer()
-                HStack(alignment: .lastTextBaseline, spacing: 2) {
-                    Text(valueCurrent)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    Text("/ \(valueTarget) \(unit)")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-            }
-
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color(.systemFill))
-                        .frame(height: 8)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(progress >= (reference ?? 0) ? accentColor : Color.orange)
-                        .frame(width: geo.size.width * min(1, progress), height: 8)
-                        .animation(.easeInOut(duration: 0.5), value: progress)
-                    // Ghost reference marker
-                    if let ref = reference, ref > 0 {
-                        Rectangle()
-                            .fill(Color(.secondaryLabel).opacity(0.5))
-                            .frame(width: 2, height: 12)
-                            .offset(x: geo.size.width * min(1, ref) - 1)
-                    }
-                }
-            }
-            .frame(height: 8)
-        }
-        .padding(12)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 }

@@ -116,6 +116,26 @@ enum PhaseWindowCalculator {
         }
         windows.append(PhaseWindow(phase: .peakPhase, start: peakStart, end: taperStart, weekCount: peakW))
         windows.append(PhaseWindow(phase: .tapering, start: taperStart, end: taperEnd, weekCount: taperW))
+
+        // Epic #72 fix: the whole-week walk-back can land the first window's start up to a
+        // week AFTER the goal was created (floor rounding of totalWeeks). In that dead gap
+        // every phase read as `.future` on day one: no "Nu" pill, no met checkmarks, and a
+        // same-day workout didn't count toward phase 1. Snap the first window's start back to
+        // the beginning of the creation day so the plan starts the moment the goal exists
+        // (start-of-day so a run logged earlier that same day counts too). Only ever widen —
+        // a first window that already starts before the creation day is left alone.
+        if let first = windows.first {
+            let creationDay = calendar.startOfDay(for: createdAt)
+            if first.start > creationDay {
+                // Recompute the week count from the widened span — the budget count can be a
+                // full week short (e.g. a 13-week plan snaps base from 1 budget week to a real
+                // [creation day, build start] span of 2 weeks; the bar/hero must not say "1w").
+                let spanWeeks = calendar.fractionalDays(from: creationDay, to: first.end) / 7.0
+                let weekCount = max(first.weekCount, Int(spanWeeks.rounded()))
+                windows[0] = PhaseWindow(phase: first.phase, start: creationDay,
+                                         end: first.end, weekCount: weekCount)
+            }
+        }
         return windows
     }
 

@@ -258,19 +258,6 @@
         }
       }
     },
-    "/ %@ %@" : {
-      "localizations" : {
-        "nl" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "/ %1$@ %2$@"
-          }
-        }
-      }
-    },
-    "/ 100" : {
-
-    },
     "/ dag" : {
       "localizations" : {
         "de" : {
@@ -448,6 +435,7 @@
       }
     },
     "%@ dagen op rij getraind. Neem vandaag rust." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -560,6 +548,7 @@
       }
     },
     "%@ TRIMP binnengehaald — goede stap richting '%@'. Je loopt nog iets achter, maar de coach heeft een vervolgstap klaar." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -582,6 +571,7 @@
       }
     },
     "%@ TRIMP binnengehaald. Je loopt nog achter op %@ doelen, maar je bent op de goede weg. Open de coach." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -650,6 +640,7 @@
       }
     },
     "%@: %@ /wk | Nodig: %@ /wk (%@)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -699,9 +690,6 @@
     "%@w" : {
 
     },
-    "• %@" : {
-
-    },
     "<3% stabiel · 3–5% mild · 5–8% moderate · >8% significant. Wordt niet gemeten bij stop-and-go-ritten (te variabele intensiteit)." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -729,6 +717,7 @@
 
     },
     "⚠️ Te hard in taper-fase! Neem rust." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -775,10 +764,8 @@
         }
       }
     },
-    "🏆" : {
-
-    },
     "3 dagen" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -893,6 +880,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Empezar"
+          }
+        }
+      }
+    },
+    "Aankomend" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bevorstehend"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Upcoming"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próxima"
           }
         }
       }
@@ -1191,6 +1200,52 @@
         }
       }
     },
+    "Afstand ligt op schema." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distanz liegt im Plan."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distance is on schedule."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La distancia va según lo previsto."
+          }
+        }
+      }
+    },
+    "Afstand ligt voor op schema." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distanz liegt vor dem Plan."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distance is ahead of schedule."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La distancia va adelantada."
+          }
+        }
+      }
+    },
     "AI Coach" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1239,6 +1294,7 @@
       }
     },
     "AI heeft de analyse geblokkeerd om veiligheidsredenen." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1305,6 +1361,7 @@
       }
     },
     "AI reageert niet op tijd (primair én fallback-model). Probeer het zo opnieuw." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1327,6 +1384,7 @@
       }
     },
     "AI reageert niet op tijd. Probeer het zo opnieuw." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1349,6 +1407,7 @@
       }
     },
     "AI-analyse niet beschikbaar" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1371,6 +1430,7 @@
       }
     },
     "AI-analyse niet beschikbaar (primair én fallback-model gefaald)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1393,6 +1453,7 @@
       }
     },
     "AI-quotum bereikt (primair én fallback-model). Probeer het over een paar minuten opnieuw." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1415,6 +1476,7 @@
       }
     },
     "AI-quotum bereikt. Probeer het over een paar minuten opnieuw." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1483,6 +1545,7 @@
       }
     },
     "Annuleer" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1595,6 +1658,7 @@
       }
     },
     "Apple Health" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1617,6 +1681,7 @@
       }
     },
     "Apple Health overslaan?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1866,6 +1931,7 @@
       }
     },
     "Bekijk het herstelplan" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1910,6 +1976,7 @@
       }
     },
     "belastingsschatting" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1932,6 +1999,7 @@
       }
     },
     "Berekenen..." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1976,6 +2044,7 @@
       }
     },
     "Bewerk Doel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2088,6 +2157,7 @@
       }
     },
     "Blessure" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2110,6 +2180,7 @@
       }
     },
     "Blessuregeheugen actief: %@. Plan ontziet deze zone." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2135,6 +2206,7 @@
 
     },
     "Blueprint Voortgang" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2702,6 +2774,7 @@
       }
     },
     "Datum ligt te dichtbij — kies minstens %lld dagen vooruit." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2724,6 +2797,7 @@
       }
     },
     "De AI-provider gaf een onverwachte fout terug. Probeer het opnieuw." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2746,6 +2820,7 @@
       }
     },
     "De AI-provider is tijdelijk overbelast. Wacht 30 seconden en probeer opnieuw." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2811,7 +2886,53 @@
         }
       }
     },
+    "De coach rekent vanaf deze datum terug om je trainingsfasen te plannen." : {
+      "comment" : "Epic #72 story 72.5: footer under the goal target-date section",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Coach rechnet von diesem Datum zurück, um deine Trainingsphasen zu planen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The coach counts back from this date to plan your training phases."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El coach cuenta hacia atrás desde esta fecha para planificar tus fases de entrenamiento."
+          }
+        }
+      }
+    },
+    "De streep markeert waar je vandaag zou moeten zijn." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Linie markiert, wo du heute stehen solltest."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The line marks where you should be today."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La línea marca dónde deberías estar hoy."
+          }
+        }
+      }
+    },
     "De verbinding met de AI-provider is te traag. Probeer het over een paar seconden opnieuw." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2945,6 +3066,7 @@
       }
     },
     "Deze sleutel lijkt van een andere provider. Controleer of je provider en sleutel bij elkaar horen." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2989,6 +3111,7 @@
       }
     },
     "Die streeftijd lijkt erg lang voor deze sport — klopt dat?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3011,6 +3134,7 @@
       }
     },
     "Die streeftijd lijkt erg snel voor deze sport — klopt dat?" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3079,6 +3203,7 @@
       }
     },
     "Dit bericht is geblokkeerd door de veiligheidsfilters van de AI. Herformuleer je vraag of focus op je training/herstel." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3168,6 +3293,29 @@
         }
       }
     },
+    "Doel ≥ %@ km" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ziel ≥ %@ km"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Target ≥ %@ km"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objetivo ≥ %@ km"
+          }
+        }
+      }
+    },
     "Doel Tempo" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3237,6 +3385,7 @@
       }
     },
     "Doel TRIMP behaald!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3259,6 +3408,7 @@
       }
     },
     "Doeldatum is verstreken." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3299,6 +3449,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Objetivos"
+          }
+        }
+      }
+    },
+    "Doelstelling" : {
+      "comment" : "Epic #72 story 72.5: Add/Edit goal form section header (target date + duration)",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zielsetzung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Target"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Objetivo"
           }
         }
       }
@@ -3599,6 +3772,7 @@
       }
     },
     "Engine A — workout-trigger" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3643,6 +3817,7 @@
       }
     },
     "Engine B — dagelijkse check" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3711,6 +3886,7 @@
       }
     },
     "Er ging iets mis bij het versturen. Probeer het opnieuw." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3779,6 +3955,7 @@
       }
     },
     "Extra notities (optioneel)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3892,6 +4069,7 @@
       }
     },
     "Fietstocht" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3909,6 +4087,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Salida en bici"
+          }
+        }
+      }
+    },
+    "Finishtijd" : {
+      "comment" : "Epic #72 story 72.5: GoalDurationPicker row label",
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zielzeit"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finish time"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiempo de meta"
           }
         }
       }
@@ -4189,7 +4391,31 @@
         }
       }
     },
+    "Geef je afstand een zetje — %@ km achter op schema." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib deiner Distanz einen Schub — %@ km hinter dem Plan."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Give your distance a nudge — %@ km behind schedule."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dale un empujón a tu distancia — %@ km por detrás del plan."
+          }
+        }
+      }
+    },
     "Geen API-sleutel ingesteld. Open Instellingen → AI Coach om er één toe te voegen." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4280,6 +4506,7 @@
       }
     },
     "Geen internet — controleer je verbinding en probeer opnieuw." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4325,6 +4552,7 @@
       }
     },
     "Geen recente Watch-data gevonden. We baseren je advies vandaag op je handmatige check-in." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4438,6 +4666,7 @@
       }
     },
     "Geen verbinding met de AI-provider. Controleer of je internet werkt (VPN, captive portal?) en probeer opnieuw." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4551,6 +4780,7 @@
       }
     },
     "Gekoppeld, maar geen data — controleer toegang in Apple Health" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4801,6 +5031,7 @@
       }
     },
     "Geweigerd" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5098,6 +5329,7 @@
       }
     },
     "Hardloopsessie" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5530,6 +5762,7 @@
       }
     },
     "Herstelplan Actief" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5552,6 +5785,7 @@
       }
     },
     "Herstelsignaal: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5595,7 +5829,31 @@
         }
       }
     },
+    "Het is week %@ van %@." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es ist Woche %@ von %@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It's week %@ of %@."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es la semana %@ de %@."
+          }
+        }
+      }
+    },
     "Hierdoor mis je: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5686,6 +5944,7 @@
       }
     },
     "Hoe kom ik aan een %@-sleutel? →" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5890,6 +6149,7 @@
       }
     },
     "HR-zones kunnen niet berekend worden met de huidige waarden." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6021,6 +6281,51 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Plan ideal"
+          }
+        }
+      }
+    },
+    "Iets achter" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etwas zurück"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slightly behind"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Algo por detrás"
+          }
+        }
+      }
+    },
+    "Iets achter op schema" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etwas hinter dem Plan"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slightly behind schedule"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un poco por detrás del plan"
           }
         }
       }
@@ -6391,6 +6696,7 @@
       }
     },
     "intensiteitszones" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6503,6 +6809,7 @@
       }
     },
     "Je API-sleutel werkt niet meer. Open Instellingen → AI Coach Configuratie om hem opnieuw in te voeren." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6525,6 +6832,7 @@
       }
     },
     "Je API-sleutel werkt niet. Controleer 'm in Instellingen → AI Coach." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6546,7 +6854,31 @@
         }
       }
     },
+    "Je belasting is te hoog voor de taper — bouw af." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Belastung ist zu hoch für das Tapering — reduziere."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your load is too high for the taper — wind down."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu carga es demasiado alta para el taper — reduce."
+          }
+        }
+      }
+    },
     "Je bent fysiologisch klaar voor dit doel!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6614,6 +6946,7 @@
       }
     },
     "Je bent weer op de goede weg. Volg het schema van de coach om je doel te halen." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6636,6 +6969,7 @@
       }
     },
     "Je doel heeft je nodig 👟" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6703,6 +7037,7 @@
       }
     },
     "Je hebt %@ niet getraind en '%@' loopt achter. Zelfs een korte sessie helpt. Open de coach voor de volgende stap." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6725,6 +7060,7 @@
       }
     },
     "Je hebt %@ niet getraind en '%@' loopt gevaarlijk achter. Elke dag telt nu. Open de coach voor een herstelplan." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6861,6 +7197,7 @@
       }
     },
     "Je loopt achter op %@ doelen. Open de coach voor een bijgestuurd plan." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6883,6 +7220,7 @@
       }
     },
     "Je loopt nog achter op '%@'. Open de coach voor de volgende stap." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6905,6 +7243,7 @@
       }
     },
     "Je loopt nog achter op '%@'. Overweeg een zwaardere sessie — de coach helpt je plannen." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7037,6 +7376,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu carga de entrenamiento es demasiado alta para la fase de taper."
+          }
+        }
+      }
+    },
+    "Je traint nu %@ TRIMP/week, terwijl %@ nodig is." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du trainierst %@ TRIMP/Woche, benötigt sind %@."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're training %@ TRIMP/week, while %@ is needed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrenas %@ TRIMP/semana, se necesitan %@."
           }
         }
       }
@@ -7187,6 +7549,7 @@
       }
     },
     "Jouw Plan voor de komende 7 dagen" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7233,6 +7596,7 @@
       }
     },
     "Jouw Trainingstraject" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7392,6 +7756,7 @@
       }
     },
     "Kleurintensiteit" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7505,6 +7870,7 @@
       }
     },
     "Kon model-catalogus niet lezen: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7709,6 +8075,7 @@
       }
     },
     "Laatste training: %@ · %@ km%@." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7777,6 +8144,7 @@
       }
     },
     "Lage batterij (Vibe %@/100) — prioriteit is vandaag herstel." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -7958,6 +8326,7 @@
       }
     },
     "Lekker getraind! 💪" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8183,6 +8552,7 @@
       }
     },
     "Los dit op" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8228,6 +8598,7 @@
       }
     },
     "Luister naar je lichaam. Elke stap telt — ook de rustdagen." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8568,6 +8939,29 @@
         }
       }
     },
+    "Mijlpaal '%@' is al gehaald." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meilenstein '%@' bereits erreicht."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Milestone '%@' already achieved."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hito '%@' ya conseguido."
+          }
+        }
+      }
+    },
     "MIJLPALEN & PROGNOSE" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8609,6 +9003,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "HITOS POR FASE"
+          }
+        }
+      }
+    },
+    "min" : {
+      "comment" : "Epic #72 story 72.5: GoalDurationPicker minutes-wheel unit label",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Min."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "min"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "min"
           }
         }
       }
@@ -8886,6 +9303,7 @@
       }
     },
     "Netwerkfout bij ophalen modellen: %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8908,6 +9326,7 @@
       }
     },
     "Netwerkprobleem — controleer je verbinding en probeer opnieuw." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -8953,6 +9372,7 @@
       }
     },
     "Niet actief" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9020,6 +9440,7 @@
       }
     },
     "Nieuw Doel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9042,6 +9463,7 @@
       }
     },
     "Nog geen herinneringen" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9153,6 +9575,7 @@
       }
     },
     "Notificaties" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9238,6 +9661,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ahora"
+          }
+        }
+      }
+    },
+    "Nu · %@/%@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt · %@/%@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Now · %@/%@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahora · %@/%@"
           }
         }
       }
@@ -9425,6 +9871,7 @@
       }
     },
     "Ongeldige proxy-URL voor model-catalogus." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9559,7 +10006,52 @@
         }
       }
     },
+    "Op koers" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf Kurs"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On track"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En camino"
+          }
+        }
+      }
+    },
+    "Op schema" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Im Plan"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On schedule"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según lo previsto"
+          }
+        }
+      }
+    },
     "Open Chat" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -9626,6 +10118,7 @@
       }
     },
     "Opnieuw proberen" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10196,6 +10689,7 @@
       }
     },
     "Power-zones kunnen niet berekend worden met de huidige FTP-waarde." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10375,6 +10869,7 @@
       }
     },
     "Progressie & Prognoses" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10420,6 +10915,7 @@
       }
     },
     "Proxy gaf statuscode %@ terug voor /ai/models." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10510,6 +11006,7 @@
       }
     },
     "Registratie mislukt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -10601,6 +11098,7 @@
       }
     },
     "Rust wordt aanbevolen." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11007,6 +11505,29 @@
         }
       }
     },
+    "Sport & evenement" : {
+      "comment" : "Epic #72 story 72.5: Add/Edit goal form section header",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sport & Event"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sport & event"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deporte y evento"
+          }
+        }
+      }
+    },
     "Sta notificaties toe" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11031,6 +11552,7 @@
       }
     },
     "Sta toe" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11121,6 +11643,7 @@
       }
     },
     "Stel een FTP in om power-zones te zien." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11143,6 +11666,7 @@
       }
     },
     "Stel een Max HR + Rust HR in (Karvonen) of een LTHR (Friel) om HR-zones te zien." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11165,6 +11689,7 @@
       }
     },
     "Stel een streeftijd in of zet de schakelaar uit." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11414,6 +11939,7 @@
       }
     },
     "Swipe omlaag om opnieuw te proberen" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11668,6 +12194,7 @@
       }
     },
     "Terug" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11756,6 +12283,7 @@
       }
     },
     "Tijd voor actie! ⚠️" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11823,6 +12351,7 @@
       }
     },
     "Titel" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11845,6 +12374,7 @@
       }
     },
     "Titel (bijv. Marathon onder 3:30)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11867,6 +12397,7 @@
       }
     },
     "Toch overslaan" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -11955,6 +12486,7 @@
       }
     },
     "Toestemmingen & achtergrond" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -12022,6 +12554,7 @@
       }
     },
     "tot %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -12090,6 +12623,7 @@
       }
     },
     "Training" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -12158,6 +12692,7 @@
       }
     },
     "Trainingsbelasting boven baseline." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -12175,6 +12710,75 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Carga de entrenamiento por encima de la línea base."
+          }
+        }
+      }
+    },
+    "Trainingsbelasting ligt %@ TRIMP achter." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trainingsbelastung liegt %@ TRIMP zurück."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Training load is %@ TRIMP behind."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La carga de entrenamiento va %@ TRIMP por detrás."
+          }
+        }
+      }
+    },
+    "Trainingsbelasting ligt op schema." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trainingsbelastung liegt im Plan."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Training load is on schedule."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La carga de entrenamiento va según lo previsto."
+          }
+        }
+      }
+    },
+    "Trainingsbelasting ligt voor op schema." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trainingsbelastung liegt vor dem Plan."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Training load is ahead of schedule."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La carga de entrenamiento va adelantada."
           }
         }
       }
@@ -12204,6 +12808,7 @@
       }
     },
     "trainingsschema" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -12271,6 +12876,7 @@
       }
     },
     "Triatlonsessie" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -12408,6 +13014,7 @@
       }
     },
     "Type Evenement & Intentie" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -12430,6 +13037,7 @@
       }
     },
     "Type Sport" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -12475,6 +13083,7 @@
       }
     },
     "Uiterlijk" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -12611,6 +13220,29 @@
         }
       }
     },
+    "uur" : {
+      "comment" : "Epic #72 story 72.5: GoalDurationPicker hours-wheel unit label",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Std."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hr"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "h"
+          }
+        }
+      }
+    },
     "vandaag" : {
       "localizations" : {
         "de" : {
@@ -12634,6 +13266,7 @@
       }
     },
     "Vandaag" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -12908,6 +13541,29 @@
         }
       }
     },
+    "Verplaatst dit doel naar 'Voltooide doelen'." : {
+      "comment" : "Epic #72 story 72.5: footer under the Status section in EditGoalView",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verschiebt dieses Ziel nach 'Abgeschlossene Ziele'."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moves this goal to 'Completed goals'."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mueve este objetivo a 'Objetivos completados'."
+          }
+        }
+      }
+    },
     "Versie %@ (Build %@)" : {
       "localizations" : {
         "de" : {
@@ -13049,6 +13705,7 @@
       }
     },
     "Verzoek geannuleerd. Stuur je bericht opnieuw als je een antwoord wilt." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -13071,6 +13728,7 @@
       }
     },
     "Vibe %@/100 · HRV %@ ms — houd het gematigd." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -13093,6 +13751,7 @@
       }
     },
     "Vibe Score" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -13137,6 +13796,7 @@
       }
     },
     "Vibe Score op pauze" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -13389,6 +14049,7 @@
       }
     },
     "Volle batterij (Vibe %@/100) — goede dag voor intensiteit." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -13433,6 +14094,7 @@
       }
     },
     "Volume deze week is %@ boven je gemiddelde. Plan 1–2 rustdagen." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -13473,6 +14135,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Antes"
+          }
+        }
+      }
+    },
+    "Voor op schema" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vor dem Plan"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ahead of schedule"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adelantado"
           }
         }
       }
@@ -13568,6 +14253,7 @@
       }
     },
     "Vraag of vertel iets over deze workout…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -13635,6 +14321,7 @@
       }
     },
     "Vul Max HR in om zones via Karvonen te berekenen, of gebruik LTHR voor de Friel-methode." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -13657,6 +14344,7 @@
       }
     },
     "Vul Rust HR in om zones via Karvonen te berekenen, of gebruik LTHR voor de Friel-methode." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -13747,6 +14435,7 @@
       }
     },
     "Wandeling" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -14120,6 +14809,7 @@
       }
     },
     "Workout geregistreerd" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -14142,6 +14832,7 @@
       }
     },
     "Workout geregistreerd (%@ TRIMP)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -14277,6 +14968,7 @@
       }
     },
     "Zwemsessie" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

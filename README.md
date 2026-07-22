@@ -62,13 +62,13 @@ Beyond averages: VibeCoach reads the raw time-series of a workout and detects ae
 
 <br clear="left">
 
-### 🎯 Goals in phases — what to hit, and when
+### 🎯 Goals — will I make it?
 
 <img src="docs/screenshots/05-goals-phases.png" width="230" align="right" alt="Goals with training phases">
 
-Each goal is broken into training phases (Base · Build · Peak · Taper). Every phase shows its date range, targets and key milestones in a collapsible section, so you always know what you should reach by when.
+Every goal leads with a straight answer: on track, slightly behind, or at risk — with a short explanation, not just a colour. Cumulative progress bars carry a marker for where you should be *today*, and once you've hit a milestone (like your longest run) it turns into a check instead of a bar to keep chasing. Training phases (Base · Build · Peak · Taper) group their own milestones, so the current phase always shows "Now · done/total" while later ones simply read "Upcoming".
 
-**What you get:** a clear, dated path to your event — not one distant finish line.
+**What you get:** one glance answers "will I make it?" — with the dated phase-by-phase path to back it up.
 
 <br clear="right">
 
@@ -126,7 +126,7 @@ A short technical summary; the full picture lives in the linked docs (no duplica
 
 **CI:** a 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) on `macos-latest`, plus a CodeQL scan of Swift + Actions workflows and a `release-please` workflow that cuts semver tags + GitHub Releases from Conventional Commits.
 
-**Recently completed:** Epic #70 (per-workout chat with local memory — discuss a workout on its detail page; distilled facts feed plans & feedback), #67 ("How it's built" viewer — visual dev workflow: agent collaboration, CI pipeline, branching & docs), #66 (architecture viewer redesigned — plain-language story first, drill-down depth, mobile-friendly), #65 (refactor hardening: bounded queries + sample retention, ChatViewModel decomposition, sync-orchestration extraction, view splits, lint guardrails), #64 (refactor follow-ups: dead-code cleanup, centralised date formatting, file splits). Open work → [`docs/ROADMAP.md`](docs/ROADMAP.md) · full history → [`docs/ROADMAP-archive.md`](docs/ROADMAP-archive.md).
+**Recently completed:** Epic #72 (Goals-tab redesign — status verdict, expected-today markers, phase-grouped milestones, finish-time duration fix), #70 (per-workout chat with local memory — discuss a workout on its detail page; distilled facts feed plans & feedback), #67 ("How it's built" viewer — visual dev workflow: agent collaboration, CI pipeline, branching & docs), #66 (architecture viewer redesigned — plain-language story first, drill-down depth, mobile-friendly), #65 (refactor hardening: bounded queries + sample retention, ChatViewModel decomposition, sync-orchestration extraction, view splits, lint guardrails). Open work → [`docs/ROADMAP.md`](docs/ROADMAP.md) · full history → [`docs/ROADMAP-archive.md`](docs/ROADMAP-archive.md).
 
 **Dig deeper:**
 

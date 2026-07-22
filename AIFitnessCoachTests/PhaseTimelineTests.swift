@@ -147,4 +147,82 @@ final class PhaseTimelineTests: XCTestCase {
         XCTAssertEqual(session?.current ?? 0, 30, accuracy: 0.01,
                        "The longest-session target must reflect the 30 km run logged in this phase")
     }
+
+    // MARK: - Epic #72 regression: day-one goal (creation inside the week-rounding gap)
+
+    /// Reproduces the on-device bug (11 Jul 2026): a goal created today whose whole-week
+    /// walk-back placed the base window's start on TOMORROW. Every phase then read as
+    /// `.future` — "Aankomend" everywhere, no "Nu · n/m" pill — and the already-achieved
+    /// 14 km long run stayed unchecked in the milestone list.
+    func testDayOneGoalFirstPhaseIsCurrentAndCountsSameDayRun() {
+        // 99 days out: floor(99/7) = 14 budget weeks walked back from the target lands the
+        // base start one day AFTER creation — exactly the rounding gap being fixed.
+        let target = cal.date(byAdding: .day, value: 99, to: now)!
+        let goal = FitnessGoal(title: "Marathon Amsterdam", targetDate: target,
+                               createdAt: now, sportCategory: .running)
+
+        let windows = PhaseWindowCalculator.windows(targetDate: target, createdAt: now)
+        XCTAssertEqual(windows.first?.start, cal.startOfDay(for: now),
+                       "First window must snap back to the start of the creation day")
+
+        // A 14 km run logged earlier that same day — BEFORE the goal was created.
+        let run = makeActivity(sport: .running,
+                               startDate: cal.date(byAdding: .hour, value: -3, to: now)!,
+                               distanceMeters: 14_000, trimp: 120)
+        let timeline = ProgressService.phaseTimeline(for: goal, activities: [run], now: now)
+
+        let first = timeline.phases.first
+        XCTAssertEqual(first?.status, .current,
+                       "A day-one goal starts in its first phase — never 'upcoming'")
+        let session = first?.targets.first { $0.unit == "km" }
+        XCTAssertEqual(session?.current ?? 0, 14, accuracy: 0.01,
+                       "The same-day run counts toward phase 1")
+    }
+
+    /// Second on-device repro (11 Jul 2026, 22:02): the 14 km run was done days BEFORE the
+    /// goal was created. The "Progress this phase" card (PeriodizationEngine, trailing
+    /// look-back) showed it as achieved while the milestone list (in-window only) kept
+    /// showing "9 / 13 km". The current phase's longest-session target must use the union
+    /// of the phase window and the trailing capability window.
+    func testCurrentPhaseLongestSessionCountsRunFromBeforeGoalCreation() {
+        let target = cal.date(byAdding: .day, value: 99, to: now)!
+        let goal = FitnessGoal(title: "Marathon Amsterdam", targetDate: target,
+                               createdAt: now, sportCategory: .running)
+
+        // 14 km two days before the goal existed; 9 km after creation.
+        let oldRun = makeActivity(sport: .running,
+                                  startDate: cal.date(byAdding: .day, value: -2, to: now)!,
+                                  distanceMeters: 14_000, trimp: 120)
+        let newRun = makeActivity(sport: .running,
+                                  startDate: cal.date(byAdding: .hour, value: -1, to: now)!,
+                                  distanceMeters: 9_000, trimp: 80)
+        let timeline = ProgressService.phaseTimeline(for: goal, activities: [oldRun, newRun], now: now)
+
+        let first = timeline.phases.first
+        XCTAssertEqual(first?.status, .current)
+        let session = first?.targets.first { $0.unit == "km" }
+        XCTAssertEqual(session?.current ?? 0, 14, accuracy: 0.01,
+                       "A capability run from before goal creation counts for the current phase")
+        XCTAssertEqual(session?.isMet, true)
+
+        // Past-phase semantics unchanged: a PAST phase only shows its in-window maximum.
+        let pastGoal = makeGoal(title: "Marathon Amsterdam", weeksUntil: 3, createdWeeksAgo: 16)
+        let pastTimeline = ProgressService.phaseTimeline(for: pastGoal, activities: [], now: now)
+        XCTAssertEqual(pastTimeline.phases.first { $0.phase == .buildPhase }?.status, .past)
+    }
+
+    /// Third on-device repro (12 Jul 2026): a 97-day goal floors to 13 budget weeks → base
+    /// budget 1w, but the creation-day snap widens the real window to ~13 days. The label
+    /// then read "BASE 1w" / "week 1 of 1" next to a two-week window. The snapped window
+    /// must recompute its week count from the actual span.
+    func testSnappedFirstWindowRecomputesWeekCount() {
+        let target = cal.date(byAdding: .day, value: 97, to: now)!
+        let windows = PhaseWindowCalculator.windows(targetDate: target, createdAt: now)
+
+        let base = windows.first
+        XCTAssertEqual(base?.phase, .baseBuilding)
+        XCTAssertEqual(base?.start, cal.startOfDay(for: now))
+        XCTAssertEqual(base?.weekCount, 2,
+                       "A ~13-day snapped window must report 2 weeks, not the 1-week budget")
+    }
 }
