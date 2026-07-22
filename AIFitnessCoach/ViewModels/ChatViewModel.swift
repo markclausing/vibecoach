@@ -336,7 +336,7 @@ class ChatViewModel: ObservableObject {
                 isTyping = true
                 isFetchingWorkout = false
                 let contextPrefix = buildContextPrefix(invocation)
-                fetchAIResponse(for: "\(contextPrefix)\(uiPrompt)", image: nil)
+                fetchAIResponse(for: "\(contextPrefix)\(uiPrompt)", image: nil, updatesDashboardInsight: true)
             case .message(let text):
                 messages.append(ChatMessage(role: .ai, text: text))
                 isFetchingWorkout = false
@@ -350,7 +350,11 @@ class ChatViewModel: ObservableObject {
     ///
     /// - Parameter fallbackMessage: If JSON parsing fails (e.g. on hidden system calls), this
     ///   message is shown instead of the raw AI text — to prevent JSON becoming visible.
-    func fetchAIResponse(for text: String, image: UIImage?, fallbackMessage: String? = nil) {
+    /// - Parameter updatesDashboardInsight: when `true` (the status-analysis path) the
+    ///   dashboard "Coach Insight" card + its "last update" timestamp refresh on any non-empty
+    ///   motivation — even when the coach judged the schedule still fine and returned prose
+    ///   without a plan JSON. Plan-bearing responses refresh the card regardless of this flag.
+    func fetchAIResponse(for text: String, image: UIImage?, fallbackMessage: String? = nil, updatesDashboardInsight: Bool = false) {
         // Epic 20: BYOK — block if no valid API key is configured. Exception: an injected
         // custom model (mock) skips the key check so tests don't fail on a missing key.
         if model is RealAIProviderClient {
@@ -456,12 +460,15 @@ class ChatViewModel: ObservableObject {
                 }
                 // Always reset after one use — prevents a later chat message from staying in merge mode.
                 pendingPlanUpdateMode = .replace
+            }
 
-                // Store the motivation for the dashboard insight block
-                if !parsed.motivation.isEmpty {
-                    latestCoachInsight = parsed.motivation
-                    context.lastAnalysisTimestamp = Date().timeIntervalSince1970
-                }
+            // Store the motivation for the dashboard "Coach Insight" card. This must run for a
+            // plan-bearing response AND for a status analysis that returned prose only (no plan) —
+            // otherwise a pull-to-refresh where the coach judged the schedule still fine leaves the
+            // card + its "last update" timestamp frozen at the last plan-bearing response.
+            if !parsed.motivation.isEmpty && (parsed.plan != nil || updatesDashboardInsight) {
+                latestCoachInsight = parsed.motivation
+                context.lastAnalysisTimestamp = Date().timeIntervalSince1970
             }
 
             messages.append(ChatMessage(role: .ai, text: parsed.motivation, suggestedPlan: parsed.plan))
