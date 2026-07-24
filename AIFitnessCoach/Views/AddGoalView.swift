@@ -13,6 +13,8 @@ struct AddGoalView: View {
     // Epic Doel-Intenties
     @State private var eventFormat: EventFormat = .singleDayRace
     @State private var primaryIntent: PrimaryIntent = .peakPerformance
+    // Epic #73: race priority within the unified macrocycle. nil = auto (latest race = A-race).
+    @State private var racePriority: RacePriority?
     // Epic #55: number of consecutive event days (only used for a multi-day stage event).
     @State private var eventDurationDays: Int = 5
     @State private var hasStretchGoal: Bool = false
@@ -57,6 +59,15 @@ struct AddGoalView: View {
                     Picker("Doel", selection: $primaryIntent) {
                         Text("Uitlopen / Genieten").tag(PrimaryIntent.completion)
                         Text("Presteren / Zo snel mogelijk").tag(PrimaryIntent.peakPerformance)
+                    }
+
+                    // Epic #73: with multiple race goals the A-race anchors one shared macrocycle;
+                    // B/C races become mini-taper tune-ups inside it. "Automatisch" = latest race is A.
+                    Picker("Prioriteit", selection: $racePriority) {
+                        Text("Automatisch (laatste race)").tag(RacePriority?.none)
+                        Text("A – hoofddoel").tag(RacePriority?.some(.a))
+                        Text("B – tussenrace").tag(RacePriority?.some(.b))
+                        Text("C – meetmoment").tag(RacePriority?.some(.c))
                     }
                 }
 
@@ -136,7 +147,8 @@ struct AddGoalView: View {
             format: eventFormat,
             intent: primaryIntent,
             stretchGoalTime: stretchTime,
-            eventDurationDays: eventFormat == .multiDayStage ? eventDurationDays : nil
+            eventDurationDays: eventFormat == .multiDayStage ? eventDurationDays : nil,
+            racePriority: racePriority
         )
 
         // Determine the Target TRIMP asynchronously via AI or fallback

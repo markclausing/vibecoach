@@ -861,6 +861,28 @@
     "112" : {
 
     },
+    "A – hoofddoel" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A – Hauptziel"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A – main goal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A – objetivo principal"
+          }
+        }
+      }
+    },
     "Aan de slag" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1795,6 +1817,50 @@
         }
       }
     },
+    "Automatisch (laatste race)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisch (letztes Rennen)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic (latest race)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automático (última carrera)"
+          }
+        }
+      }
+    },
+    "B – tussenrace" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "B – Formtest-Rennen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "B – tune-up race"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "B – carrera de preparación"
+          }
+        }
+      }
+    },
     "Base Phase afgerond" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2340,6 +2406,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Inicio de Build %@"
+          }
+        }
+      }
+    },
+    "C – meetmoment" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C – Zwischenziel"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C – checkpoint"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C – punto de control"
           }
         }
       }
@@ -10775,6 +10863,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Buen tiempo para entrenar."
+          }
+        }
+      }
+    },
+    "Prioriteit" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Priorität"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Priority"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioridad"
           }
         }
       }
