@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.4.0](https://github.com/markclausing/vibecoach/compare/v2.3.0...v2.4.0) (2026-07-22)
+
+
+### Features
+
+* Goals-tab redesign — verdict, expected-today markers, phase-grouped milestones (Epic [#72](https://github.com/markclausing/vibecoach/issues/72)) ([#354](https://github.com/markclausing/vibecoach/issues/354)) ([acac822](https://github.com/markclausing/vibecoach/commit/acac8225f3a5ccbcdc4589760bb26b8b6508b013))
+
+
+### Bug Fixes
+
+* untranslated coach-insight and recovery strings (Chat + Settings) ([#353](https://github.com/markclausing/vibecoach/issues/353)) ([f960618](https://github.com/markclausing/vibecoach/commit/f960618e61e42a7ea85df845234dade39cb8be04))
+* untranslated Memory-tab strings (missing i18n catalog keys) ([#351](https://github.com/markclausing/vibecoach/issues/351)) ([87edadd](https://github.com/markclausing/vibecoach/commit/87edadd5a6d05830f325779a687ebd255b86bb2e))
+
 ## [2.3.0](https://github.com/markclausing/vibecoach/compare/v2.2.0...v2.3.0) (2026-07-10)
 
 
