@@ -253,7 +253,9 @@
 		F11DCACE610000000000B00C /* WorkoutChatEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A00C /* WorkoutChatEntry.swift */; };
 		F11DCACE610000000000B00D /* WorkoutChatFact.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A00D /* WorkoutChatFact.swift */; };
 		F11DCACE610000000000B00E /* SchemaV7.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A00E /* SchemaV7.swift */; };
+		E73000000000000000000204 /* SchemaV8.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73000000000000000000104 /* SchemaV8.swift */; };
 		F11DCACE610000000000B00F /* SchemaMigrationV6ToV7Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11DCACE610000000000A00F /* SchemaMigrationV6ToV7Tests.swift */; };
+		E73000000000000000000205 /* SchemaMigrationV7ToV8Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73000000000000000000105 /* SchemaMigrationV7ToV8Tests.swift */; };
 		DCA4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */; };
 		DDA4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDB4F7B2D6E8F0A1B2C3D405 /* HeartRateZoneCalculator.swift */; };
 		DEA4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEB4F7B2D6E8F0A1B2C3D405 /* PowerZoneCalculator.swift */; };
@@ -588,7 +590,9 @@
 		F11DCACE610000000000A00C /* WorkoutChatEntry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatEntry.swift; sourceTree = "<group>"; };
 		F11DCACE610000000000A00D /* WorkoutChatFact.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutChatFact.swift; sourceTree = "<group>"; };
 		F11DCACE610000000000A00E /* SchemaV7.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaV7.swift; sourceTree = "<group>"; };
+		E73000000000000000000104 /* SchemaV8.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaV8.swift; sourceTree = "<group>"; };
 		F11DCACE610000000000A00F /* SchemaMigrationV6ToV7Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaMigrationV6ToV7Tests.swift; sourceTree = "<group>"; };
+		E73000000000000000000105 /* SchemaMigrationV7ToV8Tests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SchemaMigrationV7ToV8Tests.swift; sourceTree = "<group>"; };
 		EBB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightCacheTests.swift; sourceTree = "<group>"; };
 		F11DCACE610000000000A002 /* PHIContextCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PHIContextCacheTests.swift; sourceTree = "<group>"; };
 		ECB4F7B2D6E8F0A1B2C3D405 /* WorkoutInsightService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WorkoutInsightService.swift; sourceTree = "<group>"; };
@@ -849,6 +853,7 @@
 				F11DCACE610000000000A008 /* CoordinatePrivacyTests.swift */,
 				F11DCACE610000000000A00B /* SchemaMigrationV5ToV6Tests.swift */,
 				F11DCACE610000000000A00F /* SchemaMigrationV6ToV7Tests.swift */,
+				E73000000000000000000105 /* SchemaMigrationV7ToV8Tests.swift */,
 				F11DCACE610000000000A011 /* WorkoutChatScopeInstructionTests.swift */,
 				F11DCACE610000000000A015 /* WorkoutChatResponseParserTests.swift */,
 				F11DCACE610000000000A016 /* WorkoutChatViewModelTests.swift */,
@@ -1203,6 +1208,7 @@
 				D5D0070102D007010100D006 /* SchemaV5.swift */,
 				F11DCACE610000000000A00A /* SchemaV6.swift */,
 				F11DCACE610000000000A00E /* SchemaV7.swift */,
+				E73000000000000000000104 /* SchemaV8.swift */,
 				F11DCACE610000000000A00C /* WorkoutChatEntry.swift */,
 				F11DCACE610000000000A00D /* WorkoutChatFact.swift */,
 				F11DCACE610000000000A012 /* WorkoutChatResponse.swift */,
@@ -1534,6 +1540,7 @@
 				F11DCACE610000000000B008 /* CoordinatePrivacyTests.swift in Sources */,
 				F11DCACE610000000000B00B /* SchemaMigrationV5ToV6Tests.swift in Sources */,
 				F11DCACE610000000000B00F /* SchemaMigrationV6ToV7Tests.swift in Sources */,
+				E73000000000000000000205 /* SchemaMigrationV7ToV8Tests.swift in Sources */,
 				F11DCACE610000000000B011 /* WorkoutChatScopeInstructionTests.swift in Sources */,
 				F11DCACE610000000000B015 /* WorkoutChatResponseParserTests.swift in Sources */,
 				F11DCACE610000000000B016 /* WorkoutChatViewModelTests.swift in Sources */,
@@ -1570,6 +1577,7 @@
 				D5D0070101D007010100D005 /* SchemaV5.swift in Sources */,
 				F11DCACE610000000000B00A /* SchemaV6.swift in Sources */,
 				F11DCACE610000000000B00E /* SchemaV7.swift in Sources */,
+				E73000000000000000000204 /* SchemaV8.swift in Sources */,
 				F11DCACE610000000000B00C /* WorkoutChatEntry.swift in Sources */,
 				F11DCACE610000000000B00D /* WorkoutChatFact.swift in Sources */,
 				F11DCACE610000000000B009 /* CoachContextCache.swift in Sources */,

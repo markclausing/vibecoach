@@ -32,12 +32,22 @@ import SwiftData
 enum AppMigrationPlan: SchemaMigrationPlan {
 
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self, SchemaV6.self, SchemaV7.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self, SchemaV4.self, SchemaV5.self, SchemaV6.self, SchemaV7.self, SchemaV8.self]
     }
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6, migrateV6toV7]
+        [migrateV1toV2, migrateV2toV3, migrateV3toV4, migrateV4toV5, migrateV5toV6, migrateV6toV7, migrateV7toV8]
     }
+
+    // MARK: - V7 → V8: pure addition (racePriority on FitnessGoal — Epic #73)
+
+    /// Epic #73: pure addition of `FitnessGoal.racePriority: RacePriority?`. Existing records
+    /// get `nil` (= unset → MacrocyclePlanner derives priority from dates). `.lightweight` is
+    /// sufficient — SwiftData adds the column, no existing rows are touched.
+    static let migrateV7toV8 = MigrationStage.lightweight(
+        fromVersion: SchemaV7.self,
+        toVersion: SchemaV8.self
+    )
 
     // MARK: - V6 → V7: pure addition (WorkoutChatEntry + WorkoutChatFact — Epic #70)
 

@@ -62,7 +62,8 @@ final class SchemaMigrationV5ToV6Tests: XCTestCase {
         }
 
         let container = try openV6Store()
-        let goals = try container.mainContext.fetch(FetchDescriptor<FitnessGoal>())
+        // Epic #73: V6 now registers the V7 FitnessGoal snapshot (frozen pre-racePriority shape).
+        let goals = try container.mainContext.fetch(FetchDescriptor<SchemaV7.FitnessGoal>())
         let prefs = try container.mainContext.fetch(FetchDescriptor<UserPreference>())
 
         XCTAssertEqual(goals.count, 1, "FitnessGoal must survive V5→V6 migration")

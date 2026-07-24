@@ -72,23 +72,36 @@ enum MacrocyclePlanner {
 
     // MARK: - Anchor selection
 
-    /// Picks the A-race: the goal with the best (lowest-rank) explicit priority, ties broken by the
-    /// latest target date. Until story 73.2 stores an explicit priority, `resolvedPriority` derives
-    /// it from dates (latest race = A), so this reduces to "latest target date wins".
+    /// Picks the A-race that anchors the macrocycle. An **explicit** `racePriority` always beats a
+    /// date-derived one (the maintainer's manual A-race wins over a later unmarked race):
+    /// 1. an explicitly-A goal (multiple → the latest-dated one);
+    /// 2. otherwise the best explicit priority present (rank A<B<C, tie → later date);
+    /// 3. otherwise — no priorities set at all — the latest race (date-derived default).
     static func selectAnchor(_ active: [FitnessGoal]) -> FitnessGoal? {
-        active.max { lhs, rhs in
-            let lp = resolvedPriority(for: lhs, among: active).rank
-            let rp = resolvedPriority(for: rhs, among: active).rank
-            if lp != rp { return lp > rp }           // lower rank ⇒ higher priority ⇒ "greater"
-            return lhs.targetDate < rhs.targetDate    // tie ⇒ later date is the anchor
+        guard !active.isEmpty else { return nil }
+
+        let explicitA = active.filter { $0.racePriority == .a }
+        if !explicitA.isEmpty {
+            return explicitA.max { $0.targetDate < $1.targetDate }
         }
+
+        let explicit = active.filter { $0.racePriority != nil }
+        if !explicit.isEmpty {
+            return explicit.min { lhs, rhs in
+                let lr = lhs.racePriority?.rank ?? RacePriority.c.rank
+                let rr = rhs.racePriority?.rank ?? RacePriority.c.rank
+                if lr != rr { return lr < rr }        // better (lower) rank wins
+                return lhs.targetDate > rhs.targetDate // tie ⇒ later date
+            }
+        }
+
+        return active.max { $0.targetDate < $1.targetDate }
     }
 
-    /// The effective priority of a goal. Story 73.1 derives it from dates (the latest active race is
-    /// the A-race, every earlier one is a B tune-up); story 73.2 will prefer a stored `racePriority`.
-    static func resolvedPriority(for goal: FitnessGoal, among active: [FitnessGoal]) -> RacePriority {
-        let latest = active.map(\.targetDate).max()
-        return goal.targetDate == latest ? .a : .b
+    /// The priority shown on a race marker: the goal's explicit `racePriority` if set, otherwise
+    /// derived from its role in the program (the anchor is the A-race, every other race a B tune-up).
+    static func resolvedPriority(for goal: FitnessGoal, anchor: FitnessGoal) -> RacePriority {
+        goal.racePriority ?? (goal.id == anchor.id ? .a : .b)
     }
 
     // MARK: - Race markers
@@ -112,7 +125,7 @@ enum MacrocyclePlanner {
                     goalID: goal.id,
                     title: goal.title,
                     date: goal.targetDate,
-                    priority: resolvedPriority(for: goal, among: active),
+                    priority: resolvedPriority(for: goal, anchor: anchor),
                     isAnchor: isAnchor,
                     miniTaperStart: taperStart
                 )
