@@ -10,6 +10,7 @@ Legend: ✅ done · 🔄 active · ⏳ backlog
 
 | Epic | What it is | Pickup trigger |
 |---|---|---|
+| 🔄 **#73** | Unified multi-goal training program — merge multiple active endurance goals into one macrocycle (A-race anchor, interim races as mini-taper tune-ups, one program timeline) instead of independent, conflicting per-goal periodisations | active — maintainer has two overlapping race goals whose separate tapers contradict |
 | ⏳ **#63** | CI pipeline extensions — TestFlight deploy (63.1, **maintainer wants this**), concurrency baseline guard (63.5), snapshot tests + dep scan (63.2+63.3 coupled) | 63.1: as soon as the maintainer's App Store Connect prerequisites are in place; others per-story |
 | ⏳ **#69** | Mental benefit of workouts — subjective track first (existing rpe/mood check-in data) | more "why am I training this" context wanted |
 | ⏳ **#71** | Objective session comparison in the Coach analysis — "vs. your recent similar sessions", GPS/weather-normalised | wanting "is this normal for me?" context in the workout analysis |
@@ -19,6 +20,36 @@ Legend: ✅ done · 🔄 active · ⏳ backlog
 ---
 
 ## Active & planned
+
+### 🔄 Epic #73: Unified multi-goal training program (one macrocycle)
+
+**Problem.** Periodisation is computed **per goal, fully independently**: `PeriodizationEngine.evaluate` derives the phase purely from that one goal's `weeksRemaining` (`TrainingPhase.calculate(weeksRemaining:)`), and `evaluateAllGoals` maps each goal in isolation — so every goal runs its own base→build→peak→**taper**. With two overlapping race goals this physically contradicts: the maintainer has *Halve marathon Haarlem* (64 d) and *Marathon Amsterdam* (86 d); Haarlem's own taper (2 w before day 64) tells the athlete to cut load exactly when Amsterdam still needs to build. The dashboard weekly target is wrong too — `DashboardView.weeklyTRIMPTarget` just takes `.max()` across goals, not a coherent plan.
+
+**Product model (locked with maintainer, July 2026):**
+- **Explicit race priority A/B/C** per goal; **exactly one A-race** anchors the macrocycle. Default when unset: latest target date = A, the rest = B.
+- **Every non-A (interim) race gets a mini-taper** (a few days' unload) and then the build toward the A-race resumes — interim races are tune-ups inside the A-race macrocycle, never a full independent taper.
+- **One unified program timeline** in the Goals tab: a single macrocycle bar to the A-race with interim races as markers; no competing per-goal phase bars/tapers.
+- **One combined weekly TRIMP target** (replacing `.max()`) and **one unified coach periodisation context** (instead of contradictory per-goal sections).
+
+**Grounding (current code):**
+- `Services/PeriodizationEngine.swift` — `evaluate` / `evaluateAllGoals` are per-goal; phase from `goal.weeksRemaining` only.
+- `Models/TrainingPhase.swift` — `TrainingPhase.calculate(weeksRemaining:)`, phase multipliers, `PhaseSuccessCriteria`.
+- `Models/PhaseTimeline.swift` — `PhaseWindowCalculator.windows(targetDate:createdAt:)` is the reusable phase-window primitive; reuse it for the macrocycle to the A-race.
+- `Views/DashboardView.swift` — `weeklyTRIMPTarget` = `.max()` across goals (line ~217); consumes `PeriodizationEngine`.
+- `Views/GoalsListView.swift` — renders each `uncompletedGoals` as its own `activeGoalCard` (`GoalHeroCard` phase bar + `PhaseMilestonesView`).
+- `Models/FitnessGoal.swift` — has `format`, `intent`, `stretchGoalTime`; **no priority field**. Live schema is **SchemaV7** (`AIFitnessCoachApp.makeModelContainer` → `SchemaV7.models`).
+- Coach prompt: `evaluateAllGoals` → per-goal `coachingContext` joined → contradictory `═══ PERIODISERING ═══` sections today.
+
+**Stories** (multi-story epic → one PR; each story its own commit):
+
+* **🔄 73.1 — `MacrocyclePlanner` engine (pure Swift, no schema):** a new `Services/MacrocyclePlanner.swift` + `Models/UnifiedProgram.swift` value types. Takes all active goals + activities + `now`, picks the **A-race anchor** (highest priority; default nil → latest `targetDate`; tie → latest date), computes the macrocycle phase windows to the anchor via `PhaseWindowCalculator` (base spans from the earliest goal `createdAt`), and overlays each **interim race** (active, non-anchor, date < anchor) as a `RaceMarker` with a **mini-taper window** (≈3–5 days before) after which the macrocycle phase resumes. Outputs `UnifiedProgram`: anchor id, `[PhaseWindow]`, `[RaceMarker]`, effective **current phase** (mini-taper overrides the underlying window when `now` is inside it), and the **combined weekly TRIMP target**. AppStorage-free (§6). Unit tests: the two-race screenshot scenario, single goal (parity), same-date goals, an interim race dated after the anchor (degenerate), no-blueprint goals. *Uses a date-derived priority until 73.2 wires the manual field.*
+* **⏳ 73.2 — `racePriority` field + SchemaV8 migration:** add `racePriority: RacePriority?` (A/B/C enum, `String, Codable`) to `FitnessGoal`. Snapshot **SchemaV8** (§2.1), `MigrationStage.lightweight` (pure addition), bump `makeModelContainer` to `SchemaV8.models`, file-backed `SchemaMigrationV7ToV8Tests` (FitnessGoal + UserPreference survive; new field writable). Add a priority picker to `AddGoalView`/`EditGoalView`. Feed the manual priority into `MacrocyclePlanner` (overrides the date-derived default). i18n catalog for the picker labels.
+* **⏳ 73.3 — Unified weekly target + current-phase wiring:** replace `DashboardView.weeklyTRIMPTarget` `.max()` with `UnifiedProgram.weeklyTrimpTarget`; feed the effective current phase into the dashboard status/badge and the week schedule target.
+* **⏳ 73.4 — One unified coach periodisation context:** replace the per-goal `coachingContext` join with a single macrocycle context (current effective phase, this week's target, the next race + that it's handled as a mini-taper tune-up). Keep the structural prompt markers (`═══ PERIODISERING ═══`, milestone-shortfall) consistent across every emitter (§13); grep both sides.
+* **⏳ 73.5 — Program-timeline UI (Goals tab):** one unified "Training programma" overview — a single macrocycle bar to the A-race with interim-race markers (mini-taper), one weekly-target/progress block, races listed with their A/B/C badge. Replaces the competing per-goal hero cards; reuse `PhaseWindow`/`GoalHeroCard`/`PhaseMilestonesView` where possible. i18n catalog entries (NL+EN/DE/ES). README showcase slot `05-goals-phases` changes → maintainer screenshot-refresh reminder + `architecture.json`/`.html` sync.
+* **⏳ 73.6 — Single-goal + degenerate-case parity:** a single active goal renders identically-well through the unified path (no regression); completed / non-blueprint / expired goals behave; the empty state is unchanged.
+
+**Effort estimate:** ~2–3 focused sessions (engine + tests → schema/field → UI). **Pickup trigger:** active — start at 73.1 (pure engine, lowest risk, everything downstream consumes it).
 
 ### ⏳ Epic #63: CI pipeline extensions (promoted from the Epic #46 backlog)
 
