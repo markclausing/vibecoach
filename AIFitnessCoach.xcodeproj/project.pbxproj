@@ -305,6 +305,7 @@
 		E73000000000000000000202 /* MacrocyclePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73000000000000000000102 /* MacrocyclePlanner.swift */; };
 		E73000000000000000000203 /* MacrocyclePlannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73000000000000000000103 /* MacrocyclePlannerTests.swift */; };
 		E73000000000000000000206 /* MacrocycleContextFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73000000000000000000106 /* MacrocycleContextFormatter.swift */; };
+		E73000000000000000000208 /* ProgramTimelineCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73000000000000000000108 /* ProgramTimelineCard.swift */; };
 		E73000000000000000000207 /* MacrocycleContextFormatterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73000000000000000000107 /* MacrocycleContextFormatterTests.swift */; };
 		E72000000000000000000208 /* WeeklyVolumeRamp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72000000000000000000108 /* WeeklyVolumeRamp.swift */; };
 		E72000000000000000000209 /* WeeklyVolumeRampTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E72000000000000000000109 /* WeeklyVolumeRampTests.swift */; };
@@ -662,6 +663,7 @@
 		E72000000000000000000109 /* WeeklyVolumeRampTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WeeklyVolumeRampTests.swift; sourceTree = "<group>"; };
 		E72000000000000000000102 /* GoalDurationPicker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalDurationPicker.swift; sourceTree = "<group>"; };
 		E72000000000000000000104 /* GoalHeroCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalHeroCard.swift; sourceTree = "<group>"; };
+		E73000000000000000000108 /* ProgramTimelineCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProgramTimelineCard.swift; sourceTree = "<group>"; };
 		E72000000000000000000105 /* GoalVerdictBanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalVerdictBanner.swift; sourceTree = "<group>"; };
 		E72000000000000000000106 /* GoalWarningCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalWarningCard.swift; sourceTree = "<group>"; };
 		E72000000000000000000107 /* GoalProgressSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalProgressSection.swift; sourceTree = "<group>"; };
@@ -982,6 +984,7 @@
 				DA54C4000000000000000101 /* GoalRowView.swift */,
 				E72000000000000000000102 /* GoalDurationPicker.swift */,
 				E72000000000000000000104 /* GoalHeroCard.swift */,
+				E73000000000000000000108 /* ProgramTimelineCard.swift */,
 				E72000000000000000000105 /* GoalVerdictBanner.swift */,
 				E72000000000000000000106 /* GoalWarningCard.swift */,
 				E72000000000000000000107 /* GoalProgressSection.swift */,
@@ -1719,6 +1722,7 @@
 				E72000000000000000000208 /* WeeklyVolumeRamp.swift in Sources */,
 				E72000000000000000000202 /* GoalDurationPicker.swift in Sources */,
 				E72000000000000000000204 /* GoalHeroCard.swift in Sources */,
+				E73000000000000000000208 /* ProgramTimelineCard.swift in Sources */,
 				E72000000000000000000205 /* GoalVerdictBanner.swift in Sources */,
 				E72000000000000000000206 /* GoalWarningCard.swift in Sources */,
 				E72000000000000000000207 /* GoalProgressSection.swift in Sources */,

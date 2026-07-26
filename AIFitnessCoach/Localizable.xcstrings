@@ -593,6 +593,29 @@
         }
       }
     },
+    "%@ TRIMP/week" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ TRIMP/Woche"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ TRIMP/week"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ TRIMP/semana"
+          }
+        }
+      }
+    },
     "%@-limiet bereikt. Probeer het later opnieuw." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -612,6 +635,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Límite de %@ alcanzado. Inténtalo más tarde."
+          }
+        }
+      }
+    },
+    "%@-race" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-Wettkampf"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-race"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carrera %@"
           }
         }
       }
@@ -9187,6 +9233,52 @@
         }
       }
     },
+    "Mini-taper · %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-Taper · %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-taper · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-taper · %@"
+          }
+        }
+      }
+    },
+    "Mini-taper vanaf %@ — daarna weer opbouwen" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-Taper ab %@ — danach weiter aufbauen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-taper from %@ — then build again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-taper desde %@ — después seguir progresando"
+          }
+        }
+      }
+    },
     "Model overbelast" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11116,6 +11208,29 @@
         }
       }
     },
+    "RACES" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WETTKÄMPFE"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RACES"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CARRERAS"
+          }
+        }
+      }
+    },
     "RECENTE WORKOUTS" : {
       "localizations" : {
         "de" : {
@@ -12936,6 +13051,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "UMBRALES DE ENTRENAMIENTO"
+          }
+        }
+      }
+    },
+    "TRAININGSPROGRAMMA" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TRAININGSPROGRAMM"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TRAINING PROGRAM"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PROGRAMA DE ENTRENAMIENTO"
           }
         }
       }
@@ -14818,6 +14956,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Competición"
+          }
+        }
+      }
+    },
+    "Week %@ van %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Woche %@ von %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week %@ of %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Semana %@ de %@"
           }
         }
       }

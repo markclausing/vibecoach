@@ -194,6 +194,29 @@ final class MacrocyclePlannerTests: XCTestCase {
         XCTAssertEqual(week.total, 23)
     }
 
+    // MARK: - Story 73.5: timeline positions for the macrocycle bar
+
+    func testFractionPlacesRacesAndNowOnTheProgramSpan() throws {
+        // Created 30 days ago, anchor in 70 days ⇒ a 100-day span; now sits at 30 %.
+        let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 20, createdDaysAgo: 30)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 70, createdDaysAgo: 30)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        XCTAssertEqual(program.fraction(of: now), 0.30, accuracy: 0.01)
+        XCTAssertEqual(program.fraction(of: haarlem.targetDate), 0.50, accuracy: 0.01)
+        XCTAssertEqual(program.fraction(of: amsterdam.targetDate), 1.0, accuracy: 0.001)
+        XCTAssertEqual(program.fraction(of: program.start), 0.0, accuracy: 0.001)
+    }
+
+    func testFractionClampsOutsideTheProgramSpan() throws {
+        let goal = makeGoal(title: "Marathon Amsterdam", targetInDays: 70, createdDaysAgo: 30)
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [goal], now: now))
+
+        XCTAssertEqual(program.fraction(of: date(days: -500, from: now)), 0.0)
+        XCTAssertEqual(program.fraction(of: date(days: 500, from: now)), 1.0)
+    }
+
     func testAnchorRaceIsExposedForTheTimelineHeader() throws {
         let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 64)
         let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 86)

@@ -51,8 +51,18 @@ struct GoalsListView: View {
         ProgressService.analyzeGaps(for: Array(goals), activities: Array(activities))
     }
 
+    /// Epic #73 story 73.5: the one macrocycle that unifies every active goal — drives the
+    /// program-timeline card, the shared phase and the A/B/C badges below.
+    private var unifiedProgram: UnifiedProgram? {
+        MacrocyclePlanner.plan(goals: Array(goals), activities: Array(activities))
+    }
+
     private var periodizationResults: [PeriodizationResult] {
-        PeriodizationEngine.evaluateAllGoals(Array(goals), activities: Array(activities))
+        PeriodizationEngine.evaluateAllGoals(
+            Array(goals),
+            activities: Array(activities),
+            phaseOverride: unifiedProgram?.currentPhase
+        )
     }
 
     private var hasActiveRecoveryPlan: Bool {
@@ -67,13 +77,15 @@ struct GoalsListView: View {
         let calendar = Calendar.current
         let twoWeeksAgo = calendar.date(byAdding: .day, value: -14, to: now) ?? now
         let blockStart  = calendar.date(byAdding: .weekOfYear, value: -16, to: now) ?? now
+        let programPhase = unifiedProgram?.currentPhase
 
         return goals.compactMap { goal in
             guard !goal.isCompleted, now < goal.targetDate else { return nil }
 
             let targetTRIMP    = goal.computedTargetTRIMP
             let weeksRemaining = max(0.1, goal.weeksRemaining(from: now))
-            let phase          = goal.currentPhase ?? .baseBuilding
+            // Epic #73: judged against the macrocycle's effective phase, like the dashboard (73.3).
+            let phase          = programPhase ?? goal.currentPhase ?? .baseBuilding
 
             let relevantActivities = activities.filter { record in
                 guard record.startDate >= blockStart && record.startDate <= now else { return false }
@@ -115,9 +127,16 @@ struct GoalsListView: View {
                         emptyStateCard
                             .padding(.horizontal)
                     } else {
+                        // Epic #73 story 73.5: one programme timeline above the goals — the
+                        // A-race macrocycle with interim races as mini-taper markers.
+                        let program = unifiedProgram
+                        if let program {
+                            ProgramTimelineCard(program: program)
+                                .padding(.bottom, 24)
+                        }
                         ForEach(uncompletedGoals) { goal in
                             NavigationLink(value: goal) {
-                                activeGoalCard(goal)
+                                activeGoalCard(goal, program: program)
                             }
                             .buttonStyle(.plain)
                             .padding(.bottom, 24)
@@ -191,7 +210,7 @@ struct GoalsListView: View {
     // MARK: - Active Goal Card
 
     @ViewBuilder
-    private func activeGoalCard(_ goal: FitnessGoal) -> some View {
+    private func activeGoalCard(_ goal: FitnessGoal, program: UnifiedProgram?) -> some View {
         let gap        = gapAnalysis.first { $0.goal.id == goal.id }
         let periResult = periodizationResults.first { $0.goal.id == goal.id }
         let riskStatus = atRiskGoals.first { $0.goal.id == goal.id }
@@ -199,13 +218,18 @@ struct GoalsListView: View {
         // Epic #60: single timeline instance, reused by the verdict mapping AND the milestones
         // list below (previously computed twice implicitly).
         let timeline   = ProgressService.phaseTimeline(for: goal, activities: Array(activities))
+        // Epic #73 story 73.5: with a programme card on screen the per-goal phase bar is dropped
+        // (it competed with the macrocycle bar); the A/B/C chip takes its place in the header.
+        let marker     = program?.races.first { $0.goalID == goal.id }
 
         VStack(spacing: 0) {
             GoalHeroCard(
                 goal: goal,
                 gap: gap,
                 verdict: verdict(for: goal, gap: gap, timeline: timeline, risk: riskStatus),
-                daysLeft: daysLeft
+                daysLeft: daysLeft,
+                showsPhaseBar: program == nil,
+                racePriority: marker?.priority
             )
 
             // ── Warning (at risk) — §1: a red status always ships with an action.

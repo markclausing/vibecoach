@@ -72,6 +72,16 @@ struct UnifiedProgram {
         races.first { $0.isAnchor }
     }
 
+    /// Story 73.5: where `date` sits on the program timeline, as a 0...1 fraction of the span.
+    /// Drives the x-position of the macrocycle bar's race markers and "you are here" indicator.
+    /// Clamped, so a date outside the span pins to an edge instead of drawing off-card.
+    func fraction(of date: Date, calendar: Calendar = .current) -> Double {
+        let span = calendar.fractionalDays(from: start, to: end)
+        guard span > 0 else { return 0 }
+        let elapsed = calendar.fractionalDays(from: start, to: date)
+        return min(1.0, max(0.0, elapsed / span))
+    }
+
     /// Story 73.3: 1-based program week + total program length, for the dashboard header
     /// ("WK 3/14"). Replaces the old per-goal week maths, which counted from whichever goal
     /// happened to come first in the query and therefore disagreed with the macrocycle bar.
