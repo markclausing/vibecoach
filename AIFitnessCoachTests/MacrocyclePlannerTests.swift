@@ -16,14 +16,15 @@ final class MacrocyclePlannerTests: XCTestCase {
     private func makeGoal(title: String,
                           targetInDays: Int,
                           createdDaysAgo: Int = 7,
-                          targetTRIMP: Double = 2000,
+                          targetTRIMP: Double? = 2000,
+                          sportCategory: SportCategory? = .running,
                           isCompleted: Bool = false) -> FitnessGoal {
         FitnessGoal(
             title: title,
             targetDate: date(days: targetInDays, from: now),
             createdAt: date(days: -createdDaysAgo, from: now),
             isCompleted: isCompleted,
-            sportCategory: .running,
+            sportCategory: sportCategory,
             targetTRIMP: targetTRIMP
         )
     }
@@ -224,5 +225,77 @@ final class MacrocyclePlannerTests: XCTestCase {
         let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
         XCTAssertEqual(program.anchorRace?.goalID, amsterdam.id)
         XCTAssertEqual(program.nextRace(after: now)?.goalID, haarlem.id)
+    }
+
+    // MARK: - Story 73.6: single-goal + degenerate-case parity
+
+    /// The unified path must not move a lone goal's phase windows: with one goal the macrocycle
+    /// *is* that goal's periodisation, so the bar renders exactly what the pre-73 per-goal bar did.
+    func testSingleGoalWindowsMatchThePerGoalPhaseWindowsExactly() throws {
+        let goal = makeGoal(title: "Marathon Amsterdam", targetInDays: 86, createdDaysAgo: 30)
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [goal], now: now))
+
+        XCTAssertEqual(program.phases, PhaseWindowCalculator.windows(for: goal))
+        XCTAssertEqual(program.start, goal.createdAt)
+        XCTAssertEqual(program.end, goal.targetDate)
+        XCTAssertFalse(program.inMiniTaper)
+    }
+
+    /// A goal without a blueprint (no `PeriodizationResult` is produced for it) must still plan:
+    /// the timeline card and weekly target are driven by the program, not by the blueprint.
+    func testGoalWithoutABlueprintStillAnchorsAProgramWithAUsableTarget() throws {
+        let strength = makeGoal(title: "Sterker worden", targetInDays: 60,
+                                targetTRIMP: nil, sportCategory: .strength)
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [strength], now: now))
+
+        XCTAssertEqual(program.anchorGoalID, strength.id)
+        XCTAssertFalse(program.phases.isEmpty)
+        // `computedTargetTRIMP` falls back to a duration-derived estimate, so the week is planned.
+        XCTAssertGreaterThan(program.weeklyTrimpTarget, 0)
+        XCTAssertNil(PeriodizationEngine.evaluate(goal: strength, activities: []),
+                     "no blueprint ⇒ no per-goal periodisation result; the program carries it")
+    }
+
+    func testCompletedAndExpiredGoalsNeverAppearOnTheTimeline() throws {
+        let active    = makeGoal(title: "Marathon Amsterdam", targetInDays: 86)
+        let completed = makeGoal(title: "Voltooid", targetInDays: 40, isCompleted: true)
+        let expired   = makeGoal(title: "Verlopen", targetInDays: -10)
+
+        let program = try XCTUnwrap(
+            MacrocyclePlanner.plan(goals: [completed, expired, active], now: now)
+        )
+
+        XCTAssertEqual(program.anchorGoalID, active.id)
+        XCTAssertEqual(program.races.map(\.goalID), [active.id])
+        // The program span starts at the *active* goal's creation — a completed goal must not
+        // stretch the timeline backwards.
+        XCTAssertEqual(program.start, active.createdAt)
+    }
+
+    /// Two races on the same day: one must still anchor deterministically and the other must not
+    /// get a mini-taper (it isn't *before* the anchor, so there is nothing to unload into).
+    func testSameDateGoalsProduceOneAnchorAndNoMiniTaper() throws {
+        let first  = makeGoal(title: "Race A", targetInDays: 50)
+        let second = makeGoal(title: "Race B", targetInDays: 50)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [first, second], now: now))
+
+        XCTAssertEqual(program.races.count, 2)
+        XCTAssertEqual(program.races.filter(\.isAnchor).count, 1)
+        XCTAssertTrue(program.races.allSatisfy { $0.miniTaperStart == nil })
+        XCTAssertFalse(program.inMiniTaper)
+    }
+
+    /// A goal created today with a race a few days out compresses every phase window; the planner
+    /// must still produce a phase, a positive target and in-range fractions rather than dividing
+    /// by a zero-length span.
+    func testVeryShortGoalCreatedTodayStillPlans() throws {
+        let sprint = makeGoal(title: "Testloop", targetInDays: 3, createdDaysAgo: 0)
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [sprint], now: now))
+
+        XCTAssertFalse(program.phases.isEmpty)
+        XCTAssertGreaterThan(program.weeklyTrimpTarget, 0)
+        XCTAssertEqual(program.programWeek(at: now).current, 1)
+        XCTAssertTrue((0.0...1.0).contains(program.fraction(of: now)))
     }
 }

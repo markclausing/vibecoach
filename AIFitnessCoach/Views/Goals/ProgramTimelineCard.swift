@@ -113,6 +113,11 @@ struct ProgramTimelineCard: View {
             macrocycleBar
             phaseLabelsRow
             statusLine
+            if let nextPhaseLabel {
+                Text(nextPhaseLabel)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         }
     }
 
@@ -186,6 +191,20 @@ struct ProgramTimelineCard: View {
             Text(targetLabel)
                 .font(.caption)
                 .foregroundColor(.secondary)
+        }
+    }
+
+    /// Story 73.6 parity: `GoalHeroCard`'s per-goal bar carried a "Peak start 12 sep" hint. With
+    /// that bar hidden the macrocycle bar has to carry it, otherwise a single-goal user loses
+    /// information they had before the epic. Reuses the existing catalog keys.
+    private var nextPhaseLabel: String? {
+        guard let next = program.phases.first(where: { $0.start > now }) else { return nil }
+        let dateStr = AppDateFormatters.display("d MMM").string(from: next.start)
+        switch next.phase {
+        case .buildPhase:   return String(localized: "Build start \(dateStr)")
+        case .peakPhase:    return String(localized: "Peak start \(dateStr)")
+        case .tapering:     return String(localized: "Taper start \(dateStr)")
+        case .baseBuilding: return nil   // base is always the first window, never "next"
         }
     }
 
