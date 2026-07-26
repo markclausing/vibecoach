@@ -213,14 +213,15 @@ final class CoachContextStore {
     }
 
     /// Epic 17.1: Writes the PeriodizationEngine status to the cache.
-    func cachePeriodizationStatus(_ results: [PeriodizationResult]) {
-        guard !results.isEmpty else {
+    /// Epic #73 story 73.4: prefixed with the unified macrocycle header (`program`) so the coach
+    /// reads one program — one phase, one weekly target, interim races as mini-taper tune-ups —
+    /// instead of a contradicting `═══ PERIODISERING ═══` block per goal.
+    func cachePeriodizationStatus(_ results: [PeriodizationResult], program: UnifiedProgram? = nil) {
+        guard !results.isEmpty || program != nil else {
             periodizationContext = ""
             return
         }
-        periodizationContext = results
-            .map { $0.coachingContext }
-            .joined(separator: "\n\n")
+        periodizationContext = MacrocycleContextFormatter.format(program: program, results: results)
     }
 
     /// Epic Doel-Intenties: Writes the intent instructions per goal to the cache.

@@ -18,19 +18,24 @@ struct PeriodizationEngine {
     ///   - goal: The fitness goal to evaluate.
     ///   - activities: All available activities of the user.
     ///   - latestReadinessScore: Most recent VibeScore (0–100). Nil = unknown → neutral behaviour.
+    ///   - phaseOverride: Epic #73 story 73.4 — the macrocycle's effective phase. When set it wins
+    ///     over this goal's own `weeksRemaining` reading, so every goal is judged against the one
+    ///     unified program instead of each running a contradicting phase (an interim race tapering
+    ///     while the A-race still builds). `nil` keeps the pre-73 per-goal behaviour.
     /// - Returns: A `PeriodizationResult` with phase, criteria, longest session and TRIMP check,
     ///   or `nil` if no blueprint applies or the goal is already completed/expired.
     static func evaluate(
         goal: FitnessGoal,
         activities: [ActivityRecord],
-        latestReadinessScore: Int? = nil
+        latestReadinessScore: Int? = nil,
+        phaseOverride: TrainingPhase? = nil
     ) -> PeriodizationResult? {
         guard !goal.isCompleted, Date() < goal.targetDate else { return nil }
         guard let blueprintType = BlueprintChecker.detectBlueprintType(for: goal) else { return nil }
 
         let bp = BlueprintChecker.blueprint(for: blueprintType)
         let weeksRemaining = goal.weeksRemaining
-        let phase = TrainingPhase.calculate(weeksRemaining: weeksRemaining)
+        let phase = phaseOverride ?? TrainingPhase.calculate(weeksRemaining: weeksRemaining)
         let criteria = phase.successCriteria
 
         // Determine the sport type matching the blueprint (running for marathon, cycling for tour)
@@ -79,12 +84,18 @@ struct PeriodizationEngine {
     static func evaluateAllGoals(
         _ goals: [FitnessGoal],
         activities: [ActivityRecord],
-        latestReadinessScore: Int? = nil
+        latestReadinessScore: Int? = nil,
+        phaseOverride: TrainingPhase? = nil
     ) -> [PeriodizationResult] {
         let now = Date()
         return goals
             .filter { !$0.isCompleted && now < $0.targetDate }
-            .compactMap { evaluate(goal: $0, activities: activities, latestReadinessScore: latestReadinessScore) }
+            .compactMap {
+                evaluate(goal: $0,
+                         activities: activities,
+                         latestReadinessScore: latestReadinessScore,
+                         phaseOverride: phaseOverride)
+            }
             .sorted { !$0.isOnTrack && $1.isOnTrack }
     }
 

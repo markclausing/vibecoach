@@ -103,11 +103,14 @@ struct DashboardView: View {
     // Epic 17.1: PeriodizationEngine results — phase + success criteria per active goal
     // Epic Doel-Intenties: pass the current VibeScore so the IntentModifier
     // can correctly evaluate the VibeScore threshold (> 65) for stretch-pace and intensity.
+    // Epic #73 story 73.4: every goal is evaluated against the macrocycle's effective phase,
+    // so the per-goal blocks in the coach prompt can no longer contradict each other.
     private var periodizationResults: [PeriodizationResult] {
         PeriodizationEngine.evaluateAllGoals(
             Array(goals),
             activities: Array(activities),
-            latestReadinessScore: todayReadiness?.readinessScore
+            latestReadinessScore: todayReadiness?.readinessScore,
+            phaseOverride: unifiedProgram?.currentPhase
         )
     }
 
@@ -696,7 +699,8 @@ struct DashboardView: View {
                 viewModel.context.cacheActiveBlueprints(blueprintResults)
                 // Epic 17.1: Write the periodization status to the AI prompt cache
                 // so the coach knows the current training phase and success criteria.
-                viewModel.context.cachePeriodizationStatus(periodizationResults)
+                // Epic #73 story 73.4: the unified macrocycle header goes in with it.
+                viewModel.context.cachePeriodizationStatus(periodizationResults, program: unifiedProgram)
                 // Epic Doel-Intenties: write the intent instructions to the separate cache
                 // so the coach receives a targeted [DOEL INTENTIES EN BENADERING] section.
                 viewModel.context.cacheIntentContext(periodizationResults)

@@ -13,7 +13,10 @@ extension CoachPromptAssembler {
         "🎉 COMPLIMENT TRIGGER",
         "🚨 CRITICAL MILESTONE SHORTFALL",
         "🚫 HARD CONSTRAINT",
-        "✅ RECOVERED"
+        "✅ RECOVERED",
+        // Epic #73 story 73.4: the unified macrocycle header emitted by `MacrocycleContextFormatter`.
+        "🎯 A-RACE",
+        "⚡ MINI-TAPER"
     ]
 
     /// Builds the coach `systemInstruction`.
@@ -63,6 +66,14 @@ extension CoachPromptAssembler {
             - URGENCY (🚨 CRITICAL MILESTONE SHORTFALL): If a critical requirement (e.g. the longest session) is not met, be direct but motivating. Name the exact distance or TRIMP still missing. Plan that milestone as the FIRST PRIORITY in the schedule.
             - SCHEDULE ACCOUNTABILITY: If you adjust the schedule because of injury, overload or another reason, you MUST always explain how the phase requirements are still achievable despite the change. Example: 'I'm replacing your running session with a long bike ride, but we'll safeguard the aerobic base for the Marathon Blueprint like this: on Saturday we'll plan a 26 km endurance run once your calf has recovered.'
             - Be strict but motivating — the coach stands beside the athlete, not above them.
+
+            CRITICAL RULE — ONE UNIFIED PROGRAM (Epic #73):
+            When the user has several race goals they still train ONE program, not one per race.
+            The periodization context opens with a unified header:
+            - 🎯 A-RACE names the single race the whole macrocycle is built toward, plus the current program week.
+            - The phase and combined weekly TRIMP target in that header apply to EVERY goal listed below it. Plan the week against those numbers, never against a single goal's own countdown.
+            - Interim races (B/C) are tune-ups inside this program. Never plan a full taper for them and never say the athlete should "peak" for one.
+            - ⚡ MINI-TAPER means an interim race is close: unload briefly (short, light sessions), race it, and resume building toward the A-race right after. Say so explicitly, so the athlete understands the drop in load is deliberate and temporary.
 
             CRITICAL RULE — INJURY & SPORT INTERACTION:
             The daily pain scores and constraints are SOLELY in the [CURRENT COMPLAINTS] context you receive at every interaction.
