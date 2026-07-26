@@ -66,4 +66,21 @@ struct UnifiedProgram {
     func nextRace(after now: Date) -> RaceMarker? {
         races.first { $0.date >= now }
     }
+
+    /// The A-race marker that anchors the macrocycle.
+    var anchorRace: RaceMarker? {
+        races.first { $0.isAnchor }
+    }
+
+    /// Story 73.3: 1-based program week + total program length, for the dashboard header
+    /// ("WK 3/14"). Replaces the old per-goal week maths, which counted from whichever goal
+    /// happened to come first in the query and therefore disagreed with the macrocycle bar.
+    /// Clamped to `1...total` so a `now` outside the span still reads sensibly.
+    func programWeek(at now: Date, calendar: Calendar = .current) -> (current: Int, total: Int) {
+        let totalWeeks = calendar.fractionalDays(from: start, to: end) / 7.0
+        let total = max(1, Int(totalWeeks.rounded(.up)))
+        let elapsedWeeks = calendar.fractionalDays(from: start, to: now) / 7.0
+        let current = min(max(1, Int(elapsedWeeks.rounded(.down)) + 1), total)
+        return (current, total)
+    }
 }

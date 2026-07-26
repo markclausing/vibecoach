@@ -4,7 +4,10 @@ import SwiftUI
 /// Replaces the standard navigationTitle with a contextual greeting + day/phase indicator.
 struct DashboardHeaderView: View {
     let periodizationResults: [PeriodizationResult]
-    let goals: [FitnessGoal]
+    /// Epic #73 story 73.3: the unified macrocycle. When present it drives the phase + week
+    /// segment of the context line, so the header can't contradict the program timeline.
+    /// `nil` (no active goal) falls back to the pre-73 per-goal reading.
+    var program: UnifiedProgram?
 
     @AppStorage(AppStorageKeys.userName) private var userName: String = ""
 
@@ -29,18 +32,24 @@ struct DashboardHeaderView: View {
 
     /// Builds the context line: "DONDERDAG 17 APR · BUILD PHASE · WK 2/5"
     private var contextLine: String {
+        let now = Date()
         let formatter = AppDateFormatters.display("EEEE d MMM")
-        var parts: [String] = [formatter.string(from: Date()).uppercased()]
+        var parts: [String] = [formatter.string(from: now).uppercased()]
 
-        if let result = periodizationResults.first {
+        if let program {
+            // Epic #73 story 73.3: one macrocycle phase for the whole program. During an interim
+            // race's mini-taper the label says so explicitly — the athlete is unloading for a
+            // tune-up, not entering the A-race taper.
+            let phaseLabel = program.inMiniTaper
+                ? String(localized: "Mini-taper")
+                : program.currentPhase.displayName
+            parts.append(phaseLabel.uppercased())
+
+            let week = program.programWeek(at: now)
+            parts.append("WK \(week.current)/\(week.total)")
+        } else if let result = periodizationResults.first {
+            // Fallback for the degenerate case (no active goal to anchor a macrocycle).
             parts.append(result.phase.displayName.uppercased())
-
-            if let goal = goals.first(where: { !$0.isCompleted && Date() < $0.targetDate }) {
-                let cal = Calendar.current
-                let totalWeeks = max(1, cal.dateComponents([.weekOfYear], from: goal.createdAt, to: goal.targetDate).weekOfYear ?? 1)
-                let elapsedWeeks = max(1, cal.dateComponents([.weekOfYear], from: goal.createdAt, to: Date()).weekOfYear ?? 1)
-                parts.append("WK \(min(elapsedWeeks, totalWeeks))/\(totalWeeks)")
-            }
         }
 
         return parts.joined(separator: " · ")

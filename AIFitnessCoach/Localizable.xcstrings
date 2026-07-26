@@ -9164,6 +9164,29 @@
         }
       }
     },
+    "Mini-taper" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-Taper"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-taper"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-taper"
+          }
+        }
+      }
+    },
     "Model overbelast" : {
       "extractionState" : "stale",
       "localizations" : {

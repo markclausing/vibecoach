@@ -122,4 +122,84 @@ final class MacrocyclePlannerTests: XCTestCase {
         XCTAssertEqual(interimMarkers.count, 2)
         XCTAssertTrue(interimMarkers.allSatisfy { $0.miniTaperStart != nil })
     }
+
+    // MARK: - Story 73.3: one combined weekly target (was `.max()` across goals)
+
+    /// The old `DashboardView.weeklyTRIMPTarget` took the max over independently-periodised goals,
+    /// so a nearby small race could dominate the target of the real A-race. The unified target is
+    /// the anchor's phase-corrected rate — for the two-race scenario that is Amsterdam's, not the
+    /// (higher, because it is closer) Haarlem rate.
+    func testCombinedWeeklyTargetFollowsTheAnchorNotTheLoudestGoal() throws {
+        let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 64, targetTRIMP: 1500)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 86, targetTRIMP: 2000)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        let anchorWeeks = max(0.1, amsterdam.weeksRemaining(from: now))
+        let expected = (amsterdam.computedTargetTRIMP / anchorWeeks) * program.currentPhase.multiplier
+        XCTAssertEqual(program.weeklyTrimpTarget, expected, accuracy: 0.001)
+
+        // The legacy `.max()` reading would have picked Haarlem's (closer ⇒ steeper) rate.
+        let haarlemWeeks = max(0.1, haarlem.weeksRemaining(from: now))
+        let legacyMax = max(
+            (haarlem.computedTargetTRIMP / haarlemWeeks) * (haarlem.currentPhase ?? .baseBuilding).multiplier,
+            expected
+        )
+        XCTAssertNotEqual(program.weeklyTrimpTarget, legacyMax, accuracy: 0.001)
+    }
+
+    /// An interim mini-taper must actually lower the week's load — that is the whole point of
+    /// folding a B-race in as a tune-up instead of letting it run its own full taper.
+    func testWeeklyTargetDropsToTaperLevelDuringAnInterimMiniTaper() throws {
+        let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 2)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 30)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        let anchorWeeks = max(0.1, amsterdam.weeksRemaining(from: now))
+        let linearRate = amsterdam.computedTargetTRIMP / anchorWeeks
+        XCTAssertTrue(program.inMiniTaper)
+        XCTAssertEqual(program.weeklyTrimpTarget, linearRate * TrainingPhase.tapering.multiplier, accuracy: 0.001)
+        XCTAssertLessThan(program.weeklyTrimpTarget, linearRate)
+    }
+
+    // MARK: - Story 73.3: program week for the dashboard header
+
+    func testProgramWeekCountsFromProgramStartAndClampsToTheSpan() throws {
+        // Created 21 days ago, race in 49 days ⇒ a 10-week program, currently in week 4.
+        let goal = makeGoal(title: "Marathon Amsterdam", targetInDays: 49, createdDaysAgo: 21)
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [goal], now: now))
+
+        let week = program.programWeek(at: now)
+        XCTAssertEqual(week.total, 10)
+        XCTAssertEqual(week.current, 4)
+
+        // Before the start and past the end both clamp into 1...total.
+        XCTAssertEqual(program.programWeek(at: date(days: -60, from: now)).current, 1)
+        XCTAssertEqual(program.programWeek(at: date(days: 400, from: now)).current, week.total)
+    }
+
+    func testProgramWeekSpansTheWholeMacrocycleNotJustTheAnchorsOwnGoal() throws {
+        // The interim goal is the older one — the program (and therefore the week count) starts
+        // there, not at the anchor's later creation date.
+        let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 64, createdDaysAgo: 70)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 86, createdDaysAgo: 7)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        XCTAssertEqual(program.start, haarlem.createdAt)
+        // 70 days elapsed of a 156-day span ⇒ week 11 of 23.
+        let week = program.programWeek(at: now)
+        XCTAssertEqual(week.current, 11)
+        XCTAssertEqual(week.total, 23)
+    }
+
+    func testAnchorRaceIsExposedForTheTimelineHeader() throws {
+        let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 64)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 86)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+        XCTAssertEqual(program.anchorRace?.goalID, amsterdam.id)
+        XCTAssertEqual(program.nextRace(after: now)?.goalID, haarlem.id)
+    }
 }

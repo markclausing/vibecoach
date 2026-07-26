@@ -111,6 +111,13 @@ struct DashboardView: View {
         )
     }
 
+    // Epic #73 story 73.3: the single macrocycle that unifies every active goal. One anchor
+    // (A-race), interim races folded in as mini-taper tune-ups — so the dashboard shows one
+    // coherent phase + weekly target instead of the loudest of several contradicting goals.
+    private var unifiedProgram: UnifiedProgram? {
+        MacrocyclePlanner.plan(goals: Array(goals), activities: Array(activities))
+    }
+
     /// Returns today's DailyReadiness record, or nil if there is none yet.
     private var todayReadiness: DailyReadiness? {
         let todayStart = Calendar.current.startOfDay(for: Date())
@@ -213,17 +220,12 @@ struct DashboardView: View {
         return totalTRIMP / Double(recentSessions.count)
     }
 
-    /// Weekly TRIMP target based on the active goal with the highest required weekly rate.
+    /// Epic #73 story 73.3: one combined weekly TRIMP target from the unified macrocycle.
+    /// Was `.max()` across independently-periodised goals, which picked the loudest goal — with
+    /// two overlapping races that meant an earlier race's taper could never lower the target
+    /// while a later race was still building (and vice versa).
     private var weeklyTRIMPTarget: Double {
-        let now = Date()
-        let activeGoals = goals.filter { !$0.isCompleted && now < $0.targetDate }
-        guard !activeGoals.isEmpty else { return 0 }
-        return activeGoals.compactMap { goal -> Double? in
-            let weeksRemaining = max(0.1, goal.weeksRemaining(from: now))
-            let phase = goal.currentPhase ?? .baseBuilding
-            let linearRate = goal.computedTargetTRIMP / weeksRemaining
-            return linearRate * phase.multiplier
-        }.max() ?? 0
+        unifiedProgram?.weeklyTrimpTarget ?? 0
     }
 
     /// Sum of TRIMP over the last 7 days.
@@ -319,13 +321,17 @@ struct DashboardView: View {
         let calendar = Calendar.current
         let twoWeeksAgo = calendar.date(byAdding: .day, value: -14, to: now) ?? now
         let trainingBlockStart = calendar.date(byAdding: .weekOfYear, value: -16, to: now) ?? now
+        // Epic #73 story 73.3: every goal is judged against the macrocycle's *effective* phase,
+        // not its own isolated one — otherwise an interim race would be flagged for "tapering
+        // overload" while the macrocycle legitimately still wants build volume.
+        let programPhase = unifiedProgram?.currentPhase
 
         return goals.compactMap { goal in
             guard !goal.isCompleted, now < goal.targetDate else { return nil }
 
             let targetTRIMP = goal.computedTargetTRIMP
             let weeksRemaining = max(0.1, goal.weeksRemaining(from: now))
-            let phase = goal.currentPhase ?? .baseBuilding
+            let phase = programPhase ?? goal.currentPhase ?? .baseBuilding
 
             // Filter relevant activities to the training block for this goal + sport category.
             let relevantActivities = activities.filter { record in
@@ -398,7 +404,7 @@ struct DashboardView: View {
                     // V2.0: Contextual header (day · phase · week)
                     DashboardHeaderView(
                         periodizationResults: periodizationResults,
-                        goals: Array(goals)
+                        program: unifiedProgram
                     )
 
                     // V2.0: Integrated Vibe Score card with metrics grid
