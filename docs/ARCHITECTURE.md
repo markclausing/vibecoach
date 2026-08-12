@@ -275,7 +275,7 @@ The app carries **two** version numbers on different clocks:
 | **Build number** | `CFBundleVersion` | `git rev-list --count HEAD` (Build Phase) | **every commit** — monotonic, never hand-edited |
 | **Marketing version** | `CFBundleShortVersionString` | the latest git tag (`git describe --tags`, Build Phase) | **only when a release is cut** (see below) |
 
-A third workflow, **`release-please`** (`.github/workflows/release-please.yml`, `googleapis/release-please-action@v4`), automates the marketing version as **semver**. It is scoped to `contents: write` + `pull-requests: write` so the test pipeline stays least-privilege; config lives in `release-please-config.json` (`release-type: simple`) + `.release-please-manifest.json` (the current released version — seeded at `2.0.0`, `2.4.0` today). That manifest is the **single readable source of the marketing version**: the source `Info.plist` still says `2.0.0` and always will, since the Build Phase only stamps the tag into the built app.
+A third workflow, **`release-please`** (`.github/workflows/release-please.yml`, `googleapis/release-please-action@v4`), automates the marketing version as **semver**. It is scoped to `contents: write` + `pull-requests: write` so the test pipeline stays least-privilege; config lives in `release-please-config.json` (`release-type: simple`) + `.release-please-manifest.json` (the current released version, seeded at `2.0.0`). That manifest is the **single readable source of the marketing version** — deliberately not restated here, so this page cannot go stale on it: the source `Info.plist` still says `2.0.0` and always will, since the Build Phase only stamps the tag into the built app.
 
 **Two-stage flow — the version only moves on a deliberate merge:**
 
