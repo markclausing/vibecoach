@@ -475,7 +475,7 @@ Every goal carries an explicit **race priority** (`RacePriority` A/B/C, `Fitness
 
 `Services/MacrocyclePlanner.swift` (pure Swift, AppStorage-free, injected clock + calendar) takes all goals and emits an optional `UnifiedProgram` (`Models/UnifiedProgram.swift`, computed value types — no `@Model`, no migration):
 
-- **Anchor selection** — an explicit A wins over a date-derived one; then the best explicit priority present (rank A<B<C, tie → later date); otherwise the latest race.
+- **Anchor selection** — an explicit A wins (latest one if there are several); otherwise the latest race. A **B/C marking demotes, it never promotes**: marking a race "B" says it is *not* the season goal, so it must never out-rank a later unmarked race. An earlier draft ranked by best-explicit-priority and did the opposite — with the half marathon marked B and the marathon left unset, the half anchored the macrocycle and the marathon three weeks later was clamped onto the end of the bar as a stray marker.
 - **Phase windows** — `PhaseWindowCalculator.windows(targetDate:createdAt:)` to the anchor, with the base spanning from the *earliest* goal's `createdAt`. Reusing the Epic #60 primitive is deliberate: the macrocycle bar and the per-phase milestone list therefore still cannot disagree.
 - **Race markers** — each active goal becomes a `RaceMarker`; interim ones (non-anchor, earlier than the anchor) carry a `miniTaperStart`. A degenerate race dated *after* the anchor stays a plain marker.
 - **Effective phase** — the window containing `now`, **overridden to `.tapering`** while `now` sits inside an interim mini-taper.

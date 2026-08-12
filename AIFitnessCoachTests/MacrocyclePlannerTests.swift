@@ -18,8 +18,9 @@ final class MacrocyclePlannerTests: XCTestCase {
                           createdDaysAgo: Int = 7,
                           targetTRIMP: Double? = 2000,
                           sportCategory: SportCategory? = .running,
+                          priority: RacePriority? = nil,
                           isCompleted: Bool = false) -> FitnessGoal {
-        FitnessGoal(
+        let goal = FitnessGoal(
             title: title,
             targetDate: date(days: targetInDays, from: now),
             createdAt: date(days: -createdDaysAgo, from: now),
@@ -27,6 +28,8 @@ final class MacrocyclePlannerTests: XCTestCase {
             sportCategory: sportCategory,
             targetTRIMP: targetTRIMP
         )
+        goal.racePriority = priority
+        return goal
     }
 
     // MARK: - Empty / degenerate
@@ -122,6 +125,50 @@ final class MacrocyclePlannerTests: XCTestCase {
         let interimMarkers = program.races.filter { !$0.isAnchor }
         XCTAssertEqual(interimMarkers.count, 2)
         XCTAssertTrue(interimMarkers.allSatisfy { $0.miniTaperStart != nil })
+    }
+
+    // MARK: - Anchor selection vs. explicit priorities
+
+    /// Regression, found on-device from the 73.5 showcase capture: the athlete had marked the
+    /// earlier half marathon "B" and left the later marathon unset. Ranking by best-explicit-
+    /// priority made that B-race anchor the macrocycle, so the whole program ran to the half
+    /// marathon and the marathon three weeks later was clamped onto the end of the bar as a stray
+    /// marker — the exact failure this epic removes. A B/C marking demotes, never promotes.
+    func testExplicitBDoesNotOutrankALaterUnmarkedRace() throws {
+        let haarlem   = makeGoal(title: "Halve Marathon Haarlem", targetInDays: 46, priority: .b)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 67, priority: nil)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        XCTAssertEqual(program.anchorGoalID, amsterdam.id)
+        XCTAssertEqual(program.end, amsterdam.targetDate)
+        // The unmarked anchor reads as the A-race; the marked one keeps its B.
+        XCTAssertEqual(program.races.first { $0.goalID == amsterdam.id }?.priority, .a)
+        XCTAssertEqual(program.races.first { $0.goalID == haarlem.id }?.priority, .b)
+        // And Haarlem is now a proper interim tune-up instead of the anchor.
+        XCTAssertNotNil(program.races.first { $0.goalID == haarlem.id }?.miniTaperStart)
+    }
+
+    /// The counterpart: an explicit A still wins over a later race — that is the whole point of
+    /// letting the athlete override the date-derived default.
+    func testExplicitAWinsOverALaterRace() throws {
+        let haarlem   = makeGoal(title: "Halve Marathon Haarlem", targetInDays: 46, priority: .a)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 67, priority: .b)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        XCTAssertEqual(program.anchorGoalID, haarlem.id)
+        XCTAssertEqual(program.end, haarlem.targetDate)
+        // A race after the anchor is degenerate: a plain marker, no mini-taper.
+        XCTAssertNil(program.races.first { $0.goalID == amsterdam.id }?.miniTaperStart)
+    }
+
+    func testAllRacesMarkedBStillAnchorsOnTheLatest() throws {
+        let haarlem   = makeGoal(title: "Halve Marathon Haarlem", targetInDays: 46, priority: .b)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 67, priority: .b)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+        XCTAssertEqual(program.anchorGoalID, amsterdam.id)
     }
 
     // MARK: - Story 73.3: one combined weekly target (was `.max()` across goals)

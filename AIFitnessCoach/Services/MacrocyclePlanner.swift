@@ -72,27 +72,22 @@ enum MacrocyclePlanner {
 
     // MARK: - Anchor selection
 
-    /// Picks the A-race that anchors the macrocycle. An **explicit** `racePriority` always beats a
-    /// date-derived one (the maintainer's manual A-race wins over a later unmarked race):
+    /// Picks the A-race that anchors the macrocycle:
     /// 1. an explicitly-A goal (multiple → the latest-dated one);
-    /// 2. otherwise the best explicit priority present (rank A<B<C, tie → later date);
-    /// 3. otherwise — no priorities set at all — the latest race (date-derived default).
+    /// 2. otherwise the latest race — the date-derived default from the locked product model.
+    ///
+    /// **A B/C marking demotes, it never promotes.** An earlier race the athlete deliberately
+    /// marked "B" must not out-rank a later unmarked one: saying "this is a B-race" is a statement
+    /// that it is *not* the season goal. Ranking by best-explicit-priority (the original 73.1
+    /// reading) did exactly the opposite — with Haarlem marked B and Amsterdam left unset, the half
+    /// marathon anchored the macrocycle and the marathon three weeks later was clamped onto the end
+    /// of the bar as a stray marker, which is the very failure this epic exists to remove.
     static func selectAnchor(_ active: [FitnessGoal]) -> FitnessGoal? {
         guard !active.isEmpty else { return nil }
 
         let explicitA = active.filter { $0.racePriority == .a }
         if !explicitA.isEmpty {
             return explicitA.max { $0.targetDate < $1.targetDate }
-        }
-
-        let explicit = active.filter { $0.racePriority != nil }
-        if !explicit.isEmpty {
-            return explicit.min { lhs, rhs in
-                let lr = lhs.racePriority?.rank ?? RacePriority.c.rank
-                let rr = rhs.racePriority?.rank ?? RacePriority.c.rank
-                if lr != rr { return lr < rr }        // better (lower) rank wins
-                return lhs.targetDate > rhs.targetDate // tie ⇒ later date
-            }
         }
 
         return active.max { $0.targetDate < $1.targetDate }
