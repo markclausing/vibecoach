@@ -50,6 +50,29 @@ jobs:
         # `github-actions-logging` reporter geeft inline annotations op het PR-diff.
         run: swiftlint --strict --reporter github-actions-logging
 
+  doc-consistency:
+    name: Doc Consistency
+    # `ubuntu-latest` i.p.v. macOS: dit is een paar seconden Python, geen Xcode.
+    # Scheelt runner-minuten (macOS kost 10x) en geeft de snelste feedback van
+    # alle jobs. Geen `needs:` — draait parallel aan lint/unit-tests.
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Check derived architecture artefacts
+        # Bewaakt de twee invarianten uit CLAUDE.md §7 die in de praktijk zijn
+        # gebroken: (1) meta.appVersion moet gelijk zijn aan de uitgebrachte
+        # versie in .release-please-manifest.json — die stond vier releases lang
+        # op 2.0.0 omdat de regel naar de bevroren Info.plist wees; (2) de JSON
+        # die in architecture.html is ingebed moet een kopie van
+        # architecture.json zijn — §7 noemt dat "the single most-forgotten item".
+        # Het script tolereert bewust versie-lag zolang een release wordt
+        # geknipt (release-please-PR + de merge-commit), anders zou de
+        # machine-gegenereerde release-PR altijd rood staan.
+        run: python3 scripts/check-doc-consistency.py
+
   unit-tests:
     name: Unit Tests
     runs-on: macos-latest
