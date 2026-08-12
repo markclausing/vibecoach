@@ -4,7 +4,7 @@ This file describes the main technical building blocks. For project rules and co
 
 > **Interactive overview:** [**open the rendered viewer**](https://htmlpreview.github.io/?https://github.com/markclausing/vibecoach/blob/main/docs/architecture/architecture.html) for a clickable version of this document (modules, dependencies, flows). GitHub displays `.html` files as source, so that link renders [`architecture/architecture.html`](architecture/architecture.html) via htmlpreview; opening the file directly in a local browser works too. The accompanying [`architecture.json`](architecture/architecture.json) contains the same data machine-readable for AI agents.
 >
-> Both files are **derived** from this `ARCHITECTURE.md` + the codebase — they version along with the app via `meta.appVersion` (= `CFBundleShortVersionString`) and their own `meta.docRevision`. When changing this file or the module layer in `AIFitnessCoach/`, they must be updated in the same commit. See [CLAUDE.md §7 — Architecture visualisation](../CLAUDE.md#architecture-visualisation-derived-artefacts) for the update protocol.
+> Both files are **derived** from this `ARCHITECTURE.md` + the codebase — they version along with the app via `meta.appVersion` (the **released** marketing version, read from `.release-please-manifest.json` / the newest `v*` tag — *not* the source `Info.plist`, whose frozen `2.0.0` is only a tag-less-build fallback) and their own `meta.docRevision`. When changing this file or the module layer in `AIFitnessCoach/`, they must be updated in the same commit. See [CLAUDE.md §7 — Architecture visualisation](../CLAUDE.md#architecture-visualisation-derived-artefacts) for the update protocol.
 
 ---
 
@@ -275,7 +275,7 @@ The app carries **two** version numbers on different clocks:
 | **Build number** | `CFBundleVersion` | `git rev-list --count HEAD` (Build Phase) | **every commit** — monotonic, never hand-edited |
 | **Marketing version** | `CFBundleShortVersionString` | the latest git tag (`git describe --tags`, Build Phase) | **only when a release is cut** (see below) |
 
-A third workflow, **`release-please`** (`.github/workflows/release-please.yml`, `googleapis/release-please-action@v4`), automates the marketing version as **semver**. It is scoped to `contents: write` + `pull-requests: write` so the test pipeline stays least-privilege; config lives in `release-please-config.json` (`release-type: simple`) + `.release-please-manifest.json` (the current version, seeded at `2.0.0`).
+A third workflow, **`release-please`** (`.github/workflows/release-please.yml`, `googleapis/release-please-action@v4`), automates the marketing version as **semver**. It is scoped to `contents: write` + `pull-requests: write` so the test pipeline stays least-privilege; config lives in `release-please-config.json` (`release-type: simple`) + `.release-please-manifest.json` (the current released version — seeded at `2.0.0`, `2.4.0` today). That manifest is the **single readable source of the marketing version**: the source `Info.plist` still says `2.0.0` and always will, since the Build Phase only stamps the tag into the built app.
 
 **Two-stage flow — the version only moves on a deliberate merge:**
 
