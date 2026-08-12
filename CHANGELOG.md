@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/markclausing/vibecoach/compare/v2.4.0...v2.5.0) (2026-08-12)
+
+
+### Features
+
+* unified multi-goal training program (one macrocycle, Epic [#73](https://github.com/markclausing/vibecoach/issues/73)) ([#356](https://github.com/markclausing/vibecoach/issues/356)) ([92d06f7](https://github.com/markclausing/vibecoach/commit/92d06f72def3c15bbad927eb727feb8dd611dd42))
+
 ## [2.4.0](https://github.com/markclausing/vibecoach/compare/v2.3.0...v2.4.0) (2026-07-22)
 
 
