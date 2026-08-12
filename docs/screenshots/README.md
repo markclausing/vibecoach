@@ -13,7 +13,7 @@ without changing the file names, so the README keeps working automatically.
 | `02-proactive-coaching.png` | Proactive coaching | A proactive notification, or the red banner + recovery plan |
 | `03-coach-chat.png` | AI coach (BYOK) | The Coach tab mid-conversation |
 | `04-workout-deepdive.png` | Workout deep-dive | `WorkoutAnalysisView` with the annotated HR/power chart + pattern chips |
-| `05-goals-phases.png` | Goals & phases | The Goals view with a phase `DisclosureGroup` expanded |
+| `05-goals-phases.png` | Goals — will I make it? | Top of the Goals tab: the `ProgramTimelineCard` macrocycle bar (Epic #73) with the race list, and the first goal card below it |
 | `06-multiday-weather.png` | Multi-day events & weather | The week schedule showing stage entries + per-stage weather |
 | `07-dual-source-sync.png` | Dual-source sync | Settings → data sources, or a workout with the source badge |
 | `08-language-privacy.png` | Language & privacy | Settings → language picker (NL/EN/DE/ES) |
