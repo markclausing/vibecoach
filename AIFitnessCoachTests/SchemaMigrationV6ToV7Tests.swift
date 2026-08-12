@@ -71,7 +71,8 @@ final class SchemaMigrationV6ToV7Tests: XCTestCase {
         }
 
         let container = try openV7Store()
-        let goals      = try container.mainContext.fetch(FetchDescriptor<FitnessGoal>())
+        // Epic #73: V7 now registers its own FitnessGoal snapshot (frozen pre-racePriority shape).
+        let goals      = try container.mainContext.fetch(FetchDescriptor<SchemaV7.FitnessGoal>())
         let prefs      = try container.mainContext.fetch(FetchDescriptor<UserPreference>())
         let activities = try container.mainContext.fetch(FetchDescriptor<ActivityRecord>())
 

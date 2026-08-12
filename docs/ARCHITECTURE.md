@@ -462,3 +462,42 @@ The workout detail page (`WorkoutAnalysisView`) ends in a **"Discuss this workou
 **Orchestration split.** `WorkoutChatViewModel` is deliberately SwiftData-free: it owns the transient thread + the AI call (reusing `CoachModelProvider` — which gained an injectable systemInstruction builder — including the overload fallback waterfall and the `-UITesting` mock), and reports persistence through two callbacks. `WorkoutChatSection` owns the `@Query`s and the callback wiring, with a fresh-fetch containment dedupe on incoming facts (the `newPreferences` pattern). The fact chips (✕ = hard delete) on the workout page are the **single** fact-management surface.
 
 **Coach integration.** `WorkoutFactsContextFormatter` renders the `[WORKOUT NOTES]` block (trailing 14-day Calendar window; current-week `dayCondition` facts lead; cap 20 newest; `""` = no block). `ChatView` builds it once in its `coachInvocation` helper and threads it via `CoachInvocationContext.workoutNotesBlock` into `buildContextPrefix` *and* `recoveryPlanSystemPrompt`. `[WORKOUT NOTES]` is registered in `structuralPromptMarkers`, so the existing marker test enforces the emitter/instruction contract (§13 both-sides rule).
+
+## 21. Unified multi-goal training program (Epic #73)
+
+Periodisation used to be computed **per goal, fully independently**: `PeriodizationEngine.evaluate` derived the phase from that one goal's `weeksRemaining`, and every consumer mapped goals in isolation. With two overlapping race goals that is physically contradictory — an earlier half marathon's own taper tells the athlete to cut load exactly when a later marathon still needs to build, the dashboard weekly target was a `.max()` across goals, and the coach prompt carried two `═══ PERIODISERING ═══` sections preaching the opposite of each other. Epic #73 replaces all of that with **one macrocycle**.
+
+### The product model
+
+Every goal carries an explicit **race priority** (`RacePriority` A/B/C, `FitnessGoal.racePriority`, SchemaV8). **Exactly one A-race anchors the macrocycle** and gets the full taper; when nothing is set the planner falls back to a date-derived default (latest race = A). Every **non-A interim race** is a tune-up *inside* that macrocycle: it gets a short **mini-taper** (~4 days' unload) after which the build toward the A-race resumes — never a full independent taper.
+
+### `MacrocyclePlanner` → `UnifiedProgram`
+
+`Services/MacrocyclePlanner.swift` (pure Swift, AppStorage-free, injected clock + calendar) takes all goals and emits an optional `UnifiedProgram` (`Models/UnifiedProgram.swift`, computed value types — no `@Model`, no migration):
+
+- **Anchor selection** — an explicit A wins (latest one if there are several); otherwise the latest race. A **B/C marking demotes, it never promotes**: marking a race "B" says it is *not* the season goal, so it must never out-rank a later unmarked race. An earlier draft ranked by best-explicit-priority and did the opposite — with the half marathon marked B and the marathon left unset, the half anchored the macrocycle and the marathon three weeks later was clamped onto the end of the bar as a stray marker.
+- **Phase windows** — `PhaseWindowCalculator.windows(targetDate:createdAt:)` to the anchor, with the base spanning from the *earliest* goal's `createdAt`. Reusing the Epic #60 primitive is deliberate: the macrocycle bar and the per-phase milestone list therefore still cannot disagree.
+- **Race markers** — each active goal becomes a `RaceMarker`; interim ones (non-anchor, earlier than the anchor) carry a `miniTaperStart`. A degenerate race dated *after* the anchor stays a plain marker.
+- **Effective phase** — the window containing `now`, **overridden to `.tapering`** while `now` sits inside an interim mini-taper.
+- **One combined weekly TRIMP target** — the anchor's linear remaining-load rate × the effective phase multiplier, so a mini-taper automatically unloads the week.
+
+`programWeek(at:)` and `fraction(of:)` are pure, clamped timeline helpers the UI reads; keeping them on the value type (not in a view) is what makes the bar's geometry unit-testable.
+
+### One program, four consumers
+
+| Consumer | Before | After |
+|---|---|---|
+| `DashboardView.weeklyTRIMPTarget` | `.max()` across goals | `UnifiedProgram.weeklyTrimpTarget` (also feeds the "behind on plan" banner + `WeekTimelineView`) |
+| `DashboardHeaderView` context line | phase + week from whichever goal came first | macrocycle phase + program week, mini-taper labelled explicitly |
+| Coach prompt | per-goal `coachingContext` joined | `MacrocycleContextFormatter`: one header + per-goal blocks evaluated with the same phase |
+| Goals tab | one phase bar **per goal** | one `ProgramTimelineCard` macrocycle bar; per-goal bars suppressed, A/B/C chips in their place |
+
+`atRiskGoals` (dashboard *and* Goals tab) likewise judges every goal against the macrocycle's effective phase — otherwise an interim race gets flagged for "tapering overload" while the program legitimately still wants build volume.
+
+### Prompt contract
+
+`PeriodizationEngine.evaluate`/`evaluateAllGoals` gained an optional **`phaseOverride`**; passing the macrocycle phase is what stops the per-goal blocks from contradicting the header (`nil` preserves the pre-73 behaviour, which is what the fallback path uses when there is no active goal). `MacrocycleContextFormatter` emits `🎯 A-RACE`, the interim-race tune-up list, `⚡ MINI-TAPER ACTIVE` and a `HARD RULE — ONE PROGRAM` line; the first two markers are registered in `structuralPromptMarkers` with a matching "ONE UNIFIED PROGRAM" rule in the `systemInstruction`, so the existing marker test pins both sides (§13 both-sides rule). Both emitters — `CoachContextStore.cachePeriodizationStatus(_:program:)` for the chat coach and `WorkoutAnalysisView+Insights` for the workout analysis — go through the same formatter.
+
+### Single-goal parity
+
+With one active goal the macrocycle *is* that goal's periodisation: the program's windows equal `PhaseWindowCalculator.windows(for:)` exactly, no mini-taper exists, and `ProgramTimelineCard` carries the "Peak start 12 sep" next-phase hint that the per-goal bar used to show — so nothing is lost for the common case. Goals without a blueprint produce no `PeriodizationResult` but still anchor a program (`computedTargetTRIMP` falls back to a duration-derived estimate), and completed/expired goals never reach the timeline nor stretch its span.

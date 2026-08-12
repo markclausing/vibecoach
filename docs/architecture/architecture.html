@@ -660,8 +660,8 @@
     "appVersion": "2.0.0",
     "appVersionSource": "AIFitnessCoach/Info.plist:CFBundleShortVersionString",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 40,
-    "lastUpdated": "2026-07-11",
+    "docRevision": 42,
+    "lastUpdated": "2026-08-12",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps CFBundleShortVersionString from git describe --tags (fallback to the source Info.plist value for tag-less builds). appVersion below mirrors the current marketing version. docRevision is bumped on every architecture-relevant change (see CLAUDE.md §7.1). See ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -823,7 +823,10 @@
         "BlueprintTimelineView",
         "ReadinessCalculator",
         "DashboardMaintenanceRunner",
-        "MigrationFallbackBanner"
+        "MigrationFallbackBanner",
+        "MacrocyclePlanner",
+        "UnifiedProgram",
+        "DashboardHeaderView"
       ],
       "tags": [
         "epic-13",
@@ -832,7 +835,8 @@
         "epic-40",
         "epic-41",
         "epic-51",
-        "epic-65"
+        "epic-65",
+        "epic-73"
       ]
     },
     {
@@ -854,7 +858,7 @@
       "layer": "views",
       "kind": "view",
       "file": "AIFitnessCoach/Views/GoalsListView.swift",
-      "description": "Per-goal detail hub (370 LOC post Epic #72 split): assembles the goal-card composition from Views/Goals/ (GoalHeroCard, GoalVerdictBanner, GoalWarningCard, GoalProgressSection) plus PhaseMilestonesView and the recovery-plan banner.",
+      "description": "Per-goal detail hub: assembles the goal-card composition from Views/Goals/ (GoalHeroCard, GoalVerdictBanner, GoalWarningCard, GoalProgressSection) plus PhaseMilestonesView and the recovery-plan banner. Epic #73 story 73.5: builds the UnifiedProgram once and shares it — ProgramTimelineCard on top, A/B/C chips on the goal headers, the macrocycle phase for periodizationResults and atRiskGoals, and the per-goal phase bar suppressed.",
       "uses": [
         "FitnessGoal",
         "BlueprintChecker",
@@ -863,12 +867,16 @@
         "GoalHeroCard",
         "GoalVerdictBanner",
         "GoalWarningCard",
-        "GoalProgressSection"
+        "GoalProgressSection",
+        "MacrocyclePlanner",
+        "UnifiedProgram",
+        "ProgramTimelineCard"
       ],
       "tags": [
         "epic-17",
         "epic-23",
-        "epic-72"
+        "epic-72",
+        "epic-73"
       ]
     },
     {
@@ -876,15 +884,17 @@
       "layer": "views",
       "kind": "view",
       "file": "AIFitnessCoach/Views/Goals/GoalHeroCard.swift",
-      "description": "Epic #72 story 72.2 — identity row (sport icon tile, Active/AI-plan pills, race-date line, days-countdown numeral) + the proportional phase-timeline bar with in-phase progress fill. Hosts GoalVerdictBanner so the 'will I make it?' verdict leads the card.",
+      "description": "Epic #72 story 72.2 — identity row (sport icon tile, Active/AI-plan pills, race-date line, days-countdown numeral) + the proportional phase-timeline bar with in-phase progress fill. Hosts GoalVerdictBanner so the 'will I make it?' verdict leads the card. Epic #73 story 73.5: showsPhaseBar hides that bar when ProgramTimelineCard draws the one macrocycle bar, and racePriority puts the A/B/C chip in the header.",
       "uses": [
         "FitnessGoal",
         "GoalVerdictBanner",
         "GoalVerdictBuilder",
-        "PhaseTimeline"
+        "PhaseTimeline",
+        "RacePriorityBadge"
       ],
       "tags": [
-        "epic-72"
+        "epic-72",
+        "epic-73"
       ]
     },
     {
@@ -1037,7 +1047,11 @@
         "SymptomContextFormatter",
         "UserOverrideContextFormatter",
         "EventWindowContextFormatter",
-        "FutureProjectionService"
+        "FutureProjectionService",
+        "MacrocycleContextFormatter"
+      ],
+      "tags": [
+        "epic-73"
       ]
     },
     {
@@ -1114,13 +1128,15 @@
       "layer": "services",
       "kind": "service",
       "file": "AIFitnessCoach/Services/PeriodizationEngine.swift",
-      "description": "Determines the active TrainingPhase (Base/Build/Peak/Taper) and the weekly TRIMP target with a phase multiplier (×1.00 / ×1.15 / ×1.30 / ×0.60).",
+      "description": "Determines the active TrainingPhase (Base/Build/Peak/Taper) and the weekly TRIMP target with a phase multiplier (×1.00 / ×1.15 / ×1.30 / ×0.60). Epic #73 story 73.4: evaluate/evaluateAllGoals take an optional phaseOverride so every goal can be judged against the macrocycle's effective phase instead of its own countdown; nil keeps the pre-73 per-goal behaviour.",
       "uses": [
         "TrainingPhase",
-        "FitnessGoal"
+        "FitnessGoal",
+        "UnifiedProgram"
       ],
       "tags": [
-        "epic-16"
+        "epic-16",
+        "epic-73"
       ]
     },
     {
@@ -2100,11 +2116,12 @@
       "layer": "models",
       "kind": "migration",
       "file": "AIFitnessCoach/Models/AppMigrationPlan.swift",
-      "description": "SchemaMigrationPlan with staged stages between SchemaV1 → V2 → V3. Type changes via willMigrate/didMigrate.",
+      "description": "SchemaMigrationPlan with staged stages SchemaV1 → … → V8 (current). Type changes via willMigrate/didMigrate; pure additions (e.g. V7→V8's FitnessGoal.racePriority) via MigrationStage.lightweight. Every stage has a file-backed seed-store test (§2.1).",
       "uses": [
         "SchemaV1",
         "SchemaV2",
-        "SchemaV3"
+        "SchemaV3",
+        "SchemaV8"
       ]
     },
     {
@@ -2128,7 +2145,7 @@
       "layer": "models",
       "kind": "schema-snapshot",
       "file": "AIFitnessCoach/Models/SchemaV3.swift",
-      "description": "Current schema version. `models` is used by AIFitnessCoachApp.makeModelContainer() as the source of truth.",
+      "description": "Frozen snapshot of the old schema. Nested @Model types keep the same unqualified name.",
       "uses": []
     },
     {
@@ -2463,6 +2480,93 @@
       "tags": [
         "epic-70"
       ]
+    },
+    {
+      "id": "MacrocyclePlanner",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/MacrocyclePlanner.swift",
+      "description": "Epic #73 story 73.1 — merges every active goal into ONE macrocycle so overlapping races stop each running a contradicting periodisation. Picks the A-race anchor (an explicit A wins, else the latest race; a B/C marking demotes but never promotes, so a race marked B cannot out-rank a later unmarked one), computes the macrocycle phase windows to that anchor via PhaseWindowCalculator (base spans from the earliest goal createdAt), and overlays each interim race as a RaceMarker with a ~4-day mini-taper window after which the build resumes. Emits UnifiedProgram: effective current phase (mini-taper overrides the underlying window) and one combined weekly TRIMP target. Pure Swift, AppStorage-free (§6); 19 unit tests (MacrocyclePlannerTests).",
+      "uses": [
+        "FitnessGoal",
+        "UnifiedProgram",
+        "PhaseTimeline",
+        "TrainingPhase"
+      ],
+      "tags": [
+        "epic-73"
+      ]
+    },
+    {
+      "id": "UnifiedProgram",
+      "layer": "models",
+      "kind": "model",
+      "file": "AIFitnessCoach/Models/UnifiedProgram.swift",
+      "description": "Epic #73 computed value-types (no @Model, no migration): RacePriority (A/B/C), RaceMarker (race on the timeline + its mini-taper start) and UnifiedProgram (anchor id, phase windows, races, effective phase, inMiniTaper, combined weekly TRIMP target, span). Exposes the pure timeline helpers the UI needs: programWeek(at:) and fraction(of:), both clamped to the program span.",
+      "uses": [
+        "TrainingPhase",
+        "PhaseTimeline"
+      ],
+      "tags": [
+        "epic-73"
+      ]
+    },
+    {
+      "id": "MacrocycleContextFormatter",
+      "layer": "viewmodels",
+      "kind": "formatter",
+      "file": "AIFitnessCoach/ViewModels/MacrocycleContextFormatter.swift",
+      "description": "Epic #73 story 73.4 — the unified periodisation block for the coach prompt. Prefixes a single macrocycle header (🎯 A-RACE + program week, the phase that applies to every goal, the combined weekly target, interim races as tune-ups with their mini-taper date, ⚡ MINI-TAPER ACTIVE when one is running, and a HARD RULE against a full taper for an interim race) to the per-goal blocks, which PeriodizationEngine has evaluated with the same phase. Replaces the old join of contradicting `═══ PERIODISERING ═══` sections. Both emitters (CoachContextStore for chat, WorkoutAnalysisView+Insights for the analysis) go through it (§13).",
+      "uses": [
+        "UnifiedProgram",
+        "MacrocyclePlanner",
+        "PeriodizationEngine",
+        "AppDateFormatters"
+      ],
+      "tags": [
+        "epic-73"
+      ]
+    },
+    {
+      "id": "ProgramTimelineCard",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/Goals/ProgramTimelineCard.swift",
+      "description": "Epic #73 story 73.5 — the one training-programme overview at the top of the Goals tab: a single macrocycle bar to the A-race (phase segments sized by real duration, interim races pinned on it as mini-taper flag markers, a 'you are here' tick), the current phase + the one combined weekly TRIMP target, the next-phase start hint, and a race list with A/B/C badges. Hosts RacePriorityBadge, reused in GoalHeroCard's header. Replaces the competing per-goal phase bars.",
+      "uses": [
+        "UnifiedProgram",
+        "MacrocyclePlanner",
+        "ThemeManager",
+        "AppDateFormatters"
+      ],
+      "tags": [
+        "epic-73"
+      ]
+    },
+    {
+      "id": "SchemaV8",
+      "layer": "models",
+      "kind": "schema-snapshot",
+      "file": "AIFitnessCoach/Models/SchemaV8.swift",
+      "description": "Current schema version (Epic #73 story 73.2: FitnessGoal.racePriority). `models` is what AIFitnessCoachApp.makeModelContainer() passes to the ModelContainer, so the migration plan is actually exercised. V7→V8 is a pure addition ⇒ MigrationStage.lightweight; covered by the file-backed SchemaMigrationV7ToV8Tests.",
+      "uses": [],
+      "tags": [
+        "epic-73"
+      ]
+    },
+    {
+      "id": "DashboardHeaderView",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/DashboardHeaderView.swift",
+      "description": "V2.0 contextual dashboard header: greeting + context line (day · phase · week). Epic #73 story 73.3: the phase and 'WK n/m' now come from the UnifiedProgram macrocycle (mini-taper labelled explicitly) instead of whichever goal came first in the query.",
+      "uses": [
+        "UnifiedProgram",
+        "AppDateFormatters"
+      ],
+      "tags": [
+        "epic-73"
+      ]
     }
   ],
   "subsystems": [
@@ -2574,6 +2678,23 @@
         "SettingsView"
       ],
       "description": "UI + AI coach in NL/EN/DE/ES. UI strings in Localizable.xcstrings (~527 keys); shared components render via Text(LocalizedStringKey(var)), computed props via String(localized:). The English coach prompt steers output language via a locale-dependent 'respond in {language}' directive (no per-language prompt copies). Prompt-interpolated enum values stay Dutch as the prompt term and are localized only at the View render site (UI-vs-prompt split). Detection logic (injuryKeywords, day-name parsing, rest/sport classification) is language-independent."
+    },
+    {
+      "id": "unified-macrocycle",
+      "title": "Unified Multi-goal Training Program",
+      "docRef": "docs/ARCHITECTURE.md#21",
+      "epic": "Epic #73",
+      "description": "One macrocycle instead of one periodisation per goal. MacrocyclePlanner picks the A-race anchor, plots interim races as mini-taper tune-ups and emits a UnifiedProgram that every consumer shares: the dashboard header + weekly TRIMP target, the coach prompt block, and the Goals-tab programme timeline.",
+      "modules": [
+        "MacrocyclePlanner",
+        "UnifiedProgram",
+        "PeriodizationEngine",
+        "MacrocycleContextFormatter",
+        "ProgramTimelineCard",
+        "GoalsListView",
+        "DashboardView",
+        "DashboardHeaderView"
+      ]
     }
   ],
   "flows": [
@@ -2792,15 +2913,15 @@
       "steps": [
         {
           "module": "AIFitnessCoachApp",
-          "action": "ModelContainer(for: SchemaV3, migrationPlan: AppMigrationPlan)"
+          "action": "ModelContainer(for: SchemaV8, migrationPlan: AppMigrationPlan)"
         },
         {
           "module": "AppMigrationPlan",
-          "action": "Execute staged stages V1→V2→V3"
+          "action": "Execute the staged stages up to V8 (V7→V8 lightweight: FitnessGoal.racePriority)"
         },
         {
           "module": "AIFitnessCoachApp",
-          "action": "On failure: log + delete the corrupt store + fresh V3 + UserDefaults flag for a UI message"
+          "action": "On failure: log + delete the corrupt store + fresh V8 + UserDefaults flag for a UI message"
         }
       ]
     },
@@ -3915,9 +4036,11 @@
     "epic-51": "User-feedback hardening — error messages, validation & visibility",
     "logging": "AppLoggers + privacy modifiers",
     "testing": "UITestMockEnvironment + GenerativeModelProtocol",
-    "epic-37": "Internationalisation (NL/EN/DE/ES) + English codebase & coach prompt"
+    "epic-37": "Internationalisation (NL/EN/DE/ES) + English codebase & coach prompt",
+    "epic-73": "Unified multi-goal training program (one macrocycle)"
   }
 }
+
 </script>
 <script>
 (function () {

@@ -156,15 +156,20 @@ extension WorkoutAnalysisView {
         // uncompleted goals.
         let activeGoals = goals.filter { !$0.isCompleted && Date() < $0.targetDate }
         let blueprintResults = BlueprintChecker.checkAllGoals(activeGoals, activities: allActivitiesForContext)
+        // Epic #73 story 73.4: same unified macrocycle as the dashboard emitter — one phase for
+        // every goal plus the program header, so the two prompt surfaces cannot drift apart (§13).
+        let program = MacrocyclePlanner.plan(goals: activeGoals, activities: allActivitiesForContext)
         let periodizationResults = PeriodizationEngine.evaluateAllGoals(
             activeGoals,
             activities: allActivitiesForContext,
-            latestReadinessScore: latestReadinessForContext?.readinessScore
+            latestReadinessScore: latestReadinessForContext?.readinessScore,
+            phaseOverride: program?.currentPhase
         )
         let goalsContext = BlueprintContextFormatter.format(results: blueprintResults)
-        let periodizationContext = periodizationResults
-            .map { $0.coachingContext }
-            .joined(separator: "\n\n")
+        let periodizationContext = MacrocycleContextFormatter.format(
+            program: program,
+            results: periodizationResults
+        )
 
         // Epic #52: fetch the hourly weather range before the cache check — the range
         // goes into the fingerprint, so without a fetch a new range would not

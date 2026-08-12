@@ -63,7 +63,9 @@ final class SchemaMigrationV4ToV5Tests: XCTestCase {
         }
 
         let container = try openV5Store()
-        let goals = try container.mainContext.fetch(FetchDescriptor<FitnessGoal>())
+        // Epic #73: V5 now registers the V7 FitnessGoal snapshot (frozen pre-racePriority shape),
+        // so the intermediate-container fetch uses that type, not the live class.
+        let goals = try container.mainContext.fetch(FetchDescriptor<SchemaV7.FitnessGoal>())
         let prefs = try container.mainContext.fetch(FetchDescriptor<UserPreference>())
 
         XCTAssertEqual(goals.count, 1, "FitnessGoal must survive the migration")
@@ -79,12 +81,12 @@ final class SchemaMigrationV4ToV5Tests: XCTestCase {
         }
 
         let container = try openV5Store()
-        let all = try container.mainContext.fetch(FetchDescriptor<FitnessGoal>())
+        let all = try container.mainContext.fetch(FetchDescriptor<SchemaV7.FitnessGoal>())
         guard let goal = all.first(where: { $0.id == id }) else {
             return XCTFail("Seeded goal not found after migration")
         }
         XCTAssertNil(goal.eventDurationDays, "Pure-addition field must be nil for pre-V5 records")
-        XCTAssertEqual(goal.resolvedEventDurationDays, 1, "nil duration behaves as single-day")
+        XCTAssertEqual(max(1, goal.eventDurationDays ?? 1), 1, "nil duration behaves as single-day")
     }
 
     func test_migration_canWriteEventDurationAfterMigration() throws {
@@ -95,15 +97,15 @@ final class SchemaMigrationV4ToV5Tests: XCTestCase {
         }
 
         let container = try openV5Store()
-        let all = try container.mainContext.fetch(FetchDescriptor<FitnessGoal>())
+        let all = try container.mainContext.fetch(FetchDescriptor<SchemaV7.FitnessGoal>())
         guard let goal = all.first else { return XCTFail("Expected a goal") }
 
         goal.eventDurationDays = 5
         try container.mainContext.save()
 
         let reopened = try openV5Store()
-        let reloaded = try reopened.mainContext.fetch(FetchDescriptor<FitnessGoal>())
+        let reloaded = try reopened.mainContext.fetch(FetchDescriptor<SchemaV7.FitnessGoal>())
         XCTAssertEqual(reloaded.first?.eventDurationDays, 5)
-        XCTAssertEqual(reloaded.first?.resolvedEventDurationDays, 5)
+        XCTAssertEqual(max(1, reloaded.first?.eventDurationDays ?? 1), 5)
     }
 }

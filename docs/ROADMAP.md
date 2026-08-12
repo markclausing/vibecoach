@@ -155,10 +155,10 @@ Residual from archived **Epic #64**: four files still sit above the 600-LOC Swif
 
 ## Recently completed (last 5)
 
+- ✅ **#73** Unified multi-goal training program — one macrocycle to the A-race, interim races as mini-taper tune-ups; one weekly target, one coach context, one programme timeline
 - ✅ **#72** Goals-tab redesign — status verdict, expected-today markers, phase-grouped milestones, finish-time duration fix
 - ✅ **#70** Per-workout chat with local memory — "discuss this workout" on the detail page; distilled facts feed plans & feedback
 - ✅ **#64** Refactor-review follow-ups — DashboardView/SettingsView splits, stale-marker cleanup; residual oversized files → Epic #68
 - ✅ **#67** "How it's built" viewer — visual dev-workflow (agent collaboration, CI pipeline, branching, docs) in the architecture HTML
-- ✅ **#66** Architecture-viewer redesign — mobile-first + non-programmer progressive disclosure (Story → Map → Depth)
 
 Full history (Phases 1–9 + all completed epics) is in **[docs/ROADMAP-archive.md](ROADMAP-archive.md)**.

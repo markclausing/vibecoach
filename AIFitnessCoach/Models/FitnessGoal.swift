@@ -53,6 +53,11 @@ final class FitnessGoal {
     /// 5-day stage tour). `nil`/≤1 = single-day. `targetDate` is the START day.
     var eventDurationDays: Int?
 
+    /// Epic #73: race priority within a multi-goal macrocycle. Exactly one A-race anchors the
+    /// unified program (full taper); B/C races are interim tune-ups (mini-taper). `nil` = unset →
+    /// `MacrocyclePlanner` falls back to a date-derived priority (latest race = A).
+    var racePriority: RacePriority?
+
     /// Safe fallback: always returns a valid EventFormat, even for records without a value.
     ///
     /// Epic #55 story 55.3: a goal with `eventDurationDays > 1` is by definition a
@@ -119,7 +124,8 @@ final class FitnessGoal {
          format: EventFormat? = .singleDayRace,
          intent: PrimaryIntent? = .peakPerformance,
          stretchGoalTime: TimeInterval? = nil,
-         eventDurationDays: Int? = nil) {
+         eventDurationDays: Int? = nil,
+         racePriority: RacePriority? = nil) {
         self.id = id
         self.title = title
         self.details = details
@@ -132,6 +138,7 @@ final class FitnessGoal {
         self.intent = intent
         self.stretchGoalTime = stretchGoalTime
         self.eventDurationDays = eventDurationDays
+        self.racePriority = racePriority
     }
 
     /// Current training phase of this goal based on weeks remaining (Epic 16).

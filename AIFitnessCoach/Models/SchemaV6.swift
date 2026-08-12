@@ -19,7 +19,8 @@ enum SchemaV6: VersionedSchema {
         [Symptom.self,
          DailyReadiness.self,
          WorkoutSample.self,
-         FitnessGoal.self,
+         // Epic #73: point at the V7 FitnessGoal snapshot (shape before `racePriority`) — see §2.1.
+         SchemaV7.FitnessGoal.self,
          ActivityRecord.self,
          UserPreference.self,
          UserConfiguration.self,

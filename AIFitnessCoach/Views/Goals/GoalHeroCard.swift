@@ -7,6 +7,12 @@ struct GoalHeroCard: View {
     let gap: BlueprintGap?
     let verdict: GoalVerdict?
     let daysLeft: Int
+    /// Epic #73 story 73.5: hidden once `ProgramTimelineCard` draws the one macrocycle bar —
+    /// a per-goal bar next to it is exactly the competing timeline this epic removes.
+    var showsPhaseBar: Bool = true
+    /// Epic #73 story 73.5: A/B/C chip next to the "Actief" pill. `nil` when there is no
+    /// unified program to rank this goal within.
+    var racePriority: RacePriority?
     @EnvironmentObject var themeManager: ThemeManager
 
     var body: some View {
@@ -19,7 +25,7 @@ struct GoalHeroCard: View {
                     .padding(.bottom, 12)
             }
 
-            if let phase = goal.currentPhase {
+            if showsPhaseBar, let phase = goal.currentPhase {
                 Divider()
                 phaseBarSection(goal: goal, currentPhase: phase, gap: gap)
                     .padding(16)
@@ -42,6 +48,9 @@ struct GoalHeroCard: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
+                    if let racePriority {
+                        RacePriorityBadge(priority: racePriority)
+                    }
                     Text("Actief")
                         .font(.caption2).fontWeight(.semibold)
                         .padding(.horizontal, 8).padding(.vertical, 3)

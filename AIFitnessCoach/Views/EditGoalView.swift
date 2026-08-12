@@ -92,6 +92,15 @@ struct EditGoalView: View {
                     Text("Uitlopen / Genieten").tag(PrimaryIntent.completion)
                     Text("Presteren / Zo snel mogelijk").tag(PrimaryIntent.peakPerformance)
                 }
+
+                // Epic #73: with multiple race goals the A-race anchors one shared macrocycle;
+                // B/C races become mini-taper tune-ups inside it. "Automatisch" = latest race is A.
+                Picker("Prioriteit", selection: $goal.racePriority) {
+                    Text("Automatisch (laatste race)").tag(RacePriority?.none)
+                    Text("A – hoofddoel").tag(RacePriority?.some(.a))
+                    Text("B – tussenrace").tag(RacePriority?.some(.b))
+                    Text("C – meetmoment").tag(RacePriority?.some(.c))
+                }
             }
 
             Section(header: Text("Doelstelling"), footer: Text("De coach rekent vanaf deze datum terug om je trainingsfasen te plannen.")) {

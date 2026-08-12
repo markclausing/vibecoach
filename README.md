@@ -66,9 +66,9 @@ Beyond averages: VibeCoach reads the raw time-series of a workout and detects ae
 
 <img src="docs/screenshots/05-goals-phases.png" width="230" align="right" alt="Goals with training phases">
 
-Every goal leads with a straight answer: on track, slightly behind, or at risk — with a short explanation, not just a colour. Cumulative progress bars carry a marker for where you should be *today*, and once you've hit a milestone (like your longest run) it turns into a check instead of a bar to keep chasing. Training phases (Base · Build · Peak · Taper) group their own milestones, so the current phase always shows "Now · done/total" while later ones simply read "Upcoming".
+Several races on the calendar? You still train **one programme**. Mark one race as your A-race and the tab opens with a single macrocycle timeline running to it — Base · Build · Peak · Taper, with your other races plotted on that same bar as tune-ups. Each of those gets a short mini-taper instead of a full one, so you arrive fresh without derailing the build toward the race that actually matters. Below it, every goal still leads with a straight answer: on track, slightly behind, or at risk — with a short explanation, not just a colour. Cumulative progress bars carry a marker for where you should be *today*, and a milestone you've hit (like your longest run) turns into a check instead of a bar to keep chasing.
 
-**What you get:** one glance answers "will I make it?" — with the dated phase-by-phase path to back it up.
+**What you get:** one glance answers "will I make it?" — and with two races on the calendar you get one coherent plan instead of two that contradict each other.
 
 <br clear="right">
 
@@ -126,7 +126,7 @@ A short technical summary; the full picture lives in the linked docs (no duplica
 
 **CI:** a 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) on `macos-latest`, plus a CodeQL scan of Swift + Actions workflows and a `release-please` workflow that cuts semver tags + GitHub Releases from Conventional Commits.
 
-**Recently completed:** Epic #72 (Goals-tab redesign — status verdict, expected-today markers, phase-grouped milestones, finish-time duration fix), #70 (per-workout chat with local memory — discuss a workout on its detail page; distilled facts feed plans & feedback), #67 ("How it's built" viewer — visual dev workflow: agent collaboration, CI pipeline, branching & docs), #66 (architecture viewer redesigned — plain-language story first, drill-down depth, mobile-friendly), #65 (refactor hardening: bounded queries + sample retention, ChatViewModel decomposition, sync-orchestration extraction, view splits, lint guardrails). Open work → [`docs/ROADMAP.md`](docs/ROADMAP.md) · full history → [`docs/ROADMAP-archive.md`](docs/ROADMAP-archive.md).
+**Recently completed:** Epic #73 (unified multi-goal training program — one macrocycle to your A-race, other races folded in as mini-taper tune-ups; one weekly target, one coach context, one timeline), #72 (Goals-tab redesign — status verdict, expected-today markers, phase-grouped milestones, finish-time duration fix), #70 (per-workout chat with local memory — discuss a workout on its detail page; distilled facts feed plans & feedback), #67 ("How it's built" viewer — visual dev workflow: agent collaboration, CI pipeline, branching & docs), #66 (architecture viewer redesigned — plain-language story first, drill-down depth, mobile-friendly). Open work → [`docs/ROADMAP.md`](docs/ROADMAP.md) · full history → [`docs/ROADMAP-archive.md`](docs/ROADMAP-archive.md).
 
 **Dig deeper:**
 

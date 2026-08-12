@@ -593,6 +593,29 @@
         }
       }
     },
+    "%@ TRIMP/week" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ TRIMP/Woche"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ TRIMP/week"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ TRIMP/semana"
+          }
+        }
+      }
+    },
     "%@-limiet bereikt. Probeer het later opnieuw." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -612,6 +635,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Límite de %@ alcanzado. Inténtalo más tarde."
+          }
+        }
+      }
+    },
+    "%@-race" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-Wettkampf"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@-race"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Carrera %@"
           }
         }
       }
@@ -860,6 +906,28 @@
     },
     "112" : {
 
+    },
+    "A – hoofddoel" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A – Hauptziel"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A – main goal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A – objetivo principal"
+          }
+        }
+      }
     },
     "Aan de slag" : {
       "extractionState" : "stale",
@@ -1795,6 +1863,50 @@
         }
       }
     },
+    "Automatisch (laatste race)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisch (letztes Rennen)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatic (latest race)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automático (última carrera)"
+          }
+        }
+      }
+    },
+    "B – tussenrace" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "B – Formtest-Rennen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "B – tune-up race"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "B – carrera de preparación"
+          }
+        }
+      }
+    },
     "Base Phase afgerond" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2340,6 +2452,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Inicio de Build %@"
+          }
+        }
+      }
+    },
+    "C – meetmoment" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C – Zwischenziel"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C – checkpoint"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C – punto de control"
           }
         }
       }
@@ -9076,6 +9210,75 @@
         }
       }
     },
+    "Mini-taper" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-Taper"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-taper"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-taper"
+          }
+        }
+      }
+    },
+    "Mini-taper · %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-Taper · %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-taper · %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-taper · %@"
+          }
+        }
+      }
+    },
+    "Mini-taper vanaf %@ — daarna weer opbouwen" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-Taper ab %@ — danach weiter aufbauen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-taper from %@ — then build again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mini-taper desde %@ — después seguir progresando"
+          }
+        }
+      }
+    },
     "Model overbelast" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10779,6 +10982,28 @@
         }
       }
     },
+    "Prioriteit" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Priorität"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Priority"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prioridad"
+          }
+        }
+      }
+    },
     "PRIVACY EERST" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -10979,6 +11204,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Alcanzar la intensidad de carrera"
+          }
+        }
+      }
+    },
+    "RACES" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WETTKÄMPFE"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RACES"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CARRERAS"
           }
         }
       }
@@ -12803,6 +13051,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "UMBRALES DE ENTRENAMIENTO"
+          }
+        }
+      }
+    },
+    "TRAININGSPROGRAMMA" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TRAININGSPROGRAMM"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TRAINING PROGRAM"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PROGRAMA DE ENTRENAMIENTO"
           }
         }
       }
@@ -14685,6 +14956,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Competición"
+          }
+        }
+      }
+    },
+    "Week %@ van %@" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Woche %@ von %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Week %@ of %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Semana %@ de %@"
           }
         }
       }

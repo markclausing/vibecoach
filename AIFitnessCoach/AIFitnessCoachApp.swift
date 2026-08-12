@@ -161,10 +161,10 @@ struct AIFitnessCoachApp: App {
             #endif
         }()
 
-        let schema = Schema(SchemaV7.models)
+        let schema = Schema(SchemaV8.models)
         let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isUITesting)
 
-        // First attempt: load existing store and run the migration chain (V1 → V2 → … → V7).
+        // First attempt: load existing store and run the migration chain (V1 → V2 → … → V8).
         do {
             let container = try ModelContainer(
                 for: schema,

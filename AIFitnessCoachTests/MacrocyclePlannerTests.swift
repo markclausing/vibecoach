@@ -1,0 +1,348 @@
+import XCTest
+@testable import AIFitnessCoach
+
+/// Epic #73 story 73.1 — unit tests for `MacrocyclePlanner`, the engine that merges every active
+/// goal into one macrocycle (A-race anchor + interim races as mini-taper tune-ups). All dates are
+/// absolute and `now` is injected, so the tests are deterministic.
+final class MacrocyclePlannerTests: XCTestCase {
+
+    private let cal = Calendar.current
+    private let now = Date(timeIntervalSince1970: 1_700_000_000)
+
+    private func date(days: Int, from base: Date) -> Date {
+        cal.date(byAdding: .day, value: days, to: base)!
+    }
+
+    private func makeGoal(title: String,
+                          targetInDays: Int,
+                          createdDaysAgo: Int = 7,
+                          targetTRIMP: Double? = 2000,
+                          sportCategory: SportCategory? = .running,
+                          priority: RacePriority? = nil,
+                          isCompleted: Bool = false) -> FitnessGoal {
+        let goal = FitnessGoal(
+            title: title,
+            targetDate: date(days: targetInDays, from: now),
+            createdAt: date(days: -createdDaysAgo, from: now),
+            isCompleted: isCompleted,
+            sportCategory: sportCategory,
+            targetTRIMP: targetTRIMP
+        )
+        goal.racePriority = priority
+        return goal
+    }
+
+    // MARK: - Empty / degenerate
+
+    func testNoActiveGoalsReturnsNil() {
+        XCTAssertNil(MacrocyclePlanner.plan(goals: [], now: now))
+    }
+
+    func testCompletedAndExpiredGoalsAreFilteredOut() {
+        let completed = makeGoal(title: "Done", targetInDays: 30, isCompleted: true)
+        let expired   = makeGoal(title: "Past", targetInDays: -5)
+        XCTAssertNil(MacrocyclePlanner.plan(goals: [completed, expired], now: now))
+    }
+
+    // MARK: - Single goal (parity)
+
+    func testSingleGoalIsItsOwnAnchorWithNoInterimRaces() {
+        let goal = makeGoal(title: "Marathon Amsterdam", targetInDays: 86)
+        let program = MacrocyclePlanner.plan(goals: [goal], now: now)
+
+        let unwrapped = try? XCTUnwrap(program)
+        XCTAssertEqual(unwrapped?.anchorGoalID, goal.id)
+        XCTAssertEqual(unwrapped?.races.count, 1)
+        XCTAssertEqual(unwrapped?.races.first?.isAnchor, true)
+        XCTAssertNil(unwrapped?.races.first?.miniTaperStart)          // anchor uses the macrocycle taper
+        XCTAssertEqual(unwrapped?.end, goal.targetDate)
+        XCTAssertGreaterThan(unwrapped?.weeklyTrimpTarget ?? 0, 0)
+    }
+
+    // MARK: - Two overlapping races (the screenshot scenario)
+
+    func testLaterRaceAnchorsTheMacrocycleEarlierIsInterim() throws {
+        let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 64)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 86)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        // The later race anchors the program; it ends on the anchor's date.
+        XCTAssertEqual(program.anchorGoalID, amsterdam.id)
+        XCTAssertEqual(program.end, amsterdam.targetDate)
+
+        // Races are sorted by date: Haarlem (interim) then Amsterdam (anchor).
+        XCTAssertEqual(program.races.map(\.goalID), [haarlem.id, amsterdam.id])
+
+        let haarlemMarker = try XCTUnwrap(program.races.first { $0.goalID == haarlem.id })
+        XCTAssertFalse(haarlemMarker.isAnchor)
+        XCTAssertEqual(haarlemMarker.priority, .b)
+        // Interim race gets a mini-taper ending on race day.
+        let expectedTaperStart = date(days: 64 - MacrocyclePlanner.miniTaperDays, from: now)
+        XCTAssertEqual(haarlemMarker.miniTaperStart, expectedTaperStart)
+
+        let amsterdamMarker = try XCTUnwrap(program.races.first { $0.goalID == amsterdam.id })
+        XCTAssertTrue(amsterdamMarker.isAnchor)
+        XCTAssertEqual(amsterdamMarker.priority, .a)
+        XCTAssertNil(amsterdamMarker.miniTaperStart)
+    }
+
+    // MARK: - Mini-taper override of the current phase
+
+    func testNowInsideInterimMiniTaperOverridesCurrentPhaseToTapering() throws {
+        // Haarlem 2 days out → its 4-day mini-taper window [now-2, now+2) contains now.
+        let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 2)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 30)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        XCTAssertEqual(program.anchorGoalID, amsterdam.id)
+        XCTAssertTrue(program.inMiniTaper)
+        XCTAssertEqual(program.currentPhase, .tapering)
+    }
+
+    func testFarFromAnyRaceIsNotInMiniTaperNorTapering() throws {
+        // 86 days from the anchor and no interim race nearby → building, not tapering.
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 86)
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [amsterdam], now: now))
+
+        XCTAssertFalse(program.inMiniTaper)
+        XCTAssertNotEqual(program.currentPhase, .tapering)
+    }
+
+    // MARK: - Anchor selection is priority/date driven
+
+    func testAnchorIsAlwaysTheLatestRaceRegardlessOfInputOrder() throws {
+        let early = makeGoal(title: "Early", targetInDays: 20)
+        let late  = makeGoal(title: "Late", targetInDays: 120)
+        let mid   = makeGoal(title: "Mid", targetInDays: 60)
+
+        // Input order shuffled — anchor must still be the latest race.
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [mid, late, early], now: now))
+        XCTAssertEqual(program.anchorGoalID, late.id)
+        XCTAssertEqual(program.races.count, 3)
+        // Every non-anchor earlier race is an interim tune-up with a mini-taper.
+        let interimMarkers = program.races.filter { !$0.isAnchor }
+        XCTAssertEqual(interimMarkers.count, 2)
+        XCTAssertTrue(interimMarkers.allSatisfy { $0.miniTaperStart != nil })
+    }
+
+    // MARK: - Anchor selection vs. explicit priorities
+
+    /// Regression, found on-device from the 73.5 showcase capture: the athlete had marked the
+    /// earlier half marathon "B" and left the later marathon unset. Ranking by best-explicit-
+    /// priority made that B-race anchor the macrocycle, so the whole program ran to the half
+    /// marathon and the marathon three weeks later was clamped onto the end of the bar as a stray
+    /// marker — the exact failure this epic removes. A B/C marking demotes, never promotes.
+    func testExplicitBDoesNotOutrankALaterUnmarkedRace() throws {
+        let haarlem   = makeGoal(title: "Halve Marathon Haarlem", targetInDays: 46, priority: .b)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 67, priority: nil)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        XCTAssertEqual(program.anchorGoalID, amsterdam.id)
+        XCTAssertEqual(program.end, amsterdam.targetDate)
+        // The unmarked anchor reads as the A-race; the marked one keeps its B.
+        XCTAssertEqual(program.races.first { $0.goalID == amsterdam.id }?.priority, .a)
+        XCTAssertEqual(program.races.first { $0.goalID == haarlem.id }?.priority, .b)
+        // And Haarlem is now a proper interim tune-up instead of the anchor.
+        XCTAssertNotNil(program.races.first { $0.goalID == haarlem.id }?.miniTaperStart)
+    }
+
+    /// The counterpart: an explicit A still wins over a later race — that is the whole point of
+    /// letting the athlete override the date-derived default.
+    func testExplicitAWinsOverALaterRace() throws {
+        let haarlem   = makeGoal(title: "Halve Marathon Haarlem", targetInDays: 46, priority: .a)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 67, priority: .b)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        XCTAssertEqual(program.anchorGoalID, haarlem.id)
+        XCTAssertEqual(program.end, haarlem.targetDate)
+        // A race after the anchor is degenerate: a plain marker, no mini-taper.
+        XCTAssertNil(program.races.first { $0.goalID == amsterdam.id }?.miniTaperStart)
+    }
+
+    func testAllRacesMarkedBStillAnchorsOnTheLatest() throws {
+        let haarlem   = makeGoal(title: "Halve Marathon Haarlem", targetInDays: 46, priority: .b)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 67, priority: .b)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+        XCTAssertEqual(program.anchorGoalID, amsterdam.id)
+    }
+
+    // MARK: - Story 73.3: one combined weekly target (was `.max()` across goals)
+
+    /// The old `DashboardView.weeklyTRIMPTarget` took the max over independently-periodised goals,
+    /// so a nearby small race could dominate the target of the real A-race. The unified target is
+    /// the anchor's phase-corrected rate — for the two-race scenario that is Amsterdam's, not the
+    /// (higher, because it is closer) Haarlem rate.
+    func testCombinedWeeklyTargetFollowsTheAnchorNotTheLoudestGoal() throws {
+        let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 64, targetTRIMP: 1500)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 86, targetTRIMP: 2000)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        let anchorWeeks = max(0.1, amsterdam.weeksRemaining(from: now))
+        let expected = (amsterdam.computedTargetTRIMP / anchorWeeks) * program.currentPhase.multiplier
+        XCTAssertEqual(program.weeklyTrimpTarget, expected, accuracy: 0.001)
+
+        // The legacy `.max()` reading would have picked Haarlem's (closer ⇒ steeper) rate.
+        let haarlemWeeks = max(0.1, haarlem.weeksRemaining(from: now))
+        let legacyMax = max(
+            (haarlem.computedTargetTRIMP / haarlemWeeks) * (haarlem.currentPhase ?? .baseBuilding).multiplier,
+            expected
+        )
+        XCTAssertNotEqual(program.weeklyTrimpTarget, legacyMax, accuracy: 0.001)
+    }
+
+    /// An interim mini-taper must actually lower the week's load — that is the whole point of
+    /// folding a B-race in as a tune-up instead of letting it run its own full taper.
+    func testWeeklyTargetDropsToTaperLevelDuringAnInterimMiniTaper() throws {
+        let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 2)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 30)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        let anchorWeeks = max(0.1, amsterdam.weeksRemaining(from: now))
+        let linearRate = amsterdam.computedTargetTRIMP / anchorWeeks
+        XCTAssertTrue(program.inMiniTaper)
+        XCTAssertEqual(program.weeklyTrimpTarget, linearRate * TrainingPhase.tapering.multiplier, accuracy: 0.001)
+        XCTAssertLessThan(program.weeklyTrimpTarget, linearRate)
+    }
+
+    // MARK: - Story 73.3: program week for the dashboard header
+
+    func testProgramWeekCountsFromProgramStartAndClampsToTheSpan() throws {
+        // Created 21 days ago, race in 49 days ⇒ a 10-week program, currently in week 4.
+        let goal = makeGoal(title: "Marathon Amsterdam", targetInDays: 49, createdDaysAgo: 21)
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [goal], now: now))
+
+        let week = program.programWeek(at: now)
+        XCTAssertEqual(week.total, 10)
+        XCTAssertEqual(week.current, 4)
+
+        // Before the start and past the end both clamp into 1...total.
+        XCTAssertEqual(program.programWeek(at: date(days: -60, from: now)).current, 1)
+        XCTAssertEqual(program.programWeek(at: date(days: 400, from: now)).current, week.total)
+    }
+
+    func testProgramWeekSpansTheWholeMacrocycleNotJustTheAnchorsOwnGoal() throws {
+        // The interim goal is the older one — the program (and therefore the week count) starts
+        // there, not at the anchor's later creation date.
+        let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 64, createdDaysAgo: 70)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 86, createdDaysAgo: 7)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        XCTAssertEqual(program.start, haarlem.createdAt)
+        // 70 days elapsed of a 156-day span ⇒ week 11 of 23.
+        let week = program.programWeek(at: now)
+        XCTAssertEqual(week.current, 11)
+        XCTAssertEqual(week.total, 23)
+    }
+
+    // MARK: - Story 73.5: timeline positions for the macrocycle bar
+
+    func testFractionPlacesRacesAndNowOnTheProgramSpan() throws {
+        // Created 30 days ago, anchor in 70 days ⇒ a 100-day span; now sits at 30 %.
+        let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 20, createdDaysAgo: 30)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 70, createdDaysAgo: 30)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+
+        XCTAssertEqual(program.fraction(of: now), 0.30, accuracy: 0.01)
+        XCTAssertEqual(program.fraction(of: haarlem.targetDate), 0.50, accuracy: 0.01)
+        XCTAssertEqual(program.fraction(of: amsterdam.targetDate), 1.0, accuracy: 0.001)
+        XCTAssertEqual(program.fraction(of: program.start), 0.0, accuracy: 0.001)
+    }
+
+    func testFractionClampsOutsideTheProgramSpan() throws {
+        let goal = makeGoal(title: "Marathon Amsterdam", targetInDays: 70, createdDaysAgo: 30)
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [goal], now: now))
+
+        XCTAssertEqual(program.fraction(of: date(days: -500, from: now)), 0.0)
+        XCTAssertEqual(program.fraction(of: date(days: 500, from: now)), 1.0)
+    }
+
+    func testAnchorRaceIsExposedForTheTimelineHeader() throws {
+        let haarlem   = makeGoal(title: "Halve marathon Haarlem", targetInDays: 64)
+        let amsterdam = makeGoal(title: "Marathon Amsterdam", targetInDays: 86)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [haarlem, amsterdam], now: now))
+        XCTAssertEqual(program.anchorRace?.goalID, amsterdam.id)
+        XCTAssertEqual(program.nextRace(after: now)?.goalID, haarlem.id)
+    }
+
+    // MARK: - Story 73.6: single-goal + degenerate-case parity
+
+    /// The unified path must not move a lone goal's phase windows: with one goal the macrocycle
+    /// *is* that goal's periodisation, so the bar renders exactly what the pre-73 per-goal bar did.
+    func testSingleGoalWindowsMatchThePerGoalPhaseWindowsExactly() throws {
+        let goal = makeGoal(title: "Marathon Amsterdam", targetInDays: 86, createdDaysAgo: 30)
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [goal], now: now))
+
+        XCTAssertEqual(program.phases, PhaseWindowCalculator.windows(for: goal))
+        XCTAssertEqual(program.start, goal.createdAt)
+        XCTAssertEqual(program.end, goal.targetDate)
+        XCTAssertFalse(program.inMiniTaper)
+    }
+
+    /// A goal without a blueprint (no `PeriodizationResult` is produced for it) must still plan:
+    /// the timeline card and weekly target are driven by the program, not by the blueprint.
+    func testGoalWithoutABlueprintStillAnchorsAProgramWithAUsableTarget() throws {
+        let strength = makeGoal(title: "Sterker worden", targetInDays: 60,
+                                targetTRIMP: nil, sportCategory: .strength)
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [strength], now: now))
+
+        XCTAssertEqual(program.anchorGoalID, strength.id)
+        XCTAssertFalse(program.phases.isEmpty)
+        // `computedTargetTRIMP` falls back to a duration-derived estimate, so the week is planned.
+        XCTAssertGreaterThan(program.weeklyTrimpTarget, 0)
+        XCTAssertNil(PeriodizationEngine.evaluate(goal: strength, activities: []),
+                     "no blueprint ⇒ no per-goal periodisation result; the program carries it")
+    }
+
+    func testCompletedAndExpiredGoalsNeverAppearOnTheTimeline() throws {
+        let active    = makeGoal(title: "Marathon Amsterdam", targetInDays: 86)
+        let completed = makeGoal(title: "Voltooid", targetInDays: 40, isCompleted: true)
+        let expired   = makeGoal(title: "Verlopen", targetInDays: -10)
+
+        let program = try XCTUnwrap(
+            MacrocyclePlanner.plan(goals: [completed, expired, active], now: now)
+        )
+
+        XCTAssertEqual(program.anchorGoalID, active.id)
+        XCTAssertEqual(program.races.map(\.goalID), [active.id])
+        // The program span starts at the *active* goal's creation — a completed goal must not
+        // stretch the timeline backwards.
+        XCTAssertEqual(program.start, active.createdAt)
+    }
+
+    /// Two races on the same day: one must still anchor deterministically and the other must not
+    /// get a mini-taper (it isn't *before* the anchor, so there is nothing to unload into).
+    func testSameDateGoalsProduceOneAnchorAndNoMiniTaper() throws {
+        let first  = makeGoal(title: "Race A", targetInDays: 50)
+        let second = makeGoal(title: "Race B", targetInDays: 50)
+
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [first, second], now: now))
+
+        XCTAssertEqual(program.races.count, 2)
+        XCTAssertEqual(program.races.filter(\.isAnchor).count, 1)
+        XCTAssertTrue(program.races.allSatisfy { $0.miniTaperStart == nil })
+        XCTAssertFalse(program.inMiniTaper)
+    }
+
+    /// A goal created today with a race a few days out compresses every phase window; the planner
+    /// must still produce a phase, a positive target and in-range fractions rather than dividing
+    /// by a zero-length span.
+    func testVeryShortGoalCreatedTodayStillPlans() throws {
+        let sprint = makeGoal(title: "Testloop", targetInDays: 3, createdDaysAgo: 0)
+        let program = try XCTUnwrap(MacrocyclePlanner.plan(goals: [sprint], now: now))
+
+        XCTAssertFalse(program.phases.isEmpty)
+        XCTAssertGreaterThan(program.weeklyTrimpTarget, 0)
+        XCTAssertEqual(program.programWeek(at: now).current, 1)
+        XCTAssertTrue((0.0...1.0).contains(program.fraction(of: now)))
+    }
+}
