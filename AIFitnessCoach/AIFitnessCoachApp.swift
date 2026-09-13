@@ -177,19 +177,34 @@ struct AIFitnessCoachApp: App {
         } catch {
             AppLoggers.fitnessDataService.error("""
                 ModelContainer init with migration plan failed: \
-                \(error.localizedDescription, privacy: .public). \
-                Falling back to a fresh DB — FitnessGoal, UserPreference, Symptom \
-                and workout-chat records are lost; HK + Strava activities re-sync \
-                automatically as soon as the app reopens.
+                \(error.localizedDescription, privacy: .public). Deciding on recovery.
                 """)
         }
 
-        // Fallback: remove the corrupt store and build an empty V7 container.
-        // During UI tests we run in-memory (`isStoredInMemoryOnly`), so no
-        // file cleanup is needed — skip that step in that case.
+        // During UI tests we run in-memory (`isStoredInMemoryOnly`), so there are no
+        // store files to inspect or quarantine — skip straight to the rebuild.
         if !isUITesting {
-            deleteCorruptStore(at: config.url)
-            MigrationFallbackStore().recordFallback()
+            let recovery = ModelStoreRecovery(storeURL: config.url)
+            switch recovery.decideAction() {
+            case .useTemporaryInMemoryStore:
+                // The store is locked (data protection before the first unlock since boot),
+                // not corrupt. Never touch it — rebuilding here is exactly how locked
+                // background launches used to wipe local-only data. This launch runs on an
+                // empty in-memory store; the next launch opens the real one again.
+                AppLoggers.fitnessDataService.error("""
+                    Store files exist but are not readable (device locked?). Leaving them \
+                    untouched and running this launch on a temporary in-memory store.
+                    """)
+                return makeTemporaryInMemoryContainer(schema: schema)
+            case .quarantineAndRebuild:
+                // Readable yet unopenable (failed migration / corruption): move it aside so it
+                // stays recoverable, then build a fresh container. FitnessGoal, UserPreference,
+                // Symptom and workout-chat records are gone from the app; HK + Strava
+                // activities re-sync automatically.
+                let quarantined = recovery.quarantineStore()
+                AppLoggers.fitnessDataService.error("Quarantined \(quarantined.count, privacy: .public) store file(s); building a fresh DB.")
+                MigrationFallbackStore().recordFallback()
+            }
         }
 
         do {
@@ -205,21 +220,20 @@ struct AIFitnessCoachApp: App {
     }
 
     /// M-3: applies an explicit data-protection class to the SwiftData store and
-    /// its WAL/SHM sidecars. `.completeUnlessOpen` keeps the file encrypted at
-    /// rest while the device is locked, yet lets the background HealthKit observer
-    /// (Engine A) keep writing to an already-open store. On the simulator this is
-    /// effectively a no-op; it is enforced on device. Best-effort by design — a
-    /// failure here must never block app launch, so we log via the defensive
-    /// pattern (§12) and continue.
+    /// its WAL/SHM sidecars — `ModelStoreRecovery.storeFileProtection`
+    /// (`.completeUntilFirstUserAuthentication`): encrypted until the first unlock after
+    /// boot, then openable by a cold background launch on a locked device (Engine A/B).
+    /// The earlier `.completeUnlessOpen` made exactly those launches fail and wipe the
+    /// store — see `ModelStoreRecovery`. Re-applied on every successful init, which also
+    /// migrates existing stores to the new class. On the simulator this is effectively a
+    /// no-op. Best-effort by design — a failure here must never block app launch, so we
+    /// log via the defensive pattern (§12) and continue.
     private static func applyFileProtection(at storeURL: URL) {
-        let basePath = storeURL.path
-        for suffix in ["", "-wal", "-shm"] {
-            let path = basePath + suffix
-            guard FileManager.default.fileExists(atPath: path) else { continue }
+        for file in ModelStoreRecovery(storeURL: storeURL).existingStoreFiles {
             do {
                 try FileManager.default.setAttributes(
-                    [.protectionKey: FileProtectionType.completeUnlessOpen],
-                    ofItemAtPath: path
+                    [.protectionKey: ModelStoreRecovery.storeFileProtection],
+                    ofItemAtPath: file.path
                 )
             } catch {
                 AppLoggers.fitnessDataService.error("Could not set file protection on the store file: \(error.localizedDescription, privacy: .public)")
@@ -227,15 +241,15 @@ struct AIFitnessCoachApp: App {
         }
     }
 
-    /// Removes the SQLite store and the associated WAL/SHM sidecar files so that
-    /// SwiftData can create a clean V2 store in the same place on a second init.
-    private static func deleteCorruptStore(at url: URL) {
-        let basePath = url.path
-        for suffix in ["", "-wal", "-shm"] {
-            let candidate = URL(fileURLWithPath: basePath + suffix)
-            if FileManager.default.fileExists(atPath: candidate.path) {
-                try? FileManager.default.removeItem(at: candidate)
-            }
+    /// Empty, non-persistent container for a launch whose on-disk store is locked. Nothing
+    /// written during this launch survives; HK + Strava data re-syncs on the next launch.
+    /// A second failure here means SwiftData itself is broken, so crashing is correct (§12).
+    private static func makeTemporaryInMemoryContainer(schema: Schema) -> ModelContainer {
+        do {
+            let memoryConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            return try ModelContainer(for: schema, configurations: memoryConfig)
+        } catch {
+            fatalError("In-memory ModelContainer init failed for a locked-store launch: \(error)")
         }
     }
 
