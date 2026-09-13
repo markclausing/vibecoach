@@ -243,15 +243,17 @@ Detection is **gated on personal HR zones** (Epic 44): cardiac drift only trigge
 
 GitHub Actions runs two workflows on every push to `main` and every PR:
 
-### `iOS CI` — 4-job DAG
+### `iOS CI` — 5-job DAG
 
 ```
 ┌─ SwiftLint        (parallel, no needs)
+┌─ Doc Consistency  (parallel, no needs — ubuntu)
 ├─ Unit Tests ──────┬─ UI Tests
 └──────────────────┴─ Coverage Report
 ```
 
 - **`SwiftLint`** — `swiftlint --strict` on the `.swiftlint.yml` config. 938→0 violations baseline; 1 new violation breaks CI.
+- **`Doc Consistency`** — `scripts/check-doc-consistency.py` on `ubuntu-latest` (seconds of Python, no Xcode — the only non-macOS job, 10× cheaper). Guards the two derived-artefact invariants that broke in practice: `architecture.json`'s `meta.appVersion` must equal the released version in `.release-please-manifest.json`, and `architecture.html` must embed a verbatim copy of `architecture.json`. Version lag is tolerated while a release is in flight (the release-please PR and its merge commit), so the machine-generated Release PR never goes red; every other context fails hard with a message naming the exact fix. Runnable locally: `python3 scripts/check-doc-consistency.py`.
 - **`Unit Tests`** — `xcodebuild test -only-testing:AIFitnessCoachTests -enableCodeCoverage YES`. xcresult as an artifact (7d).
 - **`UI Tests`** — `-only-testing:AIFitnessCoachUITests -parallel-testing-enabled NO`. Sequential to avoid xctrunner-clone flakiness (Epic 46.4 root cause). xcresult + CoreSimulator logs as artifacts (14d).
 - **`Coverage Report`** — `needs: [unit-tests, ui-tests]`. `scripts/coverage-report.py` merges both xcresults per-file (max-coverage approximation) and generates per-directory markdown with aggregates (Testable / Views / Total).
