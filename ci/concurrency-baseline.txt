@@ -3,21 +3,23 @@
 # Frozen debt, not an allowlist to grow: CI fails when an entry appears that is not
 # listed here. Entries may disappear freely; re-freeze with `--update` when they do.
 # Format: <repo-relative file>: <compiler message>, line numbers deliberately dropped.
+# Macro-expansion diagnostics (SwiftData #Predicate) are excluded — unactionable, and
+# the toolchains disagree on how to name them.
 #
-# Entries: 52
+# Diagnostic wording is toolchain-specific, so this file belongs to the Xcode below —
+# the one the CI job pins. Bumping that pin means re-freezing this baseline.
+# toolchain: Xcode_26.6.app
+# Entries: 36
 AIFitnessCoach/AIFitnessCoachApp.swift: conformance of 'AppDelegate' to protocol 'UNUserNotificationCenterDelegate' crosses into main actor-isolated code and can cause data races
 AIFitnessCoach/Extensions/AppDateFormatters.swift: static property 'cache' is not concurrency-safe because it is nonisolated global shared mutable state
 AIFitnessCoach/Extensions/AppDateFormatters.swift: static property 'iso8601' is not concurrency-safe because non-'Sendable' type 'ISO8601DateFormatter' may have shared mutable state
 AIFitnessCoach/Extensions/AppDateFormatters.swift: static property 'iso8601WithFractionalSeconds' is not concurrency-safe because non-'Sendable' type 'ISO8601DateFormatter' may have shared mutable state
 AIFitnessCoach/Services/ProactiveNotificationService.swift: capture of 'self' with non-Sendable type 'ProactiveNotificationService?' in a '@Sendable' closure
 AIFitnessCoach/Services/ProactiveNotificationService.swift: capture of 'self' with non-Sendable type 'ProactiveNotificationService?' in an isolated closure
-AIFitnessCoach/Services/ProactiveNotificationService.swift: passing closure as a 'sending' parameter risks causing data races between code in the current isolation context and concurrent execution of the closure
+AIFitnessCoach/Services/ProactiveNotificationService.swift: passing closure as a 'sending' parameter risks causing data races between code in the current task and concurrent execution of the closure
 AIFitnessCoach/Services/ProactiveNotificationService.swift: static property 'shared' is not concurrency-safe because non-'Sendable' type 'ProactiveNotificationService' may have shared mutable state
 AIFitnessCoach/Services/Security/KeychainService.swift: static property 'shared' is not concurrency-safe because non-'Sendable' type 'KeychainService' may have shared mutable state
-AIFitnessCoach/Services/Sync/ActivityDeduplicator.swift: [macro expansion #Predicate] type 'KeyPath<ActivityRecord, Date>' does not conform to the 'Sendable' protocol
-AIFitnessCoach/Services/Sync/ActivityDeduplicator.swift: [macro expansion #Predicate] type 'KeyPath<ActivityRecord, String>' does not conform to the 'Sendable' protocol
 AIFitnessCoach/Services/Sync/ActivityDeduplicator.swift: type 'KeyPath<ActivityRecord, Date>' does not conform to the 'Sendable' protocol
-AIFitnessCoach/Services/Sync/DashboardMaintenanceRunner.swift: [macro expansion #Predicate] type 'KeyPath<ActivityRecord, Date>' does not conform to the 'Sendable' protocol
 AIFitnessCoach/Services/Sync/DashboardMaintenanceRunner.swift: non-Sendable '[WorkoutSample]'-typed result can not be returned from actor-isolated instance method 'samples(forWorkoutUUID:)' to main actor-isolated context
 AIFitnessCoach/Services/Sync/DashboardMaintenanceRunner.swift: type 'KeyPath<ActivityRecord, Date>' does not conform to the 'Sendable' protocol
 AIFitnessCoach/Services/Sync/DeepSyncService.swift: sending 'self.ingestService' risks causing data races
@@ -27,8 +29,6 @@ AIFitnessCoach/Services/Sync/HealthKitSyncService.swift: non-Sendable type 'any 
 AIFitnessCoach/Services/Sync/SessionReclassifier.swift: non-Sendable '[WorkoutSample]'-typed result can not be returned from actor-isolated instance method 'samples(forWorkoutUUID:)' to main actor-isolated context
 AIFitnessCoach/Services/Sync/SessionReclassifier.swift: type 'KeyPath<ActivityRecord, Date>' does not conform to the 'Sendable' protocol
 AIFitnessCoach/Services/Sync/StravaAuthService.swift: sending 'self.session' risks causing data races
-AIFitnessCoach/Services/Sync/WorkoutSampleService.swift: [macro expansion #Predicate] type 'KeyPath<WorkoutSample, Date>' does not conform to the 'Sendable' protocol
-AIFitnessCoach/Services/Sync/WorkoutSampleService.swift: [macro expansion #Predicate] type 'KeyPath<WorkoutSample, UUID>' does not conform to the 'Sendable' protocol
 AIFitnessCoach/Services/Sync/WorkoutSampleService.swift: sending 'self' risks causing data races
 AIFitnessCoach/Services/Sync/WorkoutSampleService.swift: type 'KeyPath<WorkoutSample, Date>' does not conform to the 'Sendable' protocol
 AIFitnessCoach/Services/ThemeManager.swift: call to main actor-isolated initializer 'init(style:)' in a synchronous nonisolated context
@@ -40,20 +40,9 @@ AIFitnessCoach/ViewModels/ChatViewModel.swift: sending 'fallbackModel' risks cau
 AIFitnessCoach/ViewModels/ChatViewModel.swift: sending value of non-Sendable type 'any GenerativeModelProtocol' risks causing data races
 AIFitnessCoach/ViewModels/CoachInvocationContext.swift: static property 'empty' is not concurrency-safe because non-'Sendable' type 'CoachInvocationContext' may have shared mutable state
 AIFitnessCoach/ViewModels/WorkoutChatViewModel.swift: sending value of non-Sendable type 'any GenerativeModelProtocol' risks causing data races
-AIFitnessCoach/Views/ChatView.swift: [macro expansion #Predicate] type 'KeyPath<UserPreference, Bool>' does not conform to the 'Sendable' protocol
 AIFitnessCoach/Views/Dashboard/PostWorkoutCheckinCard.swift: static property 'all' is not concurrency-safe because non-'Sendable' type '[WorkoutCheckinOption]' may have shared mutable state
-AIFitnessCoach/Views/DashboardView.swift: [macro expansion #Predicate] type 'KeyPath<ActivityRecord, Date>' does not conform to the 'Sendable' protocol
-AIFitnessCoach/Views/DashboardView.swift: [macro expansion #Predicate] type 'KeyPath<DailyReadiness, Date>' does not conform to the 'Sendable' protocol
-AIFitnessCoach/Views/DashboardView.swift: [macro expansion #Predicate] type 'KeyPath<Symptom, Date>' does not conform to the 'Sendable' protocol
-AIFitnessCoach/Views/DashboardView.swift: [macro expansion #Predicate] type 'KeyPath<UserPreference, Bool>' does not conform to the 'Sendable' protocol
-AIFitnessCoach/Views/GoalsListView.swift: [macro expansion #Predicate] type 'KeyPath<ActivityRecord, Date>' does not conform to the 'Sendable' protocol
-AIFitnessCoach/Views/GoalsListView.swift: [macro expansion #Predicate] type 'KeyPath<UserPreference, Bool>' does not conform to the 'Sendable' protocol
 AIFitnessCoach/Views/Settings/AIProviderSettingsView.swift: sending 'self.catalogService' risks causing data races
 AIFitnessCoach/Views/Settings/SettingsView+Actions.swift: add '@preconcurrency' to suppress 'Sendable'-related warnings from module 'UserNotifications'
 AIFitnessCoach/Views/Settings/SettingsView+Actions.swift: capture of 'settings' with non-Sendable type 'UNNotificationSettings' in a '@Sendable' closure
 AIFitnessCoach/Views/Settings/SettingsView+Actions.swift: sending 'settings' risks causing data races
 AIFitnessCoach/Views/WorkoutAnalysis/RecentWorkoutsSection.swift: type 'KeyPath<ActivityRecord, Date>' does not conform to the 'Sendable' protocol
-AIFitnessCoach/Views/WorkoutAnalysis/WorkoutChatSection.swift: [macro expansion #Predicate] type 'KeyPath<WorkoutChatEntry, String>' does not conform to the 'Sendable' protocol
-AIFitnessCoach/Views/WorkoutAnalysis/WorkoutChatSection.swift: [macro expansion #Predicate] type 'KeyPath<WorkoutChatFact, String>' does not conform to the 'Sendable' protocol
-AIFitnessCoach/Views/WorkoutAnalysisView.swift: [macro expansion #Predicate] type 'KeyPath<ActivityRecord, Date>' does not conform to the 'Sendable' protocol
-AIFitnessCoach/Views/WorkoutAnalysisView.swift: [macro expansion #Predicate] type 'KeyPath<WorkoutSample, UUID>' does not conform to the 'Sendable' protocol

@@ -87,6 +87,10 @@ jobs:
     # Alleen de app-target: de test-targets voegen ~163 diagnostics toe die vrijwel
     # allemaal XCTest/XCUITest-boilerplate zijn (XCUIApplication is @MainActor, de
     # testmethodes niet) — dat is framework-ruis, geen data-race-risico in de app.
+    env:
+      # De baseline hoort bij één toolchain (zie de stap hieronder). Bumpen = baseline
+      # opnieuw bevriezen vanaf een CI-log.
+      PINNED_XCODE: Xcode_26.6.app
 
     steps:
       - name: Checkout Repository
@@ -95,8 +99,25 @@ jobs:
       - name: Setup Dummy Secrets for Build
         run: cp AIFitnessCoach/Secrets-template.swift AIFitnessCoach/Secrets.swift
 
-      - name: Select Xcode Version
-        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+      - name: Select Pinned Xcode Version
+        # Als enige job pinnen we hier een exacte Xcode in plaats van het Xcode.app-symlink
+        # te volgen. Swift herformuleert diagnostics tussen releases — 26.6 zegt "data races
+        # between code in the current task", 27 zegt "…in the current isolation context" voor
+        # dezelfde warning, en de [#MutableGlobalVariable]-group-tags bestaan pas vanaf 27.
+        # Zonder pin verandert de compiler zodra GitHub het runner-image roteert en staat de
+        # guard ineens rood op een PR die er niets mee te maken heeft.
+        #
+        # Ontbreekt de gepinde versie (image-rotatie), dan vallen we terug op de default i.p.v.
+        # hard te falen: de guard meldt dan zelf een toolchain-mismatch, wat leesbaarder is dan
+        # een geblokkeerde pipeline.
+        run: |
+          if [ -d "/Applications/$PINNED_XCODE" ]; then
+            sudo xcode-select -s "/Applications/$PINNED_XCODE/Contents/Developer"
+          else
+            echo "::warning::$PINNED_XCODE is niet op deze runner aanwezig — terugval op de default Xcode. Verwacht een toolchain-mismatch-melding van de guard; pin bijwerken en de baseline opnieuw bevriezen."
+            sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          fi
+          xcodebuild -version
 
       - name: Build and Capture Diagnostics
         # Verse `-derivedDataPath` is essentieel: een incrementele build her-emit

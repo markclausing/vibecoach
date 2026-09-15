@@ -20,6 +20,20 @@ Entries are deduplicated rather than counted: Swift emits the same diagnostic fr
 whether they sit in a declaration signature or a body. Counts would wobble between runs for reasons
 that have nothing to do with the code.
 
+Diagnostics from inside an expanded macro are skipped. In practice these are all SwiftData's
+`#Predicate` (via `@Query`) complaining that `KeyPath` is not `Sendable` — noise nobody can act on,
+since the code belongs to Apple's macro. They also have no portable source attribution: Xcode 27
+reports them as `macro expansion #Predicate` plus an "expanded code originates here" note, while
+Xcode 26.6 reports a mangled `@__swiftmacro_…` buffer name and emits no note at all. Dropping them
+is what makes the remaining entries agree across both toolchains (35 of 36 identical; see below).
+
+**The baseline belongs to one toolchain.** There is no compiler-independent key to normalise to:
+diagnostic group tags (`[#MutableGlobalVariable]`) exist only from Xcode 27, and wording changes
+between releases — Xcode 26.6 says "data races between code in the current task", Xcode 27 says
+"…in the current isolation context" for the same warning. So the baseline records the Xcode it was
+generated with, CI pins that same Xcode, and a mismatch is reported as a toolchain difference
+rather than as new debt. Bumping the pinned Xcode means re-freezing the baseline.
+
 Usage:
     python3 scripts/check-concurrency-baseline.py <build.log>            # compare (CI + local)
     python3 scripts/check-concurrency-baseline.py <build.log> --update   # re-freeze the baseline
@@ -48,8 +62,9 @@ BASELINE = REPO / "ci/concurrency-baseline.txt"
 # but for diagnostics inside an expanded macro it is a pseudo-file ("macro expansion #Predicate").
 WARNING = re.compile(r"^(?P<loc>.+?):(?P<line>\d+):(?P<col>\d+): warning: (?P<msg>.+)$")
 
-# Swift points macro diagnostics back at the call site on the line right after the warning.
-ORIGINATES = re.compile(r"^\s*`?-?\s*(?P<path>/.+?):\d+:\d+: note: expanded code originates here")
+# Which Xcode produced the log, so a toolchain change is reported as such instead of as new debt.
+TOOLCHAIN = re.compile(r"/Applications/(?P<xcode>Xcode[^/]*\.app)")
+BASELINE_TOOLCHAIN = re.compile(r"^# toolchain:\s*(?P<xcode>\S+)\s*$", re.MULTILINE)
 
 # Only concurrency diagnostics belong in this baseline; an unrelated deprecation warning appearing
 # later must not silently inherit the guard (or pollute the debt list).
@@ -85,13 +100,19 @@ def notice(msg: str) -> None:
 def relativise(path: str) -> str | None:
     """Repo-relative path, or None for anything outside the repo (SDK headers, DerivedData).
 
-    Absolute paths differ between a local checkout and a CI runner, so an entry that cannot be made
-    repo-relative is not ours and would never match the baseline anyway.
+    Matched by finding the longest suffix of the path that exists in this checkout, rather than by
+    stripping a fixed prefix: the checkout root differs per machine (`/Users/runner/work/vibecoach/
+    vibecoach` on CI), and the baseline is deliberately refreshed *from a downloaded CI log*, so a
+    prefix-based version silently discarded every entry when run anywhere but the runner itself.
     """
-    try:
-        return str(Path(path).resolve().relative_to(REPO))
-    except ValueError:
-        return None
+    parts = Path(path).parts
+    # Start at 1: parts[0] is the root ("/"), and joining an absolute path onto REPO would just
+    # yield that absolute path back — which of course "exists", so every entry stayed absolute.
+    for index in range(1, len(parts)):
+        candidate = Path(*parts[index:])
+        if (REPO / candidate).exists():
+            return str(candidate)
+    return None
 
 
 def is_concurrency(message: str) -> bool:
@@ -101,10 +122,9 @@ def is_concurrency(message: str) -> bool:
 
 def extract(log: str) -> set[str]:
     """Normalised, deduplicated `file: message` entries for every concurrency warning in the log."""
-    lines = log.splitlines()
     entries: set[str] = set()
 
-    for index, line in enumerate(lines):
+    for line in log.splitlines():
         match = WARNING.match(line)
         if not match:
             continue
@@ -113,28 +133,23 @@ def extract(log: str) -> set[str]:
         if not is_concurrency(message):
             continue
 
+        # Not an absolute path → a macro-expansion buffer. Skipped: unactionable SwiftData
+        # `#Predicate` noise, and the two toolchains disagree on how to name it at all.
         location = match.group("loc")
-        if location.startswith("/"):
-            path = relativise(location)
-        else:
-            # A macro expansion: attribute it to the call site named on the following line, and
-            # keep the pseudo-file as a prefix so the entry still says where the code came from.
-            # Without this, every #Predicate warning in the project would collapse into a single
-            # fileless entry and a new one in a new file would slip through unnoticed.
-            origin = next(
-                (ORIGINATES.match(lines[i]) for i in range(index + 1, min(index + 3, len(lines)))
-                 if ORIGINATES.match(lines[i])),
-                None,
-            )
-            if origin is None:
-                continue
-            path = relativise(origin.group("path"))
-            message = f"[{location}] {message}"
+        if not location.startswith("/"):
+            continue
 
+        path = relativise(location)
         if path is not None:
             entries.add(f"{path}: {message}")
 
     return entries
+
+
+def detect_toolchain(text: str) -> str | None:
+    """The Xcode that produced a build log, or the one a baseline was frozen with."""
+    match = TOOLCHAIN.search(text) or BASELINE_TOOLCHAIN.search(text)
+    return match.group("xcode") if match else None
 
 
 def read_baseline() -> set[str]:
@@ -147,14 +162,19 @@ def read_baseline() -> set[str]:
     }
 
 
-def write_baseline(entries: set[str]) -> None:
+def write_baseline(entries: set[str], toolchain: str | None) -> None:
     header = (
         "# Strict-concurrency warning baseline — see scripts/check-concurrency-baseline.py.\n"
         "#\n"
         "# Frozen debt, not an allowlist to grow: CI fails when an entry appears that is not\n"
         "# listed here. Entries may disappear freely; re-freeze with `--update` when they do.\n"
         "# Format: <repo-relative file>: <compiler message>, line numbers deliberately dropped.\n"
+        "# Macro-expansion diagnostics (SwiftData #Predicate) are excluded — unactionable, and\n"
+        "# the toolchains disagree on how to name them.\n"
         "#\n"
+        "# Diagnostic wording is toolchain-specific, so this file belongs to the Xcode below —\n"
+        "# the one the CI job pins. Bumping that pin means re-freezing this baseline.\n"
+        f"# toolchain: {toolchain or 'unknown'}\n"
         f"# Entries: {len(entries)}\n"
     )
     BASELINE.parent.mkdir(parents=True, exist_ok=True)
@@ -184,8 +204,12 @@ def main() -> int:
         fail(f"Build log not found: {log_path}")
         return 1
 
-    found = extract(log_path.read_text(errors="replace"))
+    log = log_path.read_text(errors="replace")
+    found = extract(log)
     baseline = read_baseline()
+
+    log_toolchain = detect_toolchain(log)
+    baseline_toolchain = detect_toolchain(BASELINE.read_text()) if BASELINE.exists() else None
 
     # An incremental build re-emits nothing for untouched files, which would look like the debt
     # vanished and pass the guard for entirely the wrong reason. Treat a total wipe-out as a broken
@@ -200,12 +224,32 @@ def main() -> int:
         return 1
 
     if update:
-        write_baseline(found)
-        print(f"✅ Baseline re-frozen at {len(found)} entries → {BASELINE.relative_to(REPO)}")
+        write_baseline(found, log_toolchain)
+        print(
+            f"✅ Baseline re-frozen at {len(found)} entries "
+            f"({log_toolchain or 'unknown toolchain'}) → {BASELINE.relative_to(REPO)}"
+        )
         return 0
 
     added = sorted(found - baseline)
     removed = sorted(baseline - found)
+
+    # Diagnostic wording changes between Xcode releases, so a toolchain mismatch shows up as a
+    # simultaneous add+remove of the *same* warning. Say that outright — otherwise it reads as
+    # "you introduced a data race" when all that happened is a compiler upgrade.
+    mismatched = (
+        added and removed
+        and log_toolchain and baseline_toolchain
+        and log_toolchain != baseline_toolchain
+    )
+    if mismatched:
+        notice(
+            f"Toolchain mismatch: this log is from {log_toolchain}, the baseline was frozen with "
+            f"{baseline_toolchain}. Diagnostic wording differs between Xcode releases, so some of "
+            f"the entries below are the same warnings phrased differently, not new debt. CI pins "
+            f"its Xcode — compare against a CI log (the job uploads one on failure) before "
+            f"concluding anything from a local run."
+        )
 
     if removed:
         notice(
