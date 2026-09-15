@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.1](https://github.com/markclausing/vibecoach/compare/v2.5.0...v2.5.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* stop locked background launches from wiping the SwiftData store ([#359](https://github.com/markclausing/vibecoach/issues/359)) ([2670e30](https://github.com/markclausing/vibecoach/commit/2670e30fc8f7601a710564e5fb861e6d02f0d38c))
+
 ## [2.5.0](https://github.com/markclausing/vibecoach/compare/v2.4.0...v2.5.0) (2026-08-12)
 
 
