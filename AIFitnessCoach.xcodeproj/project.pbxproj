@@ -64,6 +64,7 @@
 		981A09830FB5BE7522B82C9C /* GoalFormValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDF1ADFB18FBFE38E56F903C /* GoalFormValidator.swift */; };
 		48E3320DE9BDAC79B8060EEE /* UserAPIKeyStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136CF192D3B3F2D63ADC3225 /* UserAPIKeyStore.swift */; };
 		D9A4F7B2D6E8F0A1B2C3D9F0 /* MigrationFallbackStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9B4F7B2D6E8F0A1B2C3D9F0 /* MigrationFallbackStore.swift */; };
+		A1C0DE5701A1C0DE57010001 /* ModelStoreRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE5701A1C0DE57010002 /* ModelStoreRecovery.swift */; };
 		DA10FF20AA30BB40CC50DD60 /* MigrationFallbackBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA01FF02AA03BB04CC05DD06 /* MigrationFallbackBanner.swift */; };
 		DC10FF20AA30BB40CC50DD60 /* AppVersionInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */; };
 		DE10FF20AA30BB40CC50DD60 /* PhysiologicalThresholdValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */; };
@@ -123,6 +124,7 @@
 		9673922FF2B9CCC9D666596F /* MockTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70418E8B60B3D7CA1BC426AA /* MockTokenStore.swift */; };
 		96739230F2B9CCC9D666596F /* UserAPIKeyStoreMigrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70418E8C60B3D7CA1BC426AA /* UserAPIKeyStoreMigrationTests.swift */; };
 		DB10FF20AA30BB40CC50DD60 /* MigrationFallbackStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB01FF02AA03BB04CC05DD06 /* MigrationFallbackStoreTests.swift */; };
+		A1C0DE5701A1C0DE57010003 /* ModelStoreRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE5701A1C0DE57010004 /* ModelStoreRecoveryTests.swift */; };
 		DD10FF20AA30BB40CC50DD60 /* AppVersionInfoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD01FF02AA03BB04CC05DD06 /* AppVersionInfoTests.swift */; };
 		DF10FF20AA30BB40CC50DD60 /* PhysiologicalThresholdValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidatorTests.swift */; };
 		E210FF20AA30BB40CC50DD60 /* ChatScopeInstructionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E201FF02AA03BB04CC05DD06 /* ChatScopeInstructionTests.swift */; };
@@ -391,6 +393,7 @@
 		EDF1ADFB18FBFE38E56F903C /* GoalFormValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GoalFormValidator.swift; sourceTree = "<group>"; };
 		136CF192D3B3F2D63ADC3225 /* UserAPIKeyStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserAPIKeyStore.swift; sourceTree = "<group>"; };
 		D9B4F7B2D6E8F0A1B2C3D9F0 /* MigrationFallbackStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MigrationFallbackStore.swift; sourceTree = "<group>"; };
+		A1C0DE5701A1C0DE57010002 /* ModelStoreRecovery.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModelStoreRecovery.swift; sourceTree = "<group>"; };
 		DA01FF02AA03BB04CC05DD06 /* MigrationFallbackBanner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MigrationFallbackBanner.swift; sourceTree = "<group>"; };
 		DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppVersionInfo.swift; sourceTree = "<group>"; };
 		DE01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalThresholdValidator.swift; sourceTree = "<group>"; };
@@ -449,6 +452,7 @@
 		70418E8B60B3D7CA1BC426AA /* MockTokenStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MockTokenStore.swift; sourceTree = "<group>"; };
 		70418E8C60B3D7CA1BC426AA /* UserAPIKeyStoreMigrationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UserAPIKeyStoreMigrationTests.swift; sourceTree = "<group>"; };
 		DB01FF02AA03BB04CC05DD06 /* MigrationFallbackStoreTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MigrationFallbackStoreTests.swift; sourceTree = "<group>"; };
+		A1C0DE5701A1C0DE57010004 /* ModelStoreRecoveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ModelStoreRecoveryTests.swift; sourceTree = "<group>"; };
 		DD01FF02AA03BB04CC05DD06 /* AppVersionInfoTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppVersionInfoTests.swift; sourceTree = "<group>"; };
 		DF01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PhysiologicalThresholdValidatorTests.swift; sourceTree = "<group>"; };
 		E201FF02AA03BB04CC05DD06 /* ChatScopeInstructionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatScopeInstructionTests.swift; sourceTree = "<group>"; };
@@ -769,6 +773,7 @@
 				70418E8B60B3D7CA1BC426AA /* MockTokenStore.swift */,
 				70418E8C60B3D7CA1BC426AA /* UserAPIKeyStoreMigrationTests.swift */,
 				DB01FF02AA03BB04CC05DD06 /* MigrationFallbackStoreTests.swift */,
+				A1C0DE5701A1C0DE57010004 /* ModelStoreRecoveryTests.swift */,
 				DD01FF02AA03BB04CC05DD06 /* AppVersionInfoTests.swift */,
 				DF01FF02AA03BB04CC05DD06 /* PhysiologicalThresholdValidatorTests.swift */,
 				E201FF02AA03BB04CC05DD06 /* ChatScopeInstructionTests.swift */,
@@ -1133,6 +1138,7 @@
 				DC01FF02AA03BB04CC05DD06 /* AppVersionInfo.swift */,
 				CCEB39214C89DE213C19B419 /* CaptivePortalClassifier.swift */,
 				D9B4F7B2D6E8F0A1B2C3D9F0 /* MigrationFallbackStore.swift */,
+				A1C0DE5701A1C0DE57010002 /* ModelStoreRecovery.swift */,
 				EC01FF02AA03BB04CC05DD06 /* NetworkReachabilityMonitor.swift */,
 				AAA7D9A3478B658A833E11D1 /* NetworkSession.swift */,
 				B81B710B2F8D65A80062BC61 /* UITestMockEnvironment.swift */,
@@ -1459,6 +1465,7 @@
 				9673922FF2B9CCC9D666596F /* MockTokenStore.swift in Sources */,
 				96739230F2B9CCC9D666596F /* UserAPIKeyStoreMigrationTests.swift in Sources */,
 				DB10FF20AA30BB40CC50DD60 /* MigrationFallbackStoreTests.swift in Sources */,
+				A1C0DE5701A1C0DE57010003 /* ModelStoreRecoveryTests.swift in Sources */,
 				DD10FF20AA30BB40CC50DD60 /* AppVersionInfoTests.swift in Sources */,
 				DF10FF20AA30BB40CC50DD60 /* PhysiologicalThresholdValidatorTests.swift in Sources */,
 				E210FF20AA30BB40CC50DD60 /* ChatScopeInstructionTests.swift in Sources */,
@@ -1690,6 +1697,7 @@
 				981A09830FB5BE7522B82C9C /* GoalFormValidator.swift in Sources */,
 				48E3320DE9BDAC79B8060EEE /* UserAPIKeyStore.swift in Sources */,
 				D9A4F7B2D6E8F0A1B2C3D9F0 /* MigrationFallbackStore.swift in Sources */,
+				A1C0DE5701A1C0DE57010001 /* ModelStoreRecovery.swift in Sources */,
 				DC10FF20AA30BB40CC50DD60 /* AppVersionInfo.swift in Sources */,
 				DE10FF20AA30BB40CC50DD60 /* PhysiologicalThresholdValidator.swift in Sources */,
 				E110FF20AA30BB40CC50DD60 /* ChatErrorMessageMapper.swift in Sources */,

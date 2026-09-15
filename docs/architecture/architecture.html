@@ -660,8 +660,8 @@
     "appVersion": "2.5.0",
     "appVersionSource": ".release-please-manifest.json — identical to the newest v* git tag (v2.5.0). This is the version a shipped build actually reports: the Build Phase stamps it into the built app's CFBundleShortVersionString via `git describe --tags`. Deliberately NOT the source AIFitnessCoach/Info.plist value, which is frozen at 2.0.0 as a tag-less-build fallback and never ships — mirroring that stale fallback is what made this field read 2.0.0 while the app was on 2.4.0.",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 2,
-    "lastUpdated": "2026-08-12",
+    "docRevision": 3,
+    "lastUpdated": "2026-09-13",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps the marketing version from git describe --tags. appVersion above mirrors that released version — read it from .release-please-manifest.json, never from the source Info.plist. docRevision counts architecture revisions within one released version and resets to 1 when appVersion changes, so 'appVersion X.Y.Z rev N' reads as 'the architecture N revisions after the X.Y.Z release' — which may already describe code destined for the next release. See CLAUDE.md §7 and ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -750,7 +750,7 @@
       "layer": "app",
       "kind": "entry",
       "file": "AIFitnessCoach/AIFitnessCoachApp.swift",
-      "description": "@main entry point. Builds the ModelContainer with AppMigrationPlan + a defensive fallback. Injects env objects (AppNavigationState, TrainingPlanManager, ThemeManager).",
+      "description": "@main entry point. Builds the ModelContainer with AppMigrationPlan + a defensive fallback (ModelStoreRecovery: locked store → temporary in-memory container, corrupt store → quarantine + fresh DB). Injects env objects (AppNavigationState, TrainingPlanManager, ThemeManager).",
       "uses": [
         "AppDelegate",
         "AppMigrationPlan",
@@ -759,7 +759,9 @@
         "TrainingPlanManager",
         "AppNavigationState",
         "UserAPIKeyStore",
-        "UITestMockEnvironment"
+        "UITestMockEnvironment",
+        "ModelStoreRecovery",
+        "MigrationFallbackStore"
       ],
       "tags": [
         "epic-13",
@@ -1512,7 +1514,7 @@
       "layer": "models",
       "kind": "model",
       "file": "AIFitnessCoach/Models/CoachContextCache.swift",
-      "description": "SwiftData @Model (singleton) storing the 17 PHI prompt-context strings that previously lived as cleartext in UserDefaults/@AppStorage. Inherits NSFileProtectionCompleteUnlessOpen from the container (Story 61.3). Loaded and created lazily via ChatViewModel.configure(with:). clearAll() resets on Strava disconnect.",
+      "description": "SwiftData @Model (singleton) storing the 17 PHI prompt-context strings that previously lived as cleartext in UserDefaults/@AppStorage. Inherits the container's file protection (NSFileProtectionCompleteUntilFirstUserAuthentication since the Sept 2026 store-wipe hotfix; Story 61.3 originally set CompleteUnlessOpen). Loaded and created lazily via ChatViewModel.configure(with:). clearAll() resets on Strava disconnect.",
       "uses": [],
       "tags": [
         "epic-61",
@@ -1812,6 +1814,21 @@
       "uses": [],
       "tags": [
         "epic-51"
+      ]
+    },
+    {
+      "id": "ModelStoreRecovery",
+      "layer": "services",
+      "kind": "service",
+      "file": "AIFitnessCoach/Services/Infra/ModelStoreRecovery.swift",
+      "description": "Pure-Foundation recovery policy for a failed SwiftData container init (CLAUDE.md §12). Store files that exist but cannot be opened (device locked before first unlock) are left untouched → temporary in-memory container; a readable-but-unopenable store is quarantined (renamed with a UTC stamp, newest two sets kept) instead of deleted. Owns storeFileProtection (.completeUntilFirstUserAuthentication) — the Sept 2026 fix for locked background launches wiping the store. FileManager-injected, file-backed tests.",
+      "uses": [
+        "AppDateFormatters",
+        "AppLoggers"
+      ],
+      "tags": [
+        "hotfix",
+        "data-safety"
       ]
     },
     {

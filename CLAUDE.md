@@ -293,10 +293,14 @@ So: merge feature PRs whenever; they pile into one Release PR. The version only 
 - Code on the critical launch path (`ModelContainer` init, Keychain migrations, `BGTaskScheduler.register`, filesystem bootstraps) **never** uses `fatalError` as the first catch.
 - Pattern:
   1. First attempt: do it normally.
-  2. On failure: log via `AppLoggers.<x>.error` with `privacy: .public` on the framework error, and do a **fallback** (remove corrupt state, use defaults, build an empty store).
+  2. On failure: log via `AppLoggers.<x>.error` with `privacy: .public` on the framework error, and do a **fallback** (set corrupt state aside, use defaults, build an empty store).
   3. Only on the second failure: `fatalError`. At that point something is fundamentally wrong (Application Support broken, schema corrupt) and bricking is correct behaviour.
-- Example: see `AIFitnessCoachApp.makeModelContainer()`. On migration failure the fallback removes the corrupt SQLite store + WAL/SHM sidecars and builds an empty V<latest> container, with a UserDefaults flag (`vibecoach_migrationFallbackAt`) as a hook for a future UI message.
-- HK + Strava data is always re-syncable via `TriggerAutoSync` once the app reopens; only `Symptom` and `UserPreference` are local-only. Accept that data-loss risk over a bricked app — an empty DB is restored in seconds, a crash loop is not recoverable without a reinstall.
+- Example: see `AIFitnessCoachApp.makeModelContainer()` + `ModelStoreRecovery`. On a failed init the fallback **quarantines** (renames, never deletes) the SQLite store + WAL/SHM sidecars and builds an empty V<latest> container, with a UserDefaults flag (`vibecoach_migrationFallbackAt`) driving `MigrationFallbackBanner`.
+- **A failed open is not proof of corruption (Sept 2026 incident).** The app is cold-launched in the background on a *locked* device (Engine A HealthKit delivery, Engine B `BGAppRefreshTask`), and `App.init` builds the container even when that background work never touches SwiftData. With `NSFileProtectionCompleteUnlessOpen` those launches could not open the store; the fallback deleted it, repeatedly wiping goals + memory on the maintainer's device. Hard rules since:
+  - The store's protection class must allow a locked cold launch — `.completeUntilFirstUserAuthentication` (`ModelStoreRecovery.storeFileProtection`, pinned by a test). Never `.complete` / `.completeUnlessOpen` for anything read on the launch path.
+  - Before any destructive fallback, check whether the files are merely **unreadable** (actually `open(2)` them — a permission-bit check misses data protection). Unreadable → leave them untouched and run that launch on a temporary in-memory store.
+  - Destructive fallbacks rename aside, they don't delete — a quarantined store can still be pulled off a device and recovered.
+- HK + Strava data is always re-syncable via `TriggerAutoSync` once the app reopens; `FitnessGoal`, `UserPreference`, `Symptom` and the workout-chat records are local-only. Accept that data-loss risk over a bricked app — an empty DB is restored in seconds, a crash loop is not recoverable without a reinstall.
 
 ---
 
