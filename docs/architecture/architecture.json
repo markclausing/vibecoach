@@ -6,8 +6,8 @@
     "appVersion": "2.5.0",
     "appVersionSource": ".release-please-manifest.json — identical to the newest v* git tag (v2.5.0). This is the version a shipped build actually reports: the Build Phase stamps it into the built app's CFBundleShortVersionString via `git describe --tags`. Deliberately NOT the source AIFitnessCoach/Info.plist value, which is frozen at 2.0.0 as a tag-less-build fallback and never ships — mirroring that stale fallback is what made this field read 2.0.0 while the app was on 2.4.0.",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 3,
-    "lastUpdated": "2026-09-13",
+    "docRevision": 4,
+    "lastUpdated": "2026-09-15",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps the marketing version from git describe --tags. appVersion above mirrors that released version — read it from .release-please-manifest.json, never from the source Info.plist. docRevision counts architecture revisions within one released version and resets to 1 when appVersion changes, so 'appVersion X.Y.Z rev N' reads as 'the architecture N revisions after the X.Y.Z release' — which may already describe code destined for the next release. See CLAUDE.md §7 and ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -2593,7 +2593,7 @@
     ]
   },
   "ci": {
-    "summary": "GitHub Actions runs three workflows: `iOS CI` (5-job DAG) and `CodeQL Security Analysis` (Swift + Actions matrix) on every push to `main` and every PR, plus `release-please` (Epic #63) on push to `main` that maintains a Release PR and cuts semver tags + GitHub Releases from Conventional Commits. A concurrency group per branch cancels older in-flight runs on force-push.",
+    "summary": "GitHub Actions runs three workflows: `iOS CI` (6-job DAG) and `CodeQL Security Analysis` (Swift + Actions matrix) on every push to `main` and every PR, plus `release-please` (Epic #63) on push to `main` that maintains a Release PR and cuts semver tags + GitHub Releases from Conventional Commits. A concurrency group per branch cancels older in-flight runs on force-push.",
     "docRef": "docs/ARCHITECTURE.md#11",
     "platform": "GitHub Actions",
     "workflows": [
@@ -2606,7 +2606,7 @@
           "pull_request:main"
         ],
         "runner": "macos-latest (Doc Consistency on ubuntu-latest)",
-        "description": "Lint + Doc Consistency + Unit Tests + UI Tests + Coverage Report as a DAG. Coverage only runs when both test jobs are done (or when only unit tests pass — the UI bundle is then optional). Doc Consistency runs scripts/check-doc-consistency.py on ubuntu (seconds of Python, no Xcode): meta.appVersion must equal the released version in .release-please-manifest.json, and architecture.html must embed a verbatim copy of architecture.json. Version lag is tolerated while a release is in flight."
+        "description": "Lint + Doc Consistency + Concurrency Guard + Unit Tests + UI Tests + Coverage Report as a DAG. Coverage only runs when both test jobs are done (or when only unit tests pass — the UI bundle is then optional). Doc Consistency runs scripts/check-doc-consistency.py on ubuntu (seconds of Python, no Xcode): meta.appVersion must equal the released version in .release-please-manifest.json, and architecture.html must embed a verbatim copy of architecture.json. Version lag is tolerated while a release is in flight. Concurrency Guard (story 63.5) diffs the app target's strict-concurrency diagnostics from a clean xcodebuild log against ci/concurrency-baseline.txt via scripts/check-concurrency-baseline.py: new entries fail the build, disappearing entries pass with a nudge to re-freeze. Diagnostics are normalised to '<file>: <message>' (line numbers dropped — an exact file:line baseline shifts on any unrelated edit) and deduplicated (Swift emits the same warning from both the SwiftEmitModule and SwiftCompile phases). Test targets are out of scope: their ~163 diagnostics are almost entirely XCTest/XCUITest isolation boilerplate, and SwiftData #Predicate macro diagnostics are excluded as unactionable. Baseline at introduction: 36 entries. This is the only job that pins an exact Xcode (Xcode_26.6.app): Swift rewords concurrency diagnostics between releases, so the baseline belongs to one toolchain and an unpinned runner image rotation would turn the guard red on an unrelated PR."
       },
       {
         "id": "codeql",
@@ -3110,7 +3110,7 @@
         {
           "id": "ios-ci",
           "name": "iOS CI",
-          "blurb": "Lint, tests and a coverage report on every push and PR."
+          "blurb": "Lint, doc + thread-safety guards, tests and a coverage report on every push and PR."
         },
         {
           "id": "codeql",
@@ -3130,6 +3130,20 @@
           "workflow": "ios-ci",
           "needs": [],
           "blocks": "Style + rule check. One new violation breaks the build."
+        },
+        {
+          "id": "doc-consistency",
+          "name": "Doc Consistency",
+          "workflow": "ios-ci",
+          "needs": [],
+          "blocks": "Checks that the architecture docs still match the code and the released version."
+        },
+        {
+          "id": "concurrency-guard",
+          "name": "Concurrency Guard",
+          "workflow": "ios-ci",
+          "needs": [],
+          "blocks": "Freezes the known thread-safety warnings \u2014 they may shrink, never grow."
         },
         {
           "id": "unit-tests",

@@ -73,6 +73,88 @@ jobs:
         # machine-gegenereerde release-PR altijd rood staan.
         run: python3 scripts/check-doc-consistency.py
 
+  concurrency-guard:
+    name: Concurrency Guard
+    runs-on: macos-latest
+    # Geen `needs:` — draait parallel aan lint/unit-tests (story 63.5).
+    #
+    # `SWIFT_STRICT_CONCURRENCY = complete` staat project-breed aan (62.6), maar in
+    # Swift 5 language mode zijn het *warnings*: de build blijft groen hoeveel
+    # nieuwe actor-isolatie-schuld een PR ook toevoegt. Deze job bevriest die
+    # schuld in `ci/concurrency-baseline.txt` en faalt zodra er een diagnostic
+    # bijkomt die er niet in staat. Verdwijnende entries zijn altijd oké.
+    #
+    # Alleen de app-target: de test-targets voegen ~163 diagnostics toe die vrijwel
+    # allemaal XCTest/XCUITest-boilerplate zijn (XCUIApplication is @MainActor, de
+    # testmethodes niet) — dat is framework-ruis, geen data-race-risico in de app.
+    env:
+      # De baseline hoort bij één toolchain (zie de stap hieronder). Bumpen = baseline
+      # opnieuw bevriezen vanaf een CI-log.
+      PINNED_XCODE: Xcode_26.6.app
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Dummy Secrets for Build
+        run: cp AIFitnessCoach/Secrets-template.swift AIFitnessCoach/Secrets.swift
+
+      - name: Select Pinned Xcode Version
+        # Als enige job pinnen we hier een exacte Xcode in plaats van het Xcode.app-symlink
+        # te volgen. Swift herformuleert diagnostics tussen releases — 26.6 zegt "data races
+        # between code in the current task", 27 zegt "…in the current isolation context" voor
+        # dezelfde warning, en de [#MutableGlobalVariable]-group-tags bestaan pas vanaf 27.
+        # Zonder pin verandert de compiler zodra GitHub het runner-image roteert en staat de
+        # guard ineens rood op een PR die er niets mee te maken heeft.
+        #
+        # Ontbreekt de gepinde versie (image-rotatie), dan vallen we terug op de default i.p.v.
+        # hard te falen: de guard meldt dan zelf een toolchain-mismatch, wat leesbaarder is dan
+        # een geblokkeerde pipeline.
+        run: |
+          if [ -d "/Applications/$PINNED_XCODE" ]; then
+            sudo xcode-select -s "/Applications/$PINNED_XCODE/Contents/Developer"
+          else
+            echo "::warning::$PINNED_XCODE is niet op deze runner aanwezig — terugval op de default Xcode. Verwacht een toolchain-mismatch-melding van de guard; pin bijwerken en de baseline opnieuw bevriezen."
+            sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          fi
+          xcodebuild -version
+
+      - name: Build and Capture Diagnostics
+        # Verse `-derivedDataPath` is essentieel: een incrementele build her-emit
+        # geen warnings voor ongewijzigde files, waardoor de baseline vals "leeg"
+        # lijkt. Het script bewaakt dat ook zelf. Geen `xcpretty` hier — dat filtert
+        # juist de diagnostic-regels die we nodig hebben. `|| true` omdat een rode
+        # build zichtbaar hoort te worden via de unit-tests-job, niet als
+        # onleesbare ruis hier; het script faalt alsnog op een onbruikbaar log.
+        run: |
+          SIMULATOR_ID=$(xcrun simctl list devices available | grep iPhone | grep -v unavailable | awk '{print $(NF-1)}' | tr -d '()' | head -n 1)
+          echo "Using Simulator ID: $SIMULATOR_ID"
+
+          xcodebuild build \
+            -project AIFitnessCoach.xcodeproj \
+            -scheme AIFitnessCoach \
+            -destination "platform=iOS Simulator,id=$SIMULATOR_ID" \
+            -derivedDataPath "$RUNNER_TEMP/concurrency-dd" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            > concurrency-build.log 2>&1 || true
+
+          echo "Log: $(wc -l < concurrency-build.log) lines"
+
+      - name: Compare Against Baseline
+        run: python3 scripts/check-concurrency-baseline.py concurrency-build.log
+
+      - name: Upload Build Log
+        # Bij een rode guard is het ruwe log nodig om de nieuwe diagnostic in
+        # context (met de compiler-notes eronder) te lezen.
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: concurrency-build-log
+          path: concurrency-build.log
+          retention-days: 7
+
   unit-tests:
     name: Unit Tests
     runs-on: macos-latest

@@ -124,7 +124,7 @@ A short technical summary; the full picture lives in the linked docs (no duplica
 - **Privacy-first** — HealthKit on device, AI keys in Keychain, Strava secret in the Worker.
 - **Type-safe** — SwiftData with strict enums; external data mapped to enums at the front door.
 
-**CI:** a 4-job DAG (`SwiftLint` / Unit Tests / UI Tests / Coverage Report) on `macos-latest`, plus a CodeQL scan of Swift + Actions workflows and a `release-please` workflow that cuts semver tags + GitHub Releases from Conventional Commits.
+**CI:** a 6-job DAG (`SwiftLint` / Doc Consistency / Concurrency Guard / Unit Tests / UI Tests / Coverage Report) on `macos-latest` (Doc Consistency on `ubuntu-latest`), plus a CodeQL scan of Swift + Actions workflows and a `release-please` workflow that cuts semver tags + GitHub Releases from Conventional Commits.
 
 **Recently completed:** Epic #73 (unified multi-goal training program — one macrocycle to your A-race, other races folded in as mini-taper tune-ups; one weekly target, one coach context, one timeline), #72 (Goals-tab redesign — status verdict, expected-today markers, phase-grouped milestones, finish-time duration fix), #70 (per-workout chat with local memory — discuss a workout on its detail page; distilled facts feed plans & feedback), #67 ("How it's built" viewer — visual dev workflow: agent collaboration, CI pipeline, branching & docs), #66 (architecture viewer redesigned — plain-language story first, drill-down depth, mobile-friendly). Open work → [`docs/ROADMAP.md`](docs/ROADMAP.md) · full history → [`docs/ROADMAP-archive.md`](docs/ROADMAP-archive.md).
 
