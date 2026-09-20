@@ -183,7 +183,12 @@ final class WorkoutChatViewModel: ObservableObject {
         if workout.rpe != nil || workout.mood != nil {
             let rpeStr  = workout.rpe.map { "RPE \($0)/10" }
             let moodStr = workout.mood.map { "mood \($0)" }
-            dataLines.append("- Check-in: " + [rpeStr, moodStr].compactMap { $0 }.joined(separator: ", "))
+            // Epic #74: RPE is intensity only, so the session load (sRPE × duration) rides
+            // along — otherwise a long easy-feeling session reads as a light day here too.
+            let loadStr = SessionLoadCalculator
+                .calculate(rpe: workout.rpe, durationSeconds: workout.movingTimeMinutes * 60)
+                .map { "session load \($0.load) AU (\($0.band.promptLabel))" }
+            dataLines.append("- Check-in: " + [rpeStr, moodStr, loadStr].compactMap { $0 }.joined(separator: ", "))
         }
         blocks.append(dataLines.joined(separator: "\n"))
 

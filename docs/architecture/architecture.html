@@ -660,8 +660,8 @@
     "appVersion": "2.5.1",
     "appVersionSource": ".release-please-manifest.json — identical to the newest v* git tag (v2.5.1). This is the version a shipped build actually reports: the Build Phase stamps it into the built app's CFBundleShortVersionString via `git describe --tags`. Deliberately NOT the source AIFitnessCoach/Info.plist value, which is frozen at 2.0.0 as a tag-less-build fallback and never ships — mirroring that stale fallback is what made this field read 2.0.0 while the app was on 2.4.0.",
     "buildNumberSource": "git rev-list --count HEAD (set by Build Phase script in project.pbxproj)",
-    "docRevision": 1,
-    "lastUpdated": "2026-09-15",
+    "docRevision": 2,
+    "lastUpdated": "2026-09-20",
     "versioningPolicy": "Two version numbers (Epic #63 story 63.6). Build number (CFBundleVersion) auto-increments every commit via git rev-list --count HEAD (Build Phase). Marketing version (CFBundleShortVersionString, semver) is driven by release-please: each push to main updates a rolling Release PR; merging it cuts the vX.Y.Z tag + GitHub Release, and the Build Phase then stamps the marketing version from git describe --tags. appVersion above mirrors that released version — read it from .release-please-manifest.json, never from the source Info.plist. docRevision counts architecture revisions within one released version and resets to 1 when appVersion changes, so 'appVersion X.Y.Z rev N' reads as 'the architecture N revisions after the X.Y.Z release' — which may already describe code destined for the next release. See CLAUDE.md §7 and ARCHITECTURE.md#11.",
     "platform": "iOS 17+",
     "language": "Swift 5.9+",
@@ -1153,6 +1153,17 @@
       ],
       "tags": [
         "epic-14"
+      ]
+    },
+    {
+      "id": "SessionLoadCalculator",
+      "layer": "services",
+      "kind": "helper",
+      "file": "AIFitnessCoach/Services/Physiology/SessionLoadCalculator.swift",
+      "description": "Foster session-RPE: derives the session load (AU = RPE x duration in minutes) from an ActivityRecord's existing rpe + movingTime, and maps it onto a five-step band (light/moderate/substantial/demanding/veryDemanding) with a requiresRecovery flag. Fixes the coach reading a long endurance session at a low RPE as spare capacity - RPE is intensity, strain is intensity x time. Purely derived, no schema change. Pure-Swift, AppStorage-free.",
+      "uses": [],
+      "tags": [
+        "epic-74"
       ]
     },
     {
@@ -2384,14 +2395,16 @@
       "layer": "viewmodels",
       "kind": "formatter",
       "file": "AIFitnessCoach/ViewModels/LastWorkoutContextFormatter.swift",
-      "description": "Builds the 'last workout' block for the coach context: RPE category (light/moderate/hard/maximal), TRIMP, session type intent. Epic #57: readableMood(_:) maps the mood SF Symbol name to a readable English word (good/strong/exhausted/in pain/calm). Pure-Swift, AppStorage-free.",
+      "description": "Builds the 'last workout' block for the coach context: RPE category (light/moderate/hard/maximal), TRIMP, session type intent. Epic #57: readableMood(_:) maps the mood SF Symbol name to a readable English word (good/strong/exhausted/in pain/calm). Epic #74: with durationSeconds it appends the session load (AU + band via SessionLoadCalculator) and, for the demanding bands, an explicit note that RPE measures intensity only - so a long easy-paced session is not read as spare capacity. Pure-Swift, AppStorage-free.",
       "uses": [
-        "SessionType"
+        "SessionType",
+        "SessionLoadCalculator"
       ],
       "tags": [
         "epic-18",
         "epic-33",
-        "epic-57"
+        "epic-57",
+        "epic-74"
       ]
     },
     {
@@ -2459,16 +2472,18 @@
       "layer": "viewmodels",
       "kind": "viewmodel",
       "file": "AIFitnessCoach/ViewModels/WorkoutChatViewModel.swift",
-      "description": "SwiftData-free orchestration of the per-workout chat: assembles the [WORKOUT DATA]/[REMEMBERED FACTS] prompt, runs the overload fallback waterfall via CoachModelProvider (with WorkoutChatScopeInstruction injected as system instruction), and reports persistence through callbacks owned by WorkoutChatSection.",
+      "description": "SwiftData-free orchestration of the per-workout chat: assembles the [WORKOUT DATA]/[REMEMBERED FACTS] prompt, runs the overload fallback waterfall via CoachModelProvider (with WorkoutChatScopeInstruction injected as system instruction), and reports persistence through callbacks owned by WorkoutChatSection. Epic #74: the [WORKOUT DATA] check-in line carries the derived session load alongside the raw RPE.",
       "uses": [
         "CoachModelProvider",
         "WorkoutChatScopeInstruction",
         "WorkoutChatResponseParser",
         "ChatInputValidator",
-        "ChatErrorMessageMapper"
+        "ChatErrorMessageMapper",
+        "SessionLoadCalculator"
       ],
       "tags": [
-        "epic-70"
+        "epic-70",
+        "epic-74"
       ]
     },
     {
@@ -2598,6 +2613,22 @@
       ],
       "tags": [
         "epic-73"
+      ]
+    },
+    {
+      "id": "PostWorkoutCheckinCard",
+      "layer": "views",
+      "kind": "view",
+      "file": "AIFitnessCoach/Views/Dashboard/PostWorkoutCheckinCard.swift",
+      "description": "Dashboard card asking for the post-workout check-in on the most recent unrated real workout (<=48h, >=15 min, TRIMP >=15). Five holistic one-tap options map to an (rpe, mood) pair on ActivityRecord; rpe 0 is the 'not a training' sentinel. Epic #74: asks Foster's session-RPE question ('hoe zwaar was deze training als geheel?') instead of a talk test, so duration is part of what the user rates.",
+      "uses": [
+        "ActivityRecord",
+        "ThemeManager"
+      ],
+      "tags": [
+        "epic-18",
+        "epic-57",
+        "epic-74"
       ]
     }
   ],
@@ -3797,7 +3828,7 @@
           "name": "Concurrency Guard",
           "workflow": "ios-ci",
           "needs": [],
-          "blocks": "Freezes the known thread-safety warnings \u2014 they may shrink, never grow."
+          "blocks": "Freezes the known thread-safety warnings — they may shrink, never grow."
         },
         {
           "id": "unit-tests",
@@ -4084,7 +4115,8 @@
     "logging": "AppLoggers + privacy modifiers",
     "testing": "UITestMockEnvironment + GenerativeModelProtocol",
     "epic-37": "Internationalisation (NL/EN/DE/ES) + English codebase & coach prompt",
-    "epic-73": "Unified multi-goal training program (one macrocycle)"
+    "epic-73": "Unified multi-goal training program (one macrocycle)",
+    "epic-74": "Session load (Foster sRPE x duration) - RPE measures intensity, not strain"
   }
 }
 

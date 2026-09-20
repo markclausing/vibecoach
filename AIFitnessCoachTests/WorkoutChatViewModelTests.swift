@@ -84,6 +84,9 @@ final class WorkoutChatViewModelTests: XCTestCase {
         XCTAssertTrue(prompt.contains("Zondagrit"))
         XCTAssertTrue(prompt.contains("TRIMP 132"))
         XCTAssertTrue(prompt.contains("RPE 6/10"))
+        // Epic #74: de sessie-load rijdt mee met de check-in — 6 × 90 min = 540 AU.
+        XCTAssertTrue(prompt.contains("session load 540 AU (demanding)"),
+                      "Zonder duur-weging leest de coach RPE 6 op 90 minuten als een gemiddelde sessie")
         XCTAssertTrue(prompt.contains("[REMEMBERED FACTS]"))
         XCTAssertTrue(prompt.contains("Slecht geslapen voor deze rit"))
         XCTAssertTrue(prompt.contains("user: Hoe was mijn pacing?"))

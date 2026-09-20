@@ -4249,29 +4249,6 @@
         }
       }
     },
-    "Flink afgezien, praten lukte amper" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hart, konnte kaum reden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tough, could barely talk"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Muy duro, apenas podía hablar"
-          }
-        }
-      }
-    },
     "Focus op herstel" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6032,28 +6009,6 @@
         }
       }
     },
-    "Hoe ging je laatste training?" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wie war dein letztes Training?"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "How was your last workout?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Cómo fue tu último entrenamiento?"
-          }
-        }
-      }
-    },
     "Hoe is mijn herstel?" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6141,6 +6096,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "¿Cómo sientes tus molestias hoy?"
+          }
+        }
+      }
+    },
+    "Hoe zwaar was deze training als geheel?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie schwer war diese Einheit insgesamt?"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "How heavy was this session overall?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué tan dura fue esta sesión en conjunto?"
           }
         }
       }
@@ -7843,6 +7820,28 @@
         }
       }
     },
+    "Kijk terug op de hele sessie — de duur telt net zo zwaar mee als het tempo." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blick auf die gesamte Einheit — die Dauer zählt genauso viel wie das Tempo."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Look back at the whole session — the duration counts just as much as the pace."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Piensa en la sesión completa: la duración cuenta tanto como el ritmo."
+          }
+        }
+      }
+    },
     "Kijkt 6 maanden terug naar je workouts en rust-HR." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -7980,29 +7979,6 @@
         }
       }
     },
-    "Kon makkelijk doorpraten" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Konnte locker weiterreden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could easily keep talking"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Podía seguir hablando sin esfuerzo"
-          }
-        }
-      }
-    },
     "Kon model-catalogus niet lezen: %@" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8113,6 +8089,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "CORTO"
+          }
+        }
+      }
+    },
+    "Kostte me weinig, was zo weer klaar" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hat mich wenig gekostet, war schnell vorbei"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cost me little, was over before I knew it"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me costó poco, se pasó volando"
           }
         }
       }
@@ -8478,29 +8476,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "¡Buen entrenamiento! 💪"
-          }
-        }
-      }
-    },
-    "Lekker gewerkt" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gut gearbeitet"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Good effort"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buen trabajo"
           }
         }
       }
@@ -10959,6 +10934,28 @@
         }
       }
     },
+    "Prima te doen" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gut machbar"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Very doable"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bastante llevadero"
+          }
+        }
+      }
+    },
     "Prima trainingsweer." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -12004,25 +12001,24 @@
         }
       }
     },
-    "Stevig, maar voelde goed" : {
-      "extractionState" : "stale",
+    "Stevig, maar ik had nog wat over" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ordentlich, aber fühlte sich gut an"
+            "value" : "Ordentlich, aber ich hatte noch Reserven"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Solid, but felt good"
+            "value" : "Solid, but I had something left"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Exigente, pero me sentí bien"
+            "value" : "Exigente, pero me quedó algo"
           }
         }
       }
@@ -14564,6 +14560,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "¿Por qué? ›"
+          }
+        }
+      }
+    },
+    "Vroeg veel van me, dit hakt erin" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hat viel verlangt, das steckt in den Knochen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demanded a lot, this one hits"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me exigió mucho, esta se nota"
           }
         }
       }

@@ -321,3 +321,14 @@ The app is multilingual (NL/EN/DE/ES). The codebase, comments and coach prompt a
 - **Detection logic must be language-independent:** keyword/day-name/activity classification (`injuryKeywords`, `resolvedDate`, `isRestDay`/`kind`) covers NL+EN+DE+ES (+ the duration signal for rest), because the coach now writes `activityType`/dates in the user's language.
 - **Tests:** UI tests run forced in `nl` (`-testLanguage nl`). Unit tests asserting localised user-facing output compare against `String(localized:)` of the same key (locale-agnostic), not a hardcoded translation.
 - **Catalog formatting — always normalise after a hand-edit.** Xcode saves `Localizable.xcstrings` via Foundation's `JSONSerialization` with `[.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]` (space before the colon, expanded empty objects, keys sorted, slashes/emoji literal). Hand-edits write a compact, unsorted form, so the moment Xcode next touches the file it re-serialises the *entire* catalog → a ~7.5k-line whitespace diff that blocks branch checkouts and pollutes PRs. After every manual edit run `swift scripts/normalize-xcstrings.swift` to restore the canonical format; the diff then stays limited to the keys you actually changed. The script is idempotent and content-preserving (only formatting/order).
+
+---
+
+## 14. Training-load semantics — RPE is intensity, not strain (Epic #74)
+
+`ActivityRecord.rpe` answers *how hard did it feel*. It does **not** answer *how much did it take out of me*: strain is intensity × time. A 30 km run at a conversational pace is honestly rated a 2 and is still the heaviest session of the month. Reading the bare RPE as the session's cost is how the coach came to treat exactly that run as an easy day with room to spare.
+
+- **Never interpret `rpe` on its own as session strain** — in prompt text, in a threshold, or in a heuristic. Pair it with the duration via `SessionLoadCalculator.calculate(rpe:durationSeconds:)`, which gives the Foster session-RPE load in AU plus a `Band` and a `requiresRecovery` flag.
+- **A low RPE only means spare capacity when the load is also low** (light/moderate, <300 AU). Any rule of the form "low RPE + high volume ⇒ good day" is the bug this epic fixed; don't reintroduce it in a new emitter.
+- **The load is derived, never stored.** `rpe` + `movingTime` are already on `ActivityRecord`, so adding volume-awareness elsewhere needs no `@Model` change and no migration (§2.1). Keep it that way.
+- **Check-in copy asks the session-RPE question** — "how heavy was the session *as a whole*", not a talk test ("kon je nog praten?"). A talk test measures intensity during the effort, which is exactly the dimension that misleads on long sessions. New rating UI follows the same framing.

@@ -444,7 +444,8 @@ struct DashboardView: View {
                                 workoutName: recentActivity.displayName,
                                 trimp: recentActivity.trimp,
                                 startDate: recentActivity.startDate,
-                                sessionType: recentActivity.sessionType
+                                sessionType: recentActivity.sessionType,
+                                durationSeconds: recentActivity.movingTime
                             )
                         }
                         .padding(.horizontal)
@@ -729,7 +730,8 @@ struct DashboardView: View {
                     workoutName: lastRatedActivity?.displayName,
                     trimp: lastRatedActivity?.trimp,
                     startDate: lastRatedActivity?.startDate,
-                    sessionType: lastRatedActivity?.sessionType
+                    sessionType: lastRatedActivity?.sessionType,
+                    durationSeconds: lastRatedActivity?.movingTime
                 )
                 // Story 33.2a: write the USER_OVERRIDE cache so the coach respects manually
                 // moved sessions in every prompt build.

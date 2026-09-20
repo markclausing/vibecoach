@@ -74,7 +74,7 @@ enum CoachPromptAssembler {
 
         // Epic 18.1: Inject the subjective feedback (RPE + mood) of the last workout
         if !context.lastWorkoutFeedbackContext.isEmpty {
-            prefix += "[SUBJECTIVE FEEDBACK LAST WORKOUT: \(context.lastWorkoutFeedbackContext) Watch for discrepancies: if TRIMP is low but RPE ≥8, this is an early sign of overtraining or oncoming illness.]\n\n"
+            prefix += "[SUBJECTIVE FEEDBACK LAST WORKOUT: \(context.lastWorkoutFeedbackContext) Watch for discrepancies: if TRIMP is low but RPE ≥8, this is an early sign of overtraining or oncoming illness. Epic #74: RPE is intensity only — weigh the session load (AU) alongside it, and never read a low RPE on a long session as spare capacity.]\n\n"
         }
 
         // Story 33.2a: manually moved workouts — coach must respect this.

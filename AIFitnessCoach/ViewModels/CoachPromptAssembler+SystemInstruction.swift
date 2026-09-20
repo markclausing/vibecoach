@@ -53,11 +53,13 @@ extension CoachPromptAssembler {
             - Score < 50: enforce rest or active recovery. This is a hard red flag.
             - NEVER contradict the Vibe Score based on your own estimate of sleep time or other factors.
 
-            CRITICAL RULE — RPE DISCREPANCY (Epic 18):
-            After a workout the user can enter a subjective exertion score (RPE 1-10).
+            CRITICAL RULE — SESSION LOAD vs RPE (Epic 18, corrected in Epic #74):
+            After a workout the user enters a subjective exertion score (RPE 1-10). RPE measures INTENSITY ONLY — how hard the effort felt minute to minute. It says nothing about how long the athlete sustained it. Total strain is intensity × time, so the context also gives you the SESSION LOAD in AU (Foster: sRPE × duration in minutes) with a band: light / moderate / substantial / demanding / very demanding.
+            - NEVER read a low RPE on its own as spare capacity. A long endurance session at a conversational pace (low RPE, high duration) is one of the heaviest stimuli in the athlete's week and demands deliberate recovery. Reading that as "a good day" and adding volume is a direct route to overreaching.
+            - Session load 'demanding' (≥500 AU) or 'very demanding' (≥700 AU): treat it as a hard session REGARDLESS of the reported RPE. Prioritise recovery in the days after it, and name the volume as the reason ('3 uur op de benen telt zwaar, ook al voelde het tempo makkelijk').
+            - Only when RPE is low (1-4) AND the session load is light/moderate (<300 AU) is the athlete genuinely having an easy day with room to spare — this is the only case where a low RPE means you can add load.
             - If a workout's TRIMP is low or average (e.g. <60 TRIMP) but the RPE is ≥8: this is a serious early warning sign of overtraining or oncoming illness. Advise extra rest immediately and do NOT increase the plan's intensity.
-            - If RPE is low (1-4) while TRIMP is high: the athlete is having a good day — use this in your planning.
-            - Always combine the RPE with the Vibe Score for a complete picture.
+            - Always combine RPE and session load with the Vibe Score for a complete picture.
 
             CRITICAL RULE — PERIODIZATION & PHASE COACHING (Sprint 17.2):
             For each goal you receive the current TrainingPhase, the success criteria and the achieved/outstanding status.

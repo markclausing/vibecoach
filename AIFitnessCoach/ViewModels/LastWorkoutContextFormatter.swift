@@ -20,12 +20,16 @@ enum LastWorkoutContextFormatter {
     ///   - trimp: TRIMP score, optional ("onbekend" if nil).
     ///   - startDate: Date of the workout, for the "[Type] from [Date]" format.
     ///   - sessionType: Optional — when present the label + intent is added.
+    ///   - durationSeconds: Optional `movingTime`; when present (together with a valid
+    ///     RPE) the session load + band is appended so the coach weighs volume, not just
+    ///     intensity. Epic #74.
     static func format(rpe: Int?,
                        mood: String?,
                        workoutName: String?,
                        trimp: Double?,
                        startDate: Date?,
-                       sessionType: SessionType?) -> String {
+                       sessionType: SessionType?,
+                       durationSeconds: Int? = nil) -> String {
         guard let rpe, let mood else { return "" }
 
         let baseName = workoutName ?? "Training"
@@ -55,6 +59,18 @@ enum LastWorkoutContextFormatter {
         if let sessionType {
             let intent = sessionType.intent
             line += " Session type: \(sessionType.displayName) — \(intent.coachingSummary)"
+        }
+
+        // Epic #74: session load (sRPE × minutes). Spelled out rather than left for the
+        // coach to infer — the whole failure mode was the model reading a low RPE on a
+        // long session as "an easy day", so the strain is stated explicitly and, for the
+        // demanding bands, paired with the reason the low RPE must not be read that way.
+        if let load = SessionLoadCalculator.calculate(rpe: rpe, durationSeconds: durationSeconds) {
+            line += " Duration: \(load.durationMinutes) min."
+            line += " Session load: \(load.load) AU (\(load.band.promptLabel), sRPE \(load.rpe) x \(load.durationMinutes) min)."
+            if load.band.requiresRecovery {
+                line += " NOTE: RPE measures intensity only — the volume makes this a heavy training stimulus that needs deliberate recovery, even though the reported RPE is \(rpe)/10."
+            }
         }
 
         return line

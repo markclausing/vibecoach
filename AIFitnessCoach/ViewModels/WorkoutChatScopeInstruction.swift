@@ -50,6 +50,8 @@ enum WorkoutChatScopeInstruction {
 
         Do NOT attempt to answer the off-topic question anyway, not even partially or as a side remark.
 
+        READING THE DATA (Epic #74): the check-in line may carry a "session load" in AU — that is the athlete's RPE multiplied by the duration in minutes (Foster's session-RPE). RPE on its own is INTENSITY; the session load is the total strain. A long session at a low RPE still produces a high load and needs real recovery, so never read a low RPE on a long session as "that was easy, you have room to spare".
+
         Exception: a seemingly off-topic remark with a clear link to this workout or to the user's current condition (e.g. new shoes that felt odd, a stressful work week weighing on the legs) may be handled in this workout's context.
 
         RESPONSE FORMAT — respond with ONLY a JSON object, no markdown fences, matching exactly:
