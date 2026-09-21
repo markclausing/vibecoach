@@ -20,10 +20,19 @@ enum WorkoutCheckinConfig {
 /// One holistic post-workout feedback choice (Epic #57). Each option maps to an
 /// (rpe, mood) pair persisted on `ActivityRecord`, so the coach prompt,
 /// `LastWorkoutContextFormatter` and `SessionType.expectedRPERange` keep working on the
-/// stored `Int` — no schema migration, no prompt change. The talk-test descriptions make
-/// "what do I pick" obvious; one tap saves. The numeric values still land in the four
-/// downstream RPE buckets (light 1–3 / moderate 4–6 / hard 7–8 / maximal 9–10), and the
-/// 8/9 values keep triggering the low-TRIMP-vs-high-RPE overtraining check.
+/// stored `Int` — no schema migration, no prompt change. One tap saves. The numeric values
+/// still land in the four downstream RPE buckets (light 1–3 / moderate 4–6 / hard 7–8 /
+/// maximal 9–10), and the 8/9 values keep triggering the low-TRIMP-vs-high-RPE
+/// overtraining check.
+///
+/// Epic #74 — session-RPE framing. The descriptions used to be a talk test ("kon makkelijk
+/// doorpraten"), which asks about intensity *during* the effort. On a long endurance session
+/// that answer is accurate and misleading at the same time: a 30 km run at a conversational
+/// pace truthfully scores "easy" while being one of the heaviest sessions of the month. The
+/// copy now asks Foster's session-RPE question — how heavy was the session *as a whole*,
+/// looking back at it — so duration is part of what the user is rating. The stored `Int` is
+/// unchanged; `SessionLoadCalculator` additionally derives the volume-aware load downstream,
+/// so the coach no longer depends on the user getting this nuance right.
 private struct WorkoutCheckinOption: Identifiable {
     let id: String
     let icon: String
@@ -36,13 +45,13 @@ private struct WorkoutCheckinOption: Identifiable {
 
     static let all: [WorkoutCheckinOption] = [
         WorkoutCheckinOption(id: "easy", icon: "leaf.fill",
-            label: "Makkelijk", detail: "Kon makkelijk doorpraten",
+            label: "Makkelijk", detail: "Kostte me weinig, was zo weer klaar",
             rpe: 2, mood: "checkmark.circle.fill", color: .green),
         WorkoutCheckinOption(id: "good", icon: "hand.thumbsup.fill",
-            label: "Lekker gewerkt", detail: "Stevig, maar voelde goed",
+            label: "Prima te doen", detail: "Stevig, maar ik had nog wat over",
             rpe: 5, mood: "bolt.fill", color: Color(red: 0.85, green: 0.65, blue: 0.13)),
         WorkoutCheckinOption(id: "hard", icon: "flame.fill",
-            label: "Zwaar", detail: "Flink afgezien, praten lukte amper",
+            label: "Zwaar", detail: "Vroeg veel van me, dit hakt erin",
             rpe: 8, mood: "zzz", color: Color(red: 0.88, green: 0.58, blue: 0.32)),
         WorkoutCheckinOption(id: "empty", icon: "zzz",
             label: "Leeg / uitgeput", detail: "Kon echt niet meer",
@@ -88,7 +97,9 @@ struct PostWorkoutCheckinCard: View {
                 Image(systemName: "checkmark.bubble.fill")
                     .foregroundStyle(themeManager.primaryAccentColor)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Hoe ging je laatste training?")
+                    // Epic #74: session-RPE wording — the question is about the session as a
+                    // whole (intensity AND duration), not how the pace felt at any moment.
+                    Text("Hoe zwaar was deze training als geheel?")
                         .font(.headline)
                     Text(subtitle)
                         .font(.caption)
@@ -104,6 +115,14 @@ struct PostWorkoutCheckinCard: View {
             }
 
             Divider()
+
+            // Epic #74: the hint that makes the session-RPE framing explicit. Without it the
+            // user answers the intensity question they are used to and a long, easy-paced
+            // session gets rated "makkelijk" — accurate about the pace, wrong about the strain.
+            Text("Kijk terug op de hele sessie — de duur telt net zo zwaar mee als het tempo.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             // Epic #57: one tap on a holistic option (effort + feel combined) saves immediately.
             VStack(spacing: 8) {

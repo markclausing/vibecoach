@@ -120,4 +120,51 @@ final class LastWorkoutContextFormatterTests: XCTestCase {
         XCTAssertFalse(result.contains("Session type:"),
                        "Als de gebruiker geen type heeft (en classifier ook geen voorstel had), mag de prompt geen 'leeg' veld tonen — dat zou de AI zelf laten gokken")
     }
+
+    // MARK: - Epic #74: sessie-load (duur-weging)
+
+    func testOmitsSessionLoadWhenDurationUnknown() {
+        let result = LastWorkoutContextFormatter.format(
+            rpe: 5, mood: "😌", workoutName: "x", trimp: 50,
+            startDate: date, sessionType: nil
+        )
+        XCTAssertFalse(result.contains("Session load:"),
+                       "Zonder duur is er geen sessie-load — liever niets dan een verzonnen getal")
+        XCTAssertFalse(result.contains("Duration:"))
+    }
+
+    func testIncludesSessionLoadWhenDurationProvided() {
+        let result = LastWorkoutContextFormatter.format(
+            rpe: 5, mood: "bolt.fill", workoutName: "Duurloop", trimp: 180,
+            startDate: date, sessionType: nil, durationSeconds: 60 * 60
+        )
+        XCTAssertTrue(result.contains("Duration: 60 min."))
+        XCTAssertTrue(result.contains("Session load: 300 AU"))
+        XCTAssertTrue(result.contains("substantial"))
+        XCTAssertTrue(result.contains("sRPE 5 x 60 min"),
+                      "De rekensom hoort expliciet in de prompt zodat het model 'm niet zelf hoeft af te leiden")
+    }
+
+    func testLongEasySessionCarriesRecoveryWarning() {
+        // Het scenario van de epic: 30 km op praattempo. Lage RPE, enorme belasting.
+        let result = LastWorkoutContextFormatter.format(
+            rpe: 2, mood: "checkmark.circle.fill", workoutName: "Lange duurloop", trimp: 210,
+            startDate: date, sessionType: nil, durationSeconds: 350 * 60
+        )
+        XCTAssertTrue(result.contains("Session load: 700 AU"))
+        XCTAssertTrue(result.contains("very demanding"))
+        XCTAssertTrue(result.contains("RPE measures intensity only"),
+                      "Bij een zware load moet de prompt expliciet tegenspreken dat de lage RPE ruimte betekent")
+        XCTAssertTrue(result.contains("needs deliberate recovery"))
+    }
+
+    func testLightSessionHasNoRecoveryWarning() {
+        let result = LastWorkoutContextFormatter.format(
+            rpe: 2, mood: "checkmark.circle.fill", workoutName: "Wandeling", trimp: 20,
+            startDate: date, sessionType: nil, durationSeconds: 30 * 60
+        )
+        XCTAssertTrue(result.contains("Session load: 60 AU (light"))
+        XCTAssertFalse(result.contains("needs deliberate recovery"),
+                       "Een korte rustige sessie mag geen hersteladvies triggeren — anders verwatert het signaal")
+    }
 }

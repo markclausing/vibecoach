@@ -191,19 +191,23 @@ final class CoachContextStore {
     }
 
     /// Epic 18.1: Writes the subjective feedback (RPE + mood) of the last workout to the cache.
+    /// Epic #74: `durationSeconds` (the activity's `movingTime`) is passed through so the
+    /// block carries the session load, not just the bare intensity rating.
     func cacheLastWorkoutFeedback(rpe: Int?,
                                   mood: String?,
                                   workoutName: String?,
                                   trimp: Double?,
                                   startDate: Date? = nil,
-                                  sessionType: SessionType? = nil) {
+                                  sessionType: SessionType? = nil,
+                                  durationSeconds: Int? = nil) {
         lastWorkoutFeedbackContext = LastWorkoutContextFormatter.format(
             rpe: rpe,
             mood: mood,
             workoutName: workoutName,
             trimp: trimp,
             startDate: startDate,
-            sessionType: sessionType
+            sessionType: sessionType,
+            durationSeconds: durationSeconds
         )
     }
 

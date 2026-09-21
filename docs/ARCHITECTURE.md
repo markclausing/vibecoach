@@ -509,3 +509,52 @@ Every goal carries an explicit **race priority** (`RacePriority` A/B/C, `Fitness
 ### Single-goal parity
 
 With one active goal the macrocycle *is* that goal's periodisation: the program's windows equal `PhaseWindowCalculator.windows(for:)` exactly, no mini-taper exists, and `ProgramTimelineCard` carries the "Peak start 12 sep" next-phase hint that the per-goal bar used to show — so nothing is lost for the common case. Goals without a blueprint produce no `PeriodizationResult` but still anchor a program (`computedTargetTRIMP` falls back to a duration-derived estimate), and completed/expired goals never reach the timeline nor stretch its span.
+
+---
+
+## 22. Session load — why RPE alone misleads the coach (Epic #74)
+
+### The failure this fixes
+
+The post-workout check-in stores one number: `ActivityRecord.rpe` (1–10). Until Epic #74 the coach read that number as if it described the session's strain. It doesn't — RPE describes **intensity**, how hard the effort felt minute to minute. Strain is intensity × time.
+
+The gap shows up exactly where endurance training lives. A 30 km run at a conversational pace is honestly rated "makkelijk": the athlete really could keep talking. The stored RPE is 2. Meanwhile it is one of the heaviest sessions of the month and needs days of recovery. The old `systemInstruction` then made it worse with an explicit rule — *"If RPE is low (1-4) while TRIMP is high: the athlete is having a good day — use this in your planning"* — which turned the most demanding session of the week into a green light to add volume.
+
+### The model: Foster's session-RPE
+
+`SessionLoadCalculator` (`Services/Physiology/`) applies the standard session-RPE formula:
+
+```
+load (AU) = RPE × duration in minutes
+```
+
+Both inputs already exist on `ActivityRecord` (`rpe`, `movingTime`), so this is **purely derived** — no new field, no `@Model` change, no schema migration (§2.1 not triggered). The calculator is pure Swift with no `AppStorage`/`UserDefaults` (CLAUDE.md §6), so the caller injects everything.
+
+The raw AU number is mapped onto a qualitative `Band`, which is what the prompt actually leans on:
+
+| Band | Load (AU) | `requiresRecovery` |
+|---|---|---|
+| `light` | < 150 | no |
+| `moderate` | 150–299 | no |
+| `substantial` | 300–499 | no |
+| `demanding` | 500–699 | **yes** |
+| `veryDemanding` | ≥ 700 | **yes** |
+
+The cut-offs are heuristic, not a validated clinical scale. They are tuned for one property: a long session at a low RPE must still land in a band that demands recovery. The 30 km example lands at 364 AU (`substantial`) at RPE 2 and 910 AU (`veryDemanding`) at RPE 5 — versus 270 AU for a 30-minute all-out effort at RPE 9. That ordering (long-easy above short-hard) is the whole point and is pinned by `SessionLoadCalculatorTests`.
+
+Invalid input yields `nil` rather than a misleading zero: a missing RPE, the `WorkoutCheckinConfig.ignoredRPESentinel` (0, "not a training"), an out-of-scale RPE, and a non-positive or sub-30-second duration all produce no load at all.
+
+### Where it reaches the coach
+
+Two emitters, both carrying the load alongside the bare RPE:
+
+- **Coach tab** — `LastWorkoutContextFormatter.format(…, durationSeconds:)` appends `Duration: N min. Session load: N AU (band, sRPE R x N min).` The arithmetic is spelled out rather than left to the model. For the two `requiresRecovery` bands the block adds an explicit counter-statement ("RPE measures intensity only — the volume makes this a heavy training stimulus…"), because the failure mode was precisely the model drawing the opposite conclusion from a low RPE. `CoachContextStore.cacheLastWorkoutFeedback` passes `movingTime` through from both `DashboardView` call sites (the check-in callback and the `onAppear` cache priming).
+- **Per-workout chat** (Epic #70) — `WorkoutChatViewModel.buildPrompt` extends the `- Check-in:` line with `session load N AU (band)`, and `WorkoutChatScopeInstruction` gained a "READING THE DATA" paragraph defining the term, since that chat has its own system instruction.
+
+The `systemInstruction` rule was rewritten from *RPE DISCREPANCY* to **SESSION LOAD vs RPE**. The "good day" clause now requires *both* a low RPE **and** a light/moderate load — it is the only case where a low RPE means spare capacity. The low-TRIMP-with-RPE-≥8 overtraining warning is unchanged.
+
+### The UI half
+
+Deriving the load fixes the coach, but the user was also being asked the wrong question. `PostWorkoutCheckinCard` asked *"Hoe ging je laatste training?"* with talk-test descriptions ("Kon makkelijk doorpraten") — an intensity question. It now asks Foster's session-RPE question, *"Hoe zwaar was deze training als geheel?"*, with a hint that the duration counts as much as the pace, and option descriptions that no longer reference the talk test. The stored `Int` values are unchanged, so every downstream consumer (`SessionType.expectedRPERange`, the RPE buckets, the overtraining check) keeps working untouched.
+
+The two halves are deliberately redundant: the copy helps the user rate the session better, and the derived load means the coach is right even when they don't.
