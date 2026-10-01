@@ -116,7 +116,7 @@ struct PeriodizationEngine {
         if goal.resolvedIntent == .completion {
             let hasStretchWithReadiness = goal.stretchGoalTime != nil && isHighReadiness
             return IntentModifier(
-                weeklyTrimpMultiplier: 0.90,
+                weeklyTrimpMultiplier: PrimaryIntent.completion.weeklyVolumeMultiplier,
                 allowHighIntensity: hasStretchWithReadiness,
                 backToBackEmphasis: isMultiDay,
                 stretchPaceAllowed: hasStretchWithReadiness,
