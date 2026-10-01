@@ -670,4 +670,48 @@ final class FutureProjectionServiceTests: XCTestCase {
         XCTAssertEqual(ProjectionStatus.catchUpNeeded.color, "orange")
         XCTAssertEqual(ProjectionStatus.unreachable.color, "red")
     }
+
+    // MARK: - 12. Goal intent (finish vs. performance)
+
+    /// A 'finish' goal is measured against the reduced volume the PeriodizationEngine plans for it.
+    func testCompletionIntent_LowersPeakRequirement() {
+        let goal = marathonGoal(weeksAhead: 6)
+        goal.intent = .completion
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: [])
+
+        XCTAssertEqual(result?.requiredPeakTRIMP ?? 0, 650 * 0.90, accuracy: 0.01)
+        XCTAssertEqual(result?.requiredPeakKm ?? 0, 71.5 * 0.90, accuracy: 0.01)
+    }
+
+    /// Regression: a 'finish' marathon that misses the peak load must not be told to treat
+    /// the race as a training run — finishing is still the goal.
+    func testCoachContext_UnreachableCompletion_KeepsFinishGoal() {
+        let goal = marathonGoal(weeksAhead: 6)
+        goal.intent = .completion
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: [])
+        let context = result?.coachContext ?? ""
+
+        XCTAssertEqual(result?.status, .unreachable)
+        XCTAssertFalse(context.contains("trainingsrace"),
+                       "Een uitloopdoel mag nooit het advies krijgen de race als training te lopen.")
+        XCTAssertTrue(context.contains("UITLOPEN"))
+        XCTAssertTrue(context.contains("veilig finishen"))
+    }
+
+    func testCoachContext_PeakPerformance_NamesIntent() {
+        let goal = marathonGoal(weeksAhead: 6)
+        goal.intent = .peakPerformance
+        let context = FutureProjectionService.calculateProjection(for: goal, activities: [])?.coachContext ?? ""
+
+        XCTAssertTrue(context.contains("MAXIMALE PRESTATIE"))
+        XCTAssertTrue(context.contains("trainingsrace"))
+    }
+
+    func testBuildCoachContext_GedragsregelRespectsIntent() {
+        let goal = marathonGoal(weeksAhead: 26)
+        let result = FutureProjectionService.calculateProjection(for: goal, activities: [])
+        let combined = FutureProjectionService.buildCoachContext(from: [result!])
+
+        XCTAssertTrue(combined.contains("Respecteer de doelintentie"))
+    }
 }

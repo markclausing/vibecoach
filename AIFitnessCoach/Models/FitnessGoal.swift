@@ -29,6 +29,16 @@ enum PrimaryIntent: String, Codable, CaseIterable {
         case .peakPerformance: return "Zo snel mogelijk"
         }
     }
+
+    /// Scale on the weekly volume targets. Finishing safely needs a solid aerobic base,
+    /// not the full race-peak load — shared by `PeriodizationEngine` (weekly TRIMP target)
+    /// and `FutureProjectionService` (peak requirement), so both agree on what "on track" means.
+    var weeklyVolumeMultiplier: Double {
+        switch self {
+        case .completion:      return 0.90
+        case .peakPerformance: return 1.0
+        }
+    }
 }
 
 /// Represents a user's fitness goal.

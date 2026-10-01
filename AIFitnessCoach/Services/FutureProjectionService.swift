@@ -133,8 +133,11 @@ struct GoalProjection {
         let kmGrowthPct  = Int((kmObservedGrowthRate * 100).rounded())
         let kmCapPct     = hasCrossTrainingBonus ? 17 : 10
 
+        let isCompletion = goal.resolvedIntent == .completion
+
         var lines: [String] = [
-            "Doel: '\(goal.title)' — racedag \(targetStr)",
+            "Doel: '\(goal.title)' — racedag \(targetStr) — doelintentie: "
+                + (isCompletion ? "UITLOPEN (finishen, geen tijd- of prestatiedoel)" : "MAXIMALE PRESTATIE"),
             "Huidig wekelijks TRIMP: ~\(trimpInt) (piek-eis: ~\(reqTRIMPInt)) | "
                 + "Huidig wekelijks \(kmLabel): ~\(kmStr) km (piek-eis: ~\(reqKmStr) km)",
             "TRIMP-groei: \(growthPct)%/week | \(kmLabel)-groei: \(kmGrowthPct)%/week (max \(kmCapPct)%"
@@ -185,9 +188,20 @@ struct GoalProjection {
                 + "Noem de situatie constructief — niet alarmerend.")
 
         case .unreachable:
-            lines.append("🔴 PROGNOSE: Wiskundig onhaalbaar vóór racedag \(targetStr). "
-                + "KRITIEKE INSTRUCTIE: Bespreek met de atleet: (1) doeldatum uitstellen, "
-                + "(2) doeltype aanpassen of (3) race als trainingsrace beschouwen.")
+            if isCompletion {
+                // The peak load is a performance benchmark. For a 'finish' goal, falling
+                // short of it does not mean the athlete can't finish — advising them to
+                // "treat the race as a training run" contradicts the goal they chose.
+                lines.append("🔴 PROGNOSE: De piekbelasting wordt niet meer gehaald vóór racedag \(targetStr). "
+                    + "Het doel is UITLOPEN — dat blijft het doel. "
+                    + "KRITIEKE INSTRUCTIE: Stel NIET voor om de race als training te behandelen of het doel los te laten. "
+                    + "Help de atleet veilig finishen: (1) houd de resterende weken consistent zonder last-minute volume-inhaal, "
+                    + "(2) een conservatief starttempo in Zone 1-2, (3) eventueel een loop/wandel-strategie en een voedings-/drinkplan.")
+            } else {
+                lines.append("🔴 PROGNOSE: Wiskundig onhaalbaar vóór racedag \(targetStr). "
+                    + "KRITIEKE INSTRUCTIE: Bespreek met de atleet: (1) doeldatum uitstellen, "
+                    + "(2) doeltype aanpassen of (3) race als trainingsrace beschouwen.")
+            }
         }
 
         return lines.joined(separator: "\n")
@@ -314,8 +328,11 @@ struct FutureProjectionService {
             case .multiDayStage:  return 0.65
             }
         }()
-        let requiredPeakTRIMP = blueprint.weeklyTrimpTarget * TrainingPhase.peakPhase.multiplier
-        let requiredPeakKm    = blueprint.weeklyKmTarget    * TrainingPhase.peakPhase.multiplier * peakKmFormatMultiplier
+        // A 'finish' goal is measured against the same reduced volume the PeriodizationEngine
+        // plans for it — otherwise the projection judges it by a race-peak it never aimed at.
+        let intentMultiplier  = goal.resolvedIntent.weeklyVolumeMultiplier
+        let requiredPeakTRIMP = blueprint.weeklyTrimpTarget * TrainingPhase.peakPhase.multiplier * intentMultiplier
+        let requiredPeakKm    = blueprint.weeklyKmTarget    * TrainingPhase.peakPhase.multiplier * peakKmFormatMultiplier * intentMultiplier
 
         let plannedPeakDate = calendar.date(
             byAdding: .weekOfYear,
@@ -472,6 +489,8 @@ struct FutureProjectionService {
         - Bij 'Inhaalslag nodig' (.catchUpNeeded): NOOIT alarmerend. Wees constructief —
           er is genoeg tijd. Stel een concreet opbouwplan voor.
         - Bij 'Risico' of 'Onhaalbaar': stel proactief een bijsturingsplan voor.
+        - Respecteer de doelintentie: bij UITLOPEN gaat de prognose over prestatie-paraatheid,
+          niet over óf de atleet finisht. Stel dan nooit voor de race als training te lopen.
         - Verbind de prognose altijd aan de huidig lopende trainingsfase.]
         """)
         return lines.joined(separator: "\n")
