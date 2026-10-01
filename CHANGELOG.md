@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.6.0](https://github.com/markclausing/vibecoach/compare/v2.5.1...v2.6.0) (2026-10-01)
+
+
+### Features
+
+* weigh session load, not just RPE, after a workout ([#362](https://github.com/markclausing/vibecoach/issues/362)) ([4cd0eec](https://github.com/markclausing/vibecoach/commit/4cd0eec9b73bd2c80c31d54b394d6e4d3eb57fba))
+
+
+### Bug Fixes
+
+* keep a 'finish' goal a finish goal in the projection prompt ([#364](https://github.com/markclausing/vibecoach/issues/364)) ([a5e631e](https://github.com/markclausing/vibecoach/commit/a5e631e0999c72f09d4990ea562bbb6729fbb3cc))
+* let the coach see goal races in the recent-training block ([#365](https://github.com/markclausing/vibecoach/issues/365)) ([#366](https://github.com/markclausing/vibecoach/issues/366)) ([be23ca4](https://github.com/markclausing/vibecoach/commit/be23ca496ded0cb505f52a49a067f417fc6ed233))
+
 ## [2.5.1](https://github.com/markclausing/vibecoach/compare/v2.5.0...v2.5.1) (2026-09-15)
 
 
