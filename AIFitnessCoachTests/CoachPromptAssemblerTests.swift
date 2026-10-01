@@ -53,6 +53,8 @@ final class CoachPromptAssemblerTests: XCTestCase {
         XCTAssertTrue(prefix.contains("[CURRENT COMPLAINTS — SINGLE SOURCE OF TRUTH"))
         XCTAssertTrue(prefix.contains("[PHYSIOLOGICAL PATTERNS IN RECENT WORKOUTS:"))
         XCTAssertTrue(prefix.contains("[RECENT TRAINING — 14 DAYS"))
+        // §13: the race behaviour rule must reference the exact marker the builder emits.
+        XCTAssertTrue(prefix.contains("A line starting with \(WorkoutHistoryContextBuilder.raceMarker) is a goal race"))
         XCTAssertTrue(prefix.contains("[WEATHER CONDITIONS NEXT 7 DAYS"))
         XCTAssertTrue(prefix.contains("[SPORTS-SCIENCE REQUIREMENTS (BLUEPRINT):"))
         XCTAssertTrue(prefix.contains("[PERIODIZATION — PHASE, SUCCESS CRITERIA & COACH BEHAVIOUR:"))
