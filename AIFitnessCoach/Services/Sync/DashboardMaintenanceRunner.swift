@@ -175,7 +175,8 @@ final class DashboardMaintenanceRunner {
                 trimp: activity.trimp,
                 averageHeartrate: activity.averageHeartrate,
                 averagePower: nil,                  // Epic #40 hookup later
-                patterns: detected
+                patterns: detected,
+                distanceMeters: activity.distance
             ))
 
             if activity.startDate >= cutoff7 {
@@ -184,6 +185,36 @@ final class DashboardMaintenanceRunner {
         }
 
         context.workoutPatternsContext = WorkoutPatternFormatter.chatContextLine(for: patterns7d) ?? ""
-        context.workoutHistoryContext = WorkoutHistoryContextBuilder.build(entries: entries)
+        context.workoutHistoryContext = WorkoutHistoryContextBuilder.build(
+            entries: WorkoutHistoryContextBuilder.tagRaces(in: entries, goals: recentRaceGoals(since: cutoff14, now: now))
+        )
+    }
+
+    /// Goals whose race day fell inside the history window — completed or not. Once the race
+    /// date passes, a goal drops out of every "active goals" block, so this is the only place
+    /// left where the coach learns the race happened.
+    private func recentRaceGoals(since cutoff: Date, now: Date) -> [WorkoutHistoryContextBuilder.RaceGoal] {
+        // Up to the end of today: a race run this morning counts even if its stored time is later.
+        let calendar = Calendar.current
+        let endOfToday = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+        let descriptor = FetchDescriptor<FitnessGoal>(
+            predicate: #Predicate<FitnessGoal> { $0.targetDate >= cutoff && $0.targetDate < endOfToday }
+        )
+        let goals = (try? modelContext.fetch(descriptor)) ?? []
+        return goals.map { goal in
+            let sport: SportCategory? = goal.sportCategory ?? BlueprintChecker.detectBlueprintType(for: goal).map {
+                switch $0 {
+                case .marathon, .halfMarathon: return .running
+                case .cyclingTour:             return .cycling
+                }
+            }
+            return WorkoutHistoryContextBuilder.RaceGoal(
+                title: goal.title,
+                date: goal.targetDate,
+                sport: sport,
+                priority: goal.racePriority,
+                eventDays: goal.resolvedEventDurationDays
+            )
+        }
     }
 }

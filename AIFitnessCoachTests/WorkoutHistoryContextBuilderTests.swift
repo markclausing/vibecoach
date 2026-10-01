@@ -147,4 +147,75 @@ final class WorkoutHistoryContextBuilderTests: XCTestCase {
         XCTAssertTrue(output.contains("TRIMP 40"))
         XCTAssertTrue(output.contains("gem-HR 130"))
     }
+
+    // MARK: - Race tagging (goal races in the window)
+
+    private func run(daysBefore offset: Int, km: Double, minutes: Int,
+                     sport: SportCategory = .running) -> WorkoutHistoryContextBuilder.WorkoutEntry {
+        WorkoutHistoryContextBuilder.WorkoutEntry(
+            startDate: date(daysBefore: offset),
+            displayName: "Run",
+            sportCategory: sport,
+            sessionType: nil,
+            movingTime: minutes * 60,
+            trimp: nil,
+            averageHeartrate: nil,
+            averagePower: nil,
+            patterns: [],
+            distanceMeters: km * 1000
+        )
+    }
+
+    /// Regression: a 30 km long run the week before must not bury the half marathon itself.
+    func testTagRaces_HalfMarathonAfterLongerLongRun_RaceLineIsMarked() {
+        let entries = [run(daysBefore: 7, km: 30, minutes: 180), run(daysBefore: 0, km: 21.1, minutes: 115)]
+        let goal = WorkoutHistoryContextBuilder.RaceGoal(
+            title: "Halve Marathon Rotterdam", date: date(daysBefore: 0), sport: .running, priority: .b
+        )
+
+        let output = WorkoutHistoryContextBuilder.build(
+            entries: WorkoutHistoryContextBuilder.tagRaces(in: entries, goals: [goal])
+        )
+        let lines = output.components(separatedBy: "\n")
+
+        XCTAssertTrue(lines[0].hasPrefix("- \(WorkoutHistoryContextBuilder.raceMarker) 'Halve Marathon Rotterdam' (B-race) — "),
+                      "Race line must be marked: \(lines[0])")
+        XCTAssertTrue(lines[0].contains("21.1 km"))
+        XCTAssertFalse(lines[1].contains(WorkoutHistoryContextBuilder.raceMarker), "The long run is training: \(lines[1])")
+        XCTAssertTrue(lines[1].contains("30.0 km"))
+    }
+
+    func testTagRaces_SameDayWarmUp_OnlyLongestIsTheRace() {
+        let warmUp = run(daysBefore: 2, km: 2, minutes: 12)
+        let race = run(daysBefore: 2, km: 10, minutes: 45)
+        let goal = WorkoutHistoryContextBuilder.RaceGoal(title: "10K", date: date(daysBefore: 2), sport: .running, priority: nil)
+
+        let tagged = WorkoutHistoryContextBuilder.tagRaces(in: [warmUp, race], goals: [goal])
+
+        XCTAssertNil(tagged[0].race)
+        XCTAssertEqual(tagged[1].race, goal)
+    }
+
+    func testTagRaces_SportMismatchOrOtherDay_NotTagged() {
+        let ride = run(daysBefore: 3, km: 40, minutes: 90, sport: .cycling)
+        let otherDay = run(daysBefore: 4, km: 21, minutes: 110)
+        let goal = WorkoutHistoryContextBuilder.RaceGoal(title: "Halve", date: date(daysBefore: 3), sport: .running, priority: .b)
+
+        let tagged = WorkoutHistoryContextBuilder.tagRaces(in: [ride, otherDay], goals: [goal])
+
+        XCTAssertTrue(tagged.allSatisfy { $0.race == nil })
+    }
+
+    func testTagRaces_MultiDayEvent_TagsEachStage() {
+        let entries = [run(daysBefore: 3, km: 120, minutes: 300, sport: .cycling),
+                       run(daysBefore: 2, km: 110, minutes: 280, sport: .cycling)]
+        let goal = WorkoutHistoryContextBuilder.RaceGoal(
+            title: "Etapperit", date: date(daysBefore: 3), sport: .cycling, priority: .a, eventDays: 2
+        )
+
+        let tagged = WorkoutHistoryContextBuilder.tagRaces(in: entries, goals: [goal])
+
+        XCTAssertTrue(tagged.allSatisfy { $0.race == goal })
+    }
 }
+
