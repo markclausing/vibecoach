@@ -91,6 +91,38 @@ final class DashboardMaintenanceRunnerTests: XCTestCase {
         XCTAssertEqual(store.workoutHistoryContext, "", "No workouts in window → history cache cleared")
     }
 
+    /// A goal race in the window is fetched from SwiftData and marked in the history block —
+    /// also after its date has passed, when it no longer shows up in any active-goal block.
+    func testRefreshChatContextCachesMarksRecentGoalRace() async throws {
+        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let raceContainer = try ModelContainer(
+            for: ActivityRecord.self, WorkoutSample.self, FitnessGoal.self, CoachContextCache.self,
+            configurations: config
+        )
+        let raceContext = raceContainer.mainContext
+        let calendar = Calendar.current
+        let raceDay = try XCTUnwrap(calendar.date(byAdding: .day, value: -2, to: Date()))
+        let longRunDay = try XCTUnwrap(calendar.date(byAdding: .day, value: -9, to: Date()))
+
+        raceContext.insert(FitnessGoal(title: "Halve Marathon Rotterdam", targetDate: raceDay,
+                                       sportCategory: .running, racePriority: .b))
+        raceContext.insert(ActivityRecord(id: "race", name: "Race", distance: 21_100, movingTime: 6_900,
+                                          averageHeartrate: nil, sportCategory: .running, startDate: raceDay, trimp: nil))
+        raceContext.insert(ActivityRecord(id: "long", name: "Long run", distance: 30_000, movingTime: 10_800,
+                                          averageHeartrate: nil, sportCategory: .running, startDate: longRunDay, trimp: nil))
+        try raceContext.save()
+
+        let store = CoachContextStore()
+        store.configure(with: raceContext)
+        await DashboardMaintenanceRunner(modelContext: raceContext).refreshChatContextCaches(into: store)
+
+        let history = store.workoutHistoryContext
+        XCTAssertTrue(history.contains("\(WorkoutHistoryContextBuilder.raceMarker) 'Halve Marathon Rotterdam' (B-race)"),
+                      "The half marathon must be named as a race: \(history)")
+        XCTAssertEqual(history.components(separatedBy: WorkoutHistoryContextBuilder.raceMarker).count, 2,
+                       "Only the race is marked, not the longer training run: \(history)")
+    }
+
     // MARK: - Strava backfill wiring
 
     func testBackfillStravaStreamsWithNoStravaRecordsIsNoOp() async throws {

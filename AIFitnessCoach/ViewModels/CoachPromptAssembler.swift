@@ -142,7 +142,8 @@ enum CoachPromptAssembler {
             2. On ≥3 consecutive workouts with aerobic_decoupling or cardiac_drift: propose sub-LTHR work and motivate it with the specific data from this list.
             3. Use this data only on reflection/schedule questions/goal analysis — don't recite it unprompted in every turn.
             4. Combine with [TRAINING THRESHOLDS] for zone-correct interpretation of the average HR. Use the same zone terminology ("Zone 2"/"Z2", "Zone 3"/"Z3", "LTHR") — don't invent new labels.
-            5. Weigh this data against [CURRENT COMPLAINTS]. On an active injury: interpret patterns like cardiac_drift more cautiously (may be recovery fatigue, not a training need). Don't suggest volume increases if the user is recovering.]
+            5. Weigh this data against [CURRENT COMPLAINTS]. On an active injury: interpret patterns like cardiac_drift more cautiously (may be recovery fatigue, not a training need). Don't suggest volume increases if the user is recovering.
+            6. A line starting with \(WorkoutHistoryContextBuilder.raceMarker) is a goal race the athlete actually ran. Always acknowledge it by name with its distance and time — even when a training session in this list was longer, and as an exception to rule 3. A race is a result, not just another long run; factor its recovery into the plan.]
             """
             prefix += historyBlock + "\n\n"
         }
