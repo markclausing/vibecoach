@@ -182,6 +182,7 @@
 		BCA4F7B2D6E8F0A1B2C3D405 /* SessionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECA4F7B2D6E8F0A1B2C3D405 /* SessionType.swift */; };
 		BDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDA4F7B2D6E8F0A1B2C3D405 /* SessionClassifier.swift */; };
 		BEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift */; };
+		A1C0DE77401B0000000000A1 /* StravaActivityDecodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0DE77401A0000000000A1 /* StravaActivityDecodingTests.swift */; };
 		BEA4F7B2D6E8F0A1B2C3E402 /* SessionLoadCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA4F7B2D6E8F0A1B2C3E402 /* SessionLoadCalculatorTests.swift */; };
 		BFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift */; };
 		C0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift */; };
@@ -653,6 +654,7 @@
 		DA54B0000000000000000106 /* MilestoneProgressCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MilestoneProgressCard.swift; sourceTree = "<group>"; };
 		DA54B0000000000000000107 /* SymptomCheckinCard.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SymptomCheckinCard.swift; sourceTree = "<group>"; };
 		EEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionClassifierTests.swift; sourceTree = "<group>"; };
+		A1C0DE77401A0000000000A1 /* StravaActivityDecodingTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StravaActivityDecodingTests.swift; sourceTree = "<group>"; };
 		EEA4F7B2D6E8F0A1B2C3E402 /* SessionLoadCalculatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SessionLoadCalculatorTests.swift; sourceTree = "<group>"; };
 		EFA4F7B2D6E8F0A1B2C3D405 /* HeartRateZones.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HeartRateZones.swift; sourceTree = "<group>"; };
 		F0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HeartRateZonesTests.swift; sourceTree = "<group>"; };
@@ -842,6 +844,7 @@
 				E9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift */,
 				EBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift */,
 				EEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift */,
+				A1C0DE77401A0000000000A1 /* StravaActivityDecodingTests.swift */,
 				EEA4F7B2D6E8F0A1B2C3E402 /* SessionLoadCalculatorTests.swift */,
 				F0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift */,
 				F2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift */,
@@ -1536,6 +1539,7 @@
 				B9A4F7B2D6E8F0A1B2C3D405 /* WorkoutAnalysisHelpersTests.swift in Sources */,
 				BBA4F7B2D6E8F0A1B2C3D405 /* PreferencesContextFormatterTests.swift in Sources */,
 				BEA4F7B2D6E8F0A1B2C3D405 /* SessionClassifierTests.swift in Sources */,
+				A1C0DE77401B0000000000A1 /* StravaActivityDecodingTests.swift in Sources */,
 				BEA4F7B2D6E8F0A1B2C3E402 /* SessionLoadCalculatorTests.swift in Sources */,
 				C0A4F7B2D6E8F0A1B2C3D405 /* HeartRateZonesTests.swift in Sources */,
 				C2A4F7B2D6E8F0A1B2C3D405 /* LastWorkoutContextFormatterTests.swift in Sources */,
